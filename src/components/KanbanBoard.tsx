@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ticketsList, ticketsPartialUpdate } from '@/api/generated/api';
 import type { Ticket, TicketList } from '@/api/generated/interfaces';
 
@@ -40,7 +41,294 @@ const STATUS_COLUMNS = [
 
 type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 
-export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoardProps) {
+interface DragItem {
+  type: string;
+  id: number;
+  status: TicketStatus;
+  index: number;
+}
+
+// Helper functions
+const getPriorityColor = (priority?: any) => {
+  if (!priority) return '#6c757d';
+  const priorityStr = String(priority).toLowerCase();
+  switch (priorityStr) {
+    case 'high': return '#dc3545';
+    case 'medium': return '#fd7e14';
+    case 'low': return '#28a745';
+    default: return '#6c757d';
+  }
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString();
+};
+
+// Draggable Ticket Component
+function DraggableTicket({ 
+  ticket, 
+  index, 
+  onTicketClick,
+  onMoveTicket 
+}: { 
+  ticket: TicketList;
+  index: number;
+  onTicketClick?: (ticketId: number) => void;
+  onMoveTicket: (ticketId: number, sourceStatus: TicketStatus, destStatus: TicketStatus, sourceIndex: number, destIndex: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  const [{ isDragging }, dragRef] = useDrag({
+    type: 'ticket',
+    item: (): DragItem => ({
+      type: 'ticket',
+      id: ticket.id,
+      status: String(ticket.status || 'open') as TicketStatus,
+      index
+    }),
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, dropRef] = useDrop({
+    accept: 'ticket',
+    hover: (item: DragItem) => {
+      if (!item || item.id === ticket.id) {
+        return;
+      }
+      
+      const dragStatus = item.status;
+      const hoverStatus = String(ticket.status || 'open') as TicketStatus;
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      // If dragging to same status and same position, do nothing
+      if (dragStatus === hoverStatus && dragIndex === hoverIndex) {
+        return;
+      }
+
+      // Move the item
+      onMoveTicket(item.id, dragStatus, hoverStatus, dragIndex, hoverIndex);
+      
+      // Update the item for continued dragging
+      item.status = hoverStatus;
+      item.index = hoverIndex;
+    },
+  });
+
+  // Connect drag and drop to the element
+  dragRef(dropRef(ref));
+
+  return (
+    <div
+      ref={ref}
+      onClick={() => onTicketClick?.(ticket.id)}
+      style={{
+        background: isDragging ? '#f0f0f0' : '#fff',
+        border: isDragging ? '2px solid #007bff' : '1px solid #dee2e6',
+        borderRadius: '6px',
+        padding: '12px',
+        marginBottom: '8px',
+        cursor: isDragging ? 'grabbing' : 'grab',
+        boxShadow: isDragging 
+          ? '0 8px 25px rgba(0,123,255,0.3)' 
+          : '0 1px 3px rgba(0,0,0,0.1)',
+        opacity: isDragging ? 0.5 : 1,
+        transition: 'all 0.2s ease',
+      }}
+    >
+      {/* Ticket Priority Indicator */}
+      <div style={{
+        width: '100%',
+        height: '3px',
+        background: getPriorityColor(ticket.priority),
+        borderRadius: '2px',
+        marginBottom: '8px'
+      }}></div>
+
+      {/* Ticket Title */}
+      <h4 style={{
+        fontSize: '14px',
+        fontWeight: '600',
+        margin: '0 0 6px 0',
+        color: '#333',
+        lineHeight: '1.3'
+      }}>
+        {ticket.title}
+      </h4>
+
+      {/* Ticket Meta */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        fontSize: '11px',
+        color: '#6c757d',
+        marginBottom: '8px'
+      }}>
+        <span>#{ticket.id}</span>
+        <span>{formatDate(ticket.created_at)}</span>
+      </div>
+
+      {/* Assigned User */}
+      {ticket.assigned_to && (
+        <div style={{
+          marginBottom: '8px',
+          fontSize: '11px',
+          color: '#495057'
+        }}>
+          👤 {ticket.assigned_to.first_name} {ticket.assigned_to.last_name}
+        </div>
+      )}
+
+      {/* Tags */}
+      {ticket.tags && ticket.tags.length > 0 && (
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '4px'
+        }}>
+          {ticket.tags.slice(0, 3).map((tag: any) => (
+            <span
+              key={tag.id}
+              style={{
+                background: '#e9ecef',
+                color: '#495057',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontSize: '10px'
+              }}
+            >
+              {tag.name}
+            </span>
+          ))}
+          {ticket.tags.length > 3 && (
+            <span style={{
+              color: '#6c757d',
+              fontSize: '10px'
+            }}>
+              +{ticket.tags.length - 3}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Droppable Column Component
+function DroppableColumn({ 
+  column, 
+  tickets, 
+  onTicketClick, 
+  onMoveTicket 
+}: { 
+  column: typeof STATUS_COLUMNS[number];
+  tickets: TicketList[];
+  onTicketClick?: (ticketId: number) => void;
+  onMoveTicket: (ticketId: number, sourceStatus: TicketStatus, destStatus: TicketStatus, sourceIndex: number, destIndex: number) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  const [{ isOver }, dropRef] = useDrop({
+    accept: 'ticket',
+    drop: (item: DragItem) => {
+      const sourceStatus = item.status;
+      const destStatus = column.id as TicketStatus;
+      const sourceIndex = item.index;
+      const destIndex = tickets.length; // Add to end when dropping on column
+      
+      if (sourceStatus !== destStatus) {
+        onMoveTicket(item.id, sourceStatus, destStatus, sourceIndex, destIndex);
+      }
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+    }),
+  });
+
+  // Connect drop to the element
+  dropRef(ref);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        minWidth: '300px',
+        maxWidth: '300px',
+        background: isOver ? '#f0f8ff' : '#f8f9fa',
+        borderRadius: '8px',
+        padding: '16px',
+        border: isOver ? '2px dashed #007bff' : '2px dashed transparent',
+        transition: 'all 0.2s ease',
+      }}
+    >
+      {/* Column Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '16px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{
+            width: '12px',
+            height: '12px',
+            borderRadius: '50%',
+            background: column.color
+          }}></div>
+          <h3 style={{
+            fontSize: '16px',
+            fontWeight: '600',
+            margin: 0,
+            color: '#333'
+          }}>
+            {column.name}
+          </h3>
+        </div>
+        <span style={{
+          background: '#dee2e6',
+          color: '#495057',
+          padding: '2px 8px',
+          borderRadius: '12px',
+          fontSize: '12px',
+          fontWeight: '500'
+        }}>
+          {tickets.length}
+        </span>
+      </div>
+
+      {/* Column Description */}
+      <p style={{
+        fontSize: '12px',
+        color: '#6c757d',
+        margin: '0 0 16px 0'
+      }}>
+        {column.description}
+      </p>
+
+      {/* Tickets */}
+      <div style={{
+        minHeight: '200px',
+        padding: '8px'
+      }}>
+        {tickets.map((ticket, index) => (
+          <DraggableTicket
+            key={ticket.id}
+            ticket={ticket}
+            index={index}
+            onTicketClick={onTicketClick}
+            onMoveTicket={onMoveTicket}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Main Kanban Board Component
+function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps) {
   const [tickets, setTickets] = useState<{ [status: string]: TicketList[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -94,50 +382,26 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     }
   };
 
-  const handleDragEnd = async (result: DropResult) => {
-    // Prevent multiple concurrent drag operations
-    if (isMoving) {
-      console.log('Already moving, ignoring drag');
-      return;
-    }
-    
-    console.log('Drag ended:', result);
-    const { destination, source, draggableId } = result;
-
-    // If dropped outside any droppable area
-    if (!destination) {
-      console.log('No destination, aborting drag');
-      return;
-    }
-
-    // If dropped in the same position
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      console.log('Same position, aborting drag');
-      return;
-    }
-
-    const sourceStatus = source.droppableId as TicketStatus;
-    const destStatus = destination.droppableId as TicketStatus;
-    const ticketId = parseInt(draggableId);
-
-    console.log('Moving ticket:', { ticketId, sourceStatus, destStatus });
+  const moveTicket = useCallback(async (
+    ticketId: number,
+    sourceStatus: TicketStatus,
+    destStatus: TicketStatus,
+    sourceIndex: number,
+    destIndex: number
+  ) => {
+    console.log('Moving ticket:', { ticketId, sourceStatus, destStatus, sourceIndex, destIndex });
 
     // Store the current state for rollback
     const originalTickets = { ...tickets };
 
     // Find the ticket being moved
     const sourceTickets = [...(tickets[sourceStatus] || [])];
-    const movedTicket = sourceTickets.find(ticket => ticket.id === ticketId);
+    const ticketToMove = sourceTickets.find(ticket => ticket.id === ticketId);
     
-    if (!movedTicket) {
-      console.error('Could not find ticket to move', { ticketId, sourceStatus, availableTickets: sourceTickets.map(t => t.id) });
+    if (!ticketToMove) {
+      console.error('Could not find ticket to move', { ticketId, sourceStatus });
       return;
     }
-
-    console.log('Found ticket to move:', movedTicket);
 
     // Create new tickets state
     const newTickets = { ...tickets };
@@ -147,22 +411,24 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       : [...(newTickets[destStatus] || [])];
 
     // Remove from source
-    const sourceIndex = newSourceTickets.findIndex(ticket => ticket.id === ticketId);
-    if (sourceIndex === -1) {
+    const actualSourceIndex = newSourceTickets.findIndex(ticket => ticket.id === ticketId);
+    if (actualSourceIndex === -1) {
       console.error('Could not find ticket in source column');
       return;
     }
     
-    const [removedTicket] = newSourceTickets.splice(sourceIndex, 1);
+    const [removedTicket] = newSourceTickets.splice(actualSourceIndex, 1);
 
-    // Add to destination at the correct position
+    // Add to destination
     if (sourceStatus === destStatus) {
       // Moving within the same status column (just reordering)
-      newSourceTickets.splice(destination.index, 0, removedTicket);
+      const targetIndex = Math.min(destIndex, newSourceTickets.length);
+      newSourceTickets.splice(targetIndex, 0, removedTicket);
       newTickets[sourceStatus] = newSourceTickets;
     } else {
       // Moving to a different status
-      newDestTickets.splice(destination.index, 0, removedTicket);
+      const targetIndex = Math.min(destIndex, newDestTickets.length);
+      newDestTickets.splice(targetIndex, 0, removedTicket);
       newTickets[sourceStatus] = newSourceTickets;
       newTickets[destStatus] = newDestTickets;
     }
@@ -170,7 +436,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     // Update state optimistically
     setTickets(newTickets);
 
-    // Only show loading state and make API call if moving between different statuses
+    // Only make API call if moving between different statuses
     if (sourceStatus !== destStatus) {
       setIsMoving(true);
 
@@ -184,7 +450,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
           throw new Error(`Invalid status: ${destStatus}`);
         }
         
-        // Add timeout to prevent hanging (5 seconds should be enough)
+        // Add timeout to prevent hanging
         const updatePromise = ticketsPartialUpdate(ticketId, {
           status: destStatus as any
         });
@@ -210,22 +476,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     } else {
       console.log('Same status, no API call needed');
     }
-  };
-
-  const getPriorityColor = (priority?: any) => {
-    if (!priority) return '#6c757d';
-    const priorityStr = String(priority).toLowerCase();
-    switch (priorityStr) {
-      case 'high': return '#dc3545';
-      case 'medium': return '#fd7e14';
-      case 'low': return '#28a745';
-      default: return '#6c757d';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  }, [tickets]);
 
   if (loading) {
     return (
@@ -353,238 +604,62 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
         )}
       </div>
 
-      {/* Kanban Board */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        {isMoving && (
+      {/* Loading State */}
+      {isMoving && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
           <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.1)',
+            background: 'white',
+            padding: '20px',
+            borderRadius: '8px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999
+            gap: '12px'
           }}>
             <div style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              <div style={{
-                width: '20px',
-                height: '20px',
-                border: '2px solid #007bff',
-                borderTop: '2px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }}></div>
-              Moving ticket...
-            </div>
+              width: '20px',
+              height: '20px',
+              border: '2px solid #007bff',
+              borderTop: '2px solid transparent',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }}></div>
+            Moving ticket...
           </div>
-        )}
-        <div style={{
-          display: 'flex',
-          gap: '20px',
-          overflowX: 'auto',
-          paddingBottom: '20px'
-        }}>
-          {STATUS_COLUMNS.map((column) => {
-            console.log('Rendering column:', column.id, 'with tickets:', tickets[column.id]?.length || 0);
-            return (
-            <div
-              key={column.id}
-              style={{
-                minWidth: '300px',
-                maxWidth: '300px',
-                background: '#f8f9fa',
-                borderRadius: '8px',
-                padding: '16px'
-              }}
-            >
-              {/* Column Header */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '16px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{
-                    width: '12px',
-                    height: '12px',
-                    borderRadius: '50%',
-                    background: column.color
-                  }}></div>
-                  <h3 style={{
-                    fontSize: '16px',
-                    fontWeight: '600',
-                    margin: 0,
-                    color: '#333'
-                  }}>
-                    {column.name}
-                  </h3>
-                </div>
-                <span style={{
-                  background: '#dee2e6',
-                  color: '#495057',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  fontSize: '12px',
-                  fontWeight: '500'
-                }}>
-                  {tickets[column.id]?.length || 0}
-                </span>
-              </div>
-
-              {/* Column Description */}
-              <p style={{
-                fontSize: '12px',
-                color: '#6c757d',
-                margin: '0 0 16px 0'
-              }}>
-                {column.description}
-              </p>
-
-              {/* Droppable Area */}
-              <Droppable droppableId={String(column.id)}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    style={{
-                      minHeight: '200px',
-                      background: snapshot.isDraggingOver ? '#e3f2fd' : 'transparent',
-                      borderRadius: '4px',
-                      border: snapshot.isDraggingOver ? '2px dashed #007bff' : '2px dashed transparent',
-                      transition: 'all 0.2s ease',
-                      padding: '8px'
-                    }}
-                  >
-                    {(tickets[column.id] || []).map((ticket, index) => (
-                      <Draggable
-                        key={ticket.id}
-                        draggableId={String(ticket.id)}
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            onClick={() => onTicketClick?.(ticket.id)}
-                            style={{
-                              ...provided.draggableProps.style,
-                              background: snapshot.isDragging ? '#fff' : '#fff',
-                              border: snapshot.isDragging ? '2px solid #007bff' : '1px solid #dee2e6',
-                              borderRadius: '6px',
-                              padding: '12px',
-                              marginBottom: '8px',
-                              cursor: 'pointer',
-                              boxShadow: snapshot.isDragging 
-                                ? '0 8px 25px rgba(0,123,255,0.3)' 
-                                : '0 1px 3px rgba(0,0,0,0.1)',
-                              transform: snapshot.isDragging 
-                                ? `${provided.draggableProps.style?.transform} rotate(3deg)` 
-                                : provided.draggableProps.style?.transform || 'none',
-                              transition: snapshot.isDragging ? 'none' : 'all 0.2s ease',
-                              opacity: snapshot.isDragging ? 0.9 : 1
-                            }}
-                          >
-                            {/* Ticket Priority Indicator */}
-                            <div style={{
-                              width: '100%',
-                              height: '3px',
-                              background: getPriorityColor(ticket.priority),
-                              borderRadius: '2px',
-                              marginBottom: '8px'
-                            }}></div>
-
-                            {/* Ticket Title */}
-                            <h4 style={{
-                              fontSize: '14px',
-                              fontWeight: '600',
-                              margin: '0 0 6px 0',
-                              color: '#333',
-                              lineHeight: '1.3'
-                            }}>
-                              {ticket.title}
-                            </h4>
-
-                            {/* Ticket Meta */}
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              fontSize: '11px',
-                              color: '#6c757d',
-                              marginBottom: '8px'
-                            }}>
-                              <span>#{ticket.id}</span>
-                              <span>{formatDate(ticket.created_at)}</span>
-                            </div>
-
-                            {/* Assigned User */}
-                            {ticket.assigned_to && (
-                              <div style={{
-                                marginBottom: '8px',
-                                fontSize: '11px',
-                                color: '#495057'
-                              }}>
-                                👤 {ticket.assigned_to.first_name} {ticket.assigned_to.last_name}
-                              </div>
-                            )}
-
-                            {/* Tags */}
-                            {ticket.tags && ticket.tags.length > 0 && (
-                              <div style={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: '4px'
-                              }}>
-                                {ticket.tags.slice(0, 3).map((tag) => (
-                                  <span
-                                    key={tag.id}
-                                    style={{
-                                      background: '#e9ecef',
-                                      color: '#495057',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      fontSize: '10px'
-                                    }}
-                                  >
-                                    {tag.name}
-                                  </span>
-                                ))}
-                                {ticket.tags.length > 3 && (
-                                  <span style={{
-                                    color: '#6c757d',
-                                    fontSize: '10px'
-                                  }}>
-                                    +{ticket.tags.length - 3}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </div>
-            );
-          })}
         </div>
-      </DragDropContext>
+      )}
+
+      {/* Kanban Board */}
+      <div style={{
+        display: 'flex',
+        gap: '20px',
+        overflowX: 'auto',
+        paddingBottom: '20px'
+      }}>
+        {STATUS_COLUMNS.map((column) => {
+          console.log('Rendering column:', column.id, 'with tickets:', tickets[column.id]?.length || 0);
+          return (
+            <DroppableColumn
+              key={column.id}
+              column={column}
+              tickets={tickets[column.id] || []}
+              onTicketClick={onTicketClick}
+              onMoveTicket={moveTicket}
+            />
+          );
+        })}
+      </div>
 
       <style jsx>{`
         @keyframes spin {
@@ -593,5 +668,14 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
         }
       `}</style>
     </div>
+  );
+}
+
+// Wrapper component with DndProvider
+export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoardProps) {
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <KanbanBoardContent onTicketClick={onTicketClick} onCreateTicket={onCreateTicket} />
+    </DndProvider>
   );
 }
