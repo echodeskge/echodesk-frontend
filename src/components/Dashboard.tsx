@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AuthUser, TenantInfo } from '@/types/auth';
 import { authService } from '@/services/authService';
 import { User } from '@/api/generated/interfaces';
+import TicketManagement from './TicketManagement';
 
 interface DashboardProps {
   user: AuthUser;
@@ -15,6 +16,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'tickets'>('dashboard');
 
   useEffect(() => {
     fetchUserProfile();
@@ -48,6 +50,10 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       onLogout();
     }
   };
+
+  if (currentView === 'tickets') {
+    return <TicketManagement onBackToDashboard={() => setCurrentView('dashboard')} />;
+  }
 
   if (loading) {
     return (
@@ -126,6 +132,39 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <nav style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              style={{
+                background: currentView === 'dashboard' ? tenant.theme.primary_color : 'transparent',
+                color: currentView === 'dashboard' ? 'white' : tenant.theme.primary_color,
+                border: `1px solid ${tenant.theme.primary_color}`,
+                padding: '6px 12px',
+                borderRadius: '4px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => setCurrentView('tickets')}
+              style={{
+                background: (currentView as string) === 'tickets' ? tenant.theme.primary_color : 'transparent',
+                color: (currentView as string) === 'tickets' ? 'white' : tenant.theme.primary_color,
+                border: `1px solid ${tenant.theme.primary_color}`,
+                padding: '6px 12px',
+                borderRadius: '4px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              Tickets
+            </button>
+          </nav>
+          
           <div style={{ textAlign: 'right' }}>
             <p style={{
               fontSize: '14px',
@@ -300,7 +339,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '15px'
             }}>
-              <button style={{
+              <button 
+              onClick={() => setCurrentView('tickets')}
+              style={{
                 background: tenant.theme.primary_color,
                 color: 'white',
                 border: 'none',
@@ -314,7 +355,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
               onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
-                View Tickets
+                Manage Tickets
               </button>
               <button style={{
                 background: tenant.theme.secondary_color || '#f0f0f0',
