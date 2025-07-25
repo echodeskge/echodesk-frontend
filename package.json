@@ -13,20 +13,22 @@
     "clean": "rm -rf .next && rm -rf node_modules/.cache",
     "build:production": "NODE_ENV=production next build",
     "test:health": "curl -f http://localhost:3000/api/health || exit 1",
-    "deploy:check": "npm run type-check && npm run lint && npm run build:production"
+    "deploy:check": "npm run type-check && npm run lint && npm run build:production",
+    "generate": "npx @gordela/api-generator generate "
   },
   "dependencies": {
+    "@gordela/api-generator": "^1.2.0",
+    "next": "15.4.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.4.4"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.4",
-    "@eslint/eslintrc": "^3"
+    "typescript": "^5"
   }
 }
