@@ -37,15 +37,19 @@ class TenantService {
    */
   async getTenantBySubdomain(subdomain: string): Promise<TenantConfig | null> {
     try {
-      const apiUrl = this.getTenantApiUrl();
+      // Use main API for tenant configuration, not tenant-specific API
+      const apiUrl = this.apiBaseUrl;
       const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config';
       
       const response = await fetch(`${apiUrl}${endpoint}?subdomain=${subdomain}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': typeof window !== 'undefined' ? window.location.origin : '',
         },
         cache: 'no-cache', // Always get fresh tenant data
+        mode: 'cors', // Explicitly set CORS mode
       });
 
       if (response.ok) {
@@ -70,15 +74,19 @@ class TenantService {
    */
   async getTenantByDomain(domain: string): Promise<TenantConfig | null> {
     try {
-      const apiUrl = this.getTenantApiUrl();
+      // Use main API for tenant configuration, not tenant-specific API
+      const apiUrl = this.apiBaseUrl;
       const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config';
       
       const response = await fetch(`${apiUrl}${endpoint}?domain=${domain}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': typeof window !== 'undefined' ? window.location.origin : '',
         },
         cache: 'no-cache',
+        mode: 'cors', // Explicitly set CORS mode
       });
 
       if (response.ok) {
@@ -103,7 +111,10 @@ class TenantService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': typeof window !== 'undefined' ? window.location.origin : '',
         },
+        mode: 'cors', // Explicitly set CORS mode
       });
 
       if (response.ok) {
@@ -126,6 +137,8 @@ class TenantService {
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Origin': typeof window !== 'undefined' ? window.location.origin : '',
       };
 
       if (authToken) {
@@ -136,6 +149,7 @@ class TenantService {
         method: 'PUT',
         headers,
         body: JSON.stringify({ preferred_language: language }),
+        mode: 'cors', // Explicitly set CORS mode
       });
 
       return response.ok;
