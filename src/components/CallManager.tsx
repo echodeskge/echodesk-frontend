@@ -8,16 +8,24 @@ import {
   callLogsUpdateStatusPartialUpdate,
   sipConfigurationsList,
   sipConfigurationsWebrtcConfigRetrieve,
+  sipConfigurationsCreate,
+  sipConfigurationsUpdate,
+  sipConfigurationsDestroy,
+  sipConfigurationsSetDefaultCreate,
+  sipConfigurationsTestConnectionCreate,
+  sipConfigurationsRetrieve,
 } from '@/api/generated/api';
 import type {
   CallLog,
   CallInitiate,
   SipConfigurationList,
   SipConfigurationDetail,
+  SipConfiguration,
   DirectionEnum,
   StatusC94enum,
 } from '@/api/generated/interfaces';
 import { SipService } from '@/services/SipService';
+import SipConfigManager from './SipConfigManager';
 import type { Invitation } from 'sip.js';
 
 // Helper functions to handle enum checks
@@ -63,6 +71,7 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   const [callDuration, setCallDuration] = useState(0);
   const [testMode, setTestMode] = useState(false);
   const [sipRegistered, setSipRegistered] = useState(false);
+  const [currentView, setCurrentView] = useState<'calls' | 'sip-config'>('calls');
 
   // Audio and SIP refs
   const localAudioRef = useRef<HTMLAudioElement>(null);
@@ -511,7 +520,56 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
         </div>
       </div>
 
-      {/* Active Call Interface */}
+      {/* Navigation Tabs */}
+      <div style={{
+        display: 'flex',
+        gap: '2px',
+        marginBottom: '20px',
+        borderBottom: '1px solid #e1e5e9'
+      }}>
+        <button
+          onClick={() => setCurrentView('calls')}
+          style={{
+            background: currentView === 'calls' ? '#007bff' : 'transparent',
+            color: currentView === 'calls' ? 'white' : '#333',
+            border: 'none',
+            padding: '12px 20px',
+            borderRadius: '6px 6px 0 0',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            borderBottom: currentView === 'calls' ? '2px solid #007bff' : '2px solid transparent'
+          }}
+        >
+          📞 Call Interface
+        </button>
+        <button
+          onClick={() => setCurrentView('sip-config')}
+          style={{
+            background: currentView === 'sip-config' ? '#007bff' : 'transparent',
+            color: currentView === 'sip-config' ? 'white' : '#333',
+            border: 'none',
+            padding: '12px 20px',
+            borderRadius: '6px 6px 0 0',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            borderBottom: currentView === 'sip-config' ? '2px solid #007bff' : '2px solid transparent'
+          }}
+        >
+          ⚙️ SIP Configuration
+        </button>
+      </div>
+
+      {/* SIP Configuration View */}
+      {currentView === 'sip-config' && (
+        <SipConfigManager onConfigChange={fetchInitialData} />
+      )}
+
+      {/* Call Interface View */}
+      {currentView === 'calls' && (
+        <>
+          {/* Active Call Interface */}
       {activeCall && (
         <div style={{
           background: '#fff',
@@ -863,6 +921,8 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
           </div>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }
