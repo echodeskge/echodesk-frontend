@@ -5,7 +5,7 @@ import { TenantConfig } from '@/types/tenant';
 
 interface LoginFormProps {
   tenant: TenantConfig;
-  onLogin: (token: string, user: any) => void;
+  onLogin: (token: string, user: Record<string, unknown>) => void;
 }
 
 export default function LoginForm({ tenant, onLogin }: LoginFormProps) {
@@ -108,11 +108,14 @@ export default function LoginForm({ tenant, onLogin }: LoginFormProps) {
         {/* Tenant Branding */}
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           {tenant.theme.logo_url && (
-            <img 
-              src={tenant.theme.logo_url} 
-              alt={tenant.tenant_name}
-              style={{ height: '60px', marginBottom: '15px' }}
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={tenant.theme.logo_url} 
+                alt={tenant.tenant_name}
+                style={{ height: '60px', marginBottom: '15px' }}
+              />
+            </>
           )}
           <h1 style={{
             fontSize: '28px',
@@ -262,7 +265,7 @@ export default function LoginForm({ tenant, onLogin }: LoginFormProps) {
                 fontSize: '14px', 
                 margin: '0 0 20px 0' 
               }}>
-                Enter your email address and we'll send you instructions to reset your password.
+                Enter your email address and we&apos;ll send you instructions to reset your password.
               </p>
               
               <label style={{
@@ -343,8 +346,8 @@ export default function LoginForm({ tenant, onLogin }: LoginFormProps) {
           color: '#999'
         }}>
           <p style={{ margin: 0 }}>
-            Powered by EchoDesk • {tenant.schema_name}.echodesk.ge
-          </p>
+              Powered by EchoDesk • {tenant.schema_name}.echodesk.ge
+            </p>
         </div>
       </div>
     </div>

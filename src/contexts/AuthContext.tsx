@@ -10,7 +10,7 @@ interface User {
   last_name?: string;
   is_staff?: boolean;
   is_active?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface AuthContextType {
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setLoading(false);
     }
-  }, [tenant]);
+  }, [tenant]); // checkAuth is intentionally omitted to avoid infinite loops
 
   const value: AuthContextType = {
     user,

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { tenantService } from '@/services/tenantService';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const tenants = await tenantService.getAllTenants();
     
