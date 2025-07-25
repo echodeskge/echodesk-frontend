@@ -68,11 +68,13 @@ const formatDate = (dateString: string) => {
 function DraggableTicket({ 
   ticket, 
   index, 
+  currentStatus,
   onTicketClick,
   onMoveTicket 
 }: { 
   ticket: TicketList;
   index: number;
+  currentStatus: TicketStatus;
   onTicketClick?: (ticketId: number) => void;
   onMoveTicket: (ticketId: number, sourceStatus: TicketStatus, destStatus: TicketStatus, sourceIndex: number, destIndex: number) => void;
 }) {
@@ -83,7 +85,7 @@ function DraggableTicket({
     item: (): DragItem => ({
       type: 'ticket',
       id: ticket.id,
-      status: String(ticket.status || 'open') as TicketStatus,
+      status: currentStatus, // Use current status from props instead of ticket.status
       index
     }),
     collect: (monitor) => ({
@@ -93,13 +95,13 @@ function DraggableTicket({
 
   const [, dropRef] = useDrop({
     accept: 'ticket',
-    hover: (item: DragItem) => {
-      if (!item || item.id === ticket.id) {
+    hover: (item: DragItem, monitor) => {
+      if (!item || item.id === ticket.id || !ref.current || !monitor.isOver({ shallow: true })) {
         return;
       }
       
       const dragStatus = item.status;
-      const hoverStatus = String(ticket.status || 'open') as TicketStatus;
+      const hoverStatus = currentStatus; // Use current status from props
       const dragIndex = item.index;
       const hoverIndex = index;
 
@@ -108,11 +110,31 @@ function DraggableTicket({
         return;
       }
 
+      // Get the hovered rectangle
+      const hoverBoundingRect = ref.current.getBoundingClientRect();
+      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const clientOffset = monitor.getClientOffset();
+      
+      if (!clientOffset) {
+        return;
+      }
+      
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+      // Only perform the move when the mouse has crossed half of the items height
+      // When dragging downwards, only move when the cursor is below 50%
+      // When dragging upwards, only move when the cursor is above 50%
+      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
+        return;
+      }
+      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
+        return;
+      }
+
       // Move the item
       onMoveTicket(item.id, dragStatus, hoverStatus, dragIndex, hoverIndex);
       
-      // Update the item for continued dragging
-      item.status = hoverStatus;
+      // Update the item for continued dragging (only update index, not status for hover)
       item.index = hoverIndex;
     },
   });
@@ -233,7 +255,11 @@ function DroppableColumn({
   
   const [{ isOver }, dropRef] = useDrop({
     accept: 'ticket',
-    drop: (item: DragItem) => {
+    drop: (item: DragItem, monitor) => {
+      if (monitor.didDrop()) {
+        return; // Ignore if already handled by a ticket
+      }
+      
       const sourceStatus = item.status;
       const destStatus = column.id as TicketStatus;
       const sourceIndex = item.index;
@@ -241,6 +267,9 @@ function DroppableColumn({
       
       if (sourceStatus !== destStatus) {
         onMoveTicket(item.id, sourceStatus, destStatus, sourceIndex, destIndex);
+        // Update item status for continued interactions
+        item.status = destStatus;
+        item.index = destIndex;
       }
     },
     collect: (monitor) => ({
@@ -318,6 +347,7 @@ function DroppableColumn({
             key={ticket.id}
             ticket={ticket}
             index={index}
+            currentStatus={column.id as TicketStatus}
             onTicketClick={onTicketClick}
             onMoveTicket={onMoveTicket}
           />
@@ -391,47 +421,44 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
   ) => {
     console.log('Moving ticket:', { ticketId, sourceStatus, destStatus, sourceIndex, destIndex });
 
+    // Prevent moves during API calls
+    if (isMoving) {
+      console.log('Already moving, ignoring move');
+      return;
+    }
+
     // Store the current state for rollback
     const originalTickets = { ...tickets };
 
-    // Find the ticket being moved
-    const sourceTickets = [...(tickets[sourceStatus] || [])];
-    const ticketToMove = sourceTickets.find(ticket => ticket.id === ticketId);
+    // Create deep copy to avoid mutations
+    const newTickets = JSON.parse(JSON.stringify(tickets)) as { [status: string]: TicketList[] };
     
-    if (!ticketToMove) {
+    // Find the ticket in the source status
+    const sourceTickets = newTickets[sourceStatus] || [];
+    const ticketIndex = sourceTickets.findIndex(ticket => ticket.id === ticketId);
+    
+    if (ticketIndex === -1) {
       console.error('Could not find ticket to move', { ticketId, sourceStatus });
       return;
     }
 
-    // Create new tickets state
-    const newTickets = { ...tickets };
-    const newSourceTickets = [...(newTickets[sourceStatus] || [])];
-    const newDestTickets = sourceStatus === destStatus 
-      ? newSourceTickets 
-      : [...(newTickets[destStatus] || [])];
-
-    // Remove from source
-    const actualSourceIndex = newSourceTickets.findIndex(ticket => ticket.id === ticketId);
-    if (actualSourceIndex === -1) {
-      console.error('Could not find ticket in source column');
-      return;
-    }
+    // Get the ticket to move
+    const ticketToMove = sourceTickets[ticketIndex];
     
-    const [removedTicket] = newSourceTickets.splice(actualSourceIndex, 1);
+    // Remove from source
+    sourceTickets.splice(ticketIndex, 1);
+
+    // Update the ticket's status in the object
+    const updatedTicket = { ...ticketToMove, status: destStatus as any };
 
     // Add to destination
-    if (sourceStatus === destStatus) {
-      // Moving within the same status column (just reordering)
-      const targetIndex = Math.min(destIndex, newSourceTickets.length);
-      newSourceTickets.splice(targetIndex, 0, removedTicket);
-      newTickets[sourceStatus] = newSourceTickets;
-    } else {
-      // Moving to a different status
-      const targetIndex = Math.min(destIndex, newDestTickets.length);
-      newDestTickets.splice(targetIndex, 0, removedTicket);
-      newTickets[sourceStatus] = newSourceTickets;
-      newTickets[destStatus] = newDestTickets;
-    }
+    const destTickets = newTickets[destStatus] || [];
+    const targetIndex = Math.max(0, Math.min(destIndex, destTickets.length));
+    destTickets.splice(targetIndex, 0, updatedTicket);
+
+    // Update both arrays in the state
+    newTickets[sourceStatus] = sourceTickets;
+    newTickets[destStatus] = destTickets;
 
     // Update state optimistically
     setTickets(newTickets);
@@ -476,7 +503,7 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
     } else {
       console.log('Same status, no API call needed');
     }
-  }, [tickets]);
+  }, [tickets, isMoving]);
 
   if (loading) {
     return (
