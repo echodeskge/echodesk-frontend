@@ -39,24 +39,8 @@ services:
     value: ${REVALIDATION_SECRET}
     type: SECRET
 
-# Domain configuration - Individual domain approach (if wildcard fails)
-domains:
-- domain: echodesk.ge
-  type: PRIMARY
-  certificate_id: auto
-- domain: www.echodesk.ge
-  type: ALIAS
-  certificate_id: auto
-- domain: amanati.echodesk.ge
-  type: ALIAS
-  certificate_id: auto
-- domain: demo.echodesk.ge
-  type: ALIAS
-  certificate_id: auto
-- domain: test.echodesk.ge
-  type: ALIAS
-  certificate_id: auto
-# Add more tenant subdomains as needed
+# No custom domains - use Cloudflare to proxy to the .ondigitalocean.app domain
+# This avoids SSL certificate issues with App Platform
 
 # Alerts for monitoring
 alerts:
