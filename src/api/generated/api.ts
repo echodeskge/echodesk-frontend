@@ -5,6 +5,8 @@
 
 import axios from '../axios';
 import type {
+  TenantDashboardData,
+  TenantLogin,
   PaginatedCallLogList,
   CallLog,
   PatchedCallLog,
@@ -14,9 +16,14 @@ import type {
   PaginatedTicketCommentList,
   TicketComment,
   PatchedTicketComment,
+  TenantRegistration,
+  Tenant,
   PaginatedTagList,
   Tag,
   PatchedTag,
+  PaginatedTenantList,
+  TenantCreate,
+  PatchedTenant,
   PaginatedTicketListList,
   Ticket,
   PatchedTicket,
@@ -25,6 +32,65 @@ import type {
   User,
   PatchedUser,
 } from './interfaces';
+
+export async function changeTenantPassword(): Promise<{
+  message?: string;
+}> {
+  const response = await axios.post(`/api/auth/change-password/`);
+  return response.data;
+}
+
+export async function tenantDashboard(): Promise<TenantDashboardData> {
+  const response = await axios.get(`/api/auth/dashboard/`);
+  return response.data;
+}
+
+export async function tenantLogin(data: TenantLogin): Promise<{
+  message?: string;
+  token?: string;
+  dashboard_data?: Record<string, any>;
+}> {
+  const response = await axios.post(`/api/auth/login/`, data);
+  return response.data;
+}
+
+export async function tenantLogout(): Promise<{
+  message?: string;
+}> {
+  const response = await axios.post(`/api/auth/logout/`);
+  return response.data;
+}
+
+export async function tenantProfile(): Promise<{
+  id?: number;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  date_joined?: string;
+  last_login?: string;
+  is_active?: boolean;
+}> {
+  const response = await axios.get(`/api/auth/profile/`);
+  return response.data;
+}
+
+export async function updateTenantProfile2(): Promise<{
+  message?: string;
+  user?: Record<string, any>;
+}> {
+  const response = await axios.put(`/api/auth/profile/update/`);
+  return response.data;
+}
+
+export async function updateTenantProfile(): Promise<{
+  message?: string;
+  user?: Record<string, any>;
+}> {
+  const response = await axios.patch(`/api/auth/profile/update/`);
+  return response.data;
+}
 
 export async function callLogsList(
   ordering?: string,
@@ -170,6 +236,31 @@ export async function commentsDestroy(id: string): Promise<any> {
   return response.data;
 }
 
+export async function corsTestRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cors-test/`);
+  return response.data;
+}
+
+export async function deploymentStatusRetrieve(tenantId: number): Promise<any> {
+  const response = await axios.get(`/api/deployment-status/${tenantId}/`);
+  return response.data;
+}
+
+export async function preflightTestRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/preflight-test/`);
+  return response.data;
+}
+
+export async function registerTenant(data: TenantRegistration): Promise<{
+  message?: string;
+  tenant?: Record<string, any>;
+  frontend_url?: string;
+  api_url?: string;
+}> {
+  const response = await axios.post(`/api/register/`, data);
+  return response.data;
+}
+
 export async function tagsList(
   ordering?: string,
   page?: number,
@@ -213,6 +304,97 @@ export async function tagsPartialUpdate(
 
 export async function tagsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tags/${id}/`);
+  return response.data;
+}
+
+export async function tenantConfigRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/tenant/config/`);
+  return response.data;
+}
+
+export async function getTenantLanguage(): Promise<{
+  preferred_language?: string;
+  tenant_name?: string;
+  schema_name?: string;
+}> {
+  const response = await axios.get(`/api/tenant/language/`);
+  return response.data;
+}
+
+export async function tenantLanguageUpdateUpdate(): Promise<any> {
+  const response = await axios.put(`/api/tenant/language/update/`);
+  return response.data;
+}
+
+export async function tenantLanguageUpdatePartialUpdate(): Promise<any> {
+  const response = await axios.patch(`/api/tenant/language/update/`);
+  return response.data;
+}
+
+export async function tenantsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedTenantList> {
+  const response = await axios.get(
+    `/api/tenants/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function tenantsCreate(data: TenantCreate): Promise<TenantCreate> {
+  const response = await axios.post(`/api/tenants/`, data);
+  return response.data;
+}
+
+export async function tenantsRetrieve(id: number): Promise<Tenant> {
+  const response = await axios.get(`/api/tenants/${id}/`);
+  return response.data;
+}
+
+export async function tenantsUpdate(id: number, data: Tenant): Promise<Tenant> {
+  const response = await axios.put(`/api/tenants/${id}/`, data);
+  return response.data;
+}
+
+export async function tenantsPartialUpdate(
+  id: number,
+  data: PatchedTenant,
+): Promise<Tenant> {
+  const response = await axios.patch(`/api/tenants/${id}/`, data);
+  return response.data;
+}
+
+export async function tenantsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/tenants/${id}/`);
+  return response.data;
+}
+
+export async function tenantsCreateAdminUserCreate(
+  id: number,
+  data: Tenant,
+): Promise<Tenant> {
+  const response = await axios.post(
+    `/api/tenants/${id}/create_admin_user/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function tenantsUsersRetrieve(id: number): Promise<Tenant> {
+  const response = await axios.get(`/api/tenants/${id}/users/`);
+  return response.data;
+}
+
+export async function tenantsListRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/tenants/list/`);
   return response.data;
 }
 

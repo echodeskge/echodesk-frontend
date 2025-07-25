@@ -2,23 +2,15 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useTenant } from './TenantContext';
-
-interface User {
-  id: number;
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  is_staff?: boolean;
-  is_active?: boolean;
-  [key: string]: unknown;
-}
+import { AuthUser } from '@/types/auth';
+import { authService } from '@/services/auth';
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (token: string, userData: User) => void;
+  login: (token: string, userData: AuthUser) => void;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
 }
@@ -30,28 +22,37 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { tenant } = useTenant();
 
-  const login = (authToken: string, userData: User) => {
+  const login = (authToken: string, userData: AuthUser) => {
     setToken(authToken);
     setUser(userData);
-    localStorage.setItem('authToken', authToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    
+    // Also save using authService for consistency
+    if (tenant) {
+      const tenantInfo = {
+        id: tenant.schema_name,
+        name: tenant.tenant_name,
+        schema_name: tenant.schema_name,
+        domain: `${tenant.schema_name}.echodesk.ge`,
+        api_url: tenant.api_url,
+        theme: tenant.theme,
+      };
+      authService.saveAuthData(authToken, userData, tenantInfo);
+    }
   };
 
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    authService.clearLocalAuth();
   };
 
   const checkAuth = async (): Promise<boolean> => {
-    const storedToken = localStorage.getItem('authToken');
-    const storedUser = localStorage.getItem('user');
+    const { token: storedToken, user: storedUser } = authService.getStoredAuthData();
 
     if (!storedToken || !storedUser || !tenant) {
       setLoading(false);
@@ -59,41 +60,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     try {
-      // Use tenant-specific API for user validation
-      const apiUrl = tenant.api_url;
-      const response = await fetch(`${apiUrl}/users/me/`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Token ${storedToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': typeof window !== 'undefined' ? window.location.origin : '',
-        },
-        mode: 'cors',
-      });
+      // Set tenant for auth service
+      const tenantInfo = {
+        id: tenant.schema_name,
+        name: tenant.tenant_name,
+        schema_name: tenant.schema_name,
+        domain: `${tenant.schema_name}.echodesk.ge`,
+        api_url: tenant.api_url,
+        theme: tenant.theme,
+      };
+      authService.setTenant(tenantInfo);
 
-      if (response.ok) {
-        const userData = await response.json();
+      // Validate token by fetching current user
+      const userData = await authService.getCurrentUser();
+      setToken(storedToken);
+      setUser(userData);
+      setLoading(false);
+      return true;
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      // On validation failure, try to use stored user data temporarily
+      if (storedUser) {
         setToken(storedToken);
-        setUser(userData);
+        setUser(storedUser);
         setLoading(false);
         return true;
       } else {
-        // Token is invalid, clear storage
-        logout();
-        setLoading(false);
-        return false;
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      // On network error, try to use stored user data temporarily
-      try {
-        const userData = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(userData);
-        setLoading(false);
-        return true;
-      } catch {
         logout();
         setLoading(false);
         return false;
@@ -108,6 +100,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenant]); // checkAuth is intentionally omitted to avoid infinite loops
 
   const value: AuthContextType = {

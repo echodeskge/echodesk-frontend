@@ -31,6 +31,10 @@ export interface Client {
   is_active?: boolean;
 }
 
+export interface DeploymentStatusEnum {
+  [key: string]: any;
+}
+
 export interface PaginatedCallLogList {
   count: number;
   next?: string;
@@ -50,6 +54,13 @@ export interface PaginatedTagList {
   next?: string;
   previous?: string;
   results: Tag[];
+}
+
+export interface PaginatedTenantList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Tenant[];
 }
 
 export interface PaginatedTicketCommentList {
@@ -103,6 +114,24 @@ export interface PatchedTag {
   created_at?: string;
 }
 
+export interface PatchedTenant {
+  id?: number;
+  schema_name?: string;
+  domain_url?: string;
+  name?: string;
+  description?: string;
+  admin_email?: string;
+  admin_name?: string;
+  plan?: PlanEnum;
+  max_users?: number;
+  max_storage?: number;
+  preferred_language?: PreferredLanguageEnum;
+  frontend_url?: string;
+  deployment_status?: DeploymentStatusEnum;
+  is_active?: boolean;
+  created_on?: string;
+}
+
 export interface PatchedTicket {
   id?: number;
   title?: string;
@@ -140,6 +169,14 @@ export interface PatchedUser {
   date_joined?: string;
 }
 
+export interface PlanEnum {
+  [key: string]: any;
+}
+
+export interface PreferredLanguageEnum {
+  [key: string]: any;
+}
+
 export interface PriorityEnum {
   [key: string]: any;
 }
@@ -152,6 +189,58 @@ export interface Tag {
   id: number;
   name: string;
   created_at: string;
+}
+
+export interface Tenant {
+  id: number;
+  schema_name: string;
+  domain_url: string;
+  name: string;
+  description?: string;
+  admin_email: string;
+  admin_name: string;
+  plan?: PlanEnum;
+  max_users?: number;
+  max_storage?: number;
+  preferred_language?: PreferredLanguageEnum;
+  frontend_url?: string;
+  deployment_status?: DeploymentStatusEnum;
+  is_active?: boolean;
+  created_on: string;
+}
+
+export interface TenantCreate {
+  name: string;
+  description?: string;
+  admin_email: string;
+  admin_name: string;
+  plan?: PlanEnum;
+  max_users?: number;
+  max_storage?: number;
+  preferred_language?: PreferredLanguageEnum;
+  domain: string;
+}
+
+export interface TenantDashboardData {
+  tenant_info: string;
+  user_info: string;
+  statistics: string;
+}
+
+export interface TenantLogin {
+  email: string;
+  password: string;
+}
+
+export interface TenantRegistration {
+  company_name: string;
+  domain: string;
+  description?: string;
+  admin_email: string;
+  admin_password: string;
+  admin_first_name: string;
+  admin_last_name: string;
+  preferred_language?: PreferredLanguageEnum;
 }
 
 export interface Ticket {

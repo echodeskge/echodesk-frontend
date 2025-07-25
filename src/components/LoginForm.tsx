@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { TenantConfig } from '@/types/tenant';
+import { authService, LoginCredentials } from '@/services/authService';
+import { AuthUser } from '@/types/auth';
 
 interface LoginFormProps {
   tenant: TenantConfig;
-  onLogin: (token: string, user: Record<string, unknown>) => void;
+  onLogin: (token: string, user: AuthUser) => void;
 }
 
 export default function LoginForm({ tenant, onLogin }: LoginFormProps) {
@@ -21,36 +23,55 @@ export default function LoginForm({ tenant, onLogin }: LoginFormProps) {
     setError('');
 
     try {
-      const response = await fetch(`${tenant.api_url}/users/login/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': typeof window !== 'undefined' ? window.location.origin : '',
-        },
-        mode: 'cors',
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Login successful:', data);
-        
-        // Store token in localStorage
-        localStorage.setItem('authToken', data.token || data.access_token || data.key);
-        localStorage.setItem('user', JSON.stringify(data.user || data));
-        
-        onLogin(data.token || data.access_token || data.key, data.user || data);
+      // Prepare login credentials
+      const credentials: LoginCredentials = { email, password };
+      
+      // Attempt login using auth service
+      const loginResponse = await authService.login(credentials);
+      
+      // Extract token from response
+      const token = loginResponse.token;
+      
+      if (token) {
+        console.log('Login successful:', { token });
+        // Get user data from stored localStorage or dashboard data
+        const storedUser = authService.getUser();
+        if (storedUser) {
+          const authUser: AuthUser = {
+            id: storedUser.id,
+            email: storedUser.email,
+            first_name: storedUser.first_name,
+            last_name: storedUser.last_name,
+            is_active: storedUser.is_active,
+            is_staff: storedUser.is_staff,
+            date_joined: storedUser.date_joined
+          };
+          onLogin(token, authUser);
+        } else {
+          // Fallback user object if no stored user
+          const fallbackUser: AuthUser = {
+            id: 0,
+            email: email,
+            first_name: '',
+            last_name: '',
+            is_active: true,
+            is_staff: false,
+            date_joined: new Date().toISOString()
+          };
+          onLogin(token, fallbackUser);
+        }
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || errorData.detail || 'Login failed. Please check your credentials.');
+        setError('Invalid response from server. Please try again.');
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      setError('Network error. Please try again.');
+      
+      // Handle different types of errors
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Network error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
