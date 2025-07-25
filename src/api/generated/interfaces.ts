@@ -35,6 +35,11 @@ export interface DeploymentStatusEnum {
   [key: string]: any;
 }
 
+export interface KanbanBoard {
+  columns: TicketColumn[];
+  tickets_by_column: string;
+}
+
 export interface PaginatedCallLogList {
   count: number;
   next?: string;
@@ -61,6 +66,13 @@ export interface PaginatedTenantList {
   next?: string;
   previous?: string;
   results: Tenant[];
+}
+
+export interface PaginatedTicketColumnList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TicketColumn[];
 }
 
 export interface PaginatedTicketCommentList {
@@ -138,6 +150,9 @@ export interface PatchedTicket {
   description?: string;
   status?: Status14bEnum;
   priority?: PriorityEnum;
+  column?: TicketColumn;
+  column_id?: number;
+  position_in_column?: number;
   created_at?: string;
   updated_at?: string;
   created_by?: UserMinimal;
@@ -147,6 +162,15 @@ export interface PatchedTicket {
   tag_ids?: number[];
   comments?: TicketComment[];
   comments_count?: string;
+}
+
+export interface PatchedTicketColumnUpdate {
+  name?: string;
+  description?: string;
+  color?: string;
+  position?: number;
+  is_default?: boolean;
+  is_closed_status?: boolean;
 }
 
 export interface PatchedTicketComment {
@@ -249,6 +273,9 @@ export interface Ticket {
   description: string;
   status?: Status14bEnum;
   priority?: PriorityEnum;
+  column: TicketColumn;
+  column_id?: number;
+  position_in_column?: number;
   created_at: string;
   updated_at: string;
   created_by: UserMinimal;
@@ -258,6 +285,38 @@ export interface Ticket {
   tag_ids?: number[];
   comments: TicketComment[];
   comments_count: string;
+}
+
+export interface TicketColumn {
+  id: number;
+  name: string;
+  description?: string;
+  color?: string;
+  position?: number;
+  is_default?: boolean;
+  is_closed_status?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  tickets_count: string;
+}
+
+export interface TicketColumnCreate {
+  name: string;
+  description?: string;
+  color?: string;
+  position?: number;
+  is_default?: boolean;
+  is_closed_status?: boolean;
+}
+
+export interface TicketColumnUpdate {
+  name: string;
+  description?: string;
+  color?: string;
+  position?: number;
+  is_default?: boolean;
+  is_closed_status?: boolean;
 }
 
 export interface TicketComment {
@@ -275,6 +334,8 @@ export interface TicketList {
   title: string;
   status: Status14bEnum;
   priority: PriorityEnum;
+  column: TicketColumn;
+  position_in_column: number;
   created_at: string;
   updated_at: string;
   created_by: UserMinimal;

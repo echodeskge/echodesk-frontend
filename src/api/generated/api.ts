@@ -13,6 +13,12 @@ import type {
   PaginatedClientList,
   Client,
   PatchedClient,
+  PaginatedTicketColumnList,
+  TicketColumnCreate,
+  TicketColumn,
+  TicketColumnUpdate,
+  PatchedTicketColumnUpdate,
+  KanbanBoard,
   PaginatedTicketCommentList,
   TicketComment,
   PatchedTicketComment,
@@ -184,6 +190,68 @@ export async function clientsPartialUpdate(
 
 export async function clientsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/clients/${id}/`);
+  return response.data;
+}
+
+export async function columnsList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedTicketColumnList> {
+  const response = await axios.get(
+    `/api/columns/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function columnsCreate(
+  data: TicketColumnCreate,
+): Promise<TicketColumnCreate> {
+  const response = await axios.post(`/api/columns/`, data);
+  return response.data;
+}
+
+export async function columnsRetrieve(id: number): Promise<TicketColumn> {
+  const response = await axios.get(`/api/columns/${id}/`);
+  return response.data;
+}
+
+export async function columnsUpdate(
+  id: number,
+  data: TicketColumnUpdate,
+): Promise<TicketColumnUpdate> {
+  const response = await axios.put(`/api/columns/${id}/`, data);
+  return response.data;
+}
+
+export async function columnsPartialUpdate(
+  id: number,
+  data: PatchedTicketColumnUpdate,
+): Promise<TicketColumnUpdate> {
+  const response = await axios.patch(`/api/columns/${id}/`, data);
+  return response.data;
+}
+
+export async function columnsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/columns/${id}/`);
+  return response.data;
+}
+
+export async function columnsReorderCreate(
+  id: number,
+  data: TicketColumn,
+): Promise<TicketColumn> {
+  const response = await axios.post(`/api/columns/${id}/reorder/`, data);
+  return response.data;
+}
+
+export async function kanbanBoard(): Promise<KanbanBoard> {
+  const response = await axios.get(`/api/columns/kanban_board/`);
   return response.data;
 }
 
@@ -400,6 +468,7 @@ export async function tenantsListRetrieve(): Promise<any> {
 
 export async function ticketsList(
   assignedTo?: number,
+  column?: number,
   createdBy?: number,
   ordering?: string,
   page?: number,
@@ -412,6 +481,7 @@ export async function ticketsList(
     `/api/tickets/${(() => {
       const parts = [
         assignedTo ? 'assigned_to=' + encodeURIComponent(assignedTo) : null,
+        column ? 'column=' + encodeURIComponent(column) : null,
         createdBy ? 'created_by=' + encodeURIComponent(createdBy) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
@@ -474,6 +544,22 @@ export async function ticketsAssignPartialUpdate(
 
 export async function ticketsCommentsRetrieve(id: number): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/${id}/comments/`);
+  return response.data;
+}
+
+export async function moveTicketToColumn(id: number): Promise<Ticket> {
+  const response = await axios.patch(`/api/tickets/${id}/move_to_column/`);
+  return response.data;
+}
+
+export async function ticketsReorderInColumnPartialUpdate(
+  id: number,
+  data: PatchedTicket,
+): Promise<Ticket> {
+  const response = await axios.patch(
+    `/api/tickets/${id}/reorder_in_column/`,
+    data,
+  );
   return response.data;
 }
 

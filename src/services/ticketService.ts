@@ -13,19 +13,23 @@ import {
   commentsPartialUpdate,
   commentsDestroy,
   usersList,
-  tagsList
+  tagsList,
+  kanbanBoard,
+  columnsList
 } from '../api/generated/api';
 
-import type {
+import {
   Ticket,
-  PatchedTicket,
   TicketComment,
-  PatchedTicketComment,
+  User,
   PaginatedTicketListList,
   PaginatedUserList,
   PaginatedTagList,
-  User,
+  PaginatedTicketColumnList,
+  TicketColumn,
+  KanbanBoard,
   Tag,
+  PatchedTicket,
   Status14bEnum,
   PriorityEnum
 } from '../api/generated/interfaces';
@@ -34,6 +38,7 @@ export interface TicketFilters {
   status?: 'open' | 'in_progress' | 'resolved' | 'closed';
   priority?: 'low' | 'medium' | 'high' | 'critical';
   assignedTo?: number;
+  column?: number;
   createdBy?: number;
   tags?: number[];
   search?: string;
@@ -75,6 +80,7 @@ export class TicketService {
     try {
       return await ticketsList(
         filters.assignedTo,
+        filters.column,
         filters.createdBy,
         filters.ordering,
         filters.page,
@@ -247,6 +253,30 @@ export class TicketService {
       return await tagsList(undefined, undefined, search);
     } catch (error) {
       console.error('Error fetching tags:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get kanban board data
+   */
+  async getKanbanBoard(): Promise<KanbanBoard> {
+    try {
+      return await kanbanBoard();
+    } catch (error) {
+      console.error('Error fetching kanban board:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get ticket columns
+   */
+  async getColumns(): Promise<PaginatedTicketColumnList> {
+    try {
+      return await columnsList();
+    } catch (error) {
+      console.error('Error fetching columns:', error);
       throw this.handleError(error);
     }
   }

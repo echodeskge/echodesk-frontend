@@ -4,16 +4,17 @@ import { useState } from 'react';
 import TicketList from './TicketList';
 import TicketDetail from './TicketDetail';
 import TicketForm from './TicketForm';
+import KanbanBoard from './KanbanBoard';
 import type { Ticket } from '@/api/generated/interfaces';
 
-type View = 'list' | 'detail' | 'create' | 'edit';
+type View = 'list' | 'kanban' | 'detail' | 'create' | 'edit';
 
 interface TicketManagementProps {
   onBackToDashboard?: () => void;
 }
 
 export default function TicketManagement({ onBackToDashboard }: TicketManagementProps) {
-  const [currentView, setCurrentView] = useState<View>('list');
+  const [currentView, setCurrentView] = useState<View>('kanban');
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
@@ -33,7 +34,7 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
   };
 
   const handleBackToList = () => {
-    setCurrentView('list');
+    setCurrentView('kanban');
     setSelectedTicketId(null);
     setSelectedTicket(null);
   };
@@ -51,6 +52,14 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
         return (
           <TicketList
             onTicketSelect={handleTicketSelect}
+            onCreateTicket={handleCreateTicket}
+          />
+        );
+
+      case 'kanban':
+        return (
+          <KanbanBoard
+            onTicketClick={handleTicketSelect}
             onCreateTicket={handleCreateTicket}
           />
         );
@@ -105,32 +114,68 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
           padding: '15px 20px',
           display: 'flex',
           alignItems: 'center',
-          gap: '15px'
+          justifyContent: 'space-between'
         }}>
-          <button
-            onClick={onBackToDashboard}
-            style={{
-              background: '#f8f9fa',
-              border: '1px solid #dee2e6',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            ← Back to Dashboard
-          </button>
-          <h1 style={{
-            fontSize: '24px',
-            fontWeight: '600',
-            margin: 0,
-            color: '#333'
-          }}>
-            Ticket Management
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <button
+              onClick={onBackToDashboard}
+              style={{
+                background: '#f8f9fa',
+                border: '1px solid #dee2e6',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              ← Back to Dashboard
+            </button>
+            <h1 style={{
+              fontSize: '24px',
+              fontWeight: '600',
+              margin: 0,
+              color: '#333'
+            }}>
+              Ticket Management
+            </h1>
+          </div>
+
+          {/* View Toggle Buttons */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setCurrentView('kanban')}
+              style={{
+                background: currentView === 'kanban' ? '#007bff' : 'transparent',
+                color: currentView === 'kanban' ? 'white' : '#007bff',
+                border: '1px solid #007bff',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              📋 Kanban
+            </button>
+            <button
+              onClick={() => setCurrentView('list')}
+              style={{
+                background: currentView === 'list' ? '#007bff' : 'transparent',
+                color: currentView === 'list' ? 'white' : '#007bff',
+                border: '1px solid #007bff',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              📋 List
+            </button>
+          </div>
         </div>
       )}
       
