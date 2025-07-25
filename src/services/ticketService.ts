@@ -13,11 +13,7 @@ import {
   commentsPartialUpdate,
   commentsDestroy,
   usersList,
-  tagsList,
-  kanbanBoard,
-  columnsList,
-  moveTicketToColumn,
-  ticketsReorderInColumnPartialUpdate
+  tagsList
 } from '../api/generated/api';
 
 import {
@@ -27,9 +23,6 @@ import {
   PaginatedTicketListList,
   PaginatedUserList,
   PaginatedTagList,
-  PaginatedTicketColumnList,
-  TicketColumn,
-  KanbanBoard,
   Tag,
   PatchedTicket,
   Status14bEnum,
@@ -255,56 +248,6 @@ export class TicketService {
       return await tagsList(undefined, undefined, search);
     } catch (error) {
       console.error('Error fetching tags:', error);
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Get kanban board data
-   */
-  async getKanbanBoard(): Promise<KanbanBoard> {
-    try {
-      return await kanbanBoard();
-    } catch (error) {
-      console.error('Error fetching kanban board:', error);
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Get ticket columns
-   */
-  async getColumns(): Promise<PaginatedTicketColumnList> {
-    try {
-      return await columnsList();
-    } catch (error) {
-      console.error('Error fetching columns:', error);
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Move ticket to a different column
-   */
-  async moveTicketToColumn(ticketId: number): Promise<Ticket> {
-    try {
-      return await moveTicketToColumn(ticketId);
-    } catch (error) {
-      console.error('Error moving ticket to column:', error);
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Reorder ticket within a column
-   */
-  async reorderTicketInColumn(ticketId: number, position: number): Promise<Ticket> {
-    try {
-      return await ticketsReorderInColumnPartialUpdate(ticketId, {
-        position_in_column: position
-      });
-    } catch (error) {
-      console.error('Error reordering ticket in column:', error);
       throw this.handleError(error);
     }
   }

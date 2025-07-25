@@ -2,44 +2,86 @@
 
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { kanbanBoard, ticketsPartialUpdate, moveTicketToColumn, ticketsReorderInColumnPartialUpdate } from '@/api/generated/api';
-import type { KanbanBoard as KanbanBoardType, Ticket, TicketColumn } from '@/api/generated/interfaces';
+import { ticketsList, ticketsPartialUpdate } from '@/api/generated/api';
+import type { Ticket, TicketList } from '@/api/generated/interfaces';
 
 interface KanbanBoardProps {
   onTicketClick?: (ticketId: number) => void;
   onCreateTicket?: () => void;
 }
 
+// Define the status columns for the Kanban board
+const STATUS_COLUMNS = [
+  {
+    id: 'open',
+    name: 'Open',
+    description: 'New tickets that need attention',
+    color: '#17a2b8'
+  },
+  {
+    id: 'in_progress',
+    name: 'In Progress',
+    description: 'Tickets currently being worked on',
+    color: '#ffc107'
+  },
+  {
+    id: 'resolved',
+    name: 'Resolved',
+    description: 'Tickets that have been fixed',
+    color: '#28a745'
+  },
+  {
+    id: 'closed',
+    name: 'Closed',
+    description: 'Completed tickets',
+    color: '#6c757d'
+  }
+] as const;
+
+type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+
 export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoardProps) {
-  const [boardData, setBoardData] = useState<KanbanBoardType | null>(null);
-  const [tickets, setTickets] = useState<{ [columnId: string]: Ticket[] }>({});
+  const [tickets, setTickets] = useState<{ [status: string]: TicketList[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
-    fetchBoardData();
+    fetchTickets();
   }, []);
 
-  const fetchBoardData = async () => {
+  const fetchTickets = async () => {
     try {
       setLoading(true);
-      const board = await kanbanBoard();
-      setBoardData(board);
       
-      // Parse tickets by column if it's a string
-      if (typeof board.tickets_by_column === 'string') {
-        const ticketsByColumn = JSON.parse(board.tickets_by_column);
-        setTickets(ticketsByColumn);
-      } else {
-        setTickets(board.tickets_by_column as any);
-      }
+      // Fetch all tickets
+      const response = await ticketsList();
+      const allTickets = response.results;
       
-      // Clear any previous errors
+      // Group tickets by status
+      const ticketsByStatus: { [status: string]: TicketList[] } = {};
+      
+      // Initialize all status columns
+      STATUS_COLUMNS.forEach(column => {
+        ticketsByStatus[column.id] = [];
+      });
+      
+      // Group tickets by their status
+      allTickets.forEach(ticket => {
+        const status = String(ticket.status || 'open') as unknown as string;
+        if (ticketsByStatus[status]) {
+          ticketsByStatus[status].push(ticket);
+        } else {
+          // If status doesn't match our predefined statuses, put in open
+          ticketsByStatus['open'].push(ticket);
+        }
+      });
+      
+      setTickets(ticketsByStatus);
       setError('');
     } catch (err: unknown) {
-      console.error('Failed to fetch board data:', err);
-      setError('Failed to load kanban board');
+      console.error('Failed to fetch tickets:', err);
+      setError('Failed to load tickets');
     } finally {
       setLoading(false);
     }
@@ -61,15 +103,15 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       return;
     }
 
-    const sourceColumnId = source.droppableId;
-    const destColumnId = destination.droppableId;
+    const sourceStatus = source.droppableId as TicketStatus;
+    const destStatus = destination.droppableId as TicketStatus;
     const ticketId = parseInt(draggableId);
 
     // Store the current state for rollback
     const originalTickets = { ...tickets };
 
     // Find the ticket being moved
-    const sourceTickets = [...(tickets[sourceColumnId] || [])];
+    const sourceTickets = [...(tickets[sourceStatus] || [])];
     const movedTicket = sourceTickets.find(ticket => ticket.id === ticketId);
     
     if (!movedTicket) {
@@ -79,10 +121,10 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
 
     // Create new tickets state
     const newTickets = { ...tickets };
-    const newSourceTickets = [...(newTickets[sourceColumnId] || [])];
-    const newDestTickets = sourceColumnId === destColumnId 
+    const newSourceTickets = [...(newTickets[sourceStatus] || [])];
+    const newDestTickets = sourceStatus === destStatus 
       ? newSourceTickets 
-      : [...(newTickets[destColumnId] || [])];
+      : [...(newTickets[destStatus] || [])];
 
     // Remove from source
     const sourceIndex = newSourceTickets.findIndex(ticket => ticket.id === ticketId);
@@ -92,37 +134,17 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     }
     
     const [removedTicket] = newSourceTickets.splice(sourceIndex, 1);
-    
-    // Update ticket with new column info
-    const updatedTicket = {
-      ...removedTicket,
-      column_id: parseInt(destColumnId),
-      position_in_column: destination.index
-    };
 
     // Add to destination at the correct position
-    if (sourceColumnId === destColumnId) {
-      // Moving within the same column
-      newSourceTickets.splice(destination.index, 0, updatedTicket);
-      newTickets[sourceColumnId] = newSourceTickets;
+    if (sourceStatus === destStatus) {
+      // Moving within the same status column (just reordering)
+      newSourceTickets.splice(destination.index, 0, removedTicket);
+      newTickets[sourceStatus] = newSourceTickets;
     } else {
-      // Moving to a different column
-      newDestTickets.splice(destination.index, 0, updatedTicket);
-      newTickets[sourceColumnId] = newSourceTickets;
-      newTickets[destColumnId] = newDestTickets;
-    }
-
-    // Update all positions in affected columns
-    newTickets[sourceColumnId] = newTickets[sourceColumnId].map((ticket, index) => ({
-      ...ticket,
-      position_in_column: index
-    }));
-
-    if (sourceColumnId !== destColumnId) {
-      newTickets[destColumnId] = newTickets[destColumnId].map((ticket, index) => ({
-        ...ticket,
-        position_in_column: index
-      }));
+      // Moving to a different status
+      newDestTickets.splice(destination.index, 0, removedTicket);
+      newTickets[sourceStatus] = newSourceTickets;
+      newTickets[destStatus] = newDestTickets;
     }
 
     // Update state optimistically
@@ -130,23 +152,17 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     setIsMoving(true);
 
     try {
-      if (sourceColumnId === destColumnId) {
-        // Reordering within the same column
-        await ticketsReorderInColumnPartialUpdate(ticketId, {
-          position_in_column: destination.index
-        });
-      } else {
-        // Moving to a different column - use the general update since we need both column and position
+      // Only update status if moving between different statuses
+      if (sourceStatus !== destStatus) {
         await ticketsPartialUpdate(ticketId, {
-          column_id: parseInt(destColumnId),
-          position_in_column: destination.index
+          status: destStatus as any
         });
       }
       
-      // Refresh board data to ensure consistency
-      await fetchBoardData();
+      // Refresh tickets to ensure consistency
+      await fetchTickets();
     } catch (err: unknown) {
-      console.error('Failed to update ticket position:', err);
+      console.error('Failed to update ticket status:', err);
       // Revert on error
       setTickets(originalTickets);
       setError('Failed to move ticket. Please try again.');
@@ -193,7 +209,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     );
   }
 
-  if (error && !boardData) {
+  if (error && loading) {
     return (
       <div style={{
         background: '#fee',
@@ -204,7 +220,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       }}>
         {error}
         <button
-          onClick={fetchBoardData}
+          onClick={fetchTickets}
           style={{
             marginLeft: '10px',
             background: '#dc3545',
@@ -221,8 +237,8 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     );
   }
 
-  if (!boardData) {
-    return <div>No board data available</div>;
+  if (!Object.keys(tickets).length && !loading) {
+    return <div>No tickets available</div>;
   }
 
   return (
@@ -341,9 +357,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
           overflowX: 'auto',
           paddingBottom: '20px'
         }}>
-          {boardData.columns
-            .sort((a, b) => (a.position || 0) - (b.position || 0))
-            .map((column) => (
+          {STATUS_COLUMNS.map((column) => (
             <div
               key={column.id}
               style={{
@@ -362,14 +376,12 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
                 marginBottom: '16px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {column.color && (
-                    <div style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: column.color
-                    }}></div>
-                  )}
+                  <div style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    background: column.color
+                  }}></div>
                   <h3 style={{
                     fontSize: '16px',
                     fontWeight: '600',
@@ -392,15 +404,13 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
               </div>
 
               {/* Column Description */}
-              {column.description && (
-                <p style={{
-                  fontSize: '12px',
-                  color: '#6c757d',
-                  margin: '0 0 16px 0'
-                }}>
-                  {column.description}
-                </p>
-              )}
+              <p style={{
+                fontSize: '12px',
+                color: '#6c757d',
+                margin: '0 0 16px 0'
+              }}>
+                {column.description}
+              </p>
 
               {/* Droppable Area */}
               <Droppable droppableId={String(column.id)}>
@@ -417,9 +427,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
                       padding: '8px'
                     }}
                   >
-                    {(tickets[column.id] || [])
-                      .sort((a, b) => (a.position_in_column || 0) - (b.position_in_column || 0))
-                      .map((ticket, index) => (
+                    {(tickets[column.id] || []).map((ticket, index) => (
                       <Draggable
                         key={ticket.id}
                         draggableId={String(ticket.id)}
@@ -469,29 +477,14 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
                               {ticket.title}
                             </h4>
 
-                            {/* Ticket Description */}
-                            {ticket.description && (
-                              <p style={{
-                                fontSize: '12px',
-                                color: '#6c757d',
-                                margin: '0 0 8px 0',
-                                lineHeight: '1.4',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
-                              }}>
-                                {ticket.description}
-                              </p>
-                            )}
-
                             {/* Ticket Meta */}
                             <div style={{
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
                               fontSize: '11px',
-                              color: '#6c757d'
+                              color: '#6c757d',
+                              marginBottom: '8px'
                             }}>
                               <span>#{ticket.id}</span>
                               <span>{formatDate(ticket.created_at)}</span>
@@ -500,7 +493,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
                             {/* Assigned User */}
                             {ticket.assigned_to && (
                               <div style={{
-                                marginTop: '8px',
+                                marginBottom: '8px',
                                 fontSize: '11px',
                                 color: '#495057'
                               }}>
@@ -511,7 +504,6 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
                             {/* Tags */}
                             {ticket.tags && ticket.tags.length > 0 && (
                               <div style={{
-                                marginTop: '8px',
                                 display: 'flex',
                                 flexWrap: 'wrap',
                                 gap: '4px'
