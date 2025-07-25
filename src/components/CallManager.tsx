@@ -17,6 +17,8 @@ import type {
   DirectionEnum,
   StatusC94enum,
 } from '@/api/generated/interfaces';
+import { SipService } from '@/services/SipService';
+import type { Invitation } from 'sip.js';
 
 // Helper functions to handle enum checks
 const isIncomingCall = (direction: DirectionEnum | undefined | string): boolean => {
@@ -47,6 +49,7 @@ interface ActiveCall {
   status: CallStatus;
   startTime?: Date;
   duration: number;
+  invitation?: Invitation; // For incoming SIP calls
 }
 
 export default function CallManager({ onCallStatusChange }: CallManagerProps) {
@@ -58,12 +61,13 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   const [error, setError] = useState('');
   const [dialNumber, setDialNumber] = useState('');
   const [callDuration, setCallDuration] = useState(0);
+  const [testMode, setTestMode] = useState(false);
+  const [sipRegistered, setSipRegistered] = useState(false);
 
-  // WebRTC related refs
+  // Audio and SIP refs
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
+  const sipServiceRef = useRef<SipService | null>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -72,11 +76,8 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       if (callTimerRef.current) {
         clearInterval(callTimerRef.current);
       }
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-      }
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
+      if (sipServiceRef.current) {
+        sipServiceRef.current.disconnect();
       }
     };
   }, []);
@@ -123,6 +124,9 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       if (defaultSipConfig) {
         const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultSipConfig.id.toString());
         setActiveSipConfig(webrtcConfig);
+        
+        // Initialize SIP service
+        await initializeSipService(webrtcConfig);
       }
 
       setError('');
@@ -134,59 +138,97 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
     }
   };
 
-  const initializeWebRTC = useCallback(async () => {
-    try {
-      // Get user media
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localStreamRef.current = stream;
-      
-      if (localAudioRef.current) {
-        localAudioRef.current.srcObject = stream;
-      }
-
-      // Create peer connection
-      const pc = new RTCPeerConnection({
-        iceServers: activeSipConfig?.stun_server ? [
-          { urls: `stun:${activeSipConfig.stun_server}` }
-        ] : [
-          { urls: 'stun:stun.l.google.com:19302' }
-        ]
-      });
-
-      // Add local stream to peer connection
-      stream.getTracks().forEach(track => {
-        pc.addTrack(track, stream);
-      });
-
-      // Handle remote stream
-      pc.ontrack = (event) => {
-        const [remoteStream] = event.streams;
-        if (remoteAudioRef.current) {
-          remoteAudioRef.current.srcObject = remoteStream;
-        }
-      };
-
-      // Handle ICE connection state changes
-      pc.oniceconnectionstatechange = () => {
-        console.log('ICE connection state:', pc.iceConnectionState);
-        if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-          setActiveCall(prev => prev ? { ...prev, status: 'active', startTime: new Date() } : null);
-        } else if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
-          endCall();
-        }
-      };
-
-      peerConnectionRef.current = pc;
-      return pc;
-    } catch (err) {
-      console.error('Failed to initialize WebRTC:', err);
-      throw new Error('Failed to access microphone or initialize call');
+  const initializeSipService = async (sipConfig: SipConfigurationDetail) => {
+    if (!localAudioRef.current || !remoteAudioRef.current) {
+      console.warn('Audio elements not ready yet');
+      return;
     }
-  }, [activeSipConfig]);
+
+    try {
+      // Create new SIP service
+      sipServiceRef.current = new SipService(
+        localAudioRef.current,
+        remoteAudioRef.current
+      );
+
+      // Set up event handlers
+      sipServiceRef.current.on('onRegistered', () => {
+        setSipRegistered(true);
+        setError('');
+        console.log('✅ SIP registered successfully');
+      });
+
+      sipServiceRef.current.on('onUnregistered', () => {
+        setSipRegistered(false);
+        console.log('📴 SIP unregistered');
+      });
+
+      sipServiceRef.current.on('onRegistrationFailed', (error: string) => {
+        setSipRegistered(false);
+        setError(`SIP registration failed: ${error}`);
+        console.error('❌ SIP registration failed:', error);
+      });
+
+      sipServiceRef.current.on('onIncomingCall', (invitation: Invitation) => {
+        handleIncomingCall(invitation);
+      });
+
+      sipServiceRef.current.on('onCallProgress', () => {
+        setActiveCall(prev => prev ? { ...prev, status: 'connecting' } : null);
+      });
+
+      sipServiceRef.current.on('onCallAccepted', () => {
+        setActiveCall(prev => prev ? { 
+          ...prev, 
+          status: 'active', 
+          startTime: new Date() 
+        } : null);
+      });
+
+      sipServiceRef.current.on('onCallRejected', () => {
+        setActiveCall(null);
+        fetchCallLogs();
+      });
+
+      sipServiceRef.current.on('onCallEnded', () => {
+        setActiveCall(null);
+        fetchCallLogs();
+      });
+
+      sipServiceRef.current.on('onCallFailed', (error: string) => {
+        setError(`Call failed: ${error}`);
+        setActiveCall(null);
+      });
+
+      // Initialize the SIP service
+      await sipServiceRef.current.initialize(sipConfig);
+
+    } catch (err) {
+      console.error('Failed to initialize SIP service:', err);
+      setError(`SIP initialization failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  const handleIncomingCall = (invitation: Invitation) => {
+    const callerNumber = invitation.remoteIdentity.uri.user || 'Unknown';
+    
+    setActiveCall({
+      id: `incoming-${Date.now()}`,
+      callId: '',
+      number: callerNumber,
+      direction: 'incoming',
+      status: 'ringing',
+      duration: 0,
+      invitation
+    });
+
+    // Play ringtone (you can add audio file here)
+    console.log('📞 Incoming call from:', callerNumber);
+  };
 
   const initiateCall = async (number: string) => {
-    if (!activeSipConfig) {
-      setError('No SIP configuration available');
+    if (!activeSipConfig || !sipServiceRef.current || !sipRegistered) {
+      setError('SIP service not ready');
       return;
     }
 
@@ -201,10 +243,10 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
         duration: 0,
       });
 
-      // Initialize WebRTC
-      await initializeWebRTC();
+      // Use SIP service to make the call
+      await sipServiceRef.current.makeCall(number);
 
-      // Call backend API to initiate call
+      // Also log to backend
       const callData: CallInitiate = {
         recipient_number: number,
         call_type: 'voice' as any,
@@ -219,9 +261,6 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
         status: 'ringing' 
       } : null);
 
-      // Refresh call logs
-      fetchCallLogs();
-
     } catch (err: unknown) {
       console.error('Failed to initiate call:', err);
       setError('Failed to initiate call');
@@ -230,17 +269,18 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   };
 
   const answerCall = async () => {
-    if (!activeCall) return;
+    if (!activeCall?.invitation || !sipServiceRef.current) return;
 
     try {
-      await initializeWebRTC();
+      await sipServiceRef.current.acceptCall();
       
-      // Update call status
-      await callLogsUpdateStatusPartialUpdate(activeCall.callId, {
-        status: 'answered' as any,
-      });
+      // Update backend
+      if (activeCall.callId) {
+        await callLogsUpdateStatusPartialUpdate(activeCall.callId, {
+          status: 'answered' as any,
+        });
+      }
 
-      setActiveCall(prev => prev ? { ...prev, status: 'active', startTime: new Date() } : null);
     } catch (err: unknown) {
       console.error('Failed to answer call:', err);
       setError('Failed to answer call');
@@ -248,34 +288,23 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   };
 
   const endCall = async () => {
-    if (!activeCall) return;
+    if (!activeCall || !sipServiceRef.current) return;
 
     try {
       setActiveCall(prev => prev ? { ...prev, status: 'ending' } : null);
 
-      // Close WebRTC connection
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-        peerConnectionRef.current = null;
-      }
+      // End SIP call
+      await sipServiceRef.current.endCall();
 
-      // Stop local stream
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-        localStreamRef.current = null;
-      }
-
-      // Call backend API to end call
+      // Update backend
       if (activeCall.callId) {
         await callLogsEndCallCreate(activeCall.callId, {
-          status: { completed: true } as any, // Use 'completed' status to end the call
+          status: { completed: true } as any,
         });
       }
 
       setActiveCall(null);
       setCallDuration(0);
-
-      // Refresh call logs
       fetchCallLogs();
 
     } catch (err: unknown) {
@@ -299,6 +328,32 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  // Test SIP connection
+  const testSipConnection = async () => {
+    if (!activeSipConfig || !sipServiceRef.current) {
+      setError('No SIP configuration available');
+      return;
+    }
+
+    try {
+      setError('');
+      console.log('🧪 Testing SIP connection...');
+      
+      const isConnected = await sipServiceRef.current.testConnection(activeSipConfig);
+      
+      if (isConnected) {
+        setError('');
+        alert('✅ SIP connection test successful!');
+      } else {
+        setError('❌ SIP connection test failed');
+      }
+      
+    } catch (err) {
+      console.error('❌ SIP test failed:', err);
+      setError(`SIP test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
   const formatCallTime = (dateString: string): string => {
     return new Date(dateString).toLocaleString();
   };
@@ -308,19 +363,13 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
     switch (statusStr) {
       case 'answered': return '#28a745';
       case 'missed': return '#dc3545';
-      case 'busy': return '#ffc107';
-      case 'failed': return '#dc3545';
+      case 'ringing': return '#ffc107';
       default: return '#6c757d';
     }
   };
 
   const getDirectionIcon = (direction: any): string => {
-    const directionStr = String(direction).toLowerCase();
-    switch (directionStr) {
-      case 'incoming': return '📞';
-      case 'outgoing': return '📱';
-      default: return '📞';
-    }
+    return isIncomingCall(direction) ? '📞' : '📱';
   };
 
   if (loading) {
@@ -331,13 +380,13 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
         alignItems: 'center',
         height: '400px',
         flexDirection: 'column',
-        gap: '16px'
+        gap: '20px'
       }}>
         <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e9ecef',
-          borderTop: '4px solid #007bff',
+          width: '50px',
+          height: '50px',
+          border: '5px solid #f3f3f3',
+          borderTop: '5px solid #007bff',
           borderRadius: '50%',
           animation: 'spin 1s linear infinite'
         }}></div>
@@ -354,7 +403,7 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Hidden audio elements for WebRTC */}
+      {/* Hidden audio elements for SIP calling */}
       <audio ref={localAudioRef} autoPlay muted style={{ display: 'none' }} />
       <audio ref={remoteAudioRef} autoPlay style={{ display: 'none' }} />
 
@@ -402,27 +451,64 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
           Call Manager
         </h1>
         
-        {activeSipConfig && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: '#e7f3ff',
-            padding: '8px 12px',
-            borderRadius: '6px',
-            border: '1px solid #b3d9ff'
-          }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {sipRegistered ? (
             <div style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: '#28a745'
-            }}></div>
-            <span style={{ fontSize: '14px', color: '#0056b3' }}>
-              Connected: {activeSipConfig.name}
-            </span>
-          </div>
-        )}
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: '#d4edda',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #c3e6cb'
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#28a745'
+              }}></div>
+              <span style={{ fontSize: '14px', color: '#155724' }}>
+                SIP Connected
+              </span>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: '#f8d7da',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #f5c6cb'
+            }}>
+              <div style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#dc3545'
+              }}></div>
+              <span style={{ fontSize: '14px', color: '#721c24' }}>
+                SIP Disconnected
+              </span>
+            </div>
+          )}
+          
+          <button
+            onClick={testSipConnection}
+            style={{
+              background: '#17a2b8',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Test SIP
+          </button>
+        </div>
       </div>
 
       {/* Active Call Interface */}
@@ -434,50 +520,82 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
           padding: '30px',
           marginBottom: '30px',
           textAlign: 'center',
-          boxShadow: '0 10px 30px rgba(0,123,255,0.1)'
+          boxShadow: '0 4px 6px rgba(0, 123, 255, 0.1)'
         }}>
           <div style={{
-            fontSize: '18px',
+            fontSize: '24px',
             fontWeight: '600',
-            marginBottom: '20px',
+            marginBottom: '15px',
             color: '#333'
           }}>
-            {isIncomingCall(activeCall.direction) ? 'Incoming Call' : 'Outgoing Call'}
+            {activeCall.direction === 'incoming' ? '📞 Incoming Call' : '📱 Outgoing Call'}
           </div>
-
+          
           <div style={{
             fontSize: '32px',
-            fontWeight: '700',
-            marginBottom: '16px',
+            fontWeight: 'bold',
+            marginBottom: '15px',
             color: '#007bff'
           }}>
             {activeCall.number}
           </div>
-
+          
           <div style={{
-            fontSize: '16px',
+            fontSize: '18px',
             marginBottom: '20px',
             color: '#6c757d',
             textTransform: 'capitalize'
           }}>
-            Status: {activeCall.status}
-            {activeCall.status === 'active' && (
-              <span style={{ marginLeft: '10px', fontWeight: '600' }}>
-                {formatCallDuration(callDuration)}
-              </span>
-            )}
+            {activeCall.status === 'active' ? `${formatCallDuration(callDuration)}` : activeCall.status}
           </div>
 
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '20px'
-          }}>
-            {activeCall.status === 'ringing' && isIncomingCall(activeCall.direction) && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
+            {activeCall.status === 'ringing' && activeCall.direction === 'incoming' && (
+              <>
+                <button
+                  onClick={answerCall}
+                  style={{
+                    background: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    padding: '15px 30px',
+                    borderRadius: '50px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  ✅ Answer
+                </button>
+                <button
+                  onClick={endCall}
+                  style={{
+                    background: '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    padding: '15px 30px',
+                    borderRadius: '50px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  ❌ Decline
+                </button>
+              </>
+            )}
+
+            {(activeCall.status !== 'ringing' || activeCall.direction === 'outgoing') && (
               <button
-                onClick={answerCall}
+                onClick={endCall}
                 style={{
-                  background: '#28a745',
+                  background: '#dc3545',
                   color: 'white',
                   border: 'none',
                   padding: '15px 30px',
@@ -490,28 +608,9 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
                   gap: '8px'
                 }}
               >
-                📞 Answer
+                📞 {activeCall.status === 'ringing' && activeCall.direction === 'incoming' ? 'Decline' : 'End Call'}
               </button>
             )}
-            
-            <button
-              onClick={endCall}
-              style={{
-                background: '#dc3545',
-                color: 'white',
-                border: 'none',
-                padding: '15px 30px',
-                borderRadius: '50px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              📞 {activeCall.status === 'ringing' && isIncomingCall(activeCall.direction) ? 'Decline' : 'End Call'}
-            </button>
           </div>
         </div>
       )}
@@ -536,8 +635,9 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
 
           <div style={{
             display: 'flex',
-            gap: '15px',
-            marginBottom: '20px'
+            flexDirection: 'column',
+            gap: '20px',
+            maxWidth: '400px'
           }}>
             <input
               type="tel"
@@ -545,34 +645,29 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
               onChange={(e) => setDialNumber(e.target.value)}
               placeholder="Enter phone number"
               style={{
-                flex: 1,
                 padding: '12px 16px',
                 border: '2px solid #dee2e6',
                 borderRadius: '8px',
                 fontSize: '16px',
                 outline: 'none',
-                transition: 'border-color 0.2s ease'
+                transition: 'border-color 0.2s',
               }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#007bff';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#dee2e6';
-              }}
+              onFocus={(e) => e.target.style.borderColor = '#007bff'}
+              onBlur={(e) => e.target.style.borderColor = '#dee2e6'}
             />
-            
+
             <button
               onClick={() => initiateCall(dialNumber)}
-              disabled={!dialNumber.trim() || !activeSipConfig}
+              disabled={!dialNumber.trim() || !sipRegistered}
               style={{
-                background: dialNumber.trim() && activeSipConfig ? '#007bff' : '#6c757d',
+                background: dialNumber.trim() && sipRegistered ? '#007bff' : '#6c757d',
                 color: 'white',
                 border: 'none',
                 padding: '12px 24px',
                 borderRadius: '8px',
                 fontSize: '16px',
                 fontWeight: '600',
-                cursor: dialNumber.trim() && activeSipConfig ? 'pointer' : 'not-allowed',
+                cursor: dialNumber.trim() && sipRegistered ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px'
@@ -589,28 +684,22 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
             gap: '10px',
             maxWidth: '300px'
           }}>
-            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(digit => (
               <button
                 key={digit}
                 onClick={() => setDialNumber(prev => prev + digit)}
                 style={{
                   background: '#f8f9fa',
-                  border: '2px solid #dee2e6',
-                  borderRadius: '8px',
+                  border: '1px solid #dee2e6',
                   padding: '15px',
+                  borderRadius: '8px',
                   fontSize: '18px',
                   fontWeight: '600',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'background-color 0.2s'
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#e9ecef';
-                  e.currentTarget.style.borderColor = '#007bff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#f8f9fa';
-                  e.currentTarget.style.borderColor = '#dee2e6';
-                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
               >
                 {digit}
               </button>
@@ -658,13 +747,13 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
           <button
             onClick={fetchCallLogs}
             style={{
-              background: '#6c757d',
+              background: '#007bff',
               color: 'white',
               border: 'none',
               padding: '8px 16px',
               borderRadius: '6px',
-              fontSize: '14px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              fontSize: '14px'
             }}
           >
             🔄 Refresh
@@ -685,7 +774,7 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
             flexDirection: 'column',
             gap: '12px'
           }}>
-            {callLogs.slice(0, 10).map((call) => (
+            {callLogs.map((call) => (
               <div
                 key={call.id}
                 style={{

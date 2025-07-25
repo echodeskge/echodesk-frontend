@@ -18,11 +18,13 @@
   },
   "dependencies": {
     "@gordela/api-generator": "^1.2.0",
+    "@types/sip.js": "^0.12.0",
     "next": "15.4.4",
     "react": "19.1.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "sip.js": "^0.21.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
