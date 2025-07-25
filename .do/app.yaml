@@ -1,0 +1,53 @@
+name: echodesk-frontend
+region: fra
+services:
+- name: frontend
+  source_dir: /
+  github:
+    repo: echodeskge/echodesk-frontend
+    branch: main
+    deploy_on_push: true
+  run_command: npm start
+  build_command: npm run build
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  routes:
+  - path: /
+  health_check:
+    http_path: /api/health
+  
+  # Environment variables for production
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: NEXT_PUBLIC_MAIN_DOMAIN
+    value: echodesk.ge
+  - key: NEXT_PUBLIC_API_DOMAIN
+    value: api.echodesk.ge
+  - key: NEXT_PUBLIC_API_BASE_URL
+    value: https://api.echodesk.ge
+  - key: NEXT_PUBLIC_DEFAULT_LANGUAGE
+    value: en
+  - key: NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT
+    value: /api/tenant/config
+  - key: NEXT_PUBLIC_TENANTS_LIST_ENDPOINT
+    value: /api/tenants/list
+  - key: NEXT_PUBLIC_PLATFORM
+    value: digitalocean
+  - key: REVALIDATION_SECRET
+    value: ${REVALIDATION_SECRET}
+    type: SECRET
+
+# Domain configuration - wildcard subdomains
+domains:
+- domain: echodesk.ge
+  type: PRIMARY
+- domain: "*.echodesk.ge"
+  type: ALIAS
+  wildcard: true
+
+# Alerts for monitoring
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
