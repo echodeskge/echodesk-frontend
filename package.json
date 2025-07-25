@@ -10,7 +10,10 @@
     "dev-setup": "chmod +x dev-setup.sh && ./dev-setup.sh",
     "dev-with-setup": "npm run dev-setup && npm run dev",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next && rm -rf node_modules/.cache"
+    "clean": "rm -rf .next && rm -rf node_modules/.cache",
+    "build:production": "NODE_ENV=production next build",
+    "test:health": "curl -f http://localhost:3000/api/health || exit 1",
+    "deploy:check": "npm run type-check && npm run lint && npm run build:production"
   },
   "dependencies": {
     "react": "19.1.0",
