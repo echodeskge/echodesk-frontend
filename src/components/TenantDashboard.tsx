@@ -1,4 +1,5 @@
 import { TenantConfig } from '@/types/tenant';
+import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 
 interface TenantDashboardProps {
@@ -7,6 +8,7 @@ interface TenantDashboardProps {
 
 export default function TenantDashboard({ tenant }: TenantDashboardProps) {
   const [activeSection, setActiveSection] = useState('overview');
+  const { user, logout } = useAuth();
 
   const getLanguageFlag = (lang: string) => {
     switch (lang) {
@@ -63,6 +65,15 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
               fontSize: '14px',
               color: '#495057'
             }}>
+              👤 {user?.first_name || user?.email || 'User'}
+            </span>
+            <span style={{ 
+              background: '#e9ecef', 
+              padding: '6px 12px', 
+              borderRadius: '20px',
+              fontSize: '14px',
+              color: '#495057'
+            }}>
               {getLanguageFlag(tenant.preferred_language)} {getLanguageName(tenant.preferred_language)}
             </span>
             <span style={{ 
@@ -76,6 +87,21 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
             }}>
               {tenant.plan}
             </span>
+            <button
+              onClick={logout}
+              style={{
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '6px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
