@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // DigitalOcean App Platform optimization
   output: 'standalone',
   
+  // Disable React Strict Mode for better drag and drop performance
+  reactStrictMode: false,
+  
   async headers() {
     return [
       {
