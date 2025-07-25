@@ -101,7 +101,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       return;
     }
     
-    console.log('Drag ended:', result); // Debug log
+    console.log('Drag ended:', result);
     const { destination, source, draggableId } = result;
 
     // If dropped outside any droppable area
@@ -169,13 +169,13 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
 
     // Update state optimistically
     setTickets(newTickets);
-    setIsMoving(true);
 
-    try {
-      console.log('Starting API update...');
-      
-      // Only update status if moving between different statuses
-      if (sourceStatus !== destStatus) {
+    // Only show loading state and make API call if moving between different statuses
+    if (sourceStatus !== destStatus) {
+      setIsMoving(true);
+
+      try {
+        console.log('Starting API update...');
         console.log('Updating ticket status to:', destStatus);
         
         // Ensure the status is valid
@@ -184,33 +184,31 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
           throw new Error(`Invalid status: ${destStatus}`);
         }
         
-        // Add timeout to prevent hanging
+        // Add timeout to prevent hanging (5 seconds should be enough)
         const updatePromise = ticketsPartialUpdate(ticketId, {
           status: destStatus as any
         });
         
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Update timeout')), 10000); // 10 second timeout
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Update timeout after 5 seconds')), 5000);
         });
         
         await Promise.race([updatePromise, timeoutPromise]);
         console.log('Status update successful');
-      } else {
-        console.log('Same status, skipping API call');
+      } catch (err: unknown) {
+        console.error('Failed to update ticket status:', err);
+        // Revert on error
+        setTickets(originalTickets);
+        setError('Failed to move ticket. Please try again.');
+        
+        // Clear error after 3 seconds
+        setTimeout(() => setError(''), 3000);
+      } finally {
+        console.log('Setting isMoving to false');
+        setIsMoving(false);
       }
-      
-      console.log('Drag operation finished');
-    } catch (err: unknown) {
-      console.error('Failed to update ticket status:', err);
-      // Revert on error
-      setTickets(originalTickets);
-      setError('Failed to move ticket. Please try again.');
-      
-      // Clear error after 3 seconds
-      setTimeout(() => setError(''), 3000);
-    } finally {
-      console.log('Setting isMoving to false');
-      setIsMoving(false);
+    } else {
+      console.log('Same status, no API call needed');
     }
   };
 
