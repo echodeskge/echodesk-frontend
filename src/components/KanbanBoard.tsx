@@ -69,13 +69,20 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       // Group tickets by their status
       allTickets.forEach(ticket => {
         const status = String(ticket.status || 'open') as unknown as string;
+        console.log('Ticket status mapping:', { ticketId: ticket.id, originalStatus: ticket.status, mappedStatus: status });
         if (ticketsByStatus[status]) {
           ticketsByStatus[status].push(ticket);
         } else {
           // If status doesn't match our predefined statuses, put in open
+          console.log('Status not found, moving to open:', { status, availableStatuses: Object.keys(ticketsByStatus) });
           ticketsByStatus['open'].push(ticket);
         }
       });
+
+      console.log('Final tickets by status:', Object.keys(ticketsByStatus).map(status => ({ 
+        status, 
+        count: ticketsByStatus[status].length 
+      })));
       
       setTickets(ticketsByStatus);
       setError('');
@@ -88,10 +95,18 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
   };
 
   const handleDragEnd = async (result: DropResult) => {
+    // Prevent multiple concurrent drag operations
+    if (isMoving) {
+      console.log('Already moving, ignoring drag');
+      return;
+    }
+    
+    console.log('Drag ended:', result); // Debug log
     const { destination, source, draggableId } = result;
 
     // If dropped outside any droppable area
     if (!destination) {
+      console.log('No destination, aborting drag');
       return;
     }
 
@@ -100,12 +115,15 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       destination.droppableId === source.droppableId &&
       destination.index === source.index
     ) {
+      console.log('Same position, aborting drag');
       return;
     }
 
     const sourceStatus = source.droppableId as TicketStatus;
     const destStatus = destination.droppableId as TicketStatus;
     const ticketId = parseInt(draggableId);
+
+    console.log('Moving ticket:', { ticketId, sourceStatus, destStatus });
 
     // Store the current state for rollback
     const originalTickets = { ...tickets };
@@ -115,9 +133,11 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     const movedTicket = sourceTickets.find(ticket => ticket.id === ticketId);
     
     if (!movedTicket) {
-      console.error('Could not find ticket to move');
+      console.error('Could not find ticket to move', { ticketId, sourceStatus, availableTickets: sourceTickets.map(t => t.id) });
       return;
     }
+
+    console.log('Found ticket to move:', movedTicket);
 
     // Create new tickets state
     const newTickets = { ...tickets };
@@ -152,15 +172,34 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     setIsMoving(true);
 
     try {
+      console.log('Starting API update...');
+      
       // Only update status if moving between different statuses
       if (sourceStatus !== destStatus) {
-        await ticketsPartialUpdate(ticketId, {
+        console.log('Updating ticket status to:', destStatus);
+        
+        // Ensure the status is valid
+        const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
+        if (!validStatuses.includes(destStatus)) {
+          throw new Error(`Invalid status: ${destStatus}`);
+        }
+        
+        // Add timeout to prevent hanging
+        const updatePromise = ticketsPartialUpdate(ticketId, {
           status: destStatus as any
         });
+        
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Update timeout')), 10000); // 10 second timeout
+        });
+        
+        await Promise.race([updatePromise, timeoutPromise]);
+        console.log('Status update successful');
+      } else {
+        console.log('Same status, skipping API call');
       }
       
-      // Refresh tickets to ensure consistency
-      await fetchTickets();
+      console.log('Drag operation finished');
     } catch (err: unknown) {
       console.error('Failed to update ticket status:', err);
       // Revert on error
@@ -170,6 +209,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       // Clear error after 3 seconds
       setTimeout(() => setError(''), 3000);
     } finally {
+      console.log('Setting isMoving to false');
       setIsMoving(false);
     }
   };
@@ -357,7 +397,9 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
           overflowX: 'auto',
           paddingBottom: '20px'
         }}>
-          {STATUS_COLUMNS.map((column) => (
+          {STATUS_COLUMNS.map((column) => {
+            console.log('Rendering column:', column.id, 'with tickets:', tickets[column.id]?.length || 0);
+            return (
             <div
               key={column.id}
               style={{
@@ -541,7 +583,8 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
                 )}
               </Droppable>
             </div>
-          ))}
+            );
+          })}
         </div>
       </DragDropContext>
 
