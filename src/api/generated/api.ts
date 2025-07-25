@@ -8,8 +8,12 @@ import type {
   TenantDashboardData,
   TenantLogin,
   PaginatedCallLogList,
+  CallLogCreate,
   CallLog,
   PatchedCallLog,
+  CallStatusUpdate,
+  PatchedCallStatusUpdate,
+  CallInitiate,
   PaginatedClientList,
   Client,
   PatchedClient,
@@ -24,6 +28,10 @@ import type {
   PatchedTicketComment,
   TenantRegistration,
   Tenant,
+  PaginatedSipConfigurationListList,
+  SipConfiguration,
+  SipConfigurationDetail,
+  PatchedSipConfiguration,
   PaginatedTagList,
   Tag,
   PatchedTag,
@@ -116,18 +124,20 @@ export async function callLogsList(
   return response.data;
 }
 
-export async function callLogsCreate(data: CallLog): Promise<CallLog> {
+export async function callLogsCreate(
+  data: CallLogCreate,
+): Promise<CallLogCreate> {
   const response = await axios.post(`/api/call-logs/`, data);
   return response.data;
 }
 
-export async function callLogsRetrieve(id: number): Promise<CallLog> {
+export async function callLogsRetrieve(id: string): Promise<CallLog> {
   const response = await axios.get(`/api/call-logs/${id}/`);
   return response.data;
 }
 
 export async function callLogsUpdate(
-  id: number,
+  id: string,
   data: CallLog,
 ): Promise<CallLog> {
   const response = await axios.put(`/api/call-logs/${id}/`, data);
@@ -135,15 +145,50 @@ export async function callLogsUpdate(
 }
 
 export async function callLogsPartialUpdate(
-  id: number,
+  id: string,
   data: PatchedCallLog,
 ): Promise<CallLog> {
   const response = await axios.patch(`/api/call-logs/${id}/`, data);
   return response.data;
 }
 
-export async function callLogsDestroy(id: number): Promise<any> {
+export async function callLogsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/call-logs/${id}/`);
+  return response.data;
+}
+
+export async function callLogsEndCallCreate(
+  id: string,
+  data: CallStatusUpdate,
+): Promise<CallLog> {
+  const response = await axios.post(`/api/call-logs/${id}/end_call/`, data);
+  return response.data;
+}
+
+export async function callLogsUpdateStatusPartialUpdate(
+  id: string,
+  data: PatchedCallStatusUpdate,
+): Promise<CallLog> {
+  const response = await axios.patch(
+    `/api/call-logs/${id}/update_status/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function callLogsInitiateCallCreate(
+  data: CallInitiate,
+): Promise<CallLog> {
+  const response = await axios.post(`/api/call-logs/initiate_call/`, data);
+  return response.data;
+}
+
+export async function callLogsStatisticsRetrieve(
+  period?: 'month' | 'today' | 'week',
+): Promise<Record<string, any>> {
+  const response = await axios.get(
+    `/api/call-logs/statistics/${period ? '?period=' + encodeURIComponent(period) : ''}`,
+  );
   return response.data;
 }
 
@@ -190,6 +235,25 @@ export async function clientsPartialUpdate(
 
 export async function clientsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/clients/${id}/`);
+  return response.data;
+}
+
+export async function clientsCallHistoryList(
+  id: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedCallLogList> {
+  const response = await axios.get(
+    `/api/clients/${id}/call_history/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
@@ -326,6 +390,90 @@ export async function registerTenant(data: TenantRegistration): Promise<{
   api_url?: string;
 }> {
   const response = await axios.post(`/api/register/`, data);
+  return response.data;
+}
+
+export async function sipConfigurationsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedSipConfigurationListList> {
+  const response = await axios.get(
+    `/api/sip-configurations/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function sipConfigurationsCreate(
+  data: SipConfiguration,
+): Promise<SipConfiguration> {
+  const response = await axios.post(`/api/sip-configurations/`, data);
+  return response.data;
+}
+
+export async function sipConfigurationsRetrieve(
+  id: string,
+): Promise<SipConfigurationDetail> {
+  const response = await axios.get(`/api/sip-configurations/${id}/`);
+  return response.data;
+}
+
+export async function sipConfigurationsUpdate(
+  id: string,
+  data: SipConfiguration,
+): Promise<SipConfiguration> {
+  const response = await axios.put(`/api/sip-configurations/${id}/`, data);
+  return response.data;
+}
+
+export async function sipConfigurationsPartialUpdate(
+  id: string,
+  data: PatchedSipConfiguration,
+): Promise<SipConfiguration> {
+  const response = await axios.patch(`/api/sip-configurations/${id}/`, data);
+  return response.data;
+}
+
+export async function sipConfigurationsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/sip-configurations/${id}/`);
+  return response.data;
+}
+
+export async function sipConfigurationsSetDefaultCreate(
+  id: string,
+  data: SipConfiguration,
+): Promise<Record<string, any>> {
+  const response = await axios.post(
+    `/api/sip-configurations/${id}/set_default/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function sipConfigurationsTestConnectionCreate(
+  id: string,
+  data: SipConfiguration,
+): Promise<Record<string, any>> {
+  const response = await axios.post(
+    `/api/sip-configurations/${id}/test_connection/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function sipConfigurationsWebrtcConfigRetrieve(
+  id: string,
+): Promise<SipConfigurationDetail> {
+  const response = await axios.get(
+    `/api/sip-configurations/${id}/webrtc_config/`,
+  );
   return response.data;
 }
 

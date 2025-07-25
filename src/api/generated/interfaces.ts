@@ -3,20 +3,57 @@
  * DO NOT EDIT MANUALLY
  */
 
-export interface CallLog {
-  id: number;
-  caller_number: string;
+export interface CallInitiate {
   recipient_number: string;
-  duration?: string;
-  duration_display: string;
-  status: CallLogStatusEnum;
-  created_at: string;
-  notes?: string;
-  handled_by?: number;
-  handled_by_name: string;
+  call_type?: CallTypeEnum;
+  sip_configuration?: number;
 }
 
-export interface CallLogStatusEnum {
+export interface CallLog {
+  id: number;
+  call_id: string;
+  caller_number: string;
+  recipient_number: string;
+  direction?: DirectionEnum;
+  call_type?: CallTypeEnum;
+  started_at: string;
+  answered_at?: string;
+  ended_at?: string;
+  duration?: string;
+  duration_display: string;
+  status?: StatusC94enum;
+  notes?: string;
+  sip_call_id?: string;
+  client: number;
+  client_name: string;
+  handled_by?: number;
+  handled_by_name: string;
+  sip_configuration?: number;
+  sip_config_name: string;
+  recording_url?: string;
+  call_quality_score?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CallLogCreate {
+  caller_number: string;
+  recipient_number: string;
+  direction?: DirectionEnum;
+  call_type?: CallTypeEnum;
+  sip_call_id?: string;
+  sip_configuration?: number;
+  notes?: string;
+}
+
+export interface CallStatusUpdate {
+  status: StatusC94enum;
+  notes?: string;
+  call_quality_score?: number;
+  recording_url?: string;
+}
+
+export interface CallTypeEnum {
   [key: string]: any;
 }
 
@@ -32,6 +69,10 @@ export interface Client {
 }
 
 export interface DeploymentStatusEnum {
+  [key: string]: any;
+}
+
+export interface DirectionEnum {
   [key: string]: any;
 }
 
@@ -52,6 +93,13 @@ export interface PaginatedClientList {
   next?: string;
   previous?: string;
   results: Client[];
+}
+
+export interface PaginatedSipConfigurationListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: SipConfigurationList[];
 }
 
 export interface PaginatedTagList {
@@ -98,15 +146,36 @@ export interface PaginatedUserList {
 
 export interface PatchedCallLog {
   id?: number;
+  call_id?: string;
   caller_number?: string;
   recipient_number?: string;
+  direction?: DirectionEnum;
+  call_type?: CallTypeEnum;
+  started_at?: string;
+  answered_at?: string;
+  ended_at?: string;
   duration?: string;
   duration_display?: string;
-  status?: CallLogStatusEnum;
-  created_at?: string;
+  status?: StatusC94enum;
   notes?: string;
+  sip_call_id?: string;
+  client?: number;
+  client_name?: string;
   handled_by?: number;
   handled_by_name?: string;
+  sip_configuration?: number;
+  sip_config_name?: string;
+  recording_url?: string;
+  call_quality_score?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedCallStatusUpdate {
+  status?: StatusC94enum;
+  notes?: string;
+  call_quality_score?: number;
+  recording_url?: string;
 }
 
 export interface PatchedClient {
@@ -118,6 +187,24 @@ export interface PatchedClient {
   created_at?: string;
   updated_at?: string;
   is_active?: boolean;
+}
+
+export interface PatchedSipConfiguration {
+  id?: number;
+  name?: string;
+  sip_server?: string;
+  sip_port?: number;
+  username?: string;
+  realm?: string;
+  proxy?: string;
+  stun_server?: string;
+  turn_server?: string;
+  turn_username?: string;
+  is_active?: boolean;
+  is_default?: boolean;
+  max_concurrent_calls?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PatchedTag {
@@ -205,7 +292,55 @@ export interface PriorityEnum {
   [key: string]: any;
 }
 
+export interface SipConfiguration {
+  id: number;
+  name: string;
+  sip_server: string;
+  sip_port?: number;
+  username: string;
+  realm?: string;
+  proxy?: string;
+  stun_server?: string;
+  turn_server?: string;
+  turn_username?: string;
+  is_active?: boolean;
+  is_default?: boolean;
+  max_concurrent_calls?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SipConfigurationDetail {
+  id: number;
+  name: string;
+  sip_server: string;
+  sip_port?: number;
+  username: string;
+  password: string;
+  realm?: string;
+  proxy?: string;
+  stun_server?: string;
+  turn_server?: string;
+  turn_username?: string;
+  turn_password?: string;
+  is_active?: boolean;
+  is_default?: boolean;
+  max_concurrent_calls?: number;
+}
+
+export interface SipConfigurationList {
+  id: number;
+  name: string;
+  sip_server: string;
+  is_active?: boolean;
+  is_default?: boolean;
+}
+
 export interface Status14bEnum {
+  [key: string]: any;
+}
+
+export interface StatusC94enum {
   [key: string]: any;
 }
 

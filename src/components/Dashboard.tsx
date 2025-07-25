@@ -5,6 +5,7 @@ import { AuthUser, TenantInfo } from '@/types/auth';
 import { authService } from '@/services/authService';
 import { User } from '@/api/generated/interfaces';
 import TicketManagement from './TicketManagement';
+import CallManager from './CallManager';
 
 interface DashboardProps {
   user: AuthUser;
@@ -16,7 +17,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [currentView, setCurrentView] = useState<'dashboard' | 'tickets'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'tickets' | 'calls'>('dashboard');
 
   useEffect(() => {
     fetchUserProfile();
@@ -53,6 +54,10 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
   if (currentView === 'tickets') {
     return <TicketManagement onBackToDashboard={() => setCurrentView('dashboard')} />;
+  }
+
+  if (currentView === 'calls') {
+    return <CallManager onCallStatusChange={(isActive) => console.log('Call status:', isActive)} />;
   }
 
   if (loading) {
@@ -162,6 +167,21 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               }}
             >
               Tickets
+            </button>
+            <button
+              onClick={() => setCurrentView('calls')}
+              style={{
+                background: (currentView as string) === 'calls' ? tenant.theme.primary_color : 'transparent',
+                color: (currentView as string) === 'calls' ? 'white' : tenant.theme.primary_color,
+                border: `1px solid ${tenant.theme.primary_color}`,
+                padding: '6px 12px',
+                borderRadius: '4px',
+                fontSize: '14px',
+                cursor: 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              📞 Calls
             </button>
           </nav>
           
@@ -356,6 +376,24 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 Manage Tickets
+              </button>
+              <button 
+              onClick={() => setCurrentView('calls')}
+              style={{
+                background: tenant.theme.primary_color,
+                color: 'white',
+                border: 'none',
+                padding: '15px 20px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'transform 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                📞 Call Management
               </button>
               <button style={{
                 background: tenant.theme.secondary_color || '#f0f0f0',
