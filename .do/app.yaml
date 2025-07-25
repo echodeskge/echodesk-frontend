@@ -30,9 +30,9 @@ services:
   - key: NEXT_PUBLIC_DEFAULT_LANGUAGE
     value: en
   - key: NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT
-    value: /api/tenant/config
+    value: /api/tenant/config/
   - key: NEXT_PUBLIC_TENANTS_LIST_ENDPOINT
-    value: /api/tenants/list
+    value: /api/tenants/list/
   - key: NEXT_PUBLIC_PLATFORM
     value: digitalocean
   - key: REVALIDATION_SECRET

@@ -39,7 +39,7 @@ class TenantService {
     try {
       // Use main API for tenant configuration, not tenant-specific API
       const apiUrl = this.apiBaseUrl;
-      const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config';
+      const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config/';
       
       const response = await fetch(`${apiUrl}${endpoint}?subdomain=${subdomain}`, {
         method: 'GET',
@@ -52,8 +52,12 @@ class TenantService {
         mode: 'cors', // Explicitly set CORS mode
       });
 
+      console.log(`Tenant API call: ${apiUrl}${endpoint}?subdomain=${subdomain}`);
+      console.log(`Response status: ${response.status}`);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('Tenant config loaded:', data);
         return data;
       }
       
@@ -62,6 +66,8 @@ class TenantService {
         return null;
       }
       
+      const errorText = await response.text();
+      console.error(`API Error: ${response.status} ${response.statusText}`, errorText);
       throw new Error(`Failed to fetch tenant: ${response.status} ${response.statusText}`);
     } catch (error) {
       console.error('Error fetching tenant config:', error);
@@ -76,7 +82,7 @@ class TenantService {
     try {
       // Use main API for tenant configuration, not tenant-specific API
       const apiUrl = this.apiBaseUrl;
-      const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config';
+      const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config/';
       
       const response = await fetch(`${apiUrl}${endpoint}?domain=${domain}`, {
         method: 'GET',
@@ -105,7 +111,7 @@ class TenantService {
   async getAllTenants(): Promise<Tenant[]> {
     try {
       const apiUrl = this.apiBaseUrl; // Use main API for listing all tenants
-      const endpoint = process.env.NEXT_PUBLIC_TENANTS_LIST_ENDPOINT || '/api/tenants/list';
+      const endpoint = process.env.NEXT_PUBLIC_TENANTS_LIST_ENDPOINT || '/api/tenants/list/';
       
       const response = await fetch(`${apiUrl}${endpoint}`, {
         method: 'GET',
