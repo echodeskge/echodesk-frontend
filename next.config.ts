@@ -91,10 +91,9 @@ const nextConfig: NextConfig = {
   // Environment-specific optimizations
   ...(process.env.NODE_ENV === 'production' && {
     swcMinify: true,
+    // Keep console logs for debugging on DigitalOcean
     compiler: {
-      removeConsole: {
-        exclude: ['error'],
-      },
+      removeConsole: false,
     },
   }),
 };
