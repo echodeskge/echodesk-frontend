@@ -165,7 +165,7 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
                 <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>Quick Actions</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <a 
-                    href={tenant.api_url + '/admin/'}
+                    href={tenant.api_url.replace('/api', '') + '/admin/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -181,7 +181,7 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
                     🔧 Admin Panel
                   </a>
                   <a 
-                    href={tenant.api_url + '/api/'}
+                    href={tenant.api_url + '/schema/swagger-ui/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
@@ -281,9 +281,9 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
                 fontSize: '14px'
               }}>
                 <p><strong>Base URL:</strong> {tenant.api_url}</p>
-                <p><strong>Admin Panel:</strong> {tenant.api_url}/admin/</p>
-                <p><strong>API Docs:</strong> {tenant.api_url}/api/schema/swagger-ui/</p>
-                <p><strong>Config Endpoint:</strong> {tenant.api_url}/api/tenant/config/</p>
+                <p><strong>Admin Panel:</strong> {tenant.api_url.replace('/api', '')}/admin/</p>
+                <p><strong>API Docs:</strong> {tenant.api_url}/schema/swagger-ui/</p>
+                <p><strong>Config Endpoint:</strong> {tenant.api_url.replace('/api', '')}/api/tenant/config/</p>
               </div>
               
               <h3 style={{ marginBottom: '15px' }}>Sample Configuration Response</h3>

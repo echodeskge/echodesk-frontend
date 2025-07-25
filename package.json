@@ -6,7 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "dev-setup": "chmod +x dev-setup.sh && ./dev-setup.sh",
+    "dev-with-setup": "npm run dev-setup && npm run dev",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next && rm -rf node_modules/.cache"
   },
   "dependencies": {
     "react": "19.1.0",
