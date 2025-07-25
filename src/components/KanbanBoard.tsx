@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { kanbanBoard, ticketsPartialUpdate } from '@/api/generated/api';
+import { kanbanBoard, ticketsPartialUpdate, moveTicketToColumn, ticketsReorderInColumnPartialUpdate } from '@/api/generated/api';
 import type { KanbanBoard as KanbanBoardType, Ticket, TicketColumn } from '@/api/generated/interfaces';
 
 interface KanbanBoardProps {
@@ -15,6 +15,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
   const [tickets, setTickets] = useState<{ [columnId: string]: Ticket[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
     fetchBoardData();
@@ -33,6 +34,9 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
       } else {
         setTickets(board.tickets_by_column as any);
       }
+      
+      // Clear any previous errors
+      setError('');
     } catch (err: unknown) {
       console.error('Failed to fetch board data:', err);
       setError('Failed to load kanban board');
@@ -61,40 +65,96 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     const destColumnId = destination.droppableId;
     const ticketId = parseInt(draggableId);
 
+    // Store the current state for rollback
+    const originalTickets = { ...tickets };
+
+    // Find the ticket being moved
+    const sourceTickets = [...(tickets[sourceColumnId] || [])];
+    const movedTicket = sourceTickets.find(ticket => ticket.id === ticketId);
+    
+    if (!movedTicket) {
+      console.error('Could not find ticket to move');
+      return;
+    }
+
     // Create new tickets state
     const newTickets = { ...tickets };
-    const sourceTickets = [...(newTickets[sourceColumnId] || [])];
-    const destTickets = sourceColumnId === destColumnId 
-      ? sourceTickets 
+    const newSourceTickets = [...(newTickets[sourceColumnId] || [])];
+    const newDestTickets = sourceColumnId === destColumnId 
+      ? newSourceTickets 
       : [...(newTickets[destColumnId] || [])];
 
     // Remove from source
-    const [movedTicket] = sourceTickets.splice(source.index, 1);
+    const sourceIndex = newSourceTickets.findIndex(ticket => ticket.id === ticketId);
+    if (sourceIndex === -1) {
+      console.error('Could not find ticket in source column');
+      return;
+    }
     
-    // Add to destination
+    const [removedTicket] = newSourceTickets.splice(sourceIndex, 1);
+    
+    // Update ticket with new column info
+    const updatedTicket = {
+      ...removedTicket,
+      column_id: parseInt(destColumnId),
+      position_in_column: destination.index
+    };
+
+    // Add to destination at the correct position
     if (sourceColumnId === destColumnId) {
-      sourceTickets.splice(destination.index, 0, movedTicket);
-      newTickets[sourceColumnId] = sourceTickets;
+      // Moving within the same column
+      newSourceTickets.splice(destination.index, 0, updatedTicket);
+      newTickets[sourceColumnId] = newSourceTickets;
     } else {
-      destTickets.splice(destination.index, 0, movedTicket);
-      newTickets[sourceColumnId] = sourceTickets;
-      newTickets[destColumnId] = destTickets;
+      // Moving to a different column
+      newDestTickets.splice(destination.index, 0, updatedTicket);
+      newTickets[sourceColumnId] = newSourceTickets;
+      newTickets[destColumnId] = newDestTickets;
+    }
+
+    // Update all positions in affected columns
+    newTickets[sourceColumnId] = newTickets[sourceColumnId].map((ticket, index) => ({
+      ...ticket,
+      position_in_column: index
+    }));
+
+    if (sourceColumnId !== destColumnId) {
+      newTickets[destColumnId] = newTickets[destColumnId].map((ticket, index) => ({
+        ...ticket,
+        position_in_column: index
+      }));
     }
 
     // Update state optimistically
     setTickets(newTickets);
+    setIsMoving(true);
 
     try {
-      // Update ticket in backend
-      await ticketsPartialUpdate(ticketId, {
-        column_id: parseInt(destColumnId),
-        position_in_column: destination.index
-      });
+      if (sourceColumnId === destColumnId) {
+        // Reordering within the same column
+        await ticketsReorderInColumnPartialUpdate(ticketId, {
+          position_in_column: destination.index
+        });
+      } else {
+        // Moving to a different column - use the general update since we need both column and position
+        await ticketsPartialUpdate(ticketId, {
+          column_id: parseInt(destColumnId),
+          position_in_column: destination.index
+        });
+      }
+      
+      // Refresh board data to ensure consistency
+      await fetchBoardData();
     } catch (err: unknown) {
       console.error('Failed to update ticket position:', err);
       // Revert on error
-      setTickets(tickets);
-      setError('Failed to move ticket');
+      setTickets(originalTickets);
+      setError('Failed to move ticket. Please try again.');
+      
+      // Clear error after 3 seconds
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setIsMoving(false);
     }
   };
 
@@ -133,7 +193,7 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
     );
   }
 
-  if (error) {
+  if (error && !boardData) {
     return (
       <div style={{
         background: '#fee',
@@ -167,6 +227,41 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
 
   return (
     <div style={{ padding: '20px' }}>
+      {error && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          background: '#dc3545',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(220,53,69,0.3)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          maxWidth: '300px'
+        }}>
+          <span>⚠️</span>
+          <span>{error}</span>
+          <button
+            onClick={() => setError('')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '16px',
+              padding: '0',
+              marginLeft: '8px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -206,6 +301,40 @@ export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoa
 
       {/* Kanban Board */}
       <DragDropContext onDragEnd={handleDragEnd}>
+        {isMoving && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999
+          }}>
+            <div style={{
+              background: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                border: '2px solid #007bff',
+                borderTop: '2px solid transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              Moving ticket...
+            </div>
+          </div>
+        )}
         <div style={{
           display: 'flex',
           gap: '20px',

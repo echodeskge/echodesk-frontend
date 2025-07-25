@@ -15,7 +15,9 @@ import {
   usersList,
   tagsList,
   kanbanBoard,
-  columnsList
+  columnsList,
+  moveTicketToColumn,
+  ticketsReorderInColumnPartialUpdate
 } from '../api/generated/api';
 
 import {
@@ -277,6 +279,32 @@ export class TicketService {
       return await columnsList();
     } catch (error) {
       console.error('Error fetching columns:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Move ticket to a different column
+   */
+  async moveTicketToColumn(ticketId: number): Promise<Ticket> {
+    try {
+      return await moveTicketToColumn(ticketId);
+    } catch (error) {
+      console.error('Error moving ticket to column:', error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Reorder ticket within a column
+   */
+  async reorderTicketInColumn(ticketId: number, position: number): Promise<Ticket> {
+    try {
+      return await ticketsReorderInColumnPartialUpdate(ticketId, {
+        position_in_column: position
+      });
+    } catch (error) {
+      console.error('Error reordering ticket in column:', error);
       throw this.handleError(error);
     }
   }
