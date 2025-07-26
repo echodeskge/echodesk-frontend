@@ -9,9 +9,12 @@ import type {
   TenantLogin,
   PaginatedCallLogList,
   CallLogCreate,
+  CallLogDetail,
   CallLog,
   PatchedCallLog,
+  CallEvent,
   CallStatusUpdate,
+  CallRecording,
   PatchedCallStatusUpdate,
   CallInitiate,
   PaginatedClientList,
@@ -131,7 +134,7 @@ export async function callLogsCreate(
   return response.data;
 }
 
-export async function callLogsRetrieve(id: number): Promise<CallLog> {
+export async function callLogsRetrieve(id: number): Promise<CallLogDetail> {
   const response = await axios.get(`/api/call-logs/${id}/`);
   return response.data;
 }
@@ -157,11 +160,60 @@ export async function callLogsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
+export async function callLogsAddEventCreate(
+  id: number,
+  data: CallEvent,
+): Promise<CallEvent> {
+  const response = await axios.post(`/api/call-logs/${id}/add_event/`, data);
+  return response.data;
+}
+
 export async function callLogsEndCallCreate(
   id: number,
   data: CallStatusUpdate,
 ): Promise<CallLog> {
   const response = await axios.post(`/api/call-logs/${id}/end_call/`, data);
+  return response.data;
+}
+
+export async function callLogsStartRecordingCreate(
+  id: number,
+  data: CallLog,
+): Promise<CallRecording> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/start_recording/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function callLogsStopRecordingCreate(
+  id: number,
+  data: CallLog,
+): Promise<CallRecording> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/stop_recording/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function callLogsToggleHoldCreate(
+  id: number,
+  data: CallLog,
+): Promise<CallLog> {
+  const response = await axios.post(`/api/call-logs/${id}/toggle_hold/`, data);
+  return response.data;
+}
+
+export async function callLogsTransferCallCreate(
+  id: number,
+  data: CallLog,
+): Promise<CallLog> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/transfer_call/`,
+    data,
+  );
   return response.data;
 }
 
@@ -791,5 +843,36 @@ export async function usersLogoutCreate(data: User): Promise<User> {
 
 export async function usersMeRetrieve(): Promise<User> {
   const response = await axios.get(`/api/users/me/`);
+  return response.data;
+}
+
+export async function webhooksRecordingCreate(data: {
+  call_id: string;
+  recording_id?: string;
+  status: 'started' | 'completed' | 'failed';
+  file_url?: string;
+  file_size?: number;
+  duration?: number;
+  format?: string;
+}): Promise<Record<string, any>> {
+  const response = await axios.post(`/api/webhooks/recording/`, data);
+  return response.data;
+}
+
+export async function webhooksSipCreate(data: {
+  event_type:
+    | 'call_initiated'
+    | 'call_ringing'
+    | 'call_answered'
+    | 'call_ended'
+    | 'call_failed';
+  call_id?: string;
+  sip_call_id: string;
+  caller_number?: string;
+  recipient_number?: string;
+  timestamp?: string;
+  metadata?: Record<string, any>;
+}): Promise<Record<string, any>> {
+  const response = await axios.post(`/api/webhooks/sip/`, data);
   return response.data;
 }

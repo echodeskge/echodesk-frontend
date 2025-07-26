@@ -7,6 +7,13 @@ import {
   callLogsLogIncomingCallCreate,
   callLogsEndCallCreate,
   callLogsUpdateStatusPartialUpdate,
+  callLogsAddEventCreate,
+  callLogsStartRecordingCreate,
+  callLogsStopRecordingCreate,
+  callLogsToggleHoldCreate,
+  callLogsTransferCallCreate,
+  callLogsStatisticsRetrieve,
+  callLogsRetrieve,
   sipConfigurationsList,
   sipConfigurationsWebrtcConfigRetrieve,
   sipConfigurationsCreate,
@@ -23,11 +30,15 @@ import type {
   SipConfigurationDetail,
   SipConfiguration,
   DirectionEnum,
-  StatusC94enum,
+  CallLogDetail,
+  CallEvent,
+  CallRecording,
+  CallStatusUpdate,
 } from '@/api/generated/interfaces';
 import { SipService } from '@/services/SipService';
 import SipConfigManager from './SipConfigManager';
 import CallDebugger from './CallDebugger';
+import CallStatsDashboard from './CallStatsDashboard';
 import type { Invitation } from 'sip.js';
 
 // Helper functions to handle enum checks
@@ -61,6 +72,10 @@ interface ActiveCall {
   startTime?: Date;
   duration: number;
   invitation?: Invitation; // For incoming SIP calls
+  isRecording?: boolean;
+  isOnHold?: boolean;
+  recording?: CallRecording;
+  events?: CallEvent[];
 }
 
 export default function CallManager({ onCallStatusChange }: CallManagerProps) {
@@ -76,6 +91,10 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   const [sipRegistered, setSipRegistered] = useState(false);
   const [currentView, setCurrentView] = useState<'calls' | 'sip-config'>('calls');
   const [showDebugger, setShowDebugger] = useState(false);
+  const [callStatistics, setCallStatistics] = useState<any>(null);
+  const [detailedCallView, setDetailedCallView] = useState<CallLogDetail | null>(null);
+  const [showCallDetails, setShowCallDetails] = useState(false);
+  const [showStatsDashboard, setShowStatsDashboard] = useState(false);
 
   // Audio and SIP refs
   const localAudioRef = useRef<HTMLAudioElement>(null);
@@ -552,6 +571,206 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     }
   };
 
+  const fetchCallStatistics = async (period: 'today' | 'week' | 'month' = 'today') => {
+    try {
+      const stats = await callLogsStatisticsRetrieve(period);
+      setCallStatistics(stats);
+    } catch (err: unknown) {
+      console.error('Failed to fetch call statistics:', err);
+    }
+  };
+
+  const fetchCallDetails = async (callId: number) => {
+    try {
+      const details = await callLogsRetrieve(callId);
+      setDetailedCallView(details);
+      setShowCallDetails(true);
+    } catch (err: unknown) {
+      console.error('Failed to fetch call details:', err);
+    }
+  };
+
+  const addCallEvent = async (eventType: string, metadata: any = {}) => {
+    if (!activeCall?.logId) return;
+
+    try {
+      await callLogsAddEventCreate(activeCall.logId, {
+        event_type: eventType as any,
+        metadata: metadata,
+        user: undefined,
+        user_name: '',
+        id: 0,
+        timestamp: new Date().toISOString()
+      });
+      console.log(`📝 Call event added: ${eventType}`);
+    } catch (err: unknown) {
+      console.error('Failed to add call event:', err);
+    }
+  };
+
+  const startRecording = async () => {
+    if (!activeCall?.logId) return;
+
+    try {
+      const recording = await callLogsStartRecordingCreate(activeCall.logId, {
+        id: activeCall.logId,
+        call_id: activeCall.callId,
+        caller_number: activeCall.direction === 'incoming' ? activeCall.number : '',
+        recipient_number: activeCall.direction === 'outgoing' ? activeCall.number : '',
+        direction: activeCall.direction as any,
+        call_type: 'voice' as any,
+        started_at: new Date().toISOString(),
+        answered_at: activeCall.startTime?.toISOString(),
+        ended_at: '',
+        duration: '',
+        duration_display: '',
+        status: 'recording' as any,
+        notes: '',
+        sip_call_id: '',
+        client: 0,
+        client_name: '',
+        handled_by: 0,
+        handled_by_name: '',
+        sip_configuration: 0,
+        sip_config_name: '',
+        recording_url: '',
+        call_quality_score: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      setActiveCall(prev => prev ? { ...prev, isRecording: true, recording } : null);
+      await addCallEvent('recording_started', { recording_id: recording.recording_id });
+      console.log('🎙️ Recording started');
+    } catch (err: unknown) {
+      console.error('Failed to start recording:', err);
+      setError('Failed to start recording');
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!activeCall?.logId || !activeCall.isRecording) return;
+
+    try {
+      const recording = await callLogsStopRecordingCreate(activeCall.logId, {
+        id: activeCall.logId,
+        call_id: activeCall.callId,
+        caller_number: activeCall.direction === 'incoming' ? activeCall.number : '',
+        recipient_number: activeCall.direction === 'outgoing' ? activeCall.number : '',
+        direction: activeCall.direction as any,
+        call_type: 'voice' as any,
+        started_at: new Date().toISOString(),
+        answered_at: activeCall.startTime?.toISOString(),
+        ended_at: '',
+        duration: '',
+        duration_display: '',
+        status: 'recording' as any,
+        notes: '',
+        sip_call_id: '',
+        client: 0,
+        client_name: '',
+        handled_by: 0,
+        handled_by_name: '',
+        sip_configuration: 0,
+        sip_config_name: '',
+        recording_url: '',
+        call_quality_score: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      setActiveCall(prev => prev ? { ...prev, isRecording: false, recording } : null);
+      await addCallEvent('recording_stopped', { recording_id: recording.recording_id });
+      console.log('🎙️ Recording stopped');
+    } catch (err: unknown) {
+      console.error('Failed to stop recording:', err);
+      setError('Failed to stop recording');
+    }
+  };
+
+  const toggleHold = async () => {
+    if (!activeCall?.logId) return;
+
+    try {
+      await callLogsToggleHoldCreate(activeCall.logId, {
+        id: activeCall.logId,
+        call_id: activeCall.callId,
+        caller_number: activeCall.direction === 'incoming' ? activeCall.number : '',
+        recipient_number: activeCall.direction === 'outgoing' ? activeCall.number : '',
+        direction: activeCall.direction as any,
+        call_type: 'voice' as any,
+        started_at: new Date().toISOString(),
+        answered_at: activeCall.startTime?.toISOString(),
+        ended_at: '',
+        duration: '',
+        duration_display: '',
+        status: activeCall.isOnHold ? 'answered' : 'on_hold' as any,
+        notes: '',
+        sip_call_id: '',
+        client: 0,
+        client_name: '',
+        handled_by: 0,
+        handled_by_name: '',
+        sip_configuration: 0,
+        sip_config_name: '',
+        recording_url: '',
+        call_quality_score: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      const newHoldState = !activeCall.isOnHold;
+      setActiveCall(prev => prev ? { ...prev, isOnHold: newHoldState } : null);
+      await addCallEvent(newHoldState ? 'hold' : 'unhold');
+      console.log(`📞 Call ${newHoldState ? 'put on hold' : 'resumed from hold'}`);
+    } catch (err: unknown) {
+      console.error('Failed to toggle hold:', err);
+      setError('Failed to toggle hold');
+    }
+  };
+
+  const transferCall = async (transferNumber: string) => {
+    if (!activeCall?.logId || !transferNumber.trim()) return;
+
+    try {
+      await callLogsTransferCallCreate(activeCall.logId, {
+        id: activeCall.logId,
+        call_id: activeCall.callId,
+        caller_number: activeCall.direction === 'incoming' ? activeCall.number : '',
+        recipient_number: transferNumber,
+        direction: activeCall.direction as any,
+        call_type: 'voice' as any,
+        started_at: new Date().toISOString(),
+        answered_at: activeCall.startTime?.toISOString(),
+        ended_at: new Date().toISOString(),
+        duration: '',
+        duration_display: '',
+        status: 'transferred' as any,
+        notes: `Call transferred to ${transferNumber}`,
+        sip_call_id: '',
+        client: 0,
+        client_name: '',
+        handled_by: 0,
+        handled_by_name: '',
+        sip_configuration: 0,
+        sip_config_name: '',
+        recording_url: '',
+        call_quality_score: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      await addCallEvent('transfer_completed', { transfer_to: transferNumber });
+      setActiveCall(null);
+      setCallDuration(0);
+      fetchCallLogs();
+      console.log(`📞 Call transferred to ${transferNumber}`);
+    } catch (err: unknown) {
+      console.error('Failed to transfer call:', err);
+      setError('Failed to transfer call');
+    }
+  };
+
   const formatCallDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -885,6 +1104,22 @@ Contact us for gateway setup assistance!`);
           📞 Call Interface
         </button>
         <button
+          onClick={() => setShowStatsDashboard(true)}
+          style={{
+            background: 'transparent',
+            color: '#333',
+            border: 'none',
+            padding: '12px 20px',
+            borderRadius: '6px 6px 0 0',
+            fontSize: '14px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            borderBottom: '2px solid transparent'
+          }}
+        >
+          📊 Statistics
+        </button>
+        <button
           onClick={() => setCurrentView('sip-config')}
           style={{
             background: currentView === 'sip-config' ? '#007bff' : 'transparent',
@@ -945,8 +1180,113 @@ Contact us for gateway setup assistance!`);
             color: '#6c757d',
             textTransform: 'capitalize'
           }}>
-            {activeCall.status === 'active' ? `${formatCallDuration(callDuration)}` : activeCall.status}
+            {activeCall.status === 'active' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <div>{formatCallDuration(callDuration)}</div>
+                {activeCall.isRecording && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#dc3545',
+                    color: 'white',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    🔴 RECORDING
+                  </div>
+                )}
+                {activeCall.isOnHold && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: '#ffc107',
+                    color: '#212529',
+                    padding: '4px 12px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    ⏸️ ON HOLD
+                  </div>
+                )}
+              </div>
+            ) : activeCall.status}
           </div>
+
+          {/* Call Controls for Active Calls */}
+          {activeCall.status === 'active' && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '15px',
+              marginBottom: '20px',
+              flexWrap: 'wrap'
+            }}>
+              <button
+                onClick={activeCall.isRecording ? stopRecording : startRecording}
+                style={{
+                  background: activeCall.isRecording ? '#dc3545' : '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '25px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {activeCall.isRecording ? '⏹️ Stop Recording' : '🎙️ Start Recording'}
+              </button>
+
+              <button
+                onClick={toggleHold}
+                style={{
+                  background: activeCall.isOnHold ? '#28a745' : '#ffc107',
+                  color: activeCall.isOnHold ? 'white' : '#212529',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '25px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {activeCall.isOnHold ? '▶️ Resume' : '⏸️ Hold'}
+              </button>
+
+              <button
+                onClick={() => {
+                  const transferNumber = prompt('Enter number to transfer to:');
+                  if (transferNumber) transferCall(transferNumber);
+                }}
+                style={{
+                  background: '#17a2b8',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 20px',
+                  borderRadius: '25px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                🔄 Transfer
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
             {activeCall.status === 'ringing' && activeCall.direction === 'incoming' && (
@@ -1251,10 +1591,26 @@ Contact us for gateway setup assistance!`);
                       padding: '6px 12px',
                       borderRadius: '6px',
                       fontSize: '12px',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      marginRight: '8px'
                     }}
                   >
                     📞 Call Back
+                  </button>
+
+                  <button
+                    onClick={() => fetchCallDetails(call.id)}
+                    style={{
+                      background: '#28a745',
+                      color: 'white',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📋 Details
                   </button>
                 </div>
               </div>
@@ -1263,6 +1619,204 @@ Contact us for gateway setup assistance!`);
         )}
       </div>
         </>
+      )}
+
+      {/* Call Details Modal */}
+      {showCallDetails && detailedCallView && (
+        <div style={{
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '800px',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            width: '90%'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ fontSize: '24px', fontWeight: '600', margin: 0 }}>
+                Call Details
+              </h3>
+              <button
+                onClick={() => setShowCallDetails(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#6c757d'
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Call Summary */}
+            <div style={{
+              background: '#f8f9fa',
+              border: '1px solid #dee2e6',
+              borderRadius: '8px',
+              padding: '20px',
+              marginBottom: '20px'
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div>
+                  <strong>Call ID:</strong> {detailedCallView.call_id}
+                </div>
+                <div>
+                  <strong>Direction:</strong> {getDirectionIcon(detailedCallView.direction)} {String(detailedCallView.direction)}
+                </div>
+                <div>
+                  <strong>From:</strong> {detailedCallView.caller_number}
+                </div>
+                <div>
+                  <strong>To:</strong> {detailedCallView.recipient_number}
+                </div>
+                <div>
+                  <strong>Status:</strong> <span style={{ color: getStatusColor(detailedCallView.status) }}>
+                    {String(detailedCallView.status)}
+                  </span>
+                </div>
+                <div>
+                  <strong>Duration:</strong> {detailedCallView.duration_display || 'N/A'}
+                </div>
+                <div>
+                  <strong>Started:</strong> {formatCallTime(detailedCallView.started_at)}
+                </div>
+                <div>
+                  <strong>Quality Score:</strong> {detailedCallView.call_quality_score ? 
+                    `${detailedCallView.call_quality_score}/5` : 'N/A'}
+                </div>
+              </div>
+              
+              {detailedCallView.notes && (
+                <div style={{ marginTop: '15px' }}>
+                  <strong>Notes:</strong> {detailedCallView.notes}
+                </div>
+              )}
+            </div>
+
+            {/* Recording Information */}
+            {detailedCallView.recording && (
+              <div style={{
+                background: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: '8px',
+                padding: '15px',
+                marginBottom: '20px'
+              }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '10px' }}>🎙️ Recording</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div><strong>Status:</strong> {String(detailedCallView.recording.status)}</div>
+                  <div><strong>Duration:</strong> {detailedCallView.recording.duration_display || 'N/A'}</div>
+                  <div><strong>Format:</strong> {detailedCallView.recording.format}</div>
+                  <div><strong>Size:</strong> {detailedCallView.recording.file_size_display || 'N/A'}</div>
+                </div>
+                
+                {detailedCallView.recording.file_url && (
+                  <div style={{ marginTop: '10px' }}>
+                    <a
+                      href={detailedCallView.recording.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        background: '#007bff',
+                        color: 'white',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        textDecoration: 'none',
+                        fontSize: '14px'
+                      }}
+                    >
+                      🎵 Listen to Recording
+                    </a>
+                  </div>
+                )}
+
+                {detailedCallView.recording.transcript && (
+                  <div style={{ marginTop: '15px' }}>
+                    <strong>Transcript:</strong>
+                    <div style={{
+                      background: '#fff',
+                      padding: '10px',
+                      borderRadius: '4px',
+                      marginTop: '5px',
+                      fontStyle: 'italic'
+                    }}>
+                      {detailedCallView.recording.transcript}
+                    </div>
+                    {detailedCallView.recording.transcript_confidence && (
+                      <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '5px' }}>
+                        Confidence: {Math.round(detailedCallView.recording.transcript_confidence * 100)}%
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Call Events Timeline */}
+            {detailedCallView.events && detailedCallView.events.length > 0 && (
+              <div style={{
+                background: '#f8f9fa',
+                border: '1px solid #dee2e6',
+                borderRadius: '8px',
+                padding: '20px'
+              }}>
+                <h4 style={{ fontSize: '18px', marginBottom: '15px' }}>📋 Call Events</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {detailedCallView.events.map((event, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '10px',
+                        background: '#fff',
+                        borderRadius: '6px',
+                        border: '1px solid #e9ecef'
+                      }}
+                    >
+                      <div>
+                        <strong>{String(event.event_type).replace(/_/g, ' ').toUpperCase()}</strong>
+                        {event.user_name && (
+                          <span style={{ color: '#6c757d', marginLeft: '8px' }}>
+                            by {event.user_name}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                        {new Date(event.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Call Statistics Dashboard Modal */}
+      {showStatsDashboard && (
+        <CallStatsDashboard onClose={() => setShowStatsDashboard(false)} />
       )}
 
       {/* Debug Component */}

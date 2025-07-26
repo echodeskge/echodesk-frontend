@@ -3,6 +3,15 @@
  * DO NOT EDIT MANUALLY
  */
 
+export interface CallEvent {
+  id: number;
+  event_type: EventTypeEnum;
+  timestamp: string;
+  metadata?: any;
+  user?: number;
+  user_name: string;
+}
+
 export interface CallInitiate {
   recipient_number: string;
   call_type?: CallTypeEnum;
@@ -21,7 +30,7 @@ export interface CallLog {
   ended_at?: string;
   duration?: string;
   duration_display: string;
-  status?: StatusC94enum;
+  status?: StatusB9eEnum;
   notes?: string;
   sip_call_id?: string;
   client: number;
@@ -46,8 +55,60 @@ export interface CallLogCreate {
   notes?: string;
 }
 
+export interface CallLogDetail {
+  id: number;
+  call_id: string;
+  caller_number: string;
+  recipient_number: string;
+  direction?: DirectionEnum;
+  call_type?: CallTypeEnum;
+  started_at: string;
+  answered_at?: string;
+  ended_at?: string;
+  duration?: string;
+  duration_display: string;
+  status?: StatusB9eEnum;
+  notes?: string;
+  sip_call_id?: string;
+  client: number;
+  client_name: string;
+  handled_by?: number;
+  handled_by_name: string;
+  sip_configuration?: number;
+  sip_config_name: string;
+  recording_url?: string;
+  call_quality_score?: number;
+  created_at: string;
+  updated_at: string;
+  events: CallEvent[];
+  recording: CallRecording;
+}
+
+export interface CallRecording {
+  id: number;
+  recording_id: string;
+  file_path?: string;
+  file_url?: string;
+  file_size?: number;
+  file_size_display: string;
+  duration?: string;
+  duration_display: string;
+  format?: string;
+  status?: CallRecordingStatusEnum;
+  started_at?: string;
+  completed_at?: string;
+  transcript?: string;
+  transcript_confidence?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CallRecordingStatusEnum {
+  [key: string]: any;
+}
+
 export interface CallStatusUpdate {
-  status: StatusC94enum;
+  status: StatusB9eEnum;
   notes?: string;
   call_quality_score?: number;
   recording_url?: string;
@@ -73,6 +134,10 @@ export interface DeploymentStatusEnum {
 }
 
 export interface DirectionEnum {
+  [key: string]: any;
+}
+
+export interface EventTypeEnum {
   [key: string]: any;
 }
 
@@ -156,7 +221,7 @@ export interface PatchedCallLog {
   ended_at?: string;
   duration?: string;
   duration_display?: string;
-  status?: StatusC94enum;
+  status?: StatusB9eEnum;
   notes?: string;
   sip_call_id?: string;
   client?: number;
@@ -172,7 +237,7 @@ export interface PatchedCallLog {
 }
 
 export interface PatchedCallStatusUpdate {
-  status?: StatusC94enum;
+  status?: StatusB9eEnum;
   notes?: string;
   call_quality_score?: number;
   recording_url?: string;
@@ -340,7 +405,7 @@ export interface Status14bEnum {
   [key: string]: any;
 }
 
-export interface StatusC94enum {
+export interface StatusB9eEnum {
   [key: string]: any;
 }
 
