@@ -26,6 +26,7 @@ import {
 import type {
   CallLog,
   CallInitiate,
+  CallLogCreate,
   SipConfigurationList,
   SipConfigurationDetail,
   SipConfiguration,
@@ -99,8 +100,53 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   // Audio and SIP refs
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const ringtoneRef = useRef<HTMLAudioElement>(null);
   const sipServiceRef = useRef<SipService | null>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Create ringtone sound programmatically
+  const createRingtone = async () => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      
+      const audioContext = audioContextRef.current;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+      gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.4);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+      
+      // Schedule next ring
+      setTimeout(createRingtone, 1000);
+      
+    } catch (error) {
+      console.warn('Could not create ringtone:', error);
+    }
+  };
+
+  const playRingtone = () => {
+    createRingtone();
+  };
+
+  const stopRingtone = () => {
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+  };
 
   useEffect(() => {
     fetchInitialData();
@@ -365,20 +411,32 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
   const handleIncomingCall = async (invitation: Invitation) => {
     const callerNumber = invitation.remoteIdentity.uri.user || 'Unknown';
-    console.log('📞 Handling incoming call from:', callerNumber);
+    const callerDomain = invitation.remoteIdentity.uri.host || '';
+    const fullCallerInfo = `${callerNumber}${callerDomain ? `@${callerDomain}` : ''}`;
+    
+    console.log('📞 Handling incoming call from:', fullCallerInfo);
+    
+    // Play ringtone sound
+    try {
+      playRingtone();
+      console.log('🔔 Playing ringtone for incoming call');
+    } catch (error) {
+      console.warn('Could not play ringtone:', error);
+    }
     
     try {
-      // Create call log for incoming call
-      const callLog = await callLogsInitiateCallCreate({
-        recipient_number: '', // Current user/extension
+      // Create incoming call log with proper direction and caller info
+      const callLogData: CallLogCreate = {
+        caller_number: callerNumber,
+        recipient_number: activeSipConfig?.username || 'Unknown',
+        direction: 'incoming' as any,
         call_type: 'voice' as any,
+        sip_call_id: invitation.id || '',
         sip_configuration: activeSipConfig?.id || 0,
-      });
-      
-      // Update the call log with correct direction and caller info
-      await callLogsUpdateStatusPartialUpdate(callLog.id, {
-        status: 'ringing' as any,
-      });
+        notes: `Incoming call from ${fullCallerInfo}`
+      };
+
+      const callLog = await callLogsLogIncomingCallCreate(callLogData);
       
       setActiveCall({
         id: `incoming-${Date.now()}`,
@@ -391,7 +449,10 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
         invitation
       });
 
-      console.log('📋 Incoming call logged with ID:', callLog.call_id);
+      console.log('📋 Incoming call logged with ID:', callLog.call_id, 'from:', fullCallerInfo);
+      
+      // Refresh call logs to show the incoming call immediately
+      fetchCallLogs();
       
     } catch (error) {
       console.error('Failed to log incoming call:', error);
@@ -399,7 +460,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       setActiveCall({
         id: `incoming-${Date.now()}`,
         logId: 0,
-        callId: '',
+        callId: `call-${Date.now()}`,
         number: callerNumber,
         direction: 'incoming',
         status: 'ringing',
@@ -407,9 +468,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
         invitation
       });
     }
-
-    // Play ringtone (you can add audio file here)
-    console.log('📞 Incoming call from:', callerNumber);
   };
 
   const initiateCall = async (number: string) => {
@@ -470,6 +528,10 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
     try {
       console.log('📞 Answering incoming call');
+      
+      // Stop ringtone
+      stopRingtone();
+      
       await sipServiceRef.current.acceptCall();
       
       // Update backend status to answered
@@ -483,6 +545,9 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     } catch (err: unknown) {
       console.error('Failed to answer call:', err);
       setError('Failed to answer call');
+      
+      // Stop ringtone on error too
+      stopRingtone();
       
       // Update call log to failed if answer attempt failed
       if (activeCall?.logId) {
@@ -504,6 +569,9 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     try {
       console.log('📞 Ending call, current status:', activeCall.status);
       setActiveCall(prev => prev ? { ...prev, status: 'ending' } : null);
+
+      // Stop ringtone if it's playing
+      stopRingtone();
 
       // End SIP call
       await sipServiceRef.current.endCall();
@@ -541,6 +609,9 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
     } catch (err: unknown) {
       console.error('Failed to end call:', err);
+      
+      // Stop ringtone even if ending failed
+      stopRingtone();
       
       // Still clean up the UI state
       setActiveCall(null);
@@ -1513,108 +1584,213 @@ Contact us for gateway setup assistance!`);
             flexDirection: 'column',
             gap: '12px'
           }}>
-            {callLogs.map((call) => (
-              <div
-                key={call.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '16px',
-                  border: '1px solid #e9ecef',
-                  borderRadius: '8px',
-                  background: '#f8f9fa'
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px'
-                }}>
-                  <span style={{ fontSize: '20px' }}>
-                    {getDirectionIcon(call.direction)}
-                  </span>
-                  
-                  <div>
-                    <div style={{
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: '#333'
-                    }}>
-                      {isIncomingCall(call.direction) ? call.caller_number : call.recipient_number}
-                    </div>
-                    
-                    <div style={{
-                      fontSize: '14px',
-                      color: '#6c757d'
-                    }}>
-                      {formatCallTime(call.created_at)}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px'
-                }}>
+            {callLogs.map((call) => {
+              const displayNumber = isIncomingCall(call.direction) ? call.caller_number : call.recipient_number;
+              const isRecentIncoming = isIncomingCall(call.direction);
+              
+              return (
+                <div
+                  key={call.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '20px',
+                    border: '1px solid #e9ecef',
+                    borderRadius: '12px',
+                    background: '#f8f9fa',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.background = '#e9ecef';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.background = '#f8f9fa';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
                   <div style={{
                     display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-end'
+                    alignItems: 'center',
+                    gap: '16px',
+                    flex: 1
                   }}>
-                    <span style={{
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      color: getStatusColor(call.status),
-                      textTransform: 'capitalize'
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: isRecentIncoming ? '#28a745' : '#007bff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '20px',
+                      color: 'white',
+                      fontWeight: 'bold'
                     }}>
-                      {String(call.status)}
-                    </span>
+                      {isRecentIncoming ? '📞' : '📱'}
+                    </div>
                     
-                    {call.duration_display && (
-                      <span style={{
-                        fontSize: '12px',
+                    <div style={{ flex: 1 }}>
+                      <div style={{
+                        fontSize: '18px',
+                        fontWeight: '700',
+                        color: '#333',
+                        marginBottom: '4px'
+                      }}>
+                        {displayNumber || 'Unknown'}
+                      </div>
+                      
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        fontSize: '14px',
                         color: '#6c757d'
                       }}>
-                        {call.duration_display}
+                        <span>
+                          {isRecentIncoming ? 'Incoming' : 'Outgoing'} • {formatCallTime(call.created_at)}
+                        </span>
+                        
+                        {call.duration_display && (
+                          <span style={{
+                            background: '#e9ecef',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            color: '#495057'
+                          }}>
+                            {call.duration_display}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end'
+                    }}>
+                      <span style={{
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: getStatusColor(call.status),
+                        textTransform: 'capitalize',
+                        background: `${getStatusColor(call.status)}20`,
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        marginBottom: '8px'
+                      }}>
+                        {String(call.status)}
                       </span>
-                    )}
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => setDialNumber(isIncomingCall(call.direction) ? call.caller_number : call.recipient_number)}
-                    style={{
-                      background: '#007bff',
-                      color: 'white',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      cursor: 'pointer',
-                      marginRight: '8px'
-                    }}
-                  >
-                    📞 Call Back
-                  </button>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}>
+                    <button
+                      onClick={() => {
+                        setDialNumber(displayNumber);
+                        // Auto-initiate call if SIP is connected
+                        if (sipRegistered && displayNumber) {
+                          initiateCall(displayNumber);
+                        }
+                      }}
+                      disabled={!sipRegistered}
+                      style={{
+                        background: sipRegistered ? '#28a745' : '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: sipRegistered ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        if (sipRegistered) {
+                          e.currentTarget.style.background = '#218838';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (sipRegistered) {
+                          e.currentTarget.style.background = '#28a745';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }
+                      }}
+                    >
+                      📞 Call
+                    </button>
 
-                  <button
-                    onClick={() => fetchCallDetails(call.id)}
-                    style={{
-                      background: '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    📋 Details
-                  </button>
+                    <button
+                      onClick={() => setDialNumber(displayNumber)}
+                      style={{
+                        background: 'transparent',
+                        color: '#007bff',
+                        border: '2px solid #007bff',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = '#007bff';
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#007bff';
+                      }}
+                    >
+                      📋 Add to Dial
+                    </button>
+
+                    <button
+                      onClick={() => fetchCallDetails(call.id)}
+                      style={{
+                        background: 'transparent',
+                        color: '#6c757d',
+                        border: '2px solid #6c757d',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = '#6c757d';
+                        e.currentTarget.style.color = 'white';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'transparent';
+                        e.currentTarget.style.color = '#6c757d';
+                      }}
+                    >
+                      📋 Details
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
