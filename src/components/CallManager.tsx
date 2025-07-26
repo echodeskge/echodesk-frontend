@@ -104,9 +104,13 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   const sipServiceRef = useRef<SipService | null>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const ringtoneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isRingtonePlayingRef = useRef<boolean>(false);
 
   // Create ringtone sound programmatically
   const createRingtone = async () => {
+    if (!isRingtonePlayingRef.current) return; // Stop if ringtone was disabled
+    
     try {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -129,8 +133,10 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.5);
       
-      // Schedule next ring
-      setTimeout(createRingtone, 1000);
+      // Schedule next ring only if still playing
+      if (isRingtonePlayingRef.current) {
+        ringtoneTimeoutRef.current = setTimeout(createRingtone, 1000);
+      }
       
     } catch (error) {
       console.warn('Could not create ringtone:', error);
@@ -138,12 +144,24 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   };
 
   const playRingtone = () => {
+    if (isRingtonePlayingRef.current) return; // Already playing
+    
+    isRingtonePlayingRef.current = true;
     createRingtone();
   };
 
   const stopRingtone = () => {
+    isRingtonePlayingRef.current = false;
+    
+    // Clear any pending ringtone timeout
+    if (ringtoneTimeoutRef.current) {
+      clearTimeout(ringtoneTimeoutRef.current);
+      ringtoneTimeoutRef.current = null;
+    }
+    
+    // Close audio context
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      audioContextRef.current.close().catch(console.warn);
       audioContextRef.current = null;
     }
   };
@@ -157,6 +175,8 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       if (sipServiceRef.current) {
         sipServiceRef.current.disconnect();
       }
+      // Stop ringtone on cleanup
+      stopRingtone();
     };
   }, []);
 
@@ -329,6 +349,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       sipServiceRef.current.on('onCallAccepted', () => {
         console.log('✅ Call accepted - updating to active state');
+        stopRingtone(); // Stop ringtone when call is accepted
         setActiveCall(prev => {
           if (prev) {
             const updatedCall = { 
@@ -352,6 +373,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       sipServiceRef.current.on('onCallRejected', () => {
         console.log('❌ Call rejected');
+        stopRingtone(); // Stop ringtone when call is rejected
         setActiveCall(prev => {
           if (prev?.logId) {
             // Update backend status based on call direction and state
@@ -368,6 +390,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       sipServiceRef.current.on('onCallEnded', () => {
         console.log('📞 Call ended normally');
+        stopRingtone(); // Stop ringtone when call ends
         setActiveCall(prev => {
           if (prev?.logId) {
             // Update backend status to ended
@@ -383,6 +406,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       sipServiceRef.current.on('onCallFailed', (error: string) => {
         console.error('❌ Call failed:', error);
+        stopRingtone(); // Stop ringtone when call fails
         setError(`Call failed: ${error}`);
         setActiveCall(prev => {
           if (prev?.logId) {
