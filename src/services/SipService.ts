@@ -52,6 +52,11 @@ export class SipService {
 
   // Check if a SIP provider is a traditional (non-WebRTC) provider
   private isTraditionalSipProvider(sipServer: string): boolean {
+    // VitalPBX server is WebRTC compatible
+    if (sipServer === '165.227.166.42') {
+      return false;
+    }
+    
     // Known traditional SIP providers that don't support WebRTC
     const traditionalProviders = [
       '89.150.1.11', // Old Georgian SIP provider
@@ -61,20 +66,6 @@ export class SipService {
       // Add other known traditional providers
     ];
     
-    // VitalPBX server is WebRTC compatible
-    if (sipServer === '165.227.166.42') {
-      return false;
-    }
-    
-    // Check for most private IP addresses (usually traditional providers)
-    // But exclude common WebRTC development IPs
-    const privateIpPattern = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|127\.)/;
-    if (privateIpPattern.test(sipServer) && 
-        !sipServer.startsWith('192.168.1.') && // Common dev environment
-        !sipServer.startsWith('10.0.0.')) {    // Common dev environment
-      return true;
-    }
-    
     // Check against known traditional providers
     return traditionalProviders.some(provider => 
       sipServer.includes(provider) || provider.includes(sipServer)
@@ -83,6 +74,11 @@ export class SipService {
 
   // Check if a SIP provider supports WebRTC
   private isWebRtcCompatibleProvider(sipServer: string): boolean {
+    // VitalPBX server is explicitly WebRTC compatible
+    if (sipServer === '165.227.166.42') {
+      return true;
+    }
+    
     // Known WebRTC-compatible providers
     const webrtcProviders = [
       'twilio.com',
@@ -103,11 +99,6 @@ export class SipService {
       'elastix',
       // Add other known WebRTC providers
     ];
-    
-    // Check for VitalPBX server (your new server)
-    if (sipServer === '165.227.166.42') {
-      return true;
-    }
     
     return webrtcProviders.some(provider => 
       sipServer.toLowerCase().includes(provider.toLowerCase())
@@ -163,8 +154,15 @@ export class SipService {
 
       // Check if this is a traditional SIP provider that doesn't support WebRTC
       const isTraditionalProvider = this.isTraditionalSipProvider(sipConfig.sip_server);
+      const isWebRtcCompatible = this.isWebRtcCompatibleProvider(sipConfig.sip_server);
       
-      if (isTraditionalProvider) {
+      console.log('🔍 SIP Provider Analysis:', {
+        server: sipConfig.sip_server,
+        isTraditional: isTraditionalProvider,
+        isWebRtcCompatible: isWebRtcCompatible
+      });
+      
+      if (isTraditionalProvider && !isWebRtcCompatible) {
         const errorMessage = `WebRTC Compatibility Issue: The SIP provider "${sipConfig.sip_server}" appears to be a traditional SIP server that only supports UDP/TCP protocols. Browser-based calling requires WebSocket (WSS) transport. 
 
 Solutions:
@@ -181,6 +179,13 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
 
       // Get the appropriate WebSocket URL for this provider
       const sipServerUri = this.getWebSocketUrl(sipConfig);
+      
+      console.log('🌐 WebSocket Configuration:', {
+        originalServer: sipConfig.sip_server,
+        originalPort: sipConfig.sip_port,
+        websocketUrl: sipServerUri,
+        protocol: window.location.protocol
+      });
       
       const sipUri = new URI('sip', sipConfig.username, sipConfig.realm || sipConfig.sip_server);
       
