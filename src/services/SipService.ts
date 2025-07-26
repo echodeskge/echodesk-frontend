@@ -119,15 +119,20 @@ export class SipService {
     const isSecure = window.location.protocol === 'https:';
     const wsProtocol = isSecure ? 'wss' : 'ws';
     
+    // VitalPBX specific configuration (your server)
+    if (sipConfig.sip_server === '165.227.166.42') {
+      // VitalPBX uses /ws path on HTTPS port
+      return `wss://165.227.166.42/ws`;
+    }
+    
     // Default WebSocket path for different servers
     let wsPath = '';
     let port = sipConfig.sip_port;
     const server = sipConfig.sip_server.toLowerCase();
     
-    // VitalPBX specific configuration
-    if (sipConfig.sip_server === '165.227.166.42' || server.includes('vitalpbx')) {
+    if (server.includes('vitalpbx')) {
       wsPath = '/ws';
-      port = isSecure ? 8089 : 8088; // VitalPBX default WebSocket ports
+      port = isSecure ? 443 : 80; // VitalPBX default WebSocket ports
     } else if (server.includes('asterisk') || server.includes('freepbx') || server.includes('issabel')) {
       wsPath = '/ws';
       port = port || (isSecure ? 8089 : 8088);
