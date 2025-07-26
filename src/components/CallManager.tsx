@@ -396,17 +396,38 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       setError('');
       console.log('🧪 Testing SIP connection...');
       
-      if (sipServiceRef.current) {
-        console.log('🔄 Reinitializing SIP service for test...');
-        await initializeSipService(activeSipConfig);
+      // Use the backend API to test the connection
+      const now = new Date().toISOString();
+      const testData: SipConfiguration = {
+        id: activeSipConfig.id,
+        name: activeSipConfig.name,
+        sip_server: activeSipConfig.sip_server,
+        sip_port: activeSipConfig.sip_port,
+        username: activeSipConfig.username,
+        realm: activeSipConfig.realm,
+        proxy: activeSipConfig.proxy,
+        stun_server: activeSipConfig.stun_server,
+        turn_server: activeSipConfig.turn_server,
+        turn_username: activeSipConfig.turn_username,
+        is_active: activeSipConfig.is_active,
+        is_default: activeSipConfig.is_default,
+        max_concurrent_calls: activeSipConfig.max_concurrent_calls,
+        created_at: now,
+        updated_at: now
+      };
+      
+      const testResult = await sipConfigurationsTestConnectionCreate(activeSipConfig.id.toString(), testData);
+      
+      if (testResult) {
+        setError('✅ SIP configuration test successful');
+        console.log('✅ SIP test successful:', testResult);
       } else {
-        console.log('🆕 Creating new SIP service for test...');
-        await initializeSipService(activeSipConfig);
+        setError('❌ SIP test failed: No response from server');
       }
       
     } catch (err) {
       console.error('❌ SIP test failed:', err);
-      setError(`SIP test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(`❌ SIP test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
