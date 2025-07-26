@@ -26,16 +26,18 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingConfig, setEditingConfig] = useState<SipConfigurationDetail | null>(null);
-  const [configForm, setConfigForm] = useState<Partial<SipConfiguration>>({
+  const [configForm, setConfigForm] = useState<Partial<SipConfigurationDetail>>({
     name: '',
     sip_server: '',
     sip_port: 5060,
     username: '',
+    password: '',
     realm: '',
     proxy: '',
     stun_server: '',
     turn_server: '',
     turn_username: '',
+    turn_password: '',
     is_active: true,
     is_default: false,
     max_concurrent_calls: 5,
@@ -110,14 +112,48 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
     }
   };
 
+  // Quick setup for your Asterisk server
+  const setupAsteriskServer = () => {
+    setEditingConfig(null);
+    setConfigForm({
+      name: 'EchoDesk Asterisk Server',
+      sip_server: '165.227.166.42',
+      sip_port: 8089, // WebSocket port for wss
+      username: '1001',
+      password: 'Giorgi123.',
+      realm: '165.227.166.42',
+      proxy: '',
+      stun_server: 'stun:stun.l.google.com:19302',
+      turn_server: '',
+      turn_username: '',
+      turn_password: '',
+      is_active: true,
+      is_default: true,
+      max_concurrent_calls: 5,
+    });
+    setShowModal(true);
+  };
+
   const saveConfig = async () => {
     try {
       setActionLoading(-1); // Special ID for save action
       
+      // Create a copy without password for the API (if creating)
+      // Password is handled separately in SipConfigurationDetail
+      const { password, turn_password, ...apiConfig } = configForm;
+      
       if (editingConfig) {
-        await sipConfigurationsUpdate(editingConfig.id.toString(), configForm as SipConfiguration);
+        // For updates, include all fields including password
+        await sipConfigurationsUpdate(editingConfig.id.toString(), configForm as any);
       } else {
-        await sipConfigurationsCreate(configForm as SipConfiguration);
+        // For creation, exclude password fields that aren't in SipConfiguration
+        const createData = {
+          ...apiConfig,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          id: 0 // Will be set by backend
+        } as SipConfiguration;
+        await sipConfigurationsCreate(createData);
       }
 
       await fetchSipConfigs();
@@ -251,27 +287,45 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
         <h2 style={{
           fontSize: '24px',
           fontWeight: '600',
-          margin: 0,
-          color: '#333'
+          color: '#333',
+          margin: 0
         }}>
           SIP Configurations
         </h2>
         
-        <button
-          onClick={() => openModal()}
-          style={{
-            background: '#007bff',
-            color: 'white',
-            border: 'none',
-            padding: '10px 16px',
-            borderRadius: '6px',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer'
-          }}
-        >
-          ➕ Add Configuration
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            onClick={setupAsteriskServer}
+            style={{
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              padding: '10px 16px',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            🚀 Quick Setup (Asterisk)
+          </button>
+          
+          <button
+            onClick={() => openModal()}
+            style={{
+              background: '#007bff',
+              color: 'white',
+              border: 'none',
+              padding: '10px 16px',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            ➕ Add Configuration
+          </button>
+        </div>
       </div>
 
       {/* SIP Configurations List */}
