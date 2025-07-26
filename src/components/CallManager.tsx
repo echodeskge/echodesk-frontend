@@ -26,6 +26,7 @@ import type {
 } from '@/api/generated/interfaces';
 import { SipService } from '@/services/SipService';
 import SipConfigManager from './SipConfigManager';
+import CallDebugger from './CallDebugger';
 import type { Invitation } from 'sip.js';
 
 // Helper functions to handle enum checks
@@ -72,6 +73,7 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   const [testMode, setTestMode] = useState(false);
   const [sipRegistered, setSipRegistered] = useState(false);
   const [currentView, setCurrentView] = useState<'calls' | 'sip-config'>('calls');
+  const [showDebugger, setShowDebugger] = useState(false);
 
   // Audio and SIP refs
   const localAudioRef = useRef<HTMLAudioElement>(null);
@@ -685,6 +687,21 @@ Contact us for gateway setup assistance!`);
           >
             Reconnect
           </button>
+          
+          <button
+            onClick={() => setShowDebugger(true)}
+            style={{
+              background: '#6f42c1',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            🔍 Debug
+          </button>
         </div>
       </div>
 
@@ -1091,6 +1108,13 @@ Contact us for gateway setup assistance!`);
       </div>
         </>
       )}
+
+      {/* Debug Component */}
+      <CallDebugger
+        sipService={sipServiceRef.current}
+        isVisible={showDebugger}
+        onClose={() => setShowDebugger(false)}
+      />
     </div>
   );
 }

@@ -52,8 +52,8 @@ export class SipService {
 
   // Check if a SIP provider is a traditional (non-WebRTC) provider
   private isTraditionalSipProvider(sipServer: string): boolean {
-    // VitalPBX server is WebRTC compatible
-    if (sipServer === '165.227.166.42') {
+    // VitalPBX servers are WebRTC compatible
+    if (sipServer === '165.227.166.42' || sipServer === 'pbx.echodesk.ge') {
       return false;
     }
     
@@ -74,8 +74,8 @@ export class SipService {
 
   // Check if a SIP provider supports WebRTC
   private isWebRtcCompatibleProvider(sipServer: string): boolean {
-    // VitalPBX server is explicitly WebRTC compatible
-    if (sipServer === '165.227.166.42') {
+    // VitalPBX servers are explicitly WebRTC compatible
+    if (sipServer === '165.227.166.42' || sipServer === 'pbx.echodesk.ge') {
       return true;
     }
     
@@ -97,6 +97,7 @@ export class SipService {
       'freepbx',
       'issabel',
       'elastix',
+      'echodesk.ge',
       // Add other known WebRTC providers
     ];
     
@@ -110,10 +111,16 @@ export class SipService {
     const isSecure = window.location.protocol === 'https:';
     const wsProtocol = isSecure ? 'wss' : 'ws';
     
-    // VitalPBX specific configuration (your server)
+    // VitalPBX specific configuration (SSL domain)
+    if (sipConfig.sip_server === 'pbx.echodesk.ge') {
+      // VitalPBX with SSL uses standard HTTPS port with /ws path
+      return `wss://pbx.echodesk.ge:8089/ws`;
+    }
+    
+    // VitalPBX specific configuration (IP address - fallback)
     if (sipConfig.sip_server === '165.227.166.42') {
-      // VitalPBX uses /ws path on HTTPS port
-      return `wss://165.227.166.42/ws`;
+      // VitalPBX uses /ws path on WebSocket port
+      return `wss://165.227.166.42:8089/ws`;
     }
     
     // Default WebSocket path for different servers
@@ -121,9 +128,9 @@ export class SipService {
     let port = sipConfig.sip_port;
     const server = sipConfig.sip_server.toLowerCase();
     
-    if (server.includes('vitalpbx')) {
+    if (server.includes('vitalpbx') || server.includes('echodesk.ge')) {
       wsPath = '/ws';
-      port = isSecure ? 443 : 80; // VitalPBX default WebSocket ports
+      port = port || (isSecure ? 8089 : 8088);
     } else if (server.includes('asterisk') || server.includes('freepbx') || server.includes('issabel')) {
       wsPath = '/ws';
       port = port || (isSecure ? 8089 : 8088);
@@ -326,15 +333,30 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         cleanNumber = '+' + cleanNumber;
       }
       
-      // Create SIP URI
-      const realm = this.userAgent.configuration.uri?.host || 'localhost';
+      // Create SIP URI - use the configured realm
+      const realm = this.userAgent.configuration.uri?.host || 'pbx.echodesk.ge';
       const targetUri = new URI('sip', cleanNumber, realm);
       
       console.log('📞 Making call to:', {
         original: phoneNumber,
         cleaned: cleanNumber,
-        uri: targetUri.toString()
+        uri: targetUri.toString(),
+        realm: realm
       });
+
+      // Request user media first to ensure audio is available
+      console.log('🎤 Requesting user media...');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000
+        },
+        video: false
+      });
+
+      console.log('✅ User media obtained:', stream.getAudioTracks().length, 'audio tracks');
 
       // Create inviter with enhanced options
       this.currentSession = new Inviter(this.userAgent, targetUri, {
@@ -351,9 +373,9 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         }
       });
 
-      // Handle session state changes
+      // Handle session state changes with more detailed logging
       this.currentSession.stateChange.addListener((state: SessionState) => {
-        console.log('📞 Call state changed:', state);
+        console.log('📞 Call state changed:', state, 'at', new Date().toISOString());
         
         switch (state) {
           case SessionState.Initial:
@@ -362,9 +384,11 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
           case SessionState.Establishing:
             console.log('📞 Call establishing...');
             this.emit('onCallProgress');
+            // Start setting up audio early
+            setTimeout(() => this.setupAudioStreams(), 1000);
             break;
           case SessionState.Established:
-            console.log('✅ Call established');
+            console.log('✅ Call established - setting up audio');
             this.emit('onCallAccepted');
             this.setupAudioStreams();
             break;
@@ -379,12 +403,21 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         }
       });
 
-      // Send the invite
+      // Send the invite with enhanced error handling
       console.log('📤 Sending call invitation...');
       await this.currentSession.invite({
         requestDelegate: {
+          onAccept: (response) => {
+            console.log('✅ Call accepted:', response.message.statusCode);
+          },
+          onProgress: (response) => {
+            console.log('📞 Call progress:', response.message.statusCode, response.message.reasonPhrase);
+          },
+          onRedirect: (response) => {
+            console.log('🔄 Call redirected:', response.message.statusCode);
+          },
           onReject: (response) => {
-            console.log('❌ Call rejected with status:', response.message.statusCode);
+            console.log('❌ Call rejected with status:', response.message.statusCode, response.message.reasonPhrase);
             let errorMessage = 'Call rejected';
             
             switch (response.message.statusCode) {
@@ -398,14 +431,23 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
                 errorMessage = 'Call declined';
                 break;
               case 408:
-                errorMessage = 'No answer';
+                errorMessage = 'No answer / Request timeout';
+                break;
+              case 480:
+                errorMessage = 'Temporarily unavailable';
+                break;
+              case 487:
+                errorMessage = 'Request terminated';
                 break;
               default:
-                errorMessage = `Call failed (${response.message.statusCode})`;
+                errorMessage = `Call failed (${response.message.statusCode}: ${response.message.reasonPhrase})`;
             }
             
             this.emit('onCallFailed', errorMessage);
             this.currentSession = null;
+          },
+          onTrying: (response) => {
+            console.log('📞 Call trying:', response.message.statusCode);
           }
         }
       });
@@ -415,7 +457,22 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     } catch (error) {
       console.error('❌ Failed to make call:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown call error';
-      this.emit('onCallFailed', errorMessage);
+      
+      // Specific error handling for common WebRTC issues
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          this.emit('onCallFailed', 'Microphone access denied. Please allow microphone access and try again.');
+        } else if (error.name === 'NotFoundError') {
+          this.emit('onCallFailed', 'No microphone found. Please connect a microphone and try again.');
+        } else if (error.message.includes('getUserMedia')) {
+          this.emit('onCallFailed', 'Audio device error: ' + error.message);
+        } else {
+          this.emit('onCallFailed', errorMessage);
+        }
+      } else {
+        this.emit('onCallFailed', errorMessage);
+      }
+      
       this.currentSession = null;
       throw new Error(`Call failed: ${errorMessage}`);
     }
@@ -509,10 +566,13 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
   // Setup audio streams
   private setupAudioStreams() {
     if (!this.currentSession || !this.remoteAudioElement || !this.localAudioElement) {
+      console.warn('⚠️ Cannot setup audio streams - missing session or audio elements');
       return;
     }
 
     try {
+      console.log('🎵 Setting up audio streams...');
+      
       // Get session description handler
       const sessionDescriptionHandler = this.currentSession.sessionDescriptionHandler;
       if (!sessionDescriptionHandler) {
@@ -527,15 +587,56 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         return;
       }
 
+      console.log('🔗 Peer connection state:', peerConnection.connectionState);
+      console.log('🔗 ICE connection state:', peerConnection.iceConnectionState);
+      console.log('🔗 Signaling state:', peerConnection.signalingState);
+
       // Handle remote stream
       peerConnection.ontrack = (event) => {
-        console.log('🎵 Remote audio track received');
+        console.log('🎵 Remote audio track received:', event.track.kind, event.track.id);
         const [remoteStream] = event.streams;
         if (this.remoteAudioElement && remoteStream) {
+          console.log('🎵 Setting remote audio source');
           this.remoteAudioElement.srcObject = remoteStream;
-          this.remoteAudioElement.play().catch(e => 
-            console.warn('Failed to play remote audio:', e)
-          );
+          
+          // Ensure audio element properties are set correctly
+          this.remoteAudioElement.autoplay = true;
+          this.remoteAudioElement.controls = false;
+          this.remoteAudioElement.muted = false;
+          
+          this.remoteAudioElement.play().then(() => {
+            console.log('✅ Remote audio playing');
+          }).catch(e => {
+            console.warn('❌ Failed to play remote audio:', e);
+            // Try to play again after user interaction
+            setTimeout(() => {
+              this.remoteAudioElement?.play().catch(console.warn);
+            }, 1000);
+          });
+        }
+      };
+
+      // Handle connection state changes
+      peerConnection.onconnectionstatechange = () => {
+        console.log('🔗 Connection state changed:', peerConnection.connectionState);
+        
+        if (peerConnection.connectionState === 'connected') {
+          console.log('✅ Peer connection established');
+          // Verify audio streams
+          this.verifyAudioStreams(peerConnection);
+        } else if (peerConnection.connectionState === 'failed') {
+          console.error('❌ Peer connection failed');
+          this.emit('onCallFailed', 'Connection failed');
+        }
+      };
+
+      // Handle ICE connection state changes
+      peerConnection.oniceconnectionstatechange = () => {
+        console.log('🧊 ICE connection state:', peerConnection.iceConnectionState);
+        
+        if (peerConnection.iceConnectionState === 'failed') {
+          console.error('❌ ICE connection failed');
+          this.emit('onCallFailed', 'Network connection failed');
         }
       };
 
@@ -546,14 +647,66 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       );
 
       if (audioSender && audioSender.track && this.localAudioElement) {
+        console.log('🎵 Setting up local audio stream');
         const localStream = new MediaStream([audioSender.track]);
         this.localAudioElement.srcObject = localStream;
         // Note: Local audio should be muted to prevent feedback
         this.localAudioElement.muted = true;
+        this.localAudioElement.autoplay = true;
       }
+
+      // Check if we already have tracks
+      const receivers = peerConnection.getReceivers();
+      console.log('📡 Existing receivers:', receivers.length);
+      
+      receivers.forEach((receiver, index) => {
+        if (receiver.track && receiver.track.kind === 'audio') {
+          console.log(`🎵 Found existing audio track ${index}:`, receiver.track.id);
+          const stream = new MediaStream([receiver.track]);
+          if (this.remoteAudioElement) {
+            this.remoteAudioElement.srcObject = stream;
+            this.remoteAudioElement.play().catch(console.warn);
+          }
+        }
+      });
 
     } catch (error) {
       console.error('❌ Failed to setup audio streams:', error);
+    }
+  }
+
+  // Verify audio streams are working
+  private verifyAudioStreams(peerConnection: RTCPeerConnection) {
+    console.log('🔍 Verifying audio streams...');
+    
+    const senders = peerConnection.getSenders();
+    const receivers = peerConnection.getReceivers();
+    
+    console.log('📤 Senders:', senders.length);
+    senders.forEach((sender, index) => {
+      const track = sender.track;
+      if (track) {
+        console.log(`  Sender ${index}: ${track.kind} track, enabled: ${track.enabled}, muted: ${track.muted}`);
+      }
+    });
+    
+    console.log('📥 Receivers:', receivers.length);
+    receivers.forEach((receiver, index) => {
+      const track = receiver.track;
+      if (track) {
+        console.log(`  Receiver ${index}: ${track.kind} track, enabled: ${track.enabled}, muted: ${track.muted}`);
+      }
+    });
+
+    // Check audio elements
+    if (this.localAudioElement && this.localAudioElement.srcObject) {
+      const localStream = this.localAudioElement.srcObject as MediaStream;
+      console.log('🎤 Local audio tracks:', localStream.getAudioTracks().length);
+    }
+
+    if (this.remoteAudioElement && this.remoteAudioElement.srcObject) {
+      const remoteStream = this.remoteAudioElement.srcObject as MediaStream;
+      console.log('🔊 Remote audio tracks:', remoteStream.getAudioTracks().length);
     }
   }
 
