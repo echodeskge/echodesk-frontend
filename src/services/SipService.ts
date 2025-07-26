@@ -50,6 +50,50 @@ export class SipService {
     }
   }
 
+  // Check if a SIP provider is a traditional (non-WebRTC) provider
+  private isTraditionalSipProvider(sipServer: string): boolean {
+    // Known traditional SIP providers that don't support WebRTC
+    const traditionalProviders = [
+      '89.150.1.11', // Georgian SIP provider
+      'sip.telekom.ge',
+      'sip.geocell.ge',
+      'sip.megatel.ge',
+      // Add other known traditional providers
+    ];
+    
+    // Check for IP addresses (most traditional providers use direct IPs)
+    const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+    if (ipPattern.test(sipServer)) {
+      return true;
+    }
+    
+    // Check against known traditional providers
+    return traditionalProviders.some(provider => 
+      sipServer.includes(provider) || provider.includes(sipServer)
+    );
+  }
+
+  // Check if a SIP provider supports WebRTC
+  private isWebRtcCompatibleProvider(sipServer: string): boolean {
+    // Known WebRTC-compatible providers
+    const webrtcProviders = [
+      'twilio.com',
+      'vonage.com',
+      'janus.gateway',
+      'sip.js',
+      'freeswitch',
+      'asterisk',
+      'opensips',
+      'kamailio',
+      'webrtc',
+      // Add other known WebRTC providers
+    ];
+    
+    return webrtcProviders.some(provider => 
+      sipServer.toLowerCase().includes(provider.toLowerCase())
+    );
+  }
+
   // Initialize SIP user agent
   async initialize(sipConfig: SipConfigurationDetail): Promise<void> {
     try {
@@ -57,22 +101,39 @@ export class SipService {
         await this.disconnect();
       }
 
-      // For WebRTC/Browser SIP, we need to check if the provider supports WebSocket
-      // Most traditional SIP providers only support UDP/TCP, not WebSocket
+      // Check if this is a traditional SIP provider that doesn't support WebRTC
+      const isTraditionalProvider = this.isTraditionalSipProvider(sipConfig.sip_server);
+      
+      if (isTraditionalProvider) {
+        const errorMessage = `WebRTC Compatibility Issue: The SIP provider "${sipConfig.sip_server}" appears to be a traditional SIP server that only supports UDP/TCP protocols. Browser-based calling requires WebSocket (WSS) transport. 
+
+Solutions:
+1. Contact your SIP provider about WebRTC/WebSocket support
+2. Use a WebRTC gateway (FreeSWITCH, Asterisk) to bridge the connection
+3. Switch to a WebRTC-native provider (Twilio, Vonage, Janus)
+
+Traditional SIP providers work with desktop softphones (like Zoiper) but not web browsers due to security restrictions.`;
+        
+        console.error('❌ SIP Provider Compatibility Issue:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      // For WebRTC-compatible providers, construct WebSocket URL
       let sipServerUri: string;
       
-      // Check if this is a WebRTC-compatible provider
-      if (sipConfig.sip_server.includes('sip.js') || 
-          sipConfig.sip_server.includes('twilio') ||
-          sipConfig.sip_server.includes('webrtc')) {
+      // Check if this is a known WebRTC-compatible provider
+      if (this.isWebRtcCompatibleProvider(sipConfig.sip_server)) {
         // Use WebSocket for WebRTC providers
         const isSecure = window.location.protocol === 'https:';
         const wsProtocol = isSecure ? 'wss' : 'ws';
         sipServerUri = `${wsProtocol}://${sipConfig.sip_server}:${sipConfig.sip_port}`;
       } else {
-        // For traditional SIP providers, try direct connection first
-        // Note: This may not work from browsers due to CORS/security restrictions
-        sipServerUri = `sip:${sipConfig.sip_server}:${sipConfig.sip_port}`;
+        // For unknown providers, assume WebSocket support and try
+        const isSecure = window.location.protocol === 'https:';
+        const wsProtocol = isSecure ? 'wss' : 'ws';
+        sipServerUri = `${wsProtocol}://${sipConfig.sip_server}:${sipConfig.sip_port}`;
+        
+        console.warn('⚠️ Unknown SIP provider, attempting WebSocket connection. If this fails, the provider may not support WebRTC.');
       }
       
       const sipUri = new URI('sip', sipConfig.username, sipConfig.realm || sipConfig.sip_server);

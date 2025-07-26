@@ -206,14 +206,29 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
         console.error('❌ SIP registration failed:', error);
         
         // Check if it's a WebRTC compatibility issue
-        if (error.includes('WebSocket') || error.includes('CORS') || error.includes('network')) {
-          setError(`SIP Provider Compatibility Issue: Your Georgian SIP provider (${sipConfig.sip_server}) may not support WebRTC calls from browsers. Traditional SIP providers often only support UDP/TCP connections, not WebSocket connections required for browser-based calling. Consider using a WebRTC-compatible provider like Twilio or configure a SIP gateway.`);
+        if (error.includes('WebRTC Compatibility Issue') || error.includes('traditional SIP server')) {
+          setError(`🚫 Traditional SIP Provider Detected
+
+Your Georgian SIP provider (${sipConfig.sip_server}) uses traditional SIP protocols (UDP/TCP) that don't work in web browsers. Browsers require WebSocket (WSS) transport for security reasons.
+
+✅ Working Solutions:
+1. 🏆 WebRTC Gateway: Set up FreeSWITCH or Asterisk to bridge your provider
+2. 🔄 Provider Upgrade: Ask your provider for WebRTC/WebSocket support  
+3. 🌐 Alternative Provider: Use Twilio, Vonage, or other WebRTC providers
+
+💡 Why this happens: Desktop apps like Zoiper can use UDP/TCP directly, but web browsers cannot due to security restrictions.`);
+        } else if (error.includes('WebSocket') || error.includes('CORS') || error.includes('network')) {
+          setError(`❌ Connection Failed: ${error}
+
+This usually means your SIP provider doesn't support WebRTC calls from browsers. Traditional SIP providers work with desktop softphones but not web browsers.
+
+Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
         } else {
           setError(`SIP registration failed: ${error}`);
         }
         
         // Don't auto-retry for compatibility issues
-        if (!error.includes('WebSocket') && !error.includes('CORS')) {
+        if (!error.includes('WebRTC Compatibility') && !error.includes('WebSocket') && !error.includes('CORS')) {
           setTimeout(() => {
             console.log('🔄 Retrying SIP registration...');
             if (sipServiceRef.current) {
@@ -595,11 +610,47 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
                   fontSize: '12px',
                   color: '#856404',
                   background: '#fff3cd',
-                  padding: '4px 8px',
+                  padding: '8px 12px',
                   borderRadius: '4px',
-                  border: '1px solid #ffeaa7'
+                  border: '1px solid #ffeaa7',
+                  marginTop: '8px',
+                  lineHeight: '1.4'
                 }}>
-                  ⚠️ Georgian SIP provider may require WebRTC gateway
+                  ⚠️ <strong>Traditional SIP Provider Detected</strong><br/>
+                  Your Georgian provider (89.150.1.11) uses traditional SIP protocols.<br/>
+                  Web browsers require WebRTC/WebSocket for calling.<br/>
+                  <a href="#" onClick={(e) => {
+                    e.preventDefault();
+                    setError(`🔧 WebRTC Gateway Setup Guide
+
+To use your Georgian SIP provider with web browsers, you need a WebRTC gateway:
+
+1. 🏆 FreeSWITCH Gateway (Recommended):
+   - Install FreeSWITCH on a server
+   - Configure SIP trunk to 89.150.1.11
+   - Enable mod_verto for WebRTC
+   - Point your frontend to the gateway
+
+2. 🔧 Asterisk Gateway:
+   - Install Asterisk with chan_pjsip
+   - Configure trunk to your provider
+   - Enable WebRTC transport
+   - Use Asterisk as WebRTC endpoint
+
+3. 🌐 Cloud Solutions:
+   - Twilio SIP Trunking with WebRTC
+   - Vonage WebRTC SDK
+   - JsSIP + WebRTC gateway
+
+4. 📞 Alternative: Desktop Integration
+   - Keep web dashboard for management
+   - Use desktop softphone for calls
+   - Integrate via API hooks
+
+Contact us for gateway setup assistance!`);
+                  }} style={{ color: '#856404', textDecoration: 'underline' }}>
+                    Setup Guide
+                  </a>
                 </div>
               )}
             </div>
