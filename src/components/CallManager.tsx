@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   callLogsList,
   callLogsInitiateCallCreate,
+  callLogsLogIncomingCallCreate,
   callLogsEndCallCreate,
   callLogsUpdateStatusPartialUpdate,
   sipConfigurationsList,
@@ -52,7 +53,8 @@ type CallStatus = 'idle' | 'ringing' | 'connecting' | 'active' | 'ending';
 
 interface ActiveCall {
   id: string;
-  callId: string;
+  logId: number; // Database ID for API calls
+  callId: string; // UUID for display
   number: string;
   direction: 'incoming' | 'outgoing';
   status: CallStatus;
@@ -144,7 +146,7 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       const defaultSipConfig = sipConfigsResponse.results.find(config => config.is_default);
       if (defaultSipConfig) {
         console.log('📞 Found default SIP config:', defaultSipConfig.name);
-        const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultSipConfig.id.toString());
+        const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultSipConfig.id);
         setActiveSipConfig(webrtcConfig);
         console.log('✅ SIP config loaded, will initialize service when audio elements are ready');
       } else {
@@ -245,30 +247,89 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       });
 
       sipServiceRef.current.on('onCallProgress', () => {
-        setActiveCall(prev => prev ? { ...prev, status: 'connecting' } : null);
+        console.log('📞 Call progress - updating to ringing state');
+        setActiveCall(prev => {
+          if (prev) {
+            // Update backend status to ringing
+            if (prev.logId) {
+              callLogsUpdateStatusPartialUpdate(prev.logId, {
+                status: 'ringing' as any,
+              }).catch(err => console.error('Failed to update call status to ringing:', err));
+            }
+            return { ...prev, status: 'ringing' };
+          }
+          return null;
+        });
       });
 
       sipServiceRef.current.on('onCallAccepted', () => {
-        setActiveCall(prev => prev ? { 
-          ...prev, 
-          status: 'active', 
-          startTime: new Date() 
-        } : null);
+        console.log('✅ Call accepted - updating to active state');
+        setActiveCall(prev => {
+          if (prev) {
+            const updatedCall = { 
+              ...prev, 
+              status: 'active' as CallStatus, 
+              startTime: new Date() 
+            };
+            
+            // Update backend status to answered
+            if (prev.logId) {
+              callLogsUpdateStatusPartialUpdate(prev.logId, {
+                status: 'answered' as any,
+              }).catch(err => console.error('Failed to update call status to answered:', err));
+            }
+            
+            return updatedCall;
+          }
+          return null;
+        });
       });
 
       sipServiceRef.current.on('onCallRejected', () => {
-        setActiveCall(null);
+        console.log('❌ Call rejected');
+        setActiveCall(prev => {
+          if (prev?.logId) {
+            // Update backend status based on call direction and state
+            const status = prev.direction === 'incoming' ? 'missed' : 'busy';
+            callLogsUpdateStatusPartialUpdate(prev.logId, {
+              status: status as any,
+              notes: 'Call was rejected'
+            }).catch(err => console.error('Failed to update call status to rejected:', err));
+          }
+          return null;
+        });
         fetchCallLogs();
       });
 
       sipServiceRef.current.on('onCallEnded', () => {
-        setActiveCall(null);
+        console.log('📞 Call ended normally');
+        setActiveCall(prev => {
+          if (prev?.logId) {
+            // Update backend status to ended
+            callLogsUpdateStatusPartialUpdate(prev.logId, {
+              status: 'ended' as any,
+              notes: prev.status === 'active' ? 'Call completed normally' : 'Call ended before connection'
+            }).catch(err => console.error('Failed to update call status to ended:', err));
+          }
+          return null;
+        });
         fetchCallLogs();
       });
 
       sipServiceRef.current.on('onCallFailed', (error: string) => {
+        console.error('❌ Call failed:', error);
         setError(`Call failed: ${error}`);
-        setActiveCall(null);
+        setActiveCall(prev => {
+          if (prev?.logId) {
+            // Update backend status to failed
+            callLogsUpdateStatusPartialUpdate(prev.logId, {
+              status: 'failed' as any,
+              notes: `Call failed: ${error}`
+            }).catch(err => console.error('Failed to update call status to failed:', err));
+          }
+          return null;
+        });
+        fetchCallLogs();
       });
 
       // Initialize the SIP service
@@ -283,18 +344,50 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     }
   };
 
-  const handleIncomingCall = (invitation: Invitation) => {
+  const handleIncomingCall = async (invitation: Invitation) => {
     const callerNumber = invitation.remoteIdentity.uri.user || 'Unknown';
+    console.log('📞 Handling incoming call from:', callerNumber);
     
-    setActiveCall({
-      id: `incoming-${Date.now()}`,
-      callId: '',
-      number: callerNumber,
-      direction: 'incoming',
-      status: 'ringing',
-      duration: 0,
-      invitation
-    });
+    try {
+      // Create call log for incoming call
+      const callLog = await callLogsInitiateCallCreate({
+        recipient_number: '', // Current user/extension
+        call_type: 'voice' as any,
+        sip_configuration: activeSipConfig?.id || 0,
+      });
+      
+      // Update the call log with correct direction and caller info
+      await callLogsUpdateStatusPartialUpdate(callLog.id, {
+        status: 'ringing' as any,
+      });
+      
+      setActiveCall({
+        id: `incoming-${Date.now()}`,
+        logId: callLog.id,
+        callId: callLog.call_id,
+        number: callerNumber,
+        direction: 'incoming',
+        status: 'ringing',
+        duration: 0,
+        invitation
+      });
+
+      console.log('📋 Incoming call logged with ID:', callLog.call_id);
+      
+    } catch (error) {
+      console.error('Failed to log incoming call:', error);
+      // Still set the call state even if logging fails
+      setActiveCall({
+        id: `incoming-${Date.now()}`,
+        logId: 0,
+        callId: '',
+        number: callerNumber,
+        direction: 'incoming',
+        status: 'ringing',
+        duration: 0,
+        invitation
+      });
+    }
 
     // Play ringtone (you can add audio file here)
     console.log('📞 Incoming call from:', callerNumber);
@@ -308,9 +401,22 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
     try {
       setError('');
+      
+      // First create the call log in backend
+      const callData: CallInitiate = {
+        recipient_number: number,
+        call_type: 'voice' as any,
+        sip_configuration: activeSipConfig.id,
+      };
+
+      const callLog = await callLogsInitiateCallCreate(callData);
+      console.log('📋 Call log created:', callLog.call_id);
+      
+      // Set initial call state
       setActiveCall({
         id: `call-${Date.now()}`,
-        callId: '',
+        logId: callLog.id,
+        callId: callLog.call_id,
         number,
         direction: 'outgoing',
         status: 'connecting',
@@ -319,26 +425,24 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       // Use SIP service to make the call
       await sipServiceRef.current.makeCall(number);
-
-      // Also log to backend
-      const callData: CallInitiate = {
-        recipient_number: number,
-        call_type: 'voice' as any,
-        sip_configuration: activeSipConfig.id,
-      };
-
-      const callLog = await callLogsInitiateCallCreate(callData);
-      
-      setActiveCall(prev => prev ? { 
-        ...prev, 
-        callId: callLog.call_id,
-        status: 'ringing' 
-      } : null);
+      console.log('📞 SIP call initiated successfully');
 
     } catch (err: unknown) {
       console.error('Failed to initiate call:', err);
       setError('Failed to initiate call');
       setActiveCall(null);
+      
+      // If we created a call log but SIP failed, update it to failed
+      if (activeCall?.logId) {
+        try {
+          await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
+            status: 'failed' as any,
+            notes: `Call initiation failed: ${err instanceof Error ? err.message : 'Unknown error'}`
+          });
+        } catch (logError) {
+          console.error('Failed to update call log:', logError);
+        }
+      }
     }
   };
 
@@ -346,18 +450,32 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     if (!activeCall?.invitation || !sipServiceRef.current) return;
 
     try {
+      console.log('📞 Answering incoming call');
       await sipServiceRef.current.acceptCall();
       
-      // Update backend
-      if (activeCall.callId) {
-        await callLogsUpdateStatusPartialUpdate(activeCall.callId, {
+      // Update backend status to answered
+      if (activeCall.logId) {
+        await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
           status: 'answered' as any,
         });
+        console.log('📋 Call status updated to answered');
       }
 
     } catch (err: unknown) {
       console.error('Failed to answer call:', err);
       setError('Failed to answer call');
+      
+      // Update call log to failed if answer attempt failed
+      if (activeCall?.logId) {
+        try {
+          await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
+            status: 'failed' as any,
+            notes: `Failed to answer call: ${err instanceof Error ? err.message : 'Unknown error'}`
+          });
+        } catch (logError) {
+          console.error('Failed to update call log:', logError);
+        }
+      }
     }
   };
 
@@ -365,16 +483,37 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     if (!activeCall || !sipServiceRef.current) return;
 
     try {
+      console.log('📞 Ending call, current status:', activeCall.status);
       setActiveCall(prev => prev ? { ...prev, status: 'ending' } : null);
 
       // End SIP call
       await sipServiceRef.current.endCall();
 
-      // Update backend
-      if (activeCall.callId) {
-        await callLogsEndCallCreate(activeCall.callId, {
-          status: { completed: true } as any,
+      // Update backend with appropriate status
+      if (activeCall.logId) {
+        let finalStatus: string;
+        let notes: string;
+
+        if (activeCall.status === 'active') {
+          finalStatus = 'ended';
+          notes = 'Call completed normally';
+        } else if (activeCall.status === 'ringing' && activeCall.direction === 'incoming') {
+          finalStatus = 'missed';
+          notes = 'Incoming call declined';
+        } else if (activeCall.status === 'ringing' && activeCall.direction === 'outgoing') {
+          finalStatus = 'cancelled';
+          notes = 'Outgoing call cancelled';
+        } else {
+          finalStatus = 'ended';
+          notes = 'Call ended';
+        }
+
+        await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
+          status: finalStatus as any,
+          notes: notes
         });
+        
+        console.log(`📋 Call status updated to ${finalStatus}`);
       }
 
       setActiveCall(null);
@@ -383,7 +522,24 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
     } catch (err: unknown) {
       console.error('Failed to end call:', err);
+      
+      // Still clean up the UI state
       setActiveCall(null);
+      setCallDuration(0);
+      
+      // Try to update the call log even if SIP end failed
+      if (activeCall?.logId) {
+        try {
+          await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
+            status: 'failed' as any,
+            notes: `Call end failed: ${err instanceof Error ? err.message : 'Unknown error'}`
+          });
+        } catch (logError) {
+          console.error('Failed to update call log after end failure:', logError);
+        }
+      }
+      
+      fetchCallLogs();
     }
   };
 
@@ -433,7 +589,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
         updated_at: now
       };
       
-      const testResult = await sipConfigurationsTestConnectionCreate(activeSipConfig.id.toString(), testData);
+      const testResult = await sipConfigurationsTestConnectionCreate(activeSipConfig.id, testData);
       
       if (testResult) {
         setError('✅ SIP configuration test successful');

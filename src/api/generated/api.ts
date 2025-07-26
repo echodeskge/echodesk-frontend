@@ -131,13 +131,13 @@ export async function callLogsCreate(
   return response.data;
 }
 
-export async function callLogsRetrieve(id: string): Promise<CallLog> {
+export async function callLogsRetrieve(id: number): Promise<CallLog> {
   const response = await axios.get(`/api/call-logs/${id}/`);
   return response.data;
 }
 
 export async function callLogsUpdate(
-  id: string,
+  id: number,
   data: CallLog,
 ): Promise<CallLog> {
   const response = await axios.put(`/api/call-logs/${id}/`, data);
@@ -145,20 +145,20 @@ export async function callLogsUpdate(
 }
 
 export async function callLogsPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedCallLog,
 ): Promise<CallLog> {
   const response = await axios.patch(`/api/call-logs/${id}/`, data);
   return response.data;
 }
 
-export async function callLogsDestroy(id: string): Promise<any> {
+export async function callLogsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/call-logs/${id}/`);
   return response.data;
 }
 
 export async function callLogsEndCallCreate(
-  id: string,
+  id: number,
   data: CallStatusUpdate,
 ): Promise<CallLog> {
   const response = await axios.post(`/api/call-logs/${id}/end_call/`, data);
@@ -166,7 +166,7 @@ export async function callLogsEndCallCreate(
 }
 
 export async function callLogsUpdateStatusPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedCallStatusUpdate,
 ): Promise<CallLog> {
   const response = await axios.patch(
@@ -180,6 +180,13 @@ export async function callLogsInitiateCallCreate(
   data: CallInitiate,
 ): Promise<CallLog> {
   const response = await axios.post(`/api/call-logs/initiate_call/`, data);
+  return response.data;
+}
+
+export async function callLogsLogIncomingCallCreate(
+  data: CallLogCreate,
+): Promise<CallLog> {
+  const response = await axios.post(`/api/call-logs/log_incoming_call/`, data);
   return response.data;
 }
 
@@ -419,14 +426,14 @@ export async function sipConfigurationsCreate(
 }
 
 export async function sipConfigurationsRetrieve(
-  id: string,
+  id: number,
 ): Promise<SipConfigurationDetail> {
   const response = await axios.get(`/api/sip-configurations/${id}/`);
   return response.data;
 }
 
 export async function sipConfigurationsUpdate(
-  id: string,
+  id: number,
   data: SipConfiguration,
 ): Promise<SipConfiguration> {
   const response = await axios.put(`/api/sip-configurations/${id}/`, data);
@@ -434,20 +441,20 @@ export async function sipConfigurationsUpdate(
 }
 
 export async function sipConfigurationsPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedSipConfiguration,
 ): Promise<SipConfiguration> {
   const response = await axios.patch(`/api/sip-configurations/${id}/`, data);
   return response.data;
 }
 
-export async function sipConfigurationsDestroy(id: string): Promise<any> {
+export async function sipConfigurationsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/sip-configurations/${id}/`);
   return response.data;
 }
 
 export async function sipConfigurationsSetDefaultCreate(
-  id: string,
+  id: number,
   data: SipConfiguration,
 ): Promise<Record<string, any>> {
   const response = await axios.post(
@@ -458,7 +465,7 @@ export async function sipConfigurationsSetDefaultCreate(
 }
 
 export async function sipConfigurationsTestConnectionCreate(
-  id: string,
+  id: number,
   data: SipConfiguration,
 ): Promise<Record<string, any>> {
   const response = await axios.post(
@@ -469,7 +476,7 @@ export async function sipConfigurationsTestConnectionCreate(
 }
 
 export async function sipConfigurationsWebrtcConfigRetrieve(
-  id: string,
+  id: number,
 ): Promise<SipConfigurationDetail> {
   const response = await axios.get(
     `/api/sip-configurations/${id}/webrtc_config/`,
