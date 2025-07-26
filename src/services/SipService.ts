@@ -57,14 +57,31 @@ export class SipService {
         await this.disconnect();
       }
 
-      // Build SIP server URI
-      const sipServerUri = `sip:${sipConfig.sip_server}:${sipConfig.sip_port}`;
+      // For WebRTC/Browser SIP, we need to check if the provider supports WebSocket
+      // Most traditional SIP providers only support UDP/TCP, not WebSocket
+      let sipServerUri: string;
+      
+      // Check if this is a WebRTC-compatible provider
+      if (sipConfig.sip_server.includes('sip.js') || 
+          sipConfig.sip_server.includes('twilio') ||
+          sipConfig.sip_server.includes('webrtc')) {
+        // Use WebSocket for WebRTC providers
+        const isSecure = window.location.protocol === 'https:';
+        const wsProtocol = isSecure ? 'wss' : 'ws';
+        sipServerUri = `${wsProtocol}://${sipConfig.sip_server}:${sipConfig.sip_port}`;
+      } else {
+        // For traditional SIP providers, try direct connection first
+        // Note: This may not work from browsers due to CORS/security restrictions
+        sipServerUri = `sip:${sipConfig.sip_server}:${sipConfig.sip_port}`;
+      }
+      
       const sipUri = new URI('sip', sipConfig.username, sipConfig.realm || sipConfig.sip_server);
       
       console.log('🔧 Initializing SIP with config:', {
         server: sipServerUri,
         username: sipConfig.username,
-        realm: sipConfig.realm
+        realm: sipConfig.realm,
+        provider: sipConfig.sip_server
       });
 
       // Create user agent
@@ -72,8 +89,9 @@ export class SipService {
         uri: sipUri,
         transportOptions: {
           server: sipServerUri,
-          // For secure connections, use wss:// instead of ws://
-          connectionTimeout: 30
+          connectionTimeout: 30,
+          maxReconnectionAttempts: 3,
+          reconnectionTimeout: 5
         },
         authorizationUsername: sipConfig.username,
         authorizationPassword: sipConfig.password,

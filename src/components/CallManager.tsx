@@ -91,6 +91,16 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
     };
   }, []);
 
+  // Separate effect for SIP initialization after audio elements are ready
+  useEffect(() => {
+    if (activeSipConfig && localAudioRef.current && remoteAudioRef.current && !sipServiceRef.current) {
+      console.log('🔧 Initializing SIP service with config:', activeSipConfig.name);
+      initializeSipService(activeSipConfig).catch(err => {
+        console.error('Failed to initialize SIP service:', err);
+      });
+    }
+  }, [activeSipConfig]);
+
   useEffect(() => {
     onCallStatusChange?.(activeCall !== null);
   }, [activeCall, onCallStatusChange]);
@@ -131,11 +141,13 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       // Get the default SIP configuration for WebRTC
       const defaultSipConfig = sipConfigsResponse.results.find(config => config.is_default);
       if (defaultSipConfig) {
+        console.log('📞 Found default SIP config:', defaultSipConfig.name);
         const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultSipConfig.id.toString());
         setActiveSipConfig(webrtcConfig);
-        
-        // Initialize SIP service
-        await initializeSipService(webrtcConfig);
+        console.log('✅ SIP config loaded, will initialize service when audio elements are ready');
+      } else {
+        console.warn('⚠️ No default SIP configuration found');
+        setError('No SIP configuration found. Please add a SIP configuration.');
       }
 
       setError('');
@@ -149,11 +161,28 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
 
   const initializeSipService = async (sipConfig: SipConfigurationDetail) => {
     if (!localAudioRef.current || !remoteAudioRef.current) {
-      console.warn('Audio elements not ready yet');
+      console.warn('⚠️ Audio elements not ready yet, retrying in 1 second...');
+      setTimeout(() => initializeSipService(sipConfig), 1000);
       return;
     }
 
     try {
+      console.log('🔧 Starting SIP service initialization...');
+      console.log('📞 SIP Config:', {
+        name: sipConfig.name,
+        server: sipConfig.sip_server,
+        port: sipConfig.sip_port,
+        username: sipConfig.username,
+        realm: sipConfig.realm
+      });
+
+      // Disconnect existing service if any
+      if (sipServiceRef.current) {
+        console.log('🔌 Disconnecting existing SIP service...');
+        await sipServiceRef.current.disconnect();
+        sipServiceRef.current = null;
+      }
+
       // Create new SIP service
       sipServiceRef.current = new SipService(
         localAudioRef.current,
@@ -164,18 +193,34 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       sipServiceRef.current.on('onRegistered', () => {
         setSipRegistered(true);
         setError('');
-        console.log('✅ SIP registered successfully');
+        console.log('✅ SIP registered successfully with', sipConfig.sip_server);
       });
 
       sipServiceRef.current.on('onUnregistered', () => {
         setSipRegistered(false);
-        console.log('📴 SIP unregistered');
+        console.log('📴 SIP unregistered from', sipConfig.sip_server);
       });
 
       sipServiceRef.current.on('onRegistrationFailed', (error: string) => {
         setSipRegistered(false);
-        setError(`SIP registration failed: ${error}`);
         console.error('❌ SIP registration failed:', error);
+        
+        // Check if it's a WebRTC compatibility issue
+        if (error.includes('WebSocket') || error.includes('CORS') || error.includes('network')) {
+          setError(`SIP Provider Compatibility Issue: Your Georgian SIP provider (${sipConfig.sip_server}) may not support WebRTC calls from browsers. Traditional SIP providers often only support UDP/TCP connections, not WebSocket connections required for browser-based calling. Consider using a WebRTC-compatible provider like Twilio or configure a SIP gateway.`);
+        } else {
+          setError(`SIP registration failed: ${error}`);
+        }
+        
+        // Don't auto-retry for compatibility issues
+        if (!error.includes('WebSocket') && !error.includes('CORS')) {
+          setTimeout(() => {
+            console.log('🔄 Retrying SIP registration...');
+            if (sipServiceRef.current) {
+              sipServiceRef.current.initialize(sipConfig).catch(console.error);
+            }
+          }, 10000); // Longer retry interval
+        }
       });
 
       sipServiceRef.current.on('onIncomingCall', (invitation: Invitation) => {
@@ -210,11 +255,14 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       });
 
       // Initialize the SIP service
+      console.log('🚀 Initializing SIP connection...');
       await sipServiceRef.current.initialize(sipConfig);
+      console.log('📞 SIP service initialized, waiting for registration...');
 
     } catch (err) {
-      console.error('Failed to initialize SIP service:', err);
+      console.error('❌ Failed to initialize SIP service:', err);
       setError(`SIP initialization failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setSipRegistered(false);
     }
   };
 
@@ -339,7 +387,7 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
 
   // Test SIP connection
   const testSipConnection = async () => {
-    if (!activeSipConfig || !sipServiceRef.current) {
+    if (!activeSipConfig) {
       setError('No SIP configuration available');
       return;
     }
@@ -348,18 +396,37 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       setError('');
       console.log('🧪 Testing SIP connection...');
       
-      const isConnected = await sipServiceRef.current.testConnection(activeSipConfig);
-      
-      if (isConnected) {
-        setError('');
-        alert('✅ SIP connection test successful!');
+      if (sipServiceRef.current) {
+        console.log('🔄 Reinitializing SIP service for test...');
+        await initializeSipService(activeSipConfig);
       } else {
-        setError('❌ SIP connection test failed');
+        console.log('🆕 Creating new SIP service for test...');
+        await initializeSipService(activeSipConfig);
       }
       
     } catch (err) {
       console.error('❌ SIP test failed:', err);
       setError(`SIP test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+  };
+
+  // Manual reconnect function
+  const reconnectSip = async () => {
+    if (!activeSipConfig) {
+      setError('No SIP configuration available');
+      return;
+    }
+
+    try {
+      setError('');
+      setSipRegistered(false);
+      console.log('🔄 Manually reconnecting SIP...');
+      
+      await initializeSipService(activeSipConfig);
+      
+    } catch (err) {
+      console.error('❌ SIP reconnect failed:', err);
+      setError(`SIP reconnect failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -478,28 +545,42 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
                 background: '#28a745'
               }}></div>
               <span style={{ fontSize: '14px', color: '#155724' }}>
-                SIP Connected
+                SIP Connected ({activeSipConfig?.name})
               </span>
             </div>
           ) : (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: '#f8d7da',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              border: '1px solid #f5c6cb'
-            }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <div style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#dc3545'
-              }}></div>
-              <span style={{ fontSize: '14px', color: '#721c24' }}>
-                SIP Disconnected
-              </span>
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                background: '#f8d7da',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #f5c6cb'
+              }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#dc3545'
+                }}></div>
+                <span style={{ fontSize: '14px', color: '#721c24' }}>
+                  SIP Disconnected
+                </span>
+              </div>
+              {activeSipConfig?.sip_server === '89.150.1.11' && (
+                <div style={{
+                  fontSize: '12px',
+                  color: '#856404',
+                  background: '#fff3cd',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid #ffeaa7'
+                }}>
+                  ⚠️ Georgian SIP provider may require WebRTC gateway
+                </div>
+              )}
             </div>
           )}
           
@@ -516,6 +597,21 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
             }}
           >
             Test SIP
+          </button>
+          
+          <button
+            onClick={reconnectSip}
+            style={{
+              background: '#28a745',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Reconnect
           </button>
         </div>
       </div>
