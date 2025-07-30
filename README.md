@@ -2,6 +2,8 @@
 
 A modern, multi-tenant frontend application built with Next.js 15.4.4, TypeScript, and React 19 for the EchoDesk CRM platform.
 
+**Last Updated**: July 31, 2025 - Enhanced with comprehensive user management UI and improved tenant features.
+
 ## 🏗️ Architecture
 
 ### **Multi-Tenant Subdomain Structure**
