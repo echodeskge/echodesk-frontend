@@ -13,8 +13,8 @@ import {
   commentsPartialUpdate,
   commentsDestroy,
   usersList,
-  tagsList
-} from '../api/generated/api';
+  tagsList,
+} from "../api/generated/api";
 
 import {
   Ticket,
@@ -26,12 +26,12 @@ import {
   Tag,
   PatchedTicket,
   Status14bEnum,
-  PriorityEnum
-} from '../api/generated/interfaces';
+  PriorityEnum,
+} from "../api/generated/interfaces";
 
 export interface TicketFilters {
-  status?: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  status?: "open" | "in_progress" | "resolved" | "closed";
+  priority?: "low" | "medium" | "high" | "critical";
   assignedTo?: number;
   column?: number;
   createdBy?: number;
@@ -44,7 +44,7 @@ export interface TicketFilters {
 export interface CreateTicketData {
   title: string;
   description: string;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
   tag_ids?: number[];
 }
@@ -52,8 +52,8 @@ export interface CreateTicketData {
 export interface UpdateTicketData {
   title?: string;
   description?: string;
-  status?: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  status?: "open" | "in_progress" | "resolved" | "closed";
+  priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
   tag_ids?: number[];
 }
@@ -71,7 +71,9 @@ export class TicketService {
   /**
    * Get tickets list with optional filters
    */
-  async getTickets(filters: TicketFilters = {}): Promise<PaginatedTicketListList> {
+  async getTickets(
+    filters: TicketFilters = {}
+  ): Promise<PaginatedTicketListList> {
     try {
       return await ticketsList(
         filters.assignedTo,
@@ -85,7 +87,7 @@ export class TicketService {
         filters.tags
       );
     } catch (error) {
-      console.error('Error fetching tickets:', error);
+      console.error("Error fetching tickets:", error);
       throw this.handleError(error);
     }
   }
@@ -97,7 +99,7 @@ export class TicketService {
     try {
       return await ticketsRetrieve(id);
     } catch (error) {
-      console.error('Error fetching ticket:', error);
+      console.error("Error fetching ticket:", error);
       throw this.handleError(error);
     }
   }
@@ -113,13 +115,13 @@ export class TicketService {
         description: data.description,
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
-        tag_ids: data.tag_ids || []
+        tag_ids: data.tag_ids || [],
       };
 
       // Call the API with partial data, let backend fill the rest
       return await ticketsCreate(createData as unknown as Ticket);
     } catch (error) {
-      console.error('Error creating ticket:', error);
+      console.error("Error creating ticket:", error);
       throw this.handleError(error);
     }
   }
@@ -136,12 +138,12 @@ export class TicketService {
         status: data.status as unknown as Status14bEnum,
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
-        tag_ids: data.tag_ids
+        tag_ids: data.tag_ids,
       };
 
       return await ticketsPartialUpdate(id, updateData);
     } catch (error) {
-      console.error('Error updating ticket:', error);
+      console.error("Error updating ticket:", error);
       throw this.handleError(error);
     }
   }
@@ -153,7 +155,7 @@ export class TicketService {
     try {
       await ticketsDestroy(id);
     } catch (error) {
-      console.error('Error deleting ticket:', error);
+      console.error("Error deleting ticket:", error);
       throw this.handleError(error);
     }
   }
@@ -163,9 +165,11 @@ export class TicketService {
    */
   async assignTicket(ticketId: number, userId: number): Promise<Ticket> {
     try {
-      return await ticketsAssignPartialUpdate(ticketId, { assigned_to_id: userId });
+      return await ticketsAssignPartialUpdate(ticketId, {
+        assigned_to_id: userId,
+      });
     } catch (error) {
-      console.error('Error assigning ticket:', error);
+      console.error("Error assigning ticket:", error);
       throw this.handleError(error);
     }
   }
@@ -180,14 +184,14 @@ export class TicketService {
         comment,
         // These will be set by the backend
         id: 0,
-        user: { id: 0, email: '', first_name: '', last_name: '' },
+        user: { id: 0, email: "", first_name: "", last_name: "" },
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       return await commentsCreate(commentData);
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error("Error adding comment:", error);
       throw this.handleError(error);
     }
   }
@@ -195,11 +199,14 @@ export class TicketService {
   /**
    * Update a comment
    */
-  async updateComment(commentId: string, comment: string): Promise<TicketComment> {
+  async updateComment(
+    commentId: string,
+    comment: string
+  ): Promise<TicketComment> {
     try {
       return await commentsPartialUpdate(commentId, { comment });
     } catch (error) {
-      console.error('Error updating comment:', error);
+      console.error("Error updating comment:", error);
       throw this.handleError(error);
     }
   }
@@ -211,7 +218,7 @@ export class TicketService {
     try {
       await commentsDestroy(commentId);
     } catch (error) {
-      console.error('Error deleting comment:', error);
+      console.error("Error deleting comment:", error);
       throw this.handleError(error);
     }
   }
@@ -223,7 +230,7 @@ export class TicketService {
     try {
       return await ticketsCommentsRetrieve(ticketId);
     } catch (error) {
-      console.error('Error fetching ticket comments:', error);
+      console.error("Error fetching ticket comments:", error);
       throw this.handleError(error);
     }
   }
@@ -236,15 +243,10 @@ export class TicketService {
       return await usersList(
         undefined, // department
         undefined, // isActive
-        undefined, // isStaff
-        undefined, // ordering
-        undefined, // page
-        undefined, // role
-        search,    // search
-        undefined  // status
+        search // search
       );
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
       throw this.handleError(error);
     }
   }
@@ -256,7 +258,7 @@ export class TicketService {
     try {
       return await tagsList(undefined, undefined, search);
     } catch (error) {
-      console.error('Error fetching tags:', error);
+      console.error("Error fetching tags:", error);
       throw this.handleError(error);
     }
   }
@@ -265,18 +267,26 @@ export class TicketService {
    * Handle API errors
    */
   private handleError(error: unknown): Error {
-    if (error && typeof error === 'object' && 'response' in error) {
-      const axiosError = error as { response?: { status?: number; data?: { message?: string; detail?: string } } };
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as {
+        response?: {
+          status?: number;
+          data?: { message?: string; detail?: string };
+        };
+      };
       if (axiosError.response?.status === 401) {
-        return new Error('Authentication required');
+        return new Error("Authentication required");
       }
-      const message = axiosError.response?.data?.message || axiosError.response?.data?.detail || 'API Error';
+      const message =
+        axiosError.response?.data?.message ||
+        axiosError.response?.data?.detail ||
+        "API Error";
       return new Error(message);
     }
     if (error instanceof Error) {
       return error;
     }
-    return new Error('Unknown error occurred');
+    return new Error("Unknown error occurred");
   }
 }
 

@@ -120,10 +120,7 @@ export default function UserDetailsModal({
                 <label>Phone</label>
                 <span>{user.phone_number || "Not provided"}</span>
               </div>
-              <div className="info-item">
-                <label>Department</label>
-                <span>{user.department || "Not assigned"}</span>
-              </div>
+
               <div className="info-item">
                 <label>Job Title</label>
                 <span>{user.job_title || "Not specified"}</span>
@@ -163,52 +160,6 @@ export default function UserDetailsModal({
                 <span>
                   {user.last_login ? formatDate(user.last_login) : "Never"}
                 </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <h3>Permissions</h3>
-            <div className="permissions-grid">
-              <div className="permission-item">
-                <span
-                  className={`permission-status ${user.can_view_all_tickets ? "enabled" : "disabled"}`}
-                >
-                  {user.can_view_all_tickets ? "✅" : "❌"}
-                </span>
-                <span>Can view all tickets</span>
-              </div>
-              <div className="permission-item">
-                <span
-                  className={`permission-status ${user.can_manage_users ? "enabled" : "disabled"}`}
-                >
-                  {user.can_manage_users ? "✅" : "❌"}
-                </span>
-                <span>Can manage users</span>
-              </div>
-              <div className="permission-item">
-                <span
-                  className={`permission-status ${(user as any).can_make_calls ? "enabled" : "disabled"}`}
-                >
-                  {(user as any).can_make_calls ? "✅" : "❌"}
-                </span>
-                <span>Can make calls</span>
-              </div>
-              <div className="permission-item">
-                <span
-                  className={`permission-status ${(user as any).can_manage_groups ? "enabled" : "disabled"}`}
-                >
-                  {(user as any).can_manage_groups ? "✅" : "❌"}
-                </span>
-                <span>Can manage groups</span>
-              </div>
-              <div className="permission-item">
-                <span
-                  className={`permission-status ${user.can_manage_settings ? "enabled" : "disabled"}`}
-                >
-                  {user.can_manage_settings ? "✅" : "❌"}
-                </span>
-                <span>Can manage settings</span>
               </div>
             </div>
           </div>

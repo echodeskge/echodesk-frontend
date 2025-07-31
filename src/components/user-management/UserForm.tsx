@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { UserCreate, UserUpdate, User } from "@/api/generated/interfaces";
+import { useState, useEffect } from "react";
+import { UserCreate, UserUpdate, User, Group, PaginatedGroupList } from "@/api/generated/interfaces";
+import { groupsList } from "@/api/generated/api";
+import "./UserForm.css";
 
 interface UserFormProps {
   mode: "create" | "edit";
@@ -16,34 +18,39 @@ export default function UserForm({
   onSubmit,
   onCancel,
 }: UserFormProps) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(true);
+
   const [formData, setFormData] = useState({
     email: user?.email || "",
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
     password: "",
     password_confirm: "",
-    role: user?.role || "",
-    department: user?.department || "",
+    is_active: user?.is_active ?? true,
+    group_ids: user?.group_ids || [],
     phone_number: user?.phone_number || "",
     job_title: user?.job_title || "",
-    can_view_all_tickets: user?.can_view_all_tickets || false,
-    can_manage_users: user?.can_manage_users || false,
-    can_make_calls: (user as any)?.can_make_calls || false,
-    can_manage_groups: (user as any)?.can_manage_groups || false,
-    can_manage_settings: user?.can_manage_settings || false,
-    is_active: user?.is_active !== undefined ? user.is_active : true,
-    status: user?.status || "active",
+    status: user?.is_active ? "active" : "inactive",
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Load groups on component mount
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const response: PaginatedGroupList = await groupsList();
+        setGroups(response.results || []);
+      } catch (error) {
+        console.error('Failed to load groups:', error);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
 
-  const roleOptions = [
-    { value: "admin", label: "Admin" },
-    { value: "manager", label: "Manager" },
-    { value: "agent", label: "Agent" },
-    { value: "viewer", label: "Viewer" },
-  ];
+    fetchGroups();
+  }, []);
 
   const statusOptions = [
     { value: "active", label: "Active" },
@@ -103,31 +110,19 @@ export default function UserForm({
           last_name: formData.last_name,
           password: formData.password,
           password_confirm: formData.password_confirm,
-          role: formData.role as any,
-          department: formData.department || undefined,
+          group_ids: formData.group_ids.length > 0 ? formData.group_ids : undefined,
           phone_number: formData.phone_number || undefined,
           job_title: formData.job_title || undefined,
-          can_view_all_tickets: formData.can_view_all_tickets,
-          can_manage_users: formData.can_manage_users,
-          can_make_calls: formData.can_make_calls,
-          can_manage_groups: formData.can_manage_groups,
-          can_manage_settings: formData.can_manage_settings,
         };
         await onSubmit(createData);
       } else {
         const updateData: any = {
           first_name: formData.first_name,
           last_name: formData.last_name,
-          role: formData.role as any,
           status: formData.status as any,
-          department: formData.department || undefined,
+          group_ids: formData.group_ids.length > 0 ? formData.group_ids : undefined,
           phone_number: formData.phone_number || undefined,
           job_title: formData.job_title || undefined,
-          can_view_all_tickets: formData.can_view_all_tickets,
-          can_manage_users: formData.can_manage_users,
-          can_make_calls: formData.can_make_calls,
-          can_manage_groups: formData.can_manage_groups,
-          can_manage_settings: formData.can_manage_settings,
           is_active: formData.is_active,
         };
         await onSubmit(updateData);
@@ -175,22 +170,6 @@ export default function UserForm({
             </div>
 
             <div className="form-group">
-              <label htmlFor="role">Role</label>
-              <select
-                id="role"
-                value={formData.role?.toString() || ""}
-                onChange={(e) => handleChange("role", e.target.value)}
-              >
-                <option value="">Select Role</option>
-                {roleOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
               <label htmlFor="first_name">First Name *</label>
               <input
                 type="text"
@@ -220,15 +199,25 @@ export default function UserForm({
               )}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="department">Department</label>
-              <input
-                type="text"
-                id="department"
-                value={formData.department}
-                onChange={(e) => handleChange("department", e.target.value)}
-                placeholder="Sales, Support, etc."
-              />
+            <div className="form-section">
+              <h3>Group Assignment</h3>
+              <div className="form-group">
+                <label htmlFor="group">Group</label>
+                <select
+                  id="group"
+                  value={formData.group_ids.length > 0 ? formData.group_ids[0] : ""}
+                  onChange={(e) => handleChange("group_ids", e.target.value ? [parseInt(e.target.value)] : [])}
+                  disabled={loadingGroups}
+                >
+                  <option value="">Select Group</option>
+                  {groups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingGroups && <small>Loading groups...</small>}
+              </div>
             </div>
 
             <div className="form-group">
@@ -310,78 +299,21 @@ export default function UserForm({
             </div>
           )}
 
-          <div className="form-section">
-            <h3>Permissions</h3>
-            <div className="permissions-grid">
+          {mode === "edit" && (
+            <div className="user-status-section">
+              <h4>User Status</h4>
               <label className="checkbox-label">
                 <input
                   type="checkbox"
-                  checked={formData.can_view_all_tickets}
+                  checked={formData.is_active}
                   onChange={(e) =>
-                    handleChange("can_view_all_tickets", e.target.checked)
+                    handleChange("is_active", e.target.checked)
                   }
                 />
-                <span>Can view all tickets</span>
+                <span>User is active</span>
               </label>
-
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.can_manage_users}
-                  onChange={(e) =>
-                    handleChange("can_manage_users", e.target.checked)
-                  }
-                />
-                <span>Can manage users</span>
-              </label>
-
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.can_make_calls}
-                  onChange={(e) =>
-                    handleChange("can_make_calls", e.target.checked)
-                  }
-                />
-                <span>Can make calls</span>
-              </label>
-
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.can_manage_groups}
-                  onChange={(e) =>
-                    handleChange("can_manage_groups", e.target.checked)
-                  }
-                />
-                <span>Can manage groups</span>
-              </label>
-
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.can_manage_settings}
-                  onChange={(e) =>
-                    handleChange("can_manage_settings", e.target.checked)
-                  }
-                />
-                <span>Can manage settings</span>
-              </label>
-
-              {mode === "edit" && (
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_active}
-                    onChange={(e) =>
-                      handleChange("is_active", e.target.checked)
-                    }
-                  />
-                  <span>User is active</span>
-                </label>
-              )}
             </div>
-          </div>
+          )}
 
           <div className="form-actions">
             <button

@@ -7,6 +7,7 @@ import { User } from "@/api/generated/interfaces";
 import TicketManagement from "./TicketManagement";
 import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
+import GroupManagement from "./GroupManagement";
 
 interface DashboardProps {
   user: AuthUser;
@@ -19,7 +20,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "tickets" | "calls" | "users" | "settings"
+    "dashboard" | "tickets" | "calls" | "users" | "groups" | "settings"
   >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -70,50 +71,112 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "🏠", permission: null },
-    { id: "tickets", label: "Tickets", icon: "🎫", permission: null, description: "View and manage tickets" },
-    { id: "calls", label: "Calls", icon: "📞", permission: "can_make_calls", description: "Handle phone calls" },
-    { id: "users", label: "Users", icon: "👥", permission: "can_manage_users", description: "Manage user accounts" },
-    { id: "settings", label: "Settings", icon: "⚙️", permission: "can_manage_settings", description: "Configure system settings" },
+    {
+      id: "tickets",
+      label: "Tickets",
+      icon: "🎫",
+      permission: null,
+      description: "View and manage tickets",
+    },
+    {
+      id: "calls",
+      label: "Calls",
+      icon: "📞",
+      permission: "can_make_calls",
+      description: "Handle phone calls",
+    },
+    {
+      id: "users",
+      label: "Users",
+      icon: "👥",
+      permission: "can_manage_users",
+      description: "Manage user accounts",
+    },
+    {
+      id: "groups",
+      label: "Groups",
+      icon: "👨‍👩‍👧‍👦",
+      permission: "can_manage_groups",
+      description: "Manage user groups and permissions",
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: "⚙️",
+      permission: "can_manage_settings",
+      description: "Configure system settings",
+    },
   ];
 
-  // Helper function to check if user has permission for a menu item
-  const hasPermission = (permission: string | null): boolean => {
-    if (!permission || !userProfile) return true; // Always show items without permission requirements
-    
-    // Check if user is staff - staff can see everything
-    if (userProfile.is_staff) return true;
-    
-    // Check if user has admin role (note: role comes as enum, need to check the string value)
-    const userRole = typeof userProfile.role === 'string' ? userProfile.role : String(userProfile.role);
-    if (userRole === 'admin') return true;
-    
+  // Function to check if user has a specific permission
+  const hasPermission = (
+    userProfile: User | null,
+    permission: string
+  ): boolean => {
+    if (!userProfile) return false;
+
+    // Check if user is superuser - superusers have all permissions
+    if ((userProfile as any).is_superuser) {
+      return true;
+    }
+
+    try {
+      // Parse the all_permissions JSON field
+      const allPermissions = JSON.parse(userProfile.all_permissions || "{}");
+      return allPermissions[permission] || false;
+    } catch (error) {
+      console.error("Error parsing permissions:", error);
+      return false;
+    }
+  };
+
+  // Function to check menu permissions
+  const checkMenuPermission = (permission: string): boolean => {
+    if (!userProfile) return false;
+
+    // Check if user is superuser - superusers have all permissions
+    if ((userProfile as any).is_superuser) {
+      return true;
+    }
+
+    const userRole = userProfile.role?.toString();
+
+    // Admins have access to everything
+    if (userRole === "admin") {
+      return true;
+    }
+
+    // Managers have most permissions except user management
+    if (userRole === "manager") {
+      if (permission === "can_manage_users") {
+        return false; // Managers can't manage users
+      }
+      return true;
+    }
+
+    // Agents have limited permissions
+    if (userRole === "agent") {
+      const allowedPermissions = [
+        "can_create_tickets",
+        "can_edit_own_tickets",
+        "can_make_calls",
+      ];
+      return allowedPermissions.includes(permission);
+    }
+
     // Viewers only get basic access - no management permissions
-    if (userRole === 'viewer') {
+    if (userRole === "viewer") {
       return false; // Viewers have very limited access
     }
-    
-    // Check specific permissions
-    if (permission === 'can_manage_users') {
-      return userProfile.can_manage_users || false;
-    }
-    if (permission === 'can_view_all_tickets') {
-      return userProfile.can_view_all_tickets || false;
-    }
-    if (permission === 'can_make_calls') {
-      return (userProfile as any).can_make_calls || false;
-    }
-    if (permission === 'can_manage_groups') {
-      return (userProfile as any).can_manage_groups || false;
-    }
-    if (permission === 'can_manage_settings') {
-      return userProfile.can_manage_settings || false;
-    }
-    
-    return false;
+
+    // Use the parsed permissions for specific checks
+    return hasPermission(userProfile, permission);
   };
 
   // Filter menu items based on user permissions
-  const visibleMenuItems = menuItems.filter(item => hasPermission(item.permission));
+  const visibleMenuItems = menuItems.filter((item) =>
+    item.permission ? checkMenuPermission(item.permission) : true
+  );
 
   const handleMenuClick = (
     viewId: "dashboard" | "tickets" | "calls" | "users" | "settings"
@@ -273,7 +336,14 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
             <button
               key={item.id}
               onClick={() =>
-                handleMenuClick(item.id as "dashboard" | "tickets" | "calls" | "users" | "settings")
+                handleMenuClick(
+                  item.id as
+                    | "dashboard"
+                    | "tickets"
+                    | "calls"
+                    | "users"
+                    | "settings"
+                )
               }
               style={{
                 width: "100%",
@@ -360,7 +430,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                       marginBottom: "2px",
                     }}
                   >
-                    {userProfile.full_name || `${userProfile.first_name} ${userProfile.last_name}`.trim() || userProfile.email}
+                    {userProfile.full_name ||
+                      `${userProfile.first_name} ${userProfile.last_name}`.trim() ||
+                      userProfile.email}
                   </div>
                   <div
                     style={{
@@ -368,26 +440,39 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                       color: "#6c757d",
                     }}
                   >
-                    {typeof userProfile.role === 'string' ? userProfile.role : String(userProfile.role || 'agent')}
+                    {typeof userProfile.role === "string"
+                      ? userProfile.role
+                      : String(userProfile.role || "agent")}
                   </div>
                 </div>
               </div>
-              
+
               {/* Development: Show permissions */}
-              {process.env.NODE_ENV === 'development' && (
-                <div style={{
-                  fontSize: "10px",
-                  color: "#6c757d",
-                  backgroundColor: "#f8f9fa",
-                  padding: "4px 8px",
-                  borderRadius: "4px",
-                  marginBottom: "8px",
-                  border: "1px solid #e9ecef"
-                }}>
-                  <div>👥 Users: {userProfile.can_manage_users ? '✅' : '❌'}</div>
-                  <div>🎫 All Tickets: {userProfile.can_view_all_tickets ? '✅' : '❌'}</div>
-                  <div>� Calls: {(userProfile as any).can_make_calls ? '✅' : '❌'}</div>
-                  <div>⚙️ Settings: {userProfile.can_manage_settings ? '✅' : '❌'}</div>
+              {process.env.NODE_ENV === "development" && (
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#6c757d",
+                    backgroundColor: "#f8f9fa",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    marginBottom: "8px",
+                    border: "1px solid #e9ecef",
+                  }}
+                >
+                  <div>
+                    👥 Users: {hasPermission(userProfile, 'can_manage_users') ? "✅" : "❌"}
+                  </div>
+                  <div>
+                    🎫 All Tickets:{" "}
+                    {hasPermission(userProfile, 'can_view_all_tickets') ? "✅" : "❌"}
+                  </div>
+                  <div>
+                    � Calls: {(userProfile as any).can_make_calls ? "✅" : "❌"}
+                  </div>
+                  <div>
+                    ⚙️ Settings: {hasPermission(userProfile, 'can_manage_settings') ? "✅" : "❌"}
+                  </div>
                 </div>
               )}
             </div>
@@ -518,16 +603,23 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
           {currentView === "users" && <UserManagement />}
 
+          {currentView === "groups" && <GroupManagement />}
+
           {currentView === "settings" && (
-            <div style={{
-              background: "white",
-              padding: "30px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            }}>
-              <h2 style={{ margin: "0 0 20px 0", color: "#333" }}>System Settings</h2>
+            <div
+              style={{
+                background: "white",
+                padding: "30px",
+                borderRadius: "12px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              }}
+            >
+              <h2 style={{ margin: "0 0 20px 0", color: "#333" }}>
+                System Settings
+              </h2>
               <p style={{ color: "#666" }}>
-                System settings will be available here. This section will include:
+                System settings will be available here. This section will
+                include:
               </p>
               <ul style={{ color: "#666", marginLeft: "20px" }}>
                 <li>Tenant configuration</li>

@@ -3,17 +3,6 @@
  * DO NOT EDIT MANUALLY
  */
 
-export interface ActionEnum {
-  [key: string]: any;
-}
-
-export interface BulkUserAction {
-  user_ids: number[];
-  action: ActionEnum;
-  role?: RoleEnum;
-  status?: Status336enum;
-}
-
 export interface CallEvent {
   id: number;
   event_type: EventTypeEnum;
@@ -140,6 +129,16 @@ export interface Client {
   is_active?: boolean;
 }
 
+export interface Department {
+  id: number;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+  employee_count: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DeploymentStatusEnum {
   [key: string]: any;
 }
@@ -155,16 +154,14 @@ export interface EventTypeEnum {
 export interface Group {
   id: number;
   name: string;
+  permissions: Permission[];
+  permission_ids?: number[];
   user_count: string;
-  users: string[];
 }
 
 export interface GroupCreate {
   name: string;
-}
-
-export interface GroupUpdate {
-  name: string;
+  permission_ids?: number[];
 }
 
 export interface KanbanBoard {
@@ -186,11 +183,25 @@ export interface PaginatedClientList {
   results: Client[];
 }
 
+export interface PaginatedDepartmentList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Department[];
+}
+
 export interface PaginatedGroupList {
   count: number;
   next?: string;
   previous?: string;
   results: Group[];
+}
+
+export interface PaginatedPermissionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Permission[];
 }
 
 export interface PaginatedSipConfigurationListList {
@@ -242,12 +253,6 @@ export interface PaginatedUserList {
   results: User[];
 }
 
-export interface PasswordChange {
-  old_password: string;
-  new_password: string;
-  new_password_confirm: string;
-}
-
 export interface PatchedCallLog {
   id?: number;
   call_id?: string;
@@ -293,8 +298,22 @@ export interface PatchedClient {
   is_active?: boolean;
 }
 
-export interface PatchedGroupUpdate {
+export interface PatchedDepartment {
+  id?: number;
   name?: string;
+  description?: string;
+  is_active?: boolean;
+  employee_count?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedGroup {
+  id?: number;
+  name?: string;
+  permissions?: Permission[];
+  permission_ids?: number[];
+  user_count?: string;
 }
 
 export interface PatchedSipConfiguration {
@@ -378,45 +397,25 @@ export interface PatchedTicketComment {
   updated_at?: string;
 }
 
-export interface PatchedUser {
-  id?: number;
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  full_name?: string;
-  role?: RoleEnum;
-  status?: Status336enum;
-  department?: string;
-  phone_number?: string;
-  job_title?: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
-  is_active?: boolean;
-  is_staff?: boolean;
-  date_joined?: string;
-  last_login?: string;
-  invited_by?: number;
-  invitation_sent_at?: string;
-  permissions?: string;
-}
-
 export interface PatchedUserUpdate {
   first_name?: string;
   last_name?: string;
   role?: RoleEnum;
   status?: Status336enum;
-  department?: string;
   phone_number?: string;
   job_title?: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
   is_active?: boolean;
+  group_ids?: number[];
+  user_permission_ids?: number[];
+}
+
+export interface Permission {
+  id: number;
+  name: string;
+  codename: string;
+  content_type: number;
+  app_label: string;
+  model: string;
 }
 
 export interface PlanEnum {
@@ -634,21 +633,20 @@ export interface User {
   full_name: string;
   role?: RoleEnum;
   status?: Status336enum;
-  department?: string;
   phone_number?: string;
   job_title?: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
+  department: Department;
+  department_id?: number;
   is_active?: boolean;
   is_staff?: boolean;
   date_joined: string;
   last_login: string;
-  invited_by: number;
-  invitation_sent_at: string;
   permissions: string;
+  group_permissions: string;
+  all_permissions: string;
+  groups: Group[];
+  group_ids?: number[];
+  user_permission_ids?: number[];
 }
 
 export interface UserCreate {
@@ -658,14 +656,12 @@ export interface UserCreate {
   password: string;
   password_confirm: string;
   role?: RoleEnum;
-  department?: string;
+  status?: Status336enum;
   phone_number?: string;
   job_title?: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
+  department_id?: number;
+  group_ids?: number[];
+  user_permission_ids?: number[];
 }
 
 export interface UserMinimal {
@@ -680,13 +676,9 @@ export interface UserUpdate {
   last_name?: string;
   role?: RoleEnum;
   status?: Status336enum;
-  department?: string;
   phone_number?: string;
   job_title?: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
   is_active?: boolean;
+  group_ids?: number[];
+  user_permission_ids?: number[];
 }

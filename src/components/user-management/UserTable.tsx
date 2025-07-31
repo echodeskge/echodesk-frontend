@@ -237,7 +237,6 @@ export default function UserTable({
                       {user.role?.toString() || "User"}
                     </span>
                   </td>
-                  <td>{user.department || "-"}</td>
                   <td>
                     <span
                       className={`status-badge ${getStatusColor(user.status)}`}

@@ -6,7 +6,6 @@ import {
   UserCreate,
   PaginatedUserList,
   UserUpdate,
-  BulkUserAction,
 } from "@/api/generated/interfaces";
 import * as api from "@/api/generated/api";
 
@@ -61,14 +60,9 @@ export default function UserManagement() {
       setError("");
 
       const response: PaginatedUserList = await api.usersList(
-        filters.department || undefined,
-        filters.isActive ?? undefined,
-        filters.isStaff ?? undefined,
         undefined, // ordering
         pagination.currentPage,
-        (filters.role as any) || undefined,
-        filters.search || undefined,
-        (filters.status as any) || undefined
+        filters.search || undefined
       );
 
       setUsers(response.results);
@@ -99,7 +93,10 @@ export default function UserManagement() {
     }
   };
 
-  const handleUpdateUser = async (userId: number, userData: UserCreate | UserUpdate) => {
+  const handleUpdateUser = async (
+    userId: number,
+    userData: UserCreate | UserUpdate
+  ) => {
     try {
       await api.usersUpdate(userId, userData as UserUpdate);
       setEditingUser(null);
@@ -128,7 +125,7 @@ export default function UserManagement() {
 
   const handleChangeUserStatus = async (userId: number, status: string) => {
     try {
-      await api.usersChangeStatus(userId, { status: status as any });
+      await api.usersPartialUpdate(userId, { status: status as any });
       fetchUsers(); // Refresh the list
     } catch (err: any) {
       alert(
@@ -149,7 +146,7 @@ export default function UserManagement() {
     }
 
     try {
-      await api.usersResetPassword(userId, {} as User);
+      await api.usersChangePasswordCreate(userId, {} as User);
       alert("Password reset email sent successfully");
     } catch (err: any) {
       alert(
@@ -164,13 +161,13 @@ export default function UserManagement() {
     additionalData?: any
   ) => {
     try {
-      const bulkActionData: BulkUserAction = {
+      const bulkActionData: any = {
         user_ids: userIds,
         action: action as any,
         ...additionalData,
       };
 
-      await api.usersBulkAction(bulkActionData);
+      await api.usersBulkActionCreate(bulkActionData);
       setSelectedUsers([]);
       fetchUsers(); // Refresh the list
     } catch (err: any) {

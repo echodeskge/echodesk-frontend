@@ -29,11 +29,15 @@ import type {
   PaginatedTicketCommentList,
   TicketComment,
   PatchedTicketComment,
+  PaginatedDepartmentList,
+  Department,
+  PatchedDepartment,
   PaginatedGroupList,
   GroupCreate,
   Group,
-  GroupUpdate,
-  PatchedGroupUpdate,
+  PatchedGroup,
+  PaginatedPermissionList,
+  Permission,
   TenantRegistration,
   Tenant,
   PaginatedSipConfigurationListList,
@@ -54,9 +58,6 @@ import type {
   User,
   UserUpdate,
   PatchedUserUpdate,
-  PatchedUser,
-  BulkUserAction,
-  PasswordChange,
 } from './interfaces';
 
 export async function changeTenantPassword(): Promise<{
@@ -441,6 +442,55 @@ export async function corsTestRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function departmentsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedDepartmentList> {
+  const response = await axios.get(
+    `/api/departments/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function departmentsCreate(data: Department): Promise<Department> {
+  const response = await axios.post(`/api/departments/`, data);
+  return response.data;
+}
+
+export async function departmentsRetrieve(id: number): Promise<Department> {
+  const response = await axios.get(`/api/departments/${id}/`);
+  return response.data;
+}
+
+export async function departmentsUpdate(
+  id: number,
+  data: Department,
+): Promise<Department> {
+  const response = await axios.put(`/api/departments/${id}/`, data);
+  return response.data;
+}
+
+export async function departmentsPartialUpdate(
+  id: number,
+  data: PatchedDepartment,
+): Promise<Department> {
+  const response = await axios.patch(`/api/departments/${id}/`, data);
+  return response.data;
+}
+
+export async function departmentsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/departments/${id}/`);
+  return response.data;
+}
+
 export async function deploymentStatusRetrieve(tenantId: number): Promise<any> {
   const response = await axios.get(`/api/deployment-status/${tenantId}/`);
   return response.data;
@@ -474,18 +524,15 @@ export async function groupsRetrieve(id: number): Promise<Group> {
   return response.data;
 }
 
-export async function groupsUpdate(
-  id: number,
-  data: GroupUpdate,
-): Promise<GroupUpdate> {
+export async function groupsUpdate(id: number, data: Group): Promise<Group> {
   const response = await axios.put(`/api/groups/${id}/`, data);
   return response.data;
 }
 
 export async function groupsPartialUpdate(
   id: number,
-  data: PatchedGroupUpdate,
-): Promise<GroupUpdate> {
+  data: PatchedGroup,
+): Promise<Group> {
   const response = await axios.patch(`/api/groups/${id}/`, data);
   return response.data;
 }
@@ -495,12 +542,15 @@ export async function groupsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function groupsAddUsers(id: number, data: Group): Promise<Group> {
+export async function groupsAddUsersCreate(
+  id: number,
+  data: Group,
+): Promise<Group> {
   const response = await axios.post(`/api/groups/${id}/add_users/`, data);
   return response.data;
 }
 
-export async function groupsRemoveUsers(
+export async function groupsRemoveUsersCreate(
   id: number,
   data: Group,
 ): Promise<Group> {
@@ -508,8 +558,31 @@ export async function groupsRemoveUsers(
   return response.data;
 }
 
-export async function groupsStatistics(): Promise<Group> {
-  const response = await axios.get(`/api/groups/statistics/`);
+export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
+  const response = await axios.get(`/api/groups/available_permissions/`);
+  return response.data;
+}
+
+export async function permissionsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedPermissionList> {
+  const response = await axios.get(
+    `/api/permissions/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function permissionsRetrieve(id: number): Promise<Permission> {
+  const response = await axios.get(`/api/permissions/${id}/`);
   return response.data;
 }
 
@@ -857,26 +930,16 @@ export async function ticketsMyTicketsRetrieve(): Promise<Ticket> {
 }
 
 export async function usersList(
-  department?: string,
-  isActive?: boolean,
-  isStaff?: boolean,
   ordering?: string,
   page?: number,
-  role?: 'admin' | 'agent' | 'manager' | 'viewer',
   search?: string,
-  status?: 'active' | 'inactive' | 'pending' | 'suspended',
 ): Promise<PaginatedUserList> {
   const response = await axios.get(
     `/api/users/${(() => {
       const parts = [
-        department ? 'department=' + encodeURIComponent(department) : null,
-        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
-        isStaff ? 'is_staff=' + encodeURIComponent(isStaff) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
-        role ? 'role=' + encodeURIComponent(role) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
-        status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -915,53 +978,16 @@ export async function usersDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function usersChangeStatus(
-  id: number,
-  data: PatchedUser,
-): Promise<User> {
-  const response = await axios.patch(`/api/users/${id}/change_status/`, data);
-  return response.data;
-}
-
-export async function usersResetPassword(
+export async function usersChangePasswordCreate(
   id: number,
   data: User,
 ): Promise<User> {
-  const response = await axios.post(`/api/users/${id}/reset_password/`, data);
+  const response = await axios.post(`/api/users/${id}/change_password/`, data);
   return response.data;
 }
 
-export async function usersBulkAction(
-  data: BulkUserAction,
-): Promise<BulkUserAction> {
+export async function usersBulkActionCreate(data: User): Promise<User> {
   const response = await axios.post(`/api/users/bulk_action/`, data);
-  return response.data;
-}
-
-export async function usersChangePassword(
-  data: PasswordChange,
-): Promise<PasswordChange> {
-  const response = await axios.post(`/api/users/change_password/`, data);
-  return response.data;
-}
-
-export async function usersLoginCreate(data: User): Promise<User> {
-  const response = await axios.post(`/api/users/login/`, data);
-  return response.data;
-}
-
-export async function usersLogoutCreate(data: User): Promise<User> {
-  const response = await axios.post(`/api/users/logout/`, data);
-  return response.data;
-}
-
-export async function usersMe(): Promise<User> {
-  const response = await axios.get(`/api/users/me/`);
-  return response.data;
-}
-
-export async function usersStatistics(): Promise<User> {
-  const response = await axios.get(`/api/users/statistics/`);
   return response.data;
 }
 

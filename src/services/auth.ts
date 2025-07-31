@@ -1,5 +1,5 @@
 import { createAxiosInstance } from '@/api/axios';
-import { usersMe } from '@/api/generated/api';
+import { tenantProfile } from '@/api/generated/api';
 import { User } from '@/api/generated/interfaces';
 import { LoginRequest, LoginResponse, AuthUser, TenantInfo } from '@/types/auth';
 
@@ -35,7 +35,7 @@ export class AuthService {
   // Get current user profile
   async getCurrentUser(): Promise<User> {
     try {
-      return await usersMe();
+      return await tenantProfile() as User;
     } catch (error) {
       console.error('Get current user error:', error);
       throw error;

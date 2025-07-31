@@ -1,25 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Group, GroupCreate, PaginatedGroupList } from '../api/generated/interfaces';
-import { groupsList, groupsCreate, groupsUpdate, groupsDestroy } from '../api/generated/api';
+import { Group, GroupCreate, PaginatedGroupList, PatchedGroup, Permission, PaginatedPermissionList } from '../api/generated/interfaces';
+import { groupsList, groupsCreate, groupsPartialUpdate, groupsDestroy, permissionsList } from '../api/generated/api';
 import './GroupManagement.css';
 
 interface GroupFormData {
   name: string;
+  permission_ids: number[];
+}
+
+interface ExtendedGroup extends Group {
+  [key: string]: any; // Allow for permission fields
 }
 
 interface GroupFormProps {
   mode: 'create' | 'edit';
-  group?: Group;
+  group?: ExtendedGroup;
   onSubmit: (data: GroupFormData) => Promise<void>;
   onCancel: () => void;
+  permissions: Permission[];
+  permissionSearch: string;
+  setPermissionSearch: (search: string) => void;
 }
 
-const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }) => {
+// Helper function to format permission name like Django admin
+const formatPermissionName = (permission: Permission) => {
+  return `${permission.app_label} | ${permission.model} | ${permission.name}`;
+};
+
+const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel, permissions, permissionSearch, setPermissionSearch }) => {
   const [formData, setFormData] = useState<GroupFormData>({
     name: group?.name || '',
+    permission_ids: group?.permissions?.map(p => p.id) || [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Update form data when group prop changes
+  useEffect(() => {
+    if (group) {
+      setFormData({
+        name: group.name || '',
+        permission_ids: group.permissions?.map(p => p.id) || [],
+      });
+    }
+  }, [group]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +61,18 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }
     }
   };
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | number[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
+  };
+
+  const handlePermissionToggle = (permissionId: number) => {
+    const updatedPermissionIds = formData.permission_ids.includes(permissionId)
+      ? formData.permission_ids.filter(id => id !== permissionId)
+      : [...formData.permission_ids, permissionId];
+    handleChange('permission_ids', updatedPermissionIds);
   };
 
   return (
@@ -71,6 +102,49 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }
             {errors.name && <span className="error-text">{errors.name}</span>}
           </div>
 
+          <div className="permissions-section">
+            <h3>Group Permissions</h3>
+            <p>Select the permissions that members of this group will have:</p>
+            
+            <div className="permissions-search">
+              <input
+                type="text"
+                placeholder="Search permissions..."
+                value={permissionSearch}
+                onChange={(e) => setPermissionSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+            
+            <div className="permissions-count">
+              Showing {permissions.length} permissions
+              {permissionSearch && ` (filtered)`}
+            </div>
+            
+            {permissions.length === 0 ? (
+              <div>Loading permissions...</div>
+            ) : (
+              <div className="permissions-grid">
+                {permissions.map((permission) => (
+                  <div key={permission.id} className="permission-item">
+                    <label className="permission-label">
+                      <input
+                        type="checkbox"
+                        checked={formData.permission_ids.includes(permission.id)}
+                        onChange={() => handlePermissionToggle(permission.id)}
+                      />
+                      <div className="permission-info">
+                        <span className="permission-name" title={permission.name}>
+                          {formatPermissionName(permission)}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="form-actions">
             <button type="button" onClick={onCancel} className="cancel-btn">
               Cancel
@@ -90,18 +164,21 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }
 };
 
 const GroupManagement: React.FC = () => {
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<ExtendedGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState<{ mode: 'create' | 'edit'; group?: Group } | null>(null);
+  const [showForm, setShowForm] = useState<{ mode: 'create' | 'edit'; group?: ExtendedGroup } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [loadingPermissions, setLoadingPermissions] = useState(true);
+  const [permissionSearch, setPermissionSearch] = useState('');
 
   const loadGroups = async () => {
     try {
       setLoading(true);
       setError(null);
       const response: PaginatedGroupList = await groupsList();
-      setGroups(response.results);
+      setGroups(response.results as ExtendedGroup[]);
     } catch (err: any) {
       setError(err.message || "Failed to load groups");
     } finally {
@@ -109,13 +186,43 @@ const GroupManagement: React.FC = () => {
     }
   };
 
+  const loadPermissions = async () => {
+    try {
+      setLoadingPermissions(true);
+      let allPermissions: Permission[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response: PaginatedPermissionList = await permissionsList(undefined, page);
+        allPermissions = [...allPermissions, ...(response.results || [])];
+        
+        // Check if there are more pages
+        hasMore = !!response.next;
+        page++;
+        
+        // Safety break to avoid infinite loops
+        if (page > 20) break;
+      }
+      
+      setPermissions(allPermissions);
+      console.log(`Loaded ${allPermissions.length} permissions for groups`);
+    } catch (err: any) {
+      console.error('Failed to load permissions:', err);
+    } finally {
+      setLoadingPermissions(false);
+    }
+  };
+
   useEffect(() => {
     loadGroups();
+    loadPermissions();
   }, []);
 
   const handleCreateGroup = async (data: GroupFormData) => {
-    const createData: GroupCreate = {
+    const createData: any = {
       name: data.name,
+      permission_ids: data.permission_ids,
     };
     
     await groupsCreate(createData);
@@ -126,7 +233,12 @@ const GroupManagement: React.FC = () => {
   const handleUpdateGroup = async (data: GroupFormData) => {
     if (!showForm?.group) return;
     
-    await groupsUpdate(showForm.group.id, { name: data.name });
+    const updateData: any = {
+      name: data.name,
+      permission_ids: data.permission_ids,
+    };
+    
+    await groupsPartialUpdate(showForm.group.id, updateData);
     setShowForm(null);
     await loadGroups();
   };
@@ -147,6 +259,18 @@ const GroupManagement: React.FC = () => {
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Filter permissions based on search
+  const filteredPermissions = permissions.filter(permission => {
+    if (!permissionSearch) return true;
+    const searchLower = permissionSearch.toLowerCase();
+    return (
+      permission.name?.toLowerCase().includes(searchLower) ||
+      permission.model?.toLowerCase().includes(searchLower) ||
+      permission.app_label?.toLowerCase().includes(searchLower) ||
+      formatPermissionName(permission).toLowerCase().includes(searchLower)
+    );
+  });
 
   if (loading) {
     return (
@@ -240,18 +364,25 @@ const GroupManagement: React.FC = () => {
                 </div>
               </div>
 
-              {group.users && group.users.length > 0 && (
-                <div className="group-users">
-                  <h4>Users in this group:</h4>
-                  <div className="users-list">
-                    {group.users.map((username, index) => (
-                      <span key={index} className="user-badge">
-                        {username}
-                      </span>
-                    ))}
-                  </div>
+              <div className="group-permissions">
+                <h4>Group Permissions:</h4>
+                <div className="permissions-summary">
+                  {(() => {
+                    const groupPermissions = group.permissions || [];
+                    return groupPermissions.length > 0 ? (
+                      <div className="permissions-list">
+                        {groupPermissions.map((permission) => (
+                          <span key={permission.id} className="permission-badge" title={permission.name}>
+                            {permission.codename}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="no-permissions">No permissions assigned</span>
+                    );
+                  })()}
                 </div>
-              )}
+              </div>
             </div>
           ))
         )}
@@ -263,6 +394,9 @@ const GroupManagement: React.FC = () => {
           group={showForm.group}
           onSubmit={showForm.mode === 'create' ? handleCreateGroup : handleUpdateGroup}
           onCancel={() => setShowForm(null)}
+          permissions={filteredPermissions}
+          permissionSearch={permissionSearch}
+          setPermissionSearch={setPermissionSearch}
         />
       )}
     </div>
