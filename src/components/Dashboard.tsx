@@ -19,7 +19,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "tickets" | "calls" | "users" | "reports" | "settings"
+    "dashboard" | "tickets" | "calls" | "users" | "settings"
   >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -71,9 +71,8 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "🏠", permission: null },
     { id: "tickets", label: "Tickets", icon: "🎫", permission: null, description: "View and manage tickets" },
-    { id: "calls", label: "Calls", icon: "📞", permission: null, description: "Handle phone calls" },
+    { id: "calls", label: "Calls", icon: "📞", permission: "can_make_calls", description: "Handle phone calls" },
     { id: "users", label: "Users", icon: "👥", permission: "can_manage_users", description: "Manage user accounts" },
-    { id: "reports", label: "Reports", icon: "📊", permission: "can_view_reports", description: "View analytics and reports" },
     { id: "settings", label: "Settings", icon: "⚙️", permission: "can_manage_settings", description: "Configure system settings" },
   ];
 
@@ -88,12 +87,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     const userRole = typeof userProfile.role === 'string' ? userProfile.role : String(userProfile.role);
     if (userRole === 'admin') return true;
     
-    // Manager role gets access to reports by default
-    if (userRole === 'manager' && permission === 'can_view_reports') return true;
-    
     // Viewers only get basic access - no management permissions
     if (userRole === 'viewer') {
-      return permission === 'can_view_reports'; // Viewers can only see reports
+      return false; // Viewers have very limited access
     }
     
     // Check specific permissions
@@ -103,8 +99,8 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     if (permission === 'can_view_all_tickets') {
       return userProfile.can_view_all_tickets || false;
     }
-    if (permission === 'can_view_reports') {
-      return userProfile.can_view_reports || false;
+    if (permission === 'can_make_calls') {
+      return (userProfile as any).can_make_calls || false;
     }
     if (permission === 'can_manage_settings') {
       return userProfile.can_manage_settings || false;
@@ -117,7 +113,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const visibleMenuItems = menuItems.filter(item => hasPermission(item.permission));
 
   const handleMenuClick = (
-    viewId: "dashboard" | "tickets" | "calls" | "users" | "reports" | "settings"
+    viewId: "dashboard" | "tickets" | "calls" | "users" | "settings"
   ) => {
     setCurrentView(viewId);
     if (isMobile) {
@@ -274,7 +270,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
             <button
               key={item.id}
               onClick={() =>
-                handleMenuClick(item.id as "dashboard" | "tickets" | "calls" | "users" | "reports" | "settings")
+                handleMenuClick(item.id as "dashboard" | "tickets" | "calls" | "users" | "settings")
               }
               style={{
                 width: "100%",
@@ -387,7 +383,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                 }}>
                   <div>👥 Users: {userProfile.can_manage_users ? '✅' : '❌'}</div>
                   <div>🎫 All Tickets: {userProfile.can_view_all_tickets ? '✅' : '❌'}</div>
-                  <div>📊 Reports: {userProfile.can_view_reports ? '✅' : '❌'}</div>
+                  <div>� Calls: {(userProfile as any).can_make_calls ? '✅' : '❌'}</div>
                   <div>⚙️ Settings: {userProfile.can_manage_settings ? '✅' : '❌'}</div>
                 </div>
               )}
@@ -518,26 +514,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
           )}
 
           {currentView === "users" && <UserManagement />}
-
-          {currentView === "reports" && (
-            <div style={{
-              background: "white",
-              padding: "30px",
-              borderRadius: "12px",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-            }}>
-              <h2 style={{ margin: "0 0 20px 0", color: "#333" }}>Reports & Analytics</h2>
-              <p style={{ color: "#666" }}>
-                Reports functionality will be implemented here. This section will include:
-              </p>
-              <ul style={{ color: "#666", marginLeft: "20px" }}>
-                <li>User activity reports</li>
-                <li>Ticket resolution analytics</li>
-                <li>Call volume statistics</li>
-                <li>Performance metrics</li>
-              </ul>
-            </div>
-          )}
 
           {currentView === "settings" && (
             <div style={{

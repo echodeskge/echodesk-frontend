@@ -28,7 +28,7 @@ export default function UserForm({
     job_title: user?.job_title || "",
     can_view_all_tickets: user?.can_view_all_tickets || false,
     can_manage_users: user?.can_manage_users || false,
-    can_view_reports: user?.can_view_reports || false,
+    can_make_calls: (user as any)?.can_make_calls || false,
     can_manage_settings: user?.can_manage_settings || false,
     is_active: user?.is_active !== undefined ? user.is_active : true,
     status: user?.status || "active",
@@ -96,7 +96,7 @@ export default function UserForm({
     setIsSubmitting(true);
     try {
       if (mode === "create") {
-        const createData: UserCreate = {
+        const createData: any = {
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
@@ -108,12 +108,12 @@ export default function UserForm({
           job_title: formData.job_title || undefined,
           can_view_all_tickets: formData.can_view_all_tickets,
           can_manage_users: formData.can_manage_users,
-          can_view_reports: formData.can_view_reports,
+          can_make_calls: formData.can_make_calls,
           can_manage_settings: formData.can_manage_settings,
         };
         await onSubmit(createData);
       } else {
-        const updateData: UserUpdate = {
+        const updateData: any = {
           first_name: formData.first_name,
           last_name: formData.last_name,
           role: formData.role as any,
@@ -123,7 +123,7 @@ export default function UserForm({
           job_title: formData.job_title || undefined,
           can_view_all_tickets: formData.can_view_all_tickets,
           can_manage_users: formData.can_manage_users,
-          can_view_reports: formData.can_view_reports,
+          can_make_calls: formData.can_make_calls,
           can_manage_settings: formData.can_manage_settings,
           is_active: formData.is_active,
         };
@@ -335,12 +335,12 @@ export default function UserForm({
               <label className="checkbox-label">
                 <input
                   type="checkbox"
-                  checked={formData.can_view_reports}
+                  checked={formData.can_make_calls}
                   onChange={(e) =>
-                    handleChange("can_view_reports", e.target.checked)
+                    handleChange("can_make_calls", e.target.checked)
                   }
                 />
-                <span>Can view reports</span>
+                <span>Can make calls</span>
               </label>
 
               <label className="checkbox-label">
