@@ -188,11 +188,19 @@ export default function UserDetailsModal({
               </div>
               <div className="permission-item">
                 <span
-                  className={`permission-status ${user.can_view_reports ? "enabled" : "disabled"}`}
+                  className={`permission-status ${(user as any).can_make_calls ? "enabled" : "disabled"}`}
                 >
-                  {user.can_view_reports ? "✅" : "❌"}
+                  {(user as any).can_make_calls ? "✅" : "❌"}
                 </span>
-                <span>Can view reports</span>
+                <span>Can make calls</span>
+              </div>
+              <div className="permission-item">
+                <span
+                  className={`permission-status ${(user as any).can_manage_groups ? "enabled" : "disabled"}`}
+                >
+                  {(user as any).can_manage_groups ? "✅" : "❌"}
+                </span>
+                <span>Can manage groups</span>
               </div>
               <div className="permission-item">
                 <span
