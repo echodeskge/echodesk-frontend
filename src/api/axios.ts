@@ -1,12 +1,13 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
-// Function to get the API URL based on current subdomain
+// Function to get the API URL based on current subdomain or path
 const getApiUrl = (): string => {
   if (typeof window === 'undefined') {
     return 'https://api.echodesk.ge'; // fallback for SSR
   }
   
   const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
   
   // Check if we're on a subdomain of echodesk.ge
   if (hostname.endsWith('.echodesk.ge') && hostname !== 'echodesk.ge') {
@@ -20,16 +21,43 @@ const getApiUrl = (): string => {
     return apiUrl;
   }
   
-  // For localhost development or other domains
-  if (hostname === 'localhost' || hostname.startsWith('127.0.0.1')) {
-    // You can adjust this for local development
+  // Check for path-based tenant routing (e.g., localhost:3000/amanati-tenant)
+  if (hostname.includes('localhost')) {
+    const pathMatch = pathname.match(/^\/([^\/]+)-tenant\/?/);
+    if (pathMatch) {
+      const tenantName = pathMatch[1];
+      const apiUrl = `https://${tenantName}.api.echodesk.ge`;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🏠 Path-based tenant detected: ${tenantName} -> API URL: ${apiUrl}`);
+      }
+      
+      return apiUrl;
+    }
+    
+    // For localhost without tenant path, use main API
     const devApiUrl = 'https://api.echodesk.ge';
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🏠 Development mode -> API URL: ${devApiUrl}`);
+      console.log(`🏠 Development mode (no tenant) -> API URL: ${devApiUrl}`);
     }
     
     return devApiUrl;
+  }
+  
+  // For localhost development with subdomain (e.g., amanati.localhost:3000)
+  if (hostname.includes('localhost') && hostname !== 'localhost') {
+    const parts = hostname.split('.');
+    if (parts.length > 1 && parts[0] !== 'localhost') {
+      const subdomain = parts[0];
+      const apiUrl = `https://${subdomain}.api.echodesk.ge`;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔗 Localhost subdomain detected: ${subdomain} -> API URL: ${apiUrl}`);
+      }
+      
+      return apiUrl;
+    }
   }
   
   // Default fallback

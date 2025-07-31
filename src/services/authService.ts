@@ -7,19 +7,9 @@ import {
   updateTenantProfile,
   changeTenantPassword 
 } from '../api/generated/api';
-import type { TenantLogin as TenantLoginType } from '../api/generated/interfaces';
+import type { TenantLogin as TenantLoginType, User as GeneratedUser } from '../api/generated/interfaces';
 
-export interface User {
-  id: number;
-  email: string;
-  first_name: string;
-  last_name: string;
-  is_staff: boolean;
-  is_superuser: boolean;
-  date_joined: string;
-  last_login?: string;
-  is_active: boolean;
-}
+export type User = GeneratedUser;
 
 export interface TenantInfo {
   id: number;
@@ -251,17 +241,8 @@ class AuthService {
     try {
       const response = await tenantProfile();
       
-      const user: User = {
-        id: response.id || 0,
-        email: response.email || '',
-        first_name: response.first_name || '',
-        last_name: response.last_name || '',
-        is_staff: response.is_staff || false,
-        is_superuser: response.is_superuser || false,
-        date_joined: response.date_joined || '',
-        last_login: response.last_login,
-        is_active: response.is_active || false
-      };
+      // Cast the response to the full User interface
+      const user = response as User;
       
       // Update stored user data
       if (typeof window !== 'undefined') {

@@ -47,7 +47,11 @@ import type {
   PaginatedUserList,
   UserCreate,
   User,
+  UserUpdate,
+  PatchedUserUpdate,
   PatchedUser,
+  BulkUserAction,
+  PasswordChange,
 } from './interfaces';
 
 export async function changeTenantPassword(): Promise<{
@@ -781,16 +785,26 @@ export async function ticketsMyTicketsRetrieve(): Promise<Ticket> {
 }
 
 export async function usersList(
+  department?: string,
+  isActive?: boolean,
+  isStaff?: boolean,
   ordering?: string,
   page?: number,
+  role?: 'admin' | 'agent' | 'manager' | 'viewer',
   search?: string,
+  status?: 'active' | 'inactive' | 'pending' | 'suspended',
 ): Promise<PaginatedUserList> {
   const response = await axios.get(
     `/api/users/${(() => {
       const parts = [
+        department ? 'department=' + encodeURIComponent(department) : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isStaff ? 'is_staff=' + encodeURIComponent(isStaff) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        role ? 'role=' + encodeURIComponent(role) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -808,15 +822,18 @@ export async function usersRetrieve(id: number): Promise<User> {
   return response.data;
 }
 
-export async function usersUpdate(id: number, data: User): Promise<User> {
+export async function usersUpdate(
+  id: number,
+  data: UserUpdate,
+): Promise<UserUpdate> {
   const response = await axios.put(`/api/users/${id}/`, data);
   return response.data;
 }
 
 export async function usersPartialUpdate(
   id: number,
-  data: PatchedUser,
-): Promise<User> {
+  data: PatchedUserUpdate,
+): Promise<UserUpdate> {
   const response = await axios.patch(`/api/users/${id}/`, data);
   return response.data;
 }
@@ -826,7 +843,32 @@ export async function usersDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function usersChangePasswordCreate(data: User): Promise<User> {
+export async function usersChangeStatus(
+  id: number,
+  data: PatchedUser,
+): Promise<User> {
+  const response = await axios.patch(`/api/users/${id}/change_status/`, data);
+  return response.data;
+}
+
+export async function usersResetPassword(
+  id: number,
+  data: User,
+): Promise<User> {
+  const response = await axios.post(`/api/users/${id}/reset_password/`, data);
+  return response.data;
+}
+
+export async function usersBulkAction(
+  data: BulkUserAction,
+): Promise<BulkUserAction> {
+  const response = await axios.post(`/api/users/bulk_action/`, data);
+  return response.data;
+}
+
+export async function usersChangePassword(
+  data: PasswordChange,
+): Promise<PasswordChange> {
   const response = await axios.post(`/api/users/change_password/`, data);
   return response.data;
 }
@@ -841,8 +883,13 @@ export async function usersLogoutCreate(data: User): Promise<User> {
   return response.data;
 }
 
-export async function usersMeRetrieve(): Promise<User> {
+export async function usersMe(): Promise<User> {
   const response = await axios.get(`/api/users/me/`);
+  return response.data;
+}
+
+export async function usersStatistics(): Promise<User> {
+  const response = await axios.get(`/api/users/statistics/`);
   return response.data;
 }
 

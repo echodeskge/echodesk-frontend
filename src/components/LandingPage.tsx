@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function LandingPage() {
   return (
     <div style={{
@@ -49,7 +51,7 @@ export default function LandingPage() {
           </code>
         </p>
         <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-          <a 
+          <Link 
             href="/register-tenant/"
             style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -66,7 +68,7 @@ export default function LandingPage() {
             onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
             Create New Tenant
-          </a>
+          </Link>
           <a 
             href="#"
             style={{

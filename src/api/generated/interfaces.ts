@@ -3,6 +3,17 @@
  * DO NOT EDIT MANUALLY
  */
 
+export interface ActionEnum {
+  [key: string]: any;
+}
+
+export interface BulkUserAction {
+  user_ids: number[];
+  action: ActionEnum;
+  role?: RoleEnum;
+  status?: Status336enum;
+}
+
 export interface CallEvent {
   id: number;
   event_type: EventTypeEnum;
@@ -209,6 +220,12 @@ export interface PaginatedUserList {
   results: User[];
 }
 
+export interface PasswordChange {
+  old_password: string;
+  new_password: string;
+  new_password_confirm: string;
+}
+
 export interface PatchedCallLog {
   id?: number;
   call_id?: string;
@@ -340,9 +357,38 @@ export interface PatchedUser {
   email?: string;
   first_name?: string;
   last_name?: string;
+  full_name?: string;
+  role?: RoleEnum;
+  status?: Status336enum;
+  department?: string;
+  phone_number?: string;
+  job_title?: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_view_reports?: boolean;
+  can_manage_settings?: boolean;
   is_active?: boolean;
   is_staff?: boolean;
   date_joined?: string;
+  last_login?: string;
+  invited_by?: number;
+  invitation_sent_at?: string;
+  permissions?: string;
+}
+
+export interface PatchedUserUpdate {
+  first_name?: string;
+  last_name?: string;
+  role?: RoleEnum;
+  status?: Status336enum;
+  department?: string;
+  phone_number?: string;
+  job_title?: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_view_reports?: boolean;
+  can_manage_settings?: boolean;
+  is_active?: boolean;
 }
 
 export interface PlanEnum {
@@ -354,6 +400,10 @@ export interface PreferredLanguageEnum {
 }
 
 export interface PriorityEnum {
+  [key: string]: any;
+}
+
+export interface RoleEnum {
   [key: string]: any;
 }
 
@@ -402,6 +452,10 @@ export interface SipConfigurationList {
 }
 
 export interface Status14bEnum {
+  [key: string]: any;
+}
+
+export interface Status336enum {
   [key: string]: any;
 }
 
@@ -549,18 +603,39 @@ export interface User {
   email: string;
   first_name?: string;
   last_name?: string;
+  full_name: string;
+  role?: RoleEnum;
+  status?: Status336enum;
+  department?: string;
+  phone_number?: string;
+  job_title?: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_view_reports?: boolean;
+  can_manage_settings?: boolean;
   is_active?: boolean;
   is_staff?: boolean;
   date_joined: string;
+  last_login: string;
+  invited_by: number;
+  invitation_sent_at: string;
+  permissions: string;
 }
 
 export interface UserCreate {
   email: string;
-  password: string;
-  password_confirm: string;
   first_name?: string;
   last_name?: string;
-  is_staff?: boolean;
+  password: string;
+  password_confirm: string;
+  role?: RoleEnum;
+  department?: string;
+  phone_number?: string;
+  job_title?: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_view_reports?: boolean;
+  can_manage_settings?: boolean;
 }
 
 export interface UserMinimal {
@@ -568,4 +643,19 @@ export interface UserMinimal {
   email: string;
   first_name: string;
   last_name: string;
+}
+
+export interface UserUpdate {
+  first_name?: string;
+  last_name?: string;
+  role?: RoleEnum;
+  status?: Status336enum;
+  department?: string;
+  phone_number?: string;
+  job_title?: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_view_reports?: boolean;
+  can_manage_settings?: boolean;
+  is_active?: boolean;
 }

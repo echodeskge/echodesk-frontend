@@ -27,28 +27,39 @@ export function TenantProvider({ children }: TenantProviderProps) {
       setLoading(true);
       setError(null);
 
-      // Get hostname from window (client-side only)
+      // Get hostname and pathname from window (client-side only)
       if (typeof window === 'undefined') {
         setLoading(false);
         return;
       }
 
       const hostname = window.location.hostname;
-      const subdomain = tenantService.getSubdomainFromHostname(hostname);
+      const pathname = window.location.pathname;
+      
+      // Try to get tenant identifier from subdomain or path
+      let tenantIdentifier: string | null = null;
+      
+      // First try subdomain-based detection
+      tenantIdentifier = tenantService.getSubdomainFromHostname(hostname);
+      
+      // If no subdomain and we're on localhost, try path-based detection
+      if (!tenantIdentifier && hostname.includes('localhost')) {
+        tenantIdentifier = tenantService.getTenantFromPath(pathname);
+      }
 
-      if (!subdomain) {
-        // Not a tenant domain, set tenant to null
+      if (!tenantIdentifier) {
+        // Not a tenant domain/path, set tenant to null
         setTenant(null);
         setLoading(false);
         return;
       }
 
-      const tenantConfig = await tenantService.getTenantBySubdomain(subdomain);
+      const tenantConfig = await tenantService.getTenantBySubdomain(tenantIdentifier);
       
       if (tenantConfig) {
         setTenant(tenantConfig);
       } else {
-        setError(`Tenant not found for subdomain: ${subdomain}`);
+        setError(`Tenant not found for identifier: ${tenantIdentifier}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tenant');

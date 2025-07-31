@@ -19,14 +19,15 @@ class TenantService {
    * Get the correct API URL for a specific tenant
    */
   private getTenantApiUrl(subdomain?: string): string {
-    if (this.isDevelopment && typeof window !== 'undefined' && window.location.hostname.includes('localhost')) {
-      return this.apiBaseUrl;
-    }
-    
     if (subdomain) {
-      // Use tenant-specific API subdomain: tenant.api.echodesk.ge
+      // Use tenant-specific API subdomain: subdomain.api.echodesk.ge
       const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || 'api.echodesk.ge';
       return `https://${subdomain}.${apiDomain}`;
+    }
+    
+    // Fallback to main API for non-tenant requests
+    if (this.isDevelopment && typeof window !== 'undefined' && window.location.hostname.includes('localhost')) {
+      return this.apiBaseUrl;
     }
     
     return this.apiBaseUrl;
@@ -37,8 +38,8 @@ class TenantService {
    */
   async getTenantBySubdomain(subdomain: string): Promise<TenantConfig | null> {
     try {
-      // Use main API for tenant configuration, not tenant-specific API
-      const apiUrl = this.apiBaseUrl;
+      // Always use main API for tenant configuration lookup, not tenant-specific API
+      const apiUrl = 'https://api.echodesk.ge';
       const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config/';
       
       const response = await fetch(`${apiUrl}${endpoint}?subdomain=${subdomain}`, {
@@ -80,8 +81,8 @@ class TenantService {
    */
   async getTenantByDomain(domain: string): Promise<TenantConfig | null> {
     try {
-      // Use main API for tenant configuration, not tenant-specific API
-      const apiUrl = this.apiBaseUrl;
+      // Always use main API for tenant configuration lookup, not tenant-specific API
+      const apiUrl = 'https://api.echodesk.ge';
       const endpoint = process.env.NEXT_PUBLIC_TENANT_CONFIG_ENDPOINT || '/api/tenant/config/';
       
       const response = await fetch(`${apiUrl}${endpoint}?domain=${domain}`, {
@@ -110,7 +111,8 @@ class TenantService {
    */
   async getAllTenants(): Promise<Tenant[]> {
     try {
-      const apiUrl = this.apiBaseUrl; // Use main API for listing all tenants
+      // Always use main API for listing all tenants
+      const apiUrl = 'https://api.echodesk.ge';
       const endpoint = process.env.NEXT_PUBLIC_TENANTS_LIST_ENDPOINT || '/api/tenants/list/';
       
       const response = await fetch(`${apiUrl}${endpoint}`, {
@@ -193,10 +195,53 @@ class TenantService {
   }
 
   /**
+   * Extract tenant from URL path (for localhost development)
+   * Supports paths like /amanati-tenant
+   */
+  getTenantFromPath(pathname: string): string | null {
+    // Match pattern like /amanati-tenant or /tenant-name-tenant
+    const pathMatch = pathname.match(/^\/([^\/]+)-tenant\/?/);
+    if (pathMatch) {
+      return pathMatch[1]; // Return the tenant name without "-tenant" suffix
+    }
+    return null;
+  }
+
+  /**
+   * Get tenant identifier from current context (subdomain or path)
+   */
+  getCurrentTenantIdentifier(): string | null {
+    if (typeof window === 'undefined') return null;
+    
+    const hostname = window.location.hostname;
+    const pathname = window.location.pathname;
+    
+    // First try subdomain-based detection
+    const subdomain = this.getSubdomainFromHostname(hostname);
+    if (subdomain) {
+      return subdomain;
+    }
+    
+    // Then try path-based detection (for localhost development)
+    if (hostname.includes('localhost')) {
+      return this.getTenantFromPath(pathname);
+    }
+    
+    return null;
+  }
+
+  /**
    * Check if current domain is a tenant domain
    */
   isTenantDomain(hostname: string): boolean {
     return this.getSubdomainFromHostname(hostname) !== null;
+  }
+
+  /**
+   * Check if current path indicates a tenant route
+   */
+  isTenantPath(pathname: string): boolean {
+    return this.getTenantFromPath(pathname) !== null;
   }
 
   /**
@@ -226,10 +271,7 @@ class TenantService {
   getPublicTenantApiUrl(subdomain: string): string {
     const apiDomain = process.env.NEXT_PUBLIC_API_DOMAIN || 'api.echodesk.ge';
     
-    if (this.isDevelopment) {
-      return `http://localhost:8000`;
-    }
-    
+    // Always use tenant-specific API URL, even in development
     return `https://${subdomain}.${apiDomain}`;
   }
 }
