@@ -29,6 +29,7 @@ export default function UserForm({
     can_view_all_tickets: user?.can_view_all_tickets || false,
     can_manage_users: user?.can_manage_users || false,
     can_make_calls: (user as any)?.can_make_calls || false,
+    can_manage_groups: (user as any)?.can_manage_groups || false,
     can_manage_settings: user?.can_manage_settings || false,
     is_active: user?.is_active !== undefined ? user.is_active : true,
     status: user?.status || "active",
@@ -109,6 +110,7 @@ export default function UserForm({
           can_view_all_tickets: formData.can_view_all_tickets,
           can_manage_users: formData.can_manage_users,
           can_make_calls: formData.can_make_calls,
+          can_manage_groups: formData.can_manage_groups,
           can_manage_settings: formData.can_manage_settings,
         };
         await onSubmit(createData);
@@ -124,6 +126,7 @@ export default function UserForm({
           can_view_all_tickets: formData.can_view_all_tickets,
           can_manage_users: formData.can_manage_users,
           can_make_calls: formData.can_make_calls,
+          can_manage_groups: formData.can_manage_groups,
           can_manage_settings: formData.can_manage_settings,
           is_active: formData.is_active,
         };
@@ -341,6 +344,17 @@ export default function UserForm({
                   }
                 />
                 <span>Can make calls</span>
+              </label>
+
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={formData.can_manage_groups}
+                  onChange={(e) =>
+                    handleChange("can_manage_groups", e.target.checked)
+                  }
+                />
+                <span>Can manage groups</span>
               </label>
 
               <label className="checkbox-label">

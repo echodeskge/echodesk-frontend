@@ -152,6 +152,21 @@ export interface EventTypeEnum {
   [key: string]: any;
 }
 
+export interface Group {
+  id: number;
+  name: string;
+  user_count: string;
+  users: string[];
+}
+
+export interface GroupCreate {
+  name: string;
+}
+
+export interface GroupUpdate {
+  name: string;
+}
+
 export interface KanbanBoard {
   columns: TicketColumn[];
   tickets_by_column: string;
@@ -169,6 +184,13 @@ export interface PaginatedClientList {
   next?: string;
   previous?: string;
   results: Client[];
+}
+
+export interface PaginatedGroupList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Group[];
 }
 
 export interface PaginatedSipConfigurationListList {
@@ -271,6 +293,10 @@ export interface PatchedClient {
   is_active?: boolean;
 }
 
+export interface PatchedGroupUpdate {
+  name?: string;
+}
+
 export interface PatchedSipConfiguration {
   id?: number;
   name?: string;
@@ -365,7 +391,8 @@ export interface PatchedUser {
   job_title?: string;
   can_view_all_tickets?: boolean;
   can_manage_users?: boolean;
-  can_view_reports?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
   can_manage_settings?: boolean;
   is_active?: boolean;
   is_staff?: boolean;
@@ -386,7 +413,8 @@ export interface PatchedUserUpdate {
   job_title?: string;
   can_view_all_tickets?: boolean;
   can_manage_users?: boolean;
-  can_view_reports?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
   can_manage_settings?: boolean;
   is_active?: boolean;
 }
@@ -611,7 +639,8 @@ export interface User {
   job_title?: string;
   can_view_all_tickets?: boolean;
   can_manage_users?: boolean;
-  can_view_reports?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
   can_manage_settings?: boolean;
   is_active?: boolean;
   is_staff?: boolean;
@@ -634,7 +663,8 @@ export interface UserCreate {
   job_title?: string;
   can_view_all_tickets?: boolean;
   can_manage_users?: boolean;
-  can_view_reports?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
   can_manage_settings?: boolean;
 }
 
@@ -655,7 +685,8 @@ export interface UserUpdate {
   job_title?: string;
   can_view_all_tickets?: boolean;
   can_manage_users?: boolean;
-  can_view_reports?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
   can_manage_settings?: boolean;
   is_active?: boolean;
 }

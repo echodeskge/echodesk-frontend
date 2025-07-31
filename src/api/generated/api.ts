@@ -29,6 +29,11 @@ import type {
   PaginatedTicketCommentList,
   TicketComment,
   PatchedTicketComment,
+  PaginatedGroupList,
+  GroupCreate,
+  Group,
+  GroupUpdate,
+  PatchedGroupUpdate,
   TenantRegistration,
   Tenant,
   PaginatedSipConfigurationListList,
@@ -438,6 +443,73 @@ export async function corsTestRetrieve(): Promise<any> {
 
 export async function deploymentStatusRetrieve(tenantId: number): Promise<any> {
   const response = await axios.get(`/api/deployment-status/${tenantId}/`);
+  return response.data;
+}
+
+export async function groupsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedGroupList> {
+  const response = await axios.get(
+    `/api/groups/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function groupsCreate(data: GroupCreate): Promise<GroupCreate> {
+  const response = await axios.post(`/api/groups/`, data);
+  return response.data;
+}
+
+export async function groupsRetrieve(id: number): Promise<Group> {
+  const response = await axios.get(`/api/groups/${id}/`);
+  return response.data;
+}
+
+export async function groupsUpdate(
+  id: number,
+  data: GroupUpdate,
+): Promise<GroupUpdate> {
+  const response = await axios.put(`/api/groups/${id}/`, data);
+  return response.data;
+}
+
+export async function groupsPartialUpdate(
+  id: number,
+  data: PatchedGroupUpdate,
+): Promise<GroupUpdate> {
+  const response = await axios.patch(`/api/groups/${id}/`, data);
+  return response.data;
+}
+
+export async function groupsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/groups/${id}/`);
+  return response.data;
+}
+
+export async function groupsAddUsers(id: number, data: Group): Promise<Group> {
+  const response = await axios.post(`/api/groups/${id}/add_users/`, data);
+  return response.data;
+}
+
+export async function groupsRemoveUsers(
+  id: number,
+  data: Group,
+): Promise<Group> {
+  const response = await axios.post(`/api/groups/${id}/remove_users/`, data);
+  return response.data;
+}
+
+export async function groupsStatistics(): Promise<Group> {
+  const response = await axios.get(`/api/groups/statistics/`);
   return response.data;
 }
 

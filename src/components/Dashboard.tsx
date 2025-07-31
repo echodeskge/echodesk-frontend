@@ -102,6 +102,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     if (permission === 'can_make_calls') {
       return (userProfile as any).can_make_calls || false;
     }
+    if (permission === 'can_manage_groups') {
+      return (userProfile as any).can_manage_groups || false;
+    }
     if (permission === 'can_manage_settings') {
       return userProfile.can_manage_settings || false;
     }
