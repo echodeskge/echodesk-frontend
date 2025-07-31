@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AuthUser, TenantInfo } from "@/types/auth";
 import { authService } from "@/services/auth";
 import { User } from "@/api/generated/interfaces";
+import { getSidebarMenuItems, hasPermission } from "@/services/permissionService";
 import TicketManagement from "./TicketManagement";
 import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
@@ -75,28 +76,28 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       id: "tickets",
       label: "Tickets",
       icon: "🎫",
-      permission: null,
+      permission: "can_access_tickets",
       description: "View and manage tickets",
     },
     {
       id: "calls",
       label: "Calls",
       icon: "📞",
-      permission: "can_make_calls",
+      permission: "can_access_calls",
       description: "Handle phone calls",
     },
     {
       id: "users",
       label: "Users",
       icon: "👥",
-      permission: "can_manage_users",
+      permission: "can_access_user_management",
       description: "Manage user accounts",
     },
     {
       id: "groups",
       label: "Groups",
       icon: "👨‍👩‍👧‍👦",
-      permission: "can_manage_groups",
+      permission: "can_access_user_management",
       description: "Manage user groups and permissions",
     },
     {
@@ -108,75 +109,8 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     },
   ];
 
-  // Function to check if user has a specific permission
-  const hasPermission = (
-    userProfile: User | null,
-    permission: string
-  ): boolean => {
-    if (!userProfile) return false;
-
-    // Check if user is superuser - superusers have all permissions
-    if ((userProfile as any).is_superuser) {
-      return true;
-    }
-
-    try {
-      // Parse the all_permissions JSON field
-      const allPermissions = JSON.parse(userProfile.all_permissions || "{}");
-      return allPermissions[permission] || false;
-    } catch (error) {
-      console.error("Error parsing permissions:", error);
-      return false;
-    }
-  };
-
-  // Function to check menu permissions
-  const checkMenuPermission = (permission: string): boolean => {
-    if (!userProfile) return false;
-
-    // Check if user is superuser - superusers have all permissions
-    if ((userProfile as any).is_superuser) {
-      return true;
-    }
-
-    const userRole = userProfile.role?.toString();
-
-    // Admins have access to everything
-    if (userRole === "admin") {
-      return true;
-    }
-
-    // Managers have most permissions except user management
-    if (userRole === "manager") {
-      if (permission === "can_manage_users") {
-        return false; // Managers can't manage users
-      }
-      return true;
-    }
-
-    // Agents have limited permissions
-    if (userRole === "agent") {
-      const allowedPermissions = [
-        "can_create_tickets",
-        "can_edit_own_tickets",
-        "can_make_calls",
-      ];
-      return allowedPermissions.includes(permission);
-    }
-
-    // Viewers only get basic access - no management permissions
-    if (userRole === "viewer") {
-      return false; // Viewers have very limited access
-    }
-
-    // Use the parsed permissions for specific checks
-    return hasPermission(userProfile, permission);
-  };
-
-  // Filter menu items based on user permissions
-  const visibleMenuItems = menuItems.filter((item) =>
-    item.permission ? checkMenuPermission(item.permission) : true
-  );
+  // Filter menu items based on user permissions using the new permission service
+  const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
   const handleMenuClick = (
     viewId: "dashboard" | "tickets" | "calls" | "users" | "settings"
@@ -461,17 +395,19 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                   }}
                 >
                   <div>
-                    👥 Users: {hasPermission(userProfile, 'can_manage_users') ? "✅" : "❌"}
+                    🎫 Tickets: {hasPermission(userProfile, 'can_access_tickets') ? "✅" : "❌"}
                   </div>
                   <div>
-                    🎫 All Tickets:{" "}
-                    {hasPermission(userProfile, 'can_view_all_tickets') ? "✅" : "❌"}
+                    📞 Calls: {hasPermission(userProfile, 'can_access_calls') ? "✅" : "❌"}
                   </div>
                   <div>
-                    � Calls: {(userProfile as any).can_make_calls ? "✅" : "❌"}
+                    👥 User Mgmt: {hasPermission(userProfile, 'can_access_user_management') ? "✅" : "❌"}
                   </div>
                   <div>
                     ⚙️ Settings: {hasPermission(userProfile, 'can_manage_settings') ? "✅" : "❌"}
+                  </div>
+                  <div style={{ fontSize: "9px", marginTop: "4px", fontStyle: "italic" }}>
+                    Groups: {userProfile?.groups?.map(g => g.name).join(', ') || 'None'}
                   </div>
                 </div>
               )}

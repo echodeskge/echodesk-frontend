@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Group, GroupCreate, PaginatedGroupList, PatchedGroup, Permission, PaginatedPermissionList } from '../api/generated/interfaces';
 import { groupsList, groupsCreate, groupsPartialUpdate, groupsDestroy, permissionsList } from '../api/generated/api';
+import GroupPermissionForm from './GroupPermissionForm';
+import { categoriesToDjangoPermissions, djangoPermissionsToCategories } from '@/utils/permissionUtils';
 import './GroupManagement.css';
 
 interface GroupFormData {
   name: string;
-  permission_ids: number[];
+  permission_codenames: string[]; // Changed from permission_ids to codenames
 }
 
 interface ExtendedGroup extends Group {
@@ -17,30 +19,35 @@ interface GroupFormProps {
   group?: ExtendedGroup;
   onSubmit: (data: GroupFormData) => Promise<void>;
   onCancel: () => void;
-  permissions: Permission[];
-  permissionSearch: string;
-  setPermissionSearch: (search: string) => void;
 }
 
-// Helper function to format permission name like Django admin
-const formatPermissionName = (permission: Permission) => {
-  return `${permission.app_label} | ${permission.model} | ${permission.name}`;
-};
-
-const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel, permissions, permissionSearch, setPermissionSearch }) => {
+const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState<GroupFormData>({
     name: group?.name || '',
-    permission_ids: group?.permissions?.map(p => p.id) || [],
+    permission_codenames: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  // Update form data when group prop changes
+  // Convert group permissions to codenames on component mount
   useEffect(() => {
     if (group) {
+      const groupPermissionCodenames = group.permissions?.map(p => p.codename) || [];
+      
+      // Debug: Show what permissions we're working with
+      console.log('Editing group:', group.name);
+      console.log('Group permissions from API:', group.permissions?.map(p => ({
+        id: p.id,
+        codename: p.codename,
+        name: p.name,
+        app_label: p.app_label,
+        model: p.model
+      })));
+      console.log('Extracted codenames:', groupPermissionCodenames);
+      
       setFormData({
         name: group.name || '',
-        permission_ids: group.permissions?.map(p => p.id) || [],
+        permission_codenames: groupPermissionCodenames,
       });
     }
   }, [group]);
@@ -61,18 +68,11 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel, 
     }
   };
 
-  const handleChange = (field: string, value: string | number[]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
-
-  const handlePermissionToggle = (permissionId: number) => {
-    const updatedPermissionIds = formData.permission_ids.includes(permissionId)
-      ? formData.permission_ids.filter(id => id !== permissionId)
-      : [...formData.permission_ids, permissionId];
-    handleChange('permission_ids', updatedPermissionIds);
+  const handlePermissionsChange = (permissions: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      permission_codenames: permissions
+    }));
   };
 
   return (
@@ -94,7 +94,7 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel, 
               type="text"
               id="name"
               value={formData.name}
-              onChange={(e) => handleChange("name", e.target.value)}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               className={errors.name ? "error" : ""}
               placeholder="Enter group name"
               required
@@ -102,48 +102,12 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel, 
             {errors.name && <span className="error-text">{errors.name}</span>}
           </div>
 
-          <div className="permissions-section">
-            <h3>Group Permissions</h3>
-            <p>Select the permissions that members of this group will have:</p>
-            
-            <div className="permissions-search">
-              <input
-                type="text"
-                placeholder="Search permissions..."
-                value={permissionSearch}
-                onChange={(e) => setPermissionSearch(e.target.value)}
-                className="search-input"
-              />
-            </div>
-            
-            <div className="permissions-count">
-              Showing {permissions.length} permissions
-              {permissionSearch && ` (filtered)`}
-            </div>
-            
-            {permissions.length === 0 ? (
-              <div>Loading permissions...</div>
-            ) : (
-              <div className="permissions-grid">
-                {permissions.map((permission) => (
-                  <div key={permission.id} className="permission-item">
-                    <label className="permission-label">
-                      <input
-                        type="checkbox"
-                        checked={formData.permission_ids.includes(permission.id)}
-                        onChange={() => handlePermissionToggle(permission.id)}
-                      />
-                      <div className="permission-info">
-                        <span className="permission-name" title={permission.name}>
-                          {formatPermissionName(permission)}
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Use the new simplified permission form */}
+          <GroupPermissionForm
+            selectedPermissions={formData.permission_codenames}
+            onPermissionsChange={handlePermissionsChange}
+            disabled={isSubmitting}
+          />
 
           <div className="form-actions">
             <button type="button" onClick={onCancel} className="cancel-btn">
@@ -171,7 +135,6 @@ const GroupManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loadingPermissions, setLoadingPermissions] = useState(true);
-  const [permissionSearch, setPermissionSearch] = useState('');
 
   const loadGroups = async () => {
     try {
@@ -207,6 +170,17 @@ const GroupManagement: React.FC = () => {
       
       setPermissions(allPermissions);
       console.log(`Loaded ${allPermissions.length} permissions for groups`);
+      
+      // Debug: Show sample permissions
+      if (allPermissions.length > 0) {
+        console.log('Sample permissions:', allPermissions.slice(0, 5).map(p => ({
+          id: p.id,
+          codename: p.codename,
+          name: p.name,
+          app_label: p.app_label,
+          model: p.model
+        })));
+      }
     } catch (err: any) {
       console.error('Failed to load permissions:', err);
     } finally {
@@ -219,28 +193,100 @@ const GroupManagement: React.FC = () => {
     loadPermissions();
   }, []);
 
-  const handleCreateGroup = async (data: GroupFormData) => {
-    const createData: any = {
-      name: data.name,
-      permission_ids: data.permission_ids,
-    };
+  // Helper function to convert permission codenames to IDs
+    const getPermissionIdsFromCodenames = (selectedCodenames: string[]): number[] => {
+    console.log('Converting codenames to IDs:', selectedCodenames);
     
-    await groupsCreate(createData);
-    setShowForm(null);
-    await loadGroups();
+    if (!permissions || permissions.length === 0) {
+      console.warn('No permissions loaded yet');
+      return [];
+    }
+
+    const permissionIds: number[] = [];
+    
+    selectedCodenames.forEach(codename => {
+      // Try different matching strategies
+      const permission = permissions.find(p => {
+        // Strategy 1: Direct codename match
+        if (p.codename === codename) return true;
+        
+        // Strategy 2: Full format app.action_model
+        if (p.app_label && p.model && p.codename) {
+          const fullCodename = `${p.app_label}.${p.codename}`;
+          if (fullCodename === codename) return true;
+        }
+        
+        // Strategy 3: Strip app prefix if codename includes it
+        if (codename.includes('.')) {
+          const [, actionModel] = codename.split('.');
+          if (p.codename === actionModel) return true;
+        }
+        
+        return false;
+      });
+      
+      if (permission) {
+        permissionIds.push(permission.id);
+        console.log(`Mapped codename "${codename}" to permission ID ${permission.id} (${permission.name})`);
+      } else {
+        console.warn(`Could not find permission for codename: ${codename}`);
+        // Debug: show what permissions are available
+        console.log('Available permissions (first 10):', permissions.slice(0, 10).map(p => ({
+          id: p.id,
+          codename: p.codename,
+          full: p.app_label ? `${p.app_label}.${p.codename}` : p.codename
+        })));
+      }
+    });
+
+    console.log('Final permission IDs:', permissionIds);
+    return permissionIds;
+  };
+
+  const handleCreateGroup = async (data: GroupFormData) => {
+    try {
+      const permissionIds = getPermissionIdsFromCodenames(data.permission_codenames);
+      
+      if (data.permission_codenames.length > 0 && permissionIds.length === 0) {
+        throw new Error("Failed to convert permission codenames to IDs. Please try again.");
+      }
+      
+      const createData: any = {
+        name: data.name,
+        permission_ids: permissionIds, // Convert codenames to IDs
+      };
+      
+      await groupsCreate(createData);
+      setShowForm(null);
+      await loadGroups();
+    } catch (err: any) {
+      setError(err.message || "Failed to create group");
+      throw err; // Re-throw to let the form handle it
+    }
   };
 
   const handleUpdateGroup = async (data: GroupFormData) => {
     if (!showForm?.group) return;
     
-    const updateData: any = {
-      name: data.name,
-      permission_ids: data.permission_ids,
-    };
-    
-    await groupsPartialUpdate(showForm.group.id, updateData);
-    setShowForm(null);
-    await loadGroups();
+    try {
+      const permissionIds = getPermissionIdsFromCodenames(data.permission_codenames);
+      
+      if (data.permission_codenames.length > 0 && permissionIds.length === 0) {
+        throw new Error("Failed to convert permission codenames to IDs. Please try again.");
+      }
+      
+      const updateData: any = {
+        name: data.name,
+        permission_ids: permissionIds, // Convert codenames to IDs
+      };
+      
+      await groupsPartialUpdate(showForm.group.id, updateData);
+      setShowForm(null);
+      await loadGroups();
+    } catch (err: any) {
+      setError(err.message || "Failed to update group");
+      throw err; // Re-throw to let the form handle it
+    }
   };
 
   const handleDeleteGroup = async (group: Group) => {
@@ -260,22 +306,12 @@ const GroupManagement: React.FC = () => {
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Filter permissions based on search
-  const filteredPermissions = permissions.filter(permission => {
-    if (!permissionSearch) return true;
-    const searchLower = permissionSearch.toLowerCase();
-    return (
-      permission.name?.toLowerCase().includes(searchLower) ||
-      permission.model?.toLowerCase().includes(searchLower) ||
-      permission.app_label?.toLowerCase().includes(searchLower) ||
-      formatPermissionName(permission).toLowerCase().includes(searchLower)
-    );
-  });
-
-  if (loading) {
+  if (loading || loadingPermissions) {
     return (
       <div className="groups-container">
-        <div className="loading-spinner">Loading groups...</div>
+        <div className="loading-spinner">
+          Loading {loading ? 'groups' : 'permissions'}...
+        </div>
       </div>
     );
   }
@@ -369,13 +405,30 @@ const GroupManagement: React.FC = () => {
                 <div className="permissions-summary">
                   {(() => {
                     const groupPermissions = group.permissions || [];
-                    return groupPermissions.length > 0 ? (
+                    const groupPermissionCodenames = groupPermissions.map(p => p.codename);
+                    const selectedCategories = djangoPermissionsToCategories(groupPermissionCodenames);
+                    
+                    return selectedCategories.length > 0 ? (
                       <div className="permissions-list">
-                        {groupPermissions.map((permission) => (
-                          <span key={permission.id} className="permission-badge" title={permission.name}>
-                            {permission.codename}
-                          </span>
-                        ))}
+                        {selectedCategories.map((category) => {
+                          const categoryLabels: { [key: string]: string } = {
+                            'tickets': 'Tickets 🎫',
+                            'calls': 'Calls 📞',
+                            'user_management': 'User Management 👥'
+                          };
+                          return (
+                            <span key={category} className="permission-badge">
+                              {categoryLabels[category] || category}
+                            </span>
+                          );
+                        })}
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#6c757d', 
+                          marginTop: '4px' 
+                        }}>
+                          ({groupPermissions.length} Django permissions)
+                        </div>
                       </div>
                     ) : (
                       <span className="no-permissions">No permissions assigned</span>
@@ -394,9 +447,6 @@ const GroupManagement: React.FC = () => {
           group={showForm.group}
           onSubmit={showForm.mode === 'create' ? handleCreateGroup : handleUpdateGroup}
           onCancel={() => setShowForm(null)}
-          permissions={filteredPermissions}
-          permissionSearch={permissionSearch}
-          setPermissionSearch={setPermissionSearch}
         />
       )}
     </div>
