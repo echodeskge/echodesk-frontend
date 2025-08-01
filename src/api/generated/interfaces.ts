@@ -151,6 +151,27 @@ export interface EventTypeEnum {
   [key: string]: any;
 }
 
+export interface FacebookMessage {
+  id: number;
+  message_id: string;
+  sender_id: string;
+  sender_name?: string;
+  message_text: string;
+  timestamp: string;
+  is_from_page?: boolean;
+  page_name: string;
+  created_at: string;
+}
+
+export interface FacebookPageConnection {
+  id: number;
+  page_id: string;
+  page_name: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Group {
   id: number;
   name: string;
@@ -188,6 +209,20 @@ export interface PaginatedDepartmentList {
   next?: string;
   previous?: string;
   results: Department[];
+}
+
+export interface PaginatedFacebookMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: FacebookMessage[];
+}
+
+export interface PaginatedFacebookPageConnectionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: FacebookPageConnection[];
 }
 
 export interface PaginatedGroupList {
@@ -304,6 +339,15 @@ export interface PatchedDepartment {
   description?: string;
   is_active?: boolean;
   employee_count?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedFacebookPageConnection {
+  id?: number;
+  page_id?: string;
+  page_name?: string;
+  is_active?: boolean;
   created_at?: string;
   updated_at?: string;
 }

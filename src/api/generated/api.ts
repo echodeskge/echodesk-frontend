@@ -44,6 +44,11 @@ import type {
   SipConfiguration,
   SipConfigurationDetail,
   PatchedSipConfiguration,
+  PaginatedFacebookMessageList,
+  FacebookMessage,
+  PaginatedFacebookPageConnectionList,
+  FacebookPageConnection,
+  PatchedFacebookPageConnection,
   PaginatedTagList,
   Tag,
   PatchedTag,
@@ -98,6 +103,18 @@ export async function tenantProfile(): Promise<{
   date_joined?: string;
   last_login?: string;
   is_active?: boolean;
+  groups?: {
+    id?: number;
+    name?: string;
+    permissions?: {
+      id?: number;
+      codename?: string;
+      name?: string;
+      app_label?: string;
+      model?: string;
+    }[];
+  }[];
+  all_permissions?: string[];
 }> {
   const response = await axios.get(`/api/auth/profile/`);
   return response.data;
@@ -682,6 +699,109 @@ export async function sipConfigurationsWebrtcConfigRetrieve(
   const response = await axios.get(
     `/api/sip-configurations/${id}/webrtc_config/`,
   );
+  return response.data;
+}
+
+export async function socialFacebookMessagesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedFacebookMessageList> {
+  const response = await axios.get(
+    `/api/social/facebook-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialFacebookMessagesRetrieve(
+  id: string,
+): Promise<FacebookMessage> {
+  const response = await axios.get(`/api/social/facebook-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialFacebookPagesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedFacebookPageConnectionList> {
+  const response = await axios.get(
+    `/api/social/facebook-pages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialFacebookPagesCreate(
+  data: FacebookPageConnection,
+): Promise<FacebookPageConnection> {
+  const response = await axios.post(`/api/social/facebook-pages/`, data);
+  return response.data;
+}
+
+export async function socialFacebookPagesRetrieve(
+  id: string,
+): Promise<FacebookPageConnection> {
+  const response = await axios.get(`/api/social/facebook-pages/${id}/`);
+  return response.data;
+}
+
+export async function socialFacebookPagesUpdate(
+  id: string,
+  data: FacebookPageConnection,
+): Promise<FacebookPageConnection> {
+  const response = await axios.put(`/api/social/facebook-pages/${id}/`, data);
+  return response.data;
+}
+
+export async function socialFacebookPagesPartialUpdate(
+  id: string,
+  data: PatchedFacebookPageConnection,
+): Promise<FacebookPageConnection> {
+  const response = await axios.patch(`/api/social/facebook-pages/${id}/`, data);
+  return response.data;
+}
+
+export async function socialFacebookPagesDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/social/facebook-pages/${id}/`);
+  return response.data;
+}
+
+export async function socialFacebookDisconnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/facebook/disconnect/`);
+  return response.data;
+}
+
+export async function socialFacebookOauthCallbackRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/oauth/callback/`);
+  return response.data;
+}
+
+export async function socialFacebookOauthDebugRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/oauth/debug/`);
+  return response.data;
+}
+
+export async function socialFacebookOauthStartRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/oauth/start/`);
+  return response.data;
+}
+
+export async function socialFacebookStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/status/`);
   return response.data;
 }
 

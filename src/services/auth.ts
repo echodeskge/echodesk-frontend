@@ -1,7 +1,12 @@
-import { createAxiosInstance } from '@/api/axios';
-import { tenantProfile } from '@/api/generated/api';
-import { User } from '@/api/generated/interfaces';
-import { LoginRequest, LoginResponse, AuthUser, TenantInfo } from '@/types/auth';
+import { createAxiosInstance } from "@/api/axios";
+import { tenantProfile } from "@/api/generated/api";
+import { User } from "@/api/generated/interfaces";
+import {
+  LoginRequest,
+  LoginResponse,
+  AuthUser,
+  TenantInfo,
+} from "@/types/auth";
 
 export class AuthService {
   private static instance: AuthService;
@@ -24,10 +29,13 @@ export class AuthService {
     try {
       // Use the generated API function, but we need to adapt it since the generated
       // function expects a User object but login typically expects email/password
-      const response = await this.axiosInstance.post('/api/users/login/', credentials);
+      const response = await this.axiosInstance.post(
+        "/api/users/login/",
+        credentials
+      );
       return response.data;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   }
@@ -35,9 +43,9 @@ export class AuthService {
   // Get current user profile
   async getCurrentUser(): Promise<User> {
     try {
-      return await tenantProfile() as User;
+      return (await tenantProfile()) as unknown as User;
     } catch (error) {
-      console.error('Get current user error:', error);
+      console.error("Get current user error:", error);
       throw error;
     }
   }
@@ -50,9 +58,9 @@ export class AuthService {
   // Logout user
   async logout(): Promise<void> {
     try {
-      await this.axiosInstance.post('/api/users/logout/');
+      await this.axiosInstance.post("/api/users/logout/");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       // Continue with local logout even if API call fails
     } finally {
       this.clearLocalAuth();
@@ -61,33 +69,37 @@ export class AuthService {
 
   // Clear local authentication data
   clearLocalAuth(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      localStorage.removeItem('tenant');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user");
+      localStorage.removeItem("tenant");
     }
   }
 
   // Save authentication data locally
   saveAuthData(token: string, user: AuthUser, tenant?: TenantInfo): void {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('authToken', token);
-      localStorage.setItem('user', JSON.stringify(user));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("authToken", token);
+      localStorage.setItem("user", JSON.stringify(user));
       if (tenant) {
-        localStorage.setItem('tenant', JSON.stringify(tenant));
+        localStorage.setItem("tenant", JSON.stringify(tenant));
       }
     }
   }
 
   // Get stored authentication data
-  getStoredAuthData(): { token: string | null; user: AuthUser | null; tenant: TenantInfo | null } {
-    if (typeof window === 'undefined') {
+  getStoredAuthData(): {
+    token: string | null;
+    user: AuthUser | null;
+    tenant: TenantInfo | null;
+  } {
+    if (typeof window === "undefined") {
       return { token: null, user: null, tenant: null };
     }
 
-    const token = localStorage.getItem('authToken');
-    const userStr = localStorage.getItem('user');
-    const tenantStr = localStorage.getItem('tenant');
+    const token = localStorage.getItem("authToken");
+    const userStr = localStorage.getItem("user");
+    const tenantStr = localStorage.getItem("tenant");
 
     return {
       token,
@@ -105,10 +117,12 @@ export class AuthService {
   // Get tenant info from subdomain
   async getTenantInfo(subdomain: string): Promise<TenantInfo> {
     try {
-      const response = await this.axiosInstance.get(`/api/tenants/${subdomain}/`);
+      const response = await this.axiosInstance.get(
+        `/api/tenants/${subdomain}/`
+      );
       return response.data;
     } catch (error) {
-      console.error('Get tenant info error:', error);
+      console.error("Get tenant info error:", error);
       throw error;
     }
   }
