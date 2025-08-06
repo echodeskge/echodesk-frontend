@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,31 +12,13 @@ import ErrorMessage from '@/components/ErrorMessage';
 import { TenantInfo } from '@/types/auth';
 import { tenantService } from '@/services/tenantService';
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { tenant, loading: tenantLoading, error } = useTenant();
   const { isAuthenticated, user, loading: authLoading, login, logout } = useAuth();
 
-  useEffect(() => {
-    // Check if we're on localhost and should redirect to tenant path
-    if (typeof window !== 'undefined' && window.location.hostname.includes('localhost')) {
-      const pathname = window.location.pathname;
-      const search = window.location.search;
-      
-      // If we have a subdomain on localhost, redirect to path-based route
-      const subdomain = tenantService.getSubdomainFromHostname(window.location.hostname);
-      if (subdomain && pathname === '/') {
-        router.push(`/${subdomain}-tenant${search}`);
-        return;
-      }
-    }
-
-    // Handle OAuth callback parameters
-    handleOAuthCallback();
-  }, [router, searchParams]);
-
-  const handleOAuthCallback = () => {
+  const handleOAuthCallback = useCallback(() => {
     if (typeof window === 'undefined') return;
 
     const facebookStatus = searchParams.get('facebook_status');
@@ -74,7 +56,25 @@ export default function Home() {
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
     }
-  };
+  }, [searchParams]);
+
+  useEffect(() => {
+    // Check if we're on localhost and should redirect to tenant path
+    if (typeof window !== 'undefined' && window.location.hostname.includes('localhost')) {
+      const pathname = window.location.pathname;
+      const search = window.location.search;
+      
+      // If we have a subdomain on localhost, redirect to path-based route
+      const subdomain = tenantService.getSubdomainFromHostname(window.location.hostname);
+      if (subdomain && pathname === '/') {
+        router.push(`/${subdomain}-tenant${search}`);
+        return;
+      }
+    }
+
+    // Handle OAuth callback parameters
+    handleOAuthCallback();
+  }, [router, handleOAuthCallback]);
 
   const showNotification = (type: 'success' | 'error', title: string, message: string) => {
     // Create notification element
@@ -166,4 +166,12 @@ export default function Home() {
 
   // If no tenant (main domain), show landing page
   return <LandingPage />;
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <HomeContent />
+    </Suspense>
+  );
 }

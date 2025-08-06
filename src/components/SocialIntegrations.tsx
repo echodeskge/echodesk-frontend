@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FacebookPageConnection, FacebookMessage } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
 
@@ -84,28 +84,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   const [instagramStats, setInstagramStats] = useState<InstagramConnectionStats | null>(null);
   const [activeTab, setActiveTab] = useState<"facebook" | "instagram" | "whatsapp">("facebook");
 
-  useEffect(() => {
-    loadSocialConnections();
-  }, [activeTab]);
-
-  const loadSocialConnections = async () => {
-    setLoading(true);
-    try {
-      if (activeTab === "facebook") {
-        await loadFacebookStatus();
-      } else if (activeTab === "instagram") {
-        await loadInstagramStatus();
-      }
-      // Add other platforms later
-    } catch (err: any) {
-      console.error("Failed to load social connections:", err);
-      setError(err.message || "Failed to load social connections");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadFacebookStatus = async () => {
+  const loadFacebookStatus = useCallback(async () => {
     try {
       // Get connection status
       const statusResponse = await axios.get('/api/social/facebook/status/');
@@ -135,7 +114,60 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
       console.error("Failed to load Facebook status:", err);
       throw err;
     }
-  };
+  }, [onConnectionChange]);
+
+  const loadInstagramStatus = useCallback(async () => {
+    try {
+      // Get connection status
+      const statusResponse = await axios.get('/api/social/instagram/status/');
+      const status = statusResponse.data;
+      setInstagramStatus(status);
+
+      // Notify parent component of connection status change
+      if (onConnectionChange) {
+        onConnectionChange('instagram', status.connected || false);
+      }
+
+      // Get connected accounts
+      const accountsResponse = await axios.get('/api/social/instagram-accounts/');
+      const accountsData = accountsResponse.data as PaginatedResponse<InstagramAccountConnection>;
+      setInstagramAccounts(accountsData.results || []);
+
+      // Get recent messages for stats
+      if (status.connected) {
+        const messagesResponse = await axios.get('/api/social/instagram-messages/?page=1');
+        const messagesData = messagesResponse.data as PaginatedResponse<InstagramMessage>;
+        setInstagramStats({
+          totalMessages: messagesData.count,
+          recentMessages: messagesData.results.slice(0, 5)
+        });
+      }
+    } catch (err: any) {
+      console.error("Failed to load Instagram status:", err);
+      throw err;
+    }
+  }, [onConnectionChange]);
+
+  const loadSocialConnections = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (activeTab === "facebook") {
+        await loadFacebookStatus();
+      } else if (activeTab === "instagram") {
+        await loadInstagramStatus();
+      }
+      // Add other platforms later
+    } catch (err: any) {
+      console.error("Failed to load social connections:", err);
+      setError(err.message || "Failed to load social connections");
+    } finally {
+      setLoading(false);
+    }
+  }, [activeTab, loadFacebookStatus, loadInstagramStatus]);
+
+  useEffect(() => {
+    loadSocialConnections();
+  }, [loadSocialConnections]);
 
   const handleConnectFacebook = async () => {
     setLoading(true);
@@ -170,38 +202,6 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
       setError(err.response?.data?.error || err.message || "Failed to disconnect Facebook");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadInstagramStatus = async () => {
-    try {
-      // Get connection status
-      const statusResponse = await axios.get('/api/social/instagram/status/');
-      const status = statusResponse.data;
-      setInstagramStatus(status);
-
-      // Notify parent component of connection status change
-      if (onConnectionChange) {
-        onConnectionChange('instagram', status.connected || false);
-      }
-
-      // Get connected accounts
-      const accountsResponse = await axios.get('/api/social/instagram-accounts/');
-      const accountsData = accountsResponse.data as PaginatedResponse<InstagramAccountConnection>;
-      setInstagramAccounts(accountsData.results || []);
-
-      // Get recent messages for stats
-      if (status.connected) {
-        const messagesResponse = await axios.get('/api/social/instagram-messages/?page=1');
-        const messagesData = messagesResponse.data as PaginatedResponse<InstagramMessage>;
-        setInstagramStats({
-          totalMessages: messagesData.count,
-          recentMessages: messagesData.results.slice(0, 5)
-        });
-      }
-    } catch (err: any) {
-      console.error("Failed to load Instagram status:", err);
-      throw err;
     }
   };
 
