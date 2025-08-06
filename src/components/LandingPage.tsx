@@ -3,24 +3,22 @@ import { useState } from "react";
 
 export default function LandingPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [pricingModel, setPricingModel] = useState<'agent' | 'crm'>('agent');
 
-  const packages = [
+  const agentBasedPackages = [
     {
       id: 1,
-      name: "Starter",
-      price: "$29",
-      period: "per month",
-      description:
-        "Perfect for small teams getting started with ticket management",
+      name: "Essential",
+      price: "5₾",
+      period: "per agent/month",
+      description: "Basic ticket management and communication tools for small teams",
       features: [
         "Complete Ticket Management System",
-        "Kanban Board Views",
-        "Team Collaboration Tools",
-        "Custom Workflows",
-        "Basic Reporting & Analytics",
-        "Email Notifications",
-        "Multi-language Support",
-        "Basic API Access",
+        "Email Integration",
+        "Basic Reporting",
+        "Team Collaboration",
+        "Mobile App Access",
+        "Email Support"
       ],
       highlight: false,
       color: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -28,20 +26,17 @@ export default function LandingPage() {
     {
       id: 2,
       name: "Professional",
-      price: "$79",
-      period: "per month",
-      description:
-        "Advanced features with integrated SIP calling for customer support",
+      price: "10₾",
+      period: "per agent/month",
+      description: "Advanced features with SIP calling and social integrations",
       features: [
-        "Everything in Starter",
+        "Everything in Essential",
         "Integrated SIP Phone System",
-        "Voice Call Management",
-        "Call Recording & Logging",
-        "Advanced Call Routing",
-        "IVR (Interactive Voice Response)",
-        "Call Analytics & Reports",
-        "Multiple Phone Lines",
-        "Conference Calling",
+        "Call Recording & Analytics",
+        "Facebook Messenger Integration",
+        "Instagram DM Integration",
+        "Advanced Workflows",
+        "Priority Support"
       ],
       highlight: true,
       color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
@@ -49,25 +44,84 @@ export default function LandingPage() {
     {
       id: 3,
       name: "Enterprise",
-      price: "$149",
-      period: "per month",
-      description:
-        "Complete omnichannel solution with social media integrations",
+      price: "15₾",
+      period: "per agent/month",
+      description: "Complete omnichannel solution with WhatsApp and custom integrations",
       features: [
         "Everything in Professional",
-        "Facebook Messenger Integration",
-        "Instagram Direct Messages",
         "WhatsApp Business API",
-        "Social Media Management",
-        "Unified Inbox for All Channels",
-        "Advanced Automation Rules",
         "Custom Integrations",
-        "Priority Support & Training",
+        "Advanced Analytics Dashboard",
+        "Multi-tenant Management",
+        "API Access",
+        "Dedicated Account Manager",
+        "24/7 Premium Support"
       ],
       highlight: false,
       color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
     },
   ];
+
+  const crmBasedPackages = [
+    {
+      id: 4,
+      name: "Startup",
+      price: "49₾",
+      period: "per month",
+      description: "Perfect for small businesses with up to 5 users",
+      features: [
+        "Up to 5 Users",
+        "Complete Ticket Management",
+        "Email Integration",
+        "Basic Reporting",
+        "Mobile App Access",
+        "Standard Support",
+        "5GB Storage"
+      ],
+      highlight: false,
+      color: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    },
+    {
+      id: 5,
+      name: "Business",
+      price: "149₾",
+      period: "per month",
+      description: "Growing teams with advanced features and up to 15 users",
+      features: [
+        "Up to 15 Users",
+        "Everything in Startup",
+        "SIP Phone System",
+        "Social Media Integration",
+        "Advanced Workflows",
+        "Call Recording",
+        "Priority Support",
+        "25GB Storage"
+      ],
+      highlight: true,
+      color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    },
+    {
+      id: 6,
+      name: "Corporation",
+      price: "299₾",
+      period: "per month",
+      description: "Large organizations with unlimited users and enterprise features",
+      features: [
+        "Unlimited Users",
+        "Everything in Business",
+        "WhatsApp Business API",
+        "Custom Integrations",
+        "Advanced Analytics",
+        "Multi-tenant Architecture",
+        "Dedicated Support",
+        "Unlimited Storage"
+      ],
+      highlight: false,
+      color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+    },
+  ];
+
+  const packages = pricingModel === 'agent' ? agentBasedPackages : crmBasedPackages;
 
   const services = [
     {
@@ -327,6 +381,62 @@ export default function LandingPage() {
           >
             Choose Your Perfect Plan
           </h2>
+          
+          {/* Pricing Model Toggle */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginBottom: '2rem',
+            gap: '10px'
+          }}>
+            <button
+              onClick={() => setPricingModel('agent')}
+              style={{
+                padding: '12px 24px',
+                borderRadius: '50px',
+                border: '2px solid #2A2B7C',
+                background: pricingModel === 'agent' ? '#2A2B7C' : 'transparent',
+                color: pricingModel === 'agent' ? 'white' : '#2A2B7C',
+                fontWeight: '600',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              Agent-Based Pricing
+            </button>
+            <button
+              onClick={() => setPricingModel('crm')}
+              style={{
+                padding: '12px 24px',
+                borderRadius: '50px',
+                border: '2px solid #2A2B7C',
+                background: pricingModel === 'crm' ? '#2A2B7C' : 'transparent',
+                color: pricingModel === 'crm' ? 'white' : '#2A2B7C',
+                fontWeight: '600',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              CRM-Based Pricing
+            </button>
+          </div>
+          
+          <p
+            style={{
+              fontSize: '1rem',
+              color: '#64748b',
+              marginBottom: '1rem',
+              fontStyle: 'italic'
+            }}
+          >
+            {pricingModel === 'agent' 
+              ? 'Pay per agent - perfect for teams that want predictable scaling costs'
+              : 'Fixed pricing with user limits - ideal for organizations with defined team sizes'
+            }
+          </p>
+          
           <p
             style={{
               fontSize: "1.2rem",
