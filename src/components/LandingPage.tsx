@@ -254,7 +254,7 @@ export default function LandingPage() {
               View Pricing
             </a>
             <Link
-              href="https://api.echodesk.ge/register-tenant/"
+              href="/register"
               style={{
                 background: "white",
                 color: "#667eea",
@@ -582,7 +582,7 @@ export default function LandingPage() {
                 </ul>
 
                 <Link
-                  href="/register-tenant/"
+                  href="/register"
                   style={{
                     display: "inline-block",
                     width: "100%",
@@ -659,7 +659,7 @@ export default function LandingPage() {
             }}
           >
             <Link
-              href="https://api.echodesk.ge/register-tenant/"
+              href="/register"
               style={{
                 background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
                 color: "white",

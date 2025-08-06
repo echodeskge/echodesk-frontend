@@ -36,6 +36,9 @@ import type {
   GroupCreate,
   Group,
   PatchedGroup,
+  PaginatedPackageListList,
+  Package,
+  PackageList,
   PaginatedPermissionList,
   Permission,
   TenantRegistration,
@@ -49,6 +52,16 @@ import type {
   PaginatedFacebookPageConnectionList,
   FacebookPageConnection,
   PatchedFacebookPageConnection,
+  PaginatedInstagramAccountConnectionList,
+  InstagramAccountConnection,
+  PatchedInstagramAccountConnection,
+  PaginatedInstagramMessageList,
+  InstagramMessage,
+  PaginatedWhatsAppBusinessConnectionList,
+  WhatsAppBusinessConnection,
+  PatchedWhatsAppBusinessConnection,
+  PaginatedWhatsAppMessageList,
+  WhatsAppMessage,
   PaginatedTagList,
   Tag,
   PatchedTag,
@@ -580,6 +593,75 @@ export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
   return response.data;
 }
 
+export async function packagesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedPackageListList> {
+  const response = await axios.get(
+    `/api/packages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function getPackageFeatures(packageId: number): Promise<{
+  package_id?: number;
+  package_name?: string;
+  features?: string[];
+  limits?: {
+    max_users?: number;
+    max_whatsapp_messages?: number;
+    max_storage_gb?: number;
+  };
+  capabilities?: {
+    ticket_management?: boolean;
+    email_integration?: boolean;
+    sip_calling?: boolean;
+    facebook_integration?: boolean;
+    instagram_integration?: boolean;
+    whatsapp_integration?: boolean;
+    advanced_analytics?: boolean;
+    api_access?: boolean;
+    custom_integrations?: boolean;
+    priority_support?: boolean;
+    dedicated_account_manager?: boolean;
+  };
+}> {
+  const response = await axios.get(`/api/packages/${packageId}/features/`);
+  return response.data;
+}
+
+export async function packagesRetrieve(id: number): Promise<Package> {
+  const response = await axios.get(`/api/packages/${id}/`);
+  return response.data;
+}
+
+export async function listPackagesByPricingModel(): Promise<PackageList[]> {
+  const response = await axios.get(`/api/packages/by-model/`);
+  return response.data;
+}
+
+export async function calculatePricing(): Promise<{
+  package_id?: number;
+  package_name?: string;
+  pricing_model?: string;
+  base_price?: number;
+  agent_count?: number;
+  monthly_cost?: number;
+  yearly_cost?: number;
+  savings_yearly?: number;
+}> {
+  const response = await axios.get(`/api/packages/calculate-pricing/`);
+  return response.data;
+}
+
 export async function permissionsList(
   ordering?: string,
   page?: number,
@@ -611,6 +693,7 @@ export async function preflightTestRetrieve(): Promise<any> {
 export async function registerTenant(data: TenantRegistration): Promise<{
   message?: string;
   tenant?: Record<string, any>;
+  subscription?: Record<string, any>;
   frontend_url?: string;
   api_url?: string;
 }> {
@@ -780,6 +863,21 @@ export async function socialFacebookPagesDestroy(id: string): Promise<any> {
   return response.data;
 }
 
+export async function socialFacebookDatabaseDebugRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/database/debug/`);
+  return response.data;
+}
+
+export async function socialFacebookDatabaseTestRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/database/test/`);
+  return response.data;
+}
+
+export async function socialFacebookDatabaseTestCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/facebook/database/test/`);
+  return response.data;
+}
+
 export async function socialFacebookDisconnectCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/disconnect/`);
   return response.data;
@@ -800,8 +898,235 @@ export async function socialFacebookOauthStartRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function socialFacebookPagesDebugRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/pages/debug/`);
+  return response.data;
+}
+
 export async function socialFacebookStatusRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/status/`);
+  return response.data;
+}
+
+export async function socialFacebookWebhookTestRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/webhook/test/`);
+  return response.data;
+}
+
+export async function socialFacebookWebhookTestCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/facebook/webhook/test/`);
+  return response.data;
+}
+
+export async function socialInstagramAccountsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedInstagramAccountConnectionList> {
+  const response = await axios.get(
+    `/api/social/instagram-accounts/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialInstagramAccountsCreate(
+  data: InstagramAccountConnection,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.post(`/api/social/instagram-accounts/`, data);
+  return response.data;
+}
+
+export async function socialInstagramAccountsRetrieve(
+  id: string,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.get(`/api/social/instagram-accounts/${id}/`);
+  return response.data;
+}
+
+export async function socialInstagramAccountsUpdate(
+  id: string,
+  data: InstagramAccountConnection,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.put(
+    `/api/social/instagram-accounts/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialInstagramAccountsPartialUpdate(
+  id: string,
+  data: PatchedInstagramAccountConnection,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.patch(
+    `/api/social/instagram-accounts/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialInstagramAccountsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/social/instagram-accounts/${id}/`);
+  return response.data;
+}
+
+export async function socialInstagramMessagesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedInstagramMessageList> {
+  const response = await axios.get(
+    `/api/social/instagram-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialInstagramMessagesRetrieve(
+  id: string,
+): Promise<InstagramMessage> {
+  const response = await axios.get(`/api/social/instagram-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialInstagramDisconnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/instagram/disconnect/`);
+  return response.data;
+}
+
+export async function socialInstagramOauthCallbackRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/instagram/oauth/callback/`);
+  return response.data;
+}
+
+export async function socialInstagramOauthStartRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/instagram/oauth/start/`);
+  return response.data;
+}
+
+export async function socialInstagramStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/instagram/status/`);
+  return response.data;
+}
+
+export async function socialWhatsappConnectionsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedWhatsAppBusinessConnectionList> {
+  const response = await axios.get(
+    `/api/social/whatsapp-connections/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappConnectionsCreate(
+  data: WhatsAppBusinessConnection,
+): Promise<WhatsAppBusinessConnection> {
+  const response = await axios.post(`/api/social/whatsapp-connections/`, data);
+  return response.data;
+}
+
+export async function socialWhatsappConnectionsRetrieve(
+  id: string,
+): Promise<WhatsAppBusinessConnection> {
+  const response = await axios.get(`/api/social/whatsapp-connections/${id}/`);
+  return response.data;
+}
+
+export async function socialWhatsappConnectionsUpdate(
+  id: string,
+  data: WhatsAppBusinessConnection,
+): Promise<WhatsAppBusinessConnection> {
+  const response = await axios.put(
+    `/api/social/whatsapp-connections/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappConnectionsPartialUpdate(
+  id: string,
+  data: PatchedWhatsAppBusinessConnection,
+): Promise<WhatsAppBusinessConnection> {
+  const response = await axios.patch(
+    `/api/social/whatsapp-connections/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappConnectionsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/social/whatsapp-connections/${id}/`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappMessagesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedWhatsAppMessageList> {
+  const response = await axios.get(
+    `/api/social/whatsapp-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappMessagesRetrieve(
+  id: string,
+): Promise<WhatsAppMessage> {
+  const response = await axios.get(`/api/social/whatsapp-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialWhatsappConnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/whatsapp/connect/`);
+  return response.data;
+}
+
+export async function socialWhatsappDisconnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/whatsapp/disconnect/`);
+  return response.data;
+}
+
+export async function socialWhatsappSetupRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/whatsapp/setup/`);
+  return response.data;
+}
+
+export async function socialWhatsappStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/whatsapp/status/`);
   return response.data;
 }
 

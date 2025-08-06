@@ -3,6 +3,10 @@
  * DO NOT EDIT MANUALLY
  */
 
+export interface BillingPeriodEnum {
+  [key: string]: any;
+}
+
 export interface CallEvent {
   id: number;
   event_type: EventTypeEnum;
@@ -156,6 +160,7 @@ export interface FacebookMessage {
   message_id: string;
   sender_id: string;
   sender_name?: string;
+  profile_pic_url?: string;
   message_text: string;
   timestamp: string;
   is_from_page?: boolean;
@@ -185,9 +190,77 @@ export interface GroupCreate {
   permission_ids?: number[];
 }
 
+export interface InstagramAccountConnection {
+  id: number;
+  instagram_account_id: string;
+  username: string;
+  account_name?: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InstagramMessage {
+  id: number;
+  message_id: string;
+  conversation_id: string;
+  sender_id: string;
+  sender_username?: string;
+  message_text?: string;
+  message_type?: string;
+  attachment_url?: string;
+  timestamp: string;
+  is_from_business?: boolean;
+  account_username: string;
+  created_at: string;
+}
+
 export interface KanbanBoard {
   columns: TicketColumn[];
   tickets_by_column: string;
+}
+
+export interface Package {
+  id: number;
+  name: string;
+  display_name: string;
+  description: string;
+  pricing_model?: PricingModelEnum;
+  price_gel: string;
+  billing_period?: BillingPeriodEnum;
+  max_users?: number;
+  max_whatsapp_messages: number;
+  max_storage_gb?: number;
+  ticket_management?: boolean;
+  email_integration?: boolean;
+  sip_calling?: boolean;
+  facebook_integration?: boolean;
+  instagram_integration?: boolean;
+  whatsapp_integration?: boolean;
+  advanced_analytics?: boolean;
+  api_access?: boolean;
+  custom_integrations?: boolean;
+  priority_support?: boolean;
+  dedicated_account_manager?: boolean;
+  is_highlighted?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+  features_list: string;
+}
+
+export interface PackageList {
+  id: number;
+  name: string;
+  display_name: string;
+  description: string;
+  pricing_model?: PricingModelEnum;
+  price_gel: string;
+  max_users?: number;
+  max_whatsapp_messages: number;
+  max_storage_gb?: number;
+  is_highlighted?: boolean;
+  features_list: string;
+  pricing_suffix: string;
 }
 
 export interface PaginatedCallLogList {
@@ -230,6 +303,27 @@ export interface PaginatedGroupList {
   next?: string;
   previous?: string;
   results: Group[];
+}
+
+export interface PaginatedInstagramAccountConnectionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InstagramAccountConnection[];
+}
+
+export interface PaginatedInstagramMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InstagramMessage[];
+}
+
+export interface PaginatedPackageListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: PackageList[];
 }
 
 export interface PaginatedPermissionList {
@@ -286,6 +380,20 @@ export interface PaginatedUserList {
   next?: string;
   previous?: string;
   results: User[];
+}
+
+export interface PaginatedWhatsAppBusinessConnectionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WhatsAppBusinessConnection[];
+}
+
+export interface PaginatedWhatsAppMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WhatsAppMessage[];
 }
 
 export interface PatchedCallLog {
@@ -358,6 +466,16 @@ export interface PatchedGroup {
   permissions?: Permission[];
   permission_ids?: number[];
   user_count?: string;
+}
+
+export interface PatchedInstagramAccountConnection {
+  id?: number;
+  instagram_account_id?: string;
+  username?: string;
+  account_name?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PatchedSipConfiguration {
@@ -453,6 +571,19 @@ export interface PatchedUserUpdate {
   user_permission_ids?: number[];
 }
 
+export interface PatchedWhatsAppBusinessConnection {
+  id?: number;
+  business_account_id?: string;
+  phone_number_id?: string;
+  phone_number?: string;
+  display_phone_number?: string;
+  verified_name?: string;
+  webhook_url?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Permission {
   id: number;
   name: string;
@@ -467,6 +598,10 @@ export interface PlanEnum {
 }
 
 export interface PreferredLanguageEnum {
+  [key: string]: any;
+}
+
+export interface PricingModelEnum {
   [key: string]: any;
 }
 
@@ -585,6 +720,9 @@ export interface TenantRegistration {
   company_name: string;
   domain: string;
   description?: string;
+  package_id: number;
+  pricing_model: PricingModelEnum;
+  agent_count?: number;
   admin_email: string;
   admin_password: string;
   admin_first_name: string;
@@ -725,4 +863,37 @@ export interface UserUpdate {
   is_active?: boolean;
   group_ids?: number[];
   user_permission_ids?: number[];
+}
+
+export interface WhatsAppBusinessConnection {
+  id: number;
+  business_account_id: string;
+  phone_number_id: string;
+  phone_number: string;
+  display_phone_number: string;
+  verified_name: string;
+  webhook_url?: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WhatsAppMessage {
+  id: number;
+  message_id: string;
+  from_number: string;
+  to_number: string;
+  contact_name?: string;
+  message_text?: string;
+  message_type?: string;
+  media_url?: string;
+  media_mime_type?: string;
+  timestamp: string;
+  is_from_business?: boolean;
+  is_read?: boolean;
+  delivery_status?: string;
+  connection_phone: string;
+  connection_name: string;
+  created_at: string;
+  updated_at: string;
 }
