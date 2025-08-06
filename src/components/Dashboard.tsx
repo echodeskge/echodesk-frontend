@@ -28,10 +28,11 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [facebookConnected, setFacebookConnected] = useState(false);
+  const [instagramConnected, setInstagramConnected] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
-    checkFacebookConnection();
+    checkSocialConnections();
 
     // Check if mobile on mount and resize
     const checkMobile = () => {
@@ -74,14 +75,29 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     }
   };
 
-  const checkFacebookConnection = async () => {
+  const checkSocialConnections = async () => {
     try {
       const axiosInstance = (await import("@/api/axios")).default;
-      const response = await axiosInstance.get('/api/social/facebook/status/');
-      setFacebookConnected(response.data.connected || false);
+      
+      // Check Facebook connection
+      try {
+        const facebookResponse = await axiosInstance.get('/api/social/facebook/status/');
+        setFacebookConnected(facebookResponse.data.connected || false);
+      } catch (err) {
+        console.error("Failed to check Facebook connection:", err);
+        setFacebookConnected(false);
+      }
+
+      // Check Instagram connection
+      try {
+        const instagramResponse = await axiosInstance.get('/api/social/instagram/status/');
+        setInstagramConnected(instagramResponse.data.connected || false);
+      } catch (err) {
+        console.error("Failed to check Instagram connection:", err);
+        setInstagramConnected(false);
+      }
     } catch (err) {
-      console.error("Failed to check Facebook connection:", err);
-      setFacebookConnected(false);
+      console.error("Failed to check social connections:", err);
     }
   };
 
@@ -101,13 +117,13 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       permission: "can_access_calls",
       description: "Handle phone calls",
     },
-    // Add Messages menu item only when Facebook is connected
-    ...(facebookConnected ? [{
+    // Add Messages menu item only when Facebook or Instagram is connected
+    ...((facebookConnected || instagramConnected) ? [{
       id: "messages",
       label: "Messages",
       icon: "💬",
       permission: "can_manage_settings", // Use same permission as social for now
-      description: "View and respond to Facebook messages",
+      description: `View and respond to ${facebookConnected && instagramConnected ? 'Facebook and Instagram' : facebookConnected ? 'Facebook' : 'Instagram'} messages`,
     }] : []),
     {
       id: "users",
@@ -583,7 +599,13 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
           {currentView === "social" && (
             <SocialIntegrations
               onBackToDashboard={() => setCurrentView("dashboard")}
-              onConnectionChange={(connected) => setFacebookConnected(connected)}
+              onConnectionChange={(type, connected) => {
+                if (type === 'facebook') {
+                  setFacebookConnected(connected);
+                } else if (type === 'instagram') {
+                  setInstagramConnected(connected);
+                }
+              }}
             />
           )}
 
