@@ -18,6 +18,7 @@ export default function LandingPage() {
         "Basic Reporting",
         "Team Collaboration",
         "Mobile App Access",
+        "Up to 1,000 WhatsApp messages/month",
         "Email Support"
       ],
       highlight: false,
@@ -26,7 +27,7 @@ export default function LandingPage() {
     {
       id: 2,
       name: "Professional",
-      price: "10₾",
+      price: "15₾",
       period: "per agent/month",
       description: "Advanced features with SIP calling and social integrations",
       features: [
@@ -35,6 +36,7 @@ export default function LandingPage() {
         "Call Recording & Analytics",
         "Facebook Messenger Integration",
         "Instagram DM Integration",
+        "Up to 5,000 WhatsApp messages/month",
         "Advanced Workflows",
         "Priority Support"
       ],
@@ -44,12 +46,13 @@ export default function LandingPage() {
     {
       id: 3,
       name: "Enterprise",
-      price: "15₾",
+      price: "25₾",
       period: "per agent/month",
       description: "Complete omnichannel solution with WhatsApp and custom integrations",
       features: [
         "Everything in Professional",
         "WhatsApp Business API",
+        "Up to 15,000 WhatsApp messages/month",
         "Custom Integrations",
         "Advanced Analytics Dashboard",
         "Multi-tenant Management",
@@ -66,7 +69,7 @@ export default function LandingPage() {
     {
       id: 4,
       name: "Startup",
-      price: "49₾",
+      price: "79₾",
       period: "per month",
       description: "Perfect for small businesses with up to 5 users",
       features: [
@@ -75,6 +78,7 @@ export default function LandingPage() {
         "Email Integration",
         "Basic Reporting",
         "Mobile App Access",
+        "Up to 2,000 WhatsApp messages/month",
         "Standard Support",
         "5GB Storage"
       ],
@@ -84,37 +88,40 @@ export default function LandingPage() {
     {
       id: 5,
       name: "Business",
-      price: "149₾",
+      price: "249₾",
       period: "per month",
-      description: "Growing teams with advanced features and up to 15 users",
+      description: "Growing teams with advanced features and up to 25 users",
       features: [
-        "Up to 15 Users",
+        "Up to 25 Users",
         "Everything in Startup",
         "SIP Phone System",
         "Social Media Integration",
         "Advanced Workflows",
         "Call Recording",
+        "Up to 10,000 WhatsApp messages/month",
         "Priority Support",
-        "25GB Storage"
+        "50GB Storage"
       ],
       highlight: true,
       color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
     },
     {
       id: 6,
-      name: "Corporation",
-      price: "299₾",
+      name: "Corporate",
+      price: "699₾",
       period: "per month",
-      description: "Large organizations with unlimited users and enterprise features",
+      description: "Large organizations with up to 100 users and enterprise features",
       features: [
-        "Unlimited Users",
+        "Up to 100 Users",
         "Everything in Business",
         "WhatsApp Business API",
+        "Up to 50,000 WhatsApp messages/month",
         "Custom Integrations",
         "Advanced Analytics",
         "Multi-tenant Architecture",
-        "Dedicated Support",
-        "Unlimited Storage"
+        "Dedicated Account Manager",
+        "Unlimited Storage",
+        "Custom SLA Agreement"
       ],
       highlight: false,
       color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
