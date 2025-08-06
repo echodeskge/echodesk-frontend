@@ -903,6 +903,15 @@ export async function socialFacebookPagesDebugRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function socialFacebookSendMessageCreate(data: {
+  recipient_id: string;
+  message: string;
+  page_id: string;
+}): Promise<any> {
+  const response = await axios.post(`/api/social/facebook/send-message/`, data);
+  return response.data;
+}
+
 export async function socialFacebookStatusRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/status/`);
   return response.data;

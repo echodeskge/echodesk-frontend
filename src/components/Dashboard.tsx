@@ -9,6 +9,8 @@ import TicketManagement from "./TicketManagement";
 import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
 import GroupManagement from "./GroupManagement";
+import SocialIntegrations from "./SocialIntegrations";
+import MessagesManagement from "./MessagesManagement";
 
 interface DashboardProps {
   user: AuthUser;
@@ -21,13 +23,15 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "tickets" | "calls" | "users" | "groups" | "settings"
+    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
   >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [facebookConnected, setFacebookConnected] = useState(false);
 
   useEffect(() => {
     fetchUserProfile();
+    checkFacebookConnection();
 
     // Check if mobile on mount and resize
     const checkMobile = () => {
@@ -70,6 +74,17 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     }
   };
 
+  const checkFacebookConnection = async () => {
+    try {
+      const axiosInstance = (await import("@/api/axios")).default;
+      const response = await axiosInstance.get('/api/social/facebook/status/');
+      setFacebookConnected(response.data.connected || false);
+    } catch (err) {
+      console.error("Failed to check Facebook connection:", err);
+      setFacebookConnected(false);
+    }
+  };
+
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: "🏠", permission: null },
     {
@@ -86,6 +101,14 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       permission: "can_access_calls",
       description: "Handle phone calls",
     },
+    // Add Messages menu item only when Facebook is connected
+    ...(facebookConnected ? [{
+      id: "messages",
+      label: "Messages",
+      icon: "💬",
+      permission: "can_manage_settings", // Use same permission as social for now
+      description: "View and respond to Facebook messages",
+    }] : []),
     {
       id: "users",
       label: "Users",
@@ -101,6 +124,13 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       description: "Manage user groups and permissions",
     },
     {
+      id: "social",
+      label: "Social Media",
+      icon: "📱",
+      permission: "can_manage_settings",
+      description: "Connect social media accounts",
+    },
+    {
       id: "settings",
       label: "Settings",
       icon: "⚙️",
@@ -113,7 +143,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
   const handleMenuClick = (
-    viewId: "dashboard" | "tickets" | "calls" | "users" | "settings"
+    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
   ) => {
     setCurrentView(viewId);
     if (isMobile) {
@@ -276,6 +306,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                     | "tickets"
                     | "calls"
                     | "users"
+                    | "groups"
+                    | "messages"
+                    | "social"
                     | "settings"
                 )
               }
@@ -541,6 +574,19 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
           {currentView === "groups" && <GroupManagement />}
 
+          {currentView === "messages" && (
+            <MessagesManagement
+              onBackToDashboard={() => setCurrentView("dashboard")}
+            />
+          )}
+
+          {currentView === "social" && (
+            <SocialIntegrations
+              onBackToDashboard={() => setCurrentView("dashboard")}
+              onConnectionChange={(connected) => setFacebookConnected(connected)}
+            />
+          )}
+
           {currentView === "settings" && (
             <div
               style={{
@@ -560,9 +606,12 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               <ul style={{ color: "#666", marginLeft: "20px" }}>
                 <li>Tenant configuration</li>
                 <li>Security settings</li>
-                <li>Integration settings</li>
                 <li>Notification preferences</li>
+                <li>User permissions and roles</li>
               </ul>
+              <div style={{ marginTop: "20px", padding: "15px", background: "#f8f9fa", borderRadius: "8px", fontSize: "14px", color: "#666" }}>
+                <strong>Note:</strong> Social media integrations are now available in the dedicated &quot;Social Media&quot; section in the sidebar.
+              </div>
             </div>
           )}
 
