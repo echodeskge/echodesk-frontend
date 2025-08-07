@@ -36,6 +36,24 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
+
+  // Add CSS animation for spinning
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   useEffect(() => {
     loadConnectedPages();
@@ -52,6 +70,27 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
       loadConversationMessages();
     }
   }, [selectedConversation]);
+
+  // Auto-refresh messages every 5 seconds
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const refreshInterval = setInterval(async () => {
+      setBackgroundLoading(true);
+      try {
+        if (selectedPage) {
+          await loadConversations(true); // Silent loading
+        }
+        if (selectedConversation) {
+          await loadConversationMessages(true); // Silent loading
+        }
+      } finally {
+        setBackgroundLoading(false);
+      }
+    }, 5000); // 5 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [selectedPage, selectedConversation, autoRefresh]);
 
   const loadConnectedPages = async () => {
     setLoading(true);
@@ -72,10 +111,10 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
     }
   };
 
-  const loadConversations = async () => {
+  const loadConversations = async (silent = false) => {
     if (!selectedPage) return;
     
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const response = await axios.get(`/api/social/facebook-messages/?page_id=${selectedPage}`);
       const messagesData = response.data as PaginatedResponse<FacebookMessage>;
@@ -103,15 +142,16 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
         .sort((a, b) => new Date(b.last_message.timestamp).getTime() - new Date(a.last_message.timestamp).getTime());
       
       setConversations(sortedConversations);
+      setLastUpdated(new Date());
     } catch (err: any) {
       console.error("Failed to load conversations:", err);
       setError(err.response?.data?.error || "Failed to load conversations");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const loadConversationMessages = async () => {
+  const loadConversationMessages = async (silent = false) => {
     if (!selectedConversation) return;
     
     try {
@@ -124,6 +164,7 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
       );
       
       setMessages(sortedMessages);
+      setLastUpdated(new Date());
     } catch (err: any) {
       console.error("Failed to load conversation messages:", err);
       setError(err.response?.data?.error || "Failed to load conversation messages");
@@ -281,8 +322,70 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
             </h1>
             <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#666" }}>
               View and respond to messages from your Facebook pages
+              {autoRefresh && (
+                <span style={{ color: backgroundLoading ? "#ffc107" : "#28a745", marginLeft: "8px" }}>
+                  • {backgroundLoading ? "Refreshing..." : "Auto-refreshing every 5s"}
+                </span>
+              )}
             </p>
           </div>
+          
+          {/* Auto-refresh toggle */}
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            style={{
+              padding: "8px 12px",
+              border: "1px solid #dee2e6",
+              borderRadius: "6px",
+              fontSize: "12px",
+              background: autoRefresh ? "#e7f3e7" : "white",
+              color: autoRefresh ? "#28a745" : "#666",
+              cursor: "pointer",
+              marginRight: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+            title={autoRefresh ? "Disable auto-refresh" : "Enable auto-refresh"}
+          >
+            <span 
+              style={{ 
+                fontSize: "14px",
+                animation: backgroundLoading ? "spin 1s linear infinite" : "none"
+              }}
+            >
+              {autoRefresh ? "🔄" : "⏸️"}
+            </span>
+            {autoRefresh ? "Auto" : "Manual"}
+          </button>
+          
+          {/* Manual refresh button */}
+          <button
+            onClick={() => {
+              if (selectedPage) loadConversations();
+              if (selectedConversation) loadConversationMessages();
+            }}
+            disabled={loading}
+            style={{
+              padding: "8px 12px",
+              border: "1px solid #dee2e6",
+              borderRadius: "6px",
+              fontSize: "12px",
+              background: "white",
+              color: "#666",
+              cursor: loading ? "not-allowed" : "pointer",
+              marginRight: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+            title="Refresh messages now"
+          >
+            <span style={{ fontSize: "14px", transform: loading ? "rotate(360deg)" : "none", transition: "transform 0.5s" }}>
+              🔄
+            </span>
+            {loading ? "..." : "Refresh"}
+          </button>
           
           {/* Page Selector */}
           {connectedPages.length > 1 && (
@@ -371,8 +474,14 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
                 borderRadius: "6px",
                 fontSize: "14px",
                 boxSizing: "border-box",
+                marginBottom: "8px",
               }}
             />
+            {lastUpdated && (
+              <div style={{ fontSize: "11px", color: "#666", textAlign: "center" }}>
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </div>
+            )}
           </div>
 
           {/* Conversations List */}
