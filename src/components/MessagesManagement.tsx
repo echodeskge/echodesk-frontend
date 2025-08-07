@@ -97,11 +97,10 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
     try {
       const response = await axios.get('/api/social/facebook-pages/');
       const pagesData = response.data as PaginatedResponse<FacebookPageConnection>;
-      const activePages = pagesData.results.filter(page => page.is_active);
-      setConnectedPages(activePages);
+      setConnectedPages(pagesData.results || []);
       
-      if (activePages.length > 0 && !selectedPage) {
-        setSelectedPage(activePages[0].page_id);
+      if (pagesData.results && pagesData.results.length > 0 && !selectedPage) {
+        setSelectedPage(pagesData.results[0].page_id);
       }
     } catch (err: any) {
       console.error("Failed to load connected pages:", err);
