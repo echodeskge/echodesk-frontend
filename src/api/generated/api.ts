@@ -804,7 +804,7 @@ export async function socialFacebookMessagesList(
 }
 
 export async function socialFacebookMessagesRetrieve(
-  id: string,
+  id: number,
 ): Promise<FacebookMessage> {
   const response = await axios.get(`/api/social/facebook-messages/${id}/`);
   return response.data;
@@ -836,14 +836,14 @@ export async function socialFacebookPagesCreate(
 }
 
 export async function socialFacebookPagesRetrieve(
-  id: string,
+  id: number,
 ): Promise<FacebookPageConnection> {
   const response = await axios.get(`/api/social/facebook-pages/${id}/`);
   return response.data;
 }
 
 export async function socialFacebookPagesUpdate(
-  id: string,
+  id: number,
   data: FacebookPageConnection,
 ): Promise<FacebookPageConnection> {
   const response = await axios.put(`/api/social/facebook-pages/${id}/`, data);
@@ -851,15 +851,25 @@ export async function socialFacebookPagesUpdate(
 }
 
 export async function socialFacebookPagesPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedFacebookPageConnection,
 ): Promise<FacebookPageConnection> {
   const response = await axios.patch(`/api/social/facebook-pages/${id}/`, data);
   return response.data;
 }
 
-export async function socialFacebookPagesDestroy(id: string): Promise<any> {
+export async function socialFacebookPagesDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/social/facebook-pages/${id}/`);
+  return response.data;
+}
+
+export async function socialFacebookApiTestRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/facebook/api/test/`);
+  return response.data;
+}
+
+export async function socialFacebookApiTestCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/facebook/api/test/`);
   return response.data;
 }
 
@@ -953,14 +963,14 @@ export async function socialInstagramAccountsCreate(
 }
 
 export async function socialInstagramAccountsRetrieve(
-  id: string,
+  id: number,
 ): Promise<InstagramAccountConnection> {
   const response = await axios.get(`/api/social/instagram-accounts/${id}/`);
   return response.data;
 }
 
 export async function socialInstagramAccountsUpdate(
-  id: string,
+  id: number,
   data: InstagramAccountConnection,
 ): Promise<InstagramAccountConnection> {
   const response = await axios.put(
@@ -971,7 +981,7 @@ export async function socialInstagramAccountsUpdate(
 }
 
 export async function socialInstagramAccountsPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedInstagramAccountConnection,
 ): Promise<InstagramAccountConnection> {
   const response = await axios.patch(
@@ -981,7 +991,7 @@ export async function socialInstagramAccountsPartialUpdate(
   return response.data;
 }
 
-export async function socialInstagramAccountsDestroy(id: string): Promise<any> {
+export async function socialInstagramAccountsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/social/instagram-accounts/${id}/`);
   return response.data;
 }
@@ -1005,9 +1015,23 @@ export async function socialInstagramMessagesList(
 }
 
 export async function socialInstagramMessagesRetrieve(
-  id: string,
+  id: number,
 ): Promise<InstagramMessage> {
   const response = await axios.get(`/api/social/instagram-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialInstagramConversationsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/instagram/conversations/`);
+  return response.data;
+}
+
+export async function socialInstagramConversationsMessagesRetrieve(
+  conversationId: string,
+): Promise<any> {
+  const response = await axios.get(
+    `/api/social/instagram/conversations/${conversationId}/messages/`,
+  );
   return response.data;
 }
 
@@ -1023,6 +1047,11 @@ export async function socialInstagramOauthCallbackRetrieve(): Promise<any> {
 
 export async function socialInstagramOauthStartRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/instagram/oauth/start/`);
+  return response.data;
+}
+
+export async function socialInstagramSendMessageCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/instagram/send-message/`);
   return response.data;
 }
 
@@ -1126,6 +1155,11 @@ export async function socialWhatsappConnectCreate(): Promise<any> {
 
 export async function socialWhatsappDisconnectCreate(): Promise<any> {
   const response = await axios.post(`/api/social/whatsapp/disconnect/`);
+  return response.data;
+}
+
+export async function socialWhatsappSendMessageCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/whatsapp/send-message/`);
   return response.data;
 }
 

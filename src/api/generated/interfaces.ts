@@ -194,7 +194,8 @@ export interface InstagramAccountConnection {
   id: number;
   instagram_account_id: string;
   username: string;
-  account_name?: string;
+  name?: string;
+  profile_picture_url?: string;
   is_active?: boolean;
   created_at: string;
   updated_at: string;
@@ -472,7 +473,8 @@ export interface PatchedInstagramAccountConnection {
   id?: number;
   instagram_account_id?: string;
   username?: string;
-  account_name?: string;
+  name?: string;
+  profile_picture_url?: string;
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
