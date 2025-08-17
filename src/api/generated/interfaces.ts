@@ -122,6 +122,10 @@ export interface CallTypeEnum {
   [key: string]: any;
 }
 
+export interface CategoryEnum {
+  [key: string]: any;
+}
+
 export interface Client {
   id: number;
   name: string;
@@ -151,6 +155,44 @@ export interface DirectionEnum {
   [key: string]: any;
 }
 
+export interface DurationTypeEnum {
+  [key: string]: any;
+}
+
+export interface EmployeeLeaveBalance {
+  id: number;
+  employee_name: string;
+  employee_email: string;
+  leave_type_name: string;
+  leave_type_category: string;
+  available_days: string;
+  total_allocated: string;
+  year: number;
+  allocated_days?: string;
+  used_days?: string;
+  pending_days?: string;
+  carried_over_days?: string;
+  created_at: string;
+  updated_at: string;
+  employee: number;
+  leave_type: number;
+}
+
+export interface EmployeeWorkSchedule {
+  id: number;
+  employee_name: string;
+  employee_email: string;
+  work_schedule_name: string;
+  work_schedule_details: WorkSchedule;
+  effective_from?: string;
+  effective_to?: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  employee: number;
+  work_schedule: number;
+}
+
 export interface EventTypeEnum {
   [key: string]: any;
 }
@@ -177,6 +219,16 @@ export interface FacebookPageConnection {
   updated_at: string;
 }
 
+export interface FacebookSendMessage {
+  recipient_id: string;
+  message: string;
+  page_id: string;
+}
+
+export interface GenderSpecificEnum {
+  [key: string]: any;
+}
+
 export interface Group {
   id: number;
   name: string;
@@ -188,6 +240,15 @@ export interface Group {
 export interface GroupCreate {
   name: string;
   permission_ids?: number[];
+}
+
+export interface Holiday {
+  id: number;
+  name: string;
+  date: string;
+  is_recurring?: boolean;
+  description?: string;
+  created_at: string;
 }
 
 export interface InstagramAccountConnection {
@@ -219,6 +280,117 @@ export interface InstagramMessage {
 export interface KanbanBoard {
   columns: TicketColumn[];
   tickets_by_column: string;
+}
+
+export interface LeaveRequest {
+  id: number;
+  employee_name: string;
+  employee_email: string;
+  leave_type_name: string;
+  leave_type_category: string;
+  approved_by_name: string;
+  comments: LeaveRequestComment[];
+  can_submit_info: string;
+  start_date: string;
+  end_date: string;
+  duration_type?: DurationTypeEnum;
+  start_time?: string;
+  end_time?: string;
+  total_days: string;
+  working_days_count: string;
+  reason: string;
+  emergency_contact?: string;
+  handover_notes?: string;
+  status?: Status6e7enum;
+  approval_date: string;
+  approval_comments?: string;
+  medical_certificate?: string;
+  supporting_documents?: string;
+  submitted_at: string;
+  created_at: string;
+  updated_at: string;
+  employee: number;
+  leave_type: number;
+  approved_by: number;
+}
+
+export interface LeaveRequestComment {
+  id: number;
+  author_name: string;
+  comment: string;
+  is_internal?: boolean;
+  created_at: string;
+  leave_request: number;
+  author: number;
+}
+
+export interface LeaveRequestCreate {
+  leave_type: number;
+  start_date: string;
+  end_date: string;
+  duration_type?: DurationTypeEnum;
+  start_time?: string;
+  end_time?: string;
+  reason: string;
+  emergency_contact?: string;
+  handover_notes?: string;
+  medical_certificate?: string;
+  supporting_documents?: string;
+}
+
+export interface LeaveRequestUpdate {
+  id: number;
+  employee_name: string;
+  employee_email: string;
+  leave_type_name: string;
+  leave_type_category: string;
+  approved_by_name: string;
+  comments: LeaveRequestComment[];
+  can_submit_info: string;
+  start_date: string;
+  end_date: string;
+  duration_type?: DurationTypeEnum;
+  start_time?: string;
+  end_time?: string;
+  total_days: string;
+  working_days_count: string;
+  reason: string;
+  emergency_contact?: string;
+  handover_notes?: string;
+  status?: Status6e7enum;
+  approval_date: string;
+  approval_comments?: string;
+  medical_certificate?: string;
+  supporting_documents?: string;
+  submitted_at: string;
+  created_at: string;
+  updated_at: string;
+  employee: number;
+  leave_type: number;
+  approved_by: number;
+}
+
+export interface LeaveType {
+  id: number;
+  name: string;
+  description?: string;
+  category: CategoryEnum;
+  max_days_per_year: string;
+  allow_carry_over?: boolean;
+  max_carry_over_days?: string;
+  requires_approval?: boolean;
+  min_notice_days?: number;
+  max_consecutive_days?: number;
+  requires_medical_certificate?: boolean;
+  medical_certificate_threshold_days?: number;
+  minimum_service_months?: number;
+  available_to_probationary?: boolean;
+  gender_specific?: GenderSpecificEnum;
+  is_active?: boolean;
+  is_paid?: boolean;
+  color_code?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Package {
@@ -285,6 +457,20 @@ export interface PaginatedDepartmentList {
   results: Department[];
 }
 
+export interface PaginatedEmployeeLeaveBalanceList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EmployeeLeaveBalance[];
+}
+
+export interface PaginatedEmployeeWorkScheduleList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EmployeeWorkSchedule[];
+}
+
 export interface PaginatedFacebookMessageList {
   count: number;
   next?: string;
@@ -306,6 +492,13 @@ export interface PaginatedGroupList {
   results: Group[];
 }
 
+export interface PaginatedHolidayList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Holiday[];
+}
+
 export interface PaginatedInstagramAccountConnectionList {
   count: number;
   next?: string;
@@ -318,6 +511,20 @@ export interface PaginatedInstagramMessageList {
   next?: string;
   previous?: string;
   results: InstagramMessage[];
+}
+
+export interface PaginatedLeaveRequestList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LeaveRequest[];
+}
+
+export interface PaginatedLeaveTypeList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LeaveType[];
 }
 
 export interface PaginatedPackageListList {
@@ -397,6 +604,13 @@ export interface PaginatedWhatsAppMessageList {
   results: WhatsAppMessage[];
 }
 
+export interface PaginatedWorkScheduleList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WorkSchedule[];
+}
+
 export interface PatchedCallLog {
   id?: number;
   call_id?: string;
@@ -452,6 +666,40 @@ export interface PatchedDepartment {
   updated_at?: string;
 }
 
+export interface PatchedEmployeeLeaveBalance {
+  id?: number;
+  employee_name?: string;
+  employee_email?: string;
+  leave_type_name?: string;
+  leave_type_category?: string;
+  available_days?: string;
+  total_allocated?: string;
+  year?: number;
+  allocated_days?: string;
+  used_days?: string;
+  pending_days?: string;
+  carried_over_days?: string;
+  created_at?: string;
+  updated_at?: string;
+  employee?: number;
+  leave_type?: number;
+}
+
+export interface PatchedEmployeeWorkSchedule {
+  id?: number;
+  employee_name?: string;
+  employee_email?: string;
+  work_schedule_name?: string;
+  work_schedule_details?: WorkSchedule;
+  effective_from?: string;
+  effective_to?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  employee?: number;
+  work_schedule?: number;
+}
+
 export interface PatchedFacebookPageConnection {
   id?: number;
   page_id?: string;
@@ -469,6 +717,15 @@ export interface PatchedGroup {
   user_count?: string;
 }
 
+export interface PatchedHoliday {
+  id?: number;
+  name?: string;
+  date?: string;
+  is_recurring?: boolean;
+  description?: string;
+  created_at?: string;
+}
+
 export interface PatchedInstagramAccountConnection {
   id?: number;
   instagram_account_id?: string;
@@ -476,6 +733,61 @@ export interface PatchedInstagramAccountConnection {
   name?: string;
   profile_picture_url?: string;
   is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedLeaveRequestUpdate {
+  id?: number;
+  employee_name?: string;
+  employee_email?: string;
+  leave_type_name?: string;
+  leave_type_category?: string;
+  approved_by_name?: string;
+  comments?: LeaveRequestComment[];
+  can_submit_info?: string;
+  start_date?: string;
+  end_date?: string;
+  duration_type?: DurationTypeEnum;
+  start_time?: string;
+  end_time?: string;
+  total_days?: string;
+  working_days_count?: string;
+  reason?: string;
+  emergency_contact?: string;
+  handover_notes?: string;
+  status?: Status6e7enum;
+  approval_date?: string;
+  approval_comments?: string;
+  medical_certificate?: string;
+  supporting_documents?: string;
+  submitted_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  employee?: number;
+  leave_type?: number;
+  approved_by?: number;
+}
+
+export interface PatchedLeaveType {
+  id?: number;
+  name?: string;
+  description?: string;
+  category?: CategoryEnum;
+  max_days_per_year?: string;
+  allow_carry_over?: boolean;
+  max_carry_over_days?: string;
+  requires_approval?: boolean;
+  min_notice_days?: number;
+  max_consecutive_days?: number;
+  requires_medical_certificate?: boolean;
+  medical_certificate_threshold_days?: number;
+  minimum_service_months?: number;
+  available_to_probationary?: boolean;
+  gender_specific?: GenderSpecificEnum;
+  is_active?: boolean;
+  is_paid?: boolean;
+  color_code?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -586,6 +898,30 @@ export interface PatchedWhatsAppBusinessConnection {
   updated_at?: string;
 }
 
+export interface PatchedWorkSchedule {
+  id?: number;
+  working_days_count?: string;
+  working_days_list?: string;
+  name?: string;
+  description?: string;
+  schedule_type?: ScheduleTypeEnum;
+  hours_per_day?: string;
+  hours_per_week?: string;
+  monday?: boolean;
+  tuesday?: boolean;
+  wednesday?: boolean;
+  thursday?: boolean;
+  friday?: boolean;
+  saturday?: boolean;
+  sunday?: boolean;
+  start_time?: string;
+  end_time?: string;
+  break_duration_minutes?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Permission {
   id: number;
   name: string;
@@ -612,6 +948,10 @@ export interface PriorityEnum {
 }
 
 export interface RoleEnum {
+  [key: string]: any;
+}
+
+export interface ScheduleTypeEnum {
   [key: string]: any;
 }
 
@@ -664,6 +1004,10 @@ export interface Status14bEnum {
 }
 
 export interface Status336enum {
+  [key: string]: any;
+}
+
+export interface Status6e7enum {
   [key: string]: any;
 }
 
@@ -896,6 +1240,30 @@ export interface WhatsAppMessage {
   delivery_status?: string;
   connection_phone: string;
   connection_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkSchedule {
+  id: number;
+  working_days_count: string;
+  working_days_list: string;
+  name: string;
+  description?: string;
+  schedule_type?: ScheduleTypeEnum;
+  hours_per_day?: string;
+  hours_per_week?: string;
+  monday?: boolean;
+  tuesday?: boolean;
+  wednesday?: boolean;
+  thursday?: boolean;
+  friday?: boolean;
+  saturday?: boolean;
+  sunday?: boolean;
+  start_time?: string;
+  end_time?: string;
+  break_duration_minutes?: number;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
 }

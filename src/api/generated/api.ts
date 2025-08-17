@@ -36,6 +36,26 @@ import type {
   GroupCreate,
   Group,
   PatchedGroup,
+  PaginatedEmployeeWorkScheduleList,
+  EmployeeWorkSchedule,
+  PatchedEmployeeWorkSchedule,
+  PaginatedHolidayList,
+  Holiday,
+  PatchedHoliday,
+  PaginatedEmployeeLeaveBalanceList,
+  EmployeeLeaveBalance,
+  PatchedEmployeeLeaveBalance,
+  PaginatedLeaveRequestList,
+  LeaveRequestCreate,
+  LeaveRequest,
+  LeaveRequestUpdate,
+  PatchedLeaveRequestUpdate,
+  PaginatedLeaveTypeList,
+  LeaveType,
+  PatchedLeaveType,
+  PaginatedWorkScheduleList,
+  WorkSchedule,
+  PatchedWorkSchedule,
   PaginatedPackageListList,
   Package,
   PackageList,
@@ -52,6 +72,7 @@ import type {
   PaginatedFacebookPageConnectionList,
   FacebookPageConnection,
   PatchedFacebookPageConnection,
+  FacebookSendMessage,
   PaginatedInstagramAccountConnectionList,
   InstagramAccountConnection,
   PatchedInstagramAccountConnection,
@@ -593,6 +614,465 @@ export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
   return response.data;
 }
 
+export async function hrEmployeeSchedulesList(
+  employee?: number,
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  workSchedule?: number,
+): Promise<PaginatedEmployeeWorkScheduleList> {
+  const response = await axios.get(
+    `/api/hr/employee-schedules/${(() => {
+      const parts = [
+        employee ? 'employee=' + encodeURIComponent(employee) : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        workSchedule
+          ? 'work_schedule=' + encodeURIComponent(workSchedule)
+          : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function hrEmployeeSchedulesCreate(
+  data: EmployeeWorkSchedule,
+): Promise<EmployeeWorkSchedule> {
+  const response = await axios.post(`/api/hr/employee-schedules/`, data);
+  return response.data;
+}
+
+export async function hrEmployeeSchedulesRetrieve(
+  id: number,
+): Promise<EmployeeWorkSchedule> {
+  const response = await axios.get(`/api/hr/employee-schedules/${id}/`);
+  return response.data;
+}
+
+export async function hrEmployeeSchedulesUpdate(
+  id: number,
+  data: EmployeeWorkSchedule,
+): Promise<EmployeeWorkSchedule> {
+  const response = await axios.put(`/api/hr/employee-schedules/${id}/`, data);
+  return response.data;
+}
+
+export async function hrEmployeeSchedulesPartialUpdate(
+  id: number,
+  data: PatchedEmployeeWorkSchedule,
+): Promise<EmployeeWorkSchedule> {
+  const response = await axios.patch(`/api/hr/employee-schedules/${id}/`, data);
+  return response.data;
+}
+
+export async function hrEmployeeSchedulesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/hr/employee-schedules/${id}/`);
+  return response.data;
+}
+
+export async function hrEmployeeSchedulesMyScheduleRetrieve(): Promise<EmployeeWorkSchedule> {
+  const response = await axios.get(`/api/hr/employee-schedules/my_schedule/`);
+  return response.data;
+}
+
+export async function hrHolidaysList(
+  isRecurring?: boolean,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedHolidayList> {
+  const response = await axios.get(
+    `/api/hr/holidays/${(() => {
+      const parts = [
+        isRecurring ? 'is_recurring=' + encodeURIComponent(isRecurring) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function hrHolidaysCreate(data: Holiday): Promise<Holiday> {
+  const response = await axios.post(`/api/hr/holidays/`, data);
+  return response.data;
+}
+
+export async function hrHolidaysRetrieve(id: number): Promise<Holiday> {
+  const response = await axios.get(`/api/hr/holidays/${id}/`);
+  return response.data;
+}
+
+export async function hrHolidaysUpdate(
+  id: number,
+  data: Holiday,
+): Promise<Holiday> {
+  const response = await axios.put(`/api/hr/holidays/${id}/`, data);
+  return response.data;
+}
+
+export async function hrHolidaysPartialUpdate(
+  id: number,
+  data: PatchedHoliday,
+): Promise<Holiday> {
+  const response = await axios.patch(`/api/hr/holidays/${id}/`, data);
+  return response.data;
+}
+
+export async function hrHolidaysDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/hr/holidays/${id}/`);
+  return response.data;
+}
+
+export async function hrHolidaysCurrentYearRetrieve(): Promise<Holiday> {
+  const response = await axios.get(`/api/hr/holidays/current_year/`);
+  return response.data;
+}
+
+export async function hrLeaveBalancesList(
+  employee?: number,
+  leaveType?: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  year?: number,
+): Promise<PaginatedEmployeeLeaveBalanceList> {
+  const response = await axios.get(
+    `/api/hr/leave-balances/${(() => {
+      const parts = [
+        employee ? 'employee=' + encodeURIComponent(employee) : null,
+        leaveType ? 'leave_type=' + encodeURIComponent(leaveType) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        year ? 'year=' + encodeURIComponent(year) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function hrLeaveBalancesCreate(
+  data: EmployeeLeaveBalance,
+): Promise<EmployeeLeaveBalance> {
+  const response = await axios.post(`/api/hr/leave-balances/`, data);
+  return response.data;
+}
+
+export async function hrLeaveBalancesRetrieve(
+  id: number,
+): Promise<EmployeeLeaveBalance> {
+  const response = await axios.get(`/api/hr/leave-balances/${id}/`);
+  return response.data;
+}
+
+export async function hrLeaveBalancesUpdate(
+  id: number,
+  data: EmployeeLeaveBalance,
+): Promise<EmployeeLeaveBalance> {
+  const response = await axios.put(`/api/hr/leave-balances/${id}/`, data);
+  return response.data;
+}
+
+export async function hrLeaveBalancesPartialUpdate(
+  id: number,
+  data: PatchedEmployeeLeaveBalance,
+): Promise<EmployeeLeaveBalance> {
+  const response = await axios.patch(`/api/hr/leave-balances/${id}/`, data);
+  return response.data;
+}
+
+export async function hrLeaveBalancesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/hr/leave-balances/${id}/`);
+  return response.data;
+}
+
+export async function hrLeaveBalancesInitializeYearCreate(
+  data: EmployeeLeaveBalance,
+): Promise<EmployeeLeaveBalance> {
+  const response = await axios.post(
+    `/api/hr/leave-balances/initialize_year/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function hrLeaveBalancesMyBalancesRetrieve(): Promise<EmployeeLeaveBalance> {
+  const response = await axios.get(`/api/hr/leave-balances/my_balances/`);
+  return response.data;
+}
+
+export async function hrLeaveRequestsList(
+  employee?: number,
+  leaveType?: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  status?:
+    | 'approved'
+    | 'cancelled'
+    | 'completed'
+    | 'draft'
+    | 'pending_approval'
+    | 'rejected'
+    | 'submitted',
+): Promise<PaginatedLeaveRequestList> {
+  const response = await axios.get(
+    `/api/hr/leave-requests/${(() => {
+      const parts = [
+        employee ? 'employee=' + encodeURIComponent(employee) : null,
+        leaveType ? 'leave_type=' + encodeURIComponent(leaveType) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function hrLeaveRequestsCreate(
+  data: LeaveRequestCreate,
+): Promise<LeaveRequestCreate> {
+  const response = await axios.post(`/api/hr/leave-requests/`, data);
+  return response.data;
+}
+
+export async function hrLeaveRequestsRetrieve(
+  id: number,
+): Promise<LeaveRequest> {
+  const response = await axios.get(`/api/hr/leave-requests/${id}/`);
+  return response.data;
+}
+
+export async function hrLeaveRequestsUpdate(
+  id: number,
+  data: LeaveRequestUpdate,
+): Promise<LeaveRequestUpdate> {
+  const response = await axios.put(`/api/hr/leave-requests/${id}/`, data);
+  return response.data;
+}
+
+export async function hrLeaveRequestsPartialUpdate(
+  id: number,
+  data: PatchedLeaveRequestUpdate,
+): Promise<LeaveRequestUpdate> {
+  const response = await axios.patch(`/api/hr/leave-requests/${id}/`, data);
+  return response.data;
+}
+
+export async function hrLeaveRequestsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/hr/leave-requests/${id}/`);
+  return response.data;
+}
+
+export async function hrLeaveRequestsAddCommentCreate(
+  id: number,
+  data: LeaveRequest,
+): Promise<LeaveRequest> {
+  const response = await axios.post(
+    `/api/hr/leave-requests/${id}/add_comment/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function hrLeaveRequestsApproveRejectCreate(
+  id: number,
+  data: LeaveRequest,
+): Promise<LeaveRequest> {
+  const response = await axios.post(
+    `/api/hr/leave-requests/${id}/approve_reject/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function hrLeaveRequestsCancelCreate(
+  id: number,
+  data: LeaveRequest,
+): Promise<LeaveRequest> {
+  const response = await axios.post(
+    `/api/hr/leave-requests/${id}/cancel/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function hrLeaveRequestsSubmitCreate(
+  id: number,
+  data: LeaveRequest,
+): Promise<LeaveRequest> {
+  const response = await axios.post(
+    `/api/hr/leave-requests/${id}/submit/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function hrLeaveRequestsCalendarViewRetrieve(): Promise<LeaveRequest> {
+  const response = await axios.get(`/api/hr/leave-requests/calendar_view/`);
+  return response.data;
+}
+
+export async function hrLeaveRequestsMyRequestsRetrieve(): Promise<LeaveRequest> {
+  const response = await axios.get(`/api/hr/leave-requests/my_requests/`);
+  return response.data;
+}
+
+export async function hrLeaveRequestsPendingApprovalRetrieve(): Promise<LeaveRequest> {
+  const response = await axios.get(`/api/hr/leave-requests/pending_approval/`);
+  return response.data;
+}
+
+export async function hrLeaveTypesList(
+  category?:
+    | 'annual'
+    | 'bereavement'
+    | 'compensation'
+    | 'emergency'
+    | 'maternity'
+    | 'paternity'
+    | 'personal'
+    | 'sick'
+    | 'study'
+    | 'unpaid',
+  isActive?: boolean,
+  isPaid?: boolean,
+  ordering?: string,
+  page?: number,
+  requiresApproval?: boolean,
+  search?: string,
+): Promise<PaginatedLeaveTypeList> {
+  const response = await axios.get(
+    `/api/hr/leave-types/${(() => {
+      const parts = [
+        category ? 'category=' + encodeURIComponent(category) : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isPaid ? 'is_paid=' + encodeURIComponent(isPaid) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        requiresApproval
+          ? 'requires_approval=' + encodeURIComponent(requiresApproval)
+          : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function hrLeaveTypesCreate(data: LeaveType): Promise<LeaveType> {
+  const response = await axios.post(`/api/hr/leave-types/`, data);
+  return response.data;
+}
+
+export async function hrLeaveTypesRetrieve(id: number): Promise<LeaveType> {
+  const response = await axios.get(`/api/hr/leave-types/${id}/`);
+  return response.data;
+}
+
+export async function hrLeaveTypesUpdate(
+  id: number,
+  data: LeaveType,
+): Promise<LeaveType> {
+  const response = await axios.put(`/api/hr/leave-types/${id}/`, data);
+  return response.data;
+}
+
+export async function hrLeaveTypesPartialUpdate(
+  id: number,
+  data: PatchedLeaveType,
+): Promise<LeaveType> {
+  const response = await axios.patch(`/api/hr/leave-types/${id}/`, data);
+  return response.data;
+}
+
+export async function hrLeaveTypesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/hr/leave-types/${id}/`);
+  return response.data;
+}
+
+export async function hrReportsEmployeeSummaryRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/hr/reports/employee_summary/`);
+  return response.data;
+}
+
+export async function hrReportsLeaveTrendsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/hr/reports/leave_trends/`);
+  return response.data;
+}
+
+export async function hrWorkSchedulesList(
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  scheduleType?: 'custom' | 'flexible' | 'shift' | 'standard',
+  search?: string,
+): Promise<PaginatedWorkScheduleList> {
+  const response = await axios.get(
+    `/api/hr/work-schedules/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        scheduleType
+          ? 'schedule_type=' + encodeURIComponent(scheduleType)
+          : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function hrWorkSchedulesCreate(
+  data: WorkSchedule,
+): Promise<WorkSchedule> {
+  const response = await axios.post(`/api/hr/work-schedules/`, data);
+  return response.data;
+}
+
+export async function hrWorkSchedulesRetrieve(
+  id: number,
+): Promise<WorkSchedule> {
+  const response = await axios.get(`/api/hr/work-schedules/${id}/`);
+  return response.data;
+}
+
+export async function hrWorkSchedulesUpdate(
+  id: number,
+  data: WorkSchedule,
+): Promise<WorkSchedule> {
+  const response = await axios.put(`/api/hr/work-schedules/${id}/`, data);
+  return response.data;
+}
+
+export async function hrWorkSchedulesPartialUpdate(
+  id: number,
+  data: PatchedWorkSchedule,
+): Promise<WorkSchedule> {
+  const response = await axios.patch(`/api/hr/work-schedules/${id}/`, data);
+  return response.data;
+}
+
+export async function hrWorkSchedulesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/hr/work-schedules/${id}/`);
+  return response.data;
+}
+
 export async function packagesList(
   ordering?: string,
   page?: number,
@@ -913,11 +1393,13 @@ export async function socialFacebookPagesDebugRetrieve(): Promise<any> {
   return response.data;
 }
 
-export async function socialFacebookSendMessageCreate(data: {
-  recipient_id: string;
-  message: string;
-  page_id: string;
-}): Promise<any> {
+export async function socialFacebookSendMessageCreate(
+  data: FacebookSendMessage,
+): Promise<{
+  success?: boolean;
+  message?: string;
+  facebook_message_id?: string;
+}> {
   const response = await axios.post(`/api/social/facebook/send-message/`, data);
   return response.data;
 }
