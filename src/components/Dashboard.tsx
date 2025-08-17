@@ -10,7 +10,7 @@ import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
 import GroupManagement from "./GroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
-import MessagesManagement from "./MessagesManagement";
+import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
 
 interface DashboardProps {
   user: AuthUser;
@@ -591,7 +591,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
           {currentView === "groups" && <GroupManagement />}
 
           {currentView === "messages" && (
-            <MessagesManagement
+            <UnifiedMessagesManagement
               onBackToDashboard={() => setCurrentView("dashboard")}
             />
           )}
