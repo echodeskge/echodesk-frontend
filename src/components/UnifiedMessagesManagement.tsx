@@ -367,6 +367,31 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
     }
   }, [selectedConversation, loadConversationMessages]);
 
+  // Refetch data when the component becomes visible (e.g., returning from social integrations)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, refetch data
+        loadConnectedAccounts();
+        loadAllConversations();
+      }
+    };
+
+    const handleFocus = () => {
+      // Window regained focus, refetch data
+      loadConnectedAccounts();
+      loadAllConversations();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [loadConnectedAccounts, loadAllConversations]);
+
   // Auto-refresh every 5 seconds
   useEffect(() => {
     if (!autoRefresh) return;
@@ -439,6 +464,36 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Manual refresh button */}
+          <button
+            onClick={() => {
+              loadConnectedAccounts();
+              loadAllConversations();
+              if (selectedConversation) {
+                loadConversationMessages();
+              }
+            }}
+            disabled={loading}
+            style={{
+              padding: "8px 12px",
+              border: "1px solid #dee2e6",
+              borderRadius: "6px",
+              fontSize: "12px",
+              background: "white",
+              color: "#666",
+              cursor: loading ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+            title="Refresh messages and connections"
+          >
+            <span style={{ fontSize: "14px", transform: loading ? "rotate(360deg)" : "none", transition: "transform 0.5s" }}>
+              🔄
+            </span>
+            {loading ? "..." : "Refresh"}
+          </button>
+          
           <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "14px" }}>
             <input
               type="checkbox"

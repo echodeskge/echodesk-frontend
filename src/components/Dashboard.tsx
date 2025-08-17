@@ -29,6 +29,8 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [instagramConnected, setInstagramConnected] = useState(false);
+  const [connectionsChanged, setConnectionsChanged] = useState(false);
+  const [messagesRefreshKey, setMessagesRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchUserProfile();
@@ -161,6 +163,12 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const handleMenuClick = (
     viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
   ) => {
+    // If navigating to messages after connections changed, refresh the component
+    if (viewId === "messages" && connectionsChanged) {
+      setMessagesRefreshKey(prev => prev + 1);
+      setConnectionsChanged(false);
+    }
+    
     setCurrentView(viewId);
     if (isMobile) {
       setSidebarOpen(false); // Close sidebar on mobile after selection
@@ -592,14 +600,23 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
           {currentView === "messages" && (
             <UnifiedMessagesManagement
+              key={messagesRefreshKey} // Force refresh when this key changes
               onBackToDashboard={() => setCurrentView("dashboard")}
             />
           )}
 
           {currentView === "social" && (
             <SocialIntegrations
-              onBackToDashboard={() => setCurrentView("dashboard")}
+              onBackToDashboard={() => {
+                // If connections changed while in social view, refresh messages
+                if (connectionsChanged) {
+                  setMessagesRefreshKey(prev => prev + 1);
+                  setConnectionsChanged(false);
+                }
+                setCurrentView("dashboard");
+              }}
               onConnectionChange={(type, connected) => {
+                setConnectionsChanged(true); // Mark that connections have changed
                 if (type === 'facebook') {
                   setFacebookConnected(connected);
                 } else if (type === 'instagram') {

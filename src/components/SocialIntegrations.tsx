@@ -188,15 +188,31 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   };
 
   const handleDisconnectFacebook = async () => {
-    if (!confirm("Are you sure you want to disconnect all Facebook pages? This will stop receiving messages.")) {
+    if (!confirm("Are you sure you want to disconnect all Facebook pages? This will stop receiving messages and also disconnect any associated Instagram accounts.")) {
       return;
     }
 
     setLoading(true);
     setError("");
     try {
-      await axios.post('/api/social/facebook/disconnect/');
-      await loadFacebookStatus(); // Reload status
+      const response = await axios.post('/api/social/facebook/disconnect/');
+      
+      // Facebook disconnect also removes Instagram accounts, so reload both
+      await Promise.all([
+        loadFacebookStatus(),
+        loadInstagramStatus()
+      ]);
+      
+      // Notify parent component that both Facebook and Instagram connections changed
+      if (onConnectionChange) {
+        onConnectionChange('facebook', false);
+        onConnectionChange('instagram', false);
+      }
+      
+      // Show success message if provided
+      if (response.data.message) {
+        console.log("Facebook disconnect successful:", response.data.message);
+      }
     } catch (err: any) {
       console.error("Failed to disconnect Facebook:", err);
       setError(err.response?.data?.error || err.message || "Failed to disconnect Facebook");
@@ -224,15 +240,27 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   };
 
   const handleDisconnectInstagram = async () => {
-    if (!confirm("Are you sure you want to disconnect all Instagram accounts? This will stop receiving messages.")) {
+    if (!confirm("Are you sure you want to disconnect all Instagram accounts? This will permanently delete all Instagram messages and connections.")) {
       return;
     }
 
     setLoading(true);
     setError("");
     try {
-      await axios.post('/api/social/instagram/disconnect/');
-      await loadInstagramStatus(); // Reload status
+      const response = await axios.post('/api/social/instagram/disconnect/');
+      
+      // Reload Instagram status to reflect changes
+      await loadInstagramStatus();
+      
+      // Notify parent component that Instagram connection changed
+      if (onConnectionChange) {
+        onConnectionChange('instagram', false);
+      }
+      
+      // Show success message if provided
+      if (response.data.message) {
+        console.log("Instagram disconnect successful:", response.data.message);
+      }
     } catch (err: any) {
       console.error("Failed to disconnect Instagram:", err);
       setError(err.response?.data?.error || err.message || "Failed to disconnect Instagram");
