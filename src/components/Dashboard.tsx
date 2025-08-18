@@ -11,6 +11,7 @@ import UserManagement from "./UserManagement";
 import GroupManagement from "./GroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
 import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
+import HRManagement from "./HRManagement";
 
 interface DashboardProps {
   user: AuthUser;
@@ -23,7 +24,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
+    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "hr"
   >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -142,6 +143,13 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       description: "Manage user groups and permissions",
     },
     {
+      id: "hr",
+      label: "HR Management",
+      icon: "👔",
+      permission: "can_access_hr_management",
+      description: "Manage work schedules, leave types and requests",
+    },
+    {
       id: "social",
       label: "Social Media",
       icon: "📱",
@@ -161,7 +169,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
   const handleMenuClick = (
-    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
+    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "hr"
   ) => {
     // If navigating to messages after connections changed, refresh the component
     if (viewId === "messages" && connectionsChanged) {
@@ -334,6 +342,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                     | "messages"
                     | "social"
                     | "settings"
+                    | "hr"
                 )
               }
               style={{
@@ -459,6 +468,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                   </div>
                   <div>
                     👥 User Mgmt: {hasPermission(userProfile, 'can_access_user_management') ? "✅" : "❌"}
+                  </div>
+                  <div>
+                    👔 HR Mgmt: {hasPermission(userProfile, 'can_access_hr_management') ? "✅" : "❌"}
                   </div>
                   <div>
                     ⚙️ Settings: {hasPermission(userProfile, 'can_manage_settings') ? "✅" : "❌"}
@@ -597,6 +609,8 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
           {currentView === "users" && <UserManagement />}
 
           {currentView === "groups" && <GroupManagement />}
+
+          {currentView === "hr" && <HRManagement />}
 
           {currentView === "messages" && (
             <UnifiedMessagesManagement
