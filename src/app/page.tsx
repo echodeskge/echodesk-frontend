@@ -22,10 +22,8 @@ function HomeContent() {
     if (typeof window === 'undefined') return;
 
     const facebookStatus = searchParams.get('facebook_status');
-    const instagramStatus = searchParams.get('instagram_status');
     const message = searchParams.get('message');
     const pages = searchParams.get('pages');
-    const accounts = searchParams.get('accounts');
 
     // Handle Facebook OAuth callback
     if (facebookStatus) {
@@ -42,20 +40,6 @@ function HomeContent() {
       window.history.replaceState({}, '', newUrl);
     }
 
-    // Handle Instagram OAuth callback
-    if (instagramStatus) {
-      if (instagramStatus === 'connected') {
-        const successMessage = message || `Successfully connected ${accounts || '0'} Instagram account(s)`;
-        showNotification('success', '✅ Instagram Connected', successMessage);
-      } else if (instagramStatus === 'error') {
-        const errorMessage = message || 'Failed to connect Instagram';
-        showNotification('error', '❌ Instagram Connection Failed', decodeURIComponent(errorMessage));
-      }
-      
-      // Clean up URL parameters
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    }
   }, [searchParams]);
 
   useEffect(() => {

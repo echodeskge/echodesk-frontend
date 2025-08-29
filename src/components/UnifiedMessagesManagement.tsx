@@ -29,33 +29,10 @@ interface FacebookMessage {
   page_name: string;
 }
 
-interface InstagramMessage {
-  id: number;
-  message_id: string;
-  conversation_id: string;
-  sender_id: string;
-  sender_username: string;
-  message_text: string;
-  message_type: string;
-  attachment_url?: string;
-  timestamp: string;
-  is_from_business: boolean;
-  account_connection: number;
-}
-
-interface InstagramAccountConnection {
-  id: number;
-  instagram_account_id: string;
-  username: string;
-  name: string;
-  profile_picture_url?: string;
-  is_active: boolean;
-  created_at: string;
-}
 
 interface UnifiedMessage {
   id: string;
-  platform: 'facebook' | 'instagram';
+  platform: 'facebook';
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -67,18 +44,18 @@ interface UnifiedMessage {
   page_name?: string;
   conversation_id: string;
   platform_message_id: string;
-  account_id: string; // page_id for Facebook, instagram_account_id for Instagram
+  account_id: string; // page_id for Facebook
 }
 
 interface UnifiedConversation {
-  platform: 'facebook' | 'instagram';
+  platform: 'facebook';
   conversation_id: string;
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
   last_message: UnifiedMessage;
   message_count: number;
-  account_name: string; // page_name or Instagram username
+  account_name: string; // page_name
   account_id: string;
 }
 
@@ -89,11 +66,10 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
   const [selectedConversation, setSelectedConversation] = useState<UnifiedConversation | null>(null);
   const [conversationMessages, setConversationMessages] = useState<UnifiedMessage[]>([]);
   const [facebookPages, setFacebookPages] = useState<FacebookPageConnection[]>([]);
-  const [instagramAccounts, setInstagramAccounts] = useState<InstagramAccountConnection[]>([]);
   const [replyText, setReplyText] = useState("");
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [platformFilter, setPlatformFilter] = useState<'all' | 'facebook' | 'instagram'>('all');
+  const [platformFilter, setPlatformFilter] = useState<'all' | 'facebook'>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
@@ -105,10 +81,6 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
       const facebookData = facebookResponse.data as PaginatedResponse<FacebookPageConnection>;
       setFacebookPages(facebookData.results || []);
 
-      // Load Instagram accounts
-      const instagramResponse = await axios.get('/api/social/instagram-accounts/');
-      const instagramData = instagramResponse.data as PaginatedResponse<InstagramAccountConnection>;
-      setInstagramAccounts(instagramData.results || []);
 
     } catch (err: unknown) {
       console.error("Failed to load connected accounts:", err);
@@ -177,55 +149,6 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
         }
       }
 
-      // Load Instagram conversations
-      for (const account of instagramAccounts) {
-        try {
-          const response = await axios.get(`/api/social/instagram-messages/?account_id=${account.instagram_account_id}`);
-          const messagesData = response.data as PaginatedResponse<InstagramMessage>;
-          
-          // Group by conversation_id to create conversations
-          const conversationMap = new Map<string, UnifiedConversation>();
-          
-          messagesData.results.forEach(message => {
-            if (!message.is_from_business) { // Only conversations from users
-              const existing = conversationMap.get(message.conversation_id);
-              const unifiedMessage: UnifiedMessage = {
-                id: `instagram_${message.id}`,
-                platform: 'instagram',
-                sender_id: message.sender_id,
-                sender_name: message.sender_username || "Unknown User",
-                profile_pic_url: undefined, // Instagram doesn't provide profile pics in messages
-                message_text: message.message_text,
-                message_type: message.message_type,
-                attachment_url: message.attachment_url,
-                timestamp: message.timestamp,
-                is_from_business: message.is_from_business,
-                conversation_id: message.conversation_id,
-                platform_message_id: message.message_id,
-                account_id: account.instagram_account_id
-              };
-
-              if (!existing || new Date(message.timestamp) > new Date(existing.last_message.timestamp)) {
-                conversationMap.set(message.conversation_id, {
-                  platform: 'instagram',
-                  conversation_id: message.conversation_id,
-                  sender_id: message.sender_id,
-                  sender_name: message.sender_username || "Unknown User",
-                  profile_pic_url: undefined,
-                  last_message: unifiedMessage,
-                  message_count: messagesData.results.filter(m => m.conversation_id === message.conversation_id).length,
-                  account_name: `@${account.username}`,
-                  account_id: account.instagram_account_id
-                });
-              }
-            }
-          });
-          
-          allConversations.push(...Array.from(conversationMap.values()));
-        } catch (err) {
-          console.error(`Failed to load Instagram messages for account @${account.username}:`, err);
-        }
-      }
 
       // Sort by last message timestamp
       allConversations.sort((a, b) => 
@@ -244,7 +167,7 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [facebookPages, instagramAccounts]);
+  }, [facebookPages]);
 
   const loadConversationMessages = useCallback(async (silent = false) => {
     if (!selectedConversation) return;
@@ -277,28 +200,6 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
           account_id: selectedConversation.account_id
         }));
 
-      } else if (selectedConversation.platform === 'instagram') {
-        // Load Instagram messages for this conversation
-        const response = await axios.get(
-          `/api/social/instagram-messages/?account_id=${selectedConversation.account_id}&conversation_id=${selectedConversation.conversation_id}`
-        );
-        const messagesData = response.data as PaginatedResponse<InstagramMessage>;
-        
-        messages = messagesData.results.map(message => ({
-          id: `instagram_${message.id}`,
-          platform: 'instagram' as const,
-          sender_id: message.sender_id,
-          sender_name: message.sender_username || "Unknown User",
-          profile_pic_url: undefined,
-          message_text: message.message_text,
-          message_type: message.message_type,
-          attachment_url: message.attachment_url,
-          timestamp: message.timestamp,
-          is_from_business: message.is_from_business,
-          conversation_id: message.conversation_id,
-          platform_message_id: message.message_id,
-          account_id: selectedConversation.account_id
-        }));
       }
 
       // Sort by timestamp
@@ -327,13 +228,6 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
           recipient_id: selectedConversation.sender_id,
           message: replyText,
           page_id: selectedConversation.account_id
-        });
-      } else if (selectedConversation.platform === 'instagram') {
-        // Send Instagram message
-        await axios.post('/api/social/instagram/send-message/', {
-          recipient_id: selectedConversation.sender_id,
-          message: replyText,
-          instagram_account_id: selectedConversation.account_id
         });
       }
 
@@ -458,7 +352,7 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
               Messages
             </h1>
             <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#666" }}>
-              Unified inbox for Facebook and Instagram messages
+              Unified inbox for Facebook messages
             </p>
           </div>
         </div>
@@ -551,7 +445,7 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
               }}
             />
             <div style={{ display: "flex", gap: "8px" }}>
-              {(['all', 'facebook', 'instagram'] as const).map(platform => (
+              {(['all', 'facebook'] as const).map(platform => (
                 <button
                   key={platform}
                   onClick={() => setPlatformFilter(platform)}

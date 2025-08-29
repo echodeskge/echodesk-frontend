@@ -11,7 +11,6 @@ import UserManagement from "./UserManagement";
 import GroupManagement from "./GroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
 import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
-import HRManagement from "./HRManagement";
 
 interface DashboardProps {
   user: AuthUser;
@@ -24,12 +23,11 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "hr"
+    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
   >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [facebookConnected, setFacebookConnected] = useState(false);
-  const [instagramConnected, setInstagramConnected] = useState(false);
   const [connectionsChanged, setConnectionsChanged] = useState(false);
   const [messagesRefreshKey, setMessagesRefreshKey] = useState(0);
 
@@ -91,14 +89,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
         setFacebookConnected(false);
       }
 
-      // Check Instagram connection
-      try {
-        const instagramResponse = await axiosInstance.get('/api/social/instagram/status/');
-        setInstagramConnected(instagramResponse.data.connected || false);
-      } catch (err) {
-        console.error("Failed to check Instagram connection:", err);
-        setInstagramConnected(false);
-      }
     } catch (err) {
       console.error("Failed to check social connections:", err);
     }
@@ -120,13 +110,13 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       permission: "can_access_calls",
       description: "Handle phone calls",
     },
-    // Add Messages menu item only when Facebook or Instagram is connected
-    ...((facebookConnected || instagramConnected) ? [{
+    // Add Messages menu item only when Facebook is connected
+    ...(facebookConnected ? [{
       id: "messages",
       label: "Messages",
       icon: "💬",
       permission: "can_manage_settings", // Use same permission as social for now
-      description: `View and respond to ${facebookConnected && instagramConnected ? 'Facebook and Instagram' : facebookConnected ? 'Facebook' : 'Instagram'} messages`,
+      description: "View and respond to Facebook messages",
     }] : []),
     {
       id: "users",
@@ -141,13 +131,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       icon: "👨‍👩‍👧‍👦",
       permission: "can_access_user_management",
       description: "Manage user groups and permissions",
-    },
-    {
-      id: "hr",
-      label: "HR Management",
-      icon: "👔",
-      permission: "can_access_hr_management",
-      description: "Manage work schedules, leave types and requests",
     },
     {
       id: "social",
@@ -169,7 +152,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
   const handleMenuClick = (
-    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "hr"
+    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
   ) => {
     // If navigating to messages after connections changed, refresh the component
     if (viewId === "messages" && connectionsChanged) {
@@ -342,7 +325,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                     | "messages"
                     | "social"
                     | "settings"
-                    | "hr"
                 )
               }
               style={{
@@ -468,9 +450,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                   </div>
                   <div>
                     👥 User Mgmt: {hasPermission(userProfile, 'can_access_user_management') ? "✅" : "❌"}
-                  </div>
-                  <div>
-                    👔 HR Mgmt: {hasPermission(userProfile, 'can_access_hr_management') ? "✅" : "❌"}
                   </div>
                   <div>
                     ⚙️ Settings: {hasPermission(userProfile, 'can_manage_settings') ? "✅" : "❌"}
@@ -610,7 +589,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
           {currentView === "groups" && <GroupManagement />}
 
-          {currentView === "hr" && <HRManagement />}
 
           {currentView === "messages" && (
             <UnifiedMessagesManagement
@@ -633,8 +611,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                 setConnectionsChanged(true); // Mark that connections have changed
                 if (type === 'facebook') {
                   setFacebookConnected(connected);
-                } else if (type === 'instagram') {
-                  setInstagramConnected(connected);
                 }
               }}
             />

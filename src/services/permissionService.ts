@@ -105,43 +105,6 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'auth.delete_permission',
       'auth.view_permission'
     ]
-  },
-  {
-    id: 'hr_management',
-    label: 'HR Management',
-    description: 'Full access to HR functions including work schedules, leave types, requests, and balances',
-    permissions: [
-      // Work schedule permissions
-      'hr.add_workschedule',
-      'hr.change_workschedule',
-      'hr.delete_workschedule',
-      'hr.view_workschedule',
-      // Leave type permissions
-      'hr.add_leavetype',
-      'hr.change_leavetype',
-      'hr.delete_leavetype',
-      'hr.view_leavetype',
-      // Leave request permissions
-      'hr.add_leaverequest',
-      'hr.change_leaverequest',
-      'hr.delete_leaverequest',
-      'hr.view_leaverequest',
-      // Leave balance permissions
-      'hr.add_employeeleavebalance',
-      'hr.change_employeeleavebalance',
-      'hr.delete_employeeleavebalance',
-      'hr.view_employeeleavebalance',
-      // Employee work schedule permissions
-      'hr.add_employeeworkschedule',
-      'hr.change_employeeworkschedule',
-      'hr.delete_employeeworkschedule',
-      'hr.view_employeeworkschedule',
-      // Holiday permissions
-      'hr.add_holiday',
-      'hr.change_holiday',
-      'hr.delete_holiday',
-      'hr.view_holiday'
-    ]
   }
 ];
 
@@ -173,13 +136,11 @@ export class PermissionService {
       'can_access_tickets',
       'can_access_calls', 
       'can_access_user_management',
-      'can_access_hr_management',
       'can_manage_settings' // Admin-specific permission
     ],
     manager: [
       'can_access_tickets',
-      'can_access_calls',
-      'can_access_hr_management' // Managers can access HR features
+      'can_access_calls'
       // Note: managers cannot access user management by default
     ],
     agent: [

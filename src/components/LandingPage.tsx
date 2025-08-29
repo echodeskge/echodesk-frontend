@@ -18,7 +18,6 @@ export default function LandingPage() {
         "Basic Reporting",
         "Team Collaboration",
         "Mobile App Access",
-        "Up to 1,000 WhatsApp messages/month",
         "Email Support"
       ],
       highlight: false,
@@ -35,8 +34,6 @@ export default function LandingPage() {
         "Integrated SIP Phone System",
         "Call Recording & Analytics",
         "Facebook Messenger Integration",
-        "Instagram DM Integration",
-        "Up to 5,000 WhatsApp messages/month",
         "Advanced Workflows",
         "Priority Support"
       ],
@@ -48,11 +45,9 @@ export default function LandingPage() {
       name: "Enterprise",
       price: "25₾",
       period: "per agent/month",
-      description: "Complete omnichannel solution with WhatsApp and custom integrations",
+      description: "Complete solution with advanced features and custom integrations",
       features: [
         "Everything in Professional",
-        "WhatsApp Business API",
-        "Up to 15,000 WhatsApp messages/month",
         "Custom Integrations",
         "Advanced Analytics Dashboard",
         "Multi-tenant Management",
@@ -78,7 +73,6 @@ export default function LandingPage() {
         "Email Integration",
         "Basic Reporting",
         "Mobile App Access",
-        "Up to 2,000 WhatsApp messages/month",
         "Standard Support",
         "5GB Storage"
       ],
@@ -98,7 +92,6 @@ export default function LandingPage() {
         "Social Media Integration",
         "Advanced Workflows",
         "Call Recording",
-        "Up to 10,000 WhatsApp messages/month",
         "Priority Support",
         "50GB Storage"
       ],
@@ -114,8 +107,6 @@ export default function LandingPage() {
       features: [
         "Up to 100 Users",
         "Everything in Business",
-        "WhatsApp Business API",
-        "Up to 50,000 WhatsApp messages/month",
         "Custom Integrations",
         "Advanced Analytics",
         "Multi-tenant Architecture",
@@ -147,7 +138,7 @@ export default function LandingPage() {
       icon: "💬",
       title: "Social Messaging",
       description:
-        "Connect with customers on Facebook, Instagram, and WhatsApp. Manage all conversations from one unified inbox.",
+        "Connect with customers on Facebook Messenger. Manage all conversations from one unified inbox.",
     },
     {
       icon: "📊",
