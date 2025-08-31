@@ -330,6 +330,13 @@ export interface PaginatedSipConfigurationListList {
   results: SipConfigurationList[];
 }
 
+export interface PaginatedSubTicketAssignmentList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: SubTicketAssignment[];
+}
+
 export interface PaginatedSubTicketList {
   count: number;
   next?: string;
@@ -349,6 +356,13 @@ export interface PaginatedTenantList {
   next?: string;
   previous?: string;
   results: Tenant[];
+}
+
+export interface PaginatedTicketAssignmentList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TicketAssignment[];
 }
 
 export interface PaginatedTicketColumnList {
@@ -496,9 +510,21 @@ export interface PatchedSubTicket {
   created_by?: UserMinimal;
   assigned_to?: UserMinimal;
   assigned_to_id?: number;
+  assigned_users?: UserMinimal[];
+  assignments?: SubTicketAssignment[];
+  assigned_user_ids?: number[];
+  assignment_roles?: Record<string, any>;
   checklist_items?: ChecklistItem[];
   checklist_items_count?: string;
   completed_items_count?: string;
+}
+
+export interface PatchedSubTicketAssignment {
+  id?: number;
+  user?: UserMinimal;
+  role?: Role451enum;
+  assigned_at?: string;
+  assigned_by?: UserMinimal;
 }
 
 export interface PatchedTag {
@@ -542,6 +568,10 @@ export interface PatchedTicket {
   created_by?: UserMinimal;
   assigned_to?: UserMinimal;
   assigned_to_id?: number;
+  assigned_users?: UserMinimal[];
+  assignments?: TicketAssignment[];
+  assigned_user_ids?: number[];
+  assignment_roles?: Record<string, any>;
   tags?: Tag[];
   tag_ids?: number[];
   comments?: TicketComment[];
@@ -552,6 +582,14 @@ export interface PatchedTicket {
   checklist_items?: ChecklistItem[];
   checklist_items_count?: string;
   completed_checklist_items_count?: string;
+}
+
+export interface PatchedTicketAssignment {
+  id?: number;
+  user?: UserMinimal;
+  role?: Role451enum;
+  assigned_at?: string;
+  assigned_by?: UserMinimal;
 }
 
 export interface PatchedTicketColumnUpdate {
@@ -576,7 +614,7 @@ export interface PatchedTicketComment {
 export interface PatchedUserUpdate {
   first_name?: string;
   last_name?: string;
-  role?: RoleEnum;
+  role?: Role4c6enum;
   status?: Status336enum;
   phone_number?: string;
   job_title?: string;
@@ -610,7 +648,11 @@ export interface PriorityEnum {
   [key: string]: any;
 }
 
-export interface RoleEnum {
+export interface Role451enum {
+  [key: string]: any;
+}
+
+export interface Role4c6enum {
   [key: string]: any;
 }
 
@@ -681,9 +723,21 @@ export interface SubTicket {
   created_by: UserMinimal;
   assigned_to: UserMinimal;
   assigned_to_id?: number;
+  assigned_users: UserMinimal[];
+  assignments: SubTicketAssignment[];
+  assigned_user_ids?: number[];
+  assignment_roles?: Record<string, any>;
   checklist_items: ChecklistItem[];
   checklist_items_count: string;
   completed_items_count: string;
+}
+
+export interface SubTicketAssignment {
+  id: number;
+  user: UserMinimal;
+  role?: Role451enum;
+  assigned_at: string;
+  assigned_by: UserMinimal;
 }
 
 export interface Tag {
@@ -764,6 +818,10 @@ export interface Ticket {
   created_by: UserMinimal;
   assigned_to: UserMinimal;
   assigned_to_id?: number;
+  assigned_users: UserMinimal[];
+  assignments: TicketAssignment[];
+  assigned_user_ids?: number[];
+  assignment_roles?: Record<string, any>;
   tags: Tag[];
   tag_ids?: number[];
   comments: TicketComment[];
@@ -774,6 +832,14 @@ export interface Ticket {
   checklist_items: ChecklistItem[];
   checklist_items_count: string;
   completed_checklist_items_count: string;
+}
+
+export interface TicketAssignment {
+  id: number;
+  user: UserMinimal;
+  role?: Role451enum;
+  assigned_at: string;
+  assigned_by: UserMinimal;
 }
 
 export interface TicketColumn {
@@ -830,6 +896,8 @@ export interface TicketList {
   updated_at: string;
   created_by: UserMinimal;
   assigned_to: UserMinimal;
+  assigned_users: UserMinimal[];
+  assignments: TicketAssignment[];
   tags: Tag[];
   comments_count: string;
 }
@@ -840,7 +908,7 @@ export interface User {
   first_name?: string;
   last_name?: string;
   full_name: string;
-  role?: RoleEnum;
+  role?: Role4c6enum;
   status?: Status336enum;
   phone_number?: string;
   job_title?: string;
@@ -864,7 +932,7 @@ export interface UserCreate {
   last_name?: string;
   password: string;
   password_confirm: string;
-  role?: RoleEnum;
+  role?: Role4c6enum;
   status?: Status336enum;
   phone_number?: string;
   job_title?: string;
@@ -883,7 +951,7 @@ export interface UserMinimal {
 export interface UserUpdate {
   first_name?: string;
   last_name?: string;
-  role?: RoleEnum;
+  role?: Role4c6enum;
   status?: Status336enum;
   phone_number?: string;
   job_title?: string;

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { ticketService, TicketFilters } from '@/services/ticketService';
 import { columnsList } from '@/api/generated/api';
 import type { TicketList, PaginatedTicketListList, TicketColumn } from '@/api/generated/interfaces';
+import AssigneeList from './AssigneeList';
+import BulkAssignmentModal from './BulkAssignmentModal';
 
 interface TicketListProps {
   onTicketSelect?: (ticketId: number) => void;
@@ -17,6 +19,8 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<TicketFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTickets, setSelectedTickets] = useState<Set<number>>(new Set());
+  const [bulkAssignmentOpen, setBulkAssignmentOpen] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -70,6 +74,30 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
 
   const handlePageChange = (page: number) => {
     setFilters({ ...filters, page });
+  };
+
+  const handleTicketSelect = (ticketId: number, checked: boolean) => {
+    const newSelected = new Set(selectedTickets);
+    if (checked) {
+      newSelected.add(ticketId);
+    } else {
+      newSelected.delete(ticketId);
+    }
+    setSelectedTickets(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && tickets?.results) {
+      const allTicketIds = new Set(tickets.results.map(ticket => ticket.id));
+      setSelectedTickets(allTicketIds);
+    } else {
+      setSelectedTickets(new Set());
+    }
+  };
+
+  const handleBulkAssignmentSuccess = () => {
+    setSelectedTickets(new Set());
+    fetchTickets(); // Refresh the list
   };
 
   const getStatusColor = (ticket: TicketList) => {
@@ -364,10 +392,66 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
       }}>
         {tickets && tickets.results && tickets.results.length > 0 ? (
           <>
+            {/* Bulk Actions Bar */}
+            {selectedTickets.size > 0 && (
+              <div style={{
+                background: '#e3f2fd',
+                border: '1px solid #bbdefb',
+                borderRadius: '4px',
+                padding: '12px 20px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <span style={{
+                  fontSize: '14px',
+                  color: '#1976d2',
+                  fontWeight: '500'
+                }}>
+                  {selectedTickets.size} ticket{selectedTickets.size > 1 ? 's' : ''} selected
+                </span>
+                
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => setBulkAssignmentOpen(true)}
+                    style={{
+                      background: '#1976d2',
+                      color: 'white',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Bulk Assign
+                  </button>
+                  
+                  <button
+                    onClick={() => setSelectedTickets(new Set())}
+                    style={{
+                      background: 'white',
+                      color: '#1976d2',
+                      border: '1px solid #1976d2',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Table Header */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: '50px 1fr 120px 100px 120px 120px 80px',
+              gridTemplateColumns: '40px 50px 1fr 120px 100px 120px 120px 80px',
               background: '#f8f9fa',
               padding: '15px 20px',
               borderBottom: '1px solid #dee2e6',
@@ -375,6 +459,14 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
               fontWeight: '600',
               color: '#495057'
             }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="checkbox"
+                  checked={tickets?.results ? selectedTickets.size === tickets.results.length && tickets.results.length > 0 : false}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  style={{ margin: 0 }}
+                />
+              </div>
               <div>ID</div>
               <div>Title</div>
               <div>Status</div>
@@ -388,35 +480,46 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
             {tickets.results.map((ticket) => (
               <div
                 key={ticket.id}
-                onClick={() => onTicketSelect && onTicketSelect(ticket.id)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '50px 1fr 120px 100px 120px 120px 80px',
+                  gridTemplateColumns: '40px 50px 1fr 120px 100px 120px 120px 80px',
                   padding: '15px 20px',
                   borderBottom: '1px solid #dee2e6',
                   fontSize: '14px',
-                  cursor: onTicketSelect ? 'pointer' : 'default',
                   transition: 'background-color 0.2s'
                 }}
                 onMouseOver={(e) => {
-                  if (onTicketSelect) {
-                    e.currentTarget.style.backgroundColor = '#f8f9fa';
-                  }
+                  e.currentTarget.style.backgroundColor = '#f8f9fa';
                 }}
                 onMouseOut={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedTickets.has(ticket.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleTicketSelect(ticket.id, e.target.checked);
+                    }}
+                    style={{ margin: 0 }}
+                  />
+                </div>
                 <div style={{ fontWeight: '500', color: '#6c757d' }}>
                   #{ticket.id}
                 </div>
-                <div style={{
-                  fontWeight: '500',
-                  color: '#343a40',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}>
+                <div 
+                  onClick={() => onTicketSelect && onTicketSelect(ticket.id)}
+                  style={{
+                    fontWeight: '500',
+                    color: '#343a40',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    cursor: onTicketSelect ? 'pointer' : 'default'
+                  }}
+                >
                   {ticket.title}
                 </div>
                 <div>
@@ -445,12 +548,14 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
                     {ticket.priority as any || 'None'}
                   </span>
                 </div>
-                <div style={{ color: '#6c757d' }}>
-                  {ticket.assigned_to ? 
-                    `${ticket.assigned_to.first_name} ${ticket.assigned_to.last_name}`.trim() || 
-                    ticket.assigned_to.email : 
-                    'Unassigned'
-                  }
+                <div>
+                  <AssigneeList
+                    assigned_to={ticket.assigned_to}
+                    assigned_users={ticket.assigned_users}
+                    assignments={ticket.assignments}
+                    size="small"
+                    maxDisplay={2}
+                  />
                 </div>
                 <div style={{ color: '#6c757d' }}>
                   {formatDate(ticket.created_at)}
@@ -563,6 +668,14 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
           </div>
         )}
       </div>
+
+      {/* Bulk Assignment Modal */}
+      <BulkAssignmentModal
+        selectedTickets={tickets?.results?.filter(ticket => selectedTickets.has(ticket.id)) || []}
+        isOpen={bulkAssignmentOpen}
+        onClose={() => setBulkAssignmentOpen(false)}
+        onSuccess={handleBulkAssignmentSuccess}
+      />
 
       <style jsx>{`
         @keyframes spin {

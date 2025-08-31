@@ -47,6 +47,8 @@ export interface CreateTicketData {
   description_format?: 'plain' | 'html' | 'delta';
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
+  assigned_user_ids?: number[];
+  assignment_roles?: Record<string, string>;
   column_id?: number;
   tag_ids?: number[];
 }
@@ -59,6 +61,8 @@ export interface UpdateTicketData {
   status?: "open" | "in_progress" | "resolved" | "closed";
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
+  assigned_user_ids?: number[];
+  assignment_roles?: Record<string, string>;
   column_id?: number;
   tag_ids?: number[];
 }
@@ -121,6 +125,8 @@ export class TicketService {
         description_format: (data.description_format as any) || 'plain',
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
+        assigned_user_ids: data.assigned_user_ids || [],
+        assignment_roles: data.assignment_roles || {},
         column_id: data.column_id,
         tag_ids: data.tag_ids || [],
       };
@@ -147,6 +153,8 @@ export class TicketService {
         status: data.status,
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
+        assigned_user_ids: data.assigned_user_ids || [],
+        assignment_roles: data.assignment_roles || {},
         column_id: data.column_id,
         tag_ids: data.tag_ids,
       };
@@ -269,6 +277,69 @@ export class TicketService {
       return await tagsList(undefined, undefined, search);
     } catch (error) {
       console.error("Error fetching tags:", error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Bulk assign users to multiple tickets
+   */
+  async bulkAssignTickets(
+    ticketIds: number[], 
+    userIds: number[], 
+    roles: Record<string, string> = {},
+    replace: boolean = false
+  ): Promise<void> {
+    try {
+      // For now, update each ticket individually
+      // In the future, this could be optimized with a dedicated bulk endpoint
+      const promises = ticketIds.map(ticketId => {
+        const assigned_user_ids = userIds;
+        const assignment_roles = roles;
+        const primaryAssignment = userIds.find(uid => roles[uid.toString()] === 'primary');
+        const assigned_to_id = primaryAssignment || userIds[0];
+
+        return this.updateTicket(ticketId, {
+          assigned_to_id,
+          assigned_user_ids,
+          assignment_roles
+        });
+      });
+
+      await Promise.all(promises);
+    } catch (error) {
+      console.error("Error bulk assigning tickets:", error);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Bulk unassign users from multiple tickets
+   */
+  async bulkUnassignTickets(ticketIds: number[], userIds?: number[]): Promise<void> {
+    try {
+      const promises = ticketIds.map(ticketId => {
+        if (userIds && userIds.length > 0) {
+          // Unassign specific users - this would need backend support
+          // For now, we'll just clear all assignments if no userIds specified
+          return this.updateTicket(ticketId, {
+            assigned_to_id: undefined,
+            assigned_user_ids: [],
+            assignment_roles: {}
+          });
+        } else {
+          // Clear all assignments
+          return this.updateTicket(ticketId, {
+            assigned_to_id: undefined,
+            assigned_user_ids: [],
+            assignment_roles: {}
+          });
+        }
+      });
+
+      await Promise.all(promises);
+    } catch (error) {
+      console.error("Error bulk unassigning tickets:", error);
       throw this.handleError(error);
     }
   }

@@ -5,6 +5,8 @@ import { ticketService } from '@/services/ticketService';
 import type { Ticket, TicketComment, User } from '@/api/generated/interfaces';
 import SubTicketList from './SubTicketList';
 import ChecklistItemList from './ChecklistItemList';
+import AssigneeList from './AssigneeList';
+import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
 
 interface TicketDetailProps {
   ticketId: number;
@@ -19,6 +21,8 @@ export default function TicketDetail({ ticketId, onBack, onEdit }: TicketDetailP
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [editingAssignments, setEditingAssignments] = useState(false);
+  const [tempAssignments, setTempAssignments] = useState<AssignmentData[]>([]);
 
   useEffect(() => {
     fetchTicket();
@@ -87,6 +91,63 @@ export default function TicketDetail({ ticketId, onBack, onEdit }: TicketDetailP
     } catch (err) {
       console.error('Error assigning ticket:', err);
       setError(err instanceof Error ? err.message : 'Failed to assign ticket');
+    }
+  };
+
+  const handleStartEditingAssignments = () => {
+    if (!ticket) return;
+
+    // Initialize temp assignments from current ticket
+    const currentAssignments: AssignmentData[] = [];
+    
+    if (ticket.assignments && ticket.assignments.length > 0) {
+      currentAssignments.push(...ticket.assignments.map(assignment => ({
+        userId: assignment.user.id,
+        role: (assignment.role as any) || 'collaborator'
+      })));
+    } else if (ticket.assigned_to) {
+      currentAssignments.push({
+        userId: ticket.assigned_to.id,
+        role: 'primary'
+      });
+    }
+
+    setTempAssignments(currentAssignments);
+    setEditingAssignments(true);
+  };
+
+  const handleCancelEditingAssignments = () => {
+    setEditingAssignments(false);
+    setTempAssignments([]);
+  };
+
+  const handleSaveAssignments = async () => {
+    if (!ticket) return;
+
+    try {
+      // Prepare assignment data
+      const assigned_user_ids = tempAssignments.map(a => a.userId);
+      const assignment_roles: Record<string, string> = {};
+      tempAssignments.forEach(a => {
+        assignment_roles[a.userId.toString()] = a.role;
+      });
+
+      // Set primary assignee
+      const primaryAssignment = tempAssignments.find(a => a.role === 'primary') || tempAssignments[0];
+      const assigned_to_id = primaryAssignment?.userId;
+
+      const updatedTicket = await ticketService.updateTicket(ticket.id, {
+        assigned_to_id,
+        assigned_user_ids,
+        assignment_roles
+      });
+
+      setTicket(updatedTicket);
+      setEditingAssignments(false);
+      setTempAssignments([]);
+    } catch (err) {
+      console.error('Error updating assignments:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update assignments');
     }
   };
 
@@ -553,38 +614,95 @@ export default function TicketDetail({ ticketId, onBack, onEdit }: TicketDetailP
             </div>
 
             <div>
-              <label style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#6c757d',
-                marginBottom: '5px'
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '8px'
               }}>
-                Assign To
-              </label>
-              <select
-                value={ticket.assigned_to?.id || ''}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    handleAssign(parseInt(e.target.value));
-                  }
-                }}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #dee2e6',
-                  borderRadius: '4px',
+                <label style={{
                   fontSize: '14px',
-                  background: 'white'
-                }}
-              >
-                <option value="">Unassigned</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} ({user.email})
-                  </option>
-                ))}
-              </select>
+                  fontWeight: '500',
+                  color: '#6c757d'
+                }}>
+                  Assigned Users
+                </label>
+                
+                {!editingAssignments && (
+                  <button
+                    onClick={handleStartEditingAssignments}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#3498db',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      padding: '2px 6px',
+                      borderRadius: '3px',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+              
+              {editingAssignments ? (
+                <div>
+                  <MultiUserAssignment
+                    users={users}
+                    assignments={ticket.assignments}
+                    selectedAssignments={tempAssignments}
+                    onChange={setTempAssignments}
+                    placeholder="Assign users to this ticket..."
+                  />
+                  
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginTop: '12px'
+                  }}>
+                    <button
+                      onClick={handleSaveAssignments}
+                      style={{
+                        background: '#27ae60',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        flex: 1
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelEditingAssignments}
+                      style={{
+                        background: '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        flex: 1
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <AssigneeList
+                  assigned_to={ticket.assigned_to}
+                  assigned_users={ticket.assigned_users}
+                  assignments={ticket.assignments}
+                  showRoles={true}
+                  size="medium"
+                />
+              )}
             </div>
           </div>
 
@@ -629,10 +747,14 @@ export default function TicketDetail({ ticketId, onBack, onEdit }: TicketDetailP
                   Assigned To
                 </div>
                 <div style={{ fontSize: '14px', color: '#495057' }}>
-                  {ticket.assigned_to ? 
-                    `${ticket.assigned_to.first_name} ${ticket.assigned_to.last_name}` : 
-                    'Unassigned'
-                  }
+                  <AssigneeList
+                    assigned_to={ticket.assigned_to}
+                    assigned_users={ticket.assigned_users}
+                    assignments={ticket.assignments}
+                    showRoles={false}
+                    size="small"
+                    maxDisplay={3}
+                  />
                 </div>
               </div>
 

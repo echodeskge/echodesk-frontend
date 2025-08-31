@@ -5,6 +5,7 @@ import { ticketService, CreateTicketData, UpdateTicketData } from '@/services/ti
 import { columnsList } from '@/api/generated/api';
 import type { Ticket, User, Tag, TicketColumn } from '@/api/generated/interfaces';
 import SimpleRichTextEditor from './SimpleRichTextEditor';
+import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
 
 interface TicketFormProps {
   ticket?: Ticket; // If provided, we're editing; otherwise creating
@@ -23,6 +24,8 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
     column_id: 0,
     tag_ids: [] as number[]
   });
+  
+  const [assignments, setAssignments] = useState<AssignmentData[]>([]);
   
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -46,6 +49,21 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
         column_id: ticket.column?.id || 0,
         tag_ids: ticket.tags ? ticket.tags.map(tag => tag.id) : []
       });
+
+      // Initialize assignments from existing ticket
+      if (ticket.assignments && ticket.assignments.length > 0) {
+        const existingAssignments: AssignmentData[] = ticket.assignments.map(assignment => ({
+          userId: assignment.user.id,
+          role: (assignment.role as any) || 'collaborator'
+        }));
+        setAssignments(existingAssignments);
+      } else if (ticket.assigned_to) {
+        // If no multi-assignments but has assigned_to, create assignment
+        setAssignments([{
+          userId: ticket.assigned_to.id,
+          role: 'primary'
+        }]);
+      }
     }
 
     // Fetch users and tags
@@ -90,6 +108,17 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
     try {
       let savedTicket: Ticket;
 
+      // Prepare assignment data
+      const assigned_user_ids = assignments.map(a => a.userId);
+      const assignment_roles: Record<string, string> = {};
+      assignments.forEach(a => {
+        assignment_roles[a.userId.toString()] = a.role;
+      });
+
+      // Set primary assignee (first primary role or first assignment)
+      const primaryAssignment = assignments.find(a => a.role === 'primary') || assignments[0];
+      const assigned_to_id = primaryAssignment?.userId || formData.assigned_to_id || undefined;
+
       if (isEditing && ticket) {
         // Update existing ticket
         const updateData: UpdateTicketData = {
@@ -98,7 +127,9 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
           rich_description: formData.description_format === 'html' ? formData.rich_description : null,
           description_format: formData.description_format,
           priority: formData.priority,
-          assigned_to_id: formData.assigned_to_id || undefined,
+          assigned_to_id,
+          assigned_user_ids,
+          assignment_roles,
           column_id: formData.column_id || undefined,
           tag_ids: formData.tag_ids
         };
@@ -112,7 +143,9 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
           rich_description: formData.description_format === 'html' ? formData.rich_description : null,
           description_format: formData.description_format,
           priority: formData.priority,
-          assigned_to_id: formData.assigned_to_id || undefined,
+          assigned_to_id,
+          assigned_user_ids,
+          assignment_roles,
           column_id: formData.column_id || undefined,
           tag_ids: formData.tag_ids
         };
@@ -356,10 +389,10 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             )}
           </div>
 
-          {/* Priority, Status, and Assignment Row */}
+          {/* Priority and Status Row */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
+            gridTemplateColumns: '1fr 1fr',
             gap: '20px',
             marginBottom: '25px'
           }}>
@@ -438,40 +471,27 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
               </select>
             </div>
 
-            {/* Assign To */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#2c3e50',
-                marginBottom: '8px'
-              }}>
-                Assign To
-              </label>
-              <select
-                value={formData.assigned_to_id}
-                onChange={(e) => handleInputChange('assigned_to_id', parseInt(e.target.value) || 0)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e1e5e9',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  background: 'white',
-                  transition: 'border-color 0.2s'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3498db'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-              >
-                <option value={0}>Unassigned</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} ({user.email})
-                  </option>
-                ))}
-              </select>
-            </div>
+          </div>
+
+          {/* Multi-User Assignment */}
+          <div style={{ marginBottom: '25px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#2c3e50',
+              marginBottom: '8px'
+            }}>
+              Assign Users
+            </label>
+            <MultiUserAssignment
+              users={users}
+              assignments={ticket?.assignments}
+              selectedAssignments={assignments}
+              onChange={setAssignments}
+              disabled={loading}
+              placeholder="Select users to assign to this ticket..."
+            />
           </div>
 
           {/* Tags */}

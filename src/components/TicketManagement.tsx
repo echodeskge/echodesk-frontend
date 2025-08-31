@@ -1,40 +1,42 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import TicketList from './TicketList';
-import TicketDetail from './TicketDetail';
-import TicketForm from './TicketForm';
-import KanbanBoard from './KanbanBoard';
-import type { Ticket } from '@/api/generated/interfaces';
+import { useState } from "react";
+import TicketList from "./TicketList";
+import TicketDetail from "./TicketDetail";
+import TicketForm from "./TicketForm";
+import KanbanBoard from "./KanbanBoard";
+import type { Ticket } from "@/api/generated/interfaces";
 
-type View = 'list' | 'kanban' | 'detail' | 'create' | 'edit';
+type View = "list" | "kanban" | "detail" | "create" | "edit";
 
 interface TicketManagementProps {
   onBackToDashboard?: () => void;
 }
 
-export default function TicketManagement({ onBackToDashboard }: TicketManagementProps) {
-  const [currentView, setCurrentView] = useState<View>('kanban');
+export default function TicketManagement({
+  onBackToDashboard,
+}: TicketManagementProps) {
+  const [currentView, setCurrentView] = useState<View>("kanban");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
   const handleTicketSelect = (ticketId: number) => {
     setSelectedTicketId(ticketId);
-    setCurrentView('detail');
+    setCurrentView("detail");
   };
 
   const handleCreateTicket = () => {
     setSelectedTicket(null);
-    setCurrentView('create');
+    setCurrentView("create");
   };
 
   const handleEditTicket = (ticket: Ticket) => {
     setSelectedTicket(ticket);
-    setCurrentView('edit');
+    setCurrentView("edit");
   };
 
   const handleBackToList = () => {
-    setCurrentView('kanban');
+    setCurrentView("kanban");
     setSelectedTicketId(null);
     setSelectedTicket(null);
   };
@@ -43,12 +45,12 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
     // After saving, show the ticket detail
     setSelectedTicketId(ticket.id);
     setSelectedTicket(ticket);
-    setCurrentView('detail');
+    setCurrentView("detail");
   };
 
   const renderCurrentView = () => {
     switch (currentView) {
-      case 'list':
+      case "list":
         return (
           <TicketList
             onTicketSelect={handleTicketSelect}
@@ -56,7 +58,7 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
           />
         );
 
-      case 'kanban':
+      case "kanban":
         return (
           <KanbanBoard
             onTicketClick={handleTicketSelect}
@@ -64,7 +66,7 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
           />
         );
 
-      case 'detail':
+      case "detail":
         if (!selectedTicketId) {
           return <div>No ticket selected</div>;
         }
@@ -76,15 +78,12 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
           />
         );
 
-      case 'create':
+      case "create":
         return (
-          <TicketForm
-            onSave={handleTicketSaved}
-            onCancel={handleBackToList}
-          />
+          <TicketForm onSave={handleTicketSaved} onCancel={handleBackToList} />
         );
 
-      case 'edit':
+      case "edit":
         if (!selectedTicket) {
           return <div>No ticket selected for editing</div>;
         }
@@ -92,7 +91,7 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
           <TicketForm
             ticket={selectedTicket}
             onSave={handleTicketSaved}
-            onCancel={() => setCurrentView('detail')}
+            onCancel={() => setCurrentView("detail")}
           />
         );
 
@@ -102,75 +101,44 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f8f9fa'
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f8f9fa",
+      }}
+    >
       {/* Header with back button */}
       {onBackToDashboard && (
-        <div style={{
-          background: 'white',
-          borderBottom: '1px solid #e1e5e9',
-          padding: '15px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <button
-              onClick={onBackToDashboard}
-              style={{
-                background: '#f8f9fa',
-                border: '1px solid #dee2e6',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              ← Back to Dashboard
-            </button>
-            <h1 style={{
-              fontSize: '24px',
-              fontWeight: '600',
-              margin: 0,
-              color: '#333'
-            }}>
-              Ticket Management
-            </h1>
-          </div>
-
+        <div>
           {/* View Toggle Buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: "flex", gap: "8px" }}>
             <button
-              onClick={() => setCurrentView('kanban')}
+              onClick={() => setCurrentView("kanban")}
               style={{
-                background: currentView === 'kanban' ? '#007bff' : 'transparent',
-                color: currentView === 'kanban' ? 'white' : '#007bff',
-                border: '1px solid #007bff',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                fontWeight: '500'
+                background:
+                  currentView === "kanban" ? "#007bff" : "transparent",
+                color: currentView === "kanban" ? "white" : "#007bff",
+                border: "1px solid #007bff",
+                padding: "8px 16px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                cursor: "pointer",
+                fontWeight: "500",
               }}
             >
               📋 Kanban
             </button>
             <button
-              onClick={() => setCurrentView('list')}
+              onClick={() => setCurrentView("list")}
               style={{
-                background: currentView === 'list' ? '#007bff' : 'transparent',
-                color: currentView === 'list' ? 'white' : '#007bff',
-                border: '1px solid #007bff',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                fontWeight: '500'
+                background: currentView === "list" ? "#007bff" : "transparent",
+                color: currentView === "list" ? "white" : "#007bff",
+                border: "1px solid #007bff",
+                padding: "8px 16px",
+                borderRadius: "6px",
+                fontSize: "14px",
+                cursor: "pointer",
+                fontWeight: "500",
               }}
             >
               📋 List
@@ -178,7 +146,7 @@ export default function TicketManagement({ onBackToDashboard }: TicketManagement
           </div>
         </div>
       )}
-      
+
       {renderCurrentView()}
     </div>
   );

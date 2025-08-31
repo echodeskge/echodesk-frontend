@@ -59,6 +59,9 @@ import type {
   PaginatedSubTicketList,
   SubTicket,
   PatchedSubTicket,
+  PaginatedSubTicketAssignmentList,
+  SubTicketAssignment,
+  PatchedSubTicketAssignment,
   PaginatedTagList,
   Tag,
   PatchedTag,
@@ -68,6 +71,9 @@ import type {
   PaginatedTicketListList,
   Ticket,
   PatchedTicket,
+  PaginatedTicketAssignmentList,
+  TicketAssignment,
+  PatchedTicketAssignment,
   PaginatedUserList,
   UserCreate,
   User,
@@ -1077,6 +1083,100 @@ export async function subTicketsToggleCompletionPartialUpdate(
   return response.data;
 }
 
+export async function subTicketsAssignmentsList(
+  subTicketPk: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedSubTicketAssignmentList> {
+  const response = await axios.get(
+    `/api/sub-tickets/${subTicketPk}/assignments/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function subTicketsAssignmentsCreate(
+  subTicketPk: number,
+  data: SubTicketAssignment,
+): Promise<SubTicketAssignment> {
+  const response = await axios.post(
+    `/api/sub-tickets/${subTicketPk}/assignments/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function subTicketsAssignmentsRetrieve(
+  id: number,
+  subTicketPk: number,
+): Promise<SubTicketAssignment> {
+  const response = await axios.get(
+    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
+  );
+  return response.data;
+}
+
+export async function subTicketsAssignmentsUpdate(
+  id: number,
+  subTicketPk: number,
+  data: SubTicketAssignment,
+): Promise<SubTicketAssignment> {
+  const response = await axios.put(
+    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function subTicketsAssignmentsPartialUpdate(
+  id: number,
+  subTicketPk: number,
+  data: PatchedSubTicketAssignment,
+): Promise<SubTicketAssignment> {
+  const response = await axios.patch(
+    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function subTicketsAssignmentsDestroy(
+  id: number,
+  subTicketPk: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
+  );
+  return response.data;
+}
+
+export async function subTicketsAssignmentsBulkAssignCreate(
+  subTicketPk: number,
+  data: SubTicketAssignment,
+): Promise<SubTicketAssignment> {
+  const response = await axios.post(
+    `/api/sub-tickets/${subTicketPk}/assignments/bulk_assign/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function subTicketsAssignmentsBulkUnassignDestroy(
+  subTicketPk: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/sub-tickets/${subTicketPk}/assignments/bulk_unassign/`,
+  );
+  return response.data;
+}
+
 export async function tagsList(
   ordering?: string,
   page?: number,
@@ -1305,6 +1405,100 @@ export async function ticketsReorderInColumnPartialUpdate(
   const response = await axios.patch(
     `/api/tickets/${id}/reorder_in_column/`,
     data,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsList(
+  ticketPk: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedTicketAssignmentList> {
+  const response = await axios.get(
+    `/api/tickets/${ticketPk}/assignments/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsCreate(
+  ticketPk: number,
+  data: TicketAssignment,
+): Promise<TicketAssignment> {
+  const response = await axios.post(
+    `/api/tickets/${ticketPk}/assignments/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsRetrieve(
+  id: number,
+  ticketPk: number,
+): Promise<TicketAssignment> {
+  const response = await axios.get(
+    `/api/tickets/${ticketPk}/assignments/${id}/`,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsUpdate(
+  id: number,
+  ticketPk: number,
+  data: TicketAssignment,
+): Promise<TicketAssignment> {
+  const response = await axios.put(
+    `/api/tickets/${ticketPk}/assignments/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsPartialUpdate(
+  id: number,
+  ticketPk: number,
+  data: PatchedTicketAssignment,
+): Promise<TicketAssignment> {
+  const response = await axios.patch(
+    `/api/tickets/${ticketPk}/assignments/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsDestroy(
+  id: number,
+  ticketPk: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/tickets/${ticketPk}/assignments/${id}/`,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsBulkAssignCreate(
+  ticketPk: number,
+  data: TicketAssignment,
+): Promise<TicketAssignment> {
+  const response = await axios.post(
+    `/api/tickets/${ticketPk}/assignments/bulk_assign/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ticketsAssignmentsBulkUnassignDestroy(
+  ticketPk: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/tickets/${ticketPk}/assignments/bulk_unassign/`,
   );
   return response.data;
 }
