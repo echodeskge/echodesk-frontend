@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import type { User, UserMinimal, TicketAssignment } from '@/api/generated/interfaces';
+import type { UserMinimal, TicketAssignment } from '@/api/generated/interfaces';
 
 interface AssigneeListProps {
   assigned_to?: UserMinimal | null;
@@ -34,7 +33,6 @@ export default function AssigneeList({
   showRoles = false,
   size = 'medium'
 }: AssigneeListProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
 
   // Get the final list of users to display
   let usersToShow: UserMinimal[] = [];
