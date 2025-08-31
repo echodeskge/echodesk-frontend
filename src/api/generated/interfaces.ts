@@ -122,6 +122,18 @@ export interface CallTypeEnum {
   [key: string]: any;
 }
 
+export interface ChecklistItem {
+  id: number;
+  ticket?: number;
+  sub_ticket?: number;
+  text: string;
+  is_checked?: boolean;
+  position?: number;
+  created_at: string;
+  updated_at: string;
+  created_by: UserMinimal;
+}
+
 export interface Client {
   id: number;
   name: string;
@@ -144,6 +156,10 @@ export interface Department {
 }
 
 export interface DeploymentStatusEnum {
+  [key: string]: any;
+}
+
+export interface DescriptionFormatEnum {
   [key: string]: any;
 }
 
@@ -251,6 +267,13 @@ export interface PaginatedCallLogList {
   results: CallLog[];
 }
 
+export interface PaginatedChecklistItemList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ChecklistItem[];
+}
+
 export interface PaginatedClientList {
   count: number;
   next?: string;
@@ -305,6 +328,13 @@ export interface PaginatedSipConfigurationListList {
   next?: string;
   previous?: string;
   results: SipConfigurationList[];
+}
+
+export interface PaginatedSubTicketList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: SubTicket[];
 }
 
 export interface PaginatedTagList {
@@ -383,6 +413,18 @@ export interface PatchedCallStatusUpdate {
   recording_url?: string;
 }
 
+export interface PatchedChecklistItem {
+  id?: number;
+  ticket?: number;
+  sub_ticket?: number;
+  text?: string;
+  is_checked?: boolean;
+  position?: number;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: UserMinimal;
+}
+
 export interface PatchedClient {
   id?: number;
   name?: string;
@@ -439,6 +481,26 @@ export interface PatchedSipConfiguration {
   updated_at?: string;
 }
 
+export interface PatchedSubTicket {
+  id?: number;
+  parent_ticket?: number;
+  title?: string;
+  description?: string;
+  rich_description?: any;
+  description_format?: DescriptionFormatEnum;
+  priority?: PriorityEnum;
+  is_completed?: boolean;
+  position?: number;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: UserMinimal;
+  assigned_to?: UserMinimal;
+  assigned_to_id?: number;
+  checklist_items?: ChecklistItem[];
+  checklist_items_count?: string;
+  completed_items_count?: string;
+}
+
 export interface PatchedTag {
   id?: number;
   name?: string;
@@ -467,6 +529,8 @@ export interface PatchedTicket {
   id?: number;
   title?: string;
   description?: string;
+  rich_description?: any;
+  description_format?: DescriptionFormatEnum;
   status?: string;
   priority?: PriorityEnum;
   is_closed?: string;
@@ -482,6 +546,12 @@ export interface PatchedTicket {
   tag_ids?: number[];
   comments?: TicketComment[];
   comments_count?: string;
+  sub_tickets?: SubTicket[];
+  sub_tickets_count?: string;
+  completed_sub_tickets_count?: string;
+  checklist_items?: ChecklistItem[];
+  checklist_items_count?: string;
+  completed_checklist_items_count?: string;
 }
 
 export interface PatchedTicketColumnUpdate {
@@ -596,6 +666,26 @@ export interface StatusB9eEnum {
   [key: string]: any;
 }
 
+export interface SubTicket {
+  id: number;
+  parent_ticket: number;
+  title: string;
+  description?: string;
+  rich_description?: any;
+  description_format?: DescriptionFormatEnum;
+  priority?: PriorityEnum;
+  is_completed?: boolean;
+  position?: number;
+  created_at: string;
+  updated_at: string;
+  created_by: UserMinimal;
+  assigned_to: UserMinimal;
+  assigned_to_id?: number;
+  checklist_items: ChecklistItem[];
+  checklist_items_count: string;
+  completed_items_count: string;
+}
+
 export interface Tag {
   id: number;
   name: string;
@@ -661,6 +751,8 @@ export interface Ticket {
   id: number;
   title: string;
   description: string;
+  rich_description?: any;
+  description_format?: DescriptionFormatEnum;
   status: string;
   priority?: PriorityEnum;
   is_closed: string;
@@ -676,6 +768,12 @@ export interface Ticket {
   tag_ids?: number[];
   comments: TicketComment[];
   comments_count: string;
+  sub_tickets: SubTicket[];
+  sub_tickets_count: string;
+  completed_sub_tickets_count: string;
+  checklist_items: ChecklistItem[];
+  checklist_items_count: string;
+  completed_checklist_items_count: string;
 }
 
 export interface TicketColumn {

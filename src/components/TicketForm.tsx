@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ticketService, CreateTicketData, UpdateTicketData } from '@/services/ticketService';
 import { columnsList } from '@/api/generated/api';
 import type { Ticket, User, Tag, TicketColumn } from '@/api/generated/interfaces';
+import SimpleRichTextEditor from './SimpleRichTextEditor';
 
 interface TicketFormProps {
   ticket?: Ticket; // If provided, we're editing; otherwise creating
@@ -15,6 +16,8 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    rich_description: '',
+    description_format: 'html' as 'plain' | 'html' | 'delta',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     assigned_to_id: 0,
     column_id: 0,
@@ -36,6 +39,8 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
       setFormData({
         title: ticket.title,
         description: ticket.description,
+        rich_description: ticket.rich_description || ((ticket.description_format as any) === 'html' ? ticket.description : ''),
+        description_format: (ticket.description_format as any) || 'html',
         priority: (ticket.priority as any) || 'medium',
         assigned_to_id: ticket.assigned_to?.id || 0,
         column_id: ticket.column?.id || 0,
@@ -89,7 +94,9 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
         // Update existing ticket
         const updateData: UpdateTicketData = {
           title: formData.title,
-          description: formData.description,
+          description: formData.description_format === 'html' ? formData.rich_description : formData.description,
+          rich_description: formData.description_format === 'html' ? formData.rich_description : null,
+          description_format: formData.description_format,
           priority: formData.priority,
           assigned_to_id: formData.assigned_to_id || undefined,
           column_id: formData.column_id || undefined,
@@ -101,7 +108,9 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
         // Create new ticket
         const createData: CreateTicketData = {
           title: formData.title,
-          description: formData.description,
+          description: formData.description_format === 'html' ? formData.rich_description : formData.description,
+          rich_description: formData.description_format === 'html' ? formData.rich_description : null,
+          description_format: formData.description_format,
           priority: formData.priority,
           assigned_to_id: formData.assigned_to_id || undefined,
           column_id: formData.column_id || undefined,
@@ -126,6 +135,22 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const handleRichTextChange = (html: string) => {
+    setFormData(prev => ({
+      ...prev,
+      rich_description: html,
+      // Keep plain description in sync for fallback
+      description: html.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text fallback
+    }));
+  };
+
+  const handleDescriptionFormatChange = (format: 'plain' | 'html' | 'delta') => {
+    setFormData(prev => ({
+      ...prev,
+      description_format: format
     }));
   };
 
@@ -241,6 +266,55 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             />
           </div>
 
+          {/* Description Format Toggle */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#2c3e50',
+              marginBottom: '8px'
+            }}>
+              Description Format
+            </label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => handleDescriptionFormatChange('plain')}
+                style={{
+                  background: formData.description_format === 'plain' ? '#3498db' : 'white',
+                  color: formData.description_format === 'plain' ? 'white' : '#3498db',
+                  border: '2px solid #3498db',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Plain Text
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDescriptionFormatChange('html')}
+                style={{
+                  background: formData.description_format === 'html' ? '#3498db' : 'white',
+                  color: formData.description_format === 'html' ? 'white' : '#3498db',
+                  border: '2px solid #3498db',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Rich Text
+              </button>
+            </div>
+          </div>
+
           {/* Description */}
           <div style={{ marginBottom: '25px' }}>
             <label style={{
@@ -252,26 +326,34 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             }}>
               Description *
             </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              required
-              placeholder="Describe the issue or request in detail..."
-              rows={6}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '6px',
-                fontSize: '16px',
-                fontFamily: 'inherit',
-                resize: 'vertical',
-                transition: 'border-color 0.2s',
-                boxSizing: 'border-box'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#3498db'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-            />
+            {formData.description_format === 'html' ? (
+              <SimpleRichTextEditor
+                value={formData.rich_description}
+                onChange={handleRichTextChange}
+                placeholder="Describe the issue or request in detail..."
+              />
+            ) : (
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                required
+                placeholder="Describe the issue or request in detail..."
+                rows={6}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e1e5e9',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  transition: 'border-color 0.2s',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3498db'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              />
+            )}
           </div>
 
           {/* Priority, Status, and Assignment Row */}
@@ -471,16 +553,16 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             
             <button
               type="submit"
-              disabled={loading || !formData.title.trim() || !formData.description.trim()}
+              disabled={loading || !formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim())}
               style={{
-                background: (!formData.title.trim() || !formData.description.trim() || loading) ? '#dee2e6' : '#27ae60',
+                background: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || loading) ? '#dee2e6' : '#27ae60',
                 color: 'white',
                 border: 'none',
                 padding: '12px 24px',
                 borderRadius: '6px',
                 fontSize: '16px',
                 fontWeight: '500',
-                cursor: (!formData.title.trim() || !formData.description.trim() || loading) ? 'not-allowed' : 'pointer',
+                cursor: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || loading) ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.2s'
               }}
               onMouseOver={(e) => {

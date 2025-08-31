@@ -178,6 +178,27 @@ function DraggableTicket({
         </div>
       )}
 
+      {/* Progress indicators */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '8px',
+        fontSize: '10px',
+        color: '#6c757d'
+      }}>
+        {/* Comments count */}
+        {ticket.comments_count && parseInt(ticket.comments_count) > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px'
+          }}>
+            💬 {ticket.comments_count}
+          </div>
+        )}
+      </div>
+
       {/* Tags */}
       {ticket.tags && ticket.tags.length > 0 && (
         <div style={{

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { ticketService } from '@/services/ticketService';
 import type { Ticket, TicketComment, User } from '@/api/generated/interfaces';
+import SubTicketList from './SubTicketList';
+import ChecklistItemList from './ChecklistItemList';
 
 interface TicketDetailProps {
   ticketId: number;
@@ -326,10 +328,13 @@ export default function TicketDetail({ ticketId, onBack, onEdit }: TicketDetailP
               borderRadius: '6px',
               padding: '20px',
               lineHeight: '1.6',
-              color: '#495057',
-              whiteSpace: 'pre-wrap'
+              color: '#495057'
             }}>
-              {ticket.description}
+              {(ticket.description_format as any) === 'html' && ticket.rich_description ? (
+                <div dangerouslySetInnerHTML={{ __html: ticket.rich_description }} />
+              ) : (
+                <div style={{ whiteSpace: 'pre-wrap' }}>{ticket.description}</div>
+              )}
             </div>
 
             {/* Tags */}
@@ -362,6 +367,28 @@ export default function TicketDetail({ ticketId, onBack, onEdit }: TicketDetailP
                 </div>
               </div>
             )}
+
+            {/* Checklist Items */}
+            <ChecklistItemList
+              ticketId={ticket.id}
+              items={ticket.checklist_items || []}
+              onItemsChange={fetchTicket}
+            />
+          </div>
+
+          {/* Sub-tickets */}
+          <div style={{
+            background: 'white',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            padding: '25px',
+            marginBottom: '20px'
+          }}>
+            <SubTicketList
+              parentTicketId={ticket.id}
+              subTickets={ticket.sub_tickets || []}
+              onSubTicketsChange={fetchTicket}
+            />
           </div>
 
           {/* Comments */}
@@ -634,6 +661,22 @@ export default function TicketDetail({ ticketId, onBack, onEdit }: TicketDetailP
                 </div>
                 <div style={{ fontSize: '14px', color: '#495057' }}>
                   {formatDate(ticket.updated_at)}
+                </div>
+              </div>
+
+              <div>
+                <div style={{
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: '#6c757d',
+                  marginBottom: '2px'
+                }}>
+                  Progress
+                </div>
+                <div style={{ fontSize: '12px', color: '#495057', lineHeight: '1.4' }}>
+                  <div>Sub-tickets: {ticket.completed_sub_tickets_count}/{ticket.sub_tickets_count}</div>
+                  <div>Checklist: {ticket.completed_checklist_items_count}/{ticket.checklist_items_count}</div>
+                  <div>Comments: {ticket.comments_count}</div>
                 </div>
               </div>
             </div>

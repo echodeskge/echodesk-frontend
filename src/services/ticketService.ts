@@ -43,6 +43,8 @@ export interface TicketFilters {
 export interface CreateTicketData {
   title: string;
   description: string;
+  rich_description?: any;
+  description_format?: 'plain' | 'html' | 'delta';
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
   column_id?: number;
@@ -52,6 +54,8 @@ export interface CreateTicketData {
 export interface UpdateTicketData {
   title?: string;
   description?: string;
+  rich_description?: any;
+  description_format?: 'plain' | 'html' | 'delta';
   status?: "open" | "in_progress" | "resolved" | "closed";
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
@@ -113,6 +117,8 @@ export class TicketService {
       const createData = {
         title: data.title,
         description: data.description,
+        rich_description: data.rich_description,
+        description_format: (data.description_format as any) || 'plain',
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
         column_id: data.column_id,
@@ -136,6 +142,8 @@ export class TicketService {
       const updateData: PatchedTicket = {
         title: data.title,
         description: data.description,
+        rich_description: data.rich_description,
+        description_format: (data.description_format as any) || 'plain',
         status: data.status,
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,

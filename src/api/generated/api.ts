@@ -17,6 +17,9 @@ import type {
   CallRecording,
   PatchedCallStatusUpdate,
   CallInitiate,
+  PaginatedChecklistItemList,
+  ChecklistItem,
+  PatchedChecklistItem,
   PaginatedClientList,
   Client,
   PatchedClient,
@@ -53,6 +56,9 @@ import type {
   FacebookPageConnection,
   PatchedFacebookPageConnection,
   FacebookSendMessage,
+  PaginatedSubTicketList,
+  SubTicket,
+  PatchedSubTicket,
   PaginatedTagList,
   Tag,
   PatchedTag,
@@ -278,6 +284,79 @@ export async function callLogsStatisticsRetrieve(
 ): Promise<Record<string, any>> {
   const response = await axios.get(
     `/api/call-logs/statistics/${period ? '?period=' + encodeURIComponent(period) : ''}`,
+  );
+  return response.data;
+}
+
+export async function checklistItemsList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedChecklistItemList> {
+  const response = await axios.get(
+    `/api/checklist-items/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function checklistItemsCreate(
+  data: ChecklistItem,
+): Promise<ChecklistItem> {
+  const response = await axios.post(`/api/checklist-items/`, data);
+  return response.data;
+}
+
+export async function checklistItemsRetrieve(
+  id: string,
+): Promise<ChecklistItem> {
+  const response = await axios.get(`/api/checklist-items/${id}/`);
+  return response.data;
+}
+
+export async function checklistItemsUpdate(
+  id: string,
+  data: ChecklistItem,
+): Promise<ChecklistItem> {
+  const response = await axios.put(`/api/checklist-items/${id}/`, data);
+  return response.data;
+}
+
+export async function checklistItemsPartialUpdate(
+  id: string,
+  data: PatchedChecklistItem,
+): Promise<ChecklistItem> {
+  const response = await axios.patch(`/api/checklist-items/${id}/`, data);
+  return response.data;
+}
+
+export async function checklistItemsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/checklist-items/${id}/`);
+  return response.data;
+}
+
+export async function checklistItemsReorderPartialUpdate(
+  id: string,
+  data: PatchedChecklistItem,
+): Promise<ChecklistItem> {
+  const response = await axios.patch(
+    `/api/checklist-items/${id}/reorder/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function checklistItemsToggleCheckPartialUpdate(
+  id: string,
+  data: PatchedChecklistItem,
+): Promise<ChecklistItem> {
+  const response = await axios.patch(
+    `/api/checklist-items/${id}/toggle_check/`,
+    data,
   );
   return response.data;
 }
@@ -927,6 +1006,74 @@ export async function socialFacebookWebhookTestRetrieve(): Promise<any> {
 
 export async function socialFacebookWebhookTestCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/webhook/test/`);
+  return response.data;
+}
+
+export async function subTicketsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedSubTicketList> {
+  const response = await axios.get(
+    `/api/sub-tickets/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function subTicketsCreate(data: SubTicket): Promise<SubTicket> {
+  const response = await axios.post(`/api/sub-tickets/`, data);
+  return response.data;
+}
+
+export async function subTicketsRetrieve(id: string): Promise<SubTicket> {
+  const response = await axios.get(`/api/sub-tickets/${id}/`);
+  return response.data;
+}
+
+export async function subTicketsUpdate(
+  id: string,
+  data: SubTicket,
+): Promise<SubTicket> {
+  const response = await axios.put(`/api/sub-tickets/${id}/`, data);
+  return response.data;
+}
+
+export async function subTicketsPartialUpdate(
+  id: string,
+  data: PatchedSubTicket,
+): Promise<SubTicket> {
+  const response = await axios.patch(`/api/sub-tickets/${id}/`, data);
+  return response.data;
+}
+
+export async function subTicketsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/sub-tickets/${id}/`);
+  return response.data;
+}
+
+export async function subTicketsReorderPartialUpdate(
+  id: string,
+  data: PatchedSubTicket,
+): Promise<SubTicket> {
+  const response = await axios.patch(`/api/sub-tickets/${id}/reorder/`, data);
+  return response.data;
+}
+
+export async function subTicketsToggleCompletionPartialUpdate(
+  id: string,
+  data: PatchedSubTicket,
+): Promise<SubTicket> {
+  const response = await axios.patch(
+    `/api/sub-tickets/${id}/toggle_completion/`,
+    data,
+  );
   return response.data;
 }
 
