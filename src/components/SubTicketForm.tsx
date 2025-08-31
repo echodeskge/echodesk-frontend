@@ -93,6 +93,8 @@ export default function SubTicketForm({ parentTicketId, subTicket, onSave, onCan
           updated_at: '',
           created_by: { id: 0, email: '', first_name: '', last_name: '' },
           assigned_to: { id: 0, email: '', first_name: '', last_name: '' },
+          assigned_users: [],
+          assignments: [],
           checklist_items: [],
           checklist_items_count: '0',
           completed_items_count: '0'
