@@ -25,7 +25,6 @@ import {
   PaginatedTagList,
   Tag,
   PatchedTicket,
-  Status14bEnum,
   PriorityEnum,
 } from "../api/generated/interfaces";
 
@@ -46,6 +45,7 @@ export interface CreateTicketData {
   description: string;
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
+  column_id?: number;
   tag_ids?: number[];
 }
 
@@ -55,6 +55,7 @@ export interface UpdateTicketData {
   status?: "open" | "in_progress" | "resolved" | "closed";
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
+  column_id?: number;
   tag_ids?: number[];
 }
 
@@ -83,7 +84,6 @@ export class TicketService {
         filters.page,
         filters.priority,
         filters.search,
-        filters.status,
         filters.tags
       );
     } catch (error) {
@@ -115,6 +115,7 @@ export class TicketService {
         description: data.description,
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
+        column_id: data.column_id,
         tag_ids: data.tag_ids || [],
       };
 
@@ -135,9 +136,10 @@ export class TicketService {
       const updateData: PatchedTicket = {
         title: data.title,
         description: data.description,
-        status: data.status as unknown as Status14bEnum,
+        status: data.status,
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
+        column_id: data.column_id,
         tag_ids: data.tag_ids,
       };
 

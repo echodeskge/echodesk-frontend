@@ -11,6 +11,7 @@ import UserManagement from "./UserManagement";
 import GroupManagement from "./GroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
 import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
+import StatusManagement from "./StatusManagement";
 
 interface DashboardProps {
   user: AuthUser;
@@ -23,7 +24,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
+    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "statuses"
   >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -103,6 +104,14 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       permission: "can_access_tickets",
       description: "View and manage tickets",
     },
+    // Add Ticket Status Management for superusers only
+    ...((userProfile as any)?.is_superuser ? [{
+      id: "statuses",
+      label: "Ticket Statuses",
+      icon: "📋",
+      permission: null, // No additional permission check needed - superuser check is sufficient
+      description: "Manage ticket status columns and workflow",
+    }] : []),
     {
       id: "calls",
       label: "Calls",
@@ -152,7 +161,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
   const handleMenuClick = (
-    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings"
+    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "statuses"
   ) => {
     // If navigating to messages after connections changed, refresh the component
     if (viewId === "messages" && connectionsChanged) {
@@ -325,6 +334,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                     | "messages"
                     | "social"
                     | "settings"
+                    | "statuses"
                 )
               }
               style={{
@@ -589,6 +599,18 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
           {currentView === "groups" && <GroupManagement />}
 
+          {currentView === "statuses" && (
+            <div
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                padding: "20px",
+              }}
+            >
+              <StatusManagement />
+            </div>
+          )}
 
           {currentView === "messages" && (
             <UnifiedMessagesManagement

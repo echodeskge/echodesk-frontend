@@ -467,8 +467,9 @@ export interface PatchedTicket {
   id?: number;
   title?: string;
   description?: string;
-  status?: Status14bEnum;
+  status?: string;
   priority?: PriorityEnum;
+  is_closed?: string;
   column?: TicketColumn;
   column_id?: number;
   position_in_column?: number;
@@ -587,10 +588,6 @@ export interface SipConfigurationList {
   is_default?: boolean;
 }
 
-export interface Status14bEnum {
-  [key: string]: any;
-}
-
 export interface Status336enum {
   [key: string]: any;
 }
@@ -664,8 +661,9 @@ export interface Ticket {
   id: number;
   title: string;
   description: string;
-  status?: Status14bEnum;
+  status: string;
   priority?: PriorityEnum;
+  is_closed: string;
   column: TicketColumn;
   column_id?: number;
   position_in_column?: number;
@@ -725,8 +723,9 @@ export interface TicketComment {
 export interface TicketList {
   id: number;
   title: string;
-  status: Status14bEnum;
+  status: string;
   priority: PriorityEnum;
+  is_closed: string;
   column: TicketColumn;
   position_in_column: number;
   created_at: string;

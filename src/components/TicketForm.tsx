@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { ticketService, CreateTicketData, UpdateTicketData } from '@/services/ticketService';
-import type { Ticket, User, Tag } from '@/api/generated/interfaces';
+import { columnsList } from '@/api/generated/api';
+import type { Ticket, User, Tag, TicketColumn } from '@/api/generated/interfaces';
 
 interface TicketFormProps {
   ticket?: Ticket; // If provided, we're editing; otherwise creating
@@ -16,11 +17,13 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
     description: '',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     assigned_to_id: 0,
+    column_id: 0,
     tag_ids: [] as number[]
   });
   
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fetchingData, setFetchingData] = useState(true);
@@ -35,6 +38,7 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
         description: ticket.description,
         priority: (ticket.priority as any) || 'medium',
         assigned_to_id: ticket.assigned_to?.id || 0,
+        column_id: ticket.column?.id || 0,
         tag_ids: ticket.tags ? ticket.tags.map(tag => tag.id) : []
       });
     }
@@ -46,13 +50,25 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
   const fetchFormData = async () => {
     try {
       setFetchingData(true);
-      const [usersResult, tagsResult] = await Promise.all([
+      const [usersResult, tagsResult, columnsResult] = await Promise.all([
         ticketService.getUsers(),
-        ticketService.getTags()
+        ticketService.getTags(),
+        columnsList()
       ]);
       
       setUsers(usersResult.results || []);
       setTags(tagsResult.results || []);
+      setColumns(columnsResult.results || []);
+      
+      // Set default column if creating new ticket and no column is selected
+      if (!ticket && columnsResult.results && columnsResult.results.length > 0 && formData.column_id === 0) {
+        const defaultColumn = columnsResult.results.find(col => col.is_default);
+        if (defaultColumn) {
+          setFormData(prev => ({ ...prev, column_id: defaultColumn.id }));
+        } else {
+          setFormData(prev => ({ ...prev, column_id: columnsResult.results[0].id }));
+        }
+      }
     } catch (err) {
       console.error('Error fetching form data:', err);
       setError('Failed to load form data');
@@ -76,6 +92,7 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
           description: formData.description,
           priority: formData.priority,
           assigned_to_id: formData.assigned_to_id || undefined,
+          column_id: formData.column_id || undefined,
           tag_ids: formData.tag_ids
         };
         
@@ -87,6 +104,7 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
           description: formData.description,
           priority: formData.priority,
           assigned_to_id: formData.assigned_to_id || undefined,
+          column_id: formData.column_id || undefined,
           tag_ids: formData.tag_ids
         };
         
@@ -256,10 +274,10 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             />
           </div>
 
-          {/* Priority and Assignment Row */}
+          {/* Priority, Status, and Assignment Row */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: '1fr 1fr 1fr',
             gap: '20px',
             marginBottom: '25px'
           }}>
@@ -301,6 +319,41 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label style={{
+                display: 'block',
+                fontSize: '16px',
+                fontWeight: '600',
+                color: '#2c3e50',
+                marginBottom: '8px'
+              }}>
+                Status
+              </label>
+              <select
+                value={formData.column_id}
+                onChange={(e) => handleInputChange('column_id', parseInt(e.target.value) || 0)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e1e5e9',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  background: 'white',
+                  transition: 'border-color 0.2s'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#3498db'}
+                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+              >
+                <option value={0}>Select Status</option>
+                {columns.map((column) => (
+                  <option key={column.id} value={column.id}>
+                    {column.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Assign To */}

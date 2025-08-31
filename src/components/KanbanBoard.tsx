@@ -3,48 +3,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { ticketsList, ticketsPartialUpdate } from '@/api/generated/api';
-import type { Ticket, TicketList } from '@/api/generated/interfaces';
+import { kanbanBoard, ticketsPartialUpdate } from '@/api/generated/api';
+import type { Ticket, TicketList, TicketColumn, KanbanBoard as KanbanBoardType } from '@/api/generated/interfaces';
 
 interface KanbanBoardProps {
   onTicketClick?: (ticketId: number) => void;
   onCreateTicket?: () => void;
 }
 
-// Define the status columns for the Kanban board
-const STATUS_COLUMNS = [
-  {
-    id: 'open',
-    name: 'Open',
-    description: 'New tickets that need attention',
-    color: '#17a2b8'
-  },
-  {
-    id: 'in_progress',
-    name: 'In Progress',
-    description: 'Tickets currently being worked on',
-    color: '#ffc107'
-  },
-  {
-    id: 'resolved',
-    name: 'Resolved',
-    description: 'Tickets that have been fixed',
-    color: '#28a745'
-  },
-  {
-    id: 'closed',
-    name: 'Closed',
-    description: 'Completed tickets',
-    color: '#6c757d'
-  }
-] as const;
-
-type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+type TicketStatus = string;
 
 interface DragItem {
   type: string;
   id: number;
-  status: TicketStatus;
+  columnId: number;
   index: number;
 }
 
@@ -68,15 +40,15 @@ const formatDate = (dateString: string) => {
 function DraggableTicket({ 
   ticket, 
   index, 
-  currentStatus,
+  column,
   onTicketClick,
   onMoveTicket 
 }: { 
   ticket: TicketList;
   index: number;
-  currentStatus: TicketStatus;
+  column: TicketColumn;
   onTicketClick?: (ticketId: number) => void;
-  onMoveTicket: (ticketId: number, sourceStatus: TicketStatus, destStatus: TicketStatus, sourceIndex: number, destIndex: number) => void;
+  onMoveTicket: (ticketId: number, sourceColumnId: number, destColumnId: number, sourceIndex: number, destIndex: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   
@@ -85,7 +57,7 @@ function DraggableTicket({
     item: (): DragItem => ({
       type: 'ticket',
       id: ticket.id,
-      status: currentStatus, // Use current status from props instead of ticket.status
+      columnId: column.id,
       index
     }),
     collect: (monitor) => ({
@@ -100,13 +72,13 @@ function DraggableTicket({
         return;
       }
       
-      const dragStatus = item.status;
-      const hoverStatus = currentStatus; // Use current status from props
+      const dragColumnId = item.columnId;
+      const hoverColumnId = column.id;
       const dragIndex = item.index;
       const hoverIndex = index;
 
-      // If dragging to same status and same position, do nothing
-      if (dragStatus === hoverStatus && dragIndex === hoverIndex) {
+      // If dragging to same column and same position, do nothing
+      if (dragColumnId === hoverColumnId && dragIndex === hoverIndex) {
         return;
       }
 
@@ -132,9 +104,9 @@ function DraggableTicket({
       }
 
       // Move the item
-      onMoveTicket(item.id, dragStatus, hoverStatus, dragIndex, hoverIndex);
+      onMoveTicket(item.id, dragColumnId, hoverColumnId, dragIndex, hoverIndex);
       
-      // Update the item for continued dragging (only update index, not status for hover)
+      // Update the item for continued dragging
       item.index = hoverIndex;
     },
   });
@@ -148,14 +120,16 @@ function DraggableTicket({
       onClick={() => onTicketClick?.(ticket.id)}
       style={{
         background: isDragging ? '#f0f0f0' : '#fff',
-        border: isDragging ? '2px solid #007bff' : '1px solid #dee2e6',
+        border: isDragging 
+          ? `2px solid ${column.color || '#007bff'}` 
+          : `1px solid ${column.color || '#dee2e6'}40`,
         borderRadius: '6px',
         padding: '12px',
         marginBottom: '8px',
         cursor: isDragging ? 'grabbing' : 'grab',
         boxShadow: isDragging 
-          ? '0 8px 25px rgba(0,123,255,0.3)' 
-          : '0 1px 3px rgba(0,0,0,0.1)',
+          ? `0 8px 25px ${column.color || '#007bff'}30` 
+          : `0 1px 3px ${column.color || '#000'}10`,
         opacity: isDragging ? 0.5 : 1,
         transition: 'all 0.2s ease',
       }}
@@ -246,10 +220,10 @@ function DroppableColumn({
   onTicketClick, 
   onMoveTicket 
 }: { 
-  column: typeof STATUS_COLUMNS[number];
+  column: TicketColumn;
   tickets: TicketList[];
   onTicketClick?: (ticketId: number) => void;
-  onMoveTicket: (ticketId: number, sourceStatus: TicketStatus, destStatus: TicketStatus, sourceIndex: number, destIndex: number) => void;
+  onMoveTicket: (ticketId: number, sourceColumnId: number, destColumnId: number, sourceIndex: number, destIndex: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   
@@ -260,15 +234,15 @@ function DroppableColumn({
         return; // Ignore if already handled by a ticket
       }
       
-      const sourceStatus = item.status;
-      const destStatus = column.id as TicketStatus;
+      const sourceColumnId = item.columnId;
+      const destColumnId = column.id;
       const sourceIndex = item.index;
       const destIndex = tickets.length; // Add to end when dropping on column
       
-      if (sourceStatus !== destStatus) {
-        onMoveTicket(item.id, sourceStatus, destStatus, sourceIndex, destIndex);
-        // Update item status for continued interactions
-        item.status = destStatus;
+      if (sourceColumnId !== destColumnId) {
+        onMoveTicket(item.id, sourceColumnId, destColumnId, sourceIndex, destIndex);
+        // Update item for continued interactions
+        item.columnId = destColumnId;
         item.index = destIndex;
       }
     },
@@ -284,12 +258,14 @@ function DroppableColumn({
     <div
       ref={ref}
       style={{
-        minWidth: '300px',
-        maxWidth: '300px',
-        background: isOver ? '#f0f8ff' : '#f8f9fa',
+        minWidth: '250px',
+        maxWidth: '250px',
+        background: isOver 
+          ? `${column.color || '#6c757d'}15` 
+          : `${column.color || '#6c757d'}08`,
         borderRadius: '8px',
         padding: '16px',
-        border: isOver ? '2px dashed #007bff' : '2px dashed transparent',
+        border: isOver ? `2px dashed ${column.color || '#6c757d'}` : '2px dashed transparent',
         transition: 'all 0.2s ease',
       }}
     >
@@ -302,23 +278,24 @@ function DroppableColumn({
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            background: column.color
+            width: '16px',
+            height: '16px',
+            borderRadius: '4px',
+            background: column.color || '#6c757d',
+            boxShadow: `0 2px 4px ${column.color || '#6c757d'}25`
           }}></div>
           <h3 style={{
-            fontSize: '16px',
+            fontSize: '15px',
             fontWeight: '600',
             margin: 0,
-            color: '#333'
+            color: column.color || '#333'
           }}>
             {column.name}
           </h3>
         </div>
         <span style={{
-          background: '#dee2e6',
-          color: '#495057',
+          background: `${column.color || '#6c757d'}20`,
+          color: column.color || '#495057',
           padding: '2px 8px',
           borderRadius: '12px',
           fontSize: '12px',
@@ -329,13 +306,15 @@ function DroppableColumn({
       </div>
 
       {/* Column Description */}
-      <p style={{
-        fontSize: '12px',
-        color: '#6c757d',
-        margin: '0 0 16px 0'
-      }}>
-        {column.description}
-      </p>
+      {column.description && (
+        <p style={{
+          fontSize: '12px',
+          color: '#6c757d',
+          margin: '0 0 16px 0'
+        }}>
+          {column.description}
+        </p>
+      )}
 
       {/* Tickets */}
       <div style={{
@@ -347,7 +326,7 @@ function DroppableColumn({
             key={ticket.id}
             ticket={ticket}
             index={index}
-            currentStatus={column.id as TicketStatus}
+            column={column}
             onTicketClick={onTicketClick}
             onMoveTicket={onMoveTicket}
           />
@@ -359,54 +338,26 @@ function DroppableColumn({
 
 // Main Kanban Board Component
 function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps) {
-  const [tickets, setTickets] = useState<{ [status: string]: TicketList[] }>({});
+  const [boardData, setBoardData] = useState<KanbanBoardType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
-    fetchTickets();
+    fetchBoardData();
   }, []);
 
-  const fetchTickets = async () => {
+  const fetchBoardData = async () => {
     try {
       setLoading(true);
       
-      // Fetch all tickets
-      const response = await ticketsList();
-      const allTickets = response.results;
-      
-      // Group tickets by status
-      const ticketsByStatus: { [status: string]: TicketList[] } = {};
-      
-      // Initialize all status columns
-      STATUS_COLUMNS.forEach(column => {
-        ticketsByStatus[column.id] = [];
-      });
-      
-      // Group tickets by their status
-      allTickets.forEach(ticket => {
-        const status = String(ticket.status || 'open') as unknown as string;
-        console.log('Ticket status mapping:', { ticketId: ticket.id, originalStatus: ticket.status, mappedStatus: status });
-        if (ticketsByStatus[status]) {
-          ticketsByStatus[status].push(ticket);
-        } else {
-          // If status doesn't match our predefined statuses, put in open
-          console.log('Status not found, moving to open:', { status, availableStatuses: Object.keys(ticketsByStatus) });
-          ticketsByStatus['open'].push(ticket);
-        }
-      });
-
-      console.log('Final tickets by status:', Object.keys(ticketsByStatus).map(status => ({ 
-        status, 
-        count: ticketsByStatus[status].length 
-      })));
-      
-      setTickets(ticketsByStatus);
+      // Fetch kanban board data with dynamic columns and tickets
+      const response = await kanbanBoard();
+      setBoardData(response);
       setError('');
     } catch (err: unknown) {
-      console.error('Failed to fetch tickets:', err);
-      setError('Failed to load tickets');
+      console.error('Failed to fetch kanban board:', err);
+      setError('Failed to load kanban board');
     } finally {
       setLoading(false);
     }
@@ -414,12 +365,12 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
 
   const moveTicket = useCallback(async (
     ticketId: number,
-    sourceStatus: TicketStatus,
-    destStatus: TicketStatus,
+    sourceColumnId: number,
+    destColumnId: number,
     sourceIndex: number,
     destIndex: number
   ) => {
-    console.log('Moving ticket:', { ticketId, sourceStatus, destStatus, sourceIndex, destIndex });
+    console.log('Moving ticket:', { ticketId, sourceColumnId, destColumnId, sourceIndex, destIndex });
 
     // Prevent moves during API calls
     if (isMoving) {
@@ -427,71 +378,25 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
       return;
     }
 
-    // Store the current state for rollback
-    const originalTickets = { ...tickets };
-
-    // Create deep copy to avoid mutations
-    const newTickets = JSON.parse(JSON.stringify(tickets)) as { [status: string]: TicketList[] };
-    
-    // Find the ticket in the source status
-    const sourceTickets = newTickets[sourceStatus] || [];
-    const ticketIndex = sourceTickets.findIndex(ticket => ticket.id === ticketId);
-    
-    if (ticketIndex === -1) {
-      console.error('Could not find ticket to move', { ticketId, sourceStatus });
-      return;
-    }
-
-    // Get the ticket to move
-    const ticketToMove = sourceTickets[ticketIndex];
-    
-    // Remove from source
-    sourceTickets.splice(ticketIndex, 1);
-
-    // Update the ticket's status in the object
-    const updatedTicket = { ...ticketToMove, status: destStatus as any };
-
-    // Add to destination
-    const destTickets = newTickets[destStatus] || [];
-    const targetIndex = Math.max(0, Math.min(destIndex, destTickets.length));
-    destTickets.splice(targetIndex, 0, updatedTicket);
-
-    // Update both arrays in the state
-    newTickets[sourceStatus] = sourceTickets;
-    newTickets[destStatus] = destTickets;
-
-    // Update state optimistically
-    setTickets(newTickets);
-
-    // Only make API call if moving between different statuses
-    if (sourceStatus !== destStatus) {
+    // Only make API call if moving between different columns
+    if (sourceColumnId !== destColumnId) {
       setIsMoving(true);
 
       try {
         console.log('Starting API update...');
-        console.log('Updating ticket status to:', destStatus);
+        console.log('Moving ticket to column:', destColumnId);
         
-        // Ensure the status is valid
-        const validStatuses = ['open', 'in_progress', 'resolved', 'closed'];
-        if (!validStatuses.includes(destStatus)) {
-          throw new Error(`Invalid status: ${destStatus}`);
-        }
-        
-        // Add timeout to prevent hanging
-        const updatePromise = ticketsPartialUpdate(ticketId, {
-          status: destStatus as any
+        // Use the partial update endpoint to move the ticket
+        await ticketsPartialUpdate(ticketId, {
+          column_id: destColumnId,
+          position_in_column: destIndex
         });
         
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Update timeout after 5 seconds')), 5000);
-        });
-        
-        await Promise.race([updatePromise, timeoutPromise]);
-        console.log('Status update successful');
+        console.log('Ticket move successful');
+        // Refresh the board data to get the updated state
+        await fetchBoardData();
       } catch (err: unknown) {
-        console.error('Failed to update ticket status:', err);
-        // Revert on error
-        setTickets(originalTickets);
+        console.error('Failed to move ticket:', err);
         setError('Failed to move ticket. Please try again.');
         
         // Clear error after 3 seconds
@@ -501,9 +406,9 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
         setIsMoving(false);
       }
     } else {
-      console.log('Same status, no API call needed');
+      console.log('Same column, no API call needed - would need reorder endpoint');
     }
-  }, [tickets, isMoving]);
+  }, [isMoving, fetchBoardData]);
 
   if (loading) {
     return (
@@ -536,7 +441,7 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
       }}>
         {error}
         <button
-          onClick={fetchTickets}
+          onClick={fetchBoardData}
           style={{
             marginLeft: '10px',
             background: '#dc3545',
@@ -553,8 +458,8 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
     );
   }
 
-  if (!Object.keys(tickets).length && !loading) {
-    return <div>No tickets available</div>;
+  if (!boardData && !loading) {
+    return <div>No board data available</div>;
   }
 
   return (
@@ -674,13 +579,17 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
         overflowX: 'auto',
         paddingBottom: '20px'
       }}>
-        {STATUS_COLUMNS.map((column) => {
-          console.log('Rendering column:', column.id, 'with tickets:', tickets[column.id]?.length || 0);
+        {boardData && boardData.columns?.map((column) => {
+          // Get tickets for this column from tickets_by_column
+          const ticketsByColumn = boardData.tickets_by_column as any;
+          const columnTickets = ticketsByColumn?.[column.id] || [];
+          
+          console.log('Rendering column:', column.id, 'with tickets:', columnTickets.length);
           return (
             <DroppableColumn
               key={column.id}
               column={column}
-              tickets={tickets[column.id] || []}
+              tickets={columnTickets}
               onTicketClick={onTicketClick}
               onMoveTicket={moveTicket}
             />

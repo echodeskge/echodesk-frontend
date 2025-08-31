@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { ticketService, TicketFilters } from '@/services/ticketService';
-import type { TicketList, PaginatedTicketListList } from '@/api/generated/interfaces';
+import { columnsList } from '@/api/generated/api';
+import type { TicketList, PaginatedTicketListList, TicketColumn } from '@/api/generated/interfaces';
 
 interface TicketListProps {
   onTicketSelect?: (ticketId: number) => void;
@@ -11,14 +12,39 @@ interface TicketListProps {
 
 export default function TicketList({ onTicketSelect, onCreateTicket }: TicketListProps) {
   const [tickets, setTickets] = useState<PaginatedTicketListList | null>(null);
+  const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<TicketFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    fetchTickets();
-  }, [filters]);
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (columns.length > 0) {
+      fetchTickets();
+    }
+  }, [filters, columns]);
+
+  const fetchInitialData = async () => {
+    try {
+      setLoading(true);
+      // Fetch columns first
+      const columnsResult = await columnsList();
+      setColumns(columnsResult.results || []);
+      
+      // Then fetch tickets
+      const result = await ticketService.getTickets(filters);
+      setTickets(result);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchTickets = async () => {
     try {
@@ -46,7 +72,14 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
     setFilters({ ...filters, page });
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (ticket: TicketList) => {
+    // Use the column color if available, otherwise fallback to defaults
+    if (ticket.column?.color) {
+      return ticket.column.color;
+    }
+    
+    // Fallback colors based on status string
+    const status = ticket.status?.toLowerCase();
     switch (status) {
       case 'open': return '#e74c3c';
       case 'in_progress': return '#f39c12';
@@ -187,8 +220,8 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
               Status
             </label>
             <select
-              value={filters.status || ''}
-              onChange={(e) => handleFilterChange('status', e.target.value as any)}
+              value={filters.column || ''}
+              onChange={(e) => handleFilterChange('column', parseInt(e.target.value) || undefined)}
               style={{
                 padding: '10px',
                 border: '1px solid #ddd',
@@ -198,10 +231,11 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
               }}
             >
               <option value="">All Statuses</option>
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
+              {columns.map(column => (
+                <option key={column.id} value={column.id}>
+                  {column.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -387,7 +421,7 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
                 </div>
                 <div>
                   <span style={{
-                    background: getStatusColor(ticket.status as any),
+                    background: getStatusColor(ticket),
                     color: 'white',
                     padding: '4px 8px',
                     borderRadius: '12px',
@@ -395,7 +429,7 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
                     fontWeight: '500',
                     textTransform: 'capitalize'
                   }}>
-                    {(ticket.status as any)?.replace('_', ' ') || 'Unknown'}
+                    {ticket.column?.name || ticket.status || 'Unknown'}
                   </span>
                 </div>
                 <div>
@@ -454,7 +488,7 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
               fontSize: '16px',
               marginBottom: '20px'
             }}>
-              {filters.search || filters.status || filters.priority ? 
+              {filters.search || filters.column || filters.priority ? 
                 'Try adjusting your filters to see more results.' :
                 'Get started by creating your first ticket.'
               }

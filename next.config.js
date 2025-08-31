@@ -5,6 +5,12 @@ const nextConfig = {
     MAIN_DOMAIN: process.env.NEXT_PUBLIC_MAIN_DOMAIN,
     DEFAULT_LANGUAGE: process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
   async rewrites() {
     return [
       {

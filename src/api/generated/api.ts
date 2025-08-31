@@ -1075,7 +1075,6 @@ export async function ticketsList(
   page?: number,
   priority?: 'critical' | 'high' | 'low' | 'medium',
   search?: string,
-  status?: 'closed' | 'in_progress' | 'open' | 'resolved',
   tags?: number[],
 ): Promise<PaginatedTicketListList> {
   const response = await axios.get(
@@ -1088,7 +1087,6 @@ export async function ticketsList(
         page ? 'page=' + encodeURIComponent(page) : null,
         priority ? 'priority=' + encodeURIComponent(priority) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
-        status ? 'status=' + encodeURIComponent(status) : null,
         tags
           ? 'tags=' + tags.map(String).map(encodeURIComponent).join('&tags=')
           : null,

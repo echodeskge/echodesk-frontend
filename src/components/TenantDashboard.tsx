@@ -1,6 +1,7 @@
 import { TenantConfig } from '@/types/tenant';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
+import StatusManagement from './StatusManagement';
 
 interface TenantDashboardProps {
   tenant: TenantConfig;
@@ -113,6 +114,7 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
             {[
               { key: 'overview', label: '📊 Overview' },
               { key: 'users', label: '👥 Users' },
+              ...((user as any)?.is_superuser ? [{ key: 'statuses', label: '📋 Ticket Statuses' }] : []),
               { key: 'settings', label: '⚙️ Settings' },
               { key: 'api', label: '🔌 API' }
             ].map(item => (
@@ -242,6 +244,12 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
                 This will include user creation, role management, and permissions.
               </p>
             </div>
+          </div>
+        )}
+
+        {activeSection === 'statuses' && (user as any)?.is_superuser && (
+          <div>
+            <StatusManagement />
           </div>
         )}
 
