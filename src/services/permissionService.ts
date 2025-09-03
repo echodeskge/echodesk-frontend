@@ -136,19 +136,28 @@ export class PermissionService {
       'can_access_tickets',
       'can_access_calls', 
       'can_access_user_management',
-      'can_manage_settings' // Admin-specific permission
+      'can_manage_settings', // Admin-specific permission
+      'can_view_boards',
+      'can_create_boards',
+      'can_edit_boards',
+      'can_delete_boards'
     ],
     manager: [
       'can_access_tickets',
-      'can_access_calls'
+      'can_access_calls',
+      'can_view_boards',
+      'can_create_boards',
+      'can_edit_boards'
       // Note: managers cannot access user management by default
+      // Note: managers cannot delete boards by default
     ],
     agent: [
       'can_access_tickets', // Limited ticket access
-      'can_access_calls'    // Limited call access
+      'can_access_calls',   // Limited call access
+      'can_view_boards'     // Can view boards but not create/edit
     ],
     viewer: [
-      // Very limited access - mainly read-only dashboard
+      'can_view_boards'     // Can only view boards
     ]
   };
 
@@ -318,6 +327,18 @@ export class PermissionService {
         'tickets.change_ticketcolumn',
         'tickets.delete_ticketcolumn',
       ],
+      'can_view_boards': [
+        'tickets.view_board',
+      ],
+      'can_create_boards': [
+        'tickets.add_board',
+      ],
+      'can_edit_boards': [
+        'tickets.change_board',
+      ],
+      'can_delete_boards': [
+        'tickets.delete_board',
+      ],
       'can_access_calls': [
         'crm.add_calllog',
         'crm.view_calllog',
@@ -391,6 +412,7 @@ export class PermissionService {
       'can_assign_tickets': 'can_access_tickets',
       'can_manage_tags': 'can_access_tickets',
       'can_manage_columns': 'can_access_tickets',
+      // Board permissions are kept as-is (no mapping needed)
     };
 
     return legacyPermissionMap[permission] || permission;
@@ -492,7 +514,11 @@ export class PermissionService {
         'can_access_tickets',
         'can_access_calls', 
         'can_access_user_management',
-        'can_manage_settings'
+        'can_manage_settings',
+        'can_view_boards',
+        'can_create_boards',
+        'can_edit_boards',
+        'can_delete_boards'
       ];
       
       for (const permission of allPossiblePermissions) {
