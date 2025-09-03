@@ -7,6 +7,17 @@ export interface BillingPeriodEnum {
   [key: string]: any;
 }
 
+export interface Board {
+  id: number;
+  name: string;
+  description?: string;
+  is_default?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  columns_count: string;
+}
+
 export interface CallEvent {
   id: number;
   event_type: EventTypeEnum;
@@ -260,6 +271,13 @@ export interface PackageList {
   pricing_suffix: string;
 }
 
+export interface PaginatedBoardList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Board[];
+}
+
 export interface PaginatedCallLogList {
   count: number;
   next?: string;
@@ -398,6 +416,17 @@ export interface PaginatedUserList {
   next?: string;
   previous?: string;
   results: User[];
+}
+
+export interface PatchedBoard {
+  id?: number;
+  name?: string;
+  description?: string;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: string;
+  columns_count?: string;
 }
 
 export interface PatchedCallLog {
@@ -859,6 +888,7 @@ export interface TicketColumn {
   is_default?: boolean;
   is_closed_status?: boolean;
   track_time?: boolean;
+  board?: number;
   created_at: string;
   updated_at: string;
   created_by: string;

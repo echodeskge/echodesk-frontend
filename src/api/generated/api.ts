@@ -7,6 +7,9 @@ import axios from '../axios';
 import type {
   TenantDashboardData,
   TenantLogin,
+  PaginatedBoardList,
+  Board,
+  PatchedBoard,
   PaginatedCallLogList,
   CallLogCreate,
   CallLogDetail,
@@ -152,6 +155,70 @@ export async function updateTenantProfile(): Promise<{
   user?: Record<string, any>;
 }> {
   const response = await axios.patch(`/api/auth/profile/update/`);
+  return response.data;
+}
+
+export async function boardsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedBoardList> {
+  const response = await axios.get(
+    `/api/boards/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function boardsCreate(data: Board): Promise<Board> {
+  const response = await axios.post(`/api/boards/`, data);
+  return response.data;
+}
+
+export async function boardsRetrieve(id: string): Promise<Board> {
+  const response = await axios.get(`/api/boards/${id}/`);
+  return response.data;
+}
+
+export async function boardsUpdate(id: string, data: Board): Promise<Board> {
+  const response = await axios.put(`/api/boards/${id}/`, data);
+  return response.data;
+}
+
+export async function boardsPartialUpdate(
+  id: string,
+  data: PatchedBoard,
+): Promise<Board> {
+  const response = await axios.patch(`/api/boards/${id}/`, data);
+  return response.data;
+}
+
+export async function boardsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/boards/${id}/`);
+  return response.data;
+}
+
+export async function boardsKanbanBoardRetrieve(id: string): Promise<Board> {
+  const response = await axios.get(`/api/boards/${id}/kanban_board/`);
+  return response.data;
+}
+
+export async function boardsSetDefaultCreate(
+  id: string,
+  data: Board,
+): Promise<Board> {
+  const response = await axios.post(`/api/boards/${id}/set_default/`, data);
+  return response.data;
+}
+
+export async function boardsDefaultRetrieve(): Promise<Board> {
+  const response = await axios.get(`/api/boards/default/`);
   return response.data;
 }
 
@@ -436,12 +503,14 @@ export async function clientsCallHistoryList(
 }
 
 export async function columnsList(
+  board?: number,
   ordering?: string,
   page?: number,
 ): Promise<PaginatedTicketColumnList> {
   const response = await axios.get(
     `/api/columns/${(() => {
       const parts = [
+        board ? 'board=' + encodeURIComponent(board) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
       ].filter(Boolean);

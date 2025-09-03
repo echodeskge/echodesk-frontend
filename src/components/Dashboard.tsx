@@ -28,7 +28,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    | "dashboard"
     | "tickets"
     | "calls"
     | "users"
@@ -38,7 +37,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     | "settings"
     | "statuses"
     | "time-tracking"
-  >("dashboard");
+    | "empty"
+  >("tickets");
+  const [initialViewSet, setInitialViewSet] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [facebookConnected, setFacebookConnected] = useState(false);
@@ -61,6 +62,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
 
   const fetchUserProfile = async () => {
     try {
@@ -110,7 +112,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   };
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: "🏠", permission: null },
     {
       id: "tickets",
       label: "Tickets",
@@ -189,9 +190,27 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   // Filter menu items based on user permissions using the new permission service
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
+  // Set initial view based on user permissions (only once)
+  useEffect(() => {
+    if (userProfile && !initialViewSet) {
+      if (visibleMenuItems.length > 0) {
+        // Find the first menu item the user has access to
+        const firstAccessibleItem = visibleMenuItems[0];
+        if (firstAccessibleItem) {
+          setCurrentView(firstAccessibleItem.id as typeof currentView);
+        } else {
+          setCurrentView("empty");
+        }
+      } else {
+        // User has no access to any menu items
+        setCurrentView("empty");
+      }
+      setInitialViewSet(true);
+    }
+  }, [userProfile, visibleMenuItems, initialViewSet]);
+
   const handleMenuClick = (
     viewId:
-      | "dashboard"
       | "tickets"
       | "calls"
       | "users"
@@ -200,6 +219,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       | "social"
       | "settings"
       | "statuses"
+      | "time-tracking"
   ) => {
     // If navigating to messages after connections changed, refresh the component
     if (viewId === "messages" && connectionsChanged) {
@@ -364,7 +384,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               onClick={() =>
                 handleMenuClick(
                   item.id as
-                    | "dashboard"
                     | "tickets"
                     | "calls"
                     | "users"
@@ -373,6 +392,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                     | "social"
                     | "settings"
                     | "statuses"
+                    | "time-tracking"
                 )
               }
               style={{
@@ -640,9 +660,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
           {/* View Content */}
           {currentView === "tickets" && (
-            <TicketManagement
-              onBackToDashboard={() => setCurrentView("dashboard")}
-            />
+            <TicketManagement />
           )}
 
           {currentView === "calls" && (
@@ -685,7 +703,15 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
           {currentView === "messages" && (
             <UnifiedMessagesManagement
               key={messagesRefreshKey} // Force refresh when this key changes
-              onBackToDashboard={() => setCurrentView("dashboard")}
+              onBackToDashboard={() => {
+                // Go back to first accessible view instead of dashboard
+                const firstAccessibleItem = visibleMenuItems[0];
+                if (firstAccessibleItem) {
+                  setCurrentView(firstAccessibleItem.id as typeof currentView);
+                } else {
+                  setCurrentView("empty");
+                }
+              }}
             />
           )}
 
@@ -697,7 +723,13 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                   setMessagesRefreshKey((prev) => prev + 1);
                   setConnectionsChanged(false);
                 }
-                setCurrentView("dashboard");
+                // Go back to first accessible view instead of dashboard
+                const firstAccessibleItem = visibleMenuItems[0];
+                if (firstAccessibleItem) {
+                  setCurrentView(firstAccessibleItem.id as typeof currentView);
+                } else {
+                  setCurrentView("empty");
+                }
               }}
               onConnectionChange={(type, connected) => {
                 setConnectionsChanged(true); // Mark that connections have changed
@@ -747,319 +779,76 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
             </div>
           )}
 
-          {currentView === "dashboard" && (
-            <div>
-              {/* Desktop Header (only visible on desktop) */}
-              {!isMobile && (
-                <div
-                  style={{
-                    background: "white",
-                    borderRadius: "12px",
-                    padding: "30px",
-                    marginBottom: "30px",
-                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <h1
-                    style={{
-                      fontSize: "32px",
-                      fontWeight: "700",
-                      margin: "0 0 8px 0",
-                      color: "#333",
-                    }}
-                  >
-                    Welcome back!
-                  </h1>
-                  <p
-                    style={{
-                      fontSize: "16px",
-                      color: "#6c757d",
-                      margin: 0,
-                    }}
-                  >
-                    Here&apos;s what&apos;s happening with your {tenant.name}{" "}
-                    account
-                  </p>
-                </div>
-              )}
-
-              {/* Dashboard Content */}
+          {currentView === "empty" && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "60vh",
+                textAlign: "center",
+                background: "white",
+                borderRadius: "12px",
+                padding: "40px 20px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              }}
+            >
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: isMobile
-                    ? "1fr"
-                    : "repeat(auto-fit, minmax(300px, 1fr))",
-                  gap: "20px",
+                  width: "80px",
+                  height: "80px",
+                  borderRadius: "50%",
+                  background: `${tenant.theme.primary_color}15`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "32px",
+                  marginBottom: "24px",
                 }}
               >
-                {/* Stats Cards */}
-                <div
-                  style={{
-                    background: "white",
-                    padding: "25px",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                    border: `2px solid ${tenant.theme.primary_color}15`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "15px",
-                      marginBottom: "15px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "50px",
-                        height: "50px",
-                        borderRadius: "12px",
-                        background: `${tenant.theme.primary_color}15`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "24px",
-                      }}
-                    >
-                      🎫
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "18px",
-                          fontWeight: "600",
-                          color: "#333",
-                        }}
-                      >
-                        Ticket Management
-                      </h3>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "14px",
-                          color: "#6c757d",
-                        }}
-                      >
-                        Manage and track support tickets
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setCurrentView("tickets")}
-                    style={{
-                      width: "100%",
-                      background: tenant.theme.primary_color,
-                      color: "white",
-                      border: "none",
-                      padding: "12px 20px",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      cursor: "pointer",
-                    }}
-                  >
-                    View Tickets
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    background: "white",
-                    padding: "25px",
-                    borderRadius: "12px",
-                    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                    border: `2px solid ${tenant.theme.primary_color}15`,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "15px",
-                      marginBottom: "15px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "50px",
-                        height: "50px",
-                        borderRadius: "12px",
-                        background: `${tenant.theme.primary_color}15`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "24px",
-                      }}
-                    >
-                      📞
-                    </div>
-                    <div>
-                      <h3
-                        style={{
-                          margin: 0,
-                          fontSize: "18px",
-                          fontWeight: "600",
-                          color: "#333",
-                        }}
-                      >
-                        Call Management
-                      </h3>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "14px",
-                          color: "#6c757d",
-                        }}
-                      >
-                        Handle calls and SIP configuration
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setCurrentView("calls")}
-                    style={{
-                      width: "100%",
-                      background: tenant.theme.primary_color,
-                      color: "white",
-                      border: "none",
-                      padding: "12px 20px",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Manage Calls
-                  </button>
-                </div>
+                🔐
               </div>
-
-              {/* Additional Dashboard Info */}
-              <div
+              <h2
                 style={{
-                  background: "white",
-                  borderRadius: "12px",
-                  padding: "30px",
-                  marginTop: "30px",
-                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                  fontSize: "24px",
+                  fontWeight: "600",
+                  color: "#333",
+                  margin: "0 0 16px 0",
                 }}
               >
-                <h3
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "600",
-                    color: "#333",
-                    margin: "0 0 20px 0",
-                  }}
-                >
-                  Account Information
-                </h3>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-                    gap: "20px",
-                  }}
-                >
-                  <div>
-                    <h4
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#6c757d",
-                        margin: "0 0 8px 0",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      Tenant Information
-                    </h4>
-                    <p
-                      style={{
-                        margin: "0 0 8px 0",
-                        fontSize: "16px",
-                        color: "#333",
-                      }}
-                    >
-                      <strong>Name:</strong> {tenant.name}
-                    </p>
-                    <p
-                      style={{
-                        margin: "0 0 8px 0",
-                        fontSize: "16px",
-                        color: "#333",
-                      }}
-                    >
-                      <strong>Domain:</strong> {tenant.domain}
-                    </p>
-                    <p style={{ margin: "0", fontSize: "16px", color: "#333" }}>
-                      <strong>Schema:</strong> {tenant.schema_name}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#6c757d",
-                        margin: "0 0 8px 0",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      User Profile
-                    </h4>
-                    {userProfile && (
-                      <>
-                        <p
-                          style={{
-                            margin: "0 0 8px 0",
-                            fontSize: "16px",
-                            color: "#333",
-                          }}
-                        >
-                          <strong>Name:</strong> {userProfile.first_name}{" "}
-                          {userProfile.last_name}
-                        </p>
-                        <p
-                          style={{
-                            margin: "0 0 8px 0",
-                            fontSize: "16px",
-                            color: "#333",
-                          }}
-                        >
-                          <strong>Email:</strong> {userProfile.email}
-                        </p>
-                        <p
-                          style={{
-                            margin: "0",
-                            fontSize: "16px",
-                            color: "#333",
-                          }}
-                        >
-                          <strong>Status:</strong>
-                          <span
-                            style={{
-                              color: userProfile.is_active
-                                ? "#28a745"
-                                : "#dc3545",
-                              fontWeight: "600",
-                              marginLeft: "8px",
-                            }}
-                          >
-                            {userProfile.is_active ? "Active" : "Inactive"}
-                          </span>
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
+                Access Restricted
+              </h2>
+              <p
+                style={{
+                  fontSize: "16px",
+                  color: "#6c757d",
+                  margin: "0 0 24px 0",
+                  maxWidth: "400px",
+                  lineHeight: "1.5",
+                }}
+              >
+                You don&apos;t have permission to access any sections of the application.
+                Please contact your administrator to request appropriate access.
+              </p>
+              <button
+                onClick={handleLogout}
+                style={{
+                  background: tenant.theme.primary_color,
+                  color: "white",
+                  border: "none",
+                  padding: "12px 24px",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                🚪 Logout
+              </button>
             </div>
           )}
         </div>

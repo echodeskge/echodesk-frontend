@@ -5,17 +5,14 @@ import TicketList from "./TicketList";
 import TicketDetail from "./TicketDetail";
 import TicketForm from "./TicketForm";
 import KanbanBoard from "./KanbanBoard";
-import type { Ticket } from "@/api/generated/interfaces";
+import BoardForm from "./BoardForm";
+import type { Ticket, Board } from "@/api/generated/interfaces";
 
-type View = "list" | "kanban" | "detail" | "create" | "edit";
+type View = "list" | "kanban" | "detail" | "create" | "edit" | "createBoard";
 
-interface TicketManagementProps {
-  onBackToDashboard?: () => void;
-}
+interface TicketManagementProps {}
 
-export default function TicketManagement({
-  onBackToDashboard,
-}: TicketManagementProps) {
+export default function TicketManagement({}: TicketManagementProps = {}) {
   const [currentView, setCurrentView] = useState<View>("kanban");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -41,6 +38,15 @@ export default function TicketManagement({
     setSelectedTicket(null);
   };
 
+  const handleCreateBoard = () => {
+    setCurrentView("createBoard");
+  };
+
+  const handleBoardCreated = (board: Board) => {
+    // After creating board, go back to kanban view
+    setCurrentView("kanban");
+  };
+
   const handleTicketSaved = (ticket: Ticket) => {
     // After saving, show the ticket detail
     setSelectedTicketId(ticket.id);
@@ -63,6 +69,7 @@ export default function TicketManagement({
           <KanbanBoard
             onTicketClick={handleTicketSelect}
             onCreateTicket={handleCreateTicket}
+            onCreateBoard={handleCreateBoard}
           />
         );
 
@@ -95,6 +102,14 @@ export default function TicketManagement({
           />
         );
 
+      case "createBoard":
+        return (
+          <BoardForm
+            onSave={handleBoardCreated}
+            onCancel={handleBackToList}
+          />
+        );
+
       default:
         return <div>Unknown view</div>;
     }
@@ -106,11 +121,10 @@ export default function TicketManagement({
         background: "#f8f9fa",
       }}
     >
-      {/* Header with back button */}
-      {onBackToDashboard && (
-        <div>
-          {/* View Toggle Buttons */}
-          <div style={{ display: "flex", gap: "8px" }}>
+      {/* Header with view toggle buttons */}
+      <div style={{ padding: "20px 20px 0 20px" }}>
+        {/* View Toggle Buttons */}
+        <div style={{ display: "flex", gap: "8px" }}>
             <button
               onClick={() => setCurrentView("kanban")}
               style={{
@@ -144,7 +158,6 @@ export default function TicketManagement({
             </button>
           </div>
         </div>
-      )}
 
       {renderCurrentView()}
     </div>

@@ -3,18 +3,21 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { kanbanBoard } from "@/api/generated/api";
+import { kanbanBoard, boardsList, boardsKanbanBoardRetrieve } from "@/api/generated/api";
 import axios from "@/api/axios";
+import BoardSwitcher from "@/components/BoardSwitcher";
 import type {
   Ticket,
   TicketList,
   TicketColumn,
   KanbanBoard as KanbanBoardType,
+  Board,
 } from "@/api/generated/interfaces";
 
 interface KanbanBoardProps {
   onTicketClick?: (ticketId: number) => void;
   onCreateTicket?: () => void;
+  onCreateBoard?: () => void;
 }
 
 type TicketStatus = string;
@@ -444,16 +447,24 @@ function DroppableColumn({
 function KanbanBoardContent({
   onTicketClick,
   onCreateTicket,
+  onCreateBoard,
 }: KanbanBoardProps) {
   const [boardData, setBoardData] = useState<KanbanBoardType | null>(null);
+  const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMoving, setIsMoving] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
   useEffect(() => {
-    fetchBoardData();
+    initializeBoard();
   }, []);
+
+  useEffect(() => {
+    if (selectedBoardId) {
+      fetchBoardData(selectedBoardId);
+    }
+  }, [selectedBoardId]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -464,14 +475,38 @@ function KanbanBoardContent({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const fetchBoardData = async () => {
+  const initializeBoard = async () => {
     try {
       setLoading(true);
+      // Get the list of boards to find the default one
+      const boardsResponse = await boardsList();
+      const boards = boardsResponse.results || [];
+      
+      // Find default board or use the first one
+      const defaultBoard = boards.find(board => board.is_default) || boards[0];
+      
+      if (defaultBoard) {
+        setSelectedBoardId(defaultBoard.id);
+      } else {
+        // No boards exist, show empty state
+        setLoading(false);
+        setError("No boards found. Please create a board first.");
+      }
+    } catch (err: unknown) {
+      console.error("Failed to initialize board:", err);
+      setError("Failed to load boards");
+      setLoading(false);
+    }
+  };
 
-      // Fetch kanban board data with dynamic columns and tickets
-      const response = await kanbanBoard();
-      setBoardData(response);
+  const fetchBoardData = async (boardId: number) => {
+    try {
+      setLoading(true);
       setError("");
+
+      // Fetch kanban board data for specific board
+      const response = await boardsKanbanBoardRetrieve(boardId.toString());
+      setBoardData(response as any);
     } catch (err: unknown) {
       console.error("Failed to fetch kanban board:", err);
       setError("Failed to load kanban board");
@@ -518,7 +553,9 @@ function KanbanBoardContent({
 
           console.log("Ticket move successful");
           // Refresh the board data to get the updated state
-          await fetchBoardData();
+          if (selectedBoardId) {
+            await fetchBoardData(selectedBoardId);
+          }
         } catch (err: unknown) {
           console.error("Failed to move ticket:", err);
           setError("Failed to move ticket. Please try again.");
@@ -535,7 +572,7 @@ function KanbanBoardContent({
         );
       }
     },
-    [isMoving, fetchBoardData]
+    [isMoving, selectedBoardId]
   );
 
   if (loading) {
@@ -575,7 +612,7 @@ function KanbanBoardContent({
       >
         {error}
         <button
-          onClick={fetchBoardData}
+          onClick={() => selectedBoardId && fetchBoardData(selectedBoardId)}
           style={{
             marginLeft: "10px",
             background: "#dc3545",
@@ -640,22 +677,30 @@ function KanbanBoardContent({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           marginBottom: "20px",
           minHeight: "40px",
+          gap: "16px",
         }}
       >
-        <h2
-          style={{
-            fontSize: "clamp(18px, 4vw, 24px)",
-            fontWeight: "600",
-            margin: 0,
-            color: "#333",
-            minWidth: "fit-content",
-          }}
-        >
-          Kanban Board
-        </h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
+          <h2
+            style={{
+              fontSize: "clamp(18px, 4vw, 24px)",
+              fontWeight: "600",
+              margin: 0,
+              color: "#333",
+              minWidth: "fit-content",
+            }}
+          >
+            Kanban Board
+          </h2>
+          <BoardSwitcher
+            selectedBoardId={selectedBoardId}
+            onBoardChange={setSelectedBoardId}
+            onCreateBoard={onCreateBoard}
+          />
+        </div>
         {onCreateTicket && (
           <button
             onClick={onCreateTicket}
@@ -809,12 +854,14 @@ function KanbanBoardContent({
 export default function KanbanBoard({
   onTicketClick,
   onCreateTicket,
+  onCreateBoard,
 }: KanbanBoardProps) {
   return (
     <DndProvider backend={HTML5Backend}>
       <KanbanBoardContent
         onTicketClick={onTicketClick}
         onCreateTicket={onCreateTicket}
+        onCreateBoard={onCreateBoard}
       />
     </DndProvider>
   );

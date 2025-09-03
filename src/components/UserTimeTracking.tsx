@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { formatDuration } from './TimeTracking';
-import { timeLogsMyTimeSummaryRetrieve, TimeTrackingSummary } from '@/api/generated';
+import { timeLogsMyTimeSummaryRetrieve, TimeTrackingSummary as ApiTimeTrackingSummary } from '@/api/generated';
 
 interface TimeByColumn {
   column__name: string;
