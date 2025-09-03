@@ -541,7 +541,7 @@ function KanbanBoardContent({
       setError("");
 
       // Fetch kanban board data for specific board
-      const response = await boardsKanbanBoardRetrieve(boardId);
+      const response = await boardsKanbanBoardRetrieve(boardId.toString());
       setBoardData(response as any);
     } catch (err: unknown) {
       console.error("Failed to fetch kanban board:", err);

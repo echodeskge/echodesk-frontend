@@ -69,7 +69,7 @@ export default function BoardManagement({}: BoardManagementProps) {
       setError("");
       setSuccess("");
 
-      await boardsPartialUpdate(selectedBoard.id, {
+      await boardsPartialUpdate(selectedBoard.id.toString(), {
         order_user_ids: orderUserIds
       });
 

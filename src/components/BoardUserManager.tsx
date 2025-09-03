@@ -35,7 +35,7 @@ export default function BoardUserManager({
       setError("");
 
       const [boardResult, usersResult] = await Promise.all([
-        boardsRetrieve(boardId),
+        boardsRetrieve(boardId.toString()),
         ticketService.getUsers()
       ]);
 
@@ -66,7 +66,7 @@ export default function BoardUserManager({
       setError("");
       setSuccess("");
 
-      await boardsPartialUpdate(board.id, {
+      await boardsPartialUpdate(board.id.toString(), {
         order_user_ids: orderUserIds
       });
 

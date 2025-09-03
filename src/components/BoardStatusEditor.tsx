@@ -49,7 +49,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
 
   const fetchBoard = async () => {
     try {
-      const boardData = await boardsRetrieve(boardId);
+      const boardData = await boardsRetrieve(boardId.toString());
       setBoard(boardData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load board");

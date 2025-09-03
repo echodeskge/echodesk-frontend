@@ -1,53 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import { Group, GroupCreate, PaginatedGroupList, PatchedGroup, Permission, PaginatedPermissionList } from '../api/generated/interfaces';
-import { groupsList, groupsCreate, groupsPartialUpdate, groupsDestroy, permissionsList } from '../api/generated/api';
+import { TenantGroup, TenantGroupCreate, PaginatedTenantGroupList, PatchedTenantGroup, Permission, PaginatedPermissionList } from '../api/generated/interfaces';
+import { tenantGroupsList, tenantGroupsCreate, tenantGroupsPartialUpdate, tenantGroupsDestroy, permissionsList } from '../api/generated/api';
 import GroupPermissionForm from './GroupPermissionForm';
 import { categoriesToDjangoPermissions, djangoPermissionsToCategories } from '@/utils/permissionUtils';
 import './GroupManagement.css';
 
-interface GroupFormData {
+interface TenantGroupFormData {
   name: string;
-  permission_codenames: string[]; // Changed from permission_ids to codenames
-}
-
-interface ExtendedGroup extends Group {
-  [key: string]: any; // Allow for permission fields
+  description?: string;
+  // All the permission fields from TenantGroupCreate
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
+  can_manage_settings?: boolean;
+  can_create_tickets?: boolean;
+  can_edit_own_tickets?: boolean;
+  can_edit_all_tickets?: boolean;
+  can_delete_tickets?: boolean;
+  can_assign_tickets?: boolean;
+  can_view_reports?: boolean;
+  can_export_data?: boolean;
+  can_manage_tags?: boolean;
+  can_manage_columns?: boolean;
+  can_view_boards?: boolean;
+  can_create_boards?: boolean;
+  can_edit_boards?: boolean;
+  can_delete_boards?: boolean;
+  can_access_orders?: boolean;
 }
 
 interface GroupFormProps {
   mode: 'create' | 'edit';
-  group?: ExtendedGroup;
-  onSubmit: (data: GroupFormData) => Promise<void>;
+  group?: TenantGroup;
+  onSubmit: (data: TenantGroupFormData) => Promise<void>;
   onCancel: () => void;
 }
 
 const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState<GroupFormData>({
+  const [formData, setFormData] = useState<TenantGroupFormData>({
     name: group?.name || '',
-    permission_codenames: [],
+    description: group?.description || '',
+    // Initialize all permission fields from the group or default to false
+    can_view_all_tickets: group?.can_view_all_tickets || false,
+    can_manage_users: group?.can_manage_users || false,
+    can_make_calls: group?.can_make_calls || false,
+    can_manage_groups: group?.can_manage_groups || false,
+    can_manage_settings: group?.can_manage_settings || false,
+    can_create_tickets: group?.can_create_tickets || false,
+    can_edit_own_tickets: group?.can_edit_own_tickets || false,
+    can_edit_all_tickets: group?.can_edit_all_tickets || false,
+    can_delete_tickets: group?.can_delete_tickets || false,
+    can_assign_tickets: group?.can_assign_tickets || false,
+    can_view_reports: group?.can_view_reports || false,
+    can_export_data: group?.can_export_data || false,
+    can_manage_tags: group?.can_manage_tags || false,
+    can_manage_columns: group?.can_manage_columns || false,
+    can_view_boards: group?.can_view_boards || false,
+    can_create_boards: group?.can_create_boards || false,
+    can_edit_boards: group?.can_edit_boards || false,
+    can_delete_boards: group?.can_delete_boards || false,
+    can_access_orders: group?.can_access_orders || false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  // Convert group permissions to codenames on component mount
+  // Update form data when group changes
   useEffect(() => {
     if (group) {
-      const groupPermissionCodenames = group.permissions?.map(p => p.codename) || [];
-      
-      // Debug: Show what permissions we're working with
-      console.log('Editing group:', group.name);
-      console.log('Group permissions from API:', group.permissions?.map(p => ({
-        id: p.id,
-        codename: p.codename,
-        name: p.name,
-        app_label: p.app_label,
-        model: p.model
-      })));
-      console.log('Extracted codenames:', groupPermissionCodenames);
-      
       setFormData({
         name: group.name || '',
-        permission_codenames: groupPermissionCodenames,
+        description: group.description || '',
+        // Set all permission fields from the group
+        can_view_all_tickets: group.can_view_all_tickets || false,
+        can_manage_users: group.can_manage_users || false,
+        can_make_calls: group.can_make_calls || false,
+        can_manage_groups: group.can_manage_groups || false,
+        can_manage_settings: group.can_manage_settings || false,
+        can_create_tickets: group.can_create_tickets || false,
+        can_edit_own_tickets: group.can_edit_own_tickets || false,
+        can_edit_all_tickets: group.can_edit_all_tickets || false,
+        can_delete_tickets: group.can_delete_tickets || false,
+        can_assign_tickets: group.can_assign_tickets || false,
+        can_view_reports: group.can_view_reports || false,
+        can_export_data: group.can_export_data || false,
+        can_manage_tags: group.can_manage_tags || false,
+        can_manage_columns: group.can_manage_columns || false,
+        can_view_boards: group.can_view_boards || false,
+        can_create_boards: group.can_create_boards || false,
+        can_edit_boards: group.can_edit_boards || false,
+        can_delete_boards: group.can_delete_boards || false,
+        can_access_orders: group.can_access_orders || false,
       });
     }
   }, [group]);
@@ -69,10 +112,8 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }
   };
 
   const handlePermissionsChange = (permissions: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      permission_codenames: permissions
-    }));
+    // This is deprecated - keeping for compatibility but not using the data
+    console.log('Permission change (deprecated):', permissions);
   };
 
   return (
@@ -104,7 +145,7 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }
 
           {/* Use the new simplified permission form */}
           <GroupPermissionForm
-            selectedPermissions={formData.permission_codenames}
+            selectedPermissions={[]}
             onPermissionsChange={handlePermissionsChange}
             disabled={isSubmitting}
           />
@@ -128,10 +169,10 @@ const GroupForm: React.FC<GroupFormProps> = ({ mode, group, onSubmit, onCancel }
 };
 
 const GroupManagement: React.FC = () => {
-  const [groups, setGroups] = useState<ExtendedGroup[]>([]);
+  const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState<{ mode: 'create' | 'edit'; group?: ExtendedGroup } | null>(null);
+  const [showForm, setShowForm] = useState<{ mode: 'create' | 'edit'; group?: TenantGroup } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loadingPermissions, setLoadingPermissions] = useState(true);
@@ -140,8 +181,8 @@ const GroupManagement: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response: PaginatedGroupList = await groupsList();
-      setGroups(response.results as ExtendedGroup[]);
+      const response: PaginatedTenantGroupList = await tenantGroupsList();
+      setGroups(response.results);
     } catch (err: any) {
       setError(err.message || "Failed to load groups");
     } finally {
@@ -243,7 +284,7 @@ const GroupManagement: React.FC = () => {
     return permissionIds;
   };
 
-  const handleCreateGroup = async (data: GroupFormData) => {
+  const handleCreateGroup = async (data: TenantGroupFormData) => {
     try {
       const permissionIds = getPermissionIdsFromCodenames(data.permission_codenames);
       

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Board } from "@/api/generated/interfaces";
+import { Board, User } from "@/api/generated/interfaces";
 import { boardsList } from "@/api/generated/api";
+import { AuthService } from "@/services/auth";
 import OrderForm from "./OrderForm";
 
 interface OrderManagementProps {}
@@ -12,6 +13,8 @@ export default function OrderManagement({}: OrderManagementProps) {
   const [loading, setLoading] = useState(true);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const authService = AuthService.getInstance();
 
   useEffect(() => {
     fetchBoards();
@@ -20,15 +23,34 @@ export default function OrderManagement({}: OrderManagementProps) {
   const fetchBoards = async () => {
     try {
       setLoading(true);
-      const response = await boardsList();
       
-      // Filter boards that have order_users (where user can create orders)
-      // For now, we'll show all boards - this will be filtered once we implement user attachment
-      setBoards(response.results || []);
+      // Get current user and boards in parallel
+      const [userResponse, boardsResponse] = await Promise.all([
+        authService.getCurrentUser(),
+        boardsList()
+      ]);
+      
+      setCurrentUser(userResponse);
+      
+      // Backend now handles filtering based on user permissions and board attachments
+      // No need for client-side filtering - trust the API response
+      const availableBoards = boardsResponse.results || [];
+      
+      console.log('Available boards from API:', availableBoards.length);
+      console.log('Current user:', userResponse.email);
+      console.log('Boards:', availableBoards.map(b => ({
+        id: b.id,
+        name: b.name,
+        order_users_count: b.order_users?.length || 0
+      })));
+      
+      setBoards(availableBoards);
       
       // Auto-select first board if available
-      if (response.results && response.results.length > 0) {
-        setSelectedBoard(response.results[0]);
+      if (availableBoards.length > 0) {
+        setSelectedBoard(availableBoards[0]);
+      } else {
+        setSelectedBoard(null);
       }
     } catch (error) {
       console.error("Failed to fetch boards:", error);
@@ -68,7 +90,10 @@ export default function OrderManagement({}: OrderManagementProps) {
         <div style={{ fontSize: "48px", marginBottom: "16px", opacity: 0.6 }}>📋</div>
         <h2 style={{ color: "#343a40", marginBottom: "8px" }}>No Boards Available</h2>
         <p style={{ color: "#6c757d", marginBottom: "0" }}>
-          You need access to at least one board to create orders.
+          {currentUser ? 
+            "You don't have access to any boards for order creation. Contact your administrator to assign you to boards with order permissions." :
+            "You need access to at least one board to create orders."
+          }
         </p>
       </div>
     );

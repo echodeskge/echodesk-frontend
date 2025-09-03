@@ -11,7 +11,7 @@ import {
 import TicketManagement from "./TicketManagement";
 import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
-import GroupManagement from "./GroupManagement";
+import TenantGroupManagement from "./TenantGroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
 import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
 import UserTimeTracking from "./UserTimeTracking";
@@ -669,7 +669,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
           {currentView === "users" && <UserManagement />}
 
-          {currentView === "groups" && <GroupManagement />}
+          {currentView === "groups" && <TenantGroupManagement />}
 
 
           {currentView === "time-tracking" && (

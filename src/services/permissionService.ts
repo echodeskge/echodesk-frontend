@@ -84,11 +84,8 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     label: 'Orders',
     description: 'Access to order management and creation functionality',
     permissions: [
-      // Order permissions (currently implemented as tickets with is_order=True)
-      'tickets.add_order',
-      'tickets.view_order',
-      'tickets.change_order',
-      'tickets.delete_order'
+      // Order permissions use the dedicated access_orders group permission
+      'can_access_orders'
     ]
   },
   {
@@ -382,10 +379,7 @@ export class PermissionService {
         'auth.delete_permission',
       ],
       'can_access_orders': [
-        'tickets.add_order',
-        'tickets.view_order',
-        'tickets.change_order',
-        'tickets.delete_order',
+        'can_access_orders',
       ]
     };
 
@@ -650,6 +644,13 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
     icon: "🎫",
     permission: "can_access_tickets",
     description: "View and manage tickets",
+  },
+  {
+    id: "orders",
+    label: "Orders",
+    icon: "📦",
+    permission: "can_access_orders",
+    description: "Create and manage orders",
   },
   {
     id: "calls",

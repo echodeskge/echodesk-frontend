@@ -371,6 +371,13 @@ export interface PaginatedTagList {
   results: Tag[];
 }
 
+export interface PaginatedTenantGroupList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TenantGroup[];
+}
+
 export interface PaginatedTenantList {
   count: number;
   next?: string;
@@ -589,6 +596,35 @@ export interface PatchedTenant {
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   created_on?: string;
+}
+
+export interface PatchedTenantGroup {
+  id?: number;
+  name?: string;
+  description?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  member_count?: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
+  can_manage_settings?: boolean;
+  can_create_tickets?: boolean;
+  can_edit_own_tickets?: boolean;
+  can_edit_all_tickets?: boolean;
+  can_delete_tickets?: boolean;
+  can_assign_tickets?: boolean;
+  can_view_reports?: boolean;
+  can_export_data?: boolean;
+  can_manage_tags?: boolean;
+  can_manage_columns?: boolean;
+  can_view_boards?: boolean;
+  can_create_boards?: boolean;
+  can_edit_boards?: boolean;
+  can_delete_boards?: boolean;
+  can_access_orders?: boolean;
 }
 
 export interface PatchedTicket {
@@ -823,6 +859,59 @@ export interface TenantDashboardData {
   tenant_info: string;
   user_info: string;
   statistics: string;
+}
+
+export interface TenantGroup {
+  id: number;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  member_count: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
+  can_manage_settings?: boolean;
+  can_create_tickets?: boolean;
+  can_edit_own_tickets?: boolean;
+  can_edit_all_tickets?: boolean;
+  can_delete_tickets?: boolean;
+  can_assign_tickets?: boolean;
+  can_view_reports?: boolean;
+  can_export_data?: boolean;
+  can_manage_tags?: boolean;
+  can_manage_columns?: boolean;
+  can_view_boards?: boolean;
+  can_create_boards?: boolean;
+  can_edit_boards?: boolean;
+  can_delete_boards?: boolean;
+  can_access_orders?: boolean;
+}
+
+export interface TenantGroupCreate {
+  name: string;
+  description?: string;
+  can_view_all_tickets?: boolean;
+  can_manage_users?: boolean;
+  can_make_calls?: boolean;
+  can_manage_groups?: boolean;
+  can_manage_settings?: boolean;
+  can_create_tickets?: boolean;
+  can_edit_own_tickets?: boolean;
+  can_edit_all_tickets?: boolean;
+  can_delete_tickets?: boolean;
+  can_assign_tickets?: boolean;
+  can_view_reports?: boolean;
+  can_export_data?: boolean;
+  can_manage_tags?: boolean;
+  can_manage_columns?: boolean;
+  can_view_boards?: boolean;
+  can_create_boards?: boolean;
+  can_edit_boards?: boolean;
+  can_delete_boards?: boolean;
+  can_access_orders?: boolean;
 }
 
 export interface TenantLogin {

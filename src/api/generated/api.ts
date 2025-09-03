@@ -68,6 +68,10 @@ import type {
   PaginatedTagList,
   Tag,
   PatchedTag,
+  PaginatedTenantGroupList,
+  TenantGroupCreate,
+  TenantGroup,
+  PatchedTenantGroup,
   PaginatedTenantList,
   TenantCreate,
   PatchedTenant,
@@ -181,36 +185,36 @@ export async function boardsCreate(data: Board): Promise<Board> {
   return response.data;
 }
 
-export async function boardsRetrieve(id: number): Promise<Board> {
+export async function boardsRetrieve(id: string): Promise<Board> {
   const response = await axios.get(`/api/boards/${id}/`);
   return response.data;
 }
 
-export async function boardsUpdate(id: number, data: Board): Promise<Board> {
+export async function boardsUpdate(id: string, data: Board): Promise<Board> {
   const response = await axios.put(`/api/boards/${id}/`, data);
   return response.data;
 }
 
 export async function boardsPartialUpdate(
-  id: number,
+  id: string,
   data: PatchedBoard,
 ): Promise<Board> {
   const response = await axios.patch(`/api/boards/${id}/`, data);
   return response.data;
 }
 
-export async function boardsDestroy(id: number): Promise<any> {
+export async function boardsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/boards/${id}/`);
   return response.data;
 }
 
-export async function boardsKanbanBoardRetrieve(id: number): Promise<Board> {
+export async function boardsKanbanBoardRetrieve(id: string): Promise<Board> {
   const response = await axios.get(`/api/boards/${id}/kanban_board/`);
   return response.data;
 }
 
 export async function boardsSetDefaultCreate(
-  id: number,
+  id: string,
   data: Board,
 ): Promise<Board> {
   const response = await axios.post(`/api/boards/${id}/set_default/`, data);
@@ -1292,6 +1296,57 @@ export async function tagsPartialUpdate(
 
 export async function tagsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tags/${id}/`);
+  return response.data;
+}
+
+export async function tenantGroupsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedTenantGroupList> {
+  const response = await axios.get(
+    `/api/tenant-groups/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function tenantGroupsCreate(
+  data: TenantGroupCreate,
+): Promise<TenantGroupCreate> {
+  const response = await axios.post(`/api/tenant-groups/`, data);
+  return response.data;
+}
+
+export async function tenantGroupsRetrieve(id: number): Promise<TenantGroup> {
+  const response = await axios.get(`/api/tenant-groups/${id}/`);
+  return response.data;
+}
+
+export async function tenantGroupsUpdate(
+  id: number,
+  data: TenantGroup,
+): Promise<TenantGroup> {
+  const response = await axios.put(`/api/tenant-groups/${id}/`, data);
+  return response.data;
+}
+
+export async function tenantGroupsPartialUpdate(
+  id: number,
+  data: PatchedTenantGroup,
+): Promise<TenantGroup> {
+  const response = await axios.patch(`/api/tenant-groups/${id}/`, data);
+  return response.data;
+}
+
+export async function tenantGroupsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/tenant-groups/${id}/`);
   return response.data;
 }
 
