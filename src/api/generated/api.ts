@@ -1350,6 +1350,35 @@ export async function tenantGroupsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
+export async function tenantGroupsAddUsersCreate(
+  id: number,
+  data: TenantGroup,
+): Promise<TenantGroup> {
+  const response = await axios.post(
+    `/api/tenant-groups/${id}/add_users/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function tenantGroupsMembersRetrieve(
+  id: number,
+): Promise<TenantGroup> {
+  const response = await axios.get(`/api/tenant-groups/${id}/members/`);
+  return response.data;
+}
+
+export async function tenantGroupsRemoveUsersCreate(
+  id: number,
+  data: TenantGroup,
+): Promise<TenantGroup> {
+  const response = await axios.post(
+    `/api/tenant-groups/${id}/remove_users/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function tenantConfigRetrieve(): Promise<any> {
   const response = await axios.get(`/api/tenant/config/`);
   return response.data;

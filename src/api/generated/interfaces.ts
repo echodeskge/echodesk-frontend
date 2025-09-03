@@ -1084,6 +1084,8 @@ export interface User {
   all_permissions: string;
   groups: Group[];
   group_ids?: number[];
+  tenant_groups: TenantGroup[];
+  tenant_group_ids?: number[];
   user_permission_ids?: number[];
 }
 

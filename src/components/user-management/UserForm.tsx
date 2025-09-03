@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserCreate, UserUpdate, User, Group, PaginatedGroupList } from "@/api/generated/interfaces";
-import { groupsList } from "@/api/generated/api";
+import { UserCreate, UserUpdate, User, Group, PaginatedGroupList, TenantGroup, PaginatedTenantGroupList } from "@/api/generated/interfaces";
+import { groupsList, tenantGroupsList, usersRetrieve } from "@/api/generated/api";
 import "./UserForm.css";
 
 interface UserFormProps {
@@ -21,7 +21,10 @@ export default function UserForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [tenantGroups, setTenantGroups] = useState<TenantGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+  const [fullUserData, setFullUserData] = useState<User | null>(null);
 
   const [formData, setFormData] = useState({
     email: user?.email || "",
@@ -31,17 +34,72 @@ export default function UserForm({
     password_confirm: "",
     is_active: user?.is_active ?? true,
     group_ids: user?.group_ids || [],
+    tenant_group_ids: user?.tenant_group_ids || [],
     phone_number: user?.phone_number || "",
     job_title: user?.job_title || "",
     status: user?.is_active ? "active" : "inactive",
   });
 
+  // Fetch full user details when in edit mode
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (mode === 'edit' && user?.id) {
+        setLoadingUserDetails(true);
+        try {
+          const fullUser = await usersRetrieve(user.id);
+          console.log('Full user data fetched:', fullUser);
+          console.log('Full user tenant_group_ids:', fullUser.tenant_group_ids);
+          console.log('Full user tenant_groups:', fullUser.tenant_groups);
+          setFullUserData(fullUser);
+        } catch (error) {
+          console.error('Failed to fetch full user details:', error);
+          // Fall back to the user prop data
+          setFullUserData(user);
+        } finally {
+          setLoadingUserDetails(false);
+        }
+      } else {
+        setFullUserData(user || null);
+      }
+    };
+
+    fetchUserDetails();
+  }, [user, mode]);
+
+  // Update form data when user prop changes (important for edit mode)
+  useEffect(() => {
+    const userData = fullUserData || user;
+    if (userData) {
+      console.log('Updating form with user data:', userData);
+      console.log('User tenant_group_ids:', userData.tenant_group_ids);
+      console.log('User tenant_groups:', userData.tenant_groups);
+      
+      setFormData(prev => ({
+        ...prev,
+        email: userData.email || "",
+        first_name: userData.first_name || "",
+        last_name: userData.last_name || "",
+        is_active: userData.is_active ?? true,
+        group_ids: userData.group_ids || [],
+        tenant_group_ids: userData.tenant_group_ids || (userData.tenant_groups ? userData.tenant_groups.map(g => g.id) : []),
+        phone_number: userData.phone_number || "",
+        job_title: userData.job_title || "",
+        status: userData.is_active ? "active" : "inactive",
+      }));
+    }
+  }, [fullUserData, user]);
+
   // Load groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const response: PaginatedGroupList = await groupsList();
-        setGroups(response.results || []);
+        // Fetch both Django Groups and TenantGroups
+        const [groupsResponse, tenantGroupsResponse] = await Promise.all([
+          groupsList(),
+          tenantGroupsList()
+        ]);
+        setGroups(groupsResponse.results || []);
+        setTenantGroups(tenantGroupsResponse.results || []);
       } catch (error) {
         console.error('Failed to load groups:', error);
       } finally {
@@ -111,6 +169,7 @@ export default function UserForm({
           password: formData.password,
           password_confirm: formData.password_confirm,
           group_ids: formData.group_ids.length > 0 ? formData.group_ids : undefined,
+          tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
           job_title: formData.job_title || undefined,
         };
@@ -121,6 +180,7 @@ export default function UserForm({
           last_name: formData.last_name,
           status: formData.status as any,
           group_ids: formData.group_ids.length > 0 ? formData.group_ids : undefined,
+          tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
           job_title: formData.job_title || undefined,
           is_active: formData.is_active,
@@ -201,22 +261,71 @@ export default function UserForm({
 
             <div className="form-section">
               <h3>Group Assignment</h3>
+              
+              {/* TenantGroups - Primary group selection */}
               <div className="form-group">
-                <label htmlFor="group">Group</label>
+                <label htmlFor="tenant-groups">Tenant Groups</label>
+                <div className="tenant-groups-selection">
+                  {(loadingGroups || loadingUserDetails) ? (
+                    <div className="loading-message">
+                      {loadingUserDetails ? 'Loading user details...' : 'Loading groups...'}
+                    </div>
+                  ) : (
+                    <div className="groups-grid">
+                      {tenantGroups.map((group) => {
+                        const isChecked = formData.tenant_group_ids.includes(group.id);
+                        console.log(`Group ${group.name} (ID: ${group.id}): checked=${isChecked}, formData.tenant_group_ids:`, formData.tenant_group_ids);
+                        
+                        return (
+                          <label key={group.id} className="group-checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                console.log(`Checkbox change for ${group.name}: ${e.target.checked}`);
+                                const currentGroups = [...formData.tenant_group_ids];
+                                if (e.target.checked) {
+                                  currentGroups.push(group.id);
+                                } else {
+                                  const index = currentGroups.indexOf(group.id);
+                                  if (index > -1) {
+                                    currentGroups.splice(index, 1);
+                                  }
+                                }
+                                console.log('New tenant_group_ids:', currentGroups);
+                                handleChange("tenant_group_ids", currentGroups);
+                              }}
+                            />
+                            <div className="group-info">
+                              <span className="group-name">{group.name}</span>
+                              <span className="group-description">{group.description}</span>
+                              <span className="group-member-count">{group.member_count} members</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Legacy Django Groups - Keep for backward compatibility */}
+              <div className="form-group">
+                <label htmlFor="group">Legacy Django Group (Optional)</label>
                 <select
                   id="group"
                   value={formData.group_ids.length > 0 ? formData.group_ids[0] : ""}
                   onChange={(e) => handleChange("group_ids", e.target.value ? [parseInt(e.target.value)] : [])}
                   disabled={loadingGroups}
                 >
-                  <option value="">Select Group</option>
+                  <option value="">Select Django Group</option>
                   {groups.map((group) => (
                     <option key={group.id} value={group.id}>
                       {group.name}
                     </option>
                   ))}
                 </select>
-                {loadingGroups && <small>Loading groups...</small>}
+                <small className="help-text">Legacy Django groups - use TenantGroups above for new permissions</small>
               </div>
             </div>
 
@@ -496,6 +605,84 @@ export default function UserForm({
         .checkbox-label span {
           font-size: 14px;
           color: #374151;
+        }
+
+        .tenant-groups-selection {
+          margin-top: 8px;
+        }
+
+        .loading-message {
+          color: #6b7280;
+          font-style: italic;
+          padding: 12px;
+          text-align: center;
+        }
+
+        .groups-grid {
+          display: grid;
+          gap: 12px;
+          max-height: 300px;
+          overflow-y: auto;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          padding: 12px;
+          background-color: #f9fafb;
+        }
+
+        .group-checkbox-label {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 12px;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          background-color: white;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .group-checkbox-label:hover {
+          background-color: #f3f4f6;
+          border-color: #3b82f6;
+          transform: translateY(-1px);
+        }
+
+        .group-checkbox-label input[type="checkbox"] {
+          margin: 0;
+          margin-top: 2px;
+          flex-shrink: 0;
+        }
+
+        .group-info {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          flex: 1;
+        }
+
+        .group-name {
+          font-weight: 600;
+          color: #374151;
+          font-size: 14px;
+        }
+
+        .group-description {
+          font-size: 12px;
+          color: #6b7280;
+          line-height: 1.4;
+        }
+
+        .group-member-count {
+          font-size: 11px;
+          color: #9ca3af;
+          font-weight: 500;
+        }
+
+        .help-text {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 4px;
+          font-style: italic;
         }
 
         .form-actions {
