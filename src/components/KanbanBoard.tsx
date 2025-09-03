@@ -6,6 +6,8 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { kanbanBoard, boardsList, boardsKanbanBoardRetrieve } from "@/api/generated/api";
 import axios from "@/api/axios";
 import BoardSwitcher from "@/components/BoardSwitcher";
+import BoardStatusEditor from "@/components/BoardStatusEditor";
+import BoardUserManager from "@/components/BoardUserManager";
 import type {
   Ticket,
   TicketList,
@@ -18,6 +20,11 @@ interface KanbanBoardProps {
   onTicketClick?: (ticketId: number) => void;
   onCreateTicket?: () => void;
   onCreateBoard?: () => void;
+}
+
+interface KanbanBoardContentProps extends KanbanBoardProps {
+  onEditBoardStatuses?: (boardId: number) => void;
+  onManageBoardUsers?: (boardId: number) => void;
 }
 
 type TicketStatus = string;
@@ -448,13 +455,42 @@ function KanbanBoardContent({
   onTicketClick,
   onCreateTicket,
   onCreateBoard,
-}: KanbanBoardProps) {
+  onEditBoardStatuses,
+  onManageBoardUsers,
+}: KanbanBoardContentProps) {
   const [boardData, setBoardData] = useState<KanbanBoardType | null>(null);
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMoving, setIsMoving] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  // Calculate column dimensions based on available space
+  const calculateColumnDimensions = (numColumns: number) => {
+    const isMobile = windowWidth < 768;
+    // On mobile, sidebar is fixed and doesn't take space; on desktop it does
+    const sidebarWidth = isMobile ? 0 : 260;
+    const containerPadding = 40; // 20px padding on each side of main content
+    const availableWidth = windowWidth - sidebarWidth - containerPadding;
+    
+    // Account for gaps between columns (16px gap)
+    const gapWidth = Math.max(0, (numColumns - 1) * 16);
+    const totalAvailableWidth = availableWidth - gapWidth;
+    
+    // Calculate column width with 150px minimum
+    const minColumnWidth = 150;
+    const idealColumnWidth = Math.floor(totalAvailableWidth / numColumns);
+    
+    const needsHorizontalScroll = idealColumnWidth < minColumnWidth;
+    const columnWidth = needsHorizontalScroll ? minColumnWidth : idealColumnWidth;
+    
+    return {
+      columnWidth,
+      needsHorizontalScroll,
+      availableWidth,
+      totalAvailableWidth
+    };
+  };
 
   useEffect(() => {
     initializeBoard();
@@ -505,7 +541,7 @@ function KanbanBoardContent({
       setError("");
 
       // Fetch kanban board data for specific board
-      const response = await boardsKanbanBoardRetrieve(boardId.toString());
+      const response = await boardsKanbanBoardRetrieve(boardId);
       setBoardData(response as any);
     } catch (err: unknown) {
       console.error("Failed to fetch kanban board:", err);
@@ -699,6 +735,8 @@ function KanbanBoardContent({
             selectedBoardId={selectedBoardId}
             onBoardChange={setSelectedBoardId}
             onCreateBoard={onCreateBoard}
+            onEditBoardStatuses={onEditBoardStatuses}
+            onManageBoardUsers={onManageBoardUsers}
           />
         </div>
         {onCreateTicket && (
@@ -774,9 +812,15 @@ function KanbanBoardContent({
         style={{
           display: "flex",
           gap: "16px",
-          overflowX: boardData && boardData.columns && boardData.columns.length > 4 ? "auto" : "visible",
+          overflowX: (() => {
+            // Enable horizontal scroll when columns don't fit
+            if (!boardData?.columns) return "visible";
+            const { needsHorizontalScroll } = calculateColumnDimensions(boardData.columns.length);
+            return needsHorizontalScroll ? "auto" : "visible";
+          })(),
           paddingBottom: "20px",
           minHeight: "calc(100vh - 200px)",
+          scrollbarWidth: "thin", // For Firefox
         }}
       >
         {boardData &&
@@ -785,23 +829,10 @@ function KanbanBoardContent({
             const ticketsByColumn = boardData.tickets_by_column as any;
             const columnTickets = ticketsByColumn?.[column.id] || [];
             
-            // Calculate dynamic column width based on screen size and number of columns
+            // Calculate column width using the shared function
             const numColumns = boardData.columns?.length || 1;
-            const availableWidth = windowWidth - 80; // Account for padding and gaps
-            const gapWidth = (numColumns - 1) * 16; // 16px gap between columns
-            const totalAvailableWidth = availableWidth - gapWidth;
-            
-            let columnWidth;
-            if (numColumns <= 4 && windowWidth >= 768) {
-              // For 4 or fewer columns on desktop/tablet, fit all columns
-              columnWidth = Math.max(200, Math.floor(totalAvailableWidth / numColumns)) + 'px';
-            } else if (windowWidth < 768) {
-              // On mobile, use smaller fixed width with horizontal scroll
-              columnWidth = '280px';
-            } else {
-              // For many columns on desktop, use fixed width with scroll
-              columnWidth = '250px';
-            }
+            const { columnWidth: calculatedWidth } = calculateColumnDimensions(numColumns);
+            const columnWidth = calculatedWidth + 'px';
 
             console.log(
               "Rendering column:",
@@ -834,6 +865,29 @@ function KanbanBoardContent({
           }
         }
         
+        .kanban-container {
+          /* Smooth scrolling */
+          scroll-behavior: smooth;
+        }
+        
+        .kanban-container::-webkit-scrollbar {
+          height: 8px;
+        }
+        
+        .kanban-container::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        
+        .kanban-container::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 4px;
+        }
+        
+        .kanban-container::-webkit-scrollbar-thumb:hover {
+          background: #a1a1a1;
+        }
+        
         @media (max-width: 600px) {
           .create-ticket-text {
             display: none !important;
@@ -856,13 +910,83 @@ export default function KanbanBoard({
   onCreateTicket,
   onCreateBoard,
 }: KanbanBoardProps) {
+  const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
+  const [managingBoardUsersId, setManagingBoardUsersId] = useState<number | null>(null);
+
+  const handleEditBoardStatuses = (boardId: number) => {
+    setEditingBoardId(boardId);
+  };
+
+  const handleManageBoardUsers = (boardId: number) => {
+    setManagingBoardUsersId(boardId);
+  };
+
+  const handleCloseEditor = () => {
+    setEditingBoardId(null);
+  };
+
+  const handleCloseUserManager = () => {
+    setManagingBoardUsersId(null);
+  };
+
   return (
-    <DndProvider backend={HTML5Backend}>
-      <KanbanBoardContent
-        onTicketClick={onTicketClick}
-        onCreateTicket={onCreateTicket}
-        onCreateBoard={onCreateBoard}
-      />
-    </DndProvider>
+    <>
+      <DndProvider backend={HTML5Backend}>
+        <KanbanBoardContent
+          onTicketClick={onTicketClick}
+          onCreateTicket={onCreateTicket}
+          onCreateBoard={onCreateBoard}
+          onEditBoardStatuses={handleEditBoardStatuses}
+          onManageBoardUsers={handleManageBoardUsers}
+        />
+      </DndProvider>
+      
+      {editingBoardId && (
+        <BoardStatusEditor
+          boardId={editingBoardId}
+          onClose={handleCloseEditor}
+        />
+      )}
+
+      {managingBoardUsersId && (
+        <>
+          {/* Backdrop */}
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(0, 0, 0, 0.5)",
+              zIndex: 999,
+            }}
+            onClick={handleCloseUserManager}
+          />
+          
+          {/* Modal */}
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "white",
+              borderRadius: "12px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+              zIndex: 1000,
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              overflow: "auto",
+            }}
+          >
+            <BoardUserManager
+              boardId={managingBoardUsersId}
+              onClose={handleCloseUserManager}
+            />
+          </div>
+        </>
+      )}
+    </>
   );
 }

@@ -8,12 +8,16 @@ interface BoardSwitcherProps {
   selectedBoardId: number | null;
   onBoardChange: (boardId: number) => void;
   onCreateBoard?: () => void;
+  onEditBoardStatuses?: (boardId: number) => void;
+  onManageBoardUsers?: (boardId: number) => void;
 }
 
 export default function BoardSwitcher({
   selectedBoardId,
   onBoardChange,
   onCreateBoard,
+  onEditBoardStatuses,
+  onManageBoardUsers,
 }: BoardSwitcherProps) {
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,64 +118,133 @@ export default function BoardSwitcher({
             {boards.map((board) => (
               <div
                 key={board.id}
-                onClick={() => {
-                  onBoardChange(board.id);
-                  setShowDropdown(false);
-                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "8px",
                   padding: "10px 12px",
-                  cursor: "pointer",
-                  background: selectedBoardId === board.id ? "#e7f3ff" : "transparent",
                   borderBottom: "1px solid #f1f3f4",
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedBoardId !== board.id) {
-                    (e.target as HTMLElement).style.background = "#f8f9fa";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedBoardId !== board.id) {
-                    (e.target as HTMLElement).style.background = "transparent";
-                  }
                 }}
               >
                 <div
-                  style={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    background: board.is_default ? "#007bff" : "#28a745",
+                  onClick={() => {
+                    onBoardChange(board.id);
+                    setShowDropdown(false);
                   }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: "500", fontSize: "14px" }}>
-                    {board.name}
-                  </div>
-                  {board.description && (
-                    <div
-                      style={{
-                        fontSize: "12px",
-                        color: "#6c757d",
-                        marginTop: "2px",
-                      }}
-                    >
-                      {board.description}
-                    </div>
-                  )}
-                </div>
-                <div
                   style={{
-                    fontSize: "12px",
-                    color: "#6c757d",
-                    background: "#f8f9fa",
-                    padding: "2px 6px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    flex: 1,
+                    cursor: "pointer",
+                    background: selectedBoardId === board.id ? "#e7f3ff" : "transparent",
+                    padding: "4px",
                     borderRadius: "4px",
                   }}
+                  onMouseEnter={(e) => {
+                    if (selectedBoardId !== board.id) {
+                      (e.target as HTMLElement).style.background = "#f8f9fa";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedBoardId !== board.id) {
+                      (e.target as HTMLElement).style.background = "transparent";
+                    }
+                  }}
                 >
-                  {board.columns_count} columns
+                  <div
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: board.is_default ? "#007bff" : "#28a745",
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: "500", fontSize: "14px" }}>
+                      {board.name}
+                    </div>
+                    {board.description && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          color: "#6c757d",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {board.description}
+                      </div>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      color: "#6c757d",
+                      background: "#f8f9fa",
+                      padding: "2px 6px",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    {board.columns_count} columns
+                  </div>
+                </div>
+                
+                <div style={{ display: "flex", gap: "4px" }}>
+                  {onEditBoardStatuses && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditBoardStatuses(board.id);
+                        setShowDropdown(false);
+                      }}
+                      style={{
+                        background: "#007bff",
+                        color: "white",
+                        border: "none",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        fontWeight: "500",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLElement).style.background = "#0056b3";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLElement).style.background = "#007bff";
+                      }}
+                    >
+                      Edit Statuses
+                    </button>
+                  )}
+                  
+                  {onManageBoardUsers && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onManageBoardUsers(board.id);
+                        setShowDropdown(false);
+                      }}
+                      style={{
+                        background: "#28a745",
+                        color: "white",
+                        border: "none",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        cursor: "pointer",
+                        fontWeight: "500",
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.target as HTMLElement).style.background = "#218838";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.target as HTMLElement).style.background = "#28a745";
+                      }}
+                    >
+                      Manage Users
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

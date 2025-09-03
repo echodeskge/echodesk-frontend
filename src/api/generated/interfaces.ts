@@ -16,6 +16,8 @@ export interface Board {
   updated_at: string;
   created_by: string;
   columns_count: string;
+  order_users: UserMinimal[];
+  order_user_ids?: number[];
 }
 
 export interface CallEvent {
@@ -427,6 +429,8 @@ export interface PatchedBoard {
   updated_at?: string;
   created_by?: string;
   columns_count?: string;
+  order_users?: UserMinimal[];
+  order_user_ids?: number[];
 }
 
 export interface PatchedCallLog {
@@ -596,6 +600,7 @@ export interface PatchedTicket {
   status?: string;
   priority?: PriorityEnum;
   is_closed?: string;
+  is_order?: boolean;
   column?: TicketColumn;
   column_id?: number;
   position_in_column?: number;
@@ -636,6 +641,7 @@ export interface PatchedTicketColumnUpdate {
   is_default?: boolean;
   is_closed_status?: boolean;
   track_time?: boolean;
+  board?: number;
 }
 
 export interface PatchedTicketComment {
@@ -847,6 +853,7 @@ export interface Ticket {
   status: string;
   priority?: PriorityEnum;
   is_closed: string;
+  is_order?: boolean;
   column: TicketColumn;
   column_id?: number;
   position_in_column?: number;
@@ -888,7 +895,7 @@ export interface TicketColumn {
   is_default?: boolean;
   is_closed_status?: boolean;
   track_time?: boolean;
-  board?: number;
+  board: number;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -903,6 +910,7 @@ export interface TicketColumnCreate {
   is_default?: boolean;
   is_closed_status?: boolean;
   track_time?: boolean;
+  board: number;
 }
 
 export interface TicketColumnUpdate {
@@ -913,6 +921,7 @@ export interface TicketColumnUpdate {
   is_default?: boolean;
   is_closed_status?: boolean;
   track_time?: boolean;
+  board: number;
 }
 
 export interface TicketComment {

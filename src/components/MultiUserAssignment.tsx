@@ -9,9 +9,9 @@ export interface AssignmentData {
 }
 
 interface MultiUserAssignmentProps {
-  users: User[];
+  users?: User[];
   assignments?: TicketAssignment[];
-  selectedAssignments: AssignmentData[];
+  selectedAssignments?: AssignmentData[];
   onChange: (assignments: AssignmentData[]) => void;
   disabled?: boolean;
   placeholder?: string;
@@ -25,9 +25,9 @@ const roleOptions = [
 ];
 
 export default function MultiUserAssignment({
-  users,
+  users = [],
   assignments = [],
-  selectedAssignments,
+  selectedAssignments = [],
   onChange,
   disabled = false,
   placeholder = 'Select users to assign...'
@@ -48,17 +48,17 @@ export default function MultiUserAssignment({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = (users || []).filter(user => 
     !searchTerm || 
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const isUserSelected = (userId: number) => 
-    selectedAssignments.some(assignment => assignment.userId === userId);
+    (selectedAssignments || []).some(assignment => assignment.userId === userId);
 
   const getUserRole = (userId: number) => 
-    selectedAssignments.find(assignment => assignment.userId === userId)?.role || 'collaborator';
+    (selectedAssignments || []).find(assignment => assignment.userId === userId)?.role || 'collaborator';
 
   const handleUserToggle = (userId: number) => {
     if (disabled) return;
@@ -67,17 +67,17 @@ export default function MultiUserAssignment({
     
     if (isSelected) {
       // Remove user
-      onChange(selectedAssignments.filter(assignment => assignment.userId !== userId));
+      onChange((selectedAssignments || []).filter(assignment => assignment.userId !== userId));
     } else {
       // Add user with default role
-      onChange([...selectedAssignments, { userId, role: 'collaborator' }]);
+      onChange([...(selectedAssignments || []), { userId, role: 'collaborator' }]);
     }
   };
 
   const handleRoleChange = (userId: number, role: 'primary' | 'collaborator' | 'reviewer' | 'observer') => {
     if (disabled) return;
 
-    onChange(selectedAssignments.map(assignment => 
+    onChange((selectedAssignments || []).map(assignment => 
       assignment.userId === userId 
         ? { ...assignment, role }
         : assignment
@@ -86,21 +86,22 @@ export default function MultiUserAssignment({
 
   const removeAssignment = (userId: number) => {
     if (disabled) return;
-    onChange(selectedAssignments.filter(assignment => assignment.userId !== userId));
+    onChange((selectedAssignments || []).filter(assignment => assignment.userId !== userId));
   };
 
   const getSelectedUsersDisplay = () => {
-    if (selectedAssignments.length === 0) {
+    const assignments = selectedAssignments || [];
+    if (assignments.length === 0) {
       return <span style={{ color: '#6c757d' }}>{placeholder}</span>;
     }
 
-    if (selectedAssignments.length === 1) {
-      const userId = selectedAssignments[0].userId;
-      const user = users.find(u => u.id === userId);
+    if (assignments.length === 1) {
+      const userId = assignments[0].userId;
+      const user = (users || []).find(u => u.id === userId);
       return user ? `${user.first_name} ${user.last_name}` : 'Unknown User';
     }
 
-    return `${selectedAssignments.length} users selected`;
+    return `${assignments.length} users selected`;
   };
 
   const getUserDisplay = (user: User) => {
@@ -119,15 +120,15 @@ export default function MultiUserAssignment({
   return (
     <div style={{ position: 'relative' }} ref={dropdownRef}>
       {/* Selected Assignments Display */}
-      {selectedAssignments.length > 0 && (
+      {(selectedAssignments || []).length > 0 && (
         <div style={{ marginBottom: '12px' }}>
           <div style={{
             display: 'flex',
             flexWrap: 'wrap',
             gap: '8px'
           }}>
-            {selectedAssignments.map(assignment => {
-              const user = users.find(u => u.id === assignment.userId);
+            {(selectedAssignments || []).map(assignment => {
+              const user = (users || []).find(u => u.id === assignment.userId);
               if (!user) return null;
 
               return (

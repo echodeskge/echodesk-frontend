@@ -80,6 +80,18 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     ]
   },
   {
+    id: 'orders',
+    label: 'Orders',
+    description: 'Access to order management and creation functionality',
+    permissions: [
+      // Order permissions (currently implemented as tickets with is_order=True)
+      'tickets.add_order',
+      'tickets.view_order',
+      'tickets.change_order',
+      'tickets.delete_order'
+    ]
+  },
+  {
     id: 'user_management',
     label: 'User Management',
     description: 'Full access to user and group management including departments and permissions',
@@ -135,6 +147,7 @@ export class PermissionService {
     admin: [
       'can_access_tickets',
       'can_access_calls', 
+      'can_access_orders',
       'can_access_user_management',
       'can_manage_settings', // Admin-specific permission
       'can_view_boards',
@@ -145,6 +158,7 @@ export class PermissionService {
     manager: [
       'can_access_tickets',
       'can_access_calls',
+      'can_access_orders',
       'can_view_boards',
       'can_create_boards',
       'can_edit_boards'
@@ -155,6 +169,10 @@ export class PermissionService {
       'can_access_tickets', // Limited ticket access
       'can_access_calls',   // Limited call access
       'can_view_boards'     // Can view boards but not create/edit
+    ],
+    order_user: [
+      'can_access_orders',  // Can only access orders
+      'can_view_boards'     // Can view boards to select for orders
     ],
     viewer: [
       'can_view_boards'     // Can only view boards
@@ -362,6 +380,12 @@ export class PermissionService {
         'auth.view_permission',
         'auth.change_permission',
         'auth.delete_permission',
+      ],
+      'can_access_orders': [
+        'tickets.add_order',
+        'tickets.view_order',
+        'tickets.change_order',
+        'tickets.delete_order',
       ]
     };
 
@@ -512,7 +536,8 @@ export class PermissionService {
       const allPermissions: PermissionMap = {};
       const allPossiblePermissions = [
         'can_access_tickets',
-        'can_access_calls', 
+        'can_access_calls',
+        'can_access_orders',
         'can_access_user_management',
         'can_manage_settings',
         'can_view_boards',

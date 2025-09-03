@@ -4,11 +4,14 @@ import {
   columnsCreate,
   columnsUpdate,
   columnsDestroy,
+  boardsList,
+  boardsDefaultRetrieve,
 } from "../api/generated/api";
 import {
   TicketColumn,
   TicketColumnCreate,
   TicketColumnUpdate,
+  Board,
 } from "../api/generated/interfaces";
 
 interface StatusManagementProps {
@@ -19,6 +22,8 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
   onStatusChange,
 }) => {
   const [columns, setColumns] = useState<TicketColumn[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -38,12 +43,30 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
     track_time: false,
   });
 
+  const fetchBoards = async () => {
+    try {
+      const data = await boardsList();
+      setBoards(data.results || []);
+      
+      // Set default board as selected if no board is selected
+      if (!selectedBoard && data.results && data.results.length > 0) {
+        const defaultBoard = data.results.find(board => board.is_default) || data.results[0];
+        setSelectedBoard(defaultBoard);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load boards");
+    }
+  };
+
   const fetchColumns = async () => {
+    if (!selectedBoard) return;
+    
     setLoading(true);
     setError(null);
 
     try {
-      const data = await columnsList();
+      // Filter columns by the selected board
+      const data = await columnsList(selectedBoard.id);
       setColumns(data.results || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -53,8 +76,14 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
   };
 
   useEffect(() => {
-    fetchColumns();
+    fetchBoards();
   }, []);
+
+  useEffect(() => {
+    if (selectedBoard) {
+      fetchColumns();
+    }
+  }, [selectedBoard]);
 
   const resetForm = () => {
     setFormData({
@@ -113,11 +142,12 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           is_default: formData.is_default,
           is_closed_status: formData.is_closed_status,
           track_time: formData.track_time,
+          board: selectedBoard?.id!,
         };
         await columnsUpdate(editingColumn.id, updateData);
         setSuccess("Column updated successfully!");
       } else {
-        // Create new column
+        // Create new column - include board reference
         const createData: TicketColumnCreate = {
           name: formData.name,
           description: formData.description,
@@ -126,6 +156,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           is_default: formData.is_default,
           is_closed_status: formData.is_closed_status,
           track_time: formData.track_time,
+          board: selectedBoard?.id!,
         };
         await columnsCreate(createData);
         setSuccess("Column created successfully!");
@@ -207,9 +238,52 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
             fontSize: "14px",
             fontWeight: "500",
           }}
+          disabled={!selectedBoard}
         >
           + Create Status
         </button>
+      </div>
+
+      {/* Board Selection */}
+      <div style={{ marginBottom: "20px" }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: "8px",
+            fontSize: "14px",
+            fontWeight: "600",
+            color: "#333",
+          }}
+        >
+          Select Board:
+        </label>
+        <select
+          value={selectedBoard?.id || ""}
+          onChange={(e) => {
+            const board = boards.find(b => b.id === parseInt(e.target.value));
+            setSelectedBoard(board || null);
+          }}
+          style={{
+            width: "300px",
+            padding: "10px 12px",
+            border: "1px solid #ddd",
+            borderRadius: "6px",
+            fontSize: "14px",
+            backgroundColor: "white",
+          }}
+        >
+          <option value="">Select a board...</option>
+          {boards.map((board) => (
+            <option key={board.id} value={board.id}>
+              {board.name} {board.is_default ? "(Default)" : ""}
+            </option>
+          ))}
+        </select>
+        {selectedBoard && (
+          <p style={{ marginTop: "4px", fontSize: "12px", color: "#666" }}>
+            Managing statuses for "{selectedBoard.name}" board
+          </p>
+        )}
       </div>
 
       {/* Status Messages */}
@@ -359,6 +433,11 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                   }}
                 >
                   Position: {column.position} | Color: {column.color}
+                  {column.board && (
+                    <span style={{ marginLeft: "8px" }}>
+                      | Board ID: {column.board}
+                    </span>
+                  )}
                 </div>
               </div>
 

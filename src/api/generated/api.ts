@@ -181,36 +181,36 @@ export async function boardsCreate(data: Board): Promise<Board> {
   return response.data;
 }
 
-export async function boardsRetrieve(id: string): Promise<Board> {
+export async function boardsRetrieve(id: number): Promise<Board> {
   const response = await axios.get(`/api/boards/${id}/`);
   return response.data;
 }
 
-export async function boardsUpdate(id: string, data: Board): Promise<Board> {
+export async function boardsUpdate(id: number, data: Board): Promise<Board> {
   const response = await axios.put(`/api/boards/${id}/`, data);
   return response.data;
 }
 
 export async function boardsPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedBoard,
 ): Promise<Board> {
   const response = await axios.patch(`/api/boards/${id}/`, data);
   return response.data;
 }
 
-export async function boardsDestroy(id: string): Promise<any> {
+export async function boardsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/boards/${id}/`);
   return response.data;
 }
 
-export async function boardsKanbanBoardRetrieve(id: string): Promise<Board> {
+export async function boardsKanbanBoardRetrieve(id: number): Promise<Board> {
   const response = await axios.get(`/api/boards/${id}/kanban_board/`);
   return response.data;
 }
 
 export async function boardsSetDefaultCreate(
-  id: string,
+  id: number,
   data: Board,
 ): Promise<Board> {
   const response = await axios.post(`/api/boards/${id}/set_default/`, data);

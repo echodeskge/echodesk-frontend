@@ -14,8 +14,8 @@ import UserManagement from "./UserManagement";
 import GroupManagement from "./GroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
 import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
-import StatusManagement from "./StatusManagement";
 import UserTimeTracking from "./UserTimeTracking";
+import OrderManagement from "./OrderManagement";
 
 interface DashboardProps {
   user: AuthUser;
@@ -30,12 +30,12 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [currentView, setCurrentView] = useState<
     | "tickets"
     | "calls"
+    | "orders"
     | "users"
     | "groups"
     | "messages"
     | "social"
     | "settings"
-    | "statuses"
     | "time-tracking"
     | "empty"
   >("tickets");
@@ -126,24 +126,19 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       permission: "can_access_tickets", // Same permission as tickets since it's related
       description: "View your time tracking data",
     },
-    // Add Ticket Status Management for superusers only
-    ...((userProfile as any)?.is_superuser
-      ? [
-          {
-            id: "statuses",
-            label: "Ticket Statuses",
-            icon: "📋",
-            permission: null, // No additional permission check needed - superuser check is sufficient
-            description: "Manage ticket status columns and workflow",
-          },
-        ]
-      : []),
     {
       id: "calls",
       label: "Calls",
       icon: "📞",
       permission: "can_access_calls",
       description: "Handle phone calls",
+    },
+    {
+      id: "orders",
+      label: "Orders",
+      icon: "📝",
+      permission: "can_access_orders",
+      description: "Create and manage orders",
     },
     // Add Messages menu item only when Facebook is connected
     ...(facebookConnected
@@ -213,12 +208,12 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     viewId:
       | "tickets"
       | "calls"
+      | "orders"
       | "users"
       | "groups"
       | "messages"
       | "social"
       | "settings"
-      | "statuses"
       | "time-tracking"
   ) => {
     // If navigating to messages after connections changed, refresh the component
@@ -391,7 +386,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                     | "messages"
                     | "social"
                     | "settings"
-                    | "statuses"
                     | "time-tracking"
                 )
               }
@@ -671,22 +665,12 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
             />
           )}
 
+          {currentView === "orders" && <OrderManagement />}
+
           {currentView === "users" && <UserManagement />}
 
           {currentView === "groups" && <GroupManagement />}
 
-          {currentView === "statuses" && (
-            <div
-              style={{
-                background: "white",
-                borderRadius: "12px",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                padding: "20px",
-              }}
-            >
-              <StatusManagement />
-            </div>
-          )}
 
           {currentView === "time-tracking" && (
             <div
