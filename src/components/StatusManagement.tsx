@@ -35,6 +35,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
     position: 0,
     is_default: false,
     is_closed_status: false,
+    track_time: false,
   });
 
   const fetchColumns = async () => {
@@ -63,6 +64,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
       position: 0,
       is_default: false,
       is_closed_status: false,
+      track_time: false,
     });
     setEditingColumn(null);
   };
@@ -82,6 +84,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
       position: column.position || 0,
       is_default: column.is_default || false,
       is_closed_status: column.is_closed_status || false,
+      track_time: column.track_time || false,
     });
     setDialogOpen(true);
   };
@@ -109,6 +112,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           position: formData.position,
           is_default: formData.is_default,
           is_closed_status: formData.is_closed_status,
+          track_time: formData.track_time,
         };
         await columnsUpdate(editingColumn.id, updateData);
         setSuccess("Column updated successfully!");
@@ -121,6 +125,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           position: formData.position,
           is_default: formData.is_default,
           is_closed_status: formData.is_closed_status,
+          track_time: formData.track_time,
         };
         await columnsCreate(createData);
         setSuccess("Column created successfully!");
@@ -320,6 +325,20 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                       }}
                     >
                       CLOSED
+                    </span>
+                  )}
+                  {column.track_time && (
+                    <span
+                      style={{
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        fontSize: "10px",
+                        padding: "2px 6px",
+                        borderRadius: "12px",
+                        fontWeight: "600",
+                      }}
+                    >
+                      ⏱️ TIME TRACK
                     </span>
                   )}
                 </div>
@@ -601,6 +620,27 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     />
                     <span style={{ fontSize: "14px", color: "#333" }}>
                       This is a closed/completed status
+                    </span>
+                  </label>
+                </div>
+
+                <div>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.track_time}
+                      onChange={(e) => handleInputChange("track_time", e.target.checked)}
+                      style={{ cursor: "pointer" }}
+                    />
+                    <span style={{ fontSize: "14px", color: "#333" }}>
+                      Track time spent in this column
                     </span>
                   </label>
                 </div>

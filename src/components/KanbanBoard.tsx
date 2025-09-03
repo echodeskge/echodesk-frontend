@@ -1,10 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { DndProvider, useDrag, useDrop } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
-import { kanbanBoard, ticketsPartialUpdate } from '@/api/generated/api';
-import type { Ticket, TicketList, TicketColumn, KanbanBoard as KanbanBoardType } from '@/api/generated/interfaces';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
+import { kanbanBoard } from "@/api/generated/api";
+import axios from "@/api/axios";
+import type {
+  Ticket,
+  TicketList,
+  TicketColumn,
+  KanbanBoard as KanbanBoardType,
+} from "@/api/generated/interfaces";
 
 interface KanbanBoardProps {
   onTicketClick?: (ticketId: number) => void;
@@ -22,13 +28,17 @@ interface DragItem {
 
 // Helper functions
 const getPriorityColor = (priority?: any) => {
-  if (!priority) return '#6c757d';
+  if (!priority) return "#6c757d";
   const priorityStr = String(priority).toLowerCase();
   switch (priorityStr) {
-    case 'high': return '#dc3545';
-    case 'medium': return '#fd7e14';
-    case 'low': return '#28a745';
-    default: return '#6c757d';
+    case "high":
+      return "#dc3545";
+    case "medium":
+      return "#fd7e14";
+    case "low":
+      return "#28a745";
+    default:
+      return "#6c757d";
   }
 };
 
@@ -37,28 +47,34 @@ const formatDate = (dateString: string) => {
 };
 
 // Draggable Ticket Component
-function DraggableTicket({ 
-  ticket, 
-  index, 
+function DraggableTicket({
+  ticket,
+  index,
   column,
   onTicketClick,
-  onMoveTicket 
-}: { 
+  onMoveTicket,
+}: {
   ticket: TicketList;
   index: number;
   column: TicketColumn;
   onTicketClick?: (ticketId: number) => void;
-  onMoveTicket: (ticketId: number, sourceColumnId: number, destColumnId: number, sourceIndex: number, destIndex: number) => void;
+  onMoveTicket: (
+    ticketId: number,
+    sourceColumnId: number,
+    destColumnId: number,
+    sourceIndex: number,
+    destIndex: number
+  ) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  
+
   const [{ isDragging }, dragRef] = useDrag({
-    type: 'ticket',
+    type: "ticket",
     item: (): DragItem => ({
-      type: 'ticket',
+      type: "ticket",
       id: ticket.id,
       columnId: column.id,
-      index
+      index,
     }),
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
@@ -66,12 +82,17 @@ function DraggableTicket({
   });
 
   const [, dropRef] = useDrop({
-    accept: 'ticket',
+    accept: "ticket",
     hover: (item: DragItem, monitor) => {
-      if (!item || item.id === ticket.id || !ref.current || !monitor.isOver({ shallow: true })) {
+      if (
+        !item ||
+        item.id === ticket.id ||
+        !ref.current ||
+        !monitor.isOver({ shallow: true })
+      ) {
         return;
       }
-      
+
       const dragColumnId = item.columnId;
       const hoverColumnId = column.id;
       const dragIndex = item.index;
@@ -84,13 +105,14 @@ function DraggableTicket({
 
       // Get the hovered rectangle
       const hoverBoundingRect = ref.current.getBoundingClientRect();
-      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+      const hoverMiddleY =
+        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
       const clientOffset = monitor.getClientOffset();
-      
+
       if (!clientOffset) {
         return;
       }
-      
+
       const hoverClientY = clientOffset.y - hoverBoundingRect.top;
 
       // Only perform the move when the mouse has crossed half of the items height
@@ -105,7 +127,7 @@ function DraggableTicket({
 
       // Move the item
       onMoveTicket(item.id, dragColumnId, hoverColumnId, dragIndex, hoverIndex);
-      
+
       // Update the item for continued dragging
       item.index = hoverIndex;
     },
@@ -119,112 +141,142 @@ function DraggableTicket({
       ref={ref}
       onClick={() => onTicketClick?.(ticket.id)}
       style={{
-        background: isDragging ? '#f0f0f0' : '#fff',
-        border: isDragging 
-          ? `2px solid ${column.color || '#007bff'}` 
-          : `1px solid ${column.color || '#dee2e6'}40`,
-        borderRadius: '6px',
-        padding: '12px',
-        marginBottom: '8px',
-        cursor: isDragging ? 'grabbing' : 'grab',
-        boxShadow: isDragging 
-          ? `0 8px 25px ${column.color || '#007bff'}30` 
-          : `0 1px 3px ${column.color || '#000'}10`,
+        background: isDragging ? "#f0f0f0" : "#fff",
+        border: isDragging
+          ? `2px solid ${column.color || "#007bff"}`
+          : `1px solid ${column.color || "#dee2e6"}40`,
+        borderRadius: "6px",
+        padding: "clamp(8px, 2vw, 12px)",
+        marginBottom: "8px",
+        cursor: isDragging ? "grabbing" : "grab",
+        boxShadow: isDragging
+          ? `0 8px 25px ${column.color || "#007bff"}30`
+          : `0 1px 3px ${column.color || "#000"}10`,
         opacity: isDragging ? 0.5 : 1,
-        transition: 'all 0.2s ease',
+        transition: "all 0.2s ease",
       }}
     >
       {/* Ticket Priority Indicator */}
-      <div style={{
-        width: '100%',
-        height: '3px',
-        background: getPriorityColor(ticket.priority),
-        borderRadius: '2px',
-        marginBottom: '8px'
-      }}></div>
+      <div
+        style={{
+          width: "100%",
+          height: "3px",
+          background: getPriorityColor(ticket.priority),
+          borderRadius: "2px",
+          marginBottom: "8px",
+        }}
+      ></div>
 
       {/* Ticket Title */}
-      <h4 style={{
-        fontSize: '14px',
-        fontWeight: '600',
-        margin: '0 0 6px 0',
-        color: '#333',
-        lineHeight: '1.3'
-      }}>
+      <h4
+        style={{
+          fontSize: "14px",
+          fontWeight: "600",
+          margin: "0 0 6px 0",
+          color: "#333",
+          lineHeight: "1.3",
+        }}
+      >
         {ticket.title}
       </h4>
 
       {/* Ticket Meta */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: '11px',
-        color: '#6c757d',
-        marginBottom: '8px'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontSize: "11px",
+          color: "#6c757d",
+          marginBottom: "8px",
+        }}
+      >
         <span>#{ticket.id}</span>
         <span>{formatDate(ticket.created_at)}</span>
       </div>
 
       {/* Assigned User */}
       {ticket.assigned_to && (
-        <div style={{
-          marginBottom: '8px',
-          fontSize: '11px',
-          color: '#495057'
-        }}>
+        <div
+          style={{
+            marginBottom: "8px",
+            fontSize: "11px",
+            color: "#495057",
+          }}
+        >
           👤 {ticket.assigned_to.first_name} {ticket.assigned_to.last_name}
         </div>
       )}
 
       {/* Progress indicators */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        marginBottom: '8px',
-        fontSize: '10px',
-        color: '#6c757d'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          marginBottom: "8px",
+          fontSize: "10px",
+          color: "#6c757d",
+        }}
+      >
         {/* Comments count */}
         {ticket.comments_count && parseInt(ticket.comments_count) > 0 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px'
-          }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "2px",
+            }}
+          >
             💬 {ticket.comments_count}
+          </div>
+        )}
+
+        {/* Time tracking indicator */}
+        {column.track_time && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "2px",
+              color: "#007bff",
+            }}
+          >
+            ⏱️ Tracking
           </div>
         )}
       </div>
 
       {/* Tags */}
       {ticket.tags && ticket.tags.length > 0 && (
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '4px'
-        }}>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "4px",
+          }}
+        >
           {ticket.tags.slice(0, 3).map((tag: any) => (
             <span
               key={tag.id}
               style={{
-                background: '#e9ecef',
-                color: '#495057',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                fontSize: '10px'
+                background: "#e9ecef",
+                color: "#495057",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                fontSize: "10px",
               }}
             >
               {tag.name}
             </span>
           ))}
           {ticket.tags.length > 3 && (
-            <span style={{
-              color: '#6c757d',
-              fontSize: '10px'
-            }}>
+            <span
+              style={{
+                color: "#6c757d",
+                fontSize: "10px",
+              }}
+            >
               +{ticket.tags.length - 3}
             </span>
           )}
@@ -235,33 +287,47 @@ function DraggableTicket({
 }
 
 // Droppable Column Component
-function DroppableColumn({ 
-  column, 
-  tickets, 
-  onTicketClick, 
-  onMoveTicket 
-}: { 
+function DroppableColumn({
+  column,
+  tickets,
+  onTicketClick,
+  onMoveTicket,
+  columnWidth,
+}: {
   column: TicketColumn;
   tickets: TicketList[];
   onTicketClick?: (ticketId: number) => void;
-  onMoveTicket: (ticketId: number, sourceColumnId: number, destColumnId: number, sourceIndex: number, destIndex: number) => void;
+  onMoveTicket: (
+    ticketId: number,
+    sourceColumnId: number,
+    destColumnId: number,
+    sourceIndex: number,
+    destIndex: number
+  ) => void;
+  columnWidth: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  
+
   const [{ isOver }, dropRef] = useDrop({
-    accept: 'ticket',
+    accept: "ticket",
     drop: (item: DragItem, monitor) => {
       if (monitor.didDrop()) {
         return; // Ignore if already handled by a ticket
       }
-      
+
       const sourceColumnId = item.columnId;
       const destColumnId = column.id;
       const sourceIndex = item.index;
       const destIndex = tickets.length; // Add to end when dropping on column
-      
+
       if (sourceColumnId !== destColumnId) {
-        onMoveTicket(item.id, sourceColumnId, destColumnId, sourceIndex, destIndex);
+        onMoveTicket(
+          item.id,
+          sourceColumnId,
+          destColumnId,
+          sourceIndex,
+          destIndex
+        );
         // Update item for continued interactions
         item.columnId = destColumnId;
         item.index = destIndex;
@@ -278,70 +344,87 @@ function DroppableColumn({
   return (
     <div
       ref={ref}
+      className="kanban-column"
       style={{
-        minWidth: '250px',
-        maxWidth: '250px',
-        background: isOver 
-          ? `${column.color || '#6c757d'}15` 
-          : `${column.color || '#6c757d'}08`,
-        borderRadius: '8px',
-        padding: '16px',
-        border: isOver ? `2px dashed ${column.color || '#6c757d'}` : '2px dashed transparent',
-        transition: 'all 0.2s ease',
+        minWidth: columnWidth,
+        maxWidth: columnWidth,
+        width: "100%",
+        background: isOver
+          ? `${column.color || "#6c757d"}15`
+          : `${column.color || "#6c757d"}08`,
+        borderRadius: "8px",
+        padding: "12px",
+        border: isOver
+          ? `2px dashed ${column.color || "#6c757d"}`
+          : "2px dashed transparent",
+        transition: "all 0.2s ease",
+        flexShrink: 0,
       }}
     >
       {/* Column Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            width: '16px',
-            height: '16px',
-            borderRadius: '4px',
-            background: column.color || '#6c757d',
-            boxShadow: `0 2px 4px ${column.color || '#6c757d'}25`
-          }}></div>
-          <h3 style={{
-            fontSize: '15px',
-            fontWeight: '600',
-            margin: 0,
-            color: column.color || '#333'
-          }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "16px",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div
+            style={{
+              width: "16px",
+              height: "16px",
+              borderRadius: "4px",
+              background: column.color || "#6c757d",
+              boxShadow: `0 2px 4px ${column.color || "#6c757d"}25`,
+            }}
+          ></div>
+          <h3
+            style={{
+              fontSize: "15px",
+              fontWeight: "600",
+              margin: 0,
+              color: column.color || "#333",
+            }}
+          >
             {column.name}
           </h3>
         </div>
-        <span style={{
-          background: `${column.color || '#6c757d'}20`,
-          color: column.color || '#495057',
-          padding: '2px 8px',
-          borderRadius: '12px',
-          fontSize: '12px',
-          fontWeight: '500'
-        }}>
+        <span
+          style={{
+            background: `${column.color || "#6c757d"}20`,
+            color: column.color || "#495057",
+            padding: "2px 8px",
+            borderRadius: "12px",
+            fontSize: "12px",
+            fontWeight: "500",
+          }}
+        >
           {tickets.length}
         </span>
       </div>
 
       {/* Column Description */}
       {column.description && (
-        <p style={{
-          fontSize: '12px',
-          color: '#6c757d',
-          margin: '0 0 16px 0'
-        }}>
+        <p
+          style={{
+            fontSize: "12px",
+            color: "#6c757d",
+            margin: "0 0 16px 0",
+          }}
+        >
           {column.description}
         </p>
       )}
 
       {/* Tickets */}
-      <div style={{
-        minHeight: '200px',
-        padding: '8px'
-      }}>
+      <div
+        style={{
+          minHeight: "200px",
+          padding: "4px",
+        }}
+      >
         {tickets.map((ticket, index) => (
           <DraggableTicket
             key={ticket.id}
@@ -358,119 +441,149 @@ function DroppableColumn({
 }
 
 // Main Kanban Board Component
-function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps) {
+function KanbanBoardContent({
+  onTicketClick,
+  onCreateTicket,
+}: KanbanBoardProps) {
   const [boardData, setBoardData] = useState<KanbanBoardType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isMoving, setIsMoving] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
 
   useEffect(() => {
     fetchBoardData();
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const fetchBoardData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch kanban board data with dynamic columns and tickets
       const response = await kanbanBoard();
       setBoardData(response);
-      setError('');
+      setError("");
     } catch (err: unknown) {
-      console.error('Failed to fetch kanban board:', err);
-      setError('Failed to load kanban board');
+      console.error("Failed to fetch kanban board:", err);
+      setError("Failed to load kanban board");
     } finally {
       setLoading(false);
     }
   };
 
-  const moveTicket = useCallback(async (
-    ticketId: number,
-    sourceColumnId: number,
-    destColumnId: number,
-    sourceIndex: number,
-    destIndex: number
-  ) => {
-    console.log('Moving ticket:', { ticketId, sourceColumnId, destColumnId, sourceIndex, destIndex });
+  const moveTicket = useCallback(
+    async (
+      ticketId: number,
+      sourceColumnId: number,
+      destColumnId: number,
+      sourceIndex: number,
+      destIndex: number
+    ) => {
+      console.log("Moving ticket:", {
+        ticketId,
+        sourceColumnId,
+        destColumnId,
+        sourceIndex,
+        destIndex,
+      });
 
-    // Prevent moves during API calls
-    if (isMoving) {
-      console.log('Already moving, ignoring move');
-      return;
-    }
-
-    // Only make API call if moving between different columns
-    if (sourceColumnId !== destColumnId) {
-      setIsMoving(true);
-
-      try {
-        console.log('Starting API update...');
-        console.log('Moving ticket to column:', destColumnId);
-        
-        // Use the partial update endpoint to move the ticket
-        await ticketsPartialUpdate(ticketId, {
-          column_id: destColumnId,
-          position_in_column: destIndex
-        });
-        
-        console.log('Ticket move successful');
-        // Refresh the board data to get the updated state
-        await fetchBoardData();
-      } catch (err: unknown) {
-        console.error('Failed to move ticket:', err);
-        setError('Failed to move ticket. Please try again.');
-        
-        // Clear error after 3 seconds
-        setTimeout(() => setError(''), 3000);
-      } finally {
-        console.log('Setting isMoving to false');
-        setIsMoving(false);
+      // Prevent moves during API calls
+      if (isMoving) {
+        console.log("Already moving, ignoring move");
+        return;
       }
-    } else {
-      console.log('Same column, no API call needed - would need reorder endpoint');
-    }
-  }, [isMoving, fetchBoardData]);
+
+      // Only make API call if moving between different columns
+      if (sourceColumnId !== destColumnId) {
+        setIsMoving(true);
+
+        try {
+          console.log("Starting API update...");
+          console.log("Moving ticket to column:", destColumnId);
+
+          // Use the move_to_column endpoint to trigger time tracking
+          await axios.patch(`/api/tickets/${ticketId}/move_to_column/`, {
+            column_id: destColumnId,
+            position_in_column: destIndex,
+          });
+
+          console.log("Ticket move successful");
+          // Refresh the board data to get the updated state
+          await fetchBoardData();
+        } catch (err: unknown) {
+          console.error("Failed to move ticket:", err);
+          setError("Failed to move ticket. Please try again.");
+
+          // Clear error after 3 seconds
+          setTimeout(() => setError(""), 3000);
+        } finally {
+          console.log("Setting isMoving to false");
+          setIsMoving(false);
+        }
+      } else {
+        console.log(
+          "Same column, no API call needed - would need reorder endpoint"
+        );
+      }
+    },
+    [isMoving, fetchBoardData]
+  );
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '400px'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e9ecef',
-          borderTop: '4px solid #007bff',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "400px",
+        }}
+      >
+        <div
+          style={{
+            width: "40px",
+            height: "40px",
+            border: "4px solid #e9ecef",
+            borderTop: "4px solid #007bff",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        ></div>
       </div>
     );
   }
 
   if (error && loading) {
     return (
-      <div style={{
-        background: '#fee',
-        color: '#c33',
-        padding: '16px',
-        borderRadius: '8px',
-        textAlign: 'center'
-      }}>
+      <div
+        style={{
+          background: "#fee",
+          color: "#c33",
+          padding: "16px",
+          borderRadius: "8px",
+          textAlign: "center",
+        }}
+      >
         {error}
         <button
           onClick={fetchBoardData}
           style={{
-            marginLeft: '10px',
-            background: '#dc3545',
-            color: 'white',
-            border: 'none',
-            padding: '6px 12px',
-            borderRadius: '4px',
-            cursor: 'pointer'
+            marginLeft: "10px",
+            background: "#dc3545",
+            color: "white",
+            border: "none",
+            padding: "6px 12px",
+            borderRadius: "4px",
+            cursor: "pointer",
           }}
         >
           Retry
@@ -484,35 +597,37 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
   }
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: "clamp(12px, 3vw, 20px)" }}>
       {error && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          background: '#dc3545',
-          color: 'white',
-          padding: '12px 20px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(220,53,69,0.3)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          maxWidth: '300px'
-        }}>
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            background: "#dc3545",
+            color: "white",
+            padding: "12px 20px",
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(220,53,69,0.3)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            maxWidth: "300px",
+          }}
+        >
           <span>⚠️</span>
           <span>{error}</span>
           <button
-            onClick={() => setError('')}
+            onClick={() => setError("")}
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '16px',
-              padding: '0',
-              marginLeft: '8px'
+              background: "transparent",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              fontSize: "16px",
+              padding: "0",
+              marginLeft: "8px",
             }}
           >
             ×
@@ -521,107 +636,169 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
       )}
 
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px'
-      }}>
-        <h2 style={{
-          fontSize: '24px',
-          fontWeight: '600',
-          margin: 0,
-          color: '#333'
-        }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+          minHeight: "40px",
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "clamp(18px, 4vw, 24px)",
+            fontWeight: "600",
+            margin: 0,
+            color: "#333",
+            minWidth: "fit-content",
+          }}
+        >
           Kanban Board
         </h2>
         {onCreateTicket && (
           <button
             onClick={onCreateTicket}
             style={{
-              background: '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
+              background: "#007bff",
+              color: "white",
+              border: "none",
+              padding: "8px 16px",
+              borderRadius: "6px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
-            + Create Ticket
+            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
+            <span className="create-ticket-text" style={{ display: "inline" }}>Create Ticket</span>
           </button>
         )}
       </div>
 
       {/* Loading State */}
       {isMoving && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.1)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <div style={{
-              width: '20px',
-              height: '20px',
-              border: '2px solid #007bff',
-              borderTop: '2px solid transparent',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.1)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "20px",
+              borderRadius: "8px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <div
+              style={{
+                width: "20px",
+                height: "20px",
+                border: "2px solid #007bff",
+                borderTop: "2px solid transparent",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            ></div>
             Moving ticket...
           </div>
         </div>
       )}
 
       {/* Kanban Board */}
-      <div style={{
-        display: 'flex',
-        gap: '20px',
-        overflowX: 'auto',
-        paddingBottom: '20px'
-      }}>
-        {boardData && boardData.columns?.map((column) => {
-          // Get tickets for this column from tickets_by_column
-          const ticketsByColumn = boardData.tickets_by_column as any;
-          const columnTickets = ticketsByColumn?.[column.id] || [];
-          
-          console.log('Rendering column:', column.id, 'with tickets:', columnTickets.length);
-          return (
-            <DroppableColumn
-              key={column.id}
-              column={column}
-              tickets={columnTickets}
-              onTicketClick={onTicketClick}
-              onMoveTicket={moveTicket}
-            />
-          );
-        })}
+      <div
+        className="kanban-container"
+        style={{
+          display: "flex",
+          gap: "16px",
+          overflowX: boardData && boardData.columns && boardData.columns.length > 4 ? "auto" : "visible",
+          paddingBottom: "20px",
+          minHeight: "calc(100vh - 200px)",
+        }}
+      >
+        {boardData &&
+          boardData.columns?.map((column) => {
+            // Get tickets for this column from tickets_by_column
+            const ticketsByColumn = boardData.tickets_by_column as any;
+            const columnTickets = ticketsByColumn?.[column.id] || [];
+            
+            // Calculate dynamic column width based on screen size and number of columns
+            const numColumns = boardData.columns?.length || 1;
+            const availableWidth = windowWidth - 80; // Account for padding and gaps
+            const gapWidth = (numColumns - 1) * 16; // 16px gap between columns
+            const totalAvailableWidth = availableWidth - gapWidth;
+            
+            let columnWidth;
+            if (numColumns <= 4 && windowWidth >= 768) {
+              // For 4 or fewer columns on desktop/tablet, fit all columns
+              columnWidth = Math.max(200, Math.floor(totalAvailableWidth / numColumns)) + 'px';
+            } else if (windowWidth < 768) {
+              // On mobile, use smaller fixed width with horizontal scroll
+              columnWidth = '280px';
+            } else {
+              // For many columns on desktop, use fixed width with scroll
+              columnWidth = '250px';
+            }
+
+            console.log(
+              "Rendering column:",
+              column.id,
+              "with tickets:",
+              columnTickets.length,
+              "width:",
+              columnWidth
+            );
+            return (
+              <DroppableColumn
+                key={column.id}
+                column={column}
+                tickets={columnTickets}
+                onTicketClick={onTicketClick}
+                onMoveTicket={moveTicket}
+                columnWidth={columnWidth}
+              />
+            );
+          })}
       </div>
 
       <style jsx>{`
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        
+        @media (max-width: 600px) {
+          .create-ticket-text {
+            display: none !important;
+          }
+        }
+        
+        @media (max-width: 768px) {
+          .kanban-container {
+            overflow-x: auto !important;
+          }
         }
       `}</style>
     </div>
@@ -629,10 +806,16 @@ function KanbanBoardContent({ onTicketClick, onCreateTicket }: KanbanBoardProps)
 }
 
 // Wrapper component with DndProvider
-export default function KanbanBoard({ onTicketClick, onCreateTicket }: KanbanBoardProps) {
+export default function KanbanBoard({
+  onTicketClick,
+  onCreateTicket,
+}: KanbanBoardProps) {
   return (
     <DndProvider backend={HTML5Backend}>
-      <KanbanBoardContent onTicketClick={onTicketClick} onCreateTicket={onCreateTicket} />
+      <KanbanBoardContent
+        onTicketClick={onTicketClick}
+        onCreateTicket={onCreateTicket}
+      />
     </DndProvider>
   );
 }

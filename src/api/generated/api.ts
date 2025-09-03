@@ -74,6 +74,9 @@ import type {
   PaginatedTicketAssignmentList,
   TicketAssignment,
   PatchedTicketAssignment,
+  PaginatedTicketTimeLogList,
+  TicketTimeLog,
+  TimeTrackingSummary,
   PaginatedUserList,
   UserCreate,
   User,
@@ -1510,6 +1513,36 @@ export async function ticketsAssignedToMeRetrieve(): Promise<Ticket> {
 
 export async function ticketsMyTicketsRetrieve(): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/my_tickets/`);
+  return response.data;
+}
+
+export async function timeLogsList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedTicketTimeLogList> {
+  const response = await axios.get(
+    `/api/time-logs/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function timeLogsRetrieve(id: string): Promise<TicketTimeLog> {
+  const response = await axios.get(`/api/time-logs/${id}/`);
+  return response.data;
+}
+
+export async function timeLogsMyTimeSummaryRetrieve(
+  days?: number,
+): Promise<TimeTrackingSummary> {
+  const response = await axios.get(
+    `/api/time-logs/my_time_summary/${days ? '?days=' + encodeURIComponent(days) : ''}`,
+  );
   return response.data;
 }
 

@@ -103,7 +103,6 @@ export default function TicketManagement({
   return (
     <div
       style={{
-        minHeight: "100vh",
         background: "#f8f9fa",
       }}
     >

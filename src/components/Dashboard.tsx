@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { AuthUser, TenantInfo } from "@/types/auth";
 import { authService } from "@/services/auth";
 import { User } from "@/api/generated/interfaces";
-import { getSidebarMenuItems, hasPermission } from "@/services/permissionService";
+import {
+  getSidebarMenuItems,
+  hasPermission,
+} from "@/services/permissionService";
 import TicketManagement from "./TicketManagement";
 import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
@@ -12,6 +15,7 @@ import GroupManagement from "./GroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
 import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
 import StatusManagement from "./StatusManagement";
+import UserTimeTracking from "./UserTimeTracking";
 
 interface DashboardProps {
   user: AuthUser;
@@ -24,7 +28,16 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "statuses"
+    | "dashboard"
+    | "tickets"
+    | "calls"
+    | "users"
+    | "groups"
+    | "messages"
+    | "social"
+    | "settings"
+    | "statuses"
+    | "time-tracking"
   >("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -80,16 +93,17 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const checkSocialConnections = async () => {
     try {
       const axiosInstance = (await import("@/api/axios")).default;
-      
+
       // Check Facebook connection
       try {
-        const facebookResponse = await axiosInstance.get('/api/social/facebook/status/');
+        const facebookResponse = await axiosInstance.get(
+          "/api/social/facebook/status/"
+        );
         setFacebookConnected(facebookResponse.data.connected || false);
       } catch (err) {
         console.error("Failed to check Facebook connection:", err);
         setFacebookConnected(false);
       }
-
     } catch (err) {
       console.error("Failed to check social connections:", err);
     }
@@ -104,14 +118,25 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       permission: "can_access_tickets",
       description: "View and manage tickets",
     },
+    {
+      id: "time-tracking",
+      label: "My Time",
+      icon: "⏱️",
+      permission: "can_access_tickets", // Same permission as tickets since it's related
+      description: "View your time tracking data",
+    },
     // Add Ticket Status Management for superusers only
-    ...((userProfile as any)?.is_superuser ? [{
-      id: "statuses",
-      label: "Ticket Statuses",
-      icon: "📋",
-      permission: null, // No additional permission check needed - superuser check is sufficient
-      description: "Manage ticket status columns and workflow",
-    }] : []),
+    ...((userProfile as any)?.is_superuser
+      ? [
+          {
+            id: "statuses",
+            label: "Ticket Statuses",
+            icon: "📋",
+            permission: null, // No additional permission check needed - superuser check is sufficient
+            description: "Manage ticket status columns and workflow",
+          },
+        ]
+      : []),
     {
       id: "calls",
       label: "Calls",
@@ -120,13 +145,17 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       description: "Handle phone calls",
     },
     // Add Messages menu item only when Facebook is connected
-    ...(facebookConnected ? [{
-      id: "messages",
-      label: "Messages",
-      icon: "💬",
-      permission: "can_manage_settings", // Use same permission as social for now
-      description: "View and respond to Facebook messages",
-    }] : []),
+    ...(facebookConnected
+      ? [
+          {
+            id: "messages",
+            label: "Messages",
+            icon: "💬",
+            permission: "can_manage_settings", // Use same permission as social for now
+            description: "View and respond to Facebook messages",
+          },
+        ]
+      : []),
     {
       id: "users",
       label: "Users",
@@ -161,14 +190,23 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
   const handleMenuClick = (
-    viewId: "dashboard" | "tickets" | "calls" | "users" | "groups" | "messages" | "social" | "settings" | "statuses"
+    viewId:
+      | "dashboard"
+      | "tickets"
+      | "calls"
+      | "users"
+      | "groups"
+      | "messages"
+      | "social"
+      | "settings"
+      | "statuses"
   ) => {
     // If navigating to messages after connections changed, refresh the component
     if (viewId === "messages" && connectionsChanged) {
-      setMessagesRefreshKey(prev => prev + 1);
+      setMessagesRefreshKey((prev) => prev + 1);
       setConnectionsChanged(false);
     }
-    
+
     setCurrentView(viewId);
     if (isMobile) {
       setSidebarOpen(false); // Close sidebar on mobile after selection
@@ -453,19 +491,39 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                   }}
                 >
                   <div>
-                    🎫 Tickets: {hasPermission(userProfile, 'can_access_tickets') ? "✅" : "❌"}
+                    🎫 Tickets:{" "}
+                    {hasPermission(userProfile, "can_access_tickets")
+                      ? "✅"
+                      : "❌"}
                   </div>
                   <div>
-                    📞 Calls: {hasPermission(userProfile, 'can_access_calls') ? "✅" : "❌"}
+                    📞 Calls:{" "}
+                    {hasPermission(userProfile, "can_access_calls")
+                      ? "✅"
+                      : "❌"}
                   </div>
                   <div>
-                    👥 User Mgmt: {hasPermission(userProfile, 'can_access_user_management') ? "✅" : "❌"}
+                    👥 User Mgmt:{" "}
+                    {hasPermission(userProfile, "can_access_user_management")
+                      ? "✅"
+                      : "❌"}
                   </div>
                   <div>
-                    ⚙️ Settings: {hasPermission(userProfile, 'can_manage_settings') ? "✅" : "❌"}
+                    ⚙️ Settings:{" "}
+                    {hasPermission(userProfile, "can_manage_settings")
+                      ? "✅"
+                      : "❌"}
                   </div>
-                  <div style={{ fontSize: "9px", marginTop: "4px", fontStyle: "italic" }}>
-                    Groups: {userProfile?.groups?.map(g => g.name).join(', ') || 'None'}
+                  <div
+                    style={{
+                      fontSize: "9px",
+                      marginTop: "4px",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Groups:{" "}
+                    {userProfile?.groups?.map((g) => g.name).join(", ") ||
+                      "None"}
                   </div>
                 </div>
               )}
@@ -547,7 +605,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
         <div
           style={{
             flex: 1,
-            padding: isMobile ? "20px" : "30px",
+            padding: isMobile ? "20px" : "12px",
             background: "#f8f9fa",
           }}
         >
@@ -612,6 +670,18 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
             </div>
           )}
 
+          {currentView === "time-tracking" && (
+            <div
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              }}
+            >
+              <UserTimeTracking />
+            </div>
+          )}
+
           {currentView === "messages" && (
             <UnifiedMessagesManagement
               key={messagesRefreshKey} // Force refresh when this key changes
@@ -624,14 +694,14 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               onBackToDashboard={() => {
                 // If connections changed while in social view, refresh messages
                 if (connectionsChanged) {
-                  setMessagesRefreshKey(prev => prev + 1);
+                  setMessagesRefreshKey((prev) => prev + 1);
                   setConnectionsChanged(false);
                 }
                 setCurrentView("dashboard");
               }}
               onConnectionChange={(type, connected) => {
                 setConnectionsChanged(true); // Mark that connections have changed
-                if (type === 'facebook') {
+                if (type === "facebook") {
                   setFacebookConnected(connected);
                 }
               }}
@@ -660,8 +730,19 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                 <li>Notification preferences</li>
                 <li>User permissions and roles</li>
               </ul>
-              <div style={{ marginTop: "20px", padding: "15px", background: "#f8f9fa", borderRadius: "8px", fontSize: "14px", color: "#666" }}>
-                <strong>Note:</strong> Social media integrations are now available in the dedicated &quot;Social Media&quot; section in the sidebar.
+              <div
+                style={{
+                  marginTop: "20px",
+                  padding: "15px",
+                  background: "#f8f9fa",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  color: "#666",
+                }}
+              >
+                <strong>Note:</strong> Social media integrations are now
+                available in the dedicated &quot;Social Media&quot; section in
+                the sidebar.
               </div>
             </div>
           )}

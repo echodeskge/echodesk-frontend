@@ -386,6 +386,13 @@ export interface PaginatedTicketListList {
   results: TicketList[];
 }
 
+export interface PaginatedTicketTimeLogList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TicketTimeLog[];
+}
+
 export interface PaginatedUserList {
   count: number;
   next?: string;
@@ -599,6 +606,7 @@ export interface PatchedTicketColumnUpdate {
   position?: number;
   is_default?: boolean;
   is_closed_status?: boolean;
+  track_time?: boolean;
 }
 
 export interface PatchedTicketComment {
@@ -850,6 +858,7 @@ export interface TicketColumn {
   position?: number;
   is_default?: boolean;
   is_closed_status?: boolean;
+  track_time?: boolean;
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -863,6 +872,7 @@ export interface TicketColumnCreate {
   position?: number;
   is_default?: boolean;
   is_closed_status?: boolean;
+  track_time?: boolean;
 }
 
 export interface TicketColumnUpdate {
@@ -872,6 +882,7 @@ export interface TicketColumnUpdate {
   position?: number;
   is_default?: boolean;
   is_closed_status?: boolean;
+  track_time?: boolean;
 }
 
 export interface TicketComment {
@@ -900,6 +911,28 @@ export interface TicketList {
   assignments: TicketAssignment[];
   tags: Tag[];
   comments_count: string;
+}
+
+export interface TicketTimeLog {
+  id: number;
+  ticket: string;
+  column: TicketColumn;
+  user: UserMinimal;
+  entered_at: string;
+  exited_at: string;
+  duration_seconds: number;
+  duration_display: string;
+}
+
+export interface TimeTrackingSummary {
+  period_days: number;
+  start_date: string;
+  total_time_seconds: number;
+  total_sessions: number;
+  time_by_column: any[];
+  daily_breakdown: any[];
+  recent_activity: TicketTimeLog[];
+  active_sessions: TicketTimeLog[];
 }
 
 export interface User {
