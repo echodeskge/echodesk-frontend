@@ -341,18 +341,31 @@ export class PermissionService {
         'tickets.view_ticketcolumn',
         'tickets.change_ticketcolumn',
         'tickets.delete_ticketcolumn',
+        // Backend permission formats
+        'create_tickets',
+        'view_all_tickets',
+        'edit_own_tickets',
+        'edit_all_tickets',
+        'delete_tickets',
+        'assign_tickets',
+        'manage_tags',
+        'manage_columns',
       ],
       'can_view_boards': [
         'tickets.view_board',
+        'view_boards',  // Backend format
       ],
       'can_create_boards': [
         'tickets.add_board',
+        'create_boards',  // Backend format
       ],
       'can_edit_boards': [
         'tickets.change_board',
+        'edit_boards',  // Backend format
       ],
       'can_delete_boards': [
         'tickets.delete_board',
+        'delete_boards',  // Backend format
       ],
       'can_access_calls': [
         'crm.add_calllog',
@@ -363,6 +376,8 @@ export class PermissionService {
         'crm.view_callrecording',
         'crm.change_callrecording',
         'crm.delete_callrecording',
+        // Backend formats
+        'make_calls',
       ],
       'can_access_user_management': [
         'users.add_user',
@@ -377,9 +392,16 @@ export class PermissionService {
         'auth.view_permission',
         'auth.change_permission',
         'auth.delete_permission',
+        // Backend formats
+        'manage_users',
+        'manage_groups',
       ],
       'can_access_orders': [
         'can_access_orders',
+        'access_orders',  // Backend returns this format
+      ],
+      'can_manage_settings': [
+        'manage_settings',  // Backend format
       ]
     };
 
