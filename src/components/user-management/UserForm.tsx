@@ -47,9 +47,6 @@ export default function UserForm({
         setLoadingUserDetails(true);
         try {
           const fullUser = await usersRetrieve(user.id);
-          console.log('Full user data fetched:', fullUser);
-          console.log('Full user tenant_group_ids:', fullUser.tenant_group_ids);
-          console.log('Full user tenant_groups:', fullUser.tenant_groups);
           setFullUserData(fullUser);
         } catch (error) {
           console.error('Failed to fetch full user details:', error);
@@ -70,9 +67,6 @@ export default function UserForm({
   useEffect(() => {
     const userData = fullUserData || user;
     if (userData) {
-      console.log('Updating form with user data:', userData);
-      console.log('User tenant_group_ids:', userData.tenant_group_ids);
-      console.log('User tenant_groups:', userData.tenant_groups);
       
       setFormData(prev => ({
         ...prev,
@@ -274,7 +268,6 @@ export default function UserForm({
                     <div className="groups-grid">
                       {tenantGroups.map((group) => {
                         const isChecked = formData.tenant_group_ids.includes(group.id);
-                        console.log(`Group ${group.name} (ID: ${group.id}): checked=${isChecked}, formData.tenant_group_ids:`, formData.tenant_group_ids);
                         
                         return (
                           <label key={group.id} className="group-checkbox-label">
@@ -282,7 +275,6 @@ export default function UserForm({
                               type="checkbox"
                               checked={isChecked}
                               onChange={(e) => {
-                                console.log(`Checkbox change for ${group.name}: ${e.target.checked}`);
                                 const currentGroups = [...formData.tenant_group_ids];
                                 if (e.target.checked) {
                                   currentGroups.push(group.id);
@@ -292,7 +284,6 @@ export default function UserForm({
                                     currentGroups.splice(index, 1);
                                   }
                                 }
-                                console.log('New tenant_group_ids:', currentGroups);
                                 handleChange("tenant_group_ids", currentGroups);
                               }}
                             />
