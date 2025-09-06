@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { ticketService, CreateTicketData, UpdateTicketData } from '@/services/ticketService';
-import { columnsList } from '@/api/generated/api';
-import type { Ticket, User, Tag, TicketColumn } from '@/api/generated/interfaces';
+import { columnsList, boardsList } from '@/api/generated/api';
+import type { Ticket, User, Tag, TicketColumn, Board } from '@/api/generated/interfaces';
 import SimpleRichTextEditor from './SimpleRichTextEditor';
 import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
 
@@ -21,6 +21,7 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
     description_format: 'html' as 'plain' | 'html' | 'delta',
     priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     assigned_to_id: 0,
+    board_id: 0,
     column_id: 0,
     tag_ids: [] as number[]
   });
@@ -29,7 +30,9 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
   
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
+  const [allColumns, setAllColumns] = useState<TicketColumn[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fetchingData, setFetchingData] = useState(true);
@@ -46,6 +49,7 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
         description_format: (ticket.description_format as any) || 'html',
         priority: (ticket.priority as any) || 'medium',
         assigned_to_id: ticket.assigned_to?.id || 0,
+        board_id: ticket.column?.board || 0,
         column_id: ticket.column?.id || 0,
         tag_ids: ticket.tags ? ticket.tags.map(tag => tag.id) : []
       });
@@ -70,27 +74,45 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
     fetchFormData();
   }, [ticket]);
 
+  // Filter columns based on selected board
+  useEffect(() => {
+    if (formData.board_id && allColumns.length > 0) {
+      const filteredColumns = allColumns.filter(col => col.board === formData.board_id);
+      setColumns(filteredColumns);
+      
+      // Reset column selection if current column doesn't belong to selected board
+      if (formData.column_id && !filteredColumns.find(col => col.id === formData.column_id)) {
+        // Set default column for the selected board or first column
+        const defaultColumn = filteredColumns.find(col => col.is_default) || filteredColumns[0];
+        setFormData(prev => ({ 
+          ...prev, 
+          column_id: defaultColumn ? defaultColumn.id : 0 
+        }));
+      }
+    } else {
+      setColumns([]);
+    }
+  }, [formData.board_id, allColumns]);
+
   const fetchFormData = async () => {
     try {
       setFetchingData(true);
-      const [usersResult, tagsResult, columnsResult] = await Promise.all([
+      const [usersResult, tagsResult, boardsResult, columnsResult] = await Promise.all([
         ticketService.getUsers(),
         ticketService.getTags(),
+        boardsList(),
         columnsList()
       ]);
       
       setUsers(usersResult.results || []);
       setTags(tagsResult.results || []);
-      setColumns(columnsResult.results || []);
+      setBoards(boardsResult.results || []);
+      setAllColumns(columnsResult.results || []);
       
-      // Set default column if creating new ticket and no column is selected
-      if (!ticket && columnsResult.results && columnsResult.results.length > 0 && formData.column_id === 0) {
-        const defaultColumn = columnsResult.results.find(col => col.is_default);
-        if (defaultColumn) {
-          setFormData(prev => ({ ...prev, column_id: defaultColumn.id }));
-        } else {
-          setFormData(prev => ({ ...prev, column_id: columnsResult.results[0].id }));
-        }
+      // Set default board if creating new ticket
+      if (!ticket && boardsResult.results && boardsResult.results.length > 0 && formData.board_id === 0) {
+        const defaultBoard = boardsResult.results.find(board => board.is_default) || boardsResult.results[0];
+        setFormData(prev => ({ ...prev, board_id: defaultBoard.id }));
       }
     } catch (err) {
       console.error('Error fetching form data:', err);
@@ -389,6 +411,42 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             )}
           </div>
 
+          {/* Board Selection */}
+          <div style={{ marginBottom: '25px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '16px',
+              fontWeight: '600',
+              color: '#2c3e50',
+              marginBottom: '8px'
+            }}>
+              Board *
+            </label>
+            <select
+              value={formData.board_id}
+              onChange={(e) => handleInputChange('board_id', parseInt(e.target.value) || 0)}
+              required
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e1e5e9',
+                borderRadius: '6px',
+                fontSize: '16px',
+                background: 'white',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#3498db'}
+              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+            >
+              <option value={0}>Select Board</option>
+              {boards.map((board) => (
+                <option key={board.id} value={board.id}>
+                  {board.name} {board.is_default ? '(Default)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Priority and Status Row */}
           <div style={{
             display: 'grid',
@@ -450,24 +508,35 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
               <select
                 value={formData.column_id}
                 onChange={(e) => handleInputChange('column_id', parseInt(e.target.value) || 0)}
+                disabled={!formData.board_id || columns.length === 0}
                 style={{
                   width: '100%',
                   padding: '12px',
                   border: '2px solid #e1e5e9',
                   borderRadius: '6px',
                   fontSize: '16px',
-                  background: 'white',
+                  background: (!formData.board_id || columns.length === 0) ? '#f8f9fa' : 'white',
+                  color: (!formData.board_id || columns.length === 0) ? '#6c757d' : '#000',
+                  cursor: (!formData.board_id || columns.length === 0) ? 'not-allowed' : 'pointer',
                   transition: 'border-color 0.2s'
                 }}
                 onFocus={(e) => e.target.style.borderColor = '#3498db'}
                 onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
               >
-                <option value={0}>Select Status</option>
-                {columns.map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.name}
-                  </option>
-                ))}
+                {!formData.board_id ? (
+                  <option value={0}>Select a board first</option>
+                ) : columns.length === 0 ? (
+                  <option value={0}>No statuses available for this board</option>
+                ) : (
+                  <>
+                    <option value={0}>Select Status</option>
+                    {columns.map((column) => (
+                      <option key={column.id} value={column.id}>
+                        {column.name}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
 
@@ -573,16 +642,16 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             
             <button
               type="submit"
-              disabled={loading || !formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim())}
+              disabled={loading || !formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id}
               style={{
-                background: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || loading) ? '#dee2e6' : '#27ae60',
+                background: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id || loading) ? '#dee2e6' : '#27ae60',
                 color: 'white',
                 border: 'none',
                 padding: '12px 24px',
                 borderRadius: '6px',
                 fontSize: '16px',
                 fontWeight: '500',
-                cursor: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || loading) ? 'not-allowed' : 'pointer',
+                cursor: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id || loading) ? 'not-allowed' : 'pointer',
                 transition: 'background-color 0.2s'
               }}
               onMouseOver={(e) => {
