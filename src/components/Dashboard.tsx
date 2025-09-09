@@ -15,6 +15,7 @@ import TenantGroupManagement from "./TenantGroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
 import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
 import UserTimeTracking from "./UserTimeTracking";
+import UserStatistics from "./UserStatistics";
 import OrderManagement from "./OrderManagement";
 
 interface DashboardProps {
@@ -37,6 +38,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     | "social"
     | "settings"
     | "time-tracking"
+    | "user-statistics"
     | "empty"
   >("tickets");
   const [initialViewSet, setInitialViewSet] = useState(false);
@@ -127,6 +129,13 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       description: "View your time tracking data",
     },
     {
+      id: "user-statistics",
+      label: "Time Statistics",
+      icon: "📊",
+      permission: "can_access_user_management", // Requires user management permission
+      description: "View time tracking statistics for all users",
+    },
+    {
       id: "calls",
       label: "Calls",
       icon: "📞",
@@ -215,6 +224,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
       | "social"
       | "settings"
       | "time-tracking"
+      | "user-statistics"
   ) => {
     // If navigating to messages after connections changed, refresh the component
     if (viewId === "messages" && connectionsChanged) {
@@ -387,6 +397,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                     | "social"
                     | "settings"
                     | "time-tracking"
+                    | "user-statistics"
                 )
               }
               style={{
@@ -681,6 +692,18 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               }}
             >
               <UserTimeTracking />
+            </div>
+          )}
+
+          {currentView === "user-statistics" && (
+            <div
+              style={{
+                background: "white",
+                borderRadius: "12px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              }}
+            >
+              <UserStatistics />
             </div>
           )}
 
