@@ -117,26 +117,41 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
     return userStats;
   };
 
+  const fetchAllTimeLogs = async () => {
+    const allTimeLogs: TicketTimeLog[] = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const response = await timeLogsList(undefined, page);
+      allTimeLogs.push(...response.results);
+
+      hasMore = !!response.next;
+      page++;
+    }
+
+    return allTimeLogs;
+  };
+
   const fetchUserStats = async () => {
     try {
       setLoading(true);
       setError('');
-      
-      // Fetch users and time logs in parallel
-      const [usersResponse, timeLogsResponse] = await Promise.all([
+
+      // Fetch users and all time logs in parallel
+      const [usersResponse, allTimeLogs] = await Promise.all([
         usersList(),
-        // Fetch time logs from the past 3 months to cover all periods
-        timeLogsList()
+        fetchAllTimeLogs()
       ]);
-      
+
       // Filter time logs to only include those from columns with track_time enabled
-      const trackingTimeLogs = timeLogsResponse.results.filter(log => 
+      const trackingTimeLogs = allTimeLogs.filter(log =>
         log.column && log.column.track_time
       );
-      
+
       const userStats = aggregateTimeByUserAndPeriod(trackingTimeLogs, usersResponse.results);
       setData(userStats);
-      
+
     } catch (err) {
       console.error('Error fetching user statistics:', err);
       setError('Failed to load user statistics');
