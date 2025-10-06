@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { subTicketsCreate, subTicketsUpdate, usersList } from '@/api/generated/api';
 import type { SubTicket, User, PatchedSubTicket } from '@/api/generated/interfaces';
 import SimpleRichTextEditor from './SimpleRichTextEditor';
+import { Spinner } from '@/components/ui/spinner';
 
 interface SubTicketFormProps {
   parentTicketId: number;
@@ -424,6 +425,7 @@ export default function SubTicketForm({ parentTicketId, subTicket, onSave, onCan
                 cursor: (!formData.title.trim() || loading) ? 'not-allowed' : 'pointer'
               }}
             >
+              {loading && <Spinner className="mr-2 size-4" />}
               {loading ? 'Saving...' : (isEditing ? 'Update' : 'Add')}
             </button>
           </div>

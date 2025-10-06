@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { boardsCreate } from "@/api/generated/api";
 import type { Board } from "@/api/generated/interfaces";
+import { Spinner } from "@/components/ui/spinner";
 
 interface BoardFormProps {
   onSave?: (board: Board) => void;
@@ -222,33 +223,12 @@ export default function BoardForm({ onSave, onCancel }: BoardFormProps) {
               gap: "8px",
             }}
           >
-            {loading && (
-              <div
-                style={{
-                  width: "16px",
-                  height: "16px",
-                  border: "2px solid rgba(255,255,255,0.3)",
-                  borderTop: "2px solid white",
-                  borderRadius: "50%",
-                  animation: "spin 1s linear infinite",
-                }}
-              />
-            )}
+            {loading && <Spinner className="mr-2 size-4" />}
             {loading ? "Creating..." : "Create Board"}
           </button>
         </div>
       </form>
 
-      <style jsx>{`
-        @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </div>
   );
 }

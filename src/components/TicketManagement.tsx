@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import TicketList from "./TicketList";
 import TicketDetail from "./TicketDetail";
 import TicketForm from "./TicketForm";
 import KanbanBoard from "./KanbanBoard";
 import BoardForm from "./BoardForm";
 import type { Ticket, Board } from "@/api/generated/interfaces";
 
-type View = "list" | "kanban" | "detail" | "create" | "edit" | "createBoard";
+type View = "kanban" | "detail" | "create" | "edit" | "createBoard";
 
 interface TicketManagementProps {}
 
@@ -56,14 +55,6 @@ export default function TicketManagement({}: TicketManagementProps = {}) {
 
   const renderCurrentView = () => {
     switch (currentView) {
-      case "list":
-        return (
-          <TicketList
-            onTicketSelect={handleTicketSelect}
-            onCreateTicket={handleCreateTicket}
-          />
-        );
-
       case "kanban":
         return (
           <KanbanBoard
@@ -121,44 +112,6 @@ export default function TicketManagement({}: TicketManagementProps = {}) {
         background: "#f8f9fa",
       }}
     >
-      {/* Header with view toggle buttons */}
-      <div style={{ padding: "20px 20px 0 20px" }}>
-        {/* View Toggle Buttons */}
-        <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              onClick={() => setCurrentView("kanban")}
-              style={{
-                background:
-                  currentView === "kanban" ? "#007bff" : "transparent",
-                color: currentView === "kanban" ? "white" : "#007bff",
-                border: "1px solid #007bff",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                cursor: "pointer",
-                fontWeight: "500",
-              }}
-            >
-              📋 Kanban
-            </button>
-            <button
-              onClick={() => setCurrentView("list")}
-              style={{
-                background: currentView === "list" ? "#007bff" : "transparent",
-                color: currentView === "list" ? "white" : "#007bff",
-                border: "1px solid #007bff",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                cursor: "pointer",
-                fontWeight: "500",
-              }}
-            >
-              📋 List
-            </button>
-          </div>
-        </div>
-
       {renderCurrentView()}
     </div>
   );

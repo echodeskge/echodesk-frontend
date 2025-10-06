@@ -7,6 +7,7 @@ import type { Ticket, User, Tag, TicketColumn, Board } from '@/api/generated/int
 import SimpleRichTextEditor from './SimpleRichTextEditor';
 import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 interface TicketFormProps {
   ticket?: Ticket; // If provided, we're editing; otherwise creating
@@ -609,6 +610,7 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
               type="submit"
               disabled={loading || !formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id}
             >
+              {loading && <Spinner className="mr-2 size-4" />}
               {loading ? 'Saving...' : (isEditing ? 'Update Ticket' : 'Create Ticket')}
             </Button>
           </div>

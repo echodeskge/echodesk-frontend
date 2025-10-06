@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ticketService } from '@/services/ticketService';
 import type { User, TicketList } from '@/api/generated/interfaces';
 import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
+import { Spinner } from '@/components/ui/spinner';
 
 interface BulkAssignmentModalProps {
   selectedTickets: TicketList[];
@@ -262,6 +263,7 @@ export default function BulkAssignmentModal({
                 opacity: loading ? 0.7 : 1
               }}
             >
+              {loading && <Spinner className="mr-2 size-4" />}
               {loading ? 'Processing...' : 'Unassign All'}
             </button>
 
@@ -297,6 +299,7 @@ export default function BulkAssignmentModal({
                 cursor: (loading || assignments.length === 0) ? 'not-allowed' : 'pointer'
               }}
             >
+              {loading && <Spinner className="mr-2 size-4" />}
               {loading ? 'Assigning...' : `Assign to ${selectedTickets.length} tickets`}
             </button>
           </div>
