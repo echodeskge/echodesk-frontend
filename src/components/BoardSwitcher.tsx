@@ -3,9 +3,22 @@
 import { useState, useEffect } from "react";
 import { boardsList } from "@/api/generated/api";
 import type { Board } from "@/api/generated/interfaces";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
+import { ChevronDown, Plus, Settings, Users, Circle } from "lucide-react";
 
 interface BoardSwitcherProps {
   selectedBoardId: number | null;
+  boards?: Board[]; // Add boards as optional prop
   onBoardChange: (boardId: number) => void;
   onCreateBoard?: () => void;
   onEditBoardStatuses?: (boardId: number) => void;
@@ -14,279 +27,131 @@ interface BoardSwitcherProps {
 
 export default function BoardSwitcher({
   selectedBoardId,
+  boards: propsBoards,
   onBoardChange,
   onCreateBoard,
   onEditBoardStatuses,
   onManageBoardUsers,
 }: BoardSwitcherProps) {
-  const [boards, setBoards] = useState<Board[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  useEffect(() => {
-    fetchBoards();
-  }, []);
-
-  const fetchBoards = async () => {
-    try {
-      setLoading(true);
-      const response = await boardsList();
-      setBoards(response.results || []);
-    } catch (error) {
-      console.error("Failed to fetch boards:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use boards from props if available, otherwise fallback to empty array
+  const boards = propsBoards || [];
+  const loading = !propsBoards;
 
   const selectedBoard = boards.find(board => board.id === selectedBoardId);
 
-  return (
-    <div style={{ position: "relative" }}>
-      <button
-        onClick={() => setShowDropdown(!showDropdown)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          background: "#f8f9fa",
-          border: "1px solid #dee2e6",
-          borderRadius: "6px",
-          padding: "8px 12px",
-          fontSize: "14px",
-          fontWeight: "500",
-          cursor: "pointer",
-          minWidth: "200px",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div
-            style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: selectedBoard?.is_default ? "#007bff" : "#28a745",
-            }}
-          />
-          <span>
-            {loading ? "Loading..." : selectedBoard?.name || "Select Board"}
-          </span>
-        </div>
-        <span
-          style={{
-            transform: showDropdown ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s ease",
-          }}
-        >
-          ▼
-        </span>
-      </button>
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 min-w-[200px]">
+        <Spinner className="h-4 w-4" />
+        <span className="text-sm text-muted-foreground">Loading boards...</span>
+      </div>
+    );
+  }
 
-      {showDropdown && (
-        <>
-          {/* Backdrop */}
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 999,
-            }}
-            onClick={() => setShowDropdown(false)}
-          />
-          
-          {/* Dropdown */}
-          <div
-            style={{
-              position: "absolute",
-              top: "100%",
-              left: 0,
-              right: 0,
-              background: "white",
-              border: "1px solid #dee2e6",
-              borderRadius: "6px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              zIndex: 1000,
-              marginTop: "4px",
-              maxHeight: "300px",
-              overflowY: "auto",
-            }}
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-full max-w-xs justify-between h-auto py-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: selectedBoard?.is_default ? "#007bff" : "#28a745"
+              }}
+            />
+            <span className="text-sm">
+              {selectedBoard?.name || "Select Board"}
+            </span>
+          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent className="w-96 bg-white border border-gray-200 shadow-lg" style={{ backgroundColor: 'white' }}>
+        <DropdownMenuLabel>Boards</DropdownMenuLabel>
+
+        {boards.map((board) => (
+          <DropdownMenuItem
+            key={board.id}
+            className="cursor-pointer p-4 focus:bg-accent hover:bg-gray-100"
+            onClick={() => onBoardChange(board.id)}
           >
-            {boards.map((board) => (
+            <div className="flex items-start gap-3 w-full">
               <div
-                key={board.id}
+                className="w-2 h-2 rounded-full mt-2 flex-shrink-0"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "10px 12px",
-                  borderBottom: "1px solid #f1f3f4",
+                  backgroundColor: board.is_default ? "#007bff" : "#28a745"
                 }}
-              >
-                <div
-                  onClick={() => {
-                    onBoardChange(board.id);
-                    setShowDropdown(false);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    flex: 1,
-                    cursor: "pointer",
-                    background: selectedBoardId === board.id ? "#e7f3ff" : "transparent",
-                    padding: "4px",
-                    borderRadius: "4px",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedBoardId !== board.id) {
-                      (e.target as HTMLElement).style.background = "#f8f9fa";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedBoardId !== board.id) {
-                      (e.target as HTMLElement).style.background = "transparent";
-                    }
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: board.is_default ? "#007bff" : "#28a745",
-                    }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: "500", fontSize: "14px" }}>
-                      {board.name}
-                    </div>
-                    {board.description && (
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: "#6c757d",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {board.description}
-                      </div>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#6c757d",
-                      background: "#f8f9fa",
-                      padding: "2px 6px",
-                      borderRadius: "4px",
-                    }}
-                  >
-                    {board.columns_count} columns
-                  </div>
+              />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm">{board.name}</span>
+                  {selectedBoardId === board.id && (
+                    <Badge variant="secondary" className="text-xs">
+                      Current
+                    </Badge>
+                  )}
+                  <Badge variant="outline" className="text-xs">
+                    {board.columns_count} cols
+                  </Badge>
                 </div>
-                
-                <div style={{ display: "flex", gap: "4px" }}>
+
+                {board.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {board.description}
+                  </p>
+                )}
+
+                <div className="flex gap-1 mt-2">
                   {onEditBoardStatuses && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEditBoardStatuses(board.id);
-                        setShowDropdown(false);
-                      }}
-                      style={{
-                        background: "#007bff",
-                        color: "white",
-                        border: "none",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        fontWeight: "500",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.background = "#0056b3";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.background = "#007bff";
                       }}
                     >
-                      Edit Statuses
-                    </button>
+                      <Settings className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
                   )}
-                  
+
                   {onManageBoardUsers && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
                         onManageBoardUsers(board.id);
-                        setShowDropdown(false);
-                      }}
-                      style={{
-                        background: "#28a745",
-                        color: "white",
-                        border: "none",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "12px",
-                        cursor: "pointer",
-                        fontWeight: "500",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.target as HTMLElement).style.background = "#218838";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.target as HTMLElement).style.background = "#28a745";
                       }}
                     >
-                      Manage Users
-                    </button>
+                      <Users className="h-3 w-3 mr-1" />
+                      Users
+                    </Button>
                   )}
                 </div>
               </div>
-            ))}
+            </div>
+          </DropdownMenuItem>
+        ))}
 
-            {onCreateBoard && (
-              <>
-                <div
-                  style={{
-                    height: "1px",
-                    background: "#dee2e6",
-                    margin: "4px 0",
-                  }}
-                />
-                <div
-                  onClick={() => {
-                    onCreateBoard();
-                    setShowDropdown(false);
-                  }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "10px 12px",
-                    cursor: "pointer",
-                    color: "#007bff",
-                    fontWeight: "500",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.target as HTMLElement).style.background = "#f8f9fa";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.target as HTMLElement).style.background = "transparent";
-                  }}
-                >
-                  <span style={{ fontSize: "16px" }}>+</span>
-                  <span>Create New Board</span>
-                </div>
-              </>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+        {onCreateBoard && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="cursor-pointer text-primary p-4"
+              onClick={onCreateBoard}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              <span>Create New Board</span>
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

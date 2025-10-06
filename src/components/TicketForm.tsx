@@ -1,13 +1,35 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { ticketService, CreateTicketData, UpdateTicketData } from '@/services/ticketService';
-import { columnsList, boardsList } from '@/api/generated/api';
-import type { Ticket, User, Tag, TicketColumn, Board } from '@/api/generated/interfaces';
-import SimpleRichTextEditor from './SimpleRichTextEditor';
-import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
-import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { useState, useEffect } from "react";
+import {
+  ticketService,
+  CreateTicketData,
+  UpdateTicketData,
+} from "@/services/ticketService";
+import { columnsList, boardsList } from "@/api/generated/api";
+import type {
+  Ticket,
+  User,
+  Tag,
+  TicketColumn,
+  Board,
+} from "@/api/generated/interfaces";
+import SimpleRichTextEditor from "./SimpleRichTextEditor";
+import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface TicketFormProps {
   ticket?: Ticket; // If provided, we're editing; otherwise creating
@@ -15,28 +37,32 @@ interface TicketFormProps {
   onCancel?: () => void;
 }
 
-export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps) {
+export default function TicketForm({
+  ticket,
+  onSave,
+  onCancel,
+}: TicketFormProps) {
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    rich_description: '',
-    description_format: 'html' as 'plain' | 'html' | 'delta',
-    priority: 'medium' as 'low' | 'medium' | 'high' | 'critical',
+    title: "",
+    description: "",
+    rich_description: "",
+    description_format: "html" as "plain" | "html" | "delta",
+    priority: "medium" as "low" | "medium" | "high" | "critical",
     assigned_to_id: 0,
     board_id: 0,
     column_id: 0,
-    tag_ids: [] as number[]
+    tag_ids: [] as number[],
   });
-  
+
   const [assignments, setAssignments] = useState<AssignmentData[]>([]);
-  
+
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [allColumns, setAllColumns] = useState<TicketColumn[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [fetchingData, setFetchingData] = useState(true);
 
   const isEditing = !!ticket;
@@ -47,28 +73,36 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
       setFormData({
         title: ticket.title,
         description: ticket.description,
-        rich_description: ticket.rich_description || ((ticket.description_format as any) === 'html' ? ticket.description : ''),
-        description_format: (ticket.description_format as any) || 'html',
-        priority: (ticket.priority as any) || 'medium',
+        rich_description:
+          ticket.rich_description ||
+          ((ticket.description_format as any) === "html"
+            ? ticket.description
+            : ""),
+        description_format: (ticket.description_format as any) || "html",
+        priority: (ticket.priority as any) || "medium",
         assigned_to_id: ticket.assigned_to?.id || 0,
         board_id: ticket.column?.board || 0,
         column_id: ticket.column?.id || 0,
-        tag_ids: ticket.tags ? ticket.tags.map(tag => tag.id) : []
+        tag_ids: ticket.tags ? ticket.tags.map((tag) => tag.id) : [],
       });
 
       // Initialize assignments from existing ticket
       if (ticket.assignments && ticket.assignments.length > 0) {
-        const existingAssignments: AssignmentData[] = ticket.assignments.map(assignment => ({
-          userId: assignment.user.id,
-          role: (assignment.role as any) || 'collaborator'
-        }));
+        const existingAssignments: AssignmentData[] = ticket.assignments.map(
+          (assignment) => ({
+            userId: assignment.user.id,
+            role: (assignment.role as any) || "collaborator",
+          })
+        );
         setAssignments(existingAssignments);
       } else if (ticket.assigned_to) {
         // If no multi-assignments but has assigned_to, create assignment
-        setAssignments([{
-          userId: ticket.assigned_to.id,
-          role: 'primary'
-        }]);
+        setAssignments([
+          {
+            userId: ticket.assigned_to.id,
+            role: "primary",
+          },
+        ]);
       }
     }
 
@@ -79,16 +113,22 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
   // Filter columns based on selected board
   useEffect(() => {
     if (formData.board_id && allColumns.length > 0) {
-      const filteredColumns = allColumns.filter(col => col.board === formData.board_id);
+      const filteredColumns = allColumns.filter(
+        (col) => col.board === formData.board_id
+      );
       setColumns(filteredColumns);
-      
+
       // Reset column selection if current column doesn't belong to selected board
-      if (formData.column_id && !filteredColumns.find(col => col.id === formData.column_id)) {
+      if (
+        formData.column_id &&
+        !filteredColumns.find((col) => col.id === formData.column_id)
+      ) {
         // Set default column for the selected board or first column
-        const defaultColumn = filteredColumns.find(col => col.is_default) || filteredColumns[0];
-        setFormData(prev => ({ 
-          ...prev, 
-          column_id: defaultColumn ? defaultColumn.id : 0 
+        const defaultColumn =
+          filteredColumns.find((col) => col.is_default) || filteredColumns[0];
+        setFormData((prev) => ({
+          ...prev,
+          column_id: defaultColumn ? defaultColumn.id : 0,
         }));
       }
     } else {
@@ -99,26 +139,34 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
   const fetchFormData = async () => {
     try {
       setFetchingData(true);
-      const [usersResult, tagsResult, boardsResult, columnsResult] = await Promise.all([
-        ticketService.getUsers(),
-        ticketService.getTags(),
-        boardsList(),
-        columnsList()
-      ]);
-      
+      const [usersResult, tagsResult, boardsResult, columnsResult] =
+        await Promise.all([
+          ticketService.getUsers(),
+          ticketService.getTags(),
+          boardsList(),
+          columnsList(),
+        ]);
+
       setUsers(usersResult.results || []);
       setTags(tagsResult.results || []);
       setBoards(boardsResult.results || []);
       setAllColumns(columnsResult.results || []);
-      
+
       // Set default board if creating new ticket
-      if (!ticket && boardsResult.results && boardsResult.results.length > 0 && formData.board_id === 0) {
-        const defaultBoard = boardsResult.results.find(board => board.is_default) || boardsResult.results[0];
-        setFormData(prev => ({ ...prev, board_id: defaultBoard.id }));
+      if (
+        !ticket &&
+        boardsResult.results &&
+        boardsResult.results.length > 0 &&
+        formData.board_id === 0
+      ) {
+        const defaultBoard =
+          boardsResult.results.find((board) => board.is_default) ||
+          boardsResult.results[0];
+        setFormData((prev) => ({ ...prev, board_id: defaultBoard.id }));
       }
     } catch (err) {
-      console.error('Error fetching form data:', err);
-      setError('Failed to load form data');
+      console.error("Error fetching form data:", err);
+      setError("Failed to load form data");
     } finally {
       setFetchingData(false);
     }
@@ -127,53 +175,67 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       let savedTicket: Ticket;
 
       // Prepare assignment data
-      const assigned_user_ids = assignments.map(a => a.userId);
+      const assigned_user_ids = assignments.map((a) => a.userId);
       const assignment_roles: Record<string, string> = {};
-      assignments.forEach(a => {
+      assignments.forEach((a) => {
         assignment_roles[a.userId.toString()] = a.role;
       });
 
       // Set primary assignee (first primary role or first assignment)
-      const primaryAssignment = assignments.find(a => a.role === 'primary') || assignments[0];
-      const assigned_to_id = primaryAssignment?.userId || formData.assigned_to_id || undefined;
+      const primaryAssignment =
+        assignments.find((a) => a.role === "primary") || assignments[0];
+      const assigned_to_id =
+        primaryAssignment?.userId || formData.assigned_to_id || undefined;
 
       if (isEditing && ticket) {
         // Update existing ticket
         const updateData: UpdateTicketData = {
           title: formData.title,
-          description: formData.description_format === 'html' ? formData.rich_description : formData.description,
-          rich_description: formData.description_format === 'html' ? formData.rich_description : null,
+          description:
+            formData.description_format === "html"
+              ? formData.rich_description
+              : formData.description,
+          rich_description:
+            formData.description_format === "html"
+              ? formData.rich_description
+              : null,
           description_format: formData.description_format,
           priority: formData.priority,
           assigned_to_id,
           assigned_user_ids,
           assignment_roles,
           column_id: formData.column_id || undefined,
-          tag_ids: formData.tag_ids
+          tag_ids: formData.tag_ids,
         };
-        
+
         savedTicket = await ticketService.updateTicket(ticket.id, updateData);
       } else {
         // Create new ticket
         const createData: CreateTicketData = {
           title: formData.title,
-          description: formData.description_format === 'html' ? formData.rich_description : formData.description,
-          rich_description: formData.description_format === 'html' ? formData.rich_description : null,
+          description:
+            formData.description_format === "html"
+              ? formData.rich_description
+              : formData.description,
+          rich_description:
+            formData.description_format === "html"
+              ? formData.rich_description
+              : null,
           description_format: formData.description_format,
           priority: formData.priority,
           assigned_to_id,
           assigned_user_ids,
           assignment_roles,
           column_id: formData.column_id || undefined,
-          tag_ids: formData.tag_ids
+          tag_ids: formData.tag_ids,
         };
-        
+
         savedTicket = await ticketService.createTicket(createData);
       }
 
@@ -181,448 +243,337 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
         onSave(savedTicket);
       }
     } catch (err) {
-      console.error('Error saving ticket:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save ticket');
+      console.error("Error saving ticket:", err);
+      setError(err instanceof Error ? err.message : "Failed to save ticket");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string | number | number[]) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    field: string,
+    value: string | number | number[]
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleRichTextChange = (html: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       rich_description: html,
       // Keep plain description in sync for fallback
-      description: html.replace(/<[^>]*>/g, '') // Strip HTML tags for plain text fallback
+      description: html.replace(/<[^>]*>/g, ""), // Strip HTML tags for plain text fallback
     }));
   };
 
-  const handleDescriptionFormatChange = (format: 'plain' | 'html' | 'delta') => {
-    setFormData(prev => ({
+  const handleDescriptionFormatChange = (
+    format: "plain" | "html" | "delta"
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      description_format: format
+      description_format: format,
     }));
   };
 
   const handleTagToggle = (tagId: number) => {
     const currentTags = formData.tag_ids;
     const newTags = currentTags.includes(tagId)
-      ? currentTags.filter(id => id !== tagId)
+      ? currentTags.filter((id) => id !== tagId)
       : [...currentTags, tagId];
-    
-    handleInputChange('tag_ids', newTags);
+
+    handleInputChange("tag_ids", newTags);
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return '#e74c3c';
-      case 'high': return '#e67e22';
-      case 'medium': return '#f39c12';
-      case 'low': return '#27ae60';
-      default: return '#95a5a6';
+      case "critical":
+        return "#e74c3c";
+      case "high":
+        return "#e67e22";
+      case "medium":
+        return "#f39c12";
+      case "low":
+        return "#27ae60";
+      default:
+        return "#95a5a6";
     }
   };
 
   if (fetchingData) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '400px'
-      }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e3e3e3',
-          borderTop: '4px solid #3498db',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+      <div className="h-full flex items-center justify-center">
+        <Card>
+          <CardContent className="flex items-center justify-center py-16">
+            <div className="flex items-center space-x-2">
+              <Spinner className="h-6 w-6" />
+              <span className="text-muted-foreground">
+                Loading form data...
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+    <div className="h-full p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '30px'
-      }}>
-        <h1 style={{
-          fontSize: '28px',
-          fontWeight: '600',
-          color: '#2c3e50',
-          margin: 0
-        }}>
-          {isEditing ? `Edit Ticket #${ticket?.id}` : 'Create New Ticket'}
-        </h1>
-      </div>
+      <Card className="mb-6 shadow-none border border-gray-200">
+        <CardHeader>
+          <CardTitle className="text-2xl">
+            {isEditing ? `Edit Ticket #${ticket?.id}` : "Create New Ticket"}
+          </CardTitle>
+        </CardHeader>
+      </Card>
 
       {/* Error Message */}
       {error && (
-        <div style={{
-          background: '#fee',
-          color: '#c33',
-          padding: '12px',
-          borderRadius: '6px',
-          marginBottom: '20px',
-          fontSize: '14px',
-          border: '1px solid #fcc'
-        }}>
-          {error}
-        </div>
+        <Card className="mb-6 shadow-none border-destructive bg-destructive/10">
+          <CardContent className="pt-6">
+            <p className="text-destructive text-sm">{error}</p>
+          </CardContent>
+        </Card>
       )}
 
       {/* Form */}
       <form onSubmit={handleSubmit}>
-        <div style={{
-          background: 'white',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          padding: '30px'
-        }}>
-          {/* Title */}
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#2c3e50',
-              marginBottom: '8px'
-            }}>
-              Title *
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              required
-              placeholder="Enter ticket title..."
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '6px',
-                fontSize: '16px',
-                transition: 'border-color 0.2s',
-                boxSizing: 'border-box'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#3498db'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-            />
-          </div>
-
-          {/* Description Format Toggle */}
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#2c3e50',
-              marginBottom: '8px'
-            }}>
-              Description Format
-            </label>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <Button
-                type="button"
-                variant={formData.description_format === 'plain' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleDescriptionFormatChange('plain')}
-              >
-                Plain Text
-              </Button>
-              <Button
-                type="button"
-                variant={formData.description_format === 'html' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleDescriptionFormatChange('html')}
-              >
-                Rich Text
-              </Button>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#2c3e50',
-              marginBottom: '8px'
-            }}>
-              Description *
-            </label>
-            {formData.description_format === 'html' ? (
-              <SimpleRichTextEditor
-                value={formData.rich_description}
-                onChange={handleRichTextChange}
-                placeholder="Describe the issue or request in detail..."
-              />
-            ) : (
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+        <Card className="shadow-none border border-gray-200">
+          <CardContent className="pt-6 space-y-6">
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                type="text"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
                 required
-                placeholder="Describe the issue or request in detail..."
-                rows={6}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e1e5e9',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  fontFamily: 'inherit',
-                  resize: 'vertical',
-                  transition: 'border-color 0.2s',
-                  boxSizing: 'border-box'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3498db'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+                placeholder="Enter ticket title..."
               />
-            )}
-          </div>
+            </div>
 
-          {/* Board Selection */}
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#2c3e50',
-              marginBottom: '8px'
-            }}>
-              Board *
-            </label>
-            <select
-              value={formData.board_id}
-              onChange={(e) => handleInputChange('board_id', parseInt(e.target.value) || 0)}
-              required
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #e1e5e9',
-                borderRadius: '6px',
-                fontSize: '16px',
-                background: 'white',
-                transition: 'border-color 0.2s'
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#3498db'}
-              onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
-            >
-              <option value={0}>Select Board</option>
-              {boards.map((board) => (
-                <option key={board.id} value={board.id}>
-                  {board.name} {board.is_default ? '(Default)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Priority and Status Row */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '20px',
-            marginBottom: '25px'
-          }}>
-            {/* Priority */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#2c3e50',
-                marginBottom: '8px'
-              }}>
-                Priority
-              </label>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '10px'
-              }}>
-                {['low', 'medium', 'high', 'critical'].map((priority) => (
-                  <button
-                    key={priority}
-                    type="button"
-                    onClick={() => handleInputChange('priority', priority)}
-                    style={{
-                      background: formData.priority === priority ? getPriorityColor(priority) : 'white',
-                      color: formData.priority === priority ? 'white' : getPriorityColor(priority),
-                      border: `2px solid ${getPriorityColor(priority)}`,
-                      padding: '10px 15px',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      textTransform: 'capitalize',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {priority}
-                  </button>
-                ))}
+            {/* Description Format Toggle */}
+            <div className="space-y-2">
+              <Label>Description Format</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={
+                    formData.description_format === "plain"
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={() => handleDescriptionFormatChange("plain")}
+                >
+                  Plain Text
+                </Button>
+                <Button
+                  type="button"
+                  variant={
+                    formData.description_format === "html"
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={() => handleDescriptionFormatChange("html")}
+                >
+                  Rich Text
+                </Button>
               </div>
             </div>
 
-            {/* Status */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#2c3e50',
-                marginBottom: '8px'
-              }}>
-                Status
-              </label>
-              <select
-                value={formData.column_id}
-                onChange={(e) => handleInputChange('column_id', parseInt(e.target.value) || 0)}
-                disabled={!formData.board_id || columns.length === 0}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '2px solid #e1e5e9',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  background: (!formData.board_id || columns.length === 0) ? '#f8f9fa' : 'white',
-                  color: (!formData.board_id || columns.length === 0) ? '#6c757d' : '#000',
-                  cursor: (!formData.board_id || columns.length === 0) ? 'not-allowed' : 'pointer',
-                  transition: 'border-color 0.2s'
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#3498db'}
-                onBlur={(e) => e.target.style.borderColor = '#e1e5e9'}
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              {formData.description_format === "html" ? (
+                <SimpleRichTextEditor
+                  value={formData.rich_description}
+                  onChange={handleRichTextChange}
+                  placeholder="Describe the issue or request in detail..."
+                />
+              ) : (
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
+                  required
+                  placeholder="Describe the issue or request in detail..."
+                  rows={6}
+                  className="resize-y"
+                />
+              )}
+            </div>
+
+            {/* Board Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="board">Board *</Label>
+              <Select
+                value={
+                  formData.board_id > 0 ? formData.board_id.toString() : ""
+                }
+                onValueChange={(value) =>
+                  handleInputChange("board_id", parseInt(value) || 0)
+                }
+                required
               >
-                {!formData.board_id ? (
-                  <option value={0}>Select a board first</option>
-                ) : columns.length === 0 ? (
-                  <option value={0}>No statuses available for this board</option>
-                ) : (
-                  <>
-                    <option value={0}>Select Status</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Board" />
+                </SelectTrigger>
+                <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                  {boards.map((board) => (
+                    <SelectItem key={board.id} value={board.id.toString()} className="hover:bg-gray-100 cursor-pointer">
+                      {board.name} {board.is_default ? "(Default)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Priority and Status Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Priority */}
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["low", "medium", "high", "critical"].map((priority) => (
+                    <Button
+                      key={priority}
+                      type="button"
+                      variant={
+                        formData.priority === priority ? "default" : "outline"
+                      }
+                      size="sm"
+                      onClick={() => handleInputChange("priority", priority)}
+                      className="capitalize hover:opacity-80 transition-opacity"
+                      style={{
+                        backgroundColor:
+                          formData.priority === priority
+                            ? getPriorityColor(priority)
+                            : undefined,
+                        borderColor: getPriorityColor(priority),
+                        color:
+                          formData.priority === priority
+                            ? "white"
+                            : getPriorityColor(priority),
+                      }}
+                    >
+                      {priority}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={
+                    formData.column_id > 0 ? formData.column_id.toString() : ""
+                  }
+                  onValueChange={(value) =>
+                    handleInputChange("column_id", parseInt(value) || 0)
+                  }
+                  disabled={!formData.board_id || columns.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        !formData.board_id
+                          ? "Select a board first"
+                          : columns.length === 0
+                            ? "No statuses available for this board"
+                            : "Select Status"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
                     {columns.map((column) => (
-                      <option key={column.id} value={column.id}>
+                      <SelectItem key={column.id} value={column.id.toString()} className="hover:bg-gray-100 cursor-pointer">
                         {column.name}
-                      </option>
+                      </SelectItem>
                     ))}
-                  </>
-                )}
-              </select>
-            </div>
-
-          </div>
-
-          {/* Multi-User Assignment */}
-          <div style={{ marginBottom: '25px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '16px',
-              fontWeight: '600',
-              color: '#2c3e50',
-              marginBottom: '8px'
-            }}>
-              Assign Users
-            </label>
-            <MultiUserAssignment
-              users={users}
-              assignments={ticket?.assignments}
-              selectedAssignments={assignments}
-              onChange={setAssignments}
-              disabled={loading}
-              placeholder="Select users to assign to this ticket..."
-            />
-          </div>
-
-          {/* Tags */}
-          {tags.length > 0 && (
-            <div style={{ marginBottom: '30px' }}>
-              <label style={{
-                display: 'block',
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#2c3e50',
-                marginBottom: '12px'
-              }}>
-                Tags
-              </label>
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '10px'
-              }}>
-                {tags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => handleTagToggle(tag.id)}
-                    style={{
-                      background: formData.tag_ids.includes(tag.id) ? '#3498db' : 'white',
-                      color: formData.tag_ids.includes(tag.id) ? 'white' : '#3498db',
-                      border: '2px solid #3498db',
-                      padding: '8px 16px',
-                      borderRadius: '20px',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          )}
 
-          {/* Action Buttons */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '15px',
-            paddingTop: '20px',
-            borderTop: '1px solid #e1e5e9'
-          }}>
-            {onCancel && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-              >
-                Cancel
-              </Button>
+            {/* Multi-User Assignment */}
+            <div className="space-y-2">
+              <Label>Assign Users</Label>
+              <MultiUserAssignment
+                users={users}
+                assignments={ticket?.assignments}
+                selectedAssignments={assignments}
+                onChange={setAssignments}
+                disabled={loading}
+                placeholder="Select users to assign to this ticket..."
+              />
+            </div>
+
+            {/* Tags */}
+            {tags.length > 0 && (
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      onClick={() => handleTagToggle(tag.id)}
+                      className="inline-block"
+                    >
+                      <Badge
+                        variant={
+                          formData.tag_ids.includes(tag.id)
+                            ? "default"
+                            : "outline"
+                        }
+                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
+                      >
+                        {tag.name}
+                      </Badge>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
-            
-            <Button
-              type="submit"
-              disabled={loading || !formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id}
-            >
-              {loading && <Spinner className="mr-2 size-4" />}
-              {loading ? 'Saving...' : (isEditing ? 'Update Ticket' : 'Create Ticket')}
-            </Button>
-          </div>
-        </div>
-      </form>
 
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
+              {onCancel && (
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+              )}
+
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  !formData.title.trim() ||
+                  (!formData.description.trim() &&
+                    !formData.rich_description.trim()) ||
+                  !formData.board_id
+                }
+              >
+                {loading && <Spinner className="mr-2 h-4 w-4" />}
+                {loading
+                  ? "Saving..."
+                  : isEditing
+                    ? "Update Ticket"
+                    : "Create Ticket"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </form>
     </div>
   );
 }

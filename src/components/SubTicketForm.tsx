@@ -343,8 +343,11 @@ export default function SubTicketForm({ parentTicketId, subTicket, onSave, onCan
                       fontSize: '12px',
                       fontWeight: '500',
                       cursor: 'pointer',
-                      textTransform: 'capitalize'
+                      textTransform: 'capitalize',
+                      transition: 'opacity 0.2s'
                     }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
                     {priority}
                   </button>

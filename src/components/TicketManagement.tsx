@@ -5,6 +5,7 @@ import TicketDetail from "./TicketDetail";
 import TicketForm from "./TicketForm";
 import KanbanBoard from "./KanbanBoard";
 import BoardForm from "./BoardForm";
+import { Card, CardContent } from "@/components/ui/card";
 import type { Ticket, Board } from "@/api/generated/interfaces";
 
 type View = "kanban" | "detail" | "create" | "edit" | "createBoard";
@@ -66,7 +67,13 @@ export default function TicketManagement({}: TicketManagementProps = {}) {
 
       case "detail":
         if (!selectedTicketId) {
-          return <div>No ticket selected</div>;
+          return (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">No ticket selected</p>
+              </CardContent>
+            </Card>
+          );
         }
         return (
           <TicketDetail
@@ -83,7 +90,13 @@ export default function TicketManagement({}: TicketManagementProps = {}) {
 
       case "edit":
         if (!selectedTicket) {
-          return <div>No ticket selected for editing</div>;
+          return (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground">No ticket selected for editing</p>
+              </CardContent>
+            </Card>
+          );
         }
         return (
           <TicketForm
@@ -102,16 +115,18 @@ export default function TicketManagement({}: TicketManagementProps = {}) {
         );
 
       default:
-        return <div>Unknown view</div>;
+        return (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">Unknown view</p>
+            </CardContent>
+          </Card>
+        );
     }
   };
 
   return (
-    <div
-      style={{
-        background: "#f8f9fa",
-      }}
-    >
+    <div className="h-full bg-white overflow-hidden">
       {renderCurrentView()}
     </div>
   );

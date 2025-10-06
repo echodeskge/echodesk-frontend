@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AuthUser, TenantInfo } from "@/types/auth";
 import { authService } from "@/services/auth";
 import { User } from "@/api/generated/interfaces";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import {
   getSidebarMenuItems,
   hasPermission,
@@ -30,8 +31,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ tenant, onLogout }: DashboardProps) {
-  const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
     | "tickets"
@@ -53,23 +53,8 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [messagesRefreshKey, setMessagesRefreshKey] = useState(0);
 
   useEffect(() => {
-    fetchUserProfile();
     checkSocialConnections();
-
   }, []);
-
-
-  const fetchUserProfile = async () => {
-    try {
-      const profile = await authService.getProfile();
-      setUserProfile(profile);
-    } catch (err: unknown) {
-      console.error("Failed to fetch user profile:", err);
-      setError("Failed to load user profile");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -216,7 +201,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     setCurrentView(viewId as typeof currentView);
   };
 
-  if (loading) {
+  if (profileLoading) {
     return (
       <div
         style={{
@@ -260,7 +245,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
         <AppSidebar
           tenant={tenant}
-          userProfile={userProfile}
+          userProfile={userProfile || null}
           visibleMenuItems={visibleMenuItems}
           currentView={currentView}
           onMenuClick={handleMenuClick}
@@ -275,7 +260,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
             </h1>
           </div>
 
-          <div className="flex-1 p-6 bg-white"
+          <div className="flex-1 bg-white overflow-hidden"
           >
             {/* View Content */}
             {currentView === "tickets" && (

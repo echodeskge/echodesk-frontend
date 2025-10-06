@@ -5,9 +5,16 @@ import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { kanbanBoard, boardsList, boardsKanbanBoardRetrieve } from "@/api/generated/api";
 import axios from "@/api/axios";
+import { useBoards } from "@/hooks/useBoards";
+import { useKanbanBoard } from "@/hooks/useKanbanBoard";
 import BoardSwitcher from "@/components/BoardSwitcher";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
 import BoardUserManager from "@/components/BoardUserManager";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Plus, Clock, User, Tag } from "lucide-react";
 import type {
   Ticket,
   TicketList,
@@ -147,152 +154,85 @@ function DraggableTicket({
   dragRef(dropRef(ref));
 
   return (
-    <div
+    <Card
       ref={ref}
       onClick={() => onTicketClick?.(ticket.id)}
+      className={`
+        mb-2 cursor-pointer transition-all duration-200 shadow-none border-gray-200
+        ${isDragging ? 'opacity-50 shadow-lg cursor-grabbing' : 'hover:shadow-md cursor-grab'}
+        ${isDragging ? 'border-2' : 'border'}
+      `}
       style={{
-        background: isDragging ? "#f0f0f0" : "#fff",
-        border: isDragging
-          ? `2px solid ${column.color || "#007bff"}`
-          : `1px solid ${column.color || "#dee2e6"}40`,
-        borderRadius: "6px",
-        padding: "clamp(8px, 2vw, 12px)",
-        marginBottom: "8px",
-        cursor: isDragging ? "grabbing" : "grab",
-        boxShadow: isDragging
-          ? `0 8px 25px ${column.color || "#007bff"}30`
-          : `0 1px 3px ${column.color || "#000"}10`,
-        opacity: isDragging ? 0.5 : 1,
-        transition: "all 0.2s ease",
+        borderColor: isDragging ? (column.color || "#007bff") : undefined,
+        backgroundColor: isDragging ? "#f8f9fa" : undefined,
       }}
     >
-      {/* Ticket Priority Indicator */}
-      <div
-        style={{
-          width: "100%",
-          height: "3px",
-          background: getPriorityColor(ticket.priority),
-          borderRadius: "2px",
-          marginBottom: "8px",
-        }}
-      ></div>
-
-      {/* Ticket Title */}
-      <h4
-        style={{
-          fontSize: "14px",
-          fontWeight: "600",
-          margin: "0 0 6px 0",
-          color: "#333",
-          lineHeight: "1.3",
-        }}
-      >
-        {ticket.title}
-      </h4>
-
-      {/* Ticket Meta */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontSize: "11px",
-          color: "#6c757d",
-          marginBottom: "8px",
-        }}
-      >
-        <span>#{ticket.id}</span>
-        <span>{formatDate(ticket.created_at)}</span>
-      </div>
-
-      {/* Assigned User */}
-      {ticket.assigned_to && (
+      <CardContent className="p-3">
+        {/* Ticket Priority Indicator */}
         <div
-          style={{
-            marginBottom: "8px",
-            fontSize: "11px",
-            color: "#495057",
-          }}
-        >
-          👤 {ticket.assigned_to.first_name} {ticket.assigned_to.last_name}
+          className="w-full h-1 rounded-sm mb-2"
+          style={{ backgroundColor: getPriorityColor(ticket.priority) }}
+        />
+
+        {/* Ticket Title */}
+        <h4 className="text-sm font-semibold mb-2 text-gray-900 leading-tight">
+          {ticket.title}
+        </h4>
+
+        {/* Ticket Meta */}
+        <div className="flex justify-between items-center text-xs text-muted-foreground mb-2">
+          <span>#{ticket.id}</span>
+          <span>{formatDate(ticket.created_at)}</span>
         </div>
-      )}
 
-      {/* Progress indicators */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginBottom: "8px",
-          fontSize: "10px",
-          color: "#6c757d",
-        }}
-      >
-        {/* Comments count */}
-        {ticket.comments_count && parseInt(ticket.comments_count) > 0 && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2px",
-            }}
-          >
-            💬 {ticket.comments_count}
+        {/* Assigned User */}
+        {ticket.assigned_to && (
+          <div className="flex items-center gap-1 mb-2 text-xs text-gray-700">
+            <User className="h-3 w-3" />
+            <span>{ticket.assigned_to.first_name} {ticket.assigned_to.last_name}</span>
           </div>
         )}
 
-        {/* Time tracking indicator */}
-        {column.track_time && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "2px",
-              color: "#007bff",
-            }}
-          >
-            ⏱️ Tracking
-          </div>
-        )}
-      </div>
+        {/* Progress indicators */}
+        <div className="flex items-center gap-2 mb-2">
+          {/* Comments count */}
+          {ticket.comments_count && parseInt(ticket.comments_count) > 0 && (
+            <Badge variant="secondary" className="text-xs px-1 py-0">
+              💬 {ticket.comments_count}
+            </Badge>
+          )}
 
-      {/* Tags */}
-      {ticket.tags && ticket.tags.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "4px",
-          }}
-        >
-          {ticket.tags.slice(0, 3).map((tag: any) => (
-            <span
-              key={tag.id}
-              style={{
-                background: "#e9ecef",
-                color: "#495057",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                fontSize: "10px",
-              }}
-            >
-              {tag.name}
-            </span>
-          ))}
-          {ticket.tags.length > 3 && (
-            <span
-              style={{
-                color: "#6c757d",
-                fontSize: "10px",
-              }}
-            >
-              +{ticket.tags.length - 3}
-            </span>
+          {/* Time tracking indicator */}
+          {column.track_time && (
+            <Badge variant="outline" className="text-xs px-1 py-0 text-blue-600 border-blue-200">
+              <Clock className="h-3 w-3 mr-1" />
+              Tracking
+            </Badge>
           )}
         </div>
-      )}
-    </div>
+
+        {/* Tags */}
+        {ticket.tags && ticket.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {ticket.tags.slice(0, 3).map((tag: any) => (
+              <Badge
+                key={tag.id}
+                variant="secondary"
+                className="text-xs px-2 py-0"
+              >
+                <Tag className="h-2 w-2 mr-1" />
+                {tag.name}
+              </Badge>
+            ))}
+            {ticket.tags.length > 3 && (
+              <span className="text-xs text-muted-foreground">
+                +{ticket.tags.length - 3}
+              </span>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -352,101 +292,77 @@ function DroppableColumn({
   dropRef(ref);
 
   return (
-    <div
+    <Card
       ref={ref}
-      className="kanban-column"
+      className={`
+        kanban-column flex-shrink-0 transition-all duration-200 shadow-none h-full flex flex-col
+        ${isOver ? 'border-2 border-dashed shadow-md' : 'border border-gray-200'}
+      `}
       style={{
-        minWidth: columnWidth,
+        minWidth: Math.max(280, parseInt(columnWidth)), // Ensure minimum readable width
         maxWidth: columnWidth,
         width: "100%",
-        background: isOver
+        backgroundColor: isOver
           ? `${column.color || "#6c757d"}15`
-          : `${column.color || "#6c757d"}08`,
-        borderRadius: "8px",
-        padding: "12px",
-        border: isOver
-          ? `2px dashed ${column.color || "#6c757d"}`
-          : "2px dashed transparent",
-        transition: "all 0.2s ease",
-        flexShrink: 0,
+          : undefined,
+        borderColor: isOver
+          ? column.color || "#6c757d"
+          : undefined,
       }}
     >
-      {/* Column Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "16px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div
+              className="w-4 h-4 rounded shadow-sm"
+              style={{
+                backgroundColor: column.color || "#6c757d",
+                boxShadow: `0 2px 4px ${column.color || "#6c757d"}25`,
+              }}
+            />
+            <CardTitle
+              className="text-sm font-semibold"
+              style={{ color: column.color || "#333" }}
+            >
+              {column.name}
+            </CardTitle>
+          </div>
+          <Badge
+            variant="secondary"
+            className="text-xs"
             style={{
-              width: "16px",
-              height: "16px",
-              borderRadius: "4px",
-              background: column.color || "#6c757d",
-              boxShadow: `0 2px 4px ${column.color || "#6c757d"}25`,
-            }}
-          ></div>
-          <h3
-            style={{
-              fontSize: "15px",
-              fontWeight: "600",
-              margin: 0,
-              color: column.color || "#333",
+              backgroundColor: `${column.color || "#6c757d"}20`,
+              color: column.color || "#495057",
             }}
           >
-            {column.name}
-          </h3>
+            {tickets.length}
+          </Badge>
         </div>
-        <span
-          style={{
-            background: `${column.color || "#6c757d"}20`,
-            color: column.color || "#495057",
-            padding: "2px 8px",
-            borderRadius: "12px",
-            fontSize: "12px",
-            fontWeight: "500",
-          }}
-        >
-          {tickets.length}
-        </span>
-      </div>
 
-      {/* Column Description */}
-      {column.description && (
-        <p
-          style={{
-            fontSize: "12px",
-            color: "#6c757d",
-            margin: "0 0 16px 0",
-          }}
-        >
-          {column.description}
-        </p>
-      )}
+        {/* Column Description */}
+        {column.description && (
+          <p className="text-xs text-muted-foreground mt-2 mb-0">
+            {column.description}
+          </p>
+        )}
+      </CardHeader>
 
-      {/* Tickets */}
-      <div
-        style={{
-          minHeight: "200px",
-          padding: "4px",
-        }}
-      >
-        {tickets.map((ticket, index) => (
-          <DraggableTicket
-            key={ticket.id}
-            ticket={ticket}
-            index={index}
-            column={column}
-            onTicketClick={onTicketClick}
-            onMoveTicket={onMoveTicket}
-          />
-        ))}
-      </div>
-    </div>
+      <CardContent className="pt-0 flex-1 overflow-hidden">
+        {/* Tickets */}
+        <div className="h-full overflow-y-auto space-y-2 pr-2">
+          {tickets.map((ticket, index) => (
+            <DraggableTicket
+              key={ticket.id}
+              ticket={ticket}
+              index={index}
+              column={column}
+              onTicketClick={onTicketClick}
+              onMoveTicket={onMoveTicket}
+            />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -458,12 +374,16 @@ function KanbanBoardContent({
   onEditBoardStatuses,
   onManageBoardUsers,
 }: KanbanBoardContentProps) {
-  const [boardData, setBoardData] = useState<KanbanBoardType | null>(null);
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMoving, setIsMoving] = useState(false);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  // Use React Query hooks for data fetching
+  const { data: boards = [], isLoading: boardsLoading, error: boardsError } = useBoards();
+  const { data: boardData, isLoading: boardDataLoading, error: boardDataError, refetch: refetchBoardData } = useKanbanBoard(selectedBoardId);
+
+  const loading = boardsLoading || boardDataLoading;
 
   // Calculate column dimensions based on available space
   const calculateColumnDimensions = (numColumns: number) => {
@@ -492,15 +412,15 @@ function KanbanBoardContent({
     };
   };
 
+  // Set selected board when boards are loaded
   useEffect(() => {
-    initializeBoard();
-  }, []);
-
-  useEffect(() => {
-    if (selectedBoardId) {
-      fetchBoardData(selectedBoardId);
+    if (boards.length > 0 && !selectedBoardId) {
+      const defaultBoard = boards.find(board => board.is_default) || boards[0];
+      if (defaultBoard) {
+        setSelectedBoardId(defaultBoard.id);
+      }
     }
-  }, [selectedBoardId]);
+  }, [boards, selectedBoardId]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -511,45 +431,18 @@ function KanbanBoardContent({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const initializeBoard = async () => {
-    try {
-      setLoading(true);
-      // Get the list of boards to find the default one
-      const boardsResponse = await boardsList();
-      const boards = boardsResponse.results || [];
-      
-      // Find default board or use the first one
-      const defaultBoard = boards.find(board => board.is_default) || boards[0];
-      
-      if (defaultBoard) {
-        setSelectedBoardId(defaultBoard.id);
-      } else {
-        // No boards exist, show empty state
-        setLoading(false);
-        setError("No boards found. Please create a board first.");
-      }
-    } catch (err: unknown) {
-      console.error("Failed to initialize board:", err);
+  // Handle errors from React Query
+  useEffect(() => {
+    if (boardsError) {
       setError("Failed to load boards");
-      setLoading(false);
-    }
-  };
-
-  const fetchBoardData = async (boardId: number) => {
-    try {
-      setLoading(true);
-      setError("");
-
-      // Fetch kanban board data for specific board
-      const response = await boardsKanbanBoardRetrieve(boardId.toString());
-      setBoardData(response as any);
-    } catch (err: unknown) {
-      console.error("Failed to fetch kanban board:", err);
+    } else if (boardDataError) {
       setError("Failed to load kanban board");
-    } finally {
-      setLoading(false);
+    } else if (boards.length === 0 && !boardsLoading) {
+      setError("No boards found. Please create a board first.");
+    } else {
+      setError("");
     }
-  };
+  }, [boardsError, boardDataError, boards.length, boardsLoading]);
 
   const moveTicket = useCallback(
     async (
@@ -590,7 +483,7 @@ function KanbanBoardContent({
           console.log("Ticket move successful");
           // Refresh the board data to get the updated state
           if (selectedBoardId) {
-            await fetchBoardData(selectedBoardId);
+            await refetchBoardData();
           }
         } catch (err: unknown) {
           console.error("Failed to move ticket:", err);
@@ -613,64 +506,48 @@ function KanbanBoardContent({
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "400px",
-        }}
-      >
-        <div
-          style={{
-            width: "40px",
-            height: "40px",
-            border: "4px solid #e9ecef",
-            borderTop: "4px solid #007bff",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        ></div>
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center h-96">
+          <div className="flex items-center space-x-2">
+            <Spinner className="h-8 w-8" />
+            <span className="text-muted-foreground">Loading kanban board...</span>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error && loading) {
     return (
-      <div
-        style={{
-          background: "#fee",
-          color: "#c33",
-          padding: "16px",
-          borderRadius: "8px",
-          textAlign: "center",
-        }}
-      >
-        {error}
-        <button
-          onClick={() => selectedBoardId && fetchBoardData(selectedBoardId)}
-          style={{
-            marginLeft: "10px",
-            background: "#dc3545",
-            color: "white",
-            border: "none",
-            padding: "6px 12px",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          Retry
-        </button>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
+            <p className="mb-4">{error}</p>
+            <Button
+              onClick={() => refetchBoardData()}
+              variant="destructive"
+              size="sm"
+            >
+              Retry
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!boardData && !loading) {
-    return <div>No board data available</div>;
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">No board data available</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div style={{ padding: "clamp(12px, 3vw, 20px)" }}>
+    <div className="h-full flex flex-col bg-white">
       {error && (
         <div
           style={{
@@ -709,30 +586,14 @@ function KanbanBoardContent({
       )}
 
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "20px",
-          minHeight: "40px",
-          gap: "16px",
-        }}
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
-          <h2
-            style={{
-              fontSize: "clamp(18px, 4vw, 24px)",
-              fontWeight: "600",
-              margin: 0,
-              color: "#333",
-              minWidth: "fit-content",
-            }}
-          >
+      <div className="flex justify-between items-start mb-4 gap-4 px-4 md:px-6 pt-4 md:pt-6 flex-shrink-0">
+        <div className="flex flex-col gap-3 flex-1">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-900 m-0">
             Kanban Board
           </h2>
           <BoardSwitcher
             selectedBoardId={selectedBoardId}
+            boards={boards}
             onBoardChange={setSelectedBoardId}
             onCreateBoard={onCreateBoard}
             onEditBoardStatuses={onEditBoardStatuses}
@@ -740,27 +601,14 @@ function KanbanBoardContent({
           />
         </div>
         {onCreateTicket && (
-          <button
+          <Button
             onClick={onCreateTicket}
-            style={{
-              background: "#007bff",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              whiteSpace: "nowrap",
-              flexShrink: 0,
-            }}
+            className="flex items-center gap-2 whitespace-nowrap flex-shrink-0"
+            size="sm"
           >
-            <span style={{ fontSize: "16px", lineHeight: 1 }}>+</span>
-            <span className="create-ticket-text" style={{ display: "inline" }}>Create Ticket</span>
-          </button>
+            <Plus className="h-4 w-4" />
+            <span className="create-ticket-text">Create Ticket</span>
+          </Button>
         )}
       </div>
 
@@ -807,22 +655,13 @@ function KanbanBoardContent({
       )}
 
       {/* Kanban Board */}
-      <div
-        className="kanban-container"
-        style={{
-          display: "flex",
-          gap: "16px",
-          overflowX: (() => {
-            // Enable horizontal scroll when columns don't fit
-            if (!boardData?.columns) return "visible";
-            const { needsHorizontalScroll } = calculateColumnDimensions(boardData.columns.length);
-            return needsHorizontalScroll ? "auto" : "visible";
-          })(),
-          paddingBottom: "20px",
-          minHeight: "calc(100vh - 200px)",
-          scrollbarWidth: "thin", // For Firefox
-        }}
-      >
+      <div className="flex-1 px-4 md:px-6 pb-4 md:pb-6 overflow-hidden">
+        <div
+          className="kanban-container h-full flex gap-4 overflow-x-auto overflow-y-hidden pb-4"
+          style={{
+            scrollbarWidth: "thin", // For Firefox
+          }}
+        >
         {boardData &&
           boardData.columns?.map((column) => {
             // Get tickets for this column from tickets_by_column
@@ -853,6 +692,7 @@ function KanbanBoardContent({
               />
             );
           })}
+        </div>
       </div>
 
       <style jsx>{`

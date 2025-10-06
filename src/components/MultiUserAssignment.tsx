@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { ChevronDown, X, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { User, TicketAssignment } from '@/api/generated/interfaces';
 
 export interface AssignmentData {
@@ -18,10 +25,10 @@ interface MultiUserAssignmentProps {
 }
 
 const roleOptions = [
-  { value: 'primary', label: 'Primary Assignee', color: '#e74c3c' },
-  { value: 'collaborator', label: 'Collaborator', color: '#3498db' },
-  { value: 'reviewer', label: 'Reviewer', color: '#f39c12' },
-  { value: 'observer', label: 'Observer', color: '#95a5a6' }
+  { value: 'primary', label: 'Primary Assignee', color: 'bg-red-500' },
+  { value: 'collaborator', label: 'Collaborator', color: 'bg-blue-500' },
+  { value: 'reviewer', label: 'Reviewer', color: 'bg-orange-500' },
+  { value: 'observer', label: 'Observer', color: 'bg-gray-500' }
 ];
 
 export default function MultiUserAssignment({
@@ -92,7 +99,7 @@ export default function MultiUserAssignment({
   const getSelectedUsersDisplay = () => {
     const assignments = selectedAssignments || [];
     if (assignments.length === 0) {
-      return <span style={{ color: '#6c757d' }}>{placeholder}</span>;
+      return placeholder;
     }
 
     if (assignments.length === 1) {
@@ -104,13 +111,17 @@ export default function MultiUserAssignment({
     return `${assignments.length} users selected`;
   };
 
+  const isPlaceholderShown = () => {
+    return (selectedAssignments || []).length === 0;
+  };
+
   const getUserDisplay = (user: User) => {
     const name = `${user.first_name} ${user.last_name}`.trim() || user.email;
     return `${name} (${user.email})`;
   };
 
   const getRoleColor = (role: string) => {
-    return roleOptions.find(opt => opt.value === role)?.color || '#95a5a6';
+    return roleOptions.find(opt => opt.value === role)?.color || 'bg-gray-500';
   };
 
   const getRoleLabel = (role: string) => {
@@ -118,15 +129,11 @@ export default function MultiUserAssignment({
   };
 
   return (
-    <div style={{ position: 'relative' }} ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef}>
       {/* Selected Assignments Display */}
       {(selectedAssignments || []).length > 0 && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px'
-          }}>
+        <div className="mb-3">
+          <div className="flex flex-wrap gap-2">
             {(selectedAssignments || []).map(assignment => {
               const user = (users || []).find(u => u.id === assignment.userId);
               if (!user) return null;
@@ -134,64 +141,40 @@ export default function MultiUserAssignment({
               return (
                 <div
                   key={assignment.userId}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: 'white',
-                    border: '2px solid #e1e5e9',
-                    borderRadius: '20px',
-                    padding: '6px 12px',
-                    fontSize: '14px',
-                    gap: '8px'
-                  }}
+                  className="flex items-center bg-white border-2 border-gray-200 rounded-full px-3 py-1.5 text-sm gap-2"
                 >
-                  <span style={{ fontWeight: '500' }}>
+                  <span className="font-medium">
                     {getUserDisplay(user)}
                   </span>
-                  
-                  <select
-                    value={assignment.role}
-                    onChange={(e) => handleRoleChange(assignment.userId, e.target.value as any)}
-                    disabled={disabled}
-                    style={{
-                      background: getRoleColor(assignment.role),
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      padding: '2px 8px',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      cursor: disabled ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    {roleOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
 
-                  <button
+                  <Select
+                    value={assignment.role}
+                    onValueChange={(value) => handleRoleChange(assignment.userId, value as any)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className={`h-6 w-auto border-none text-white text-xs font-medium px-2 ${getRoleColor(assignment.role)}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                      {roleOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100 cursor-pointer">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
                     type="button"
                     onClick={() => removeAssignment(assignment.userId)}
                     disabled={disabled}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#dc3545',
-                      cursor: disabled ? 'not-allowed' : 'pointer',
-                      fontSize: '16px',
-                      padding: '0',
-                      width: '16px',
-                      height: '16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    variant="ghost"
+                    size="icon-sm"
+                    className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
                     title="Remove assignment"
                   >
-                    ×
-                  </button>
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               );
             })}
@@ -200,73 +183,40 @@ export default function MultiUserAssignment({
       )}
 
       {/* Dropdown Trigger */}
-      <div
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        style={{
-          width: '100%',
-          padding: '12px',
-          border: '2px solid #e1e5e9',
-          borderRadius: '6px',
-          backgroundColor: disabled ? '#f8f9fa' : 'white',
-          cursor: disabled ? 'not-allowed' : 'pointer',
-          transition: 'border-color 0.2s',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}
-      >
-        <span>{getSelectedUsersDisplay()}</span>
-        <span style={{
-          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s'
-        }}>
-          ▼
-        </span>
-      </div>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            disabled={disabled}
+            className="w-full justify-between bg-white border-2 border-gray-200 hover:border-gray-300"
+          >
+            <span className={isPlaceholderShown() ? "text-muted-foreground" : ""}>
+              {getSelectedUsersDisplay()}
+            </span>
+            <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          </Button>
+        </DropdownMenuTrigger>
 
-      {/* Dropdown Menu */}
-      {isOpen && !disabled && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          background: 'white',
-          border: '2px solid #e1e5e9',
-          borderTop: 'none',
-          borderRadius: '0 0 6px 6px',
-          boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-          zIndex: 1000,
-          maxHeight: '300px',
-          overflow: 'hidden'
-        }}>
+        {/* Dropdown Menu */}
+        <DropdownMenuContent className="w-full bg-white border-2 border-gray-200 shadow-lg p-0" align="start" style={{ backgroundColor: 'white' }}>
           {/* Search Input */}
-          <div style={{ padding: '12px', borderBottom: '1px solid #e1e5e9' }}>
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #e1e5e9',
-                borderRadius: '4px',
-                fontSize: '14px',
-                boxSizing: 'border-box'
-              }}
-            />
+          <div className="p-3 border-b border-gray-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search users..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-white border-gray-200"
+              />
+            </div>
           </div>
 
           {/* User List */}
-          <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+          <div className="max-h-48 overflow-y-auto">
             {filteredUsers.length === 0 ? (
-              <div style={{
-                padding: '16px',
-                textAlign: 'center',
-                color: '#6c757d',
-                fontSize: '14px'
-              }}>
+              <div className="p-4 text-center text-muted-foreground text-sm">
                 {searchTerm ? 'No users found' : 'No users available'}
               </div>
             ) : (
@@ -276,64 +226,32 @@ export default function MultiUserAssignment({
                   <div
                     key={user.id}
                     onClick={() => handleUserToggle(user.id)}
-                    style={{
-                      padding: '12px',
-                      cursor: 'pointer',
-                      borderBottom: '1px solid #f1f1f1',
-                      background: selected ? '#f8f9ff' : 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseOver={(e) => {
-                      if (!selected) {
-                        e.currentTarget.style.backgroundColor = '#f8f9fa';
-                      }
-                    }}
-                    onMouseOut={(e) => {
-                      if (!selected) {
-                        e.currentTarget.style.backgroundColor = 'white';
-                      }
-                    }}
+                    className={`p-3 cursor-pointer border-b border-gray-100 flex items-center justify-between transition-colors hover:bg-gray-100 ${
+                      selected ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50'
+                    }`}
                   >
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}>
-                      <input
-                        type="checkbox"
+                    <div className="flex items-center gap-2">
+                      <Checkbox
                         checked={selected}
-                        onChange={() => {}} // Handled by parent div click
-                        style={{ margin: 0 }}
+                        onCheckedChange={() => {}} // Handled by parent div click
                       />
-                      <span style={{ fontSize: '14px' }}>
+                      <span className="text-sm">
                         {getUserDisplay(user)}
                       </span>
                     </div>
-                    
+
                     {selected && (
-                      <span
-                        style={{
-                          background: getRoleColor(getUserRole(user.id)),
-                          color: 'white',
-                          padding: '2px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '500'
-                        }}
-                      >
+                      <Badge className={`text-white text-xs font-medium ${getRoleColor(getUserRole(user.id))}`}>
                         {getRoleLabel(getUserRole(user.id))}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 );
               })
             )}
           </div>
-        </div>
-      )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
