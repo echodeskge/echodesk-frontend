@@ -6,6 +6,7 @@ import { columnsList, boardsList } from '@/api/generated/api';
 import type { Ticket, User, Tag, TicketColumn, Board } from '@/api/generated/interfaces';
 import SimpleRichTextEditor from './SimpleRichTextEditor';
 import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
+import { Button } from '@/components/ui/button';
 
 interface TicketFormProps {
   ticket?: Ticket; // If provided, we're editing; otherwise creating
@@ -333,40 +334,22 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
               Description Format
             </label>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button
+              <Button
                 type="button"
+                variant={formData.description_format === 'plain' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => handleDescriptionFormatChange('plain')}
-                style={{
-                  background: formData.description_format === 'plain' ? '#3498db' : 'white',
-                  color: formData.description_format === 'plain' ? 'white' : '#3498db',
-                  border: '2px solid #3498db',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
               >
                 Plain Text
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant={formData.description_format === 'html' ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => handleDescriptionFormatChange('html')}
-                style={{
-                  background: formData.description_format === 'html' ? '#3498db' : 'white',
-                  color: formData.description_format === 'html' ? 'white' : '#3498db',
-                  border: '2px solid #3498db',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
               >
                 Rich Text
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -613,60 +596,21 @@ export default function TicketForm({ ticket, onSave, onCancel }: TicketFormProps
             borderTop: '1px solid #e1e5e9'
           }}>
             {onCancel && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={onCancel}
-                style={{
-                  background: 'white',
-                  color: '#6c757d',
-                  border: '2px solid #6c757d',
-                  padding: '12px 24px',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = '#6c757d';
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.color = '#6c757d';
-                }}
               >
                 Cancel
-              </button>
+              </Button>
             )}
             
-            <button
+            <Button
               type="submit"
               disabled={loading || !formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id}
-              style={{
-                background: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id || loading) ? '#dee2e6' : '#27ae60',
-                color: 'white',
-                border: 'none',
-                padding: '12px 24px',
-                borderRadius: '6px',
-                fontSize: '16px',
-                fontWeight: '500',
-                cursor: (!formData.title.trim() || (!formData.description.trim() && !formData.rich_description.trim()) || !formData.board_id || loading) ? 'not-allowed' : 'pointer',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseOver={(e) => {
-                if (!e.currentTarget.disabled) {
-                  e.currentTarget.style.backgroundColor = '#229954';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!e.currentTarget.disabled) {
-                  e.currentTarget.style.backgroundColor = '#27ae60';
-                }
-              }}
             >
               {loading ? 'Saving...' : (isEditing ? 'Update Ticket' : 'Create Ticket')}
-            </button>
+            </Button>
           </div>
         </div>
       </form>

@@ -7,6 +7,7 @@ import { User } from "@/api/generated/interfaces";
 import {
   getSidebarMenuItems,
   hasPermission,
+  MenuItem,
 } from "@/services/permissionService";
 import TicketManagement from "./TicketManagement";
 import CallManager from "./CallManager";
@@ -17,6 +18,10 @@ import UnifiedMessagesManagement from "./UnifiedMessagesManagement";
 import UserTimeTracking from "./UserTimeTracking";
 import UserStatistics from "./UserStatistics";
 import OrderManagement from "./OrderManagement";
+import { AppSidebar } from "./AppSidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 
 interface DashboardProps {
   user: AuthUser;
@@ -43,7 +48,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   >("tickets");
   const [initialViewSet, setInitialViewSet] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [connectionsChanged, setConnectionsChanged] = useState(false);
   const [messagesRefreshKey, setMessagesRefreshKey] = useState(0);
@@ -52,17 +56,6 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     fetchUserProfile();
     checkSocialConnections();
 
-    // Check if mobile on mount and resize
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setSidebarOpen(false); // Close mobile sidebar when switching to desktop
-      }
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
 
@@ -213,29 +206,14 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
     }
   }, [userProfile, visibleMenuItems, initialViewSet]);
 
-  const handleMenuClick = (
-    viewId:
-      | "tickets"
-      | "calls"
-      | "orders"
-      | "users"
-      | "groups"
-      | "messages"
-      | "social"
-      | "settings"
-      | "time-tracking"
-      | "user-statistics"
-  ) => {
+  const handleMenuClick = (viewId: string) => {
     // If navigating to messages after connections changed, refresh the component
     if (viewId === "messages" && connectionsChanged) {
       setMessagesRefreshKey((prev) => prev + 1);
       setConnectionsChanged(false);
     }
 
-    setCurrentView(viewId);
-    if (isMobile) {
-      setSidebarOpen(false); // Close sidebar on mobile after selection
-    }
+    setCurrentView(viewId as typeof currentView);
   };
 
   if (loading) {
@@ -276,602 +254,217 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        background: "#f8f9fa",
-      }}
-    >
-      {/* Mobile Overlay */}
-      {isMobile && sidebarOpen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            zIndex: 999,
-          }}
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        style={{
-          width: isMobile ? "280px" : "260px",
-          background: "white",
-          borderRight: "1px solid #e1e5e9",
-          position: isMobile ? "fixed" : "relative",
-          top: 0,
-          left: 0,
-          height: "100vh",
-          transform: isMobile
-            ? sidebarOpen
-              ? "translateX(0)"
-              : "translateX(-100%)"
-            : "translateX(0)",
-          transition: "transform 0.3s ease-in-out",
-          zIndex: 1000,
-          display: "flex",
-          flexDirection: "column",
-          boxShadow: isMobile ? "2px 0 10px rgba(0,0,0,0.1)" : "none",
-        }}
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-gray-50"
+        style={{ background: "#f8f9fa" }}
       >
-        {/* Sidebar Header */}
-        <div
-          style={{
-            padding: "20px",
-            borderBottom: "1px solid #e1e5e9",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            {tenant.theme.logo_url && (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={tenant.theme.logo_url}
-                  alt={tenant.name}
-                  style={{ height: "32px", marginRight: "12px" }}
-                />
-              </>
-            )}
-            <div>
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "18px",
-                  fontWeight: "600",
-                  color: tenant.theme.primary_color,
-                }}
-              >
-                {tenant.name}
-              </h2>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: "12px",
-                  color: "#6c757d",
-                }}
-              >
-                {tenant.domain}
-              </p>
-            </div>
+
+        <AppSidebar
+          tenant={tenant}
+          userProfile={userProfile}
+          visibleMenuItems={visibleMenuItems}
+          currentView={currentView}
+          onMenuClick={handleMenuClick}
+          onLogout={handleLogout}
+        />
+
+        <SidebarInset>
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <h1 className="text-lg font-semibold">
+              {visibleMenuItems.find((item) => item.id === currentView)?.label || 'Dashboard'}
+            </h1>
           </div>
 
-          {isMobile && (
-            <button
-              onClick={() => setSidebarOpen(false)}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: "24px",
-                cursor: "pointer",
-                color: "#6c757d",
-              }}
-            >
-              ×
-            </button>
-          )}
-        </div>
+          <div className="flex-1 p-6"
+            style={{
+              background: "#f8f9fa",
+            }}
+          >
+            {/* View Content */}
+            {currentView === "tickets" && (
+              <TicketManagement />
+            )}
 
-        {/* Navigation Menu */}
-        <nav style={{ flex: 1, padding: "20px 0" }}>
-          {visibleMenuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() =>
-                handleMenuClick(
-                  item.id as
-                    | "tickets"
-                    | "calls"
-                    | "users"
-                    | "groups"
-                    | "messages"
-                    | "social"
-                    | "settings"
-                    | "time-tracking"
-                    | "user-statistics"
-                )
-              }
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "12px 20px",
-                border: "none",
-                background:
-                  currentView === item.id
-                    ? `${tenant.theme.primary_color}15`
-                    : "transparent",
-                color:
-                  currentView === item.id
-                    ? tenant.theme.primary_color
-                    : "#495057",
-                fontSize: "16px",
-                fontWeight: currentView === item.id ? "600" : "400",
-                cursor: "pointer",
-                textAlign: "left",
-                borderRight:
-                  currentView === item.id
-                    ? `3px solid ${tenant.theme.primary_color}`
-                    : "3px solid transparent",
-                transition: "all 0.2s ease",
-              }}
-              onMouseOver={(e) => {
-                if (currentView !== item.id) {
-                  e.currentTarget.style.background = "#f8f9fa";
+            {currentView === "calls" && (
+              <CallManager
+                onCallStatusChange={(isActive) =>
+                  console.log("Call status:", isActive)
                 }
-              }}
-              onMouseOut={(e) => {
-                if (currentView !== item.id) {
-                  e.currentTarget.style.background = "transparent";
-                }
-              }}
-            >
-              <span style={{ fontSize: "20px" }}>{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
+              />
+            )}
 
-        {/* User Info & Logout */}
-        <div
-          style={{
-            padding: "20px",
-            borderTop: "1px solid #e1e5e9",
-          }}
-        >
-          {userProfile && (
-            <div>
+            {currentView === "orders" && <OrderManagement />}
+
+            {currentView === "users" && <UserManagement />}
+
+            {currentView === "groups" && <TenantGroupManagement />}
+
+            {currentView === "time-tracking" && (
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                <UserTimeTracking />
+              </div>
+            )}
+
+            {currentView === "user-statistics" && (
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                <UserStatistics />
+              </div>
+            )}
+
+            {currentView === "messages" && (
+              <UnifiedMessagesManagement
+                key={messagesRefreshKey}
+                onBackToDashboard={() => {
+                  const firstAccessibleItem = visibleMenuItems[0];
+                  if (firstAccessibleItem) {
+                    setCurrentView(firstAccessibleItem.id as typeof currentView);
+                  } else {
+                    setCurrentView("empty");
+                  }
+                }}
+              />
+            )}
+
+            {currentView === "social" && (
+              <SocialIntegrations
+                onBackToDashboard={() => {
+                  if (connectionsChanged) {
+                    setMessagesRefreshKey((prev) => prev + 1);
+                    setConnectionsChanged(false);
+                  }
+                  const firstAccessibleItem = visibleMenuItems[0];
+                  if (firstAccessibleItem) {
+                    setCurrentView(firstAccessibleItem.id as typeof currentView);
+                  } else {
+                    setCurrentView("empty");
+                  }
+                }}
+                onConnectionChange={(type, connected) => {
+                  setConnectionsChanged(true);
+                  if (type === "facebook") {
+                    setFacebookConnected(connected);
+                  }
+                }}
+              />
+            )}
+
+            {currentView === "settings" && (
+              <div
+                style={{
+                  background: "white",
+                  padding: "30px",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                }}
+              >
+                <h2 style={{ margin: "0 0 20px 0", color: "#333" }}>
+                  System Settings
+                </h2>
+                <p style={{ color: "#666" }}>
+                  System settings will be available here. This section will
+                  include:
+                </p>
+                <ul style={{ color: "#666", marginLeft: "20px" }}>
+                  <li>Tenant configuration</li>
+                  <li>Security settings</li>
+                  <li>Notification preferences</li>
+                  <li>User permissions and roles</li>
+                </ul>
+                <div
+                  style={{
+                    marginTop: "20px",
+                    padding: "15px",
+                    background: "#f8f9fa",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    color: "#666",
+                  }}
+                >
+                  <strong>Note:</strong> Social media integrations are now
+                  available in the dedicated "Social Media" section in
+                  the sidebar.
+                </div>
+              </div>
+            )}
+
+            {currentView === "empty" && (
               <div
                 style={{
                   display: "flex",
+                  flexDirection: "column",
                   alignItems: "center",
-                  gap: "12px",
-                  marginBottom: "12px",
+                  justifyContent: "center",
+                  minHeight: "60vh",
+                  textAlign: "center",
+                  background: "white",
+                  borderRadius: "12px",
+                  padding: "40px 20px",
+                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
                 }}
               >
                 <div
                   style={{
-                    width: "40px",
-                    height: "40px",
+                    width: "80px",
+                    height: "80px",
                     borderRadius: "50%",
-                    background: tenant.theme.primary_color,
+                    background: `${tenant.theme.primary_color}15`,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "white",
-                    fontSize: "16px",
-                    fontWeight: "600",
+                    fontSize: "32px",
+                    marginBottom: "24px",
                   }}
                 >
-                  {userProfile.first_name?.[0] ||
-                    userProfile.email[0].toUpperCase()}
+                  🔐
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#333",
-                      marginBottom: "2px",
-                    }}
-                  >
-                    {userProfile.full_name ||
-                      `${userProfile.first_name} ${userProfile.last_name}`.trim() ||
-                      userProfile.email}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#6c757d",
-                    }}
-                  >
-                    {typeof userProfile.role === "string"
-                      ? userProfile.role
-                      : String(userProfile.role || "agent")}
-                  </div>
-                </div>
-              </div>
-
-              {/* Development: Show permissions */}
-              {process.env.NODE_ENV === "development" && (
-                <div
+                <h2
                   style={{
-                    fontSize: "10px",
-                    color: "#6c757d",
-                    backgroundColor: "#f8f9fa",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    marginBottom: "8px",
-                    border: "1px solid #e9ecef",
+                    fontSize: "24px",
+                    fontWeight: "600",
+                    color: "#333",
+                    margin: "0 0 16px 0",
                   }}
                 >
-                  <div>
-                    🎫 Tickets:{" "}
-                    {hasPermission(userProfile, "can_access_tickets")
-                      ? "✅"
-                      : "❌"}
-                  </div>
-                  <div>
-                    📞 Calls:{" "}
-                    {hasPermission(userProfile, "can_access_calls")
-                      ? "✅"
-                      : "❌"}
-                  </div>
-                  <div>
-                    👥 User Mgmt:{" "}
-                    {hasPermission(userProfile, "can_access_user_management")
-                      ? "✅"
-                      : "❌"}
-                  </div>
-                  <div>
-                    ⚙️ Settings:{" "}
-                    {hasPermission(userProfile, "can_manage_settings")
-                      ? "✅"
-                      : "❌"}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "9px",
-                      marginTop: "4px",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Groups:{" "}
-                    {userProfile?.groups?.map((g) => g.name).join(", ") ||
-                      "None"}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <button
-            onClick={handleLogout}
-            style={{
-              width: "100%",
-              background: "#dc3545",
-              color: "white",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-            }}
-          >
-            🚪 Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
-      >
-        {/* Mobile Header */}
-        {isMobile && (
-          <header
-            style={{
-              background: "white",
-              borderBottom: "1px solid #e1e5e9",
-              padding: "15px 20px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            }}
-          >
-            <button
-              onClick={() => setSidebarOpen(true)}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: "24px",
-                cursor: "pointer",
-                color: "#495057",
-              }}
-            >
-              ☰
-            </button>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "20px",
-                fontWeight: "600",
-                color: "#333",
-              }}
-            >
-              {visibleMenuItems.find((item) => item.id === currentView)?.label}
-            </h1>
-            <div style={{ width: "32px" }} /> {/* Spacer for centering */}
-          </header>
-        )}
-
-        {/* Content Area */}
-        <div
-          style={{
-            flex: 1,
-            padding: isMobile ? "20px" : "12px",
-            background: "#f8f9fa",
-          }}
-        >
-          {error && (
-            <div
-              style={{
-                background: "#f8d7da",
-                color: "#721c24",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                marginBottom: "20px",
-                border: "1px solid #f5c6cb",
-              }}
-            >
-              {error}
-              <button
-                onClick={() => setError("")}
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "#721c24",
-                  cursor: "pointer",
-                  float: "right",
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                }}
-              >
-                ×
-              </button>
-            </div>
-          )}
-
-          {/* View Content */}
-          {currentView === "tickets" && (
-            <TicketManagement />
-          )}
-
-          {currentView === "calls" && (
-            <CallManager
-              onCallStatusChange={(isActive) =>
-                console.log("Call status:", isActive)
-              }
-            />
-          )}
-
-          {currentView === "orders" && <OrderManagement />}
-
-          {currentView === "users" && <UserManagement />}
-
-          {currentView === "groups" && <TenantGroupManagement />}
-
-
-          {currentView === "time-tracking" && (
-            <div
-              style={{
-                background: "white",
-                borderRadius: "12px",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <UserTimeTracking />
-            </div>
-          )}
-
-          {currentView === "user-statistics" && (
-            <div
-              style={{
-                background: "white",
-                borderRadius: "12px",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <UserStatistics />
-            </div>
-          )}
-
-          {currentView === "messages" && (
-            <UnifiedMessagesManagement
-              key={messagesRefreshKey} // Force refresh when this key changes
-              onBackToDashboard={() => {
-                // Go back to first accessible view instead of dashboard
-                const firstAccessibleItem = visibleMenuItems[0];
-                if (firstAccessibleItem) {
-                  setCurrentView(firstAccessibleItem.id as typeof currentView);
-                } else {
-                  setCurrentView("empty");
-                }
-              }}
-            />
-          )}
-
-          {currentView === "social" && (
-            <SocialIntegrations
-              onBackToDashboard={() => {
-                // If connections changed while in social view, refresh messages
-                if (connectionsChanged) {
-                  setMessagesRefreshKey((prev) => prev + 1);
-                  setConnectionsChanged(false);
-                }
-                // Go back to first accessible view instead of dashboard
-                const firstAccessibleItem = visibleMenuItems[0];
-                if (firstAccessibleItem) {
-                  setCurrentView(firstAccessibleItem.id as typeof currentView);
-                } else {
-                  setCurrentView("empty");
-                }
-              }}
-              onConnectionChange={(type, connected) => {
-                setConnectionsChanged(true); // Mark that connections have changed
-                if (type === "facebook") {
-                  setFacebookConnected(connected);
-                }
-              }}
-            />
-          )}
-
-          {currentView === "settings" && (
-            <div
-              style={{
-                background: "white",
-                padding: "30px",
-                borderRadius: "12px",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <h2 style={{ margin: "0 0 20px 0", color: "#333" }}>
-                System Settings
-              </h2>
-              <p style={{ color: "#666" }}>
-                System settings will be available here. This section will
-                include:
-              </p>
-              <ul style={{ color: "#666", marginLeft: "20px" }}>
-                <li>Tenant configuration</li>
-                <li>Security settings</li>
-                <li>Notification preferences</li>
-                <li>User permissions and roles</li>
-              </ul>
-              <div
-                style={{
-                  marginTop: "20px",
-                  padding: "15px",
-                  background: "#f8f9fa",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  color: "#666",
-                }}
-              >
-                <strong>Note:</strong> Social media integrations are now
-                available in the dedicated &quot;Social Media&quot; section in
-                the sidebar.
+                  Access Restricted
+                </h2>
+                <p
+                  style={{
+                    fontSize: "16px",
+                    color: "#6c757d",
+                    margin: "0 0 24px 0",
+                    maxWidth: "400px",
+                    lineHeight: "1.5",
+                  }}
+                >
+                  You don&apos;t have permission to access any sections of the application.
+                  Please contact your administrator to request appropriate access.
+                </p>
+                <Button
+                  onClick={handleLogout}
+                  style={{
+                    background: tenant.theme.primary_color,
+                  }}
+                >
+                  🚪 Logout
+                </Button>
               </div>
-            </div>
-          )}
-
-          {currentView === "empty" && (
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: "60vh",
-                textAlign: "center",
-                background: "white",
-                borderRadius: "12px",
-                padding: "40px 20px",
-                boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div
-                style={{
-                  width: "80px",
-                  height: "80px",
-                  borderRadius: "50%",
-                  background: `${tenant.theme.primary_color}15`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "32px",
-                  marginBottom: "24px",
-                }}
-              >
-                🔐
-              </div>
-              <h2
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "600",
-                  color: "#333",
-                  margin: "0 0 16px 0",
-                }}
-              >
-                Access Restricted
-              </h2>
-              <p
-                style={{
-                  fontSize: "16px",
-                  color: "#6c757d",
-                  margin: "0 0 24px 0",
-                  maxWidth: "400px",
-                  lineHeight: "1.5",
-                }}
-              >
-                You don&apos;t have permission to access any sections of the application.
-                Please contact your administrator to request appropriate access.
-              </p>
-              <button
-                onClick={handleLogout}
-                style={{
-                  background: tenant.theme.primary_color,
-                  color: "white",
-                  border: "none",
-                  padding: "12px 24px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                🚪 Logout
-              </button>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* CSS Animation */}
-      <style jsx>{`
-        @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
-    </div>
+            )}
+          </div>
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 }
