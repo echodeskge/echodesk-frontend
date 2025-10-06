@@ -73,8 +73,8 @@ export function AppSidebar({
   onLogout
 }: AppSidebarProps) {
   return (
-    <Sidebar variant="inset">
-      <SidebarHeader>
+    <Sidebar variant="inset" className="bg-white border-r border-gray-200">
+      <SidebarHeader className="bg-white border-b border-gray-100">
         <div className="flex items-center gap-3 px-4 py-2">
           {tenant.theme.logo_url && (
             <img
@@ -97,7 +97,7 @@ export function AppSidebar({
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -112,6 +112,7 @@ export function AppSidebar({
                       onClick={() => onMenuClick(item.id)}
                       isActive={isActive}
                       tooltip={item.description}
+                      className="cursor-pointer hover:bg-white hover:shadow-sm transition-all duration-200 data-[active=true]:bg-white data-[active=true]:shadow-md"
                     >
                       {IconComponent ? (
                         <IconComponent className="h-4 w-4" />
@@ -128,8 +129,8 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        <div className="p-4 border-t">
+      <SidebarFooter className="bg-white">
+        <div className="p-4 border-t border-gray-100">
           {userProfile && (
             <div className="mb-3">
               <p className="text-sm font-medium">
@@ -144,7 +145,7 @@ export function AppSidebar({
             variant="outline"
             size="sm"
             onClick={onLogout}
-            className="w-full"
+            className="w-full bg-white hover:bg-gray-50 hover:shadow-sm transition-all duration-200"
           >
             <Power className="h-4 w-4 mr-2" />
             Logout

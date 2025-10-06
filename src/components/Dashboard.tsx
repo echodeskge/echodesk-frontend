@@ -255,8 +255,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-gray-50"
-        style={{ background: "#f8f9fa" }}
+      <div className="flex min-h-screen w-full bg-white"
       >
 
         <AppSidebar
@@ -269,17 +268,14 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
         />
 
         <SidebarInset>
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white">
             <SidebarTrigger className="-ml-1" />
             <h1 className="text-lg font-semibold">
               {visibleMenuItems.find((item) => item.id === currentView)?.label || 'Dashboard'}
             </h1>
           </div>
 
-          <div className="flex-1 p-6"
-            style={{
-              background: "#f8f9fa",
-            }}
+          <div className="flex-1 p-6 bg-white"
           >
             {/* View Content */}
             {currentView === "tickets" && (
@@ -301,27 +297,11 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
             {currentView === "groups" && <TenantGroupManagement />}
 
             {currentView === "time-tracking" && (
-              <div
-                style={{
-                  background: "white",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                }}
-              >
-                <UserTimeTracking />
-              </div>
+              <UserTimeTracking />
             )}
 
             {currentView === "user-statistics" && (
-              <div
-                style={{
-                  background: "white",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-                }}
-              >
-                <UserStatistics />
-              </div>
+              <UserStatistics />
             )}
 
             {currentView === "messages" && (

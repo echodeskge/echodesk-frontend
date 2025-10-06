@@ -4,6 +4,12 @@ import { useState, useEffect } from 'react';
 import { formatDuration } from './TimeTracking';
 import { usersList, timeLogsList } from '@/api/generated';
 import { User, TicketTimeLog } from '@/api/generated/interfaces';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { ChevronUp, ChevronDown, ChevronsUpDown, BarChart3, Clock, Users, TrendingUp } from 'lucide-react';
 
 interface UserTimeStats {
   user_id: number;
@@ -190,442 +196,232 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
 
   if (loading) {
     return (
-      <div className={className} style={{ padding: '20px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '300px'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #e3e3e3',
-            borderTop: '4px solid #007bff',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-        </div>
+      <div className={className}>
+        <Card>
+          <CardContent className="flex items-center justify-center h-64">
+            <div className="flex items-center space-x-2">
+              <Spinner className="h-6 w-6" />
+              <span className="text-muted-foreground">Loading statistics...</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={className} style={{ padding: '20px' }}>
-        <div style={{
-          background: '#f8d7da',
-          color: '#721c24',
-          padding: '16px',
-          borderRadius: '8px',
-          textAlign: 'center'
-        }}>
-          {error}
-        </div>
+      <div className={className}>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
+              {error}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   const getSortIcon = (column: keyof UserTimeStats) => {
-    if (sortBy !== column) return '↕️';
-    return sortOrder === 'asc' ? '↑' : '↓';
+    if (sortBy !== column) return <ChevronsUpDown className="h-4 w-4" />;
+    return sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
   };
 
   return (
-    <div className={className} style={{ padding: '20px' }}>
+    <div className={className}>
       {/* Header */}
-      <div style={{
-        marginBottom: '24px'
-      }}>
-        <h2 style={{
-          fontSize: '24px',
-          fontWeight: '600',
-          color: '#333',
-          margin: '0 0 8px 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          📊 User Time Tracking Statistics
-        </h2>
-        <p style={{
-          color: '#666',
-          margin: 0,
-          fontSize: '14px'
-        }}>
-          Time tracking overview for all users in your tenant
-        </p>
-      </div>
+      <Card className="mb-6 shadow-none border border-gray-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-blue-600" />
+            User Time Tracking Statistics
+          </CardTitle>
+          <CardDescription>
+            Time tracking overview for all users in your tenant
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
       {/* Summary Cards */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px'
-      }}>
-        <div style={{
-          background: '#fff',
-          border: '1px solid #e9ecef',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#007bff',
-            marginBottom: '4px'
-          }}>
-            {data.length}
-          </div>
-          <div style={{ fontSize: '14px', color: '#666' }}>
-            Active Users
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="shadow-none border border-gray-200">
+          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+            <Users className="h-8 w-8 text-blue-500 mb-2" />
+            <div className="text-2xl font-bold text-blue-600">
+              {data.length}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Active Users
+            </div>
+          </CardContent>
+        </Card>
 
-        <div style={{
-          background: '#fff',
-          border: '1px solid #e9ecef',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#28a745',
-            marginBottom: '4px',
-            fontFamily: 'monospace'
-          }}>
-            {formatDuration(data.reduce((sum, user) => sum + user.this_week, 0))}
-          </div>
-          <div style={{ fontSize: '14px', color: '#666' }}>
-            Total This Week
-          </div>
-        </div>
+        <Card className="shadow-none border border-gray-200">
+          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+            <Clock className="h-8 w-8 text-green-500 mb-2" />
+            <div className="text-2xl font-bold text-green-600 font-mono">
+              {formatDuration(data.reduce((sum, user) => sum + user.this_week, 0))}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Total This Week
+            </div>
+          </CardContent>
+        </Card>
 
-        <div style={{
-          background: '#fff',
-          border: '1px solid #e9ecef',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#ffc107',
-            marginBottom: '4px',
-            fontFamily: 'monospace'
-          }}>
-            {data.length > 0 ? formatDuration(Math.floor(data.reduce((sum, user) => sum + user.this_week, 0) / data.length)) : '0s'}
-          </div>
-          <div style={{ fontSize: '14px', color: '#666' }}>
-            Average This Week
-          </div>
-        </div>
+        <Card className="shadow-none border border-gray-200">
+          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+            <TrendingUp className="h-8 w-8 text-yellow-500 mb-2" />
+            <div className="text-2xl font-bold text-yellow-600 font-mono">
+              {data.length > 0 ? formatDuration(Math.floor(data.reduce((sum, user) => sum + user.this_week, 0) / data.length)) : '0s'}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Average This Week
+            </div>
+          </CardContent>
+        </Card>
 
-        <div style={{
-          background: '#fff',
-          border: '1px solid #e9ecef',
-          borderRadius: '8px',
-          padding: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#6f42c1',
-            marginBottom: '4px',
-            fontFamily: 'monospace'
-          }}>
-            {data.length > 0 ? formatDuration(Math.floor(data.reduce((sum, user) => sum + user.avg_daily_this_month, 0) / data.length)) : '0s'}
-          </div>
-          <div style={{ fontSize: '14px', color: '#666' }}>
-            Team Avg Daily
-          </div>
-        </div>
+        <Card className="shadow-none border border-gray-200">
+          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+            <BarChart3 className="h-8 w-8 text-purple-500 mb-2" />
+            <div className="text-2xl font-bold text-purple-600 font-mono">
+              {data.length > 0 ? formatDuration(Math.floor(data.reduce((sum, user) => sum + user.avg_daily_this_month, 0) / data.length)) : '0s'}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Team Avg Daily
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Statistics Table */}
-      <div style={{
-        background: '#fff',
-        border: '1px solid #e9ecef',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          overflowX: 'auto'
-        }}>
-          <table style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            minWidth: '900px'
-          }}>
-            <thead>
-              <tr style={{
-                background: '#f8f9fa',
-                borderBottom: '2px solid #e9ecef'
-              }}>
-                <th
+      <Card className="shadow-none border border-gray-200">
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader className="[&_tr]:border-b [&_tr]:border-gray-100">
+              <TableRow className="border-b border-gray-100 hover:bg-transparent">
+                <TableHead
+                  className="cursor-pointer select-none"
                   onClick={() => handleSort('full_name')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'left',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    borderRight: '1px solid #e9ecef',
-                    userSelect: 'none'
-                  }}
                 >
-                  User {getSortIcon('full_name')}
-                </th>
-                <th
+                  <div className="flex items-center gap-2">
+                    User {getSortIcon('full_name')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer select-none"
                   onClick={() => handleSort('today')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    borderRight: '1px solid #e9ecef',
-                    userSelect: 'none'
-                  }}
                 >
-                  Today {getSortIcon('today')}
-                </th>
-                <th
+                  <div className="flex items-center justify-end gap-2">
+                    Today {getSortIcon('today')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer select-none"
                   onClick={() => handleSort('this_week')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    borderRight: '1px solid #e9ecef',
-                    userSelect: 'none'
-                  }}
                 >
-                  This Week {getSortIcon('this_week')}
-                </th>
-                <th
+                  <div className="flex items-center justify-end gap-2">
+                    This Week {getSortIcon('this_week')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer select-none"
                   onClick={() => handleSort('last_week')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    borderRight: '1px solid #e9ecef',
-                    userSelect: 'none'
-                  }}
                 >
-                  Last Week {getSortIcon('last_week')}
-                </th>
-                <th
+                  <div className="flex items-center justify-end gap-2">
+                    Last Week {getSortIcon('last_week')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer select-none"
                   onClick={() => handleSort('this_month')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    borderRight: '1px solid #e9ecef',
-                    userSelect: 'none'
-                  }}
                 >
-                  This Month {getSortIcon('this_month')}
-                </th>
-                <th
+                  <div className="flex items-center justify-end gap-2">
+                    This Month {getSortIcon('this_month')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer select-none"
                   onClick={() => handleSort('last_month')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    borderRight: '1px solid #e9ecef',
-                    userSelect: 'none'
-                  }}
                 >
-                  Last Month {getSortIcon('last_month')}
-                </th>
-                <th
+                  <div className="flex items-center justify-end gap-2">
+                    Last Month {getSortIcon('last_month')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer select-none"
                   onClick={() => handleSort('past_month')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    borderRight: '1px solid #e9ecef',
-                    userSelect: 'none'
-                  }}
                 >
-                  Past Month {getSortIcon('past_month')}
-                </th>
-                <th
+                  <div className="flex items-center justify-end gap-2">
+                    Past Month {getSortIcon('past_month')}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer select-none"
                   onClick={() => handleSort('avg_daily_this_month')}
-                  style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontWeight: '600',
-                    color: '#333',
-                    cursor: 'pointer',
-                    userSelect: 'none'
-                  }}
                 >
-                  Avg Daily {getSortIcon('avg_daily_this_month')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.map((user, index) => (
-                <tr
-                  key={user.user_id}
-                  style={{
-                    borderBottom: index === sortedData.length - 1 ? 'none' : '1px solid #e9ecef',
-                    backgroundColor: index % 2 === 0 ? 'transparent' : '#f8f9fa'
-                  }}
-                >
-                  <td style={{
-                    padding: '16px',
-                    borderRight: '1px solid #e9ecef'
-                  }}>
+                  <div className="flex items-center justify-end gap-2">
+                    Avg Daily {getSortIcon('avg_daily_this_month')}
+                  </div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="[&_tr:last-child]:border-0 [&_tr]:border-b [&_tr]:border-gray-100">
+              {sortedData.map((user) => (
+                <TableRow key={user.user_id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                  <TableCell>
                     <div>
-                      <div style={{
-                        fontWeight: '500',
-                        color: '#333',
-                        marginBottom: '2px'
-                      }}>
+                      <div className="font-medium">
                         {user.full_name}
                       </div>
-                      <div style={{
-                        fontSize: '12px',
-                        color: '#666'
-                      }}>
+                      <div className="text-sm text-muted-foreground">
                         {user.email}
                       </div>
                     </div>
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    color: '#333',
-                    borderRight: '1px solid #e9ecef'
-                  }}>
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
                     {formatDuration(user.today)}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    color: '#007bff',
-                    fontWeight: '600',
-                    borderRight: '1px solid #e9ecef'
-                  }}>
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-semibold text-blue-600">
                     {formatDuration(user.this_week)}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    color: '#6c757d',
-                    borderRight: '1px solid #e9ecef'
-                  }}>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-muted-foreground">
                     {formatDuration(user.last_week)}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    color: '#28a745',
-                    fontWeight: '500',
-                    borderRight: '1px solid #e9ecef'
-                  }}>
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-medium text-green-600">
                     {formatDuration(user.this_month)}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    color: '#6c757d',
-                    borderRight: '1px solid #e9ecef'
-                  }}>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-muted-foreground">
                     {formatDuration(user.last_month)}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    color: '#6c757d',
-                    borderRight: '1px solid #e9ecef'
-                  }}>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-muted-foreground">
                     {formatDuration(user.past_month)}
-                  </td>
-                  <td style={{
-                    padding: '16px',
-                    textAlign: 'right',
-                    fontFamily: 'monospace',
-                    fontSize: '14px',
-                    color: '#6f42c1',
-                    fontWeight: '500'
-                  }}>
+                  </TableCell>
+                  <TableCell className="text-right font-mono font-medium text-purple-600">
                     {formatDuration(user.avg_daily_this_month)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
 
-        {data.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '40px',
-            color: '#666'
-          }}>
-            No user data available
-          </div>
-        )}
-      </div>
+          {data.length === 0 && (
+            <div className="text-center py-10 text-muted-foreground">
+              No user data available
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Info about data source */}
-      <div style={{
-        marginTop: '16px',
-        padding: '12px',
-        background: '#e7f3ff',
-        border: '1px solid #b3d7ff',
-        borderRadius: '6px',
-        fontSize: '12px',
-        color: '#0066cc'
-      }}>
-        <strong>Info:</strong> Shows time tracked in tickets within columns that have time tracking enabled. Data is aggregated from actual ticket time logs.
-      </div>
+      <Card className="mt-4 shadow-none border border-gray-200">
+        <CardContent className="pt-6">
+          <p className="text-sm text-muted-foreground">
+            <strong>Info:</strong> Shows time tracked in tickets within columns that have time tracking enabled. Data is aggregated from actual ticket time logs.
+          </p>
+        </CardContent>
+      </Card>
 
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        table th:hover {
-          background: #e9ecef !important;
-        }
-        
-        table tr:hover {
-          background: #f1f3f4 !important;
-        }
-      `}</style>
     </div>
   );
 }
