@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   itemListsRetrieve,
@@ -30,15 +31,23 @@ import type {
   PatchedListItem,
 } from "@/api/generated/interfaces";
 
+interface CustomField {
+  name: string;
+  label: string;
+  type: "string" | "text" | "number" | "date" | "boolean";
+  required: boolean;
+}
+
 interface TreeItemProps {
   item: any;
   onEdit: (item: any) => void;
   onDelete: (id: number) => void;
   onAddChild: (parent: any) => void;
   level?: number;
+  customFieldsSchema?: CustomField[];
 }
 
-function TreeItem({ item, onEdit, onDelete, onAddChild, level = 0 }: TreeItemProps) {
+function TreeItem({ item, onEdit, onDelete, onAddChild, level = 0, customFieldsSchema }: TreeItemProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,6 +75,8 @@ function TreeItem({ item, onEdit, onDelete, onAddChild, level = 0 }: TreeItemPro
     setIsExpanded(!isExpanded);
   };
 
+  const hasCustomData = item.custom_data && Object.keys(item.custom_data).length > 0;
+
   return (
     <div>
       <div
@@ -87,7 +98,7 @@ function TreeItem({ item, onEdit, onDelete, onAddChild, level = 0 }: TreeItemPro
           ) : (
             <div className="w-5" />
           )}
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-2">
               <span className="font-medium">{item.label}</span>
               {item.custom_id && (
@@ -103,6 +114,27 @@ function TreeItem({ item, onEdit, onDelete, onAddChild, level = 0 }: TreeItemPro
             </div>
             {item.full_path && (
               <div className="text-xs text-muted-foreground">{item.full_path}</div>
+            )}
+            {hasCustomData && customFieldsSchema && customFieldsSchema.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-1">
+                {customFieldsSchema.map((field) => {
+                  const value = item.custom_data[field.name];
+                  if (value === undefined || value === null || value === "") return null;
+
+                  return (
+                    <div key={field.name} className="text-xs">
+                      <span className="text-muted-foreground">{field.label}:</span>{" "}
+                      <span className="font-medium">
+                        {field.type === "boolean"
+                          ? value
+                            ? "Yes"
+                            : "No"
+                          : value}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </div>
@@ -145,6 +177,7 @@ function TreeItem({ item, onEdit, onDelete, onAddChild, level = 0 }: TreeItemPro
               onDelete={onDelete}
               onAddChild={onAddChild}
               level={level + 1}
+              customFieldsSchema={customFieldsSchema}
             />
           ))}
         </div>
@@ -168,6 +201,7 @@ export default function ItemListDetailPage() {
     parent: null as number | null,
     position: 0,
     is_active: true,
+    custom_data: {} as Record<string, any>,
   });
 
   useEffect(() => {
@@ -197,6 +231,7 @@ export default function ItemListDetailPage() {
       parent: null,
       position: 0,
       is_active: true,
+      custom_data: {},
     });
     setDialogOpen(true);
   };
@@ -210,6 +245,7 @@ export default function ItemListDetailPage() {
       parent: parent.id,
       position: 0,
       is_active: true,
+      custom_data: {},
     });
     setDialogOpen(true);
   };
@@ -223,11 +259,31 @@ export default function ItemListDetailPage() {
       parent: item.parent || null,
       position: item.position || 0,
       is_active: item.is_active ?? true,
+      custom_data: item.custom_data || {},
     });
     setDialogOpen(true);
   };
 
+  const updateCustomFieldValue = (fieldName: string, value: any) => {
+    setFormData({
+      ...formData,
+      custom_data: {
+        ...formData.custom_data,
+        [fieldName]: value,
+      },
+    });
+  };
+
   const handleSave = async () => {
+    // Validate required custom fields
+    const customFieldsSchema = (itemList?.custom_fields_schema as CustomField[]) || [];
+    for (const field of customFieldsSchema) {
+      if (field.required && !formData.custom_data[field.name]) {
+        toast.error(`${field.label} is required`);
+        return;
+      }
+    }
+
     try {
       if (editingItem) {
         const patchData = {
@@ -237,6 +293,7 @@ export default function ItemListDetailPage() {
           parent: formData.parent ?? undefined,
           position: formData.position,
           is_active: formData.is_active,
+          custom_data: formData.custom_data,
         };
         await listItemsUpdate(editingItem.id, patchData as any);
         toast.success("Item updated successfully");
@@ -335,6 +392,9 @@ export default function ItemListDetailPage() {
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onAddChild={handleAddChild}
+                  customFieldsSchema={
+                    (itemList.custom_fields_schema as CustomField[]) || []
+                  }
                 />
               ))}
             </div>
@@ -343,7 +403,7 @@ export default function ItemListDetailPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingItem
@@ -354,15 +414,15 @@ export default function ItemListDetailPage() {
             </DialogTitle>
             <DialogDescription>
               {editingItem
-                ? "Update the item details"
+                ? "Update the item details and custom field values"
                 : parentItem
-                ? "Add a child item under the selected parent"
-                : "Add a new root-level item to this list"}
+                ? "Add a child item with custom field values under the selected parent"
+                : "Add a new root-level item with custom field values to this list"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="label">Label</Label>
+              <Label htmlFor="label">Label *</Label>
               <Input
                 id="label"
                 value={formData.label}
@@ -406,6 +466,94 @@ export default function ItemListDetailPage() {
               />
               <Label htmlFor="is_active">Active</Label>
             </div>
+
+            {/* Custom Fields */}
+            {itemList?.custom_fields_schema &&
+              Array.isArray(itemList.custom_fields_schema) &&
+              itemList.custom_fields_schema.length > 0 && (
+                <div className="border-t pt-4 space-y-4">
+                  <div>
+                    <Label className="text-base font-semibold">Custom Fields</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Fill in the custom field values for this item
+                    </p>
+                  </div>
+                  {(itemList.custom_fields_schema as CustomField[]).map((field) => (
+                    <div key={field.name}>
+                      <Label htmlFor={`custom_${field.name}`}>
+                        {field.label} {field.required && <span className="text-destructive">*</span>}
+                      </Label>
+                      {field.type === "string" && (
+                        <Input
+                          id={`custom_${field.name}`}
+                          value={formData.custom_data[field.name] || ""}
+                          onChange={(e) =>
+                            updateCustomFieldValue(field.name, e.target.value)
+                          }
+                          placeholder={`Enter ${field.label.toLowerCase()}`}
+                          required={field.required}
+                        />
+                      )}
+                      {field.type === "text" && (
+                        <Textarea
+                          id={`custom_${field.name}`}
+                          value={formData.custom_data[field.name] || ""}
+                          onChange={(e) =>
+                            updateCustomFieldValue(field.name, e.target.value)
+                          }
+                          placeholder={`Enter ${field.label.toLowerCase()}`}
+                          required={field.required}
+                          className="resize-none min-h-[80px]"
+                        />
+                      )}
+                      {field.type === "number" && (
+                        <Input
+                          id={`custom_${field.name}`}
+                          type="number"
+                          value={formData.custom_data[field.name] || ""}
+                          onChange={(e) =>
+                            updateCustomFieldValue(
+                              field.name,
+                              e.target.value ? parseFloat(e.target.value) : ""
+                            )
+                          }
+                          placeholder={`Enter ${field.label.toLowerCase()}`}
+                          required={field.required}
+                        />
+                      )}
+                      {field.type === "date" && (
+                        <Input
+                          id={`custom_${field.name}`}
+                          type="date"
+                          value={formData.custom_data[field.name] || ""}
+                          onChange={(e) =>
+                            updateCustomFieldValue(field.name, e.target.value)
+                          }
+                          required={field.required}
+                        />
+                      )}
+                      {field.type === "boolean" && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <input
+                            type="checkbox"
+                            id={`custom_${field.name}`}
+                            checked={formData.custom_data[field.name] || false}
+                            onChange={(e) =>
+                              updateCustomFieldValue(field.name, e.target.checked)
+                            }
+                          />
+                          <Label
+                            htmlFor={`custom_${field.name}`}
+                            className="font-normal text-sm"
+                          >
+                            Yes
+                          </Label>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
