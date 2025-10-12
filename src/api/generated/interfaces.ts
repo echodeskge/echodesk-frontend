@@ -231,6 +231,7 @@ export interface ItemList {
   title: string;
   description?: string;
   is_active?: boolean;
+  parent_list?: number;
   custom_fields_schema?: any;
   created_at: string;
   updated_at: string;
@@ -245,6 +246,7 @@ export interface ItemListMinimal {
   title: string;
   description: string;
   is_active: boolean;
+  parent_list: number;
   custom_fields_schema: any;
   created_at: string;
   updated_at: string;
@@ -263,6 +265,7 @@ export interface ListItem {
   label: string;
   custom_id?: string;
   parent?: number;
+  parent_list_item?: number;
   position?: number;
   is_active?: boolean;
   custom_data?: any;
@@ -618,6 +621,7 @@ export interface PatchedItemList {
   title?: string;
   description?: string;
   is_active?: boolean;
+  parent_list?: number;
   custom_fields_schema?: any;
   created_at?: string;
   updated_at?: string;
@@ -633,6 +637,7 @@ export interface PatchedListItem {
   label?: string;
   custom_id?: string;
   parent?: number;
+  parent_list_item?: number;
   position?: number;
   is_active?: boolean;
   custom_data?: any;

@@ -18,6 +18,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -58,16 +65,39 @@ export default function ItemListDetailPage() {
     label: "",
     custom_id: "",
     parent: null as number | null,
+    parent_list_item: null as number | null,
     position: 0,
     is_active: true,
     custom_data: {} as Record<string, any>,
   });
+
+  const [parentListItems, setParentListItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (listId) {
       loadItemList();
     }
   }, [listId]);
+
+  // Load parent list items when itemList has a parent_list
+  useEffect(() => {
+    const fetchParentListItems = async () => {
+      if (itemList?.parent_list) {
+        try {
+          const parentList = await itemListsRetrieve(itemList.parent_list);
+          setParentListItems(parentList.items || []);
+        } catch (error) {
+          console.error("Failed to load parent list items", error);
+        }
+      } else {
+        setParentListItems([]);
+      }
+    };
+
+    if (itemList) {
+      fetchParentListItems();
+    }
+  }, [itemList]);
 
   const loadItemList = async () => {
     try {
@@ -88,6 +118,7 @@ export default function ItemListDetailPage() {
       label: "",
       custom_id: "",
       parent: null,
+      parent_list_item: null,
       position: 0,
       is_active: true,
       custom_data: {},
@@ -102,6 +133,7 @@ export default function ItemListDetailPage() {
       label: "",
       custom_id: "",
       parent: parent.id,
+      parent_list_item: null,
       position: 0,
       is_active: true,
       custom_data: {},
@@ -116,6 +148,7 @@ export default function ItemListDetailPage() {
       label: item.label,
       custom_id: item.custom_id || "",
       parent: item.parent || null,
+      parent_list_item: item.parent_list_item || null,
       position: item.position || 0,
       is_active: item.is_active ?? true,
       custom_data: item.custom_data || {},
@@ -150,6 +183,7 @@ export default function ItemListDetailPage() {
           label: formData.label,
           custom_id: formData.custom_id,
           parent: formData.parent ?? undefined,
+          parent_list_item: formData.parent_list_item ?? undefined,
           position: formData.position,
           is_active: formData.is_active,
           custom_data: formData.custom_data,
@@ -383,6 +417,38 @@ export default function ItemListDetailPage() {
               />
               <Label htmlFor="is_active">Active</Label>
             </div>
+
+            {/* Parent List Item Selector */}
+            {itemList?.parent_list && parentListItems.length > 0 && (
+              <div>
+                <Label htmlFor="parent_list_item">Parent Item (Optional)</Label>
+                <Select
+                  value={formData.parent_list_item?.toString() || ""}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      parent_list_item: value ? parseInt(value) : null,
+                    })
+                  }
+                >
+                  <SelectTrigger id="parent_list_item">
+                    <SelectValue placeholder="Select parent item from parent list" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {parentListItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id.toString()}>
+                        {item.label}
+                        {item.custom_id && ` (${item.custom_id})`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Link this item to an item from the parent list
+                </p>
+              </div>
+            )}
 
             {/* Custom Fields */}
             {itemList?.custom_fields_schema &&

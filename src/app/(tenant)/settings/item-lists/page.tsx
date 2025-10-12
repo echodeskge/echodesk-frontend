@@ -49,6 +49,7 @@ export default function ItemListsPage() {
     title: "",
     description: "",
     is_active: true,
+    parent_list: null as number | null,
     custom_fields_schema: [] as CustomField[],
   });
 
@@ -80,6 +81,7 @@ export default function ItemListsPage() {
       title: "",
       description: "",
       is_active: true,
+      parent_list: null,
       custom_fields_schema: [],
     });
     setDialogOpen(true);
@@ -91,6 +93,7 @@ export default function ItemListsPage() {
       title: list.title,
       description: list.description || "",
       is_active: list.is_active ?? true,
+      parent_list: list.parent_list || null,
       custom_fields_schema: (list.custom_fields_schema as CustomField[]) || [],
     });
     setDialogOpen(true);
@@ -137,6 +140,7 @@ export default function ItemListsPage() {
           title: formData.title,
           description: formData.description,
           is_active: formData.is_active,
+          parent_list: formData.parent_list ?? undefined,
           custom_fields_schema: formData.custom_fields_schema,
         };
         await itemListsUpdate(editingList.id, patchData as any);
@@ -288,6 +292,35 @@ export default function ItemListsPage() {
                 }
                 placeholder="Optional description"
               />
+            </div>
+            <div>
+              <Label htmlFor="parent_list">Parent List (Optional)</Label>
+              <Select
+                value={formData.parent_list?.toString() || ""}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    parent_list: value ? parseInt(value) : null,
+                  })
+                }
+              >
+                <SelectTrigger id="parent_list">
+                  <SelectValue placeholder="Select a parent list (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {itemLists
+                    .filter((list) => list.id !== editingList?.id)
+                    .map((list) => (
+                      <SelectItem key={list.id} value={list.id.toString()}>
+                        {list.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                If set, items in this list can link to items from the parent list
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <input
