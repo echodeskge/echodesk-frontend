@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   itemListsRetrieve,
   listItemsCreate,
@@ -169,7 +169,6 @@ export default function ItemListDetailPage() {
     position: 0,
     is_active: true,
   });
-  const { toast } = useToast();
 
   useEffect(() => {
     if (listId) {

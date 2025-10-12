@@ -11,6 +11,7 @@ import {
   ticketFormsList,
   ticketFormsDefaultRetrieve,
   formSubmissionsCreate,
+  itemListsRetrieve,
 } from "@/api/generated/api";
 import type {
   Board,
@@ -60,7 +61,7 @@ function TreeSelectItem({ item, selected, onToggle, level = 0 }: any) {
     <div>
       <div
         className="flex items-center gap-2 py-1 px-2 hover:bg-accent rounded"
-        style={{ paddingLeft: `${level * 1rem + 0.5rem}` }}
+        style={{ paddingLeft: `${level * 1 + 0.5}rem` }}
       >
         {hasChildren ? (
           <button
@@ -129,6 +130,8 @@ export function TicketCreateSheet() {
   const [ticketForms, setTicketForms] = useState<TicketForm[]>([]);
   const [selectedForm, setSelectedForm] = useState<TicketForm | null>(null);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [formListsWithItems, setFormListsWithItems] = useState<any[]>([]);
+  const [loadingLists, setLoadingLists] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
 
@@ -194,6 +197,38 @@ export function TicketCreateSheet() {
     }
   }, [formData.board_id, allColumns, formData.column_id]);
 
+  // Fetch items for selected form's lists
+  useEffect(() => {
+    const fetchListItems = async () => {
+      if (!selectedForm || !selectedForm.item_lists || selectedForm.item_lists.length === 0) {
+        setFormListsWithItems([]);
+        return;
+      }
+
+      setLoadingLists(true);
+      try {
+        const listsWithItems = await Promise.all(
+          selectedForm.item_lists.map(async (list) => {
+            try {
+              const fullList = await itemListsRetrieve(list.id);
+              return fullList;
+            } catch (error) {
+              console.error(`Failed to load list ${list.id}:`, error);
+              return list;
+            }
+          })
+        );
+        setFormListsWithItems(listsWithItems);
+      } catch (error) {
+        console.error("Error fetching list items:", error);
+      } finally {
+        setLoadingLists(false);
+      }
+    };
+
+    fetchListItems();
+  }, [selectedForm]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -214,8 +249,8 @@ export function TicketCreateSheet() {
 
       const createdTicket = await ticketsCreate(ticketData);
 
-      // If a form is selected and items are selected, create form submission
-      if (selectedForm && selectedItems.length > 0) {
+      // If a form is selected, create form submission
+      if (selectedForm) {
         try {
           await formSubmissionsCreate({
             ticket: createdTicket.id,
@@ -414,26 +449,61 @@ export function TicketCreateSheet() {
 
             {/* Item Lists from Selected Form */}
             {selectedForm &&
-              selectedForm.item_lists &&
-              selectedForm.item_lists.length > 0 && (
+              formListsWithItems.length > 0 && (
                 <div className="grid gap-2">
-                  <Label>Select Items</Label>
-                  <div className="border rounded-lg p-3 space-y-3 max-h-60 overflow-y-auto">
-                    {selectedForm.item_lists.map((list) => (
-                      <div key={list.id} className="space-y-1">
-                        <div className="font-semibold text-sm">{list.title}</div>
-                        {list.description && (
-                          <div className="text-xs text-muted-foreground mb-1">
-                            {list.description}
+                  <Label>Select Items from Lists</Label>
+                  {loadingLists ? (
+                    <div className="border rounded-lg p-3 text-center text-sm text-muted-foreground">
+                      Loading items...
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg p-3 space-y-4 max-h-80 overflow-y-auto">
+                      {formListsWithItems.map((list) => (
+                        <div key={list.id} className="space-y-2">
+                          <div className="font-semibold text-sm border-b pb-1">
+                            {list.title}
                           </div>
-                        )}
-                        {/* Note: We would need to fetch the actual items for each list */}
-                        <div className="text-xs text-muted-foreground">
-                          {list.items_count} items available
+                          {list.description && (
+                            <div className="text-xs text-muted-foreground">
+                              {list.description}
+                            </div>
+                          )}
+                          <div className="space-y-1">
+                            {list.root_items && Array.isArray(list.root_items) && list.root_items.length > 0 ? (
+                              list.root_items.map((item: any) => (
+                                <TreeSelectItem
+                                  key={item.id}
+                                  item={item}
+                                  selected={selectedItems}
+                                  onToggle={toggleItem}
+                                />
+                              ))
+                            ) : list.items && Array.isArray(list.items) && list.items.length > 0 ? (
+                              list.items
+                                .filter((item: any) => !item.parent)
+                                .map((item: any) => (
+                                  <TreeSelectItem
+                                    key={item.id}
+                                    item={item}
+                                    selected={selectedItems}
+                                    onToggle={toggleItem}
+                                  />
+                                ))
+                            ) : (
+                              <div className="text-xs text-muted-foreground italic">
+                                No items in this list
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
+                  {selectedItems.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      {selectedItems.length} item(s) selected
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   ticketFormsList,
   ticketFormsCreate,
@@ -43,7 +43,6 @@ export default function TicketFormsPage() {
     item_list_ids: [] as number[],
     is_active: true,
   });
-  const { toast } = useToast();
 
   useEffect(() => {
     loadData();

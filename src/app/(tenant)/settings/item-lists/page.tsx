@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import {
   itemListsList,
   itemListsCreate,
@@ -36,8 +36,6 @@ export default function ItemListsPage() {
     description: "",
     is_active: true,
   });
-  const { toast } = useToast();
-
   useEffect(() => {
     loadItemLists();
   }, []);
@@ -48,11 +46,7 @@ export default function ItemListsPage() {
       const response = await itemListsList();
       setItemLists(response.results || []);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load item lists",
-        variant: "destructive",
-      });
+      toast.error("Failed to load item lists");
     } finally {
       setLoading(false);
     }
@@ -83,25 +77,15 @@ export default function ItemListsPage() {
           is_active: formData.is_active,
         };
         await itemListsUpdate(editingList.id, patchData);
-        toast({
-          title: "Success",
-          description: "Item list updated successfully",
-        });
+        toast.success("Item list updated successfully");
       } else {
         await itemListsCreate(formData as any);
-        toast({
-          title: "Success",
-          description: "Item list created successfully",
-        });
+        toast.success("Item list created successfully");
       }
       setDialogOpen(false);
       loadItemLists();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save item list",
-        variant: "destructive",
-      });
+      toast.error("Failed to save item list");
     }
   };
 
@@ -110,17 +94,10 @@ export default function ItemListsPage() {
 
     try {
       await itemListsDestroy(id);
-      toast({
-        title: "Success",
-        description: "Item list deleted successfully",
-      });
+      toast.success("Item list deleted successfully");
       loadItemLists();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete item list",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete item list");
     }
   };
 
