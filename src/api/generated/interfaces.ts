@@ -18,6 +18,7 @@ export interface Board {
   columns_count: string;
   order_users: UserMinimal[];
   order_user_ids?: number[];
+  payment_summary: string;
 }
 
 export interface CallEvent {
@@ -225,9 +226,58 @@ export interface GroupCreate {
   permission_ids?: number[];
 }
 
+export interface ItemList {
+  id: number;
+  title: string;
+  description?: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: UserMinimal;
+  items: ListItem[];
+  items_count: string;
+  root_items: string;
+}
+
+export interface ItemListMinimal {
+  id: number;
+  title: string;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: UserMinimal;
+  items_count: string;
+}
+
 export interface KanbanBoard {
   columns: TicketColumn[];
   tickets_by_column: string;
+}
+
+export interface ListItem {
+  id: number;
+  item_list: number;
+  label: string;
+  custom_id?: string;
+  parent?: number;
+  position?: number;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: UserMinimal;
+  children: string;
+  full_path: string;
+}
+
+export interface ListItemMinimal {
+  id: number;
+  label: string;
+  custom_id: string;
+  parent: number;
+  position: number;
+  is_active: boolean;
+  full_path: string;
 }
 
 export interface Package {
@@ -329,6 +379,20 @@ export interface PaginatedGroupList {
   results: Group[];
 }
 
+export interface PaginatedItemListMinimalList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ItemListMinimal[];
+}
+
+export interface PaginatedListItemMinimalList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ListItemMinimal[];
+}
+
 export interface PaginatedPackageListList {
   count: number;
   next?: string;
@@ -406,11 +470,32 @@ export interface PaginatedTicketCommentList {
   results: TicketComment[];
 }
 
+export interface PaginatedTicketFormMinimalList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TicketFormMinimal[];
+}
+
+export interface PaginatedTicketFormSubmissionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TicketFormSubmission[];
+}
+
 export interface PaginatedTicketListList {
   count: number;
   next?: string;
   previous?: string;
   results: TicketList[];
+}
+
+export interface PaginatedTicketPaymentList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TicketPayment[];
 }
 
 export interface PaginatedTicketTimeLogList {
@@ -438,6 +523,7 @@ export interface PatchedBoard {
   columns_count?: string;
   order_users?: UserMinimal[];
   order_user_ids?: number[];
+  payment_summary?: string;
 }
 
 export interface PatchedCallLog {
@@ -522,6 +608,34 @@ export interface PatchedGroup {
   permissions?: Permission[];
   permission_ids?: number[];
   user_count?: string;
+}
+
+export interface PatchedItemList {
+  id?: number;
+  title?: string;
+  description?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: UserMinimal;
+  items?: ListItem[];
+  items_count?: string;
+  root_items?: string;
+}
+
+export interface PatchedListItem {
+  id?: number;
+  item_list?: number;
+  label?: string;
+  custom_id?: string;
+  parent?: number;
+  position?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: UserMinimal;
+  children?: string;
+  full_path?: string;
 }
 
 export interface PatchedSipConfiguration {
@@ -659,6 +773,15 @@ export interface PatchedTicket {
   checklist_items?: ChecklistItem[];
   checklist_items_count?: string;
   completed_checklist_items_count?: string;
+  price?: string;
+  currency?: string;
+  is_paid?: boolean;
+  amount_paid?: string;
+  payment_due_date?: string;
+  payments?: TicketPayment[];
+  remaining_balance?: string;
+  payment_status?: string;
+  is_overdue?: string;
 }
 
 export interface PatchedTicketAssignment {
@@ -690,6 +813,46 @@ export interface PatchedTicketComment {
   updated_at?: string;
 }
 
+export interface PatchedTicketForm {
+  id?: number;
+  title?: string;
+  description?: string;
+  item_lists?: ItemListMinimal[];
+  item_list_ids?: number[];
+  form_config?: any;
+  is_default?: boolean;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: UserMinimal;
+  submissions_count?: string;
+}
+
+export interface PatchedTicketFormSubmission {
+  id?: number;
+  ticket?: number;
+  form?: TicketFormMinimal;
+  form_id?: number;
+  selected_items?: ListItemMinimal[];
+  selected_item_ids?: number[];
+  form_data?: any;
+  submitted_at?: string;
+  submitted_by?: UserMinimal;
+  ticket_data?: string;
+}
+
+export interface PatchedTicketPayment {
+  id?: number;
+  ticket?: number;
+  amount?: string;
+  currency?: string;
+  payment_method?: PaymentMethodEnum;
+  payment_reference?: string;
+  notes?: string;
+  processed_by?: UserMinimal;
+  processed_at?: string;
+}
+
 export interface PatchedUserUpdate {
   first_name?: string;
   last_name?: string;
@@ -699,7 +862,12 @@ export interface PatchedUserUpdate {
   job_title?: string;
   is_active?: boolean;
   group_ids?: number[];
+  tenant_group_ids?: number[];
   user_permission_ids?: number[];
+}
+
+export interface PaymentMethodEnum {
+  [key: string]: any;
 }
 
 export interface Permission {
@@ -965,6 +1133,15 @@ export interface Ticket {
   checklist_items: ChecklistItem[];
   checklist_items_count: string;
   completed_checklist_items_count: string;
+  price?: string;
+  currency?: string;
+  is_paid?: boolean;
+  amount_paid?: string;
+  payment_due_date?: string;
+  payments: TicketPayment[];
+  remaining_balance: string;
+  payment_status: string;
+  is_overdue: string;
 }
 
 export interface TicketAssignment {
@@ -1023,6 +1200,44 @@ export interface TicketComment {
   updated_at: string;
 }
 
+export interface TicketForm {
+  id: number;
+  title: string;
+  description?: string;
+  item_lists: ItemListMinimal[];
+  item_list_ids?: number[];
+  form_config?: any;
+  is_default?: boolean;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  created_by: UserMinimal;
+  submissions_count: string;
+}
+
+export interface TicketFormMinimal {
+  id: number;
+  title: string;
+  description: string;
+  is_default: boolean;
+  is_active: boolean;
+  created_at: string;
+  created_by: UserMinimal;
+}
+
+export interface TicketFormSubmission {
+  id: number;
+  ticket: number;
+  form: TicketFormMinimal;
+  form_id: number;
+  selected_items: ListItemMinimal[];
+  selected_item_ids?: number[];
+  form_data?: any;
+  submitted_at: string;
+  submitted_by: UserMinimal;
+  ticket_data: string;
+}
+
 export interface TicketList {
   id: number;
   title: string;
@@ -1039,6 +1254,18 @@ export interface TicketList {
   assignments: TicketAssignment[];
   tags: Tag[];
   comments_count: string;
+}
+
+export interface TicketPayment {
+  id: number;
+  ticket: number;
+  amount: string;
+  currency?: string;
+  payment_method?: PaymentMethodEnum;
+  payment_reference?: string;
+  notes?: string;
+  processed_by: UserMinimal;
+  processed_at: string;
 }
 
 export interface TicketTimeLog {
@@ -1120,5 +1347,6 @@ export interface UserUpdate {
   job_title?: string;
   is_active?: boolean;
   group_ids?: number[];
+  tenant_group_ids?: number[];
   user_permission_ids?: number[];
 }

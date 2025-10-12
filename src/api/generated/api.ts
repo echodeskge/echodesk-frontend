@@ -38,13 +38,25 @@ import type {
   PaginatedDepartmentList,
   Department,
   PatchedDepartment,
+  PaginatedTicketFormSubmissionList,
+  TicketFormSubmission,
+  PatchedTicketFormSubmission,
   PaginatedGroupList,
   GroupCreate,
   Group,
   PatchedGroup,
+  PaginatedItemListMinimalList,
+  ItemList,
+  PatchedItemList,
+  PaginatedListItemMinimalList,
+  ListItem,
+  PatchedListItem,
   PaginatedPackageListList,
   Package,
   PackageList,
+  PaginatedTicketPaymentList,
+  TicketPayment,
+  PatchedTicketPayment,
   PaginatedPermissionList,
   Permission,
   TenantRegistration,
@@ -75,6 +87,9 @@ import type {
   PaginatedTenantList,
   TenantCreate,
   PatchedTenant,
+  PaginatedTicketFormMinimalList,
+  TicketForm,
+  PatchedTicketForm,
   PaginatedTicketListList,
   Ticket,
   PatchedTicket,
@@ -678,6 +693,73 @@ export async function deploymentStatusRetrieve(tenantId: number): Promise<any> {
   return response.data;
 }
 
+export async function formSubmissionsList(
+  form?: number,
+  ordering?: string,
+  page?: number,
+  submittedBy?: number,
+  ticket?: number,
+): Promise<PaginatedTicketFormSubmissionList> {
+  const response = await axios.get(
+    `/api/form-submissions/${(() => {
+      const parts = [
+        form ? 'form=' + encodeURIComponent(form) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        submittedBy ? 'submitted_by=' + encodeURIComponent(submittedBy) : null,
+        ticket ? 'ticket=' + encodeURIComponent(ticket) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function formSubmissionsCreate(
+  data: TicketFormSubmission,
+): Promise<TicketFormSubmission> {
+  const response = await axios.post(`/api/form-submissions/`, data);
+  return response.data;
+}
+
+export async function formSubmissionsRetrieve(
+  id: number,
+): Promise<TicketFormSubmission> {
+  const response = await axios.get(`/api/form-submissions/${id}/`);
+  return response.data;
+}
+
+export async function formSubmissionsUpdate(
+  id: number,
+  data: TicketFormSubmission,
+): Promise<TicketFormSubmission> {
+  const response = await axios.put(`/api/form-submissions/${id}/`, data);
+  return response.data;
+}
+
+export async function formSubmissionsPartialUpdate(
+  id: number,
+  data: PatchedTicketFormSubmission,
+): Promise<TicketFormSubmission> {
+  const response = await axios.patch(`/api/form-submissions/${id}/`, data);
+  return response.data;
+}
+
+export async function formSubmissionsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/form-submissions/${id}/`);
+  return response.data;
+}
+
+export async function formSubmissionsByFormRetrieve(): Promise<TicketFormSubmission> {
+  const response = await axios.get(`/api/form-submissions/by_form/`);
+  return response.data;
+}
+
+export async function formSubmissionsByTicketRetrieve(): Promise<TicketFormSubmission> {
+  const response = await axios.get(`/api/form-submissions/by_ticket/`);
+  return response.data;
+}
+
 export async function groupsList(
   ordering?: string,
   page?: number,
@@ -742,6 +824,137 @@ export async function groupsRemoveUsersCreate(
 
 export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
   const response = await axios.get(`/api/groups/available_permissions/`);
+  return response.data;
+}
+
+export async function itemListsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedItemListMinimalList> {
+  const response = await axios.get(
+    `/api/item-lists/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function itemListsCreate(data: ItemList): Promise<ItemList> {
+  const response = await axios.post(`/api/item-lists/`, data);
+  return response.data;
+}
+
+export async function itemListsRetrieve(id: number): Promise<ItemList> {
+  const response = await axios.get(`/api/item-lists/${id}/`);
+  return response.data;
+}
+
+export async function itemListsUpdate(
+  id: number,
+  data: ItemList,
+): Promise<ItemList> {
+  const response = await axios.put(`/api/item-lists/${id}/`, data);
+  return response.data;
+}
+
+export async function itemListsPartialUpdate(
+  id: number,
+  data: PatchedItemList,
+): Promise<ItemList> {
+  const response = await axios.patch(`/api/item-lists/${id}/`, data);
+  return response.data;
+}
+
+export async function itemListsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/item-lists/${id}/`);
+  return response.data;
+}
+
+export async function itemListsRootItemsRetrieve(
+  id: number,
+): Promise<ItemList> {
+  const response = await axios.get(`/api/item-lists/${id}/root_items/`);
+  return response.data;
+}
+
+export async function listItemsList(
+  isActive?: boolean,
+  itemList?: number,
+  ordering?: string,
+  page?: number,
+  parent?: number,
+  search?: string,
+): Promise<PaginatedListItemMinimalList> {
+  const response = await axios.get(
+    `/api/list-items/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        itemList ? 'item_list=' + encodeURIComponent(itemList) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        parent ? 'parent=' + encodeURIComponent(parent) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function listItemsCreate(data: ListItem): Promise<ListItem> {
+  const response = await axios.post(`/api/list-items/`, data);
+  return response.data;
+}
+
+export async function listItemsRetrieve(id: number): Promise<ListItem> {
+  const response = await axios.get(`/api/list-items/${id}/`);
+  return response.data;
+}
+
+export async function listItemsUpdate(
+  id: number,
+  data: ListItem,
+): Promise<ListItem> {
+  const response = await axios.put(`/api/list-items/${id}/`, data);
+  return response.data;
+}
+
+export async function listItemsPartialUpdate(
+  id: number,
+  data: PatchedListItem,
+): Promise<ListItem> {
+  const response = await axios.patch(`/api/list-items/${id}/`, data);
+  return response.data;
+}
+
+export async function listItemsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/list-items/${id}/`);
+  return response.data;
+}
+
+export async function listItemsAllDescendantsRetrieve(
+  id: number,
+): Promise<ListItem> {
+  const response = await axios.get(`/api/list-items/${id}/all_descendants/`);
+  return response.data;
+}
+
+export async function listItemsChildrenRetrieve(id: number): Promise<ListItem> {
+  const response = await axios.get(`/api/list-items/${id}/children/`);
+  return response.data;
+}
+
+export async function listItemsReorderPartialUpdate(
+  id: number,
+  data: PatchedListItem,
+): Promise<ListItem> {
+  const response = await axios.patch(`/api/list-items/${id}/reorder/`, data);
   return response.data;
 }
 
@@ -811,6 +1024,82 @@ export async function calculatePricing(): Promise<{
   savings_yearly?: number;
 }> {
   const response = await axios.get(`/api/packages/calculate-pricing/`);
+  return response.data;
+}
+
+export async function paymentsList(
+  currency?: string,
+  ordering?: string,
+  page?: number,
+  paymentMethod?:
+    | 'bank_transfer'
+    | 'card'
+    | 'cash'
+    | 'manual'
+    | 'other'
+    | 'paypal'
+    | 'stripe',
+  ticket?: number,
+): Promise<PaginatedTicketPaymentList> {
+  const response = await axios.get(
+    `/api/payments/${(() => {
+      const parts = [
+        currency ? 'currency=' + encodeURIComponent(currency) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        paymentMethod
+          ? 'payment_method=' + encodeURIComponent(paymentMethod)
+          : null,
+        ticket ? 'ticket=' + encodeURIComponent(ticket) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function paymentsCreate(
+  data: TicketPayment,
+): Promise<TicketPayment> {
+  const response = await axios.post(`/api/payments/`, data);
+  return response.data;
+}
+
+export async function paymentsRetrieve(id: number): Promise<TicketPayment> {
+  const response = await axios.get(`/api/payments/${id}/`);
+  return response.data;
+}
+
+export async function paymentsUpdate(
+  id: number,
+  data: TicketPayment,
+): Promise<TicketPayment> {
+  const response = await axios.put(`/api/payments/${id}/`, data);
+  return response.data;
+}
+
+export async function paymentsPartialUpdate(
+  id: number,
+  data: PatchedTicketPayment,
+): Promise<TicketPayment> {
+  const response = await axios.patch(`/api/payments/${id}/`, data);
+  return response.data;
+}
+
+export async function paymentsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/payments/${id}/`);
+  return response.data;
+}
+
+export async function paymentsPaymentSummaryRetrieve(): Promise<TicketPayment> {
+  const response = await axios.get(`/api/payments/payment_summary/`);
+  return response.data;
+}
+
+export async function paymentsProcessPaymentCreate(
+  data: TicketPayment,
+): Promise<TicketPayment> {
+  const response = await axios.post(`/api/payments/process_payment/`, data);
   return response.data;
 }
 
@@ -1467,6 +1756,78 @@ export async function tenantsUsersRetrieve(id: number): Promise<Tenant> {
 
 export async function tenantsListRetrieve(): Promise<any> {
   const response = await axios.get(`/api/tenants/list/`);
+  return response.data;
+}
+
+export async function ticketFormsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedTicketFormMinimalList> {
+  const response = await axios.get(
+    `/api/ticket-forms/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ticketFormsCreate(data: TicketForm): Promise<TicketForm> {
+  const response = await axios.post(`/api/ticket-forms/`, data);
+  return response.data;
+}
+
+export async function ticketFormsRetrieve(id: number): Promise<TicketForm> {
+  const response = await axios.get(`/api/ticket-forms/${id}/`);
+  return response.data;
+}
+
+export async function ticketFormsUpdate(
+  id: number,
+  data: TicketForm,
+): Promise<TicketForm> {
+  const response = await axios.put(`/api/ticket-forms/${id}/`, data);
+  return response.data;
+}
+
+export async function ticketFormsPartialUpdate(
+  id: number,
+  data: PatchedTicketForm,
+): Promise<TicketForm> {
+  const response = await axios.patch(`/api/ticket-forms/${id}/`, data);
+  return response.data;
+}
+
+export async function ticketFormsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ticket-forms/${id}/`);
+  return response.data;
+}
+
+export async function ticketFormsSetDefaultCreate(
+  id: number,
+  data: TicketForm,
+): Promise<TicketForm> {
+  const response = await axios.post(
+    `/api/ticket-forms/${id}/set_default/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ticketFormsWithListsRetrieve(
+  id: number,
+): Promise<TicketForm> {
+  const response = await axios.get(`/api/ticket-forms/${id}/with_lists/`);
+  return response.data;
+}
+
+export async function ticketFormsDefaultRetrieve(): Promise<TicketForm> {
+  const response = await axios.get(`/api/ticket-forms/default/`);
   return response.data;
 }
 
