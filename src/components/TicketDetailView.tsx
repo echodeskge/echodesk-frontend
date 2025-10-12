@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from 'next-intl';
 import type { Ticket, TicketColumn, User, Tag as TagType } from "@/api/generated/interfaces";
 import { ticketService } from "@/services/ticketService";
 import { columnsList, tagsList } from "@/api/generated/api";
@@ -75,6 +76,8 @@ function getColumnColor(column: TicketColumn | null | undefined): string {
 }
 
 export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDetailViewProps) {
+  const t = useTranslations('tickets');
+  const tCommon = useTranslations('common');
   const [ticket, setTicket] = useState<Ticket>(initialTicket);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -328,24 +331,24 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                       {ticket.column?.track_time && <Clock className="ml-1 h-3 w-3" />}
                     </Badge>
                     <Badge variant={getPriorityColor(priorityDisplay) as any}>
-                      {priorityDisplay} Priority
+                      {t(`priority.${priorityDisplay.toLowerCase()}`)} {t('priority')}
                     </Badge>
                   </div>
                 </div>
                 {!isEditing ? (
                   <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                    {tCommon('edit')}
                   </Button>
                 ) : (
                   <div className="flex gap-2">
                     <Button onClick={handleSave} size="sm">
                       <Save className="h-4 w-4 mr-2" />
-                      Save
+                      {tCommon('save')}
                     </Button>
                     <Button onClick={handleCancel} variant="outline" size="sm">
                       <X className="h-4 w-4 mr-2" />
-                      Cancel
+                      {tCommon('cancel')}
                     </Button>
                   </div>
                 )}
@@ -353,7 +356,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm font-medium">Description</Label>
+                <Label className="text-sm font-medium">{t('description')}</Label>
                 {isEditing ? (
                   <Textarea
                     value={formData.description}
@@ -369,7 +372,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                       />
                     ) : (
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {ticket.description || 'No description provided'}
+                        {ticket.description || t('description')}
                       </p>
                     )}
                   </div>
@@ -378,7 +381,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
               {isEditing && (
                 <div>
-                  <Label className="text-sm font-medium">Priority</Label>
+                  <Label className="text-sm font-medium">{t('priority')}</Label>
                   <Select
                     value={formData.priority}
                     onValueChange={(value) => setFormData({ ...formData, priority: value })}
@@ -387,11 +390,11 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
+                      <SelectItem value="low">{t('priority.low')}</SelectItem>
+                      <SelectItem value="medium">{t('priority.medium')}</SelectItem>
+                      <SelectItem value="high">{t('priority.high')}</SelectItem>
+                      <SelectItem value="urgent">{t('priority.urgent')}</SelectItem>
+                      <SelectItem value="critical">{t('priority.critical')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -401,7 +404,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                 <div className="flex items-center justify-between mb-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
                     <Tag className="h-4 w-4" />
-                    Labels
+                    {t('labels')}
                   </Label>
                   <div className="flex gap-2">
                     <LabelManagementDialog />
@@ -412,7 +415,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                         size="sm"
                         className="h-auto py-1 px-2 text-xs"
                       >
-                        Edit
+                        {tCommon('edit')}
                       </Button>
                     )}
                   </div>
@@ -448,16 +451,16 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                               })}
                             </div>
                           ) : (
-                            "Select labels..."
+                            t('selectLabels')
                           )}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0" align="start">
                         <Command>
-                          <CommandInput placeholder="Search labels..." />
+                          <CommandInput placeholder={t('selectLabels')} />
                           <CommandList>
-                            <CommandEmpty>No labels found.</CommandEmpty>
+                            <CommandEmpty>{t('noLabels')}</CommandEmpty>
                             <CommandGroup>
                               {tags.map((tag) => (
                                 <CommandItem
@@ -494,10 +497,10 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                     </Popover>
                     <div className="flex gap-2">
                       <Button onClick={handleSaveLabels} size="sm" className="flex-1">
-                        Save
+                        {tCommon('save')}
                       </Button>
                       <Button onClick={handleCancelEditingLabels} variant="outline" size="sm" className="flex-1">
-                        Cancel
+                        {tCommon('cancel')}
                       </Button>
                     </div>
                   </div>
@@ -517,7 +520,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                         </Badge>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">No labels</p>
+                      <p className="text-sm text-muted-foreground">{t('noLabels')}</p>
                     )}
                   </div>
                 )}
@@ -547,7 +550,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
-                Comments ({ticket.comments_count || 0})
+                {t('comments')} ({ticket.comments_count || 0})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -555,7 +558,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                 <Textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  placeholder="Add a comment..."
+                  placeholder={t('addComment')}
                   className="min-h-[100px]"
                 />
                 <div className="flex justify-end">
@@ -563,7 +566,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                     type="submit"
                     disabled={!commentText.trim() || submittingComment}
                   >
-                    {submittingComment ? "Adding..." : "Add Comment"}
+                    {submittingComment ? tCommon('loading') : t('addComment')}
                   </Button>
                 </div>
               </form>
@@ -597,7 +600,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No comments yet. Be the first to comment!</p>
+                    <p>{t('noComments')}</p>
                   </div>
                 )}
               </div>
@@ -614,7 +617,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm">Column</Label>
+                <Label className="text-sm">{t('column')}</Label>
                 <Select
                   value={ticket.column?.id?.toString() || ""}
                   onValueChange={handleColumnChange}
@@ -634,7 +637,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <Label className="text-sm">Assigned Users</Label>
+                  <Label className="text-sm">{t('assignedTo')}</Label>
                   {!editingAssignments && (
                     <Button
                       onClick={handleStartEditingAssignments}
@@ -642,7 +645,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                       size="sm"
                       className="h-auto py-1 px-2 text-xs"
                     >
-                      Edit
+                      {tCommon('edit')}
                     </Button>
                   )}
                 </div>
@@ -654,14 +657,14 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                       assignments={ticket.assignments}
                       selectedAssignments={tempAssignments}
                       onChange={setTempAssignments}
-                      placeholder="Assign users..."
+                      placeholder={t('assignedTo')}
                     />
                     <div className="flex gap-2">
                       <Button onClick={handleSaveAssignments} size="sm" className="flex-1">
-                        Save
+                        {tCommon('save')}
                       </Button>
                       <Button onClick={handleCancelEditingAssignments} variant="outline" size="sm" className="flex-1">
-                        Cancel
+                        {tCommon('cancel')}
                       </Button>
                     </div>
                   </div>
@@ -685,7 +688,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label className="text-sm text-muted-foreground">Created By</Label>
+                <Label className="text-sm text-muted-foreground">{t('createdBy')}</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Avatar className="h-6 w-6">
                     <AvatarFallback className="text-xs">
@@ -703,7 +706,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               <div>
                 <Label className="text-sm text-muted-foreground flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Created
+                  {t('createdAt')}
                 </Label>
                 <p className="text-sm mt-1">{formatDate(ticket.created_at)}</p>
               </div>
@@ -713,7 +716,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               <div>
                 <Label className="text-sm text-muted-foreground flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Last Updated
+                  {t('updatedAt')}
                 </Label>
                 <p className="text-sm mt-1">{formatDate(ticket.updated_at)}</p>
               </div>
@@ -723,9 +726,9 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               <div>
                 <Label className="text-sm text-muted-foreground">Progress</Label>
                 <div className="text-sm space-y-1 mt-1">
-                  <div>Sub-tickets: {ticket.completed_sub_tickets_count}/{ticket.sub_tickets_count}</div>
-                  <div>Checklist: {ticket.completed_checklist_items_count}/{ticket.checklist_items_count}</div>
-                  <div>Comments: {ticket.comments_count}</div>
+                  <div>{t('subTickets')}: {ticket.completed_sub_tickets_count}/{ticket.sub_tickets_count}</div>
+                  <div>{t('checklist')}: {ticket.completed_checklist_items_count}/{ticket.checklist_items_count}</div>
+                  <div>{t('comments')}: {ticket.comments_count}</div>
                 </div>
               </div>
             </CardContent>

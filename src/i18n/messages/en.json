@@ -26,12 +26,25 @@
     "calls": "Calls",
     "messages": "Messages",
     "orders": "Orders",
-    "social": "Social",
+    "social": "Social Media",
     "groups": "Groups",
     "users": "Users",
     "settings": "Settings",
-    "timeTracking": "Time Tracking",
-    "userStatistics": "User Statistics"
+    "timeTracking": "My Time",
+    "userStatistics": "Time Statistics",
+    "dashboard": "Dashboard",
+    "description": {
+      "tickets": "View and manage tickets",
+      "calls": "Handle phone calls",
+      "messages": "View and respond to Facebook messages",
+      "orders": "Create and manage orders",
+      "social": "Connect social media accounts",
+      "groups": "Manage user groups and permissions",
+      "users": "Manage user accounts",
+      "settings": "Configure system settings",
+      "timeTracking": "View your time tracking data",
+      "userStatistics": "View time tracking statistics for all users"
+    }
   },
   "auth": {
     "login": "Login",

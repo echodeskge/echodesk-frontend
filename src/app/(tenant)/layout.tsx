@@ -15,13 +15,14 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { TenantInfo } from "@/types/auth";
 import { tenantService } from "@/services/tenantService";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale() as Locale;
+  const t = useTranslations('nav');
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: boards } = useBoards();
@@ -96,77 +97,77 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const menuItems: MenuItem[] = [
     {
       id: "tickets",
-      label: "Tickets",
+      label: t('tickets'),
       icon: "🎫",
       permission: "can_access_tickets",
-      description: "View and manage tickets",
+      description: t('description.tickets'),
     },
     {
       id: "time-tracking",
-      label: "My Time",
+      label: t('timeTracking'),
       icon: "⏱️",
       permission: "can_access_tickets",
-      description: "View your time tracking data",
+      description: t('description.timeTracking'),
     },
     {
       id: "user-statistics",
-      label: "Time Statistics",
+      label: t('userStatistics'),
       icon: "📊",
       permission: "can_access_user_management",
-      description: "View time tracking statistics for all users",
+      description: t('description.userStatistics'),
     },
     {
       id: "calls",
-      label: "Calls",
+      label: t('calls'),
       icon: "📞",
       permission: "can_access_calls",
-      description: "Handle phone calls",
+      description: t('description.calls'),
     },
     {
       id: "orders",
-      label: "Orders",
+      label: t('orders'),
       icon: "📝",
       permission: "can_access_orders",
-      description: "Create and manage orders",
+      description: t('description.orders'),
     },
     ...(facebookConnected
       ? [
           {
             id: "messages",
-            label: "Messages",
+            label: t('messages'),
             icon: "💬",
             permission: "can_manage_settings",
-            description: "View and respond to Facebook messages",
+            description: t('description.messages'),
           },
         ]
       : []),
     {
       id: "users",
-      label: "Users",
+      label: t('users'),
       icon: "👥",
       permission: "can_access_user_management",
-      description: "Manage user accounts",
+      description: t('description.users'),
     },
     {
       id: "groups",
-      label: "Groups",
+      label: t('groups'),
       icon: "👨‍👩‍👧‍👦",
       permission: "can_access_user_management",
-      description: "Manage user groups and permissions",
+      description: t('description.groups'),
     },
     {
       id: "social",
-      label: "Social Media",
+      label: t('social'),
       icon: "📱",
       permission: "can_manage_settings",
-      description: "Connect social media accounts",
+      description: t('description.social'),
     },
     {
       id: "settings",
-      label: "Settings",
+      label: t('settings'),
       icon: "⚙️",
       permission: "can_manage_settings",
-      description: "Configure system settings",
+      description: t('description.settings'),
     },
   ];
 
@@ -192,7 +193,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Get page title
   const currentMenuItem = visibleMenuItems.find((item) => item.id === currentView);
-  const pageTitle = currentMenuItem?.label || "Dashboard";
+  const pageTitle = currentMenuItem?.label || t('dashboard');
 
   // Check if we should show board switcher
   const showBoardSwitcher = currentView === "tickets" && boards && boards.length > 0;

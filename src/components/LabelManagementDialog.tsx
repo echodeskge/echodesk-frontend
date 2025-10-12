@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from 'next-intl';
 import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from "@/hooks/useTags";
 import type { Tag } from "@/api/generated";
 import {
@@ -48,6 +49,8 @@ interface LabelFormData {
 }
 
 export function LabelManagementDialog() {
+  const t = useTranslations('labels');
+  const tCommon = useTranslations('common');
   const { data: tagsData, isLoading } = useTags();
   const createTag = useCreateTag();
   const updateTag = useUpdateTag();
@@ -126,14 +129,14 @@ export function LabelManagementDialog() {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="mr-2 h-4 w-4" />
-          Manage Labels
+          {t('title')}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle>Manage Labels</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            Create, edit, and organize labels for your tickets
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -142,10 +145,10 @@ export function LabelManagementDialog() {
           <div className="flex-1">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Label Name *</Label>
+                <Label htmlFor="name">{t('labelName')} *</Label>
                 <Input
                   id="name"
-                  placeholder="e.g., Bug, Feature, Priority"
+                  placeholder={t('placeholder.name')}
                   value={formData.name}
                   onChange={(e) =>
                     setFormData({ ...formData, name: e.target.value })
@@ -155,7 +158,7 @@ export function LabelManagementDialog() {
               </div>
 
               <div className="space-y-2">
-                <Label>Color</Label>
+                <Label>{t('color')}</Label>
                 <div className="grid grid-cols-9 gap-2">
                   {DEFAULT_COLORS.map((color) => (
                     <button
@@ -195,10 +198,10 @@ export function LabelManagementDialog() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
+                <Label htmlFor="description">{t('labelDescription')}</Label>
                 <Textarea
                   id="description"
-                  placeholder="What does this label represent?"
+                  placeholder={t('placeholder.description')}
                   value={formData.description}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
@@ -208,7 +211,7 @@ export function LabelManagementDialog() {
               </div>
 
               <div className="space-y-2">
-                <Label>Preview</Label>
+                <Label>{t('preview')}</Label>
                 <Badge
                   style={{
                     backgroundColor: formData.color,
@@ -216,7 +219,7 @@ export function LabelManagementDialog() {
                   }}
                   className="text-sm px-3 py-1"
                 >
-                  {formData.name || "Label Name"}
+                  {formData.name || t('labelName')}
                 </Badge>
               </div>
 
@@ -231,12 +234,12 @@ export function LabelManagementDialog() {
                   {createTag.isPending || updateTag.isPending ? (
                     <>
                       <Spinner className="mr-2 h-4 w-4" />
-                      {editingTag ? "Updating..." : "Creating..."}
+                      {tCommon('loading')}
                     </>
                   ) : (
                     <>
                       <Check className="mr-2 h-4 w-4" />
-                      {editingTag ? "Update Label" : "Create Label"}
+                      {editingTag ? t('updateLabel') : t('createLabel')}
                     </>
                   )}
                 </Button>
@@ -247,7 +250,7 @@ export function LabelManagementDialog() {
                     onClick={resetForm}
                   >
                     <X className="mr-2 h-4 w-4" />
-                    Cancel
+                    {tCommon('cancel')}
                   </Button>
                 )}
               </div>
@@ -257,14 +260,14 @@ export function LabelManagementDialog() {
           {/* Labels List Section */}
           <div className="flex-1 border-l pl-6">
             <div className="space-y-2">
-              <Label>Existing Labels ({tags.length})</Label>
+              <Label>{t('existingLabels')} ({tags.length})</Label>
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Spinner className="h-6 w-6" />
                 </div>
               ) : tags.length === 0 ? (
                 <div className="text-sm text-muted-foreground text-center py-8">
-                  No labels yet. Create your first label!
+                  {t('noLabels')}
                 </div>
               ) : (
                 <ScrollArea className="h-[400px]">

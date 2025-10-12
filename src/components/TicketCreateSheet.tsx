@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslations } from 'next-intl';
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
 import {
   ticketsCreate,
@@ -79,6 +80,8 @@ function flattenItems(items: any[]): any[] {
 }
 
 export function TicketCreateSheet() {
+  const t = useTranslations('tickets');
+  const tCommon = useTranslations('common');
   const { isOpen, selectedBoard, selectedColumn, closeTicketCreate } =
     useTicketCreate();
   const queryClient = useQueryClient();
@@ -311,11 +314,11 @@ export function TicketCreateSheet() {
       <SheetContent className="p-0 w-full sm:max-w-lg" side="right">
         <ScrollArea className="h-full p-6">
           <SheetHeader>
-            <SheetTitle>Add New Task</SheetTitle>
+            <SheetTitle>{t('addNewTask')}</SheetTitle>
             <SheetDescription>
               {formData.column_id
-                ? `Add a new task to the ${selectedColumnName} column.`
-                : "Create a new ticket for your board."}
+                ? `${t('addNewTask')} ${selectedColumnName} ${t('column')}.`
+                : t('createTask')}
             </SheetDescription>
           </SheetHeader>
 
@@ -357,10 +360,10 @@ export function TicketCreateSheet() {
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t('ticketTitle')} *</Label>
               <Input
                 id="title"
-                placeholder="Task title"
+                placeholder={t('ticketTitle')}
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
@@ -370,7 +373,7 @@ export function TicketCreateSheet() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="board">Board *</Label>
+              <Label htmlFor="board">{t('board')} *</Label>
               <Select
                 value={formData.board_id > 0 ? formData.board_id.toString() : ""}
                 onValueChange={(value) =>
@@ -379,7 +382,7 @@ export function TicketCreateSheet() {
                 disabled={!!selectedBoard || fetchingData}
               >
                 <SelectTrigger id="board">
-                  <SelectValue placeholder="Select a board" />
+                  <SelectValue placeholder={t('selectBoard')} />
                 </SelectTrigger>
                 <SelectContent>
                   {boards.map((board) => (
@@ -392,7 +395,7 @@ export function TicketCreateSheet() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="column">Column *</Label>
+              <Label htmlFor="column">{t('column')} *</Label>
               <Select
                 value={formData.column_id > 0 ? formData.column_id.toString() : ""}
                 onValueChange={(value) =>
@@ -401,7 +404,7 @@ export function TicketCreateSheet() {
                 disabled={!formData.board_id || !!selectedColumn || fetchingData}
               >
                 <SelectTrigger id="column">
-                  <SelectValue placeholder="Select a column" />
+                  <SelectValue placeholder={t('selectColumn')} />
                 </SelectTrigger>
                 <SelectContent>
                   {columns.map((column) => (
@@ -414,7 +417,7 @@ export function TicketCreateSheet() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="priority">Priority</Label>
+              <Label htmlFor="priority">{t('priority')}</Label>
               <Select
                 value={formData.priority}
                 onValueChange={(value: any) =>
@@ -422,22 +425,22 @@ export function TicketCreateSheet() {
                 }
               >
                 <SelectTrigger id="priority">
-                  <SelectValue placeholder="Select priority" />
+                  <SelectValue placeholder={t('priority')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
+                  <SelectItem value="low">{t('priority.low')}</SelectItem>
+                  <SelectItem value="medium">{t('priority.medium')}</SelectItem>
+                  <SelectItem value="high">{t('priority.high')}</SelectItem>
+                  <SelectItem value="urgent">{t('priority.urgent')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('description')}</Label>
               <Textarea
                 id="description"
-                placeholder="Task description"
+                placeholder={t('taskDescription')}
                 className="resize-none min-h-[100px]"
                 value={formData.description}
                 onChange={(e) =>
@@ -449,7 +452,7 @@ export function TicketCreateSheet() {
             {/* Labels Section */}
             <div className="grid gap-2">
               <div className="flex items-center justify-between">
-                <Label>Labels</Label>
+                <Label>{t('labels')}</Label>
                 <LabelManagementDialog />
               </div>
               <Popover open={isLabelPopoverOpen} onOpenChange={setIsLabelPopoverOpen}>
@@ -480,16 +483,16 @@ export function TicketCreateSheet() {
                         })}
                       </div>
                     ) : (
-                      "Select labels..."
+                      t('selectLabels')
                     )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
                   <Command>
-                    <CommandInput placeholder="Search labels..." />
+                    <CommandInput placeholder={t('selectLabels')} />
                     <CommandList>
-                      <CommandEmpty>No labels found.</CommandEmpty>
+                      <CommandEmpty>{t('noLabels')}</CommandEmpty>
                       <CommandGroup>
                         {tags.map((tag) => (
                           <CommandItem
@@ -555,7 +558,7 @@ export function TicketCreateSheet() {
                   <Label>Select Items from Lists</Label>
                   {loadingLists ? (
                     <div className="border rounded-lg p-3 text-center text-sm text-muted-foreground">
-                      Loading items...
+                      {tCommon('loading')}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -617,9 +620,9 @@ export function TicketCreateSheet() {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-full p-0" align="start">
                                   <Command>
-                                    <CommandInput placeholder="Search items..." />
+                                    <CommandInput placeholder={tCommon('search')} />
                                     <CommandList>
-                                      <CommandEmpty>No items found.</CommandEmpty>
+                                      <CommandEmpty>{tCommon('noResults')}</CommandEmpty>
                                       <CommandGroup>
                                         {selectedItemId && (
                                           <CommandItem
@@ -684,12 +687,12 @@ export function TicketCreateSheet() {
               {loading ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />
-                  Creating...
+                  {tCommon('loading')}
                 </>
               ) : (
                 <>
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Task
+                  {t('createTask')}
                 </>
               )}
             </Button>
