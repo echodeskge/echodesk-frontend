@@ -182,11 +182,7 @@ export default function ItemListDetailPage() {
       const response = await itemListsRetrieve(listId);
       setItemList(response);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load item list",
-        variant: "destructive",
-      });
+      toast.error("Failed to load item list");
     } finally {
       setLoading(false);
     }
@@ -234,37 +230,28 @@ export default function ItemListDetailPage() {
   const handleSave = async () => {
     try {
       if (editingItem) {
-        const patchData: PatchedListItem = {
+        const patchData = {
+          ...editingItem,
           label: formData.label,
           custom_id: formData.custom_id,
-          parent: formData.parent,
+          parent: formData.parent ?? undefined,
           position: formData.position,
           is_active: formData.is_active,
         };
-        await listItemsUpdate(editingItem.id, patchData);
-        toast({
-          title: "Success",
-          description: "Item updated successfully",
-        });
+        await listItemsUpdate(editingItem.id, patchData as any);
+        toast.success("Item updated successfully");
       } else {
         const newItem = {
           ...formData,
           item_list: listId,
         };
         await listItemsCreate(newItem as any);
-        toast({
-          title: "Success",
-          description: "Item created successfully",
-        });
+        toast.success("Item created successfully");
       }
       setDialogOpen(false);
       loadItemList();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save item",
-        variant: "destructive",
-      });
+      toast.error("Failed to save item");
     }
   };
 
@@ -273,17 +260,10 @@ export default function ItemListDetailPage() {
 
     try {
       await listItemsDestroy(id);
-      toast({
-        title: "Success",
-        description: "Item deleted successfully",
-      });
+      toast.success("Item deleted successfully");
       loadItemList();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete item",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete item");
     }
   };
 

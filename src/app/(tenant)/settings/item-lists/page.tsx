@@ -27,7 +27,7 @@ import type { ItemList, PatchedItemList } from "@/api/generated/interfaces";
 import Link from "next/link";
 
 export default function ItemListsPage() {
-  const [itemLists, setItemLists] = useState<ItemList[]>([]);
+  const [itemLists, setItemLists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingList, setEditingList] = useState<ItemList | null>(null);
@@ -71,12 +71,13 @@ export default function ItemListsPage() {
   const handleSave = async () => {
     try {
       if (editingList) {
-        const patchData: PatchedItemList = {
+        const patchData = {
+          ...editingList,
           title: formData.title,
           description: formData.description,
           is_active: formData.is_active,
         };
-        await itemListsUpdate(editingList.id, patchData);
+        await itemListsUpdate(editingList.id, patchData as any);
         toast.success("Item list updated successfully");
       } else {
         await itemListsCreate(formData as any);

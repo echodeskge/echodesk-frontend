@@ -32,7 +32,7 @@ import type {
 } from "@/api/generated/interfaces";
 
 export default function TicketFormsPage() {
-  const [forms, setForms] = useState<TicketForm[]>([]);
+  const [forms, setForms] = useState<any[]>([]);
   const [itemLists, setItemLists] = useState<ItemListMinimal[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -58,11 +58,7 @@ export default function TicketFormsPage() {
       setForms(formsResponse.results || []);
       setItemLists(listsResponse.results || []);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load ticket forms",
-        variant: "destructive",
-      });
+      toast.error("Failed to load ticket forms");
     } finally {
       setLoading(false);
     }
@@ -93,32 +89,23 @@ export default function TicketFormsPage() {
   const handleSave = async () => {
     try {
       if (editingForm) {
-        const patchData: PatchedTicketForm = {
+        const patchData = {
+          ...editingForm,
           title: formData.title,
           description: formData.description,
           item_list_ids: formData.item_list_ids,
           is_active: formData.is_active,
         };
-        await ticketFormsUpdate(editingForm.id, patchData);
-        toast({
-          title: "Success",
-          description: "Ticket form updated successfully",
-        });
+        await ticketFormsUpdate(editingForm.id, patchData as any);
+        toast.success("Ticket form updated successfully");
       } else {
         await ticketFormsCreate(formData as any);
-        toast({
-          title: "Success",
-          description: "Ticket form created successfully",
-        });
+        toast.success("Ticket form created successfully");
       }
       setDialogOpen(false);
       loadData();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save ticket form",
-        variant: "destructive",
-      });
+      toast.error("Failed to save ticket form");
     }
   };
 
@@ -127,34 +114,22 @@ export default function TicketFormsPage() {
 
     try {
       await ticketFormsDestroy(id);
-      toast({
-        title: "Success",
-        description: "Ticket form deleted successfully",
-      });
+      toast.success("Ticket form deleted successfully");
       loadData();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete ticket form",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete ticket form");
     }
   };
 
   const handleSetDefault = async (id: number) => {
     try {
-      await ticketFormsSetDefaultCreate(id);
-      toast({
-        title: "Success",
-        description: "Default form updated successfully",
-      });
+      const form = forms.find(f => f.id === id);
+      if (!form) return;
+      await ticketFormsSetDefaultCreate(id, form as any);
+      toast.success("Default form updated successfully");
       loadData();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to set default form",
-        variant: "destructive",
-      });
+      toast.error("Failed to set default form");
     }
   };
 
@@ -218,7 +193,7 @@ export default function TicketFormsPage() {
                     </div>
                     {form.item_lists && form.item_lists.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {form.item_lists.map((list) => (
+                        {form.item_lists.map((list: any) => (
                           <Badge key={list.id} variant="outline">
                             {list.title}
                           </Badge>

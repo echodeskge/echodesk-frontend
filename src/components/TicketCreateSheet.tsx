@@ -9,7 +9,7 @@ import {
   usersList,
   tagsList,
   ticketFormsList,
-  ticketFormsDefaultRetrieve,
+  ticketFormsRetrieve,
   formSubmissionsCreate,
   itemListsRetrieve,
 } from "@/api/generated/api";
@@ -19,6 +19,7 @@ import type {
   User,
   Tag,
   TicketForm,
+  TicketFormMinimal,
   ListItemMinimal,
 } from "@/api/generated/interfaces";
 import { Button } from "@/components/ui/button";
@@ -127,7 +128,7 @@ export function TicketCreateSheet() {
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [allColumns, setAllColumns] = useState<TicketColumn[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [ticketForms, setTicketForms] = useState<TicketForm[]>([]);
+  const [ticketForms, setTicketForms] = useState<TicketFormMinimal[]>([]);
   const [selectedForm, setSelectedForm] = useState<TicketForm | null>(null);
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [formListsWithItems, setFormListsWithItems] = useState<any[]>([]);
@@ -152,11 +153,17 @@ export function TicketCreateSheet() {
         setUsers(usersRes.results || []);
         setTicketForms(formsRes.results || []);
 
-        // Set default form if available
-        const defaultForm =
-          (formsRes.results || []).find((form: TicketForm) => form.is_default) ||
-          null;
-        setSelectedForm(defaultForm);
+        // Set default form if available and fetch full form details
+        const defaultFormMinimal =
+          (formsRes.results || []).find((form) => form.is_default);
+        if (defaultFormMinimal) {
+          try {
+            const fullForm = await ticketFormsRetrieve(defaultFormMinimal.id);
+            setSelectedForm(fullForm);
+          } catch (error) {
+            console.error("Error fetching default form:", error);
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -331,12 +338,16 @@ export function TicketCreateSheet() {
                 <Label htmlFor="form">Ticket Form</Label>
                 <Select
                   value={selectedForm?.id.toString() || ""}
-                  onValueChange={(value) => {
-                    const form = ticketForms.find(
-                      (f) => f.id.toString() === value
-                    );
-                    setSelectedForm(form || null);
+                  onValueChange={async (value) => {
+                    const formId = parseInt(value);
                     setSelectedItems([]);
+                    try {
+                      const fullForm = await ticketFormsRetrieve(formId);
+                      setSelectedForm(fullForm);
+                    } catch (error) {
+                      console.error("Error fetching form:", error);
+                      setSelectedForm(null);
+                    }
                   }}
                   disabled={fetchingData}
                 >
