@@ -373,7 +373,7 @@ export function TicketCreateSheet() {
             <div className="grid gap-2">
               <Label htmlFor="board">Board *</Label>
               <Select
-                value={formData.board_id.toString()}
+                value={formData.board_id > 0 ? formData.board_id.toString() : ""}
                 onValueChange={(value) =>
                   setFormData({ ...formData, board_id: parseInt(value) })
                 }
@@ -395,7 +395,7 @@ export function TicketCreateSheet() {
             <div className="grid gap-2">
               <Label htmlFor="column">Column *</Label>
               <Select
-                value={formData.column_id.toString()}
+                value={formData.column_id > 0 ? formData.column_id.toString() : ""}
                 onValueChange={(value) =>
                   setFormData({ ...formData, column_id: parseInt(value) })
                 }
