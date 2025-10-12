@@ -165,7 +165,7 @@ export default function ItemListsPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="w-full py-6 px-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Item Lists</CardTitle>

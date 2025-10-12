@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Plus, Edit, Trash2, ChevronRight, ChevronDown, ArrowLeft } from "lucide-react";
+import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,13 +17,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { toast } from "sonner";
 import {
   itemListsRetrieve,
   listItemsCreate,
   listItemsUpdate,
   listItemsDestroy,
-  listItemsChildrenRetrieve,
 } from "@/api/generated/api";
 import type {
   ItemList,
@@ -36,154 +43,6 @@ interface CustomField {
   label: string;
   type: "string" | "text" | "number" | "date" | "boolean";
   required: boolean;
-}
-
-interface TreeItemProps {
-  item: any;
-  onEdit: (item: any) => void;
-  onDelete: (id: number) => void;
-  onAddChild: (parent: any) => void;
-  level?: number;
-  customFieldsSchema?: CustomField[];
-}
-
-function TreeItem({ item, onEdit, onDelete, onAddChild, level = 0, customFieldsSchema }: TreeItemProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [children, setChildren] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const hasChildren = item.children && (Array.isArray(item.children) ? item.children.length > 0 : item.children !== "");
-
-  const loadChildren = async () => {
-    if (!hasChildren || children.length > 0) return;
-
-    setLoading(true);
-    try {
-      const response = await listItemsChildrenRetrieve(item.id);
-      setChildren(Array.isArray(response) ? response : []);
-    } catch (error) {
-      console.error("Failed to load children", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleExpand = () => {
-    if (!isExpanded && children.length === 0) {
-      loadChildren();
-    }
-    setIsExpanded(!isExpanded);
-  };
-
-  const hasCustomData = item.custom_data && Object.keys(item.custom_data).length > 0;
-
-  return (
-    <div>
-      <div
-        className="flex items-center justify-between py-2 px-3 hover:bg-accent rounded-md group"
-        style={{ paddingLeft: `${level * 1.5 + 0.75}rem` }}
-      >
-        <div className="flex items-center gap-2 flex-1">
-          {hasChildren ? (
-            <button
-              onClick={toggleExpand}
-              className="p-0.5 hover:bg-accent-foreground/10 rounded"
-            >
-              {isExpanded ? (
-                <ChevronDown className="h-4 w-4" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
-            </button>
-          ) : (
-            <div className="w-5" />
-          )}
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{item.label}</span>
-              {item.custom_id && (
-                <Badge variant="outline" className="text-xs">
-                  {item.custom_id}
-                </Badge>
-              )}
-              {!item.is_active && (
-                <Badge variant="secondary" className="text-xs">
-                  Inactive
-                </Badge>
-              )}
-            </div>
-            {item.full_path && (
-              <div className="text-xs text-muted-foreground">{item.full_path}</div>
-            )}
-            {hasCustomData && customFieldsSchema && customFieldsSchema.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-1">
-                {customFieldsSchema.map((field) => {
-                  const value = item.custom_data[field.name];
-                  if (value === undefined || value === null || value === "") return null;
-
-                  return (
-                    <div key={field.name} className="text-xs">
-                      <span className="text-muted-foreground">{field.label}:</span>{" "}
-                      <span className="font-medium">
-                        {field.type === "boolean"
-                          ? value
-                            ? "Yes"
-                            : "No"
-                          : value}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onAddChild(item)}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(item)}
-          >
-            <Edit className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(item.id)}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-      {isExpanded && loading && (
-        <div className="py-2 px-3 text-sm text-muted-foreground" style={{ paddingLeft: `${(level + 1) * 1.5 + 0.75}rem` }}>
-          Loading...
-        </div>
-      )}
-      {isExpanded && children.length > 0 && (
-        <div>
-          {children.map((child) => (
-            <TreeItem
-              key={child.id}
-              item={child}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAddChild={onAddChild}
-              level={level + 1}
-              customFieldsSchema={customFieldsSchema}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function ItemListDetailPage() {
@@ -353,7 +212,7 @@ export default function ItemListDetailPage() {
     : itemList.items?.filter((item: any) => !item.parent) || [];
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="w-full py-6 px-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-4">
@@ -375,7 +234,7 @@ export default function ItemListDetailPage() {
           </div>
           <Button onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Root Item
+            Add Item
           </Button>
         </CardHeader>
         <CardContent>
@@ -384,19 +243,83 @@ export default function ItemListDetailPage() {
               No items found. Add a root item to get started.
             </p>
           ) : (
-            <div className="space-y-1">
-              {rootItems.map((item: any) => (
-                <TreeItem
-                  key={item.id}
-                  item={item}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onAddChild={handleAddChild}
-                  customFieldsSchema={
-                    (itemList.custom_fields_schema as CustomField[]) || []
-                  }
-                />
-              ))}
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Label</TableHead>
+                    <TableHead>Custom ID</TableHead>
+                    {((itemList.custom_fields_schema as CustomField[]) || []).map(
+                      (field) => (
+                        <TableHead key={field.name}>{field.label}</TableHead>
+                      )
+                    )}
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rootItems.map((item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.label}</TableCell>
+                      <TableCell>
+                        {item.custom_id ? (
+                          <Badge variant="outline">{item.custom_id}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      {((itemList.custom_fields_schema as CustomField[]) || []).map(
+                        (field) => {
+                          const value = item.custom_data?.[field.name];
+                          return (
+                            <TableCell key={field.name}>
+                              {value !== undefined &&
+                              value !== null &&
+                              value !== "" ? (
+                                field.type === "boolean" ? (
+                                  <Badge variant={value ? "default" : "secondary"}>
+                                    {value ? "Yes" : "No"}
+                                  </Badge>
+                                ) : (
+                                  <span>{value}</span>
+                                )
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                          );
+                        }
+                      )}
+                      <TableCell>
+                        {item.is_active ? (
+                          <Badge variant="default">Active</Badge>
+                        ) : (
+                          <Badge variant="secondary">Inactive</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(item)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
@@ -406,18 +329,12 @@ export default function ItemListDetailPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingItem
-                ? "Edit Item"
-                : parentItem
-                ? `Add Child Item to "${parentItem.label}"`
-                : "Add Root Item"}
+              {editingItem ? "Edit Item" : "Add Item"}
             </DialogTitle>
             <DialogDescription>
               {editingItem
                 ? "Update the item details and custom field values"
-                : parentItem
-                ? "Add a child item with custom field values under the selected parent"
-                : "Add a new root-level item with custom field values to this list"}
+                : "Add a new item with custom field values to this list"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
