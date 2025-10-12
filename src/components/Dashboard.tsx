@@ -10,7 +10,9 @@ import {
   hasPermission,
   MenuItem,
 } from "@/services/permissionService";
-import TicketManagement from "./TicketManagement";
+import TicketsNew from "./TicketsNew";
+import { useBoards } from "@/hooks/useBoards";
+import BoardSwitcher from "./BoardSwitcher";
 import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
 import TenantGroupManagement from "./TenantGroupManagement";
@@ -32,6 +34,7 @@ interface DashboardProps {
 
 export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const { data: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
+  const { data: boards } = useBoards();
   const [error, setError] = useState("");
   const [currentView, setCurrentView] = useState<
     | "tickets"
@@ -51,6 +54,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [connectionsChanged, setConnectionsChanged] = useState(false);
   const [messagesRefreshKey, setMessagesRefreshKey] = useState(0);
+  const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
 
   useEffect(() => {
     checkSocialConnections();
@@ -240,7 +244,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-white"
+      <div className="flex min-h-screen w-full bg-white overflow-hidden"
       >
 
         <AppSidebar
@@ -252,19 +256,31 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
           onLogout={handleLogout}
         />
 
-        <SidebarInset>
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white">
+        <SidebarInset className="flex flex-col overflow-hidden">
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white w-full">
             <SidebarTrigger className="-ml-1" />
             <h1 className="text-lg font-semibold">
               {visibleMenuItems.find((item) => item.id === currentView)?.label || 'Dashboard'}
             </h1>
+            {currentView === "tickets" && boards && boards.length > 0 && (
+              <div className="ml-4">
+                <BoardSwitcher
+                  selectedBoardId={selectedBoardId}
+                  boards={boards}
+                  onBoardChange={setSelectedBoardId}
+                />
+              </div>
+            )}
           </div>
 
-          <div className="flex-1 bg-white overflow-hidden"
+          <div className="flex-1 bg-white w-full overflow-hidden"
           >
             {/* View Content */}
             {currentView === "tickets" && (
-              <TicketManagement />
+              <TicketsNew
+                selectedBoardId={selectedBoardId}
+                onBoardChange={setSelectedBoardId}
+              />
             )}
 
             {currentView === "calls" && (
