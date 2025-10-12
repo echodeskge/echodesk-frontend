@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Ticket, TicketColumn, User } from "@/api/generated/interfaces";
+import type { Ticket, TicketColumn, User, Tag as TagType } from "@/api/generated/interfaces";
 import { ticketService } from "@/services/ticketService";
-import { columnsList } from "@/api/generated/api";
+import { columnsList, tagsList } from "@/api/generated/api";
 import axios from "@/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,11 +14,25 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import SubTicketList from "./SubTicketList";
 import ChecklistItemList from "./ChecklistItemList";
 import AssigneeList from "./AssigneeList";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
 import TimeTracking from "./TimeTracking";
+import { LabelManagementDialog } from "./LabelManagementDialog";
 import {
   Calendar,
   User as UserIcon,
@@ -27,8 +41,11 @@ import {
   Edit,
   Save,
   X,
-  Clock
+  Clock,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface TicketDetailViewProps {
   ticket: Ticket;
@@ -69,14 +86,19 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [tags, setTags] = useState<TagType[]>([]);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [editingAssignments, setEditingAssignments] = useState(false);
   const [tempAssignments, setTempAssignments] = useState<AssignmentData[]>([]);
+  const [editingLabels, setEditingLabels] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [isLabelPopoverOpen, setIsLabelPopoverOpen] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetchUsers();
     fetchColumns();
+    fetchTags();
   }, []);
 
   useEffect(() => {
@@ -113,6 +135,15 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       setColumns(filteredColumns);
     } catch (err) {
       console.error("Error fetching columns:", err);
+    }
+  };
+
+  const fetchTags = async () => {
+    try {
+      const result = await tagsList();
+      setTags(result.results || []);
+    } catch (err) {
+      console.error("Error fetching tags:", err);
     }
   };
 
@@ -214,6 +245,38 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       console.error("Error updating assignments:", err);
       setError("Failed to update assignments");
     }
+  };
+
+  const handleStartEditingLabels = () => {
+    setSelectedTagIds(ticket.tags?.map(tag => tag.id) || []);
+    setEditingLabels(true);
+  };
+
+  const handleCancelEditingLabels = () => {
+    setEditingLabels(false);
+    setSelectedTagIds([]);
+  };
+
+  const handleSaveLabels = async () => {
+    try {
+      const updatedTicket = await ticketService.updateTicket(ticket.id, {
+        tag_ids: selectedTagIds,
+      });
+
+      setTicket(updatedTicket);
+      onUpdate(updatedTicket);
+      setEditingLabels(false);
+      setSelectedTagIds([]);
+    } catch (err) {
+      console.error("Error updating labels:", err);
+      setError("Failed to update labels");
+    }
+  };
+
+  const toggleTag = (tagId: number) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
   };
 
   const priorityDisplay = String(ticket.priority || 'Medium');
@@ -334,21 +397,131 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                 </div>
               )}
 
-              {ticket.tags && ticket.tags.length > 0 && (
-                <div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
                     <Tag className="h-4 w-4" />
-                    Tags
+                    Labels
                   </Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {ticket.tags.map((tag) => (
-                      <Badge key={tag.id} variant="secondary">
-                        {tag.name}
-                      </Badge>
-                    ))}
+                  <div className="flex gap-2">
+                    <LabelManagementDialog />
+                    {!editingLabels && (
+                      <Button
+                        onClick={handleStartEditingLabels}
+                        variant="ghost"
+                        size="sm"
+                        className="h-auto py-1 px-2 text-xs"
+                      >
+                        Edit
+                      </Button>
+                    )}
                   </div>
                 </div>
-              )}
+
+                {editingLabels ? (
+                  <div className="space-y-2">
+                    <Popover open={isLabelPopoverOpen} onOpenChange={setIsLabelPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={isLabelPopoverOpen}
+                          className="w-full justify-between"
+                        >
+                          {selectedTagIds.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {selectedTagIds.map((tagId) => {
+                                const tag = tags.find((t) => t.id === tagId);
+                                if (!tag) return null;
+                                return (
+                                  <Badge
+                                    key={tag.id}
+                                    style={{
+                                      backgroundColor: tag.color || '#6B7280',
+                                      color: '#ffffff',
+                                    }}
+                                    className="text-xs px-2 py-0.5"
+                                  >
+                                    {tag.name}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            "Select labels..."
+                          )}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search labels..." />
+                          <CommandList>
+                            <CommandEmpty>No labels found.</CommandEmpty>
+                            <CommandGroup>
+                              {tags.map((tag) => (
+                                <CommandItem
+                                  key={tag.id}
+                                  value={tag.name}
+                                  onSelect={() => toggleTag(tag.id)}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedTagIds.includes(tag.id) ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <Badge
+                                    style={{
+                                      backgroundColor: tag.color || '#6B7280',
+                                      color: '#ffffff',
+                                    }}
+                                    className="text-xs px-2 py-0.5 mr-2"
+                                  >
+                                    {tag.name}
+                                  </Badge>
+                                  {tag.description && (
+                                    <span className="text-xs text-muted-foreground ml-auto">
+                                      {tag.description}
+                                    </span>
+                                  )}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveLabels} size="sm" className="flex-1">
+                        Save
+                      </Button>
+                      <Button onClick={handleCancelEditingLabels} variant="outline" size="sm" className="flex-1">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {ticket.tags && ticket.tags.length > 0 ? (
+                      ticket.tags.map((tag) => (
+                        <Badge
+                          key={tag.id}
+                          style={{
+                            backgroundColor: tag.color || '#6B7280',
+                            color: '#ffffff',
+                          }}
+                          className="text-xs px-2 py-1"
+                        >
+                          {tag.name}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No labels</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <ChecklistItemList
                 ticketId={ticket.id}
