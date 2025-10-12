@@ -22,7 +22,13 @@ export function KanbanTaskItem({ task, index }: KanbanTaskItemProps) {
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on interactive elements
     const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('a')) {
+    if (
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('[role="menuitem"]') ||
+      target.closest('[role="dialog"]') ||
+      target.closest('[data-radix-popper-content-wrapper]')
+    ) {
       return
     }
 

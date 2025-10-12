@@ -226,9 +226,8 @@ export function TicketCreateSheet() {
         title: formData.title,
         description: formData.description,
         priority: formData.priority,
-        column: formData.column_id,
-        board: formData.board_id,
-        tags: selectedTagIds,
+        column_id: formData.column_id,
+        tag_ids: selectedTagIds,
       } as any;
 
       const createdTicket = await ticketsCreate(ticketData);
@@ -251,7 +250,7 @@ export function TicketCreateSheet() {
       }
 
       // Invalidate queries to refetch data
-      queryClient.invalidateQueries({ queryKey: ["kanbanBoard"] });
+      queryClient.invalidateQueries({ queryKey: ["kanbanBoard", formData.board_id] });
 
       // Reset form
       setFormData({

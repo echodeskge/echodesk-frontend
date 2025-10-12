@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useReducer, useState } from "react"
+import { createContext, useReducer, useState, useEffect } from "react"
 
 import type { ReactNode } from "react"
 import type {
@@ -14,6 +14,8 @@ import type {
 import { teamMembersData } from "./team-members-data"
 
 import { KanbanReducer } from "./kanban-reducer"
+import { useCreateColumn, useUpdateColumn, useDeleteColumn, useReorderColumn } from "@/hooks/useTicketColumns"
+import { useDeleteTicket } from "@/hooks/useTickets"
 
 // Create Kanban context
 export const KanbanContext = createContext<KanbanContextType | undefined>(
@@ -36,6 +38,21 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
     selectedTask: undefined,
   })
 
+  // API hooks for column operations - pass boardId for proper cache invalidation
+  const boardId = selectedBoard?.id
+  const createColumnMutation = useCreateColumn(boardId)
+  const updateColumnMutation = useUpdateColumn(boardId)
+  const deleteColumnMutation = useDeleteColumn(boardId)
+  const reorderColumnMutation = useReorderColumn(boardId)
+
+  // API hooks for ticket operations
+  const deleteTicketMutation = useDeleteTicket(boardId)
+
+  // Sync columns when kanbanData prop changes (after API refetch)
+  useEffect(() => {
+    dispatch({ type: "syncColumns", columns: kanbanData })
+  }, [kanbanData])
+
   // Sidebar state management
   const [kanbanAddTaskSidebarIsOpen, setKanbanAddTaskSidebarIsOpen] =
     useState(false)
@@ -46,17 +63,61 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
   const [kanbanUpdateColumnSidebarIsOpen, setKanbanUpdateColumnSidebarIsOpen] =
     useState(false)
 
-  // Handlers for column actions
-  const handleAddColumn = (column: ColumnWithoutIdAndOrderAndTasksType) => {
-    dispatch({ type: "addColumn", column })
+  // Handlers for column actions with API integration
+  const handleAddColumn = async (column: ColumnWithoutIdAndOrderAndTasksType) => {
+    if (!selectedBoard) return
+
+    try {
+      await createColumnMutation.mutateAsync({
+        name: column.title,
+        color: column.color,
+        board: selectedBoard.id,
+        position: kanbanState.columns.length,
+        track_time: column.time_tracking || false,
+      } as any)
+    } catch (error) {
+      console.error('Error adding column:', error)
+      throw error
+    }
   }
 
-  const handleUpdateColumn = (column: ColumnType) => {
-    dispatch({ type: "updateColumn", column })
+  const handleUpdateColumn = async (column: ColumnType) => {
+    // Find the original API column
+    const apiColumn = apiColumns.find((c: any) => c.id.toString() === column.id)
+    if (!apiColumn) {
+      console.error('Column not found in API columns')
+      return
+    }
+
+    try {
+      await updateColumnMutation.mutateAsync({
+        id: apiColumn.id,
+        data: {
+          name: column.title,
+          color: column.color,
+          track_time: column.time_tracking,
+        }
+      })
+    } catch (error) {
+      console.error('Error updating column:', error)
+      throw error
+    }
   }
 
-  const handleDeleteColumn = (columnId: ColumnType["id"]) => {
-    dispatch({ type: "deleteColumn", columnId })
+  const handleDeleteColumn = async (columnId: ColumnType["id"]) => {
+    // Find the original API column
+    const apiColumn = apiColumns.find((c: any) => c.id.toString() === columnId)
+    if (!apiColumn) {
+      console.error('Column not found in API columns')
+      return
+    }
+
+    try {
+      await deleteColumnMutation.mutateAsync(apiColumn.id)
+    } catch (error) {
+      console.error('Error deleting column:', error)
+      throw error
+    }
   }
 
   // Handlers for task actions
@@ -71,22 +132,52 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
     dispatch({ type: "updateTask", task })
   }
 
-  const handleDeleteTask = (taskId: TaskType["id"]) => {
-    dispatch({ type: "deleteTask", taskId })
+  const handleDeleteTask = async (taskId: TaskType["id"]) => {
+    try {
+      // Convert string ID to number for API call
+      const numericId = parseInt(taskId)
+      await deleteTicketMutation.mutateAsync(numericId)
+    } catch (error) {
+      console.error('Error deleting ticket:', error)
+      throw error
+    }
   }
 
   // Reorder handlers
-  const handleReorderColumns = (
+  const handleReorderColumns = async (
     sourceIndex: number,
     destinationIndex: number
   ) => {
     if (sourceIndex === destinationIndex) return
 
+    // Optimistic UI update
     dispatch({
       type: "reorderColumns",
       sourceIndex,
       destinationIndex,
     })
+
+    // Get the column that was moved
+    const movedColumn = kanbanState.columns[sourceIndex]
+    const apiColumn = apiColumns.find((c: any) => c.id.toString() === movedColumn.id)
+
+    if (apiColumn) {
+      try {
+        // Call API to update position
+        await reorderColumnMutation.mutateAsync({
+          id: apiColumn.id,
+          data: { position: destinationIndex }
+        })
+      } catch (error) {
+        console.error('Error reordering column:', error)
+        // Revert on error
+        dispatch({
+          type: "reorderColumns",
+          sourceIndex: destinationIndex,
+          destinationIndex: sourceIndex,
+        })
+      }
+    }
   }
 
   const handleReorderTasks = (

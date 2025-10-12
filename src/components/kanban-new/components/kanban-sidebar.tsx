@@ -1,5 +1,13 @@
 "use client"
 
+import { KanbanAddColumnSidebar } from "./kanban-add-column-sidebar"
+import { KanbanUpdateColumnSidebar } from "./kanban-update-column-sidebar"
+
 export function KanbanSidebar() {
-  return null;
+  return (
+    <>
+      <KanbanAddColumnSidebar />
+      <KanbanUpdateColumnSidebar />
+    </>
+  )
 }

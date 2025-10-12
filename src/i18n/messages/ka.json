@@ -138,6 +138,36 @@
       "high": "მაღალი",
       "urgent": "სასწრაფო",
       "critical": "კრიტიკული"
+    },
+    "editTask": "დავალების რედაქტირება",
+    "deleteTask": "დავალების წაშლა",
+    "deleteTaskConfirm": "დარწმუნებული ხართ, რომ გსურთ ამ დავალების წაშლა? ეს მოქმედება შეუქცევადია.",
+    "columns": {
+      "addNewColumn": "ახალი სვეტის დამატება",
+      "editColumn": "სვეტის რედაქტირება",
+      "deleteColumn": "სვეტის წაშლა",
+      "columnTitle": "სვეტის სათაური",
+      "columnTitlePlaceholder": "მაგ., მუშავდება",
+      "columnColor": "სვეტის ფერი",
+      "timeTracking": "დროის აღრიცხვის ჩართვა",
+      "timeTrackingDescription": "აღრიცხეთ ამ სვეტში ტიკეტებზე დახარჯული დრო",
+      "addColumn": "სვეტის დამატება",
+      "updateColumn": "სვეტის განახლება",
+      "addColumnSidebarTitle": "ახალი სვეტის დამატება",
+      "addColumnSidebarDescription": "დაამატეთ ახალი სვეტი დაფაზე",
+      "editColumnSidebarTitle": "სვეტის რედაქტირება",
+      "editColumnSidebarDescription": "განაახლეთ სვეტის დეტალები",
+      "deleteConfirm": "დარწმუნებული ხართ, რომ გსურთ ამ სვეტის წაშლა? ყველა ტიკეტი ამ სვეტიდან გადატანილი იქნება პირველ სვეტში.",
+      "success": {
+        "created": "სვეტი წარმატებით შეიქმნა",
+        "updated": "სვეტი წარმატებით განახლდა",
+        "deleted": "სვეტი წარმატებით წაიშალა"
+      },
+      "error": {
+        "create": "სვეტის შექმნა ვერ მოხერხდა",
+        "update": "სვეტის განახლება ვერ მოხერხდა",
+        "delete": "სვეტის წაშლა ვერ მოხერხდა"
+      }
     }
   },
   "labels": {

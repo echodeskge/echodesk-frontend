@@ -39,6 +39,13 @@ export const KanbanReducer = (
       }
     }
 
+    case "syncColumns": {
+      return {
+        ...state,
+        columns: action.columns, // Replace all columns with fresh data from API
+      }
+    }
+
     case "addTask": {
       return {
         ...state,

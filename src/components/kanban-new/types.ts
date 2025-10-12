@@ -44,6 +44,7 @@ export interface ColumnType {
   order: number
   title: string
   color?: string
+  time_tracking?: boolean
   tasks: TaskType[]
 }
 
@@ -68,6 +69,7 @@ export type KanbanActionType =
   | { type: "addColumn"; column: ColumnWithoutIdAndOrderAndTasksType }
   | { type: "updateColumn"; column: ColumnType }
   | { type: "deleteColumn"; columnId: string }
+  | { type: "syncColumns"; columns: ColumnType[] }
   | {
       type: "addTask"
       task: TaskWithoutIdAndOrderAndColumnIdType

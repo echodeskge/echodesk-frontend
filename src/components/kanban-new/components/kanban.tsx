@@ -7,6 +7,7 @@ import type { DropResult } from "@hello-pangea/dnd"
 
 import { useKanbanContext } from "../use-kanban-context"
 import { KanbanColumnList } from "./kanban-column-list"
+import { KanbanSidebar } from "./kanban-sidebar"
 
 export function Kanban() {
   const { handleReorderColumns, handleReorderTasks } = useKanbanContext()
@@ -30,8 +31,11 @@ export function Kanban() {
   }
 
   return (
-    <DragDropContext onDragEnd={handleDragDrop}>
-      <KanbanColumnList />
-    </DragDropContext>
+    <>
+      <DragDropContext onDragEnd={handleDragDrop}>
+        <KanbanColumnList />
+      </DragDropContext>
+      <KanbanSidebar />
+    </>
   )
 }

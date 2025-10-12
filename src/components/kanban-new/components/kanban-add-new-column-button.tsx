@@ -1,7 +1,7 @@
 "use client"
 
 import { Plus } from "lucide-react"
-
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 
 export function KanbanAddNewColumnButton({
@@ -9,6 +9,8 @@ export function KanbanAddNewColumnButton({
 }: {
   setKanbanAddColumnSidebarIsOpen: (value: boolean) => void
 }) {
+  const t = useTranslations('tickets.columns')
+
   return (
     <Button
       variant="outline"
@@ -16,7 +18,7 @@ export function KanbanAddNewColumnButton({
       onClick={() => setKanbanAddColumnSidebarIsOpen(true)}
     >
       <Plus className="me-2 size-4 text-muted-foreground" />
-      Add New Column
+      {t('addNewColumn')}
     </Button>
   )
 }

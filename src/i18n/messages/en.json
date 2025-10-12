@@ -138,6 +138,36 @@
       "high": "High",
       "urgent": "Urgent",
       "critical": "Critical"
+    },
+    "editTask": "Edit Task",
+    "deleteTask": "Delete Task",
+    "deleteTaskConfirm": "Are you sure you want to delete this task? This action cannot be undone.",
+    "columns": {
+      "addNewColumn": "Add New Column",
+      "editColumn": "Edit Column",
+      "deleteColumn": "Delete Column",
+      "columnTitle": "Column Title",
+      "columnTitlePlaceholder": "e.g., In Progress",
+      "columnColor": "Column Color",
+      "timeTracking": "Enable Time Tracking",
+      "timeTrackingDescription": "Track time spent on tickets in this column",
+      "addColumn": "Add Column",
+      "updateColumn": "Update Column",
+      "addColumnSidebarTitle": "Add New Column",
+      "addColumnSidebarDescription": "Add a new column to the board",
+      "editColumnSidebarTitle": "Edit Column",
+      "editColumnSidebarDescription": "Update the column details",
+      "deleteConfirm": "Are you sure you want to delete this column? All tickets in this column will be moved to the first column.",
+      "success": {
+        "created": "Column created successfully",
+        "updated": "Column updated successfully",
+        "deleted": "Column deleted successfully"
+      },
+      "error": {
+        "create": "Failed to create column",
+        "update": "Failed to update column",
+        "delete": "Failed to delete column"
+      }
     }
   },
   "labels": {
