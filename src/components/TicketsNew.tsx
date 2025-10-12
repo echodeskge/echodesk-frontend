@@ -81,10 +81,20 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
 
   // Set initial board when boards load
   useEffect(() => {
-    if (boards && boards.length > 0 && !selectedBoardId) {
-      // Try to find default board, otherwise use first board
-      const defaultBoard = boards.find(b => b.is_default);
-      onBoardChange(defaultBoard?.id || boards[0].id);
+    if (boards && boards.length > 0) {
+      if (!selectedBoardId) {
+        // No board selected - try to find default board, otherwise use first board
+        const defaultBoard = boards.find(b => b.is_default);
+        onBoardChange(defaultBoard?.id || boards[0].id);
+      } else {
+        // Validate that the persisted board ID still exists
+        const boardExists = boards.some(b => b.id === selectedBoardId);
+        if (!boardExists) {
+          // Board no longer exists, fall back to default or first board
+          const defaultBoard = boards.find(b => b.is_default);
+          onBoardChange(defaultBoard?.id || boards[0].id);
+        }
+      }
     }
   }, [boards, selectedBoardId, onBoardChange]);
 
