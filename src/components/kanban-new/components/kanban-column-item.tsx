@@ -24,7 +24,7 @@ export function KanbanColumnItem({ column, index }: KanbanColumnProps) {
       {(provided: DraggableProvided) => (
         <div
           ref={provided.innerRef}
-          className="w-64 h-fit md:w-72"
+          className="w-64 md:w-72 flex flex-col h-full"
           {...provided.draggableProps} // Draggable props for drag-and-drop functionality
         >
           <KanbanColumnItemHeader column={column} provided={provided} />

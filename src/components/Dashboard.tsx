@@ -13,6 +13,8 @@ import {
 import TicketsNew from "./TicketsNew";
 import { useBoards } from "@/hooks/useBoards";
 import BoardSwitcher from "./BoardSwitcher";
+import { TicketCreateProvider } from "@/contexts/TicketCreateContext";
+import { TicketCreateSheet } from "./TicketCreateSheet";
 import CallManager from "./CallManager";
 import UserManagement from "./UserManagement";
 import TenantGroupManagement from "./TenantGroupManagement";
@@ -243,11 +245,12 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-white overflow-hidden"
-      >
+    <TicketCreateProvider>
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-white overflow-hidden"
+        >
 
-        <AppSidebar
+          <AppSidebar
           tenant={tenant}
           userProfile={userProfile || null}
           visibleMenuItems={visibleMenuItems}
@@ -446,6 +449,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
           </div>
         </SidebarInset>
       </div>
+
+      <TicketCreateSheet />
     </SidebarProvider>
+    </TicketCreateProvider>
   );
 }

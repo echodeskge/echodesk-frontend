@@ -13,7 +13,7 @@ export function KanbanColumnList() {
   const { kanbanState, setKanbanAddColumnSidebarIsOpen } = useKanbanContext()
 
   return (
-    <ScrollArea orientation="horizontal" className="w-full h-full">
+    <ScrollArea orientation="horizontal" className="w-full" style={{ height: 'calc(100vh - 3.5rem)' }}>
       <Droppable
         droppableId="root" // Unique identifier for the droppable area. Used to track drag-and-drop events
         type="Column" // Specifies the type of draggable items this droppable area will accept. Helps differentiate between column and task movements
@@ -25,6 +25,7 @@ export function KanbanColumnList() {
             ref={provided.innerRef}
             {...provided.droppableProps} // Droppable props for drag-and-drop functionality
             className="flex gap-x-4 p-4 w-max min-w-full"
+            style={{ height: 'calc(100vh - 3.5rem - 2rem)' }}
           >
             {kanbanState.columns.map((column, index) => (
               <KanbanColumnItem key={column.id} column={column} index={index} />

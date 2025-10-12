@@ -76,23 +76,25 @@ export function AppSidebar({
     <Sidebar variant="inset" className="bg-white border-r border-gray-200">
       <SidebarHeader className="bg-white border-b border-gray-100">
         <div className="flex items-center gap-3 px-4 py-2">
-          {tenant.theme.logo_url && (
+          {tenant?.theme?.logo_url && (
             <img
               src={tenant.theme.logo_url}
-              alt={tenant.name}
+              alt={tenant.name || "Logo"}
               className="h-8 w-auto"
             />
           )}
           <div className="flex flex-col">
             <h2
               className="text-lg font-semibold"
-              style={{ color: tenant.theme.primary_color }}
+              style={{ color: tenant?.theme?.primary_color }}
             >
-              {tenant.name}
+              {tenant?.name || "EchoDesk"}
             </h2>
-            <p className="text-xs text-muted-foreground">
-              {tenant.domain}
-            </p>
+            {tenant?.domain && (
+              <p className="text-xs text-muted-foreground">
+                {tenant.domain}
+              </p>
+            )}
           </div>
         </div>
       </SidebarHeader>

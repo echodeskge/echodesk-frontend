@@ -5,7 +5,7 @@ import { FacebookPageConnection, FacebookMessage } from "@/api/generated/interfa
 import axios from "@/api/axios";
 
 interface SocialIntegrationsProps {
-  onBackToDashboard: () => void;
+  onBackToDashboard?: () => void;
   onConnectionChange?: (type: 'facebook', connected: boolean) => void;
 }
 
@@ -424,20 +424,22 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-          <button
-            onClick={onBackToDashboard}
-            style={{
-              background: "transparent",
-              border: "1px solid #dee2e6",
-              borderRadius: "8px",
-              padding: "8px 12px",
-              cursor: "pointer",
-              fontSize: "14px",
-              color: "#666",
-            }}
-          >
-            ← Back to Dashboard
-          </button>
+          {onBackToDashboard && (
+            <button
+              onClick={onBackToDashboard}
+              style={{
+                background: "transparent",
+                border: "1px solid #dee2e6",
+                borderRadius: "8px",
+                padding: "8px 12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                color: "#666",
+              }}
+            >
+              ← Back to Dashboard
+            </button>
+          )}
           <div>
             <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "700", color: "#333" }}>
               Social Media Integrations

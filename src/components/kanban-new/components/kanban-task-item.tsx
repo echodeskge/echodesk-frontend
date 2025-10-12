@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter, usePathname } from "next/navigation"
 import { Draggable } from "@hello-pangea/dnd"
 
 import type { DraggableProvided } from "@hello-pangea/dnd"
@@ -16,12 +17,30 @@ interface KanbanTaskItemProps {
 }
 
 export function KanbanTaskItem({ task, index }: KanbanTaskItemProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on interactive elements
+    const target = e.target as HTMLElement
+    if (target.closest('button') || target.closest('a')) {
+      return
+    }
+
+    // Extract tenant from current path (e.g., /groot-tenant/... -> groot-tenant)
+    const pathParts = pathname.split('/').filter(Boolean)
+    const tenant = pathParts[0] || 'default'
+
+    router.push(`/${tenant}/ticket/${task.id}`)
+  }
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided: DraggableProvided) => (
         <Card
           ref={provided.innerRef}
-          className="my-2 w-full"
+          className="my-2 w-full cursor-pointer transition-shadow hover:shadow-md"
+          onClick={handleCardClick}
           {...provided.draggableProps}
         >
           <KanbanTaskItemHeader task={task} provided={provided} />

@@ -6,7 +6,7 @@ import { socialFacebookSendMessageCreate } from "@/api/generated/api";
 import axios from "@/api/axios";
 
 interface UnifiedMessagesManagementProps {
-  onBackToDashboard: () => void;
+  onBackToDashboard?: () => void;
 }
 
 interface PaginatedResponse<T> {

@@ -1,0 +1,232 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter, usePathname } from "next/navigation";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useBoards } from "@/hooks/useBoards";
+import { getSidebarMenuItems, MenuItem } from "@/services/permissionService";
+import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import BoardSwitcher from "@/components/BoardSwitcher";
+import { TicketCreateProvider } from "@/contexts/TicketCreateContext";
+import { TicketCreateSheet } from "@/components/TicketCreateSheet";
+import { BoardProvider, useBoard } from "@/contexts/BoardContext";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { TenantInfo } from "@/types/auth";
+import { tenantService } from "@/services/tenantService";
+
+function TenantLayoutContent({ children }: { children: React.ReactNode }) {
+  const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const tenantSlug = params.tenant as string;
+
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile();
+  const { data: boards } = useBoards();
+  const { selectedBoardId, setSelectedBoardId } = useBoard();
+  const [facebookConnected, setFacebookConnected] = useState(false);
+  const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
+
+  // Load tenant data
+  useEffect(() => {
+    const loadTenant = async () => {
+      try {
+        const subdomain = tenantSlug.replace(/-tenant$/, '');
+        const tenantConfig = await tenantService.getTenantBySubdomain(subdomain);
+
+        if (tenantConfig) {
+          const info: TenantInfo = {
+            id: tenantConfig.schema_name,
+            name: tenantConfig.tenant_name,
+            schema_name: tenantConfig.schema_name,
+            domain: `${tenantConfig.schema_name}.echodesk.ge`,
+            api_url: tenantConfig.api_url,
+            theme: tenantConfig.theme,
+          };
+          setTenantInfo(info);
+        }
+      } catch (err) {
+        console.error("Failed to load tenant:", err);
+      }
+    };
+
+    if (tenantSlug) {
+      loadTenant();
+    }
+  }, [tenantSlug]);
+
+  // Check social connections
+  useEffect(() => {
+    const checkSocialConnections = async () => {
+      try {
+        // Check Facebook connection
+        const axiosInstance = (await import("@/api/axios")).default;
+        const response = await axiosInstance.get("/api/social/facebook/status/");
+        setFacebookConnected(response.data.connected || false);
+      } catch (err) {
+        console.error("Failed to check social connections:", err);
+        setFacebookConnected(false);
+      }
+    };
+
+    checkSocialConnections();
+  }, []);
+
+  const menuItems: MenuItem[] = [
+    {
+      id: "tickets",
+      label: "Tickets",
+      icon: "🎫",
+      permission: "can_access_tickets",
+      description: "View and manage tickets",
+    },
+    {
+      id: "time-tracking",
+      label: "My Time",
+      icon: "⏱️",
+      permission: "can_access_tickets",
+      description: "View your time tracking data",
+    },
+    {
+      id: "user-statistics",
+      label: "Time Statistics",
+      icon: "📊",
+      permission: "can_access_user_management",
+      description: "View time tracking statistics for all users",
+    },
+    {
+      id: "calls",
+      label: "Calls",
+      icon: "📞",
+      permission: "can_access_calls",
+      description: "Handle phone calls",
+    },
+    {
+      id: "orders",
+      label: "Orders",
+      icon: "📝",
+      permission: "can_access_orders",
+      description: "Create and manage orders",
+    },
+    ...(facebookConnected
+      ? [
+          {
+            id: "messages",
+            label: "Messages",
+            icon: "💬",
+            permission: "can_manage_settings",
+            description: "View and respond to Facebook messages",
+          },
+        ]
+      : []),
+    {
+      id: "users",
+      label: "Users",
+      icon: "👥",
+      permission: "can_access_user_management",
+      description: "Manage user accounts",
+    },
+    {
+      id: "groups",
+      label: "Groups",
+      icon: "👨‍👩‍👧‍👦",
+      permission: "can_access_user_management",
+      description: "Manage user groups and permissions",
+    },
+    {
+      id: "social",
+      label: "Social Media",
+      icon: "📱",
+      permission: "can_manage_settings",
+      description: "Connect social media accounts",
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: "⚙️",
+      permission: "can_manage_settings",
+      description: "Configure system settings",
+    },
+  ];
+
+  const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
+
+  const handleMenuClick = (viewId: string) => {
+    router.push(`/${tenantSlug}/${viewId}`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout/", { method: "POST" });
+      router.push("/");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  };
+
+  // Get current view from pathname
+  const pathParts = pathname.split("/").filter(Boolean);
+  const currentView = pathParts[1] || "tickets"; // tenant/tickets/... -> tickets
+
+  // Get page title
+  const currentMenuItem = visibleMenuItems.find((item) => item.id === currentView);
+  const pageTitle = currentMenuItem?.label || "Dashboard";
+
+  // Check if we should show board switcher
+  const showBoardSwitcher = currentView === "tickets" && boards && boards.length > 0;
+
+  if (profileLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      <div className="flex h-screen w-full bg-white overflow-hidden">
+        <AppSidebar
+          tenant={tenantInfo as any}
+          userProfile={userProfile || null}
+          visibleMenuItems={visibleMenuItems}
+          currentView={currentView}
+          onMenuClick={handleMenuClick}
+          onLogout={handleLogout}
+        />
+
+        <SidebarInset className="flex flex-col overflow-hidden h-screen">
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white w-full">
+            <SidebarTrigger className="-ml-1" />
+            <h1 className="text-lg font-semibold">{pageTitle}</h1>
+            {showBoardSwitcher && (
+              <div className="ml-4">
+                <BoardSwitcher
+                  selectedBoardId={selectedBoardId}
+                  boards={boards}
+                  onBoardChange={setSelectedBoardId}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="flex-1 bg-white w-full overflow-hidden">
+            {children}
+          </div>
+        </SidebarInset>
+      </div>
+
+      <TicketCreateSheet />
+    </SidebarProvider>
+  );
+}
+
+export default function TenantLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <TicketCreateProvider>
+      <BoardProvider>
+        <TenantLayoutContent>{children}</TenantLayoutContent>
+      </BoardProvider>
+    </TicketCreateProvider>
+  );
+}

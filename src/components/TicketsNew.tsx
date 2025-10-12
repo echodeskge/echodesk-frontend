@@ -77,6 +77,8 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
   const { data: boards, isLoading: boardsLoading } = useBoards();
   const { data: kanbanBoardData, isLoading: kanbanLoading, error: kanbanError } = useKanbanBoard(selectedBoardId);
 
+  const selectedBoard = boards?.find(b => b.id === selectedBoardId);
+
   // Set initial board when boards load
   useEffect(() => {
     if (boards && boards.length > 0 && !selectedBoardId) {
@@ -129,7 +131,11 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <KanbanProvider kanbanData={kanbanData}>
+      <KanbanProvider
+        kanbanData={kanbanData}
+        selectedBoard={selectedBoard || null}
+        apiColumns={kanbanBoardData?.columns || []}
+      >
         <Kanban />
       </KanbanProvider>
     </div>

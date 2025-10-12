@@ -21,7 +21,7 @@ export function KanbanColumnItemHeader({
   provided,
 }: KanbanColumnItemHeaderProps) {
   return (
-    <CardHeader className="flex-row items-center space-y-0 gap-x-1.5 p-0">
+    <CardHeader className="flex-row items-center space-y-0 gap-x-1.5 p-0 pb-2 shrink-0">
       <div
         className={cn(
           buttonVariants({ variant: "ghost", size: "icon" }),

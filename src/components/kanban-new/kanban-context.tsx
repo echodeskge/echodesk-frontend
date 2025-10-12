@@ -22,10 +22,12 @@ export const KanbanContext = createContext<KanbanContextType | undefined>(
 
 interface KanbanProviderProps {
   kanbanData: ColumnType[]
+  selectedBoard?: any | null
+  apiColumns?: any[]
   children: ReactNode
 }
 
-export function KanbanProvider({ kanbanData, children }: KanbanProviderProps) {
+export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = [], children }: KanbanProviderProps) {
   // Reducer to manage Kanban state
   const [kanbanState, dispatch] = useReducer(KanbanReducer, {
     columns: kanbanData,
@@ -119,6 +121,8 @@ export function KanbanProvider({ kanbanData, children }: KanbanProviderProps) {
     <KanbanContext.Provider
       value={{
         kanbanState,
+        selectedBoard,
+        apiColumns,
         kanbanAddTaskSidebarIsOpen,
         setKanbanAddTaskSidebarIsOpen,
         kanbanUpdateTaskSidebarIsOpen,
