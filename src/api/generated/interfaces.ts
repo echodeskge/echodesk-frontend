@@ -701,7 +701,10 @@ export interface PatchedSubTicketAssignment {
 export interface PatchedTag {
   id?: number;
   name?: string;
+  color?: string;
+  description?: string;
   created_at?: string;
+  created_by?: UserMinimal;
 }
 
 export interface PatchedTenant {
@@ -1000,7 +1003,10 @@ export interface SubTicketAssignment {
 export interface Tag {
   id: number;
   name: string;
+  color?: string;
+  description?: string;
   created_at: string;
+  created_by: UserMinimal;
 }
 
 export interface Tenant {

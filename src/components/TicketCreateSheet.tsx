@@ -59,6 +59,7 @@ import { Plus, Check, ChevronsUpDown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { LabelManagementDialog } from "@/components/LabelManagementDialog";
 
 // Flatten items recursively for search
 function flattenItems(items: any[]): any[] {
@@ -94,6 +95,8 @@ export function TicketCreateSheet() {
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [allColumns, setAllColumns] = useState<TicketColumn[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [ticketForms, setTicketForms] = useState<TicketFormMinimal[]>([]);
   const [selectedForm, setSelectedForm] = useState<TicketForm | null>(null);
   const [selectedItems, setSelectedItems] = useState<Record<number, number | null>>({});
@@ -102,23 +105,26 @@ export function TicketCreateSheet() {
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({});
+  const [isLabelPopoverOpen, setIsLabelPopoverOpen] = useState(false);
 
-  // Fetch boards, columns, users, forms on mount
+  // Fetch boards, columns, users, forms, tags on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setFetchingData(true);
-        const [boardsRes, columnsRes, usersRes, formsRes] = await Promise.all([
+        const [boardsRes, columnsRes, usersRes, formsRes, tagsRes] = await Promise.all([
           boardsList(),
           columnsList(),
           usersList(),
           ticketFormsList(),
+          tagsList(),
         ]);
 
         setBoards(boardsRes.results || []);
         setAllColumns(columnsRes.results || []);
         setUsers(usersRes.results || []);
         setTicketForms(formsRes.results || []);
+        setTags(tagsRes.results || []);
 
         // Set default form if available and fetch full form details
         const defaultFormMinimal =
@@ -219,6 +225,7 @@ export function TicketCreateSheet() {
         priority: formData.priority,
         column: formData.column_id,
         board: formData.board_id,
+        tags: selectedTagIds,
       } as any;
 
       const createdTicket = await ticketsCreate(ticketData);
@@ -252,6 +259,7 @@ export function TicketCreateSheet() {
         column_id: selectedColumn?.id || 0,
       });
       setSelectedItems([]);
+      setSelectedTagIds([]);
 
       closeTicketCreate();
     } catch (error) {
@@ -270,7 +278,14 @@ export function TicketCreateSheet() {
       column_id: 0,
     });
     setSelectedItems([]);
+    setSelectedTagIds([]);
     closeTicketCreate();
+  };
+
+  const toggleTag = (tagId: number) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    );
   };
 
   const selectItemForList = (listId: number, itemId: number | null) => {
@@ -429,6 +444,108 @@ export function TicketCreateSheet() {
                   setFormData({ ...formData, description: e.target.value })
                 }
               />
+            </div>
+
+            {/* Labels Section */}
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <Label>Labels</Label>
+                <LabelManagementDialog />
+              </div>
+              <Popover open={isLabelPopoverOpen} onOpenChange={setIsLabelPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isLabelPopoverOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedTagIds.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedTagIds.map((tagId) => {
+                          const tag = tags.find((t) => t.id === tagId);
+                          if (!tag) return null;
+                          return (
+                            <Badge
+                              key={tag.id}
+                              style={{
+                                backgroundColor: tag.color || '#6B7280',
+                                color: '#ffffff',
+                              }}
+                              className="text-xs px-2 py-0.5"
+                            >
+                              {tag.name}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      "Select labels..."
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search labels..." />
+                    <CommandList>
+                      <CommandEmpty>No labels found.</CommandEmpty>
+                      <CommandGroup>
+                        {tags.map((tag) => (
+                          <CommandItem
+                            key={tag.id}
+                            value={tag.name}
+                            onSelect={() => toggleTag(tag.id)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedTagIds.includes(tag.id) ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <Badge
+                              style={{
+                                backgroundColor: tag.color || '#6B7280',
+                                color: '#ffffff',
+                              }}
+                              className="text-xs px-2 py-0.5 mr-2"
+                            >
+                              {tag.name}
+                            </Badge>
+                            {tag.description && (
+                              <span className="text-xs text-muted-foreground ml-auto">
+                                {tag.description}
+                              </span>
+                            )}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {selectedTagIds.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {selectedTagIds.map((tagId) => {
+                    const tag = tags.find((t) => t.id === tagId);
+                    if (!tag) return null;
+                    return (
+                      <Badge
+                        key={tag.id}
+                        style={{
+                          backgroundColor: tag.color || '#6B7280',
+                          color: '#ffffff',
+                        }}
+                        className="text-xs px-2 py-1 cursor-pointer hover:opacity-80"
+                        onClick={() => toggleTag(tag.id)}
+                      >
+                        {tag.name}
+                        <span className="ml-1">×</span>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Item Lists from Selected Form */}

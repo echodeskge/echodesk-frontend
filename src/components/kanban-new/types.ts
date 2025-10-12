@@ -18,6 +18,13 @@ export interface FileType {
   type: string
 }
 
+export interface LabelType {
+  id: number
+  name: string
+  color: string
+  description?: string
+}
+
 export interface TaskType {
   id: string
   columnId: string
@@ -25,6 +32,7 @@ export interface TaskType {
   title: string
   description?: string
   label: string
+  labels?: LabelType[]  // Multiple labels for Trello-style tags
   comments: CommentType[]
   assigned: UserType[]
   dueDate: Date
@@ -54,11 +62,6 @@ export interface KanbanStateType {
   teamMembers: UserType[]
   selectedColumn?: ColumnType
   selectedTask?: TaskType
-}
-
-export interface LabelType {
-  id: string
-  name: string
 }
 
 export type KanbanActionType =

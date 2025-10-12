@@ -65,6 +65,23 @@ export function KanbanTaskItemHeader({
       >
         {task.label}
       </Badge>
+      {/* Display Trello-style labels */}
+      {task.labels && task.labels.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {task.labels.map((label) => (
+            <Badge
+              key={label.id}
+              style={{
+                backgroundColor: label.color,
+                color: '#ffffff',
+              }}
+              className="text-xs px-2 py-0.5 font-medium"
+            >
+              {label.name}
+            </Badge>
+          ))}
+        </div>
+      )}
       <KanbanTaskItemActions task={task} />
     </CardHeader>
   )

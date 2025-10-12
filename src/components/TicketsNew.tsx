@@ -39,6 +39,12 @@ function convertApiDataToKanbanFormat(kanbanBoardData: KanbanBoard): ColumnType[
         title: ticket.title,
         description: ticket.status || '',
         label: String(ticket.priority || 'low'),
+        labels: ticket.tags?.map(tag => ({
+          id: tag.id,
+          name: tag.name,
+          color: tag.color || '#6B7280',
+          description: tag.description
+        })) || [],
         comments: [],
         assigned: assignedUsers,
         dueDate: ticket.created_at ? new Date(ticket.created_at) : new Date(),
