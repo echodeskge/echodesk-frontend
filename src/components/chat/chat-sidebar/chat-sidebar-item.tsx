@@ -16,7 +16,6 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
   const params = useParams()
 
   const chatIdParam = params.id?.[0]
-  const tenant = params.tenant as string
 
   const handleOnCLick = () => {
     // Close the sidebar when a chat is selected
@@ -25,7 +24,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
 
   return (
     <Link
-      href={`/${tenant}/messages/${chat.id}`}
+      href={`/messages/${chat.id}`}
       prefetch={false}
       className={cn(
         buttonVariants({ variant: "ghost" }),

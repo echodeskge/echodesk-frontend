@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Draggable } from "@hello-pangea/dnd"
 
 import type { DraggableProvided } from "@hello-pangea/dnd"
@@ -18,7 +18,6 @@ interface KanbanTaskItemProps {
 
 export function KanbanTaskItem({ task, index }: KanbanTaskItemProps) {
   const router = useRouter()
-  const pathname = usePathname()
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on interactive elements
@@ -27,11 +26,8 @@ export function KanbanTaskItem({ task, index }: KanbanTaskItemProps) {
       return
     }
 
-    // Extract tenant from current path (e.g., /groot-tenant/... -> groot-tenant)
-    const pathParts = pathname.split('/').filter(Boolean)
-    const tenant = pathParts[0] || 'default'
-
-    router.push(`/${tenant}/ticket/${task.id}`)
+    // Pure subdomain routing - just navigate to /ticket/{id}
+    router.push(`/ticket/${task.id}`)
   }
 
   return (

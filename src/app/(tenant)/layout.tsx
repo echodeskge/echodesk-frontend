@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useBoards } from "@/hooks/useBoards";
 import { getSidebarMenuItems, MenuItem } from "@/services/permissionService";
@@ -16,10 +16,8 @@ import { TenantInfo } from "@/types/auth";
 import { tenantService } from "@/services/tenantService";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
-  const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
-  const tenantSlug = params.tenant as string;
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: boards } = useBoards();
@@ -27,11 +25,28 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
 
-  // Load tenant data
+  // Load tenant data from subdomain
   useEffect(() => {
     const loadTenant = async () => {
       try {
-        const subdomain = tenantSlug.replace(/-tenant$/, '');
+        if (typeof window === 'undefined') return;
+
+        const hostname = window.location.hostname;
+
+        // On localhost, always use "groot" tenant
+        let subdomain: string | null;
+        if (hostname.includes('localhost')) {
+          subdomain = 'groot';
+        } else {
+          subdomain = tenantService.getSubdomainFromHostname(hostname);
+        }
+
+        if (!subdomain) {
+          console.error("No tenant subdomain found");
+          router.push('/');
+          return;
+        }
+
         const tenantConfig = await tenantService.getTenantBySubdomain(subdomain);
 
         if (tenantConfig) {
@@ -44,16 +59,18 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             theme: tenantConfig.theme,
           };
           setTenantInfo(info);
+        } else {
+          console.error("Tenant not found");
+          router.push('/');
         }
       } catch (err) {
         console.error("Failed to load tenant:", err);
+        router.push('/');
       }
     };
 
-    if (tenantSlug) {
-      loadTenant();
-    }
-  }, [tenantSlug]);
+    loadTenant();
+  }, [router]);
 
   // Check social connections
   useEffect(() => {
@@ -152,7 +169,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
   const handleMenuClick = (viewId: string) => {
-    router.push(`/${tenantSlug}/${viewId}`);
+    // Pure subdomain routing - just navigate to /viewId
+    router.push(`/${viewId}`);
   };
 
   const handleLogout = async () => {
@@ -164,9 +182,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Get current view from pathname
+  // Get current view from pathname (first segment)
   const pathParts = pathname.split("/").filter(Boolean);
-  const currentView = pathParts[1] || "tickets"; // tenant/tickets/... -> tickets
+  const currentView = pathParts[0] || "tickets"; // /tickets -> tickets
 
   // Get page title
   const currentMenuItem = visibleMenuItems.find((item) => item.id === currentView);
@@ -175,7 +193,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Check if we should show board switcher
   const showBoardSwitcher = currentView === "tickets" && boards && boards.length > 0;
 
-  if (profileLoading) {
+  if (profileLoading || !tenantInfo) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />

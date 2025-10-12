@@ -4,19 +4,16 @@ import { useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
-import Dashboard from '@/components/Dashboard';
 import LandingPage from '@/components/LandingPage';
 import LoginForm from '@/components/LoginForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
-import { TenantInfo } from '@/types/auth';
-import { tenantService } from '@/services/tenantService';
 
 function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { tenant, loading: tenantLoading, error } = useTenant();
-  const { isAuthenticated, user, loading: authLoading, login, logout } = useAuth();
+  const { isAuthenticated, user, loading: authLoading, login } = useAuth();
 
   const handleOAuthCallback = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -43,22 +40,19 @@ function HomeContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    // Check if we're on localhost and should redirect to tenant path
-    if (typeof window !== 'undefined' && window.location.hostname.includes('localhost')) {
-      const pathname = window.location.pathname;
-      const search = window.location.search;
-      
-      // If we have a subdomain on localhost, redirect to path-based route
-      const subdomain = tenantService.getSubdomainFromHostname(window.location.hostname);
-      if (subdomain && pathname === '/') {
-        router.push(`/${subdomain}-tenant${search}`);
-        return;
-      }
-    }
-
     // Handle OAuth callback parameters
     handleOAuthCallback();
-  }, [router, handleOAuthCallback]);
+  }, [handleOAuthCallback]);
+
+  // Redirect authenticated users on tenant subdomains to tickets
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (tenant && isAuthenticated && user && !authLoading && !tenantLoading) {
+      // User is authenticated on a tenant subdomain, redirect to tickets
+      router.push('/tickets');
+    }
+  }, [tenant, isAuthenticated, user, authLoading, tenantLoading, router]);
 
   const showNotification = (type: 'success' | 'error', title: string, message: string) => {
     // Create notification element
@@ -128,20 +122,12 @@ function HomeContent() {
     return <ErrorMessage error={error} />;
   }
 
-  // If tenant exists (subdomain), show login form or dashboard
+  // If tenant exists (subdomain), show login form
+  // Authenticated users will be redirected to /tickets by useEffect above
   if (tenant) {
     if (isAuthenticated && user) {
-      // User is logged in, show dashboard
-      const tenantInfo: TenantInfo = {
-        id: tenant.schema_name,
-        name: tenant.tenant_name,
-        schema_name: tenant.schema_name,
-        domain: `${tenant.schema_name}.echodesk.ge`,
-        api_url: tenant.api_url,
-        theme: tenant.theme,
-      };
-      
-      return <Dashboard user={user} tenant={tenantInfo} onLogout={logout} />;
+      // Redirect will happen via useEffect
+      return <LoadingSpinner message="Redirecting to dashboard..." />;
     } else {
       // User is not logged in, show login form
       return <LoginForm tenant={tenant} onLogin={login} />;

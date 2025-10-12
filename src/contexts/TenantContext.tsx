@@ -34,17 +34,16 @@ export function TenantProvider({ children }: TenantProviderProps) {
       }
 
       const hostname = window.location.hostname;
-      const pathname = window.location.pathname;
-      
+
       // Try to get tenant identifier from subdomain or path
       let tenantIdentifier: string | null = null;
-      
-      // First try subdomain-based detection
-      tenantIdentifier = tenantService.getSubdomainFromHostname(hostname);
-      
-      // If no subdomain and we're on localhost, try path-based detection
-      if (!tenantIdentifier && hostname.includes('localhost')) {
-        tenantIdentifier = tenantService.getTenantFromPath(pathname);
+
+      // On localhost, always use "groot" tenant
+      if (hostname.includes('localhost')) {
+        tenantIdentifier = 'groot';
+      } else {
+        // On production, use subdomain-based detection
+        tenantIdentifier = tenantService.getSubdomainFromHostname(hostname);
       }
 
       if (!tenantIdentifier) {
