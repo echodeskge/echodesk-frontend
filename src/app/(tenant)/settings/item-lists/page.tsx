@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   itemListsList,
   itemListsCreate,
@@ -41,6 +42,8 @@ interface CustomField {
 }
 
 export default function ItemListsPage() {
+  const t = useTranslations('settings.itemListsPage');
+  const tCommon = useTranslations('common');
   const [itemLists, setItemLists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -69,7 +72,7 @@ export default function ItemListsPage() {
       const response = await itemListsList();
       setItemLists(response.results || []);
     } catch (error) {
-      toast.error("Failed to load item lists");
+      toast.error(t('error.load'));
     } finally {
       setLoading(false);
     }
@@ -101,13 +104,13 @@ export default function ItemListsPage() {
 
   const addCustomField = () => {
     if (!newField.name || !newField.label) {
-      toast.error("Field name and label are required");
+      toast.error(t('error.fieldNameRequired'));
       return;
     }
 
     // Check for duplicate field names
     if (formData.custom_fields_schema.some((f) => f.name === newField.name)) {
-      toast.error("Field name must be unique");
+      toast.error(t('error.fieldNameUnique'));
       return;
     }
 
@@ -144,27 +147,27 @@ export default function ItemListsPage() {
           custom_fields_schema: formData.custom_fields_schema,
         };
         await itemListsUpdate(editingList.id, patchData as any);
-        toast.success("Item list updated successfully");
+        toast.success(t('success.updated'));
       } else {
         await itemListsCreate(formData as any);
-        toast.success("Item list created successfully");
+        toast.success(t('success.created'));
       }
       setDialogOpen(false);
       loadItemLists();
     } catch (error) {
-      toast.error("Failed to save item list");
+      toast.error(t('error.save'));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this item list?")) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     try {
       await itemListsDestroy(id);
-      toast.success("Item list deleted successfully");
+      toast.success(t('success.deleted'));
       loadItemLists();
     } catch (error) {
-      toast.error("Failed to delete item list");
+      toast.error(t('error.delete'));
     }
   };
 
@@ -172,18 +175,18 @@ export default function ItemListsPage() {
     <div className="w-full py-6 px-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Item Lists</CardTitle>
+          <CardTitle>{t('title')}</CardTitle>
           <Button onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            Create List
+            {t('createList')}
           </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground">Loading...</p>
+            <p className="text-muted-foreground">{t('loading')}</p>
           ) : itemLists.length === 0 ? (
             <p className="text-muted-foreground">
-              No item lists found. Create one to get started.
+              {t('noListsFound')}
             </p>
           ) : (
             <div className="space-y-4">
@@ -196,7 +199,7 @@ export default function ItemListsPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold">{list.title}</h3>
                       {!list.is_active && (
-                        <Badge variant="secondary">Inactive</Badge>
+                        <Badge variant="secondary">{t('inactive')}</Badge>
                       )}
                     </div>
                     {list.description && (
@@ -205,16 +208,16 @@ export default function ItemListsPage() {
                       </p>
                     )}
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{list.items_count}</span>
+                      <span>{list.items_count} {t('items')}</span>
                       {list.custom_fields_schema &&
                         Array.isArray(list.custom_fields_schema) &&
                         list.custom_fields_schema.length > 0 && (
                           <span>
-                            {list.custom_fields_schema.length} custom field(s)
+                            {list.custom_fields_schema.length} {t('customFields')}
                           </span>
                         )}
                       <span>
-                        Created: {new Date(list.created_at).toLocaleDateString()}
+                        {t('created')}: {new Date(list.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     {list.custom_fields_schema &&
@@ -233,7 +236,7 @@ export default function ItemListsPage() {
                     <Link href={`/settings/item-lists/${list.id}`}>
                       <Button variant="outline" size="sm">
                         <List className="h-4 w-4 mr-2" />
-                        Manage Items
+                        {t('manageItems')}
                       </Button>
                     </Link>
                     <Button
@@ -262,39 +265,39 @@ export default function ItemListsPage() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingList ? "Edit Item List" : "Create Item List"}
+              {editingList ? t('editDialogTitle') : t('createDialogTitle')}
             </DialogTitle>
             <DialogDescription>
               {editingList
-                ? "Update the item list details and custom fields"
-                : "Create a new item list with custom fields for organizing items"}
+                ? t('editDialogDescription')
+                : t('createDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{t('titleLabel')}</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                placeholder="e.g., Product Categories"
+                placeholder={t('titlePlaceholder')}
               />
             </div>
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('descriptionLabel')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Optional description"
+                placeholder={t('descriptionPlaceholder')}
               />
             </div>
             <div>
-              <Label htmlFor="parent_list">Parent List (Optional)</Label>
+              <Label htmlFor="parent_list">{t('parentListLabel')}</Label>
               <Select
                 value={formData.parent_list?.toString() || "none"}
                 onValueChange={(value) =>
@@ -305,10 +308,10 @@ export default function ItemListsPage() {
                 }
               >
                 <SelectTrigger id="parent_list">
-                  <SelectValue placeholder="Select a parent list (optional)" />
+                  <SelectValue placeholder={t('parentListPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">{t('parentListNone')}</SelectItem>
                   {itemLists
                     .filter((list) => list.id !== editingList?.id)
                     .map((list) => (
@@ -319,7 +322,7 @@ export default function ItemListsPage() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                If set, items in this list can link to items from the parent list
+                {t('parentListHint')}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -331,19 +334,19 @@ export default function ItemListsPage() {
                   setFormData({ ...formData, is_active: e.target.checked })
                 }
               />
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">{t('active')}</Label>
             </div>
 
             {/* Custom Fields Section */}
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-3">
-                <Label className="text-base font-semibold">Custom Fields</Label>
+                <Label className="text-base font-semibold">{t('customFieldsSection.title')}</Label>
                 <Badge variant="outline">
-                  {formData.custom_fields_schema.length} field(s)
+                  {formData.custom_fields_schema.length} {t('customFieldsSection.fieldsCount')}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Define custom fields that items in this list should have (e.g., client name, address, ID number)
+                {t('customFieldsSection.description')}
               </p>
 
               {/* Existing Custom Fields */}
@@ -366,7 +369,7 @@ export default function ItemListsPage() {
                         </div>
                         <div>
                           {field.required && (
-                            <Badge variant="outline">Required</Badge>
+                            <Badge variant="outline">{t('customFieldsSection.required')}</Badge>
                           )}
                         </div>
                       </div>
@@ -384,11 +387,11 @@ export default function ItemListsPage() {
 
               {/* Add New Field Form */}
               <div className="border rounded-lg p-4 space-y-3">
-                <p className="text-sm font-medium">Add New Field</p>
+                <p className="text-sm font-medium">{t('customFieldsSection.addNewField')}</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="field_name" className="text-xs">
-                      Field Name (key)
+                      {t('customFieldsSection.fieldNameLabel')}
                     </Label>
                     <Input
                       id="field_name"
@@ -396,13 +399,13 @@ export default function ItemListsPage() {
                       onChange={(e) =>
                         setNewField({ ...newField, name: e.target.value })
                       }
-                      placeholder="e.g., client_name"
+                      placeholder={t('customFieldsSection.fieldNamePlaceholder')}
                       className="text-sm"
                     />
                   </div>
                   <div>
                     <Label htmlFor="field_label" className="text-xs">
-                      Label (display)
+                      {t('customFieldsSection.fieldLabelLabel')}
                     </Label>
                     <Input
                       id="field_label"
@@ -410,13 +413,13 @@ export default function ItemListsPage() {
                       onChange={(e) =>
                         setNewField({ ...newField, label: e.target.value })
                       }
-                      placeholder="e.g., Client Name"
+                      placeholder={t('customFieldsSection.fieldLabelPlaceholder')}
                       className="text-sm"
                     />
                   </div>
                   <div>
                     <Label htmlFor="field_type" className="text-xs">
-                      Type
+                      {t('customFieldsSection.fieldTypeLabel')}
                     </Label>
                     <Select
                       value={newField.type}
@@ -428,11 +431,11 @@ export default function ItemListsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="string">String (short text)</SelectItem>
-                        <SelectItem value="text">Text (long text)</SelectItem>
-                        <SelectItem value="number">Number</SelectItem>
-                        <SelectItem value="date">Date</SelectItem>
-                        <SelectItem value="boolean">Boolean (yes/no)</SelectItem>
+                        <SelectItem value="string">{t('customFieldsSection.types.string')}</SelectItem>
+                        <SelectItem value="text">{t('customFieldsSection.types.text')}</SelectItem>
+                        <SelectItem value="number">{t('customFieldsSection.types.number')}</SelectItem>
+                        <SelectItem value="date">{t('customFieldsSection.types.date')}</SelectItem>
+                        <SelectItem value="boolean">{t('customFieldsSection.types.boolean')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -450,7 +453,7 @@ export default function ItemListsPage() {
                         }
                       />
                       <Label htmlFor="field_required" className="text-xs">
-                        Required
+                        {t('customFieldsSection.required')}
                       </Label>
                     </div>
                   </div>
@@ -463,17 +466,17 @@ export default function ItemListsPage() {
                   className="w-full"
                 >
                   <Plus className="h-3 w-3 mr-2" />
-                  Add Field
+                  {t('customFieldsSection.addField')}
                 </Button>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={!formData.title}>
-              {editingList ? "Update" : "Create"}
+              {editingList ? t('update') : tCommon('create')}
             </Button>
           </DialogFooter>
         </DialogContent>

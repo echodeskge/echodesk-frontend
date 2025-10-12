@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 
 import { SignInSchema, type SignInFormType } from "@/schemas/auth"
@@ -26,6 +27,8 @@ interface SignInFormProps {
 }
 
 export function SignInForm({ onLogin, onForgotPassword }: SignInFormProps) {
+  const t = useTranslations("auth")
+  const tCommon = useTranslations("common")
   const [error, setError] = useState("")
 
   const form = useForm<SignInFormType>({
@@ -74,14 +77,14 @@ export function SignInForm({ onLogin, onForgotPassword }: SignInFormProps) {
           onLogin(token, fallbackUser)
         }
       } else {
-        setError("Invalid response from server. Please try again.")
+        setError(t("invalidResponse"))
       }
     } catch (err: unknown) {
       console.error("Login error:", err)
       if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError("Network error. Please try again.")
+        setError(t("networkError"))
       }
     }
   }
@@ -101,11 +104,11 @@ export function SignInForm({ onLogin, onForgotPassword }: SignInFormProps) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("email")}</FormLabel>
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="name@example.com"
+                    placeholder={t("emailPlaceholder")}
                     {...field}
                   />
                 </FormControl>
@@ -119,13 +122,13 @@ export function SignInForm({ onLogin, onForgotPassword }: SignInFormProps) {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center">
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>{t("password")}</FormLabel>
                   <button
                     type="button"
                     onClick={onForgotPassword}
                     className="ms-auto inline-block text-sm underline hover:no-underline"
                   >
-                    Forgot your password?
+                    {t("forgotPassword")}
                   </button>
                 </div>
                 <FormControl>
@@ -138,13 +141,13 @@ export function SignInForm({ onLogin, onForgotPassword }: SignInFormProps) {
         </div>
 
         <Button type="submit" disabled={isDisabled} className="w-full">
-          {isSubmitting ? "Signing in..." : "Sign In with Email"}
+          {isSubmitting ? t("signingIn") : t("signInWithEmail")}
         </Button>
 
         <div className="-mt-4 text-center text-sm">
-          Don&apos;t have an account?{" "}
+          {t("noAccount")}{" "}
           <Link href="/register" className="underline hover:no-underline">
-            Sign up
+            {t("signUp")}
           </Link>
         </div>
       </form>

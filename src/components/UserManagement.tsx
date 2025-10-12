@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   User,
   UserCreate,
@@ -27,6 +28,8 @@ export interface UserFilters {
 }
 
 export default function UserManagement() {
+  const t = useTranslations("users");
+  const tCommon = useTranslations("common");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
@@ -109,7 +112,7 @@ export default function UserManagement() {
   };
 
   const handleDeleteUser = async (userId: number) => {
-    if (!confirm("Are you sure you want to delete this user?")) {
+    if (!confirm(t("areYouSureDelete"))) {
       return;
     }
 
@@ -118,7 +121,7 @@ export default function UserManagement() {
       fetchUsers(); // Refresh the list
     } catch (err: any) {
       alert(
-        err.response?.data?.detail || err.message || "Failed to delete user"
+        err.response?.data?.detail || err.message || tCommon("error")
       );
     }
   };
@@ -139,7 +142,7 @@ export default function UserManagement() {
   const handleResetPassword = async (userId: number) => {
     if (
       !confirm(
-        "Are you sure you want to reset this user's password? They will receive an email with instructions."
+        t("areYouSureResetPassword")
       )
     ) {
       return;
@@ -147,10 +150,10 @@ export default function UserManagement() {
 
     try {
       await api.usersChangePasswordCreate(userId, {} as User);
-      alert("Password reset email sent successfully");
+      alert(t("passwordResetSent"));
     } catch (err: any) {
       alert(
-        err.response?.data?.detail || err.message || "Failed to reset password"
+        err.response?.data?.detail || err.message || tCommon("error")
       );
     }
   };
@@ -191,12 +194,12 @@ export default function UserManagement() {
   return (
     <div className="user-management">
       <div className="user-management-header">
-        <h1>User Management</h1>
+        <h1>{t("userManagement")}</h1>
         <button
           className="btn btn-primary"
           onClick={() => setShowCreateForm(true)}
         >
-          Add User
+          {t("addUser")}
         </button>
       </div>
 

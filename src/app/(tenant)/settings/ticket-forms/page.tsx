@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import {
   ticketFormsList,
   ticketFormsCreate,
@@ -32,6 +33,8 @@ import type {
 } from "@/api/generated/interfaces";
 
 export default function TicketFormsPage() {
+  const t = useTranslations('settings.ticketFormsPage');
+  const tCommon = useTranslations('common');
   const [forms, setForms] = useState<any[]>([]);
   const [itemLists, setItemLists] = useState<ItemListMinimal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +61,7 @@ export default function TicketFormsPage() {
       setForms(formsResponse.results || []);
       setItemLists(listsResponse.results || []);
     } catch (error) {
-      toast.error("Failed to load ticket forms");
+      toast.error(t('error.load'));
     } finally {
       setLoading(false);
     }
@@ -97,27 +100,27 @@ export default function TicketFormsPage() {
           is_active: formData.is_active,
         };
         await ticketFormsUpdate(editingForm.id, patchData as any);
-        toast.success("Ticket form updated successfully");
+        toast.success(t('success.updated'));
       } else {
         await ticketFormsCreate(formData as any);
-        toast.success("Ticket form created successfully");
+        toast.success(t('success.created'));
       }
       setDialogOpen(false);
       loadData();
     } catch (error) {
-      toast.error("Failed to save ticket form");
+      toast.error(t('error.save'));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this ticket form?")) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     try {
       await ticketFormsDestroy(id);
-      toast.success("Ticket form deleted successfully");
+      toast.success(t('success.deleted'));
       loadData();
     } catch (error) {
-      toast.error("Failed to delete ticket form");
+      toast.error(t('error.delete'));
     }
   };
 
@@ -126,10 +129,10 @@ export default function TicketFormsPage() {
       const form = forms.find(f => f.id === id);
       if (!form) return;
       await ticketFormsSetDefaultCreate(id, form as any);
-      toast.success("Default form updated successfully");
+      toast.success(t('success.defaultUpdated'));
       loadData();
     } catch (error) {
-      toast.error("Failed to set default form");
+      toast.error(t('error.setDefault'));
     }
   };
 
@@ -146,18 +149,18 @@ export default function TicketFormsPage() {
     <div className="container mx-auto py-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Ticket Forms</CardTitle>
+          <CardTitle>{t('title')}</CardTitle>
           <Button onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            Create Form
+            {t('createForm')}
           </Button>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-muted-foreground">Loading...</p>
+            <p className="text-muted-foreground">{t('loading')}</p>
           ) : forms.length === 0 ? (
             <p className="text-muted-foreground">
-              No ticket forms found. Create one to get started.
+              {t('noFormsFound')}
             </p>
           ) : (
             <div className="space-y-4">
@@ -172,11 +175,11 @@ export default function TicketFormsPage() {
                       {form.is_default && (
                         <Badge variant="default">
                           <Star className="h-3 w-3 mr-1" />
-                          Default
+                          {t('default')}
                         </Badge>
                       )}
                       {!form.is_active && (
-                        <Badge variant="secondary">Inactive</Badge>
+                        <Badge variant="secondary">{t('inactive')}</Badge>
                       )}
                     </div>
                     {form.description && (
@@ -186,10 +189,10 @@ export default function TicketFormsPage() {
                     )}
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       {form.item_lists && form.item_lists.length > 0 && (
-                        <span>{form.item_lists.length} attached lists</span>
+                        <span>{form.item_lists.length} {t('attachedLists')}</span>
                       )}
-                      <span>{form.submissions_count} submissions</span>
-                      <span>Created: {new Date(form.created_at).toLocaleDateString()}</span>
+                      <span>{form.submissions_count} {t('submissions')}</span>
+                      <span>{t('created')}: {new Date(form.created_at).toLocaleDateString()}</span>
                     </div>
                     {form.item_lists && form.item_lists.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -209,7 +212,7 @@ export default function TicketFormsPage() {
                         onClick={() => handleSetDefault(form.id)}
                       >
                         <Star className="h-4 w-4 mr-2" />
-                        Set Default
+                        {t('setDefault')}
                       </Button>
                     )}
                     <Button
@@ -240,43 +243,43 @@ export default function TicketFormsPage() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingForm ? "Edit Ticket Form" : "Create Ticket Form"}
+              {editingForm ? t('editDialogTitle') : t('createDialogTitle')}
             </DialogTitle>
             <DialogDescription>
               {editingForm
-                ? "Update the ticket form details"
-                : "Create a new ticket form with attached item lists"}
+                ? t('editDialogDescription')
+                : t('createDialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{t('titleLabel')}</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                placeholder="e.g., Product Order Form"
+                placeholder={t('titlePlaceholder')}
               />
             </div>
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('descriptionLabel')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="Optional description of when to use this form"
+                placeholder={t('descriptionPlaceholder')}
               />
             </div>
             <div>
-              <Label>Attached Item Lists</Label>
+              <Label>{t('attachedItemLists')}</Label>
               <div className="border rounded-lg p-3 mt-2 space-y-2 max-h-60 overflow-y-auto">
                 {itemLists.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No item lists available. Create one first.
+                    {t('noItemListsAvailable')}
                   </p>
                 ) : (
                   itemLists.map((list) => (
@@ -316,15 +319,15 @@ export default function TicketFormsPage() {
                   setFormData({ ...formData, is_active: e.target.checked })
                 }
               />
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">{t('active')}</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={!formData.title}>
-              {editingForm ? "Update" : "Create"}
+              {editingForm ? t('update') : tCommon('create')}
             </Button>
           </DialogFooter>
         </DialogContent>

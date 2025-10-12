@@ -4,26 +4,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { List, FileText, Settings, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
+  const t = useTranslations('settings');
+
   const settingsSections = [
     {
-      title: "Item Lists",
-      description: "Manage dynamic lists of items with hierarchical structure",
+      title: t('sections.itemLists.title'),
+      description: t('sections.itemLists.description'),
       icon: List,
       href: "/settings/item-lists",
       color: "text-blue-500",
     },
     {
-      title: "Ticket Forms",
-      description: "Create and manage custom ticket forms with attached lists",
+      title: t('sections.ticketForms.title'),
+      description: t('sections.ticketForms.description'),
       icon: FileText,
       href: "/settings/ticket-forms",
       color: "text-green-500",
     },
     {
-      title: "General Settings",
-      description: "Configure general application settings",
+      title: t('sections.generalSettings.title'),
+      description: t('sections.generalSettings.description'),
       icon: Settings,
       href: "#",
       color: "text-gray-500",
@@ -35,9 +38,9 @@ export default function SettingsPage() {
     <div className="container mx-auto py-6">
       <Card>
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
+          <CardTitle>{t('title')}</CardTitle>
           <CardDescription>
-            Manage your application settings and configurations
+            {t('description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -60,7 +63,7 @@ export default function SettingsPage() {
                         {section.description}
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
-                        Coming soon...
+                        {t('comingSoon')}
                       </p>
                     </div>
                   </div>

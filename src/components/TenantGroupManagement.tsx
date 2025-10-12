@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { TenantGroup, TenantGroupCreate, PaginatedTenantGroupList } from '../api/generated/interfaces';
 import { tenantGroupsList, tenantGroupsCreate, tenantGroupsPartialUpdate, tenantGroupsDestroy } from '../api/generated/api';
 import { PERMISSION_CATEGORIES } from '@/services/permissionService';
@@ -18,6 +19,8 @@ interface TenantGroupFormProps {
 }
 
 const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit, onCancel }) => {
+  const t = useTranslations("groups");
+  const tCommon = useTranslations("common");
   const [formData, setFormData] = useState<TenantGroupFormData>({
     name: group?.name || '',
     description: group?.description || '',
@@ -123,7 +126,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
         overflowY: "auto",
       }}>
         <h2 style={{ margin: "0 0 20px 0" }}>
-          {mode === "create" ? "Create New Group" : "Edit Group"}
+          {mode === "create" ? t("createNewGroup") : t("editGroup")}
         </h2>
 
         {errors.submit && (
@@ -142,7 +145,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: "20px" }}>
             <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
-              Group Name *
+              {t("groupName")} *
             </label>
             <input
               type="text"
@@ -162,7 +165,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
 
           <div style={{ marginBottom: "20px" }}>
             <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
-              Description
+              {t("description")}
             </label>
             <textarea
               value={formData.description}
@@ -182,7 +185,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
 
           <div style={{ marginBottom: "20px" }}>
             <label style={{ display: "block", marginBottom: "12px", fontWeight: "600" }}>
-              Permissions
+              {t("permissions")}
             </label>
             
             <div style={{ display: "grid", gap: "16px" }}>
@@ -245,7 +248,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
                 opacity: isSubmitting ? 0.6 : 1,
               }}
             >
-              Cancel
+              {tCommon("cancel")}
             </button>
             <button
               type="submit"
@@ -261,7 +264,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
                 opacity: isSubmitting ? 0.6 : 1,
               }}
             >
-              {isSubmitting ? "Saving..." : mode === "create" ? "Create Group" : "Update Group"}
+              {isSubmitting ? t("saving") : mode === "create" ? t("createGroup") : t("updateGroup")}
             </button>
           </div>
         </form>
@@ -271,6 +274,8 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
 };
 
 const TenantGroupManagement: React.FC = () => {
+  const t = useTranslations("groups");
+  const tCommon = useTranslations("common");
   const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -308,12 +313,12 @@ const TenantGroupManagement: React.FC = () => {
   };
 
   const handleDeleteGroup = async (group: TenantGroup) => {
-    if (window.confirm(`Are you sure you want to delete the group "${group.name}"?`)) {
+    if (window.confirm(`${t("areYouSureDelete")} "${group.name}"?`)) {
       try {
         await tenantGroupsDestroy(group.id);
         await loadGroups();
       } catch (err: any) {
-        setError(err.message || "Failed to delete group");
+        setError(err.message || tCommon("error"));
       }
     }
   };
@@ -326,7 +331,7 @@ const TenantGroupManagement: React.FC = () => {
   if (loading) {
     return (
       <div style={{ padding: "20px", textAlign: "center" }}>
-        <div>Loading groups...</div>
+        <div>{tCommon("loading")}</div>
       </div>
     );
   }
@@ -339,7 +344,7 @@ const TenantGroupManagement: React.FC = () => {
         alignItems: "center",
         marginBottom: "20px",
       }}>
-        <h1 style={{ margin: 0 }}>Group Management</h1>
+        <h1 style={{ margin: 0 }}>{t("groupManagement")}</h1>
         <button
           onClick={() => setShowForm({ mode: 'create' })}
           style={{
@@ -352,14 +357,14 @@ const TenantGroupManagement: React.FC = () => {
             cursor: "pointer",
           }}
         >
-          Create New Group
+          {t("createNewGroup")}
         </button>
       </div>
 
       <div style={{ marginBottom: "20px" }}>
         <input
           type="text"
-          placeholder="Search groups..."
+          placeholder={t("searchGroups")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -393,7 +398,7 @@ const TenantGroupManagement: React.FC = () => {
       }}>
         {filteredGroups.length === 0 ? (
           <div style={{ padding: "40px", textAlign: "center", color: "#6c757d" }}>
-            {searchTerm ? "No groups match your search." : "No groups found. Create your first group to get started."}
+            {searchTerm ? t("noGroupsMatch") : t("noGroupsFound")}
           </div>
         ) : (
           filteredGroups.map((group) => (
@@ -417,7 +422,7 @@ const TenantGroupManagement: React.FC = () => {
                   </div>
                 )}
                 <div style={{ fontSize: "12px", color: "#6c757d" }}>
-                  {group.member_count} members • Created {new Date(group.created_at).toLocaleDateString()}
+                  {group.member_count} {t("members")} • {t("created")} {new Date(group.created_at).toLocaleDateString()}
                 </div>
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -433,7 +438,7 @@ const TenantGroupManagement: React.FC = () => {
                     cursor: "pointer",
                   }}
                 >
-                  Edit
+                  {tCommon("edit")}
                 </button>
                 <button
                   onClick={() => handleDeleteGroup(group)}
@@ -447,7 +452,7 @@ const TenantGroupManagement: React.FC = () => {
                     cursor: "pointer",
                   }}
                 >
-                  Delete
+                  {tCommon("delete")}
                 </button>
               </div>
             </div>

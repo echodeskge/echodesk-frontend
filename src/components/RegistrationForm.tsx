@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { PricingModel } from '../types/package';
 import { packagesList, registerTenant } from '../api/generated/api';
@@ -21,6 +22,8 @@ interface RegistrationFormData {
 }
 
 export default function RegistrationForm() {
+  const t = useTranslations("auth")
+  const tCommon = useTranslations("common")
   const [formData, setFormData] = useState<RegistrationFormData>({
     company_name: '',
     domain: '',
@@ -72,7 +75,7 @@ export default function RegistrationForm() {
       setPackages(data.results || []);
     } catch (error) {
       console.error('Failed to load packages:', error);
-      setError('Failed to load packages. Please try again.');
+      setError(t('loadPackagesFailed'));
     } finally {
       setLoading(false);
     }
@@ -110,13 +113,8 @@ export default function RegistrationForm() {
     try {
       const data = await registerTenant(formData as unknown as TenantRegistration);
 
-      setSuccess(`
-        🎉 Success! Your tenant has been created successfully!
-        Your URL: ${data.frontend_url}
-        Admin Login: ${formData.admin_email}
-        Dashboard Language: ${formData.preferred_language.toUpperCase()}
-      `);
-      
+      setSuccess(t('registrationSuccess'));
+
       // Redirect after 3 seconds
       setTimeout(() => {
         if (data.frontend_url) {
@@ -125,11 +123,11 @@ export default function RegistrationForm() {
       }, 3000);
     } catch (error: any) {
       console.error('Registration error:', error);
-      const errorMessage = error.response?.data?.error || 
-        error.response?.data?.domain?.[0] || 
-        error.response?.data?.admin_password?.[0] || 
+      const errorMessage = error.response?.data?.error ||
+        error.response?.data?.domain?.[0] ||
+        error.response?.data?.admin_password?.[0] ||
         error.message ||
-        'Registration failed. Please check your connection and try again.';
+        t('registrationFailed');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -167,8 +165,8 @@ export default function RegistrationForm() {
             <span style={{ color: 'white' }}>Echo</span>
             <span style={{ color: '#2FB282' }}>Desk</span>
           </h1>
-          <p style={{ color: '#666', marginTop: '5px' }}>Create Your Multi-Tenant CRM</p>
-          
+          <p style={{ color: '#666', marginTop: '5px' }}>{t('createTenant')}</p>
+
           {/* Progress indicator */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '10px' }}>
             {[1, 2, 3].map(num => (
@@ -189,9 +187,9 @@ export default function RegistrationForm() {
             ))}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '10px', gap: '20px', fontSize: '12px', color: '#666' }}>
-            <span>Package</span>
-            <span>Company</span>
-            <span>Admin</span>
+            <span>{t('package')}</span>
+            <span>{t('company')}</span>
+            <span>{t('admin')}</span>
           </div>
         </div>
 
@@ -233,7 +231,7 @@ export default function RegistrationForm() {
               animation: 'spin 1s linear infinite',
               margin: '0 auto 10px'
             }} />
-            <p>Creating your tenant...</p>
+            <p>{t('creatingTenant')}</p>
           </div>
         )}
 
@@ -242,7 +240,7 @@ export default function RegistrationForm() {
             {/* Step 1: Package Selection */}
             {step === 1 && (
               <div>
-                <h2 style={{ marginBottom: '20px', color: '#333' }}>Choose Your Package</h2>
+                <h2 style={{ marginBottom: '20px', color: '#333' }}>{t('choosePackage')}</h2>
                 
                 {/* Pricing Model Toggle */}
                 <div style={{ marginBottom: '30px', textAlign: 'center' }}>
@@ -267,7 +265,7 @@ export default function RegistrationForm() {
                         fontWeight: '500'
                       }}
                     >
-                      Agent-based Pricing
+                      {t('agentBasedPricing')}
                     </button>
                     <button
                       type="button"
@@ -283,14 +281,14 @@ export default function RegistrationForm() {
                         fontWeight: '500'
                       }}
                     >
-                      CRM-based Pricing
+                      {t('crmBasedPricing')}
                     </button>
                   </div>
-                  
+
                   <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-                    {pricingModel === 'agent' 
-                      ? 'Pay per agent - perfect for teams with dedicated support staff'
-                      : 'Fixed monthly fee - ideal for larger organizations with many users'
+                    {pricingModel === 'agent'
+                      ? t('agentPricingDesc')
+                      : t('crmPricingDesc')
                     }
                   </p>
                 </div>
@@ -329,7 +327,7 @@ export default function RegistrationForm() {
                           fontSize: '12px',
                           fontWeight: '600'
                         }}>
-                          RECOMMENDED
+                          {t('recommended')}
                         </div>
                       )}
                       
@@ -384,7 +382,7 @@ export default function RegistrationForm() {
                         cursor: 'pointer'
                       }}
                     >
-                      Continue with {selectedPackage.display_name}
+                      {t('continueWith', { packageName: selectedPackage.display_name })}
                     </button>
                   </div>
                 )}
@@ -394,11 +392,11 @@ export default function RegistrationForm() {
             {/* Step 2: Company Information */}
             {step === 2 && (
               <div>
-                <h2 style={{ marginBottom: '20px', color: '#333' }}>Company Information</h2>
-                
+                <h2 style={{ marginBottom: '20px', color: '#333' }}>{t('companyInformation')}</h2>
+
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                    Company Name *
+                    {t('companyName')} *
                   </label>
                   <input
                     type="text"
@@ -418,13 +416,13 @@ export default function RegistrationForm() {
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                    Description
+                    {t('description')}
                   </label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    placeholder="Brief description of your organization"
+                    placeholder={t('descriptionPlaceholder')}
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -440,7 +438,7 @@ export default function RegistrationForm() {
                 {formData.pricing_model === 'agent' && (
                   <div style={{ marginBottom: '20px' }}>
                     <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                      Number of Agents *
+                      {t('numberOfAgents')} *
                     </label>
                     <input
                       type="number"
@@ -458,14 +456,18 @@ export default function RegistrationForm() {
                       }}
                     />
                     <small style={{ color: '#666', fontSize: '12px' }}>
-                      Monthly cost: {selectedPackage?.price_gel || 0} × {formData.agent_count} = {(parseFloat(selectedPackage?.price_gel || '0')) * formData.agent_count}₾
+                      {t('monthlyCost', {
+                        price: selectedPackage?.price_gel || 0,
+                        count: formData.agent_count,
+                        total: (parseFloat(selectedPackage?.price_gel || '0')) * formData.agent_count
+                      })}
                     </small>
                   </div>
                 )}
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                    Your Subdomain
+                    {t('yourSubdomain')}
                   </label>
                   <div style={{
                     background: '#f8f9fa',
@@ -477,7 +479,7 @@ export default function RegistrationForm() {
                   }}>
                     {formData.domain || 'your-company'}.echodesk.ge
                   </div>
-                  <small style={{ color: '#666', fontSize: '12px' }}>Auto-generated based on your company name</small>
+                  <small style={{ color: '#666', fontSize: '12px' }}>{t('subdomainAuto')}</small>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
@@ -493,7 +495,7 @@ export default function RegistrationForm() {
                       cursor: 'pointer'
                     }}
                   >
-                    Back
+                    {tCommon('back')}
                   </button>
                   <button
                     type="button"
@@ -508,7 +510,7 @@ export default function RegistrationForm() {
                       cursor: formData.company_name ? 'pointer' : 'not-allowed'
                     }}
                   >
-                    Continue
+                    {t('continue')}
                   </button>
                 </div>
               </div>
@@ -517,12 +519,12 @@ export default function RegistrationForm() {
             {/* Step 3: Admin Details */}
             {step === 3 && (
               <div>
-                <h2 style={{ marginBottom: '20px', color: '#333' }}>Administrator Account</h2>
-                
+                <h2 style={{ marginBottom: '20px', color: '#333' }}>{t('administratorAccount')}</h2>
+
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                      First Name *
+                      {t('firstName')} *
                     </label>
                     <input
                       type="text"
@@ -541,7 +543,7 @@ export default function RegistrationForm() {
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                      Last Name *
+                      {t('lastName')} *
                     </label>
                     <input
                       type="text"
@@ -562,7 +564,7 @@ export default function RegistrationForm() {
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                    Email Address *
+                    {t('email')} *
                   </label>
                   <input
                     type="email"
@@ -582,7 +584,7 @@ export default function RegistrationForm() {
 
                 <div style={{ marginBottom: '20px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                    Password *
+                    {t('password')} *
                   </label>
                   <input
                     type="password"
@@ -599,13 +601,13 @@ export default function RegistrationForm() {
                     }}
                   />
                   <small style={{ color: '#666', fontSize: '12px' }}>
-                    Must be at least 8 characters with uppercase, lowercase, and numbers
+                    {t('passwordRequirements')}
                   </small>
                 </div>
 
                 <div style={{ marginBottom: '30px' }}>
                   <label style={{ display: 'block', marginBottom: '5px', color: '#333', fontWeight: '500' }}>
-                    Dashboard Language *
+                    {t('dashboardLanguage')} *
                   </label>
                   <select
                     name="preferred_language"
@@ -639,7 +641,7 @@ export default function RegistrationForm() {
                       cursor: 'pointer'
                     }}
                   >
-                    Back
+                    {tCommon('back')}
                   </button>
                   <button
                     type="submit"
@@ -655,7 +657,7 @@ export default function RegistrationForm() {
                       fontWeight: '600'
                     }}
                   >
-                    Create My Tenant
+                    {t('createMyTenant')}
                   </button>
                 </div>
               </div>
@@ -665,7 +667,7 @@ export default function RegistrationForm() {
 
         <div style={{ textAlign: 'center', marginTop: '20px' }}>
           <Link href="/" style={{ color: '#2FB282', textDecoration: 'none' }}>
-            ← Back to Home
+            ← {t('backToHome')}
           </Link>
         </div>
       </div>

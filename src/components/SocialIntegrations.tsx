@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { FacebookPageConnection, FacebookMessage } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
 
@@ -34,6 +35,8 @@ interface PaginatedResponse<T> {
 }
 
 export default function SocialIntegrations({ onBackToDashboard, onConnectionChange }: SocialIntegrationsProps) {
+  const t = useTranslations("social");
+  const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [facebookStatus, setFacebookStatus] = useState<FacebookStatus | null>(null);
@@ -83,11 +86,11 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
       // Add other platforms later
     } catch (err: any) {
       console.error("Failed to load social connections:", err);
-      setError(err.message || "Failed to load social connections");
+      setError(err.message || t("error"));
     } finally {
       setLoading(false);
     }
-  }, [activeTab, loadFacebookStatus]);
+  }, [activeTab, loadFacebookStatus, t]);
 
   useEffect(() => {
     loadSocialConnections();
@@ -106,13 +109,13 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
       }
     } catch (err: any) {
       console.error("Failed to start Facebook OAuth:", err);
-      setError(err.response?.data?.error || err.message || "Failed to connect to Facebook");
+      setError(err.response?.data?.error || err.message || t("error"));
       setLoading(false);
     }
   };
 
   const handleDisconnectFacebook = async () => {
-    if (!confirm("Are you sure you want to disconnect all Facebook pages? This will stop receiving messages.")) {
+    if (!confirm(t("areYouSureDisconnect"))) {
       return;
     }
 
@@ -120,22 +123,22 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
     setError("");
     try {
       const response = await axios.post('/api/social/facebook/disconnect/');
-      
+
       // Reload Facebook status
       await loadFacebookStatus();
-      
+
       // Notify parent component that Facebook connection changed
       if (onConnectionChange) {
         onConnectionChange('facebook', false);
       }
-      
+
       // Show success message if provided
       if (response.data.message) {
         console.log("Facebook disconnect successful:", response.data.message);
       }
     } catch (err: any) {
       console.error("Failed to disconnect Facebook:", err);
-      setError(err.response?.data?.error || err.message || "Failed to disconnect Facebook");
+      setError(err.response?.data?.error || err.message || t("error"));
     } finally {
       setLoading(false);
     }
@@ -182,12 +185,12 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
           </div>
           <div>
             <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>
-              Facebook Pages
+              {t("facebookPages")}
             </h3>
             <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#666" }}>
               {facebookStatus?.connected
-                ? `${facebookStatus.pages_count} page(s) connected`
-                : "Not connected"}
+                ? t("pagesConnected", { count: facebookStatus.pages_count })
+                : t("notConnected")}
             </p>
           </div>
           <div style={{ marginLeft: "auto" }}>
@@ -204,7 +207,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
 
         {facebookStatus?.connected && connectionStats && (
           <div style={{ marginBottom: "15px", fontSize: "14px", color: "#666" }}>
-            <span>📊 {connectionStats.totalMessages} total messages received</span>
+            <span>📊 {t("totalMessages", { count: connectionStats.totalMessages })}</span>
           </div>
         )}
 
@@ -225,7 +228,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                 opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? "Connecting..." : "Connect Facebook Pages"}
+              {loading ? t("connecting") : t("connectFacebookPages")}
             </button>
           ) : (
             <button
@@ -243,7 +246,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                 opacity: loading ? 0.7 : 1,
               }}
             >
-              {loading ? "Disconnecting..." : "Disconnect All Pages"}
+              {loading ? t("disconnecting") : t("disconnectAllPages")}
             </button>
           )}
           <button
@@ -261,7 +264,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
               opacity: loading ? 0.7 : 1,
             }}
           >
-            Refresh Status
+            {t("refreshStatus")}
           </button>
         </div>
       </div>
@@ -278,7 +281,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
         >
           <div style={{ background: "#f8f9fa", padding: "15px", borderBottom: "1px solid #dee2e6" }}>
             <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#333" }}>
-              Connected Facebook Pages
+              {t("connectedFacebookPages")}
             </h4>
           </div>
           <div style={{ padding: "0" }}>
@@ -298,7 +301,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                     {page.page_name}
                   </div>
                   <div style={{ fontSize: "12px", color: "#666" }}>
-                    Page ID: {page.page_id} • Connected: {formatDate(page.created_at)}
+                    {t("pageId")}: {page.page_id} • {t("connected")}: {formatDate(page.created_at)}
                   </div>
                 </div>
                 <div
@@ -311,7 +314,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                     color: page.is_active ? "#28a745" : "#dc3545",
                   }}
                 >
-                  {page.is_active ? "ACTIVE" : "INACTIVE"}
+                  {page.is_active ? t("active") : t("inactive")}
                 </div>
               </div>
             ))}
@@ -332,7 +335,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
         >
           <div style={{ background: "#f8f9fa", padding: "15px", borderBottom: "1px solid #dee2e6" }}>
             <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#333" }}>
-              Recent Messages
+              {t("recentMessages")}
             </h4>
           </div>
           <div style={{ padding: "0" }}>
@@ -392,17 +395,17 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
           }}
         >
           <h4 style={{ margin: "0 0 15px 0", fontSize: "16px", fontWeight: "600", color: "#333" }}>
-            How to Connect Facebook Pages
+            {t("howToConnect")}
           </h4>
           <ol style={{ margin: "0", paddingLeft: "20px", color: "#666", fontSize: "14px", lineHeight: "1.6" }}>
-            <li>Click &quot;Connect Facebook Pages&quot; above</li>
-            <li>You&apos;ll be redirected to Facebook to authorize the connection</li>
-            <li>Select the Facebook pages you want to connect</li>
-            <li>Grant permissions to manage messages and page content</li>
-            <li>You&apos;ll be redirected back here with your pages connected</li>
+            <li>{t("step1")}</li>
+            <li>{t("step2")}</li>
+            <li>{t("step3")}</li>
+            <li>{t("step4")}</li>
+            <li>{t("step5")}</li>
           </ol>
           <div style={{ marginTop: "15px", padding: "12px", background: "#fff3cd", borderRadius: "6px", fontSize: "13px", color: "#856404" }}>
-            <strong>Note:</strong> You need to be an admin of the Facebook pages to connect them.
+            <strong>{tCommon("note")}:</strong> {t("noteAdmin")}
           </div>
         </div>
       )}
@@ -437,15 +440,15 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                 color: "#666",
               }}
             >
-              ← Back to Dashboard
+              ← {t("backToDashboard")}
             </button>
           )}
           <div>
             <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "700", color: "#333" }}>
-              Social Media Integrations
+              {t("socialMediaIntegrations")}
             </h1>
             <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#666" }}>
-              Connect and manage your social media accounts for unified customer communication
+              {t("connectAndManage")}
             </p>
           </div>
         </div>
@@ -503,7 +506,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
         >
           <span style={{ fontSize: "24px" }}>📘</span>
           <span style={{ fontSize: "18px", fontWeight: "600", color: "#333" }}>
-            Facebook Integration
+            {t("facebookIntegration")}
           </span>
         </div>
 
@@ -511,7 +514,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
           {loading && (
             <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
               <div style={{ fontSize: "24px", marginBottom: "12px" }}>⏳</div>
-              Loading Facebook integration...
+              {t("loadingFacebookIntegration")}
             </div>
           )}
 

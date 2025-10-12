@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useTranslations } from "next-intl"
 
 import { ForgotPasswordSchema, type ForgotPasswordFormType } from "@/schemas/auth"
 import { TenantConfig } from "@/types/tenant"
@@ -24,6 +25,7 @@ interface ForgotPasswordFormProps {
 }
 
 export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFormProps) {
+  const t = useTranslations("auth")
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
 
@@ -57,14 +59,14 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
         setSuccess(true)
       } else {
         const errorData = await response.json()
-        setError(errorData.detail || errorData.message || 'Failed to send reset email. Please try again.')
+        setError(errorData.detail || errorData.message || t("resetEmailFailed"))
       }
     } catch (err: unknown) {
       console.error('Forgot password error:', err)
       if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError('Network error. Please try again.')
+        setError(t("networkError"))
       }
     }
   }
@@ -73,9 +75,9 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
     return (
       <div className="grid gap-6">
         <div className="rounded-lg bg-green-50 p-4 text-sm text-green-800 border border-green-200">
-          <div className="font-medium">Email sent!</div>
+          <div className="font-medium">{t("emailSent")}</div>
           <div className="mt-1">
-            We&apos;ve sent password reset instructions to your email address.
+            {t("resetInstructionsSent")}
           </div>
         </div>
         <Button
@@ -84,7 +86,7 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
           onClick={onBackToSignIn}
           className="w-full"
         >
-          Back to Sign In
+          {t("backToSignIn")}
         </Button>
       </div>
     )
@@ -104,11 +106,11 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{t("email")}</FormLabel>
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="name@example.com"
+                  placeholder={t("emailPlaceholder")}
                   {...field}
                 />
               </FormControl>
@@ -118,7 +120,7 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
         />
 
         <Button type="submit" disabled={isDisabled} className="w-full">
-          {isSubmitting ? "Sending..." : "Send Reset Instructions"}
+          {isSubmitting ? t("sending") : t("sendResetInstructions")}
         </Button>
 
         <Button
@@ -127,7 +129,7 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
           onClick={onBackToSignIn}
           className="w-full"
         >
-          Back to Sign In
+          {t("backToSignIn")}
         </Button>
       </form>
     </Form>

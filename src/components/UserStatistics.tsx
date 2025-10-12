@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { formatDuration } from './TimeTracking';
 import { usersList, timeLogsList } from '@/api/generated';
 import { User, TicketTimeLog } from '@/api/generated/interfaces';
@@ -35,6 +36,8 @@ interface UserStatisticsProps {
 }
 
 export default function UserStatistics({ className }: UserStatisticsProps) {
+  const t = useTranslations("userStatistics");
+  const tCommon = useTranslations("common");
   const [data, setData] = useState<UserTimeStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -201,7 +204,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
           <CardContent className="flex items-center justify-center h-64">
             <div className="flex items-center space-x-2">
               <Spinner className="h-6 w-6" />
-              <span className="text-muted-foreground">Loading statistics...</span>
+              <span className="text-muted-foreground">{t("loadingStatistics")}</span>
             </div>
           </CardContent>
         </Card>
@@ -235,10 +238,10 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-blue-600" />
-            User Time Tracking Statistics
+            {t("userTimeTrackingStatistics")}
           </CardTitle>
           <CardDescription>
-            Time tracking overview for all users in your tenant
+            {t("timeTrackingOverview")}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -252,7 +255,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
               {data.length}
             </div>
             <div className="text-sm text-muted-foreground">
-              Active Users
+              {t("activeUsers")}
             </div>
           </CardContent>
         </Card>
@@ -264,7 +267,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
               {formatDuration(data.reduce((sum, user) => sum + user.this_week, 0))}
             </div>
             <div className="text-sm text-muted-foreground">
-              Total This Week
+              {t("totalThisWeek")}
             </div>
           </CardContent>
         </Card>
@@ -276,7 +279,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
               {data.length > 0 ? formatDuration(Math.floor(data.reduce((sum, user) => sum + user.this_week, 0) / data.length)) : '0s'}
             </div>
             <div className="text-sm text-muted-foreground">
-              Average This Week
+              {t("averageThisWeek")}
             </div>
           </CardContent>
         </Card>
@@ -288,7 +291,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
               {data.length > 0 ? formatDuration(Math.floor(data.reduce((sum, user) => sum + user.avg_daily_this_month, 0) / data.length)) : '0s'}
             </div>
             <div className="text-sm text-muted-foreground">
-              Team Avg Daily
+              {t("teamAvgDaily")}
             </div>
           </CardContent>
         </Card>
@@ -305,7 +308,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('full_name')}
                 >
                   <div className="flex items-center gap-2">
-                    User {getSortIcon('full_name')}
+                    {t("user")} {getSortIcon('full_name')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -313,7 +316,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('today')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    Today {getSortIcon('today')}
+                    {t("today")} {getSortIcon('today')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -321,7 +324,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('this_week')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    This Week {getSortIcon('this_week')}
+                    {t("thisWeek")} {getSortIcon('this_week')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -329,7 +332,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('last_week')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    Last Week {getSortIcon('last_week')}
+                    {t("lastWeek")} {getSortIcon('last_week')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -337,7 +340,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('this_month')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    This Month {getSortIcon('this_month')}
+                    {t("thisMonth")} {getSortIcon('this_month')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -345,7 +348,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('last_month')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    Last Month {getSortIcon('last_month')}
+                    {t("lastMonth")} {getSortIcon('last_month')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -353,7 +356,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('past_month')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    Past Month {getSortIcon('past_month')}
+                    {t("pastMonth")} {getSortIcon('past_month')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -361,7 +364,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
                   onClick={() => handleSort('avg_daily_this_month')}
                 >
                   <div className="flex items-center justify-end gap-2">
-                    Avg Daily {getSortIcon('avg_daily_this_month')}
+                    {t("avgDaily")} {getSortIcon('avg_daily_this_month')}
                   </div>
                 </TableHead>
               </TableRow>
@@ -407,7 +410,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
 
           {data.length === 0 && (
             <div className="text-center py-10 text-muted-foreground">
-              No user data available
+              {t("noUserData")}
             </div>
           )}
         </CardContent>
@@ -417,7 +420,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
       <Card className="mt-4 shadow-none border border-gray-200">
         <CardContent className="pt-6">
           <p className="text-sm text-muted-foreground">
-            <strong>Info:</strong> Shows time tracked in tickets within columns that have time tracking enabled. Data is aggregated from actual ticket time logs.
+            {t("infoMessage")}
           </p>
         </CardContent>
       </Card>

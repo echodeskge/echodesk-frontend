@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { TenantConfig } from "@/types/tenant"
 import { AuthUser } from "@/types/auth"
 
@@ -20,6 +21,7 @@ interface SignInProps {
 }
 
 export function SignIn({ tenant, onLogin }: SignInProps) {
+  const t = useTranslations("auth")
   const [showForgotPassword, setShowForgotPassword] = useState(false)
 
   const handleForgotPassword = () => {
@@ -38,12 +40,12 @@ export function SignIn({ tenant, onLogin }: SignInProps) {
     >
       <AuthHeader>
         <AuthTitle>
-          {showForgotPassword ? "Reset Password" : "Sign In"}
+          {showForgotPassword ? t("resetPassword") : t("login")}
         </AuthTitle>
         <AuthDescription>
           {showForgotPassword
-            ? "Enter your email address and we'll send you a link to reset your password"
-            : "Enter your email below to sign in to your account"
+            ? t("resetPasswordDescription")
+            : t("loginSubtitle")
           }
         </AuthDescription>
       </AuthHeader>

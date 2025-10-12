@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Board, User } from "@/api/generated/interfaces";
 import { boardsList } from "@/api/generated/api";
 import { AuthService } from "@/services/auth";
@@ -9,6 +10,8 @@ import OrderForm from "./OrderForm";
 interface OrderManagementProps {}
 
 export default function OrderManagement({}: OrderManagementProps) {
+  const t = useTranslations("orders");
+  const tCommon = useTranslations("common");
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
@@ -72,7 +75,7 @@ export default function OrderManagement({}: OrderManagementProps) {
       }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: "24px", marginBottom: "8px" }}>⏳</div>
-          <div style={{ color: "#6c757d" }}>Loading boards...</div>
+          <div style={{ color: "#6c757d" }}>{t("loadingBoards")}</div>
         </div>
       </div>
     );
@@ -88,11 +91,11 @@ export default function OrderManagement({}: OrderManagementProps) {
         boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
       }}>
         <div style={{ fontSize: "48px", marginBottom: "16px", opacity: 0.6 }}>📋</div>
-        <h2 style={{ color: "#343a40", marginBottom: "8px" }}>No Boards Available</h2>
+        <h2 style={{ color: "#343a40", marginBottom: "8px" }}>{t("noBoardsAvailable")}</h2>
         <p style={{ color: "#6c757d", marginBottom: "0" }}>
-          {currentUser ? 
-            "You don't have access to any boards for order creation. Contact your administrator to assign you to boards with order permissions." :
-            "You need access to at least one board to create orders."
+          {currentUser ?
+            t("noAccessToBoards") :
+            t("needAccessToBoard")
           }
         </p>
       </div>
@@ -114,23 +117,23 @@ export default function OrderManagement({}: OrderManagementProps) {
         gap: "16px",
       }}>
         <div>
-          <h1 style={{ 
-            margin: "0 0 8px 0", 
+          <h1 style={{
+            margin: "0 0 8px 0",
             color: "#343a40",
             fontSize: "24px",
             fontWeight: "600"
           }}>
-            📝 Order Management
+            📝 {t("orderManagement")}
           </h1>
-          <p style={{ 
-            margin: 0, 
+          <p style={{
+            margin: 0,
             color: "#6c757d",
-            fontSize: "14px" 
+            fontSize: "14px"
           }}>
-            Create and manage orders for your assigned boards
+            {t("createManageOrders")}
           </p>
         </div>
-        
+
         <button
           onClick={() => setShowCreateForm(true)}
           disabled={!selectedBoard}
@@ -160,7 +163,7 @@ export default function OrderManagement({}: OrderManagementProps) {
           }}
         >
           <span>+</span>
-          Create Order
+          {t("createOrder")}
         </button>
       </div>
 
@@ -178,7 +181,7 @@ export default function OrderManagement({}: OrderManagementProps) {
           marginBottom: "16px",
         }}>
           <h3 style={{ margin: 0, color: "#343a40", fontSize: "18px" }}>
-            Select Board
+            {t("selectBoard")}
           </h3>
           <div style={{
             fontSize: "12px",
@@ -188,7 +191,7 @@ export default function OrderManagement({}: OrderManagementProps) {
             borderRadius: "12px",
             border: "1px solid #dee2e6",
           }}>
-            {boards.length} board{boards.length !== 1 ? 's' : ''} available
+            {t("boardsAvailable", { count: boards.length })}
           </div>
         </div>
         
@@ -248,7 +251,7 @@ export default function OrderManagement({}: OrderManagementProps) {
                   padding: "2px 6px",
                   borderRadius: "4px",
                 }}>
-                  {board.columns_count} columns
+                  {t("columnsCount", { count: board.columns_count })}
                 </div>
               </div>
               
@@ -274,16 +277,16 @@ export default function OrderManagement({}: OrderManagementProps) {
           padding: "24px",
           boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
         }}>
-          <h3 style={{ 
-            margin: "0 0 16px 0", 
+          <h3 style={{
+            margin: "0 0 16px 0",
             color: "#343a40",
-            fontSize: "18px" 
+            fontSize: "18px"
           }}>
-            Selected: {selectedBoard.name}
+            {t("selected")}: {selectedBoard.name}
           </h3>
-          
+
           <div style={{ color: "#6c757d", fontSize: "14px" }}>
-            Orders created for this board will be automatically assigned to the first column.
+            {t("ordersAutoAssigned")}
           </div>
         </div>
       )}
@@ -335,14 +338,14 @@ export default function OrderManagement({}: OrderManagementProps) {
             }}>
               <div>
                 <h3 style={{ margin: 0, color: "#343a40", fontSize: "20px" }}>
-                  Create Order for {selectedBoard.name}
+                  {t("createOrderFor")} {selectedBoard.name}
                 </h3>
-                <div style={{ 
-                  fontSize: "12px", 
-                  color: "#6c757d", 
-                  marginTop: "4px" 
+                <div style={{
+                  fontSize: "12px",
+                  color: "#6c757d",
+                  marginTop: "4px"
                 }}>
-                  Board: {selectedBoard.name} ({selectedBoard.columns_count} columns)
+                  {t("selectBoard")}: {selectedBoard.name} ({t("columnsCount", { count: selectedBoard.columns_count })})
                 </div>
               </div>
               <button

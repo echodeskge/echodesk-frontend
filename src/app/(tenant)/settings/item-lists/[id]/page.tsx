@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +54,8 @@ interface CustomField {
 }
 
 export default function ItemListDetailPage() {
+  const t = useTranslations("settings.itemListsPage.detailPage");
+  const tCommon = useTranslations("common");
   const params = useParams();
   const router = useRouter();
   const listId = parseInt(params.id as string);
@@ -105,7 +108,7 @@ export default function ItemListDetailPage() {
       const response = await itemListsRetrieve(listId);
       setItemList(response);
     } catch (error) {
-      toast.error("Failed to load item list");
+      toast.error(t("failedToSaveItem"));
     } finally {
       setLoading(false);
     }
@@ -171,7 +174,7 @@ export default function ItemListDetailPage() {
     const customFieldsSchema = (itemList?.custom_fields_schema as CustomField[]) || [];
     for (const field of customFieldsSchema) {
       if (field.required && !formData.custom_data[field.name]) {
-        toast.error(`${field.label} is required`);
+        toast.error(t("fieldRequired", { field: field.label }));
         return;
       }
     }
@@ -189,31 +192,31 @@ export default function ItemListDetailPage() {
           custom_data: formData.custom_data,
         };
         await listItemsUpdate(editingItem.id, patchData as any);
-        toast.success("Item updated successfully");
+        toast.success(t("itemUpdated"));
       } else {
         const newItem = {
           ...formData,
           item_list: listId,
         };
         await listItemsCreate(newItem as any);
-        toast.success("Item created successfully");
+        toast.success(t("itemCreated"));
       }
       setDialogOpen(false);
       loadItemList();
     } catch (error) {
-      toast.error("Failed to save item");
+      toast.error(t("failedToSaveItem"));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this item? This will also delete all child items.")) return;
+    if (!confirm(t("areYouSureDeleteItem"))) return;
 
     try {
       await listItemsDestroy(id);
-      toast.success("Item deleted successfully");
+      toast.success(t("itemDeleted"));
       loadItemList();
     } catch (error) {
-      toast.error("Failed to delete item");
+      toast.error(t("failedToDeleteItem"));
     }
   };
 
@@ -222,7 +225,7 @@ export default function ItemListDetailPage() {
       <div className="container mx-auto py-6">
         <Card>
           <CardContent className="p-6">
-            <p>Loading...</p>
+            <p>{tCommon("loading")}</p>
           </CardContent>
         </Card>
       </div>
@@ -234,7 +237,7 @@ export default function ItemListDetailPage() {
       <div className="container mx-auto py-6">
         <Card>
           <CardContent className="p-6">
-            <p>Item list not found</p>
+            <p>{t("itemListNotFound")}</p>
           </CardContent>
         </Card>
       </div>
@@ -268,28 +271,28 @@ export default function ItemListDetailPage() {
           </div>
           <Button onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Item
+            {t("addItem")}
           </Button>
         </CardHeader>
         <CardContent>
           {rootItems.length === 0 ? (
             <p className="text-muted-foreground">
-              No items found. Add a root item to get started.
+              {t("noItemsFound")}
             </p>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Label</TableHead>
-                    <TableHead>Custom ID</TableHead>
+                    <TableHead>{t("label")}</TableHead>
+                    <TableHead>{t("customId")}</TableHead>
                     {((itemList.custom_fields_schema as CustomField[]) || []).map(
                       (field) => (
                         <TableHead key={field.name}>{field.label}</TableHead>
                       )
                     )}
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="text-right">{t("actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -313,7 +316,7 @@ export default function ItemListDetailPage() {
                               value !== "" ? (
                                 field.type === "boolean" ? (
                                   <Badge variant={value ? "default" : "secondary"}>
-                                    {value ? "Yes" : "No"}
+                                    {value ? t("yes") : tCommon("no")}
                                   </Badge>
                                 ) : (
                                   <span>{value}</span>
@@ -327,9 +330,9 @@ export default function ItemListDetailPage() {
                       )}
                       <TableCell>
                         {item.is_active ? (
-                          <Badge variant="default">Active</Badge>
+                          <Badge variant="default">{t("active")}</Badge>
                         ) : (
-                          <Badge variant="secondary">Inactive</Badge>
+                          <Badge variant="secondary">{t("status")}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -363,39 +366,39 @@ export default function ItemListDetailPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Edit Item" : "Add Item"}
+              {editingItem ? t("editItem") : t("addItem")}
             </DialogTitle>
             <DialogDescription>
               {editingItem
-                ? "Update the item details and custom field values"
-                : "Add a new item with custom field values to this list"}
+                ? t("updateItemDetails")
+                : t("addNewItemDetails")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="label">Label *</Label>
+              <Label htmlFor="label">{t("labelRequired")}</Label>
               <Input
                 id="label"
                 value={formData.label}
                 onChange={(e) =>
                   setFormData({ ...formData, label: e.target.value })
                 }
-                placeholder="e.g., Electronics"
+                placeholder={t("labelPlaceholder")}
               />
             </div>
             <div>
-              <Label htmlFor="custom_id">Custom ID (Optional)</Label>
+              <Label htmlFor="custom_id">{t("customIdOptional")}</Label>
               <Input
                 id="custom_id"
                 value={formData.custom_id}
                 onChange={(e) =>
                   setFormData({ ...formData, custom_id: e.target.value })
                 }
-                placeholder="e.g., CAT-001"
+                placeholder={t("customIdPlaceholder")}
               />
             </div>
             <div>
-              <Label htmlFor="position">Position</Label>
+              <Label htmlFor="position">{t("position")}</Label>
               <Input
                 id="position"
                 type="number"
@@ -403,7 +406,7 @@ export default function ItemListDetailPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, position: parseInt(e.target.value) || 0 })
                 }
-                placeholder="0"
+                placeholder={t("positionPlaceholder")}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -415,13 +418,13 @@ export default function ItemListDetailPage() {
                   setFormData({ ...formData, is_active: e.target.checked })
                 }
               />
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">{t("active")}</Label>
             </div>
 
             {/* Parent List Item Selector */}
             {itemList?.parent_list && parentListItems.length > 0 && (
               <div>
-                <Label htmlFor="parent_list_item">Parent Item (Optional)</Label>
+                <Label htmlFor="parent_list_item">{t("parentItemOptional")}</Label>
                 <Select
                   value={formData.parent_list_item?.toString() || "none"}
                   onValueChange={(value) =>
@@ -432,10 +435,10 @@ export default function ItemListDetailPage() {
                   }
                 >
                   <SelectTrigger id="parent_list_item">
-                    <SelectValue placeholder="Select parent item from parent list" />
+                    <SelectValue placeholder={t("selectParentItem")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="none">{t("none")}</SelectItem>
                     {parentListItems.map((item) => (
                       <SelectItem key={item.id} value={item.id.toString()}>
                         {item.label}
@@ -445,7 +448,7 @@ export default function ItemListDetailPage() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Link this item to an item from the parent list
+                  {t("linkToParent")}
                 </p>
               </div>
             )}
@@ -456,15 +459,15 @@ export default function ItemListDetailPage() {
               itemList.custom_fields_schema.length > 0 && (
                 <div className="border-t pt-4 space-y-4">
                   <div>
-                    <Label className="text-base font-semibold">Custom Fields</Label>
+                    <Label className="text-base font-semibold">{t("customFields")}</Label>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Fill in the custom field values for this item
+                      {t("fillCustomFields")}
                     </p>
                   </div>
                   {(itemList.custom_fields_schema as CustomField[]).map((field) => (
                     <div key={field.name}>
                       <Label htmlFor={`custom_${field.name}`}>
-                        {field.label} {field.required && <span className="text-destructive">*</span>}
+                        {field.label} {field.required && <span className="text-destructive">{t("requiredField")}</span>}
                       </Label>
                       {field.type === "string" && (
                         <Input
@@ -473,7 +476,7 @@ export default function ItemListDetailPage() {
                           onChange={(e) =>
                             updateCustomFieldValue(field.name, e.target.value)
                           }
-                          placeholder={`Enter ${field.label.toLowerCase()}`}
+                          placeholder={t("enterField", { field: field.label.toLowerCase() })}
                           required={field.required}
                         />
                       )}
@@ -484,7 +487,7 @@ export default function ItemListDetailPage() {
                           onChange={(e) =>
                             updateCustomFieldValue(field.name, e.target.value)
                           }
-                          placeholder={`Enter ${field.label.toLowerCase()}`}
+                          placeholder={t("enterField", { field: field.label.toLowerCase() })}
                           required={field.required}
                           className="resize-none min-h-[80px]"
                         />
@@ -500,7 +503,7 @@ export default function ItemListDetailPage() {
                               e.target.value ? parseFloat(e.target.value) : ""
                             )
                           }
-                          placeholder={`Enter ${field.label.toLowerCase()}`}
+                          placeholder={t("enterField", { field: field.label.toLowerCase() })}
                           required={field.required}
                         />
                       )}
@@ -529,7 +532,7 @@ export default function ItemListDetailPage() {
                             htmlFor={`custom_${field.name}`}
                             className="font-normal text-sm"
                           >
-                            Yes
+                            {t("yes")}
                           </Label>
                         </div>
                       )}
@@ -540,10 +543,10 @@ export default function ItemListDetailPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button onClick={handleSave} disabled={!formData.label}>
-              {editingItem ? "Update" : "Create"}
+              {editingItem ? tCommon("edit") : tCommon("create")}
             </Button>
           </DialogFooter>
         </DialogContent>

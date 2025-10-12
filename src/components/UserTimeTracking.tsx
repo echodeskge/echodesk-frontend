@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { formatDuration } from './TimeTracking';
 import { timeLogsMyTimeSummaryRetrieve, TimeTrackingSummary as ApiTimeTrackingSummary } from '@/api/generated';
 
@@ -34,6 +35,8 @@ interface UserTimeTrackingProps {
 }
 
 export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
+  const t = useTranslations("timeTracking");
+  const tCommon = useTranslations("common");
   const [data, setData] = useState<TimeTrackingSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -119,19 +122,19 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
             alignItems: 'center',
             gap: '8px'
           }}>
-            ⏱️ My Time Tracking
+            ⏱️ {t("myTimeTracking")}
           </h2>
           <p style={{
             color: '#666',
             margin: 0,
             fontSize: '14px'
           }}>
-            Last {data.period_days} days
+            {t("lastDays", { days: data.period_days })}
           </p>
         </div>
-        
+
         {/* Period selector */}
-        <select 
+        <select
           value={periodDays}
           onChange={(e) => setPeriodDays(parseInt(e.target.value))}
           style={{
@@ -141,9 +144,9 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
             fontSize: '14px'
           }}
         >
-          <option value={7}>Last 7 days</option>
-          <option value={30}>Last 30 days</option>
-          <option value={90}>Last 90 days</option>
+          <option value={7}>{t("last7Days")}</option>
+          <option value={30}>{t("last30Days")}</option>
+          <option value={90}>{t("last90Days")}</option>
         </select>
       </div>
 
@@ -171,7 +174,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
             {formatDuration(data.total_time_seconds)}
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
-            Total Time Tracked
+            {t("totalTimeTracked")}
           </div>
         </div>
 
@@ -191,7 +194,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
             {data.total_sessions}
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
-            Work Sessions
+            {t("workSessions")}
           </div>
         </div>
 
@@ -212,7 +215,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
             {data.total_sessions > 0 ? formatDuration(Math.floor(data.total_time_seconds / data.total_sessions)) : '0s'}
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
-            Avg Session Time
+            {t("avgSessionTime")}
           </div>
         </div>
       </div>
@@ -232,7 +235,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
             color: '#333',
             margin: '0 0 16px 0'
           }}>
-            Time by Column
+            {t("timeByColumn")}
           </h3>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -298,7 +301,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
                       color: '#666',
                       marginTop: '2px'
                     }}>
-                      {column.session_count} sessions • {formatDuration(Math.floor(column.avg_seconds))} avg
+                      {column.session_count} {t("sessions")} • {formatDuration(Math.floor(column.avg_seconds))} {t("avg")}
                     </div>
                   </div>
                 </div>
@@ -322,7 +325,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
             color: '#333',
             margin: '0 0 16px 0'
           }}>
-            Daily Activity
+            {t("dailyActivity")}
           </h3>
           
           <div style={{
@@ -360,7 +363,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
                   fontSize: '11px',
                   color: '#999'
                 }}>
-                  {day.session_count} sessions
+                  {day.session_count} {t("sessions")}
                 </div>
               </div>
             ))}
