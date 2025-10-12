@@ -296,11 +296,11 @@ export default function ItemListsPage() {
             <div>
               <Label htmlFor="parent_list">Parent List (Optional)</Label>
               <Select
-                value={formData.parent_list?.toString() || ""}
+                value={formData.parent_list?.toString() || "none"}
                 onValueChange={(value) =>
                   setFormData({
                     ...formData,
-                    parent_list: value ? parseInt(value) : null,
+                    parent_list: value === "none" ? null : parseInt(value),
                   })
                 }
               >
@@ -308,7 +308,7 @@ export default function ItemListsPage() {
                   <SelectValue placeholder="Select a parent list (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {itemLists
                     .filter((list) => list.id !== editingList?.id)
                     .map((list) => (
