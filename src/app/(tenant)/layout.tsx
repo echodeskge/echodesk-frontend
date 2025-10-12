@@ -14,10 +14,14 @@ import { BoardProvider, useBoard } from "@/contexts/BoardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { TenantInfo } from "@/types/auth";
 import { tenantService } from "@/services/tenantService";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/lib/i18n";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const locale = useLocale() as Locale;
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: boards } = useBoards();
@@ -226,6 +230,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 />
               </div>
             )}
+            <div className="ml-auto">
+              <LanguageSwitcher currentLocale={locale} />
+            </div>
           </div>
 
           <div className="flex-1 bg-white w-full overflow-hidden">
