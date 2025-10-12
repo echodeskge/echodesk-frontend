@@ -35,6 +35,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -42,73 +55,26 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
-import { Plus, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, Check, ChevronsUpDown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-interface TreeSelectProps {
-  items: any[];
-  selected: number[];
-  onToggle: (id: number) => void;
-  level?: number;
-}
+// Flatten items recursively for search
+function flattenItems(items: any[]): any[] {
+  const flattened: any[] = [];
 
-function TreeSelectItem({ item, selected, onToggle, level = 0 }: any) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const isSelected = selected.includes(item.id);
-  const hasChildren = item.children && item.children.length > 0;
+  const flatten = (items: any[], level: number = 0) => {
+    items.forEach((item) => {
+      flattened.push({ ...item, level });
+      if (item.children && item.children.length > 0) {
+        flatten(item.children, level + 1);
+      }
+    });
+  };
 
-  return (
-    <div>
-      <div
-        className="flex items-center gap-2 py-1 px-2 hover:bg-accent rounded"
-        style={{ paddingLeft: `${level * 1 + 0.5}rem` }}
-      >
-        {hasChildren ? (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="p-0.5"
-            type="button"
-          >
-            {isExpanded ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
-          </button>
-        ) : (
-          <div className="w-4" />
-        )}
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => onToggle(item.id)}
-          className="cursor-pointer"
-        />
-        <span className="text-sm flex-1 cursor-pointer" onClick={() => onToggle(item.id)}>
-          {item.label}
-        </span>
-        {item.custom_id && (
-          <Badge variant="outline" className="text-xs">
-            {item.custom_id}
-          </Badge>
-        )}
-      </div>
-      {isExpanded && hasChildren && (
-        <div>
-          {item.children.map((child: any) => (
-            <TreeSelectItem
-              key={child.id}
-              item={child}
-              selected={selected}
-              onToggle={onToggle}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  flatten(items);
+  return flattened;
 }
 
 export function TicketCreateSheet() {
@@ -130,11 +96,12 @@ export function TicketCreateSheet() {
   const [users, setUsers] = useState<User[]>([]);
   const [ticketForms, setTicketForms] = useState<TicketFormMinimal[]>([]);
   const [selectedForm, setSelectedForm] = useState<TicketForm | null>(null);
-  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [selectedItems, setSelectedItems] = useState<Record<number, number | null>>({});
   const [formListsWithItems, setFormListsWithItems] = useState<any[]>([]);
   const [loadingLists, setLoadingLists] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
+  const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({});
 
   // Fetch boards, columns, users, forms on mount
   useEffect(() => {
@@ -259,10 +226,13 @@ export function TicketCreateSheet() {
       // If a form is selected, create form submission
       if (selectedForm) {
         try {
+          // Extract selected item IDs from the object (filter out null values)
+          const selectedItemIds = Object.values(selectedItems).filter((id): id is number => id !== null);
+
           await formSubmissionsCreate({
             ticket: createdTicket.id,
             form_id: selectedForm.id,
-            selected_item_ids: selectedItems,
+            selected_item_ids: selectedItemIds,
             form_data: {},
           } as any);
         } catch (error) {
@@ -303,12 +273,15 @@ export function TicketCreateSheet() {
     closeTicketCreate();
   };
 
-  const toggleItem = (itemId: number) => {
-    setSelectedItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
+  const selectItemForList = (listId: number, itemId: number | null) => {
+    setSelectedItems((prev) => ({
+      ...prev,
+      [listId]: itemId,
+    }));
+    setOpenPopovers((prev) => ({
+      ...prev,
+      [listId]: false,
+    }));
   };
 
   const selectedColumnName = useMemo(() => {
@@ -461,58 +434,121 @@ export function TicketCreateSheet() {
             {/* Item Lists from Selected Form */}
             {selectedForm &&
               formListsWithItems.length > 0 && (
-                <div className="grid gap-2">
+                <div className="grid gap-4">
                   <Label>Select Items from Lists</Label>
                   {loadingLists ? (
                     <div className="border rounded-lg p-3 text-center text-sm text-muted-foreground">
                       Loading items...
                     </div>
                   ) : (
-                    <div className="border rounded-lg p-3 space-y-4 max-h-80 overflow-y-auto">
-                      {formListsWithItems.map((list) => (
-                        <div key={list.id} className="space-y-2">
-                          <div className="font-semibold text-sm border-b pb-1">
-                            {list.title}
-                          </div>
-                          {list.description && (
-                            <div className="text-xs text-muted-foreground">
-                              {list.description}
-                            </div>
-                          )}
-                          <div className="space-y-1">
-                            {list.root_items && Array.isArray(list.root_items) && list.root_items.length > 0 ? (
-                              list.root_items.map((item: any) => (
-                                <TreeSelectItem
-                                  key={item.id}
-                                  item={item}
-                                  selected={selectedItems}
-                                  onToggle={toggleItem}
-                                />
-                              ))
-                            ) : list.items && Array.isArray(list.items) && list.items.length > 0 ? (
-                              list.items
-                                .filter((item: any) => !item.parent)
-                                .map((item: any) => (
-                                  <TreeSelectItem
-                                    key={item.id}
-                                    item={item}
-                                    selected={selectedItems}
-                                    onToggle={toggleItem}
-                                  />
-                                ))
+                    <div className="space-y-4">
+                      {formListsWithItems.map((list) => {
+                        const items = list.root_items && Array.isArray(list.root_items) && list.root_items.length > 0
+                          ? list.root_items
+                          : list.items && Array.isArray(list.items) && list.items.length > 0
+                          ? list.items.filter((item: any) => !item.parent)
+                          : [];
+
+                        const flatItems = flattenItems(items);
+                        const selectedItemId = selectedItems[list.id];
+                        const selectedItem = flatItems.find((item) => item.id === selectedItemId);
+
+                        return (
+                          <div key={list.id} className="space-y-2">
+                            <Label htmlFor={`list-${list.id}`} className="text-sm font-medium">
+                              {list.title}
+                              {list.description && (
+                                <span className="text-xs text-muted-foreground font-normal ml-2">
+                                  {list.description}
+                                </span>
+                              )}
+                            </Label>
+                            {items.length > 0 ? (
+                              <Popover
+                                open={openPopovers[list.id] || false}
+                                onOpenChange={(open) =>
+                                  setOpenPopovers((prev) => ({ ...prev, [list.id]: open }))
+                                }
+                              >
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    id={`list-${list.id}`}
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={openPopovers[list.id] || false}
+                                    className="w-full justify-between"
+                                  >
+                                    {selectedItem ? (
+                                      <span className="flex items-center gap-2">
+                                        {selectedItem.level > 0 && (
+                                          <span className="text-muted-foreground">
+                                            {"→ ".repeat(selectedItem.level)}
+                                          </span>
+                                        )}
+                                        {selectedItem.label}
+                                        {selectedItem.custom_id && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {selectedItem.custom_id}
+                                          </Badge>
+                                        )}
+                                      </span>
+                                    ) : (
+                                      "Select item..."
+                                    )}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-full p-0" align="start">
+                                  <Command>
+                                    <CommandInput placeholder="Search items..." />
+                                    <CommandList>
+                                      <CommandEmpty>No items found.</CommandEmpty>
+                                      <CommandGroup>
+                                        {selectedItemId && (
+                                          <CommandItem
+                                            value="none"
+                                            onSelect={() => selectItemForList(list.id, null)}
+                                          >
+                                            <span className="text-muted-foreground italic">Clear selection</span>
+                                          </CommandItem>
+                                        )}
+                                        {flatItems.map((item) => (
+                                          <CommandItem
+                                            key={item.id}
+                                            value={`${item.label} ${item.custom_id || ""}`}
+                                            onSelect={() => selectItemForList(list.id, item.id)}
+                                          >
+                                            <Check
+                                              className={`mr-2 h-4 w-4 ${
+                                                selectedItemId === item.id ? "opacity-100" : "opacity-0"
+                                              }`}
+                                            />
+                                            {item.level > 0 && (
+                                              <span className="text-muted-foreground mr-1">
+                                                {"→ ".repeat(item.level)}
+                                              </span>
+                                            )}
+                                            <span className="flex-1">{item.label}</span>
+                                            {item.custom_id && (
+                                              <Badge variant="outline" className="text-xs ml-2">
+                                                {item.custom_id}
+                                              </Badge>
+                                            )}
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
                             ) : (
-                              <div className="text-xs text-muted-foreground italic">
+                              <div className="text-sm text-muted-foreground italic border rounded-lg p-3">
                                 No items in this list
                               </div>
                             )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {selectedItems.length > 0 && (
-                    <div className="text-xs text-muted-foreground">
-                      {selectedItems.length} item(s) selected
+                        );
+                      })}
                     </div>
                   )}
                 </div>
