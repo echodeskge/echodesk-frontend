@@ -56,7 +56,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Spinner } from "@/components/ui/spinner";
-import { Plus, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Check, ChevronsUpDown, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -224,10 +224,10 @@ export function TicketCreateSheet() {
 
       const ticketData = {
         title: formData.title,
-        description: formData.description,
+        description: formData.description || "", // Ensure empty string if not provided
         priority: formData.priority,
         column_id: formData.column_id,
-        tag_ids: selectedTagIds,
+        tag_ids: selectedTagIds.length > 0 ? selectedTagIds : undefined, // Only include if tags are selected
       } as any;
 
       const createdTicket = await ticketsCreate(ticketData);
@@ -260,7 +260,7 @@ export function TicketCreateSheet() {
         board_id: selectedBoard?.id || 0,
         column_id: selectedColumn?.id || 0,
       });
-      setSelectedItems([]);
+      setSelectedItems({});
       setSelectedTagIds([]);
 
       closeTicketCreate();
@@ -279,7 +279,7 @@ export function TicketCreateSheet() {
       board_id: 0,
       column_id: 0,
     });
-    setSelectedItems([]);
+    setSelectedItems({});
     setSelectedTagIds([]);
     closeTicketCreate();
   };
@@ -325,36 +325,53 @@ export function TicketCreateSheet() {
             {/* Form Selection */}
             {ticketForms.length > 0 && (
               <div className="grid gap-2">
-                <Label htmlFor="form">Ticket Form</Label>
-                <Select
-                  value={selectedForm?.id.toString() || ""}
-                  onValueChange={async (value) => {
-                    const formId = parseInt(value);
-                    setSelectedItems([]);
-                    try {
-                      const fullForm = await ticketFormsRetrieve(formId);
-                      setSelectedForm(fullForm);
-                    } catch (error) {
-                      console.error("Error fetching form:", error);
-                      setSelectedForm(null);
-                    }
-                  }}
-                  disabled={fetchingData}
-                >
-                  <SelectTrigger id="form">
-                    <SelectValue placeholder="Select a form (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ticketForms
-                      .filter((form) => form.is_active)
-                      .map((form) => (
-                        <SelectItem key={form.id} value={form.id.toString()}>
-                          {form.title}
-                          {form.is_default && " (Default)"}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="form">Ticket Form (Optional)</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedForm?.id.toString() || ""}
+                    onValueChange={async (value) => {
+                      const formId = parseInt(value);
+                      setSelectedItems({});
+                      try {
+                        const fullForm = await ticketFormsRetrieve(formId);
+                        setSelectedForm(fullForm);
+                      } catch (error) {
+                        console.error("Error fetching form:", error);
+                        setSelectedForm(null);
+                      }
+                    }}
+                    disabled={fetchingData}
+                  >
+                    <SelectTrigger id="form" className="w-full">
+                      <SelectValue placeholder="Select a form (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ticketForms
+                        .filter((form) => form.is_active)
+                        .map((form) => (
+                          <SelectItem key={form.id} value={form.id.toString()}>
+                            {form.title}
+                            {form.is_default && " (Default)"}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedForm && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedForm(null);
+                        setSelectedItems({});
+                      }}
+                      className="shrink-0"
+                      title="Clear form selection"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -416,7 +433,7 @@ export function TicketCreateSheet() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="priority">{t('priority')}</Label>
+              <Label htmlFor="priority">{t('priority')} (Optional)</Label>
               <Select
                 value={formData.priority}
                 onValueChange={(value: any) =>
@@ -436,7 +453,7 @@ export function TicketCreateSheet() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="description">{t('description')}</Label>
+              <Label htmlFor="description">{t('description')} (Optional)</Label>
               <Textarea
                 id="description"
                 placeholder={t('taskDescription')}
@@ -451,7 +468,7 @@ export function TicketCreateSheet() {
             {/* Labels Section */}
             <div className="grid gap-2">
               <div className="flex items-center justify-between">
-                <Label>{t('labels')}</Label>
+                <Label>{t('labels')} (Optional)</Label>
                 <LabelManagementDialog />
               </div>
               <Popover open={isLabelPopoverOpen} onOpenChange={setIsLabelPopoverOpen}>
@@ -554,7 +571,7 @@ export function TicketCreateSheet() {
             {selectedForm &&
               formListsWithItems.length > 0 && (
                 <div className="grid gap-4">
-                  <Label>Select Items from Lists</Label>
+                  <Label>Select Items from Lists (Optional)</Label>
                   {loadingLists ? (
                     <div className="border rounded-lg p-3 text-center text-sm text-muted-foreground">
                       {tCommon('loading')}
@@ -583,40 +600,41 @@ export function TicketCreateSheet() {
                               )}
                             </Label>
                             {items.length > 0 ? (
-                              <Popover
-                                open={openPopovers[list.id] || false}
-                                onOpenChange={(open) =>
-                                  setOpenPopovers((prev) => ({ ...prev, [list.id]: open }))
-                                }
-                              >
-                                <PopoverTrigger asChild>
-                                  <Button
-                                    id={`list-${list.id}`}
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={openPopovers[list.id] || false}
-                                    className="w-full justify-between"
-                                  >
-                                    {selectedItem ? (
-                                      <span className="flex items-center gap-2">
-                                        {selectedItem.level > 0 && (
-                                          <span className="text-muted-foreground">
-                                            {"→ ".repeat(selectedItem.level)}
-                                          </span>
-                                        )}
-                                        {selectedItem.label}
-                                        {selectedItem.custom_id && (
-                                          <Badge variant="outline" className="text-xs">
-                                            {selectedItem.custom_id}
-                                          </Badge>
-                                        )}
-                                      </span>
-                                    ) : (
-                                      "Select item..."
-                                    )}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                  </Button>
-                                </PopoverTrigger>
+                              <div className="flex gap-2">
+                                <Popover
+                                  open={openPopovers[list.id] || false}
+                                  onOpenChange={(open) =>
+                                    setOpenPopovers((prev) => ({ ...prev, [list.id]: open }))
+                                  }
+                                >
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      id={`list-${list.id}`}
+                                      variant="outline"
+                                      role="combobox"
+                                      aria-expanded={openPopovers[list.id] || false}
+                                      className="w-full justify-between"
+                                    >
+                                      {selectedItem ? (
+                                        <span className="flex items-center gap-2 truncate">
+                                          {selectedItem.level > 0 && (
+                                            <span className="text-muted-foreground">
+                                              {"→ ".repeat(selectedItem.level)}
+                                            </span>
+                                          )}
+                                          <span className="truncate">{selectedItem.label}</span>
+                                          {selectedItem.custom_id && (
+                                            <Badge variant="outline" className="text-xs">
+                                              {selectedItem.custom_id}
+                                            </Badge>
+                                          )}
+                                        </span>
+                                      ) : (
+                                        "Select item..."
+                                      )}
+                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                  </PopoverTrigger>
                                 <PopoverContent className="w-full p-0" align="start">
                                   <Command>
                                     <CommandInput placeholder={tCommon('search')} />
@@ -660,6 +678,19 @@ export function TicketCreateSheet() {
                                   </Command>
                                 </PopoverContent>
                               </Popover>
+                              {selectedItemId && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => selectItemForList(list.id, null)}
+                                  className="shrink-0"
+                                  title="Clear selection"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
                             ) : (
                               <div className="text-sm text-muted-foreground italic border rounded-lg p-3">
                                 No items in this list

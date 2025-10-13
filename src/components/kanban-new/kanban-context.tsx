@@ -15,7 +15,7 @@ import { teamMembersData } from "./team-members-data"
 
 import { KanbanReducer } from "./kanban-reducer"
 import { useCreateColumn, useUpdateColumn, useDeleteColumn, useReorderColumn } from "@/hooks/useTicketColumns"
-import { useDeleteTicket } from "@/hooks/useTickets"
+import { useDeleteTicket, useUpdateTicket } from "@/hooks/useTickets"
 
 // Create Kanban context
 export const KanbanContext = createContext<KanbanContextType | undefined>(
@@ -47,6 +47,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
 
   // API hooks for ticket operations
   const deleteTicketMutation = useDeleteTicket(boardId)
+  const updateTicketMutation = useUpdateTicket(boardId)
 
   // Sync columns when kanbanData prop changes (after API refetch)
   useEffect(() => {
@@ -180,7 +181,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
     }
   }
 
-  const handleReorderTasks = (
+  const handleReorderTasks = async (
     sourceColumnId: string,
     sourceIndex: number,
     destinationColumnId: string,
@@ -192,11 +193,45 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
     )
       return
 
+    // Get the source column and task
+    const sourceColumn = kanbanState.columns.find(col => col.id === sourceColumnId)
+    if (!sourceColumn || !sourceColumn.tasks) return
+
+    const movedTask = sourceColumn.tasks[sourceIndex]
+    if (!movedTask) return
+
+    // Find the API column ID for the destination column
+    const destinationApiColumn = apiColumns.find((c: any) => c.id.toString() === destinationColumnId)
+    if (!destinationApiColumn) {
+      console.error('Destination column not found in API columns')
+      return
+    }
+
+    // Optimistic UI update
     dispatch({
       type: "reorderTasks",
       source: { columnId: sourceColumnId, index: sourceIndex },
       destination: { columnId: destinationColumnId, index: destinationIndex },
     })
+
+    try {
+      // Call API to update the ticket's column and position
+      await updateTicketMutation.mutateAsync({
+        id: parseInt(movedTask.id),
+        data: {
+          column_id: destinationApiColumn.id,
+          position_in_column: destinationIndex,
+        }
+      })
+    } catch (error) {
+      console.error('Error reordering task:', error)
+      // Revert on error
+      dispatch({
+        type: "reorderTasks",
+        source: { columnId: destinationColumnId, index: destinationIndex },
+        destination: { columnId: sourceColumnId, index: sourceIndex },
+      })
+    }
   }
 
   // Selection handlers

@@ -27,7 +27,6 @@ export function KanbanTaskItemContent({ task }: KanbanTaskItemContentProps) {
   return (
     <CardContent>
       <CardTitle>{task.title}</CardTitle>
-      <CardDescription>{task.description}</CardDescription>
       {/* Display media grid if there are attachments */}
       {mediaAttachments.length > 0 && (
         <MediaGrid data={mediaAttachments} className="mt-2" />
