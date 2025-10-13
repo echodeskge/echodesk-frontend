@@ -13,6 +13,7 @@ import {
   ticketFormsRetrieve,
   formSubmissionsCreate,
   itemListsRetrieve,
+  tenantGroupsList,
 } from "@/api/generated/api";
 import type {
   Board,
@@ -22,6 +23,7 @@ import type {
   TicketForm,
   TicketFormMinimal,
   ListItemMinimal,
+  TenantGroup,
 } from "@/api/generated/interfaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +63,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { LabelManagementDialog } from "@/components/LabelManagementDialog";
+import MultiGroupSelection from "@/components/MultiGroupSelection";
+import MultiUserAssignment, { AssignmentData } from "@/components/MultiUserAssignment";
 
 // Flatten items recursively for search
 function flattenItems(items: any[]): any[] {
@@ -100,6 +104,9 @@ export function TicketCreateSheet() {
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [groups, setGroups] = useState<TenantGroup[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
+  const [selectedAssignments, setSelectedAssignments] = useState<AssignmentData[]>([]);
   const [ticketForms, setTicketForms] = useState<TicketFormMinimal[]>([]);
   const [selectedForm, setSelectedForm] = useState<TicketForm | null>(null);
   const [selectedItems, setSelectedItems] = useState<Record<number, number | null>>({});
@@ -110,17 +117,18 @@ export function TicketCreateSheet() {
   const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({});
   const [isLabelPopoverOpen, setIsLabelPopoverOpen] = useState(false);
 
-  // Fetch boards, columns, users, forms, tags on mount
+  // Fetch boards, columns, users, forms, tags, groups on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setFetchingData(true);
-        const [boardsRes, columnsRes, usersRes, formsRes, tagsRes] = await Promise.all([
+        const [boardsRes, columnsRes, usersRes, formsRes, tagsRes, groupsRes] = await Promise.all([
           boardsList(),
           columnsList(),
           usersList(),
           ticketFormsList(),
           tagsList(),
+          tenantGroupsList(),
         ]);
 
         setBoards(boardsRes.results || []);
@@ -128,6 +136,7 @@ export function TicketCreateSheet() {
         setUsers(usersRes.results || []);
         setTicketForms(formsRes.results || []);
         setTags(tagsRes.results || []);
+        setGroups(groupsRes.results || []);
 
         // Set default form if available and fetch full form details
         const defaultFormMinimal =
@@ -222,12 +231,25 @@ export function TicketCreateSheet() {
     try {
       setLoading(true);
 
+      // Prepare user assignments
+      const assigned_user_ids = selectedAssignments.map((a) => a.userId);
+      const assignment_roles: Record<string, string> = {};
+      selectedAssignments.forEach((a) => {
+        assignment_roles[a.userId.toString()] = a.role;
+      });
+      const primaryAssignment = selectedAssignments.find((a) => a.role === "primary") || selectedAssignments[0];
+      const assigned_to_id = primaryAssignment?.userId;
+
       const ticketData = {
         title: formData.title,
         description: formData.description || "", // Ensure empty string if not provided
         priority: formData.priority,
         column_id: formData.column_id,
         tag_ids: selectedTagIds.length > 0 ? selectedTagIds : undefined, // Only include if tags are selected
+        assigned_group_ids: selectedGroupIds.length > 0 ? selectedGroupIds : undefined, // Only include if groups are selected
+        assigned_to_id: assigned_to_id,
+        assigned_user_ids: assigned_user_ids.length > 0 ? assigned_user_ids : undefined,
+        assignment_roles: Object.keys(assignment_roles).length > 0 ? assignment_roles : undefined,
       } as any;
 
       const createdTicket = await ticketsCreate(ticketData);
@@ -262,6 +284,8 @@ export function TicketCreateSheet() {
       });
       setSelectedItems({});
       setSelectedTagIds([]);
+      setSelectedGroupIds([]);
+      setSelectedAssignments([]);
 
       closeTicketCreate();
     } catch (error) {
@@ -281,6 +305,8 @@ export function TicketCreateSheet() {
     });
     setSelectedItems({});
     setSelectedTagIds([]);
+    setSelectedGroupIds([]);
+    setSelectedAssignments([]);
     closeTicketCreate();
   };
 
@@ -322,59 +348,6 @@ export function TicketCreateSheet() {
           </SheetHeader>
 
           <form onSubmit={handleSubmit} className="grid gap-4 mt-6">
-            {/* Form Selection */}
-            {ticketForms.length > 0 && (
-              <div className="grid gap-2">
-                <Label htmlFor="form">Ticket Form (Optional)</Label>
-                <div className="flex gap-2">
-                  <Select
-                    value={selectedForm?.id.toString() || ""}
-                    onValueChange={async (value) => {
-                      const formId = parseInt(value);
-                      setSelectedItems({});
-                      try {
-                        const fullForm = await ticketFormsRetrieve(formId);
-                        setSelectedForm(fullForm);
-                      } catch (error) {
-                        console.error("Error fetching form:", error);
-                        setSelectedForm(null);
-                      }
-                    }}
-                    disabled={fetchingData}
-                  >
-                    <SelectTrigger id="form" className="w-full">
-                      <SelectValue placeholder="Select a form (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ticketForms
-                        .filter((form) => form.is_active)
-                        .map((form) => (
-                          <SelectItem key={form.id} value={form.id.toString()}>
-                            {form.title}
-                            {form.is_default && " (Default)"}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedForm && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        setSelectedForm(null);
-                        setSelectedItems({});
-                      }}
-                      className="shrink-0"
-                      title="Clear form selection"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
             <div className="grid gap-2">
               <Label htmlFor="title">{t('ticketTitle')} *</Label>
               <Input
@@ -462,6 +435,17 @@ export function TicketCreateSheet() {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
+              />
+            </div>
+
+            {/* User Assignment Section */}
+            <div className="grid gap-2">
+              <Label>Assign to Users (Optional)</Label>
+              <MultiUserAssignment
+                users={users}
+                selectedAssignments={selectedAssignments}
+                onChange={setSelectedAssignments}
+                placeholder="Select users to assign..."
               />
             </div>
 
@@ -566,6 +550,71 @@ export function TicketCreateSheet() {
                 </div>
               )}
             </div>
+
+            {/* Group Assignment Section */}
+            <div className="grid gap-2">
+              <Label>Assign to Groups (Optional)</Label>
+              <MultiGroupSelection
+                groups={groups}
+                selectedGroupIds={selectedGroupIds}
+                onChange={setSelectedGroupIds}
+                disabled={fetchingData}
+                placeholder="Select groups to assign..."
+              />
+            </div>
+
+            {/* Form Selection */}
+            {ticketForms.length > 0 && (
+              <div className="grid gap-2">
+                <Label htmlFor="form">Ticket Form (Optional)</Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={selectedForm?.id.toString() || ""}
+                    onValueChange={async (value) => {
+                      const formId = parseInt(value);
+                      setSelectedItems({});
+                      try {
+                        const fullForm = await ticketFormsRetrieve(formId);
+                        setSelectedForm(fullForm);
+                      } catch (error) {
+                        console.error("Error fetching form:", error);
+                        setSelectedForm(null);
+                      }
+                    }}
+                    disabled={fetchingData}
+                  >
+                    <SelectTrigger id="form" className="w-full">
+                      <SelectValue placeholder="Select a form (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ticketForms
+                        .filter((form) => form.is_active)
+                        .map((form) => (
+                          <SelectItem key={form.id} value={form.id.toString()}>
+                            {form.title}
+                            {form.is_default && " (Default)"}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedForm && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedForm(null);
+                        setSelectedItems({});
+                      }}
+                      className="shrink-0"
+                      title="Clear form selection"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Item Lists from Selected Form */}
             {selectedForm &&

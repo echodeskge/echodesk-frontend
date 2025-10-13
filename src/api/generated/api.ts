@@ -1832,6 +1832,7 @@ export async function ticketFormsDefaultRetrieve(): Promise<TicketForm> {
 }
 
 export async function ticketsList(
+  assignedGroups?: number[],
   assignedTo?: number,
   column?: number,
   createdBy?: number,
@@ -1844,6 +1845,13 @@ export async function ticketsList(
   const response = await axios.get(
     `/api/tickets/${(() => {
       const parts = [
+        assignedGroups
+          ? 'assigned_groups=' +
+            assignedGroups
+              .map(String)
+              .map(encodeURIComponent)
+              .join('&assigned_groups=')
+          : null,
         assignedTo ? 'assigned_to=' + encodeURIComponent(assignedTo) : null,
         column ? 'column=' + encodeURIComponent(column) : null,
         createdBy ? 'created_by=' + encodeURIComponent(createdBy) : null,

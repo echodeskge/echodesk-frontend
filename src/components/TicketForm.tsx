@@ -6,16 +6,18 @@ import {
   CreateTicketData,
   UpdateTicketData,
 } from "@/services/ticketService";
-import { columnsList, boardsList } from "@/api/generated/api";
+import { columnsList, boardsList, tenantGroupsList } from "@/api/generated/api";
 import type {
   Ticket,
   User,
   Tag,
   TicketColumn,
   Board,
+  TenantGroup,
 } from "@/api/generated/interfaces";
 import SimpleRichTextEditor from "./SimpleRichTextEditor";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
+import MultiGroupSelection from "./MultiGroupSelection";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,9 +57,11 @@ export default function TicketForm({
   });
 
   const [assignments, setAssignments] = useState<AssignmentData[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
 
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [allColumns, setAllColumns] = useState<TicketColumn[]>([]);
@@ -104,6 +108,11 @@ export default function TicketForm({
           },
         ]);
       }
+
+      // Initialize group assignments from existing ticket
+      if (ticket.assigned_groups && ticket.assigned_groups.length > 0) {
+        setSelectedGroupIds(ticket.assigned_groups.map(group => group.id));
+      }
     }
 
     // Fetch users and tags
@@ -139,16 +148,18 @@ export default function TicketForm({
   const fetchFormData = async () => {
     try {
       setFetchingData(true);
-      const [usersResult, tagsResult, boardsResult, columnsResult] =
+      const [usersResult, tagsResult, groupsResult, boardsResult, columnsResult] =
         await Promise.all([
           ticketService.getUsers(),
           ticketService.getTags(),
+          tenantGroupsList(),
           boardsList(),
           columnsList(),
         ]);
 
       setUsers(usersResult.results || []);
       setTags(tagsResult.results || []);
+      setGroups(groupsResult.results || []);
       setBoards(boardsResult.results || []);
       setAllColumns(columnsResult.results || []);
 
@@ -209,6 +220,7 @@ export default function TicketForm({
           priority: formData.priority,
           assigned_to_id,
           assigned_user_ids,
+          assigned_group_ids: selectedGroupIds,
           assignment_roles,
           column_id: formData.column_id || undefined,
           tag_ids: formData.tag_ids,
@@ -231,6 +243,7 @@ export default function TicketForm({
           priority: formData.priority,
           assigned_to_id,
           assigned_user_ids,
+          assigned_group_ids: selectedGroupIds,
           assignment_roles,
           column_id: formData.column_id || undefined,
           tag_ids: formData.tag_ids,
@@ -514,6 +527,18 @@ export default function TicketForm({
                 onChange={setAssignments}
                 disabled={loading}
                 placeholder="Select users to assign to this ticket..."
+              />
+            </div>
+
+            {/* Multi-Group Selection */}
+            <div className="space-y-2">
+              <Label>Assign Groups</Label>
+              <MultiGroupSelection
+                groups={groups}
+                selectedGroupIds={selectedGroupIds}
+                onChange={setSelectedGroupIds}
+                disabled={loading}
+                placeholder="Select groups to assign to this ticket..."
               />
             </div>
 

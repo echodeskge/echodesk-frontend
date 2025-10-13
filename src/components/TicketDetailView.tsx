@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from 'next-intl';
-import type { Ticket, TicketColumn, User, Tag as TagType } from "@/api/generated/interfaces";
+import type { Ticket, TicketColumn, User, Tag as TagType, TenantGroup } from "@/api/generated/interfaces";
 import { ticketService } from "@/services/ticketService";
-import { columnsList, tagsList } from "@/api/generated/api";
+import { columnsList, tagsList, tenantGroupsList } from "@/api/generated/api";
 import axios from "@/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ import SubTicketList from "./SubTicketList";
 import ChecklistItemList from "./ChecklistItemList";
 import AssigneeList from "./AssigneeList";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
+import MultiGroupSelection from "./MultiGroupSelection";
 import TimeTracking from "./TimeTracking";
 import { LabelManagementDialog } from "./LabelManagementDialog";
 import {
@@ -91,8 +92,11 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<TagType[]>([]);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
+  const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [editingAssignments, setEditingAssignments] = useState(false);
   const [tempAssignments, setTempAssignments] = useState<AssignmentData[]>([]);
+  const [editingGroups, setEditingGroups] = useState(false);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
   const [editingLabels, setEditingLabels] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [isLabelPopoverOpen, setIsLabelPopoverOpen] = useState(false);
@@ -102,6 +106,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
     fetchUsers();
     fetchColumns();
     fetchTags();
+    fetchGroups();
   }, []);
 
   useEffect(() => {
@@ -147,6 +152,15 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       setTags(result.results || []);
     } catch (err) {
       console.error("Error fetching tags:", err);
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const result = await tenantGroupsList();
+      setGroups(result.results || []);
+    } catch (err) {
+      console.error("Error fetching groups:", err);
     }
   };
 
@@ -280,6 +294,32 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
     setSelectedTagIds((prev) =>
       prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
     );
+  };
+
+  const handleStartEditingGroups = () => {
+    setSelectedGroupIds(ticket.assigned_groups?.map(group => group.id) || []);
+    setEditingGroups(true);
+  };
+
+  const handleCancelEditingGroups = () => {
+    setEditingGroups(false);
+    setSelectedGroupIds([]);
+  };
+
+  const handleSaveGroups = async () => {
+    try {
+      const updatedTicket = await ticketService.updateTicket(ticket.id, {
+        assigned_group_ids: selectedGroupIds,
+      });
+
+      setTicket(updatedTicket);
+      onUpdate(updatedTicket);
+      setEditingGroups(false);
+      setSelectedGroupIds([]);
+    } catch (err) {
+      console.error("Error updating groups:", err);
+      setError("Failed to update groups");
+    }
   };
 
   const priorityDisplay = String(ticket.priority || 'Medium');
@@ -676,6 +716,59 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                     showRoles={true}
                     size="medium"
                   />
+                )}
+              </div>
+
+              <Separator />
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <Label className="text-sm">Assigned Groups</Label>
+                  {!editingGroups && (
+                    <Button
+                      onClick={handleStartEditingGroups}
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto py-1 px-2 text-xs"
+                    >
+                      {tCommon('edit')}
+                    </Button>
+                  )}
+                </div>
+
+                {editingGroups ? (
+                  <div className="space-y-2">
+                    <MultiGroupSelection
+                      groups={groups}
+                      selectedGroupIds={selectedGroupIds}
+                      onChange={setSelectedGroupIds}
+                      placeholder="Select groups..."
+                    />
+                    <div className="flex gap-2">
+                      <Button onClick={handleSaveGroups} size="sm" className="flex-1">
+                        {tCommon('save')}
+                      </Button>
+                      <Button onClick={handleCancelEditingGroups} variant="outline" size="sm" className="flex-1">
+                        {tCommon('cancel')}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {ticket.assigned_groups && ticket.assigned_groups.length > 0 ? (
+                      ticket.assigned_groups.map((group) => (
+                        <Badge
+                          key={group.id}
+                          variant="outline"
+                          className="text-xs px-2 py-1"
+                        >
+                          {group.name}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No groups assigned</p>
+                    )}
+                  </div>
                 )}
               </div>
             </CardContent>

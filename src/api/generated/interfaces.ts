@@ -776,6 +776,8 @@ export interface PatchedTicket {
   assignments?: TicketAssignment[];
   assigned_user_ids?: number[];
   assignment_roles?: Record<string, any>;
+  assigned_groups?: TenantGroupMinimal[];
+  assigned_group_ids?: number[];
   tags?: Tag[];
   tag_ids?: number[];
   comments?: TicketComment[];
@@ -1098,6 +1100,12 @@ export interface TenantGroupCreate {
   can_access_orders?: boolean;
 }
 
+export interface TenantGroupMinimal {
+  id: number;
+  name: string;
+  description: string;
+}
+
 export interface TenantLogin {
   email: string;
   password: string;
@@ -1120,7 +1128,7 @@ export interface TenantRegistration {
 export interface Ticket {
   id: number;
   title: string;
-  description: string;
+  description?: string;
   rich_description?: any;
   description_format?: DescriptionFormatEnum;
   status: string;
@@ -1139,6 +1147,8 @@ export interface Ticket {
   assignments: TicketAssignment[];
   assigned_user_ids?: number[];
   assignment_roles?: Record<string, any>;
+  assigned_groups: TenantGroupMinimal[];
+  assigned_group_ids?: number[];
   tags: Tag[];
   tag_ids?: number[];
   comments: TicketComment[];
@@ -1267,6 +1277,7 @@ export interface TicketList {
   created_by: UserMinimal;
   assigned_to: UserMinimal;
   assigned_users: UserMinimal[];
+  assigned_groups: TenantGroupMinimal[];
   assignments: TicketAssignment[];
   tags: Tag[];
   comments_count: string;

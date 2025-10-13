@@ -32,6 +32,7 @@ export interface TicketFilters {
   status?: "open" | "in_progress" | "resolved" | "closed";
   priority?: "low" | "medium" | "high" | "critical";
   assignedTo?: number;
+  assignedGroup?: number;
   column?: number;
   createdBy?: number;
   tags?: number[];
@@ -48,6 +49,7 @@ export interface CreateTicketData {
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
   assigned_user_ids?: number[];
+  assigned_group_ids?: number[];
   assignment_roles?: Record<string, string>;
   column_id?: number;
   tag_ids?: number[];
@@ -62,6 +64,7 @@ export interface UpdateTicketData {
   priority?: "low" | "medium" | "high" | "critical";
   assigned_to_id?: number;
   assigned_user_ids?: number[];
+  assigned_group_ids?: number[];
   assignment_roles?: Record<string, string>;
   column_id?: number;
   tag_ids?: number[];
@@ -126,6 +129,7 @@ export class TicketService {
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
         assigned_user_ids: data.assigned_user_ids || [],
+        assigned_group_ids: data.assigned_group_ids || [],
         assignment_roles: data.assignment_roles || {},
         column_id: data.column_id,
         tag_ids: data.tag_ids || [],
@@ -154,6 +158,7 @@ export class TicketService {
         priority: data.priority as unknown as PriorityEnum,
         assigned_to_id: data.assigned_to_id,
         assigned_user_ids: data.assigned_user_ids || [],
+        assigned_group_ids: data.assigned_group_ids || [],
         assignment_roles: data.assignment_roles || {},
         column_id: data.column_id,
         tag_ids: data.tag_ids,
