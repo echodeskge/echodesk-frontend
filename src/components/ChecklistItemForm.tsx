@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { checklistItemsCreate, checklistItemsUpdate } from '@/api/generated/api';
 import type { ChecklistItem, PatchedChecklistItem } from '@/api/generated/interfaces';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Alert, AlertDescription } from './ui/alert';
+import { Label } from './ui/label';
 
 interface ChecklistItemFormProps {
   ticketId?: number;
@@ -71,89 +75,54 @@ export default function ChecklistItemForm({
   };
 
   return (
-    <div style={{ padding: '15px' }}>
-      <h4 style={{
-        fontSize: '14px',
-        fontWeight: '600',
-        color: '#2c3e50',
-        marginBottom: '10px'
-      }}>
+    <div className="p-4">
+      <h4 className="text-sm font-semibold text-gray-800 mb-3">
         {isEditing ? 'Edit Checklist Item' : 'Add Checklist Item'}
       </h4>
 
       {error && (
-        <div style={{
-          background: '#fee',
-          color: '#c33',
-          padding: '8px',
-          borderRadius: '4px',
-          marginBottom: '10px',
-          fontSize: '12px',
-          border: '1px solid #fcc'
-        }}>
-          {error}
-        </div>
+        <Alert variant="destructive" className="mb-3">
+          <AlertDescription className="text-xs">
+            {error}
+          </AlertDescription>
+        </Alert>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <input
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="checklist-text" className="text-sm">
+            Item Text
+          </Label>
+          <Input
+            id="checklist-text"
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Enter checklist item..."
             required
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '2px solid #e1e5e9',
-              borderRadius: '4px',
-              fontSize: '14px',
-              boxSizing: 'border-box'
-            }}
+            className="text-sm"
           />
         </div>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '8px'
-        }}>
+        <div className="flex justify-end gap-2">
           {onCancel && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={onCancel}
-              style={{
-                background: 'white',
-                color: '#6c757d',
-                border: '2px solid #6c757d',
-                padding: '6px 12px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: '500',
-                cursor: 'pointer'
-              }}
             >
               Cancel
-            </button>
+            </Button>
           )}
-          
-          <button
+
+          <Button
             type="submit"
+            size="sm"
             disabled={loading || !text.trim()}
-            style={{
-              background: (!text.trim() || loading) ? '#dee2e6' : '#27ae60',
-              color: 'white',
-              border: 'none',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              fontSize: '12px',
-              fontWeight: '500',
-              cursor: (!text.trim() || loading) ? 'not-allowed' : 'pointer'
-            }}
           >
             {loading ? 'Saving...' : (isEditing ? 'Update' : 'Add')}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

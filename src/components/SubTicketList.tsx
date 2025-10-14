@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+// import { useState } from 'react';
 import { subTicketsDestroy, subTicketsToggleCompletionPartialUpdate } from '@/api/generated/api';
 import type { SubTicket } from '@/api/generated/interfaces';
-import SubTicketForm from './SubTicketForm';
-import { Button } from './ui/button';
-import { Plus } from 'lucide-react';
+// import SubTicketForm from './SubTicketForm';
+// import { Button } from './ui/button';
+// import { Plus } from 'lucide-react';
 
 interface SubTicketListProps {
   parentTicketId: number;
@@ -14,8 +14,8 @@ interface SubTicketListProps {
 }
 
 export default function SubTicketList({ parentTicketId, subTickets, onSubTicketsChange }: SubTicketListProps) {
-  const [showForm, setShowForm] = useState(false);
-  const [editingSubTicket, setEditingSubTicket] = useState<SubTicket | null>(null);
+  // const [showForm, setShowForm] = useState(false);
+  // const [editingSubTicket, setEditingSubTicket] = useState<SubTicket | null>(null);
 
   const handleToggleCompletion = async (subTicket: SubTicket) => {
     try {
@@ -43,23 +43,23 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
     }
   };
 
-  const handleEdit = (subTicket: SubTicket) => {
-    setEditingSubTicket(subTicket);
-    setShowForm(true);
-  };
+  // const handleEdit = (subTicket: SubTicket) => {
+  //   setEditingSubTicket(subTicket);
+  //   setShowForm(true);
+  // };
 
-  const handleFormSave = () => {
-    setShowForm(false);
-    setEditingSubTicket(null);
-    if (onSubTicketsChange) {
-      onSubTicketsChange();
-    }
-  };
+  // const handleFormSave = () => {
+  //   setShowForm(false);
+  //   setEditingSubTicket(null);
+  //   if (onSubTicketsChange) {
+  //     onSubTicketsChange();
+  //   }
+  // };
 
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setEditingSubTicket(null);
-  };
+  // const handleFormCancel = () => {
+  //   setShowForm(false);
+  //   setEditingSubTicket(null);
+  // };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -77,26 +77,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
         <h4 className="text-base font-semibold text-gray-800 m-0">
           Sub-Tickets ({subTickets.length})
         </h4>
-        <Button
-          onClick={() => setShowForm(true)}
-          size="sm"
-          variant="default"
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          Add Sub-Ticket
-        </Button>
       </div>
-
-      {showForm && (
-        <div className="bg-gray-50 border border-gray-300 rounded-md mb-4">
-          <SubTicketForm
-            parentTicketId={parentTicketId}
-            subTicket={editingSubTicket || undefined}
-            onSave={handleFormSave}
-            onCancel={handleFormCancel}
-          />
-        </div>
-      )}
 
       <div className="flex flex-col gap-2.5">
         {subTickets.map((subTicket) => (
@@ -155,12 +136,12 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
               </div>
 
               <div className="flex gap-1 flex-shrink-0">
-                <button
+                {/* <button
                   onClick={() => handleEdit(subTicket)}
                   className="bg-white text-blue-500 border border-blue-500 px-2 py-1 rounded text-xs cursor-pointer hover:bg-blue-50"
                 >
                   Edit
-                </button>
+                </button> */}
                 <button
                   onClick={() => handleDelete(subTicket)}
                   className="bg-white text-red-600 border border-red-600 px-2 py-1 rounded text-xs cursor-pointer hover:bg-red-50"
