@@ -335,7 +335,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   };
 
   return (
-    <div className="container max-w-7xl py-6">
+    <div className="w-full max-w-7xl mx-auto px-4 py-6">
       {error && (
         <div className="bg-destructive/10 text-destructive border border-destructive/20 px-4 py-3 rounded-lg mb-4">
           {error}

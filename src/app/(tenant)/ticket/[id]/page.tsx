@@ -63,9 +63,9 @@ export default function TicketDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full">
       <div className="border-b">
-        <div className="container flex h-14 items-center gap-4 px-4">
+        <div className="w-full max-w-7xl mx-auto flex h-14 items-center gap-4 px-4">
           <Button onClick={() => router.back()} variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
