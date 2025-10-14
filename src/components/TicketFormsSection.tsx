@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, CheckCircle2 } from "lucide-react";
+import { FileText, CheckCircle2, Eye } from "lucide-react";
 import type { Ticket, TicketFormSubmission } from "@/api/generated/interfaces";
 import { ChildFormFillDialog } from "./ChildFormFillDialog";
+import { FormSubmissionViewDialog } from "./FormSubmissionViewDialog";
 
 interface TicketFormsSectionProps {
   ticket: Ticket;
@@ -16,6 +17,7 @@ interface TicketFormsSectionProps {
 export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSectionProps) {
   const [selectedChildFormId, setSelectedChildFormId] = useState<number | null>(null);
   const [childFormDialogOpen, setChildFormDialogOpen] = useState(false);
+  const [viewSubmission, setViewSubmission] = useState<TicketFormSubmission | null>(null);
 
   // Get all form submissions
   const formSubmissions = ticket.form_submissions || [];
@@ -64,37 +66,24 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
           {/* Parent Form (Read-only) */}
           <div className="border rounded-lg p-4 bg-muted/30">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-sm">Parent Form</h4>
-              <Badge variant="outline">Completed</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {parentFormSubmission?.form?.title}
-            </p>
-            {parentFormSubmission?.form_data && Object.keys(parentFormSubmission.form_data).length > 0 && (
-              <div className="mt-3 space-y-2">
-                {Object.entries(parentFormSubmission.form_data).map(([key, value]) => {
-                  // Check if value is a base64 image (signature)
-                  const isSignature = typeof value === 'string' && value.startsWith('data:image');
-
-                  return (
-                    <div key={key} className="text-sm">
-                      <span className="font-medium">{key}:</span>{" "}
-                      {isSignature ? (
-                        <div className="mt-2">
-                          <img
-                            src={value}
-                            alt={`${key} signature`}
-                            className="border rounded max-w-xs h-auto"
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">{String(value)}</span>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-sm">Parent Form</h4>
+                  <Badge variant="outline">Completed</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {parentFormSubmission?.form?.title}
+                </p>
               </div>
-            )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setViewSubmission(parentFormSubmission)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                View
+              </Button>
+            </div>
           </div>
 
           {/* Child Forms */}
@@ -107,9 +96,9 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
 
                 return (
                   <div key={childForm.id} className={`border rounded-lg p-4 ${isSubmitted ? 'bg-muted/30' : ''}`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h5 className="font-medium text-sm">{childForm.title}</h5>
                           {isSubmitted && (
                             <Badge variant="outline" className="text-green-600 border-green-600">
@@ -123,36 +112,23 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
                             {childForm.description}
                           </p>
                         )}
-                        {/* Show submitted data if available */}
-                        {isSubmitted && childSubmission?.form_data && Object.keys(childSubmission.form_data).length > 0 && (
-                          <div className="mt-3 space-y-2 border-t pt-2">
-                            {Object.entries(childSubmission.form_data).map(([key, value]) => {
-                              const isSignature = typeof value === 'string' && value.startsWith('data:image');
-                              return (
-                                <div key={key} className="text-xs">
-                                  <span className="font-medium">{key}:</span>{" "}
-                                  {isSignature ? (
-                                    <div className="mt-2">
-                                      <img
-                                        src={value}
-                                        alt={`${key} signature`}
-                                        className="border rounded max-w-xs h-auto"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <span className="text-muted-foreground">{String(value)}</span>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                      </div>
+                      <div className="flex gap-2 flex-shrink-0">
+                        {isSubmitted ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setViewSubmission(childSubmission)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        ) : (
+                          <Button size="sm" onClick={() => handleFillChildForm(childForm.id)}>
+                            Fill Form
+                          </Button>
                         )}
                       </div>
-                      {!isSubmitted && (
-                        <Button size="sm" onClick={() => handleFillChildForm(childForm.id)}>
-                          Fill Form
-                        </Button>
-                      )}
                     </div>
                   </div>
                 );
@@ -170,6 +146,15 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
           childFormId={selectedChildFormId}
           ticketId={ticket.id}
           onSuccess={handleFormSubmitted}
+        />
+      )}
+
+      {/* Form Submission View Dialog */}
+      {viewSubmission && (
+        <FormSubmissionViewDialog
+          open={!!viewSubmission}
+          onOpenChange={(open) => !open && setViewSubmission(null)}
+          submission={viewSubmission}
         />
       )}
     </>
