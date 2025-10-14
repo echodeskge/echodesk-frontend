@@ -57,6 +57,7 @@ export default function TicketFormsPage() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    parent_form_id: null as number | null,
     item_list_ids: [] as number[],
     custom_fields: [] as CustomField[],
     is_active: true,
@@ -87,6 +88,7 @@ export default function TicketFormsPage() {
     setFormData({
       title: "",
       description: "",
+      parent_form_id: null,
       item_list_ids: [],
       custom_fields: [],
       is_active: true,
@@ -99,6 +101,7 @@ export default function TicketFormsPage() {
     setFormData({
       title: form.title,
       description: form.description || "",
+      parent_form_id: form.parent_form?.id || null,
       item_list_ids: form.item_lists?.map((list) => list.id) || [],
       custom_fields: (form.custom_fields as CustomField[]) || [],
       is_active: form.is_active ?? true,
@@ -113,6 +116,7 @@ export default function TicketFormsPage() {
           ...editingForm,
           title: formData.title,
           description: formData.description,
+          parent_form_id: formData.parent_form_id,
           item_list_ids: formData.item_list_ids,
           custom_fields: formData.custom_fields,
           is_active: formData.is_active,
@@ -230,6 +234,16 @@ export default function TicketFormsPage() {
                       {!form.is_active && (
                         <Badge variant="secondary">{t('inactive')}</Badge>
                       )}
+                      {form.parent_form && (
+                        <Badge variant="outline" className="bg-blue-50">
+                          Child of: {form.parent_form.title}
+                        </Badge>
+                      )}
+                      {form.child_forms && form.child_forms.length > 0 && (
+                        <Badge variant="outline" className="bg-green-50">
+                          Has {form.child_forms.length} child form(s)
+                        </Badge>
+                      )}
                     </div>
                     {form.description && (
                       <p className="text-sm text-muted-foreground mb-2">
@@ -323,6 +337,35 @@ export default function TicketFormsPage() {
                 placeholder={t('descriptionPlaceholder')}
               />
             </div>
+
+            {/* Parent Form Selector */}
+            <div>
+              <Label htmlFor="parent_form">Parent Form (Optional)</Label>
+              <Select
+                value={formData.parent_form_id?.toString() || "none"}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, parent_form_id: value === "none" ? null : parseInt(value) })
+                }
+              >
+                <SelectTrigger id="parent_form">
+                  <SelectValue placeholder="Select parent form (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Parent (Root Form)</SelectItem>
+                  {forms
+                    .filter((f) => f.id !== editingForm?.id) // Don't allow selecting itself
+                    .map((form) => (
+                      <SelectItem key={form.id} value={form.id.toString()}>
+                        {form.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                If set, this form will be a child form that assigned users need to fill after the parent form is completed.
+              </p>
+            </div>
+
             <div>
               <Label>{t('attachedItemLists')}</Label>
               <div className="border rounded-lg p-3 mt-2 space-y-2 max-h-60 overflow-y-auto">

@@ -832,6 +832,10 @@ export interface PatchedTicketForm {
   id?: number;
   title?: string;
   description?: string;
+  parent_form?: TicketFormMinimal;
+  parent_form_id?: number;
+  child_forms?: TicketFormMinimal[];
+  child_forms_count?: string;
   item_lists?: ItemListMinimal[];
   item_list_ids?: number[];
   form_config?: any;
@@ -1231,6 +1235,10 @@ export interface TicketForm {
   id: number;
   title: string;
   description?: string;
+  parent_form: TicketFormMinimal;
+  parent_form_id?: number;
+  child_forms: TicketFormMinimal[];
+  child_forms_count: string;
   item_lists: ItemListMinimal[];
   item_list_ids?: number[];
   form_config?: any;
