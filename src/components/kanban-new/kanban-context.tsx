@@ -15,7 +15,7 @@ import { teamMembersData } from "./team-members-data"
 
 import { KanbanReducer } from "./kanban-reducer"
 import { useCreateColumn, useUpdateColumn, useDeleteColumn, useReorderColumn } from "@/hooks/useTicketColumns"
-import { useDeleteTicket, useUpdateTicket } from "@/hooks/useTickets"
+import { useDeleteTicket, useUpdateTicket, useMoveTicketToColumn } from "@/hooks/useTickets"
 
 // Create Kanban context
 export const KanbanContext = createContext<KanbanContextType | undefined>(
@@ -48,6 +48,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
   // API hooks for ticket operations
   const deleteTicketMutation = useDeleteTicket(boardId)
   const updateTicketMutation = useUpdateTicket(boardId)
+  const moveTicketMutation = useMoveTicketToColumn(boardId)
 
   // Sync columns when kanbanData prop changes (after API refetch)
   useEffect(() => {
@@ -215,8 +216,9 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
     })
 
     try {
-      // Call API to update the ticket's column and position
-      await updateTicketMutation.mutateAsync({
+      // Call API to move the ticket to the new column and position
+      // This will handle time tracking automatically via the backend
+      await moveTicketMutation.mutateAsync({
         id: parseInt(movedTask.id),
         data: {
           column_id: destinationApiColumn.id,

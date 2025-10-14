@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ticketsDestroy, ticketsPartialUpdate } from '@/api/generated/api';
+import { ticketsDestroy, ticketsPartialUpdate, moveTicketToColumn } from '@/api/generated/api';
 import { toast } from 'sonner';
 import type { PatchedTicket } from '@/api/generated/interfaces';
 
@@ -45,6 +45,29 @@ export function useDeleteTicket(boardId?: number | null) {
     onError: (error: any) => {
       console.error('Error deleting ticket:', error);
       toast.error(error.response?.data?.detail || 'Failed to delete ticket');
+    },
+  });
+}
+
+// Move a ticket to a column (with time tracking support)
+export function useMoveTicketToColumn(boardId?: number | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { column_id: number; position_in_column: number } }) =>
+      moveTicketToColumn(id, data),
+    onSuccess: () => {
+      // Invalidate the specific board's query
+      if (boardId) {
+        queryClient.invalidateQueries({ queryKey: ['kanbanBoard', boardId] });
+      } else {
+        // Fallback to invalidating all kanbanBoard queries
+        queryClient.invalidateQueries({ queryKey: ['kanbanBoard'] });
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error moving ticket:', error);
+      toast.error(error.response?.data?.detail || 'Failed to move ticket');
     },
   });
 }
