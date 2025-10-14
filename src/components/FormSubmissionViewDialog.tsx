@@ -83,7 +83,7 @@ export function FormSubmissionViewDialog({
 
           {/* Selected items */}
           {submission.selected_items && submission.selected_items.length > 0 && (
-            <div className="border-t pt-4">
+            <div className="border rounded-lg p-4">
               <div className="font-medium text-sm mb-2">Selected Items</div>
               <div className="space-y-1">
                 {submission.selected_items.map((item) => (
