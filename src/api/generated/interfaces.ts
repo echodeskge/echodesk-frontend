@@ -797,7 +797,7 @@ export interface PatchedTicket {
   remaining_balance?: string;
   payment_status?: string;
   is_overdue?: string;
-  form_submissions?: string;
+  form_submissions?: TicketFormSubmission[];
 }
 
 export interface PatchedTicketAssignment {
@@ -1174,7 +1174,7 @@ export interface Ticket {
   remaining_balance: string;
   payment_status: string;
   is_overdue: string;
-  form_submissions: string;
+  form_submissions: TicketFormSubmission[];
 }
 
 export interface TicketAssignment {
@@ -1261,8 +1261,8 @@ export interface TicketFormMinimal {
   is_active: boolean;
   created_at: string;
   created_by: UserMinimal;
-  child_forms: string;
-  parent_form: string;
+  child_forms: Array<{id: number; title: string; description: string; is_active: boolean}>;
+  parent_form: {id: number; title: string; description: string; is_active: boolean} | null;
   item_lists: ItemListMinimal[];
   submissions_count: string;
   custom_fields: any;

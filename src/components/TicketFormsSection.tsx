@@ -9,7 +9,7 @@ import type { Ticket, TicketFormSubmission } from "@/api/generated/interfaces";
 import { ChildFormFillDialog } from "./ChildFormFillDialog";
 
 interface TicketFormsSectionProps {
-  ticket: Ticket & { form_submissions?: TicketFormSubmission[] };
+  ticket: Ticket;
   onFormSubmitted?: () => void;
 }
 

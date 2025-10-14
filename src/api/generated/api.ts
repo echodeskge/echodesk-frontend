@@ -1918,8 +1918,8 @@ export async function ticketsCommentsRetrieve(id: number): Promise<Ticket> {
   return response.data;
 }
 
-export async function moveTicketToColumn(id: number): Promise<Ticket> {
-  const response = await axios.patch(`/api/tickets/${id}/move_to_column/`);
+export async function moveTicketToColumn(id: number, data: { column_id: number; position_in_column: number }): Promise<Ticket> {
+  const response = await axios.patch(`/api/tickets/${id}/move_to_column/`, data);
   return response.data;
 }
 
