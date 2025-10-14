@@ -797,7 +797,7 @@ export interface PatchedTicket {
   remaining_balance?: string;
   payment_status?: string;
   is_overdue?: string;
-  form_submission?: string;
+  form_submissions?: string;
 }
 
 export interface PatchedTicketAssignment {
@@ -1174,7 +1174,7 @@ export interface Ticket {
   remaining_balance: string;
   payment_status: string;
   is_overdue: string;
-  form_submission: string;
+  form_submissions: string;
 }
 
 export interface TicketAssignment {
