@@ -88,6 +88,7 @@ export class TicketService {
   ): Promise<PaginatedTicketListList> {
     try {
       return await ticketsList(
+        filters.assignedGroup ? [filters.assignedGroup] : undefined,
         filters.assignedTo,
         filters.column,
         filters.createdBy,

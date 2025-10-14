@@ -76,11 +76,11 @@ export default function TicketForm({
     if (ticket) {
       setFormData({
         title: ticket.title,
-        description: ticket.description,
+        description: ticket.description || "",
         rich_description:
           ticket.rich_description ||
           ((ticket.description_format as any) === "html"
-            ? ticket.description
+            ? ticket.description || ""
             : ""),
         description_format: (ticket.description_format as any) || "html",
         priority: (ticket.priority as any) || "medium",
