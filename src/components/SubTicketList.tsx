@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { subTicketsDestroy, subTicketsToggleCompletionPartialUpdate } from '@/api/generated/api';
 import type { SubTicket } from '@/api/generated/interfaces';
 import SubTicketForm from './SubTicketForm';
+import { Button } from './ui/button';
+import { Plus } from 'lucide-react';
 
 interface SubTicketListProps {
   parentTicketId: number;
@@ -75,12 +77,14 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
         <h4 className="text-base font-semibold text-gray-800 m-0">
           Sub-Tickets ({subTickets.length})
         </h4>
-        <button
+        <Button
           onClick={() => setShowForm(true)}
-          className="bg-blue-500 text-white border-none px-3 py-1.5 rounded text-xs font-medium cursor-pointer hover:bg-blue-600"
+          size="sm"
+          variant="default"
         >
-          + Add Sub-Ticket
-        </button>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Sub-Ticket
+        </Button>
       </div>
 
       {showForm && (

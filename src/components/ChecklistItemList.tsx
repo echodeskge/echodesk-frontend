@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { checklistItemsDestroy, checklistItemsToggleCheckPartialUpdate } from '@/api/generated/api';
 import type { ChecklistItem } from '@/api/generated/interfaces';
 import ChecklistItemForm from './ChecklistItemForm';
+import { Button } from './ui/button';
+import { Plus } from 'lucide-react';
 
 interface ChecklistItemListProps {
   ticketId?: number;
@@ -76,12 +78,14 @@ export default function ChecklistItemList({
           Checklist ({completedCount}/{items.length})
         </h5>
         {showAddButton && (
-          <button
+          <Button
             onClick={() => setShowForm(true)}
-            className="bg-blue-500 text-white border-none px-2 py-1 rounded text-xs font-medium cursor-pointer hover:bg-blue-600"
+            size="sm"
+            variant="default"
           >
-            + Add Item
-          </button>
+            <Plus className="h-4 w-4 mr-1" />
+            Add Item
+          </Button>
         )}
       </div>
 
