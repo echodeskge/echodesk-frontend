@@ -67,6 +67,11 @@ export default function TicketFormsPage() {
     loadData();
   }, []);
 
+  // Debug: Log when formData changes
+  useEffect(() => {
+    console.log('formData changed:', formData);
+  }, [formData]);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -97,16 +102,39 @@ export default function TicketFormsPage() {
   };
 
   const handleEdit = (form: TicketForm) => {
-    setEditingForm(form);
-    setFormData({
+    console.log('Editing form:', form);
+    console.log('Form custom_fields type:', typeof form.custom_fields, 'value:', form.custom_fields);
+    console.log('Form item_lists:', form.item_lists);
+    console.log('Form parent_form:', form.parent_form);
+
+    // Ensure custom_fields is an array
+    let customFields: CustomField[] = [];
+    if (form.custom_fields) {
+      if (Array.isArray(form.custom_fields)) {
+        customFields = form.custom_fields as CustomField[];
+      } else if (typeof form.custom_fields === 'object') {
+        // If it's an object, try to convert it to array
+        customFields = Object.values(form.custom_fields) as CustomField[];
+      }
+    }
+
+    const formDataToSet = {
       title: form.title,
       description: form.description || "",
       parent_form_id: form.parent_form?.id || null,
       item_list_ids: form.item_lists?.map((list) => list.id) || [],
-      custom_fields: (form.custom_fields as CustomField[]) || [],
+      custom_fields: customFields,
       is_active: form.is_active ?? true,
-    });
-    setDialogOpen(true);
+    };
+
+    console.log('Setting formData to:', formDataToSet);
+
+    // Set formData first, then editingForm, then open dialog
+    // This ensures formData is updated before the dialog renders
+    setFormData(formDataToSet);
+    setEditingForm(form);
+    // Use setTimeout to ensure state updates are applied before dialog opens
+    setTimeout(() => setDialogOpen(true), 0);
   };
 
   const handleSave = async () => {
@@ -303,7 +331,7 @@ export default function TicketFormsPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent key={editingForm?.id || 'new'} className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingForm ? t('editDialogTitle') : t('createDialogTitle')}
