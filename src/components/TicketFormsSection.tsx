@@ -59,12 +59,27 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
             </p>
             {ticket.form_submission?.form_data && Object.keys(ticket.form_submission.form_data).length > 0 && (
               <div className="mt-3 space-y-2">
-                {Object.entries(ticket.form_submission.form_data).map(([key, value]) => (
-                  <div key={key} className="text-sm">
-                    <span className="font-medium">{key}:</span>{" "}
-                    <span className="text-muted-foreground">{String(value)}</span>
-                  </div>
-                ))}
+                {Object.entries(ticket.form_submission.form_data).map(([key, value]) => {
+                  // Check if value is a base64 image (signature)
+                  const isSignature = typeof value === 'string' && value.startsWith('data:image');
+
+                  return (
+                    <div key={key} className="text-sm">
+                      <span className="font-medium">{key}:</span>{" "}
+                      {isSignature ? (
+                        <div className="mt-2">
+                          <img
+                            src={value}
+                            alt={`${key} signature`}
+                            className="border rounded max-w-xs h-auto"
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">{String(value)}</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
