@@ -35,6 +35,7 @@ import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
 import MultiGroupSelection from "./MultiGroupSelection";
 import TimeTracking from "./TimeTracking";
 import { LabelManagementDialog } from "./LabelManagementDialog";
+import { TicketFormsSection } from "./TicketFormsSection";
 import {
   Calendar,
   User as UserIcon,
@@ -584,6 +585,9 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               />
             </CardContent>
           </Card>
+
+          {/* Forms Section */}
+          <TicketFormsSection ticket={ticket} onFormSubmitted={fetchTicket} />
 
           {/* Comments */}
           <Card>
