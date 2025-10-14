@@ -118,7 +118,7 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setViewSubmission(childSubmission)}
+                            onClick={() => setViewSubmission(childSubmission || null)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View
