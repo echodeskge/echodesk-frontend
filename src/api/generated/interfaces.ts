@@ -1262,6 +1262,10 @@ export interface TicketFormMinimal {
   created_at: string;
   created_by: UserMinimal;
   child_forms: string;
+  parent_form: string;
+  item_lists: ItemListMinimal[];
+  submissions_count: string;
+  custom_fields: any;
 }
 
 export interface TicketFormSubmission {
