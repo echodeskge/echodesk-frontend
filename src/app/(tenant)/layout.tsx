@@ -218,7 +218,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
           onLogout={handleLogout}
         />
 
-        <SidebarInset className="flex flex-col overflow-hidden h-screen">
+        <SidebarInset className="flex flex-col h-screen">
           <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white w-full">
             <SidebarTrigger className="-ml-1" />
             <h1 className="text-lg font-semibold">{pageTitle}</h1>
