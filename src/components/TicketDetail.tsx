@@ -10,7 +10,6 @@ import type {
 } from "@/api/generated/interfaces";
 import { columnsList } from "@/api/generated/api";
 import axios from "@/api/axios";
-import SubTicketList from "./SubTicketList";
 import ChecklistItemList from "./ChecklistItemList";
 import AssigneeList from "./AssigneeList";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
@@ -514,23 +513,6 @@ export default function TicketDetail({
             />
           </div>
 
-          {/* Sub-tickets */}
-          <div
-            style={{
-              background: "white",
-              borderRadius: "8px",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              padding: "25px",
-              marginBottom: "20px",
-            }}
-          >
-            <SubTicketList
-              parentTicketId={ticket.id}
-              subTickets={ticket.sub_tickets || []}
-              onSubTicketsChange={fetchTicket}
-            />
-          </div>
-
           {/* Comments */}
           <div
             style={{
@@ -936,10 +918,6 @@ export default function TicketDetail({
                     lineHeight: "1.4",
                   }}
                 >
-                  <div>
-                    Sub-tickets: {ticket.completed_sub_tickets_count}/
-                    {ticket.sub_tickets_count}
-                  </div>
                   <div>
                     Checklist: {ticket.completed_checklist_items_count}/
                     {ticket.checklist_items_count}

@@ -28,7 +28,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import SubTicketList from "./SubTicketList";
 import ChecklistItemList from "./ChecklistItemList";
 import AssigneeList from "./AssigneeList";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
@@ -575,17 +574,6 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
             </CardContent>
           </Card>
 
-          {/* Sub-tickets */}
-          <Card>
-            <CardContent className="pt-6">
-              <SubTicketList
-                parentTicketId={ticket.id}
-                subTickets={ticket.sub_tickets || []}
-                onSubTicketsChange={fetchTicket}
-              />
-            </CardContent>
-          </Card>
-
           {/* Forms Section */}
           <TicketFormsSection ticket={ticket} onFormSubmitted={fetchTicket} />
 
@@ -823,7 +811,6 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               <div>
                 <Label className="text-sm text-muted-foreground">Progress</Label>
                 <div className="text-sm space-y-1 mt-1">
-                  <div>{t('subTickets')}: {ticket.completed_sub_tickets_count}/{ticket.sub_tickets_count}</div>
                   <div>{t('checklist')}: {ticket.completed_checklist_items_count}/{ticket.checklist_items_count}</div>
                   <div>{t('comments')}: {ticket.comments_count}</div>
                 </div>
