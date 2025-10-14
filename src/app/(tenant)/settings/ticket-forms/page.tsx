@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, Star, StarOff } from "lucide-react";
+import { Plus, Edit, Trash2, Star, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
@@ -40,10 +47,18 @@ export default function TicketFormsPage() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingForm, setEditingForm] = useState<TicketForm | null>(null);
+  interface CustomField {
+    name: string;
+    label: string;
+    type: "string" | "text" | "number" | "date" | "signature";
+    required: boolean;
+  }
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     item_list_ids: [] as number[],
+    custom_fields: [] as CustomField[],
     is_active: true,
   });
 
@@ -73,6 +88,7 @@ export default function TicketFormsPage() {
       title: "",
       description: "",
       item_list_ids: [],
+      custom_fields: [],
       is_active: true,
     });
     setDialogOpen(true);
@@ -84,6 +100,7 @@ export default function TicketFormsPage() {
       title: form.title,
       description: form.description || "",
       item_list_ids: form.item_lists?.map((list) => list.id) || [],
+      custom_fields: (form.custom_fields as CustomField[]) || [],
       is_active: form.is_active ?? true,
     });
     setDialogOpen(true);
@@ -97,6 +114,7 @@ export default function TicketFormsPage() {
           title: formData.title,
           description: formData.description,
           item_list_ids: formData.item_list_ids,
+          custom_fields: formData.custom_fields,
           is_active: formData.is_active,
         };
         await ticketFormsUpdate(editingForm.id, patchData as any);
@@ -142,6 +160,37 @@ export default function TicketFormsPage() {
       item_list_ids: prev.item_list_ids.includes(listId)
         ? prev.item_list_ids.filter((id) => id !== listId)
         : [...prev.item_list_ids, listId],
+    }));
+  };
+
+  const addCustomField = () => {
+    setFormData((prev) => ({
+      ...prev,
+      custom_fields: [
+        ...prev.custom_fields,
+        {
+          name: "",
+          label: "",
+          type: "string" as const,
+          required: false,
+        },
+      ],
+    }));
+  };
+
+  const updateCustomField = (index: number, field: Partial<CustomField>) => {
+    setFormData((prev) => ({
+      ...prev,
+      custom_fields: prev.custom_fields.map((f, i) =>
+        i === index ? { ...f, ...field } : f
+      ),
+    }));
+  };
+
+  const removeCustomField = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      custom_fields: prev.custom_fields.filter((_, i) => i !== index),
     }));
   };
 
@@ -310,6 +359,126 @@ export default function TicketFormsPage() {
                 )}
               </div>
             </div>
+
+            {/* Custom Fields Section */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Custom Fields</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addCustomField}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Field
+                </Button>
+              </div>
+              <div className="border rounded-lg p-3 space-y-3 max-h-96 overflow-y-auto">
+                {formData.custom_fields.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No custom fields defined. Click "Add Field" to create one.
+                  </p>
+                ) : (
+                  formData.custom_fields.map((field, index) => (
+                    <div
+                      key={index}
+                      className="border rounded p-3 space-y-2 bg-accent/50"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">Field Name (ID)</Label>
+                              <Input
+                                value={field.name}
+                                onChange={(e) =>
+                                  updateCustomField(index, { name: e.target.value })
+                                }
+                                placeholder="e.g., delivery_address"
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Label</Label>
+                              <Input
+                                value={field.label}
+                                onChange={(e) =>
+                                  updateCustomField(index, { label: e.target.value })
+                                }
+                                placeholder="e.g., Delivery Address"
+                                className="h-8 text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">Type</Label>
+                              <Select
+                                value={field.type}
+                                onValueChange={(value) =>
+                                  updateCustomField(index, {
+                                    type: value as CustomField["type"],
+                                  })
+                                }
+                              >
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="string">
+                                    Text (Single Line)
+                                  </SelectItem>
+                                  <SelectItem value="text">
+                                    Text (Multi Line)
+                                  </SelectItem>
+                                  <SelectItem value="number">Number</SelectItem>
+                                  <SelectItem value="date">Date</SelectItem>
+                                  <SelectItem value="signature">
+                                    Signature (Image Upload)
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex items-end">
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`required-${index}`}
+                                  checked={field.required}
+                                  onChange={(e) =>
+                                    updateCustomField(index, {
+                                      required: e.target.checked,
+                                    })
+                                  }
+                                  className="h-4 w-4"
+                                />
+                                <Label
+                                  htmlFor={`required-${index}`}
+                                  className="text-xs"
+                                >
+                                  Required
+                                </Label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCustomField(index)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"

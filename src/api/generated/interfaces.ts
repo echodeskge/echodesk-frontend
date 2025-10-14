@@ -835,6 +835,7 @@ export interface PatchedTicketForm {
   item_lists?: ItemListMinimal[];
   item_list_ids?: number[];
   form_config?: any;
+  custom_fields?: any;
   is_default?: boolean;
   is_active?: boolean;
   created_at?: string;
@@ -1233,6 +1234,7 @@ export interface TicketForm {
   item_lists: ItemListMinimal[];
   item_list_ids?: number[];
   form_config?: any;
+  custom_fields?: any;
   is_default?: boolean;
   is_active?: boolean;
   created_at: string;
