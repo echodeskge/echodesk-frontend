@@ -236,7 +236,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex-1 bg-white w-full overflow-hidden">
+          <div className="flex-1 bg-white w-full overflow-auto">
             {children}
           </div>
         </SidebarInset>
