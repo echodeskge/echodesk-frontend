@@ -81,17 +81,41 @@ export function FormSubmissionViewDialog({
             </div>
           )}
 
-          {/* Selected items */}
+          {/* Selected items grouped by list */}
           {submission.selected_items && submission.selected_items.length > 0 && (
-            <div className="border rounded-lg p-4">
-              <div className="font-medium text-sm mb-3">Selected Items</div>
-              <div className="flex flex-wrap gap-2">
-                {submission.selected_items.map((item) => (
-                  <Badge key={item.id} variant="secondary" className="text-sm">
-                    {item.label}
-                  </Badge>
-                ))}
-              </div>
+            <div className="space-y-3">
+              {/* Group items by item_list */}
+              {(() => {
+                // Group items by their list ID
+                const itemsByList = submission.selected_items.reduce((acc, item) => {
+                  const listId = item.item_list;
+                  if (!acc[listId]) {
+                    acc[listId] = [];
+                  }
+                  acc[listId].push(item);
+                  return acc;
+                }, {} as Record<number, typeof submission.selected_items>);
+
+                // Render each list's items
+                return Object.entries(itemsByList).map(([listId, items]) => {
+                  // Find the list name from form's item_lists
+                  const list = submission.form?.item_lists?.find(l => l.id === Number(listId));
+                  const listName = list?.title || 'Selected Items';
+
+                  return (
+                    <div key={listId} className="border rounded-lg p-4">
+                      <div className="font-medium text-sm mb-3">{listName}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {items.map((item) => (
+                          <Badge key={item.id} variant="secondary" className="text-sm">
+                            {item.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
           )}
         </div>

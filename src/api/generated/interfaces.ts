@@ -278,6 +278,7 @@ export interface ListItem {
 
 export interface ListItemMinimal {
   id: number;
+  item_list: number;
   label: string;
   custom_id: string;
   parent: number;
