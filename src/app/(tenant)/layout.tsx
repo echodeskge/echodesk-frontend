@@ -17,6 +17,8 @@ import { tenantService } from "@/services/tenantService";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
+import BoardStatusEditor from "@/components/BoardStatusEditor";
+import BoardUserManager from "@/components/BoardUserManager";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -29,6 +31,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { selectedBoardId, setSelectedBoardId } = useBoard();
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
+  const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
+  const [managingBoardUsersId, setManagingBoardUsersId] = useState<number | null>(null);
 
   // Load tenant data from subdomain
   useEffect(() => {
@@ -187,6 +191,22 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const handleEditBoardStatuses = (boardId: number) => {
+    setEditingBoardId(boardId);
+  };
+
+  const handleManageBoardUsers = (boardId: number) => {
+    setManagingBoardUsersId(boardId);
+  };
+
+  const handleCloseEditor = () => {
+    setEditingBoardId(null);
+  };
+
+  const handleCloseUserManager = () => {
+    setManagingBoardUsersId(null);
+  };
+
   // Get current view from pathname (first segment)
   const pathParts = pathname.split("/").filter(Boolean);
   const currentView = pathParts[0] || "tickets"; // /tickets -> tickets
@@ -228,6 +248,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                   selectedBoardId={selectedBoardId}
                   boards={boards}
                   onBoardChange={setSelectedBoardId}
+                  onEditBoardStatuses={handleEditBoardStatuses}
+                  onManageBoardUsers={handleManageBoardUsers}
                 />
               </div>
             )}
@@ -243,6 +265,20 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       </div>
 
       <TicketCreateSheet />
+
+      {/* Board Status Editor Modal */}
+      <BoardStatusEditor
+        boardId={editingBoardId}
+        open={editingBoardId !== null}
+        onClose={handleCloseEditor}
+      />
+
+      {/* Board User Manager Modal */}
+      <BoardUserManager
+        boardId={managingBoardUsersId}
+        open={managingBoardUsersId !== null}
+        onClose={handleCloseUserManager}
+      />
     </SidebarProvider>
   );
 }

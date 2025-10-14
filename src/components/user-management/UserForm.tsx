@@ -1,26 +1,36 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserCreate, UserUpdate, User, Group, PaginatedGroupList, TenantGroup, PaginatedTenantGroupList } from "@/api/generated/interfaces";
-import { groupsList, tenantGroupsList, usersRetrieve } from "@/api/generated/api";
-import "./UserForm.css";
+import { UserCreate, UserUpdate, User, TenantGroup } from "@/api/generated/interfaces";
+import { tenantGroupsList, usersRetrieve } from "@/api/generated/api";
+import MultiGroupSelection from "@/components/MultiGroupSelection";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { XCircle, AlertCircle } from "lucide-react";
 
 interface UserFormProps {
   mode: "create" | "edit";
   user?: User;
+  open: boolean;
   onSubmit: (userData: UserCreate | UserUpdate) => Promise<void>;
-  onCancel: () => void;
+  onClose: () => void;
 }
 
 export default function UserForm({
   mode,
   user,
+  open,
   onSubmit,
-  onCancel,
+  onClose,
 }: UserFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [groups, setGroups] = useState<Group[]>([]);
   const [tenantGroups, setTenantGroups] = useState<TenantGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
@@ -33,7 +43,6 @@ export default function UserForm({
     password: "",
     password_confirm: "",
     is_active: user?.is_active ?? true,
-    group_ids: user?.group_ids || [],
     tenant_group_ids: user?.tenant_group_ids || [],
     phone_number: user?.phone_number || "",
     job_title: user?.job_title || "",
@@ -67,14 +76,13 @@ export default function UserForm({
   useEffect(() => {
     const userData = fullUserData || user;
     if (userData) {
-      
+
       setFormData(prev => ({
         ...prev,
         email: userData.email || "",
         first_name: userData.first_name || "",
         last_name: userData.last_name || "",
         is_active: userData.is_active ?? true,
-        group_ids: userData.group_ids || [],
         tenant_group_ids: userData.tenant_group_ids || (userData.tenant_groups ? userData.tenant_groups.map(g => g.id) : []),
         phone_number: userData.phone_number || "",
         job_title: userData.job_title || "",
@@ -83,19 +91,14 @@ export default function UserForm({
     }
   }, [fullUserData, user]);
 
-  // Load groups on component mount
+  // Load tenant groups on component mount
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        // Fetch both Django Groups and TenantGroups
-        const [groupsResponse, tenantGroupsResponse] = await Promise.all([
-          groupsList(),
-          tenantGroupsList()
-        ]);
-        setGroups(groupsResponse.results || []);
+        const tenantGroupsResponse = await tenantGroupsList();
         setTenantGroups(tenantGroupsResponse.results || []);
       } catch (error) {
-        console.error('Failed to load groups:', error);
+        console.error('Failed to load tenant groups:', error);
       } finally {
         setLoadingGroups(false);
       }
@@ -162,7 +165,6 @@ export default function UserForm({
           last_name: formData.last_name,
           password: formData.password,
           password_confirm: formData.password_confirm,
-          group_ids: formData.group_ids.length > 0 ? formData.group_ids : undefined,
           tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
           job_title: formData.job_title || undefined,
@@ -173,7 +175,6 @@ export default function UserForm({
           first_name: formData.first_name,
           last_name: formData.last_name,
           status: formData.status as any,
-          group_ids: formData.group_ids.length > 0 ? formData.group_ids : undefined,
           tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
           job_title: formData.job_title || undefined,
@@ -196,549 +197,217 @@ export default function UserForm({
   };
 
   return (
-    <div className="user-form-overlay">
-      <div className="user-form-modal">
-        <div className="user-form-header">
-          <h2>{mode === "create" ? "Add New User" : "Edit User"}</h2>
-          <button className="close-btn" onClick={onCancel}>
-            ×
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{mode === "create" ? "Add New User" : "Edit User"}</DialogTitle>
+          <DialogDescription>
+            {mode === "create"
+              ? "Create a new user account and assign them to groups"
+              : `Update user information for ${user?.email}`}
+          </DialogDescription>
+        </DialogHeader>
 
-        <form className="user-form" onSubmit={handleSubmit}>
-          {errors.submit && <div className="error-alert">{errors.submit}</div>}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Error Alert */}
+          {errors.submit && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertDescription>{errors.submit}</AlertDescription>
+            </Alert>
+          )}
 
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="email">Email Address *</label>
-              <input
-                type="email"
+          {/* Basic Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
                 id="email"
+                type="email"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
                 disabled={mode === "edit"}
-                className={errors.email ? "error" : ""}
                 placeholder="user@example.com"
+                className={errors.email ? "border-destructive" : ""}
               />
-              {errors.email && <div className="error-text">{errors.email}</div>}
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="first_name">First Name *</label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="first_name">First Name *</Label>
+              <Input
                 id="first_name"
+                type="text"
                 value={formData.first_name}
                 onChange={(e) => handleChange("first_name", e.target.value)}
-                className={errors.first_name ? "error" : ""}
                 placeholder="John"
+                className={errors.first_name ? "border-destructive" : ""}
               />
               {errors.first_name && (
-                <div className="error-text">{errors.first_name}</div>
+                <p className="text-sm text-destructive">{errors.first_name}</p>
               )}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="last_name">Last Name *</label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="last_name">Last Name *</Label>
+              <Input
                 id="last_name"
+                type="text"
                 value={formData.last_name}
                 onChange={(e) => handleChange("last_name", e.target.value)}
-                className={errors.last_name ? "error" : ""}
                 placeholder="Doe"
+                className={errors.last_name ? "border-destructive" : ""}
               />
               {errors.last_name && (
-                <div className="error-text">{errors.last_name}</div>
+                <p className="text-sm text-destructive">{errors.last_name}</p>
               )}
             </div>
 
-            <div className="form-section">
-              <h3>Group Assignment</h3>
-              
-              {/* TenantGroups - Primary group selection */}
-              <div className="form-group">
-                <label htmlFor="tenant-groups">Tenant Groups</label>
-                <div className="tenant-groups-selection">
-                  {(loadingGroups || loadingUserDetails) ? (
-                    <div className="loading-message">
-                      {loadingUserDetails ? 'Loading user details...' : 'Loading groups...'}
-                    </div>
-                  ) : (
-                    <div className="groups-grid">
-                      {tenantGroups.map((group) => {
-                        const isChecked = formData.tenant_group_ids.includes(group.id);
-                        
-                        return (
-                          <label key={group.id} className="group-checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                const currentGroups = [...formData.tenant_group_ids];
-                                if (e.target.checked) {
-                                  currentGroups.push(group.id);
-                                } else {
-                                  const index = currentGroups.indexOf(group.id);
-                                  if (index > -1) {
-                                    currentGroups.splice(index, 1);
-                                  }
-                                }
-                                handleChange("tenant_group_ids", currentGroups);
-                              }}
-                            />
-                            <div className="group-info">
-                              <span className="group-name">{group.name}</span>
-                              <span className="group-description">{group.description}</span>
-                              <span className="group-member-count">{group.member_count} members</span>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Legacy Django Groups - Keep for backward compatibility */}
-              <div className="form-group">
-                <label htmlFor="group">Legacy Django Group (Optional)</label>
-                <select
-                  id="group"
-                  value={formData.group_ids.length > 0 ? formData.group_ids[0] : ""}
-                  onChange={(e) => handleChange("group_ids", e.target.value ? [parseInt(e.target.value)] : [])}
-                  disabled={loadingGroups}
-                >
-                  <option value="">Select Django Group</option>
-                  {groups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-                <small className="help-text">Legacy Django groups - use TenantGroups above for new permissions</small>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="job_title">Job Title</label>
-              <input
-                type="text"
-                id="job_title"
-                value={formData.job_title}
-                onChange={(e) => handleChange("job_title", e.target.value)}
-                placeholder="Senior Developer, Sales Manager, etc."
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="phone_number">Phone Number</label>
-              <input
-                type="tel"
+            <div className="space-y-2">
+              <Label htmlFor="phone_number">Phone Number</Label>
+              <Input
                 id="phone_number"
+                type="tel"
                 value={formData.phone_number}
                 onChange={(e) => handleChange("phone_number", e.target.value)}
                 placeholder="+1 (555) 123-4567"
               />
             </div>
 
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="job_title">Job Title</Label>
+              <Input
+                id="job_title"
+                type="text"
+                value={formData.job_title}
+                onChange={(e) => handleChange("job_title", e.target.value)}
+                placeholder="Senior Developer, Sales Manager, etc."
+              />
+            </div>
+
             {mode === "edit" && (
-              <div className="form-group">
-                <label htmlFor="status">Status</label>
-                <select
-                  id="status"
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
                   value={formData.status?.toString() || ""}
-                  onChange={(e) => handleChange("status", e.target.value)}
+                  onValueChange={(value) => handleChange("status", value)}
                 >
-                  {statusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
 
+          {/* Password Section (Create Mode Only) */}
           {mode === "create" && (
-            <div className="form-section">
-              <h3>Password</h3>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="password">Password *</label>
-                  <input
-                    type="password"
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-sm font-semibold">Password</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
                     id="password"
+                    type="password"
                     value={formData.password}
                     onChange={(e) => handleChange("password", e.target.value)}
-                    className={errors.password ? "error" : ""}
                     placeholder="Minimum 8 characters"
+                    className={errors.password ? "border-destructive" : ""}
                   />
                   {errors.password && (
-                    <div className="error-text">{errors.password}</div>
+                    <p className="text-sm text-destructive">{errors.password}</p>
                   )}
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="password_confirm">Confirm Password *</label>
-                  <input
-                    type="password"
+                <div className="space-y-2">
+                  <Label htmlFor="password_confirm">Confirm Password *</Label>
+                  <Input
                     id="password_confirm"
+                    type="password"
                     value={formData.password_confirm}
-                    onChange={(e) =>
-                      handleChange("password_confirm", e.target.value)
-                    }
-                    className={errors.password_confirm ? "error" : ""}
+                    onChange={(e) => handleChange("password_confirm", e.target.value)}
                     placeholder="Re-enter password"
+                    className={errors.password_confirm ? "border-destructive" : ""}
                   />
                   {errors.password_confirm && (
-                    <div className="error-text">{errors.password_confirm}</div>
+                    <p className="text-sm text-destructive">{errors.password_confirm}</p>
                   )}
                 </div>
               </div>
             </div>
           )}
 
-          {mode === "edit" && (
-            <div className="user-status-section">
-              <h4>User Status</h4>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={formData.is_active}
-                  onChange={(e) =>
-                    handleChange("is_active", e.target.checked)
-                  }
+          {/* Group Assignment Section */}
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="text-sm font-semibold">Group Assignment</h3>
+            <div className="space-y-2">
+              <Label htmlFor="tenant-groups">Tenant Groups</Label>
+              {(loadingGroups || loadingUserDetails) ? (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner className="h-6 w-6 mr-2" />
+                  <p className="text-sm text-muted-foreground">
+                    {loadingUserDetails ? 'Loading user details...' : 'Loading groups...'}
+                  </p>
+                </div>
+              ) : (
+                <MultiGroupSelection
+                  groups={tenantGroups}
+                  selectedGroupIds={formData.tenant_group_ids}
+                  onChange={(groupIds) => handleChange("tenant_group_ids", groupIds)}
+                  disabled={isSubmitting}
+                  placeholder="Select groups to assign to this user..."
                 />
-                <span>User is active</span>
-              </label>
+              )}
+            </div>
+          </div>
+
+          {/* User Active Status (Edit Mode Only) */}
+          {mode === "edit" && (
+            <div className="space-y-4 pt-4 border-t">
+              <h3 className="text-sm font-semibold">User Status</h3>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_active"
+                  checked={formData.is_active}
+                  onCheckedChange={(checked) => handleChange("is_active", checked as boolean)}
+                />
+                <Label htmlFor="is_active" className="font-normal cursor-pointer">
+                  User is active
+                </Label>
+              </div>
             </div>
           )}
 
-          <div className="form-actions">
-            <button
+          <DialogFooter>
+            <Button
               type="button"
-              className="btn btn-secondary"
-              onClick={onCancel}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
+              variant="outline"
+              onClick={onClose}
               disabled={isSubmitting}
             >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
               {isSubmitting
                 ? "Saving..."
                 : mode === "create"
                   ? "Create User"
                   : "Update User"}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-
-      <style jsx>{`
-        .user-form-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-color: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: 20px;
-        }
-
-        .user-form-modal {
-          background: white;
-          border-radius: 8px;
-          width: 100%;
-          max-width: 800px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .user-form-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 20px 24px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .user-form-header h2 {
-          margin: 0;
-          font-size: 20px;
-          font-weight: 600;
-          color: #1f2937;
-        }
-
-        .close-btn {
-          background: none;
-          border: none;
-          font-size: 24px;
-          cursor: pointer;
-          color: #6b7280;
-          padding: 0;
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 4px;
-        }
-
-        .close-btn:hover {
-          background-color: #f3f4f6;
-          color: #374151;
-        }
-
-        .user-form {
-          padding: 24px;
-        }
-
-        .error-alert {
-          background-color: #fee2e2;
-          color: #dc2626;
-          padding: 12px;
-          border-radius: 6px;
-          margin-bottom: 20px;
-          border: 1px solid #fecaca;
-        }
-
-        .form-section {
-          margin-bottom: 24px;
-        }
-
-        .form-section h3 {
-          margin: 0 0 16px 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: #374151;
-          border-bottom: 1px solid #e5e7eb;
-          padding-bottom: 8px;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 16px;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .form-group label {
-          font-weight: 500;
-          color: #374151;
-          margin-bottom: 4px;
-          font-size: 14px;
-        }
-
-        .form-group input,
-        .form-group select {
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 14px;
-          transition: border-color 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .form-group input.error,
-        .form-group select.error {
-          border-color: #dc2626;
-        }
-
-        .error-text {
-          color: #dc2626;
-          font-size: 12px;
-          margin-top: 4px;
-        }
-
-        .permissions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 12px;
-        }
-
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          padding: 8px;
-          border-radius: 4px;
-          transition: background-color 0.2s;
-        }
-
-        .checkbox-label:hover {
-          background-color: #f3f4f6;
-        }
-
-        .checkbox-label input[type="checkbox"] {
-          margin: 0;
-        }
-
-        .checkbox-label span {
-          font-size: 14px;
-          color: #374151;
-        }
-
-        .tenant-groups-selection {
-          margin-top: 8px;
-        }
-
-        .loading-message {
-          color: #6b7280;
-          font-style: italic;
-          padding: 12px;
-          text-align: center;
-        }
-
-        .groups-grid {
-          display: grid;
-          gap: 12px;
-          max-height: 300px;
-          overflow-y: auto;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          padding: 12px;
-          background-color: #f9fafb;
-        }
-
-        .group-checkbox-label {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 12px;
-          border: 1px solid #e5e7eb;
-          border-radius: 6px;
-          background-color: white;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .group-checkbox-label:hover {
-          background-color: #f3f4f6;
-          border-color: #3b82f6;
-          transform: translateY(-1px);
-        }
-
-        .group-checkbox-label input[type="checkbox"] {
-          margin: 0;
-          margin-top: 2px;
-          flex-shrink: 0;
-        }
-
-        .group-info {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          flex: 1;
-        }
-
-        .group-name {
-          font-weight: 600;
-          color: #374151;
-          font-size: 14px;
-        }
-
-        .group-description {
-          font-size: 12px;
-          color: #6b7280;
-          line-height: 1.4;
-        }
-
-        .group-member-count {
-          font-size: 11px;
-          color: #9ca3af;
-          font-weight: 500;
-        }
-
-        .help-text {
-          font-size: 12px;
-          color: #6b7280;
-          margin-top: 4px;
-          font-style: italic;
-        }
-
-        .form-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 24px;
-          padding-top: 20px;
-          border-top: 1px solid #e5e7eb;
-        }
-
-        .btn {
-          padding: 10px 20px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          transition: background-color 0.2s;
-        }
-
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .btn-primary {
-          background-color: #3b82f6;
-          color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          background-color: #2563eb;
-        }
-
-        .btn-secondary {
-          background-color: #f3f4f6;
-          color: #374151;
-          border: 1px solid #d1d5db;
-        }
-
-        .btn-secondary:hover {
-          background-color: #e5e7eb;
-        }
-
-        @media (max-width: 768px) {
-          .user-form-modal {
-            margin: 0;
-            border-radius: 0;
-            max-height: 100vh;
-          }
-
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .permissions-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .form-actions {
-            flex-direction: column-reverse;
-          }
-        }
-      `}</style>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

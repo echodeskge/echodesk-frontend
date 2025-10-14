@@ -229,24 +229,22 @@ export default function UserManagement() {
         onPageChange={handlePageChange}
       />
 
-      {showCreateForm && (
-        <UserForm
-          mode="create"
-          onSubmit={handleCreateUser}
-          onCancel={() => setShowCreateForm(false)}
-        />
-      )}
+      <UserForm
+        mode="create"
+        open={showCreateForm}
+        onSubmit={handleCreateUser}
+        onClose={() => setShowCreateForm(false)}
+      />
 
-      {editingUser && (
-        <UserForm
-          mode="edit"
-          user={editingUser}
-          onSubmit={(userData: UserCreate | UserUpdate) =>
-            handleUpdateUser(editingUser.id, userData)
-          }
-          onCancel={() => setEditingUser(null)}
-        />
-      )}
+      <UserForm
+        mode="edit"
+        user={editingUser || undefined}
+        open={editingUser !== null}
+        onSubmit={(userData: UserCreate | UserUpdate) =>
+          editingUser ? handleUpdateUser(editingUser.id, userData) : Promise.resolve()
+        }
+        onClose={() => setEditingUser(null)}
+      />
 
       {viewingUser && (
         <UserDetailsModal

@@ -781,52 +781,17 @@ export default function KanbanBoard({
         />
       </DndProvider>
       
-      {editingBoardId && (
-        <BoardStatusEditor
-          boardId={editingBoardId}
-          onClose={handleCloseEditor}
-        />
-      )}
+      <BoardStatusEditor
+        boardId={editingBoardId}
+        open={editingBoardId !== null}
+        onClose={handleCloseEditor}
+      />
 
-      {managingBoardUsersId && (
-        <>
-          {/* Backdrop */}
-          <div
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: "rgba(0, 0, 0, 0.5)",
-              zIndex: 999,
-            }}
-            onClick={handleCloseUserManager}
-          />
-          
-          {/* Modal */}
-          <div
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              background: "white",
-              borderRadius: "12px",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-              zIndex: 1000,
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-              overflow: "auto",
-            }}
-          >
-            <BoardUserManager
-              boardId={managingBoardUsersId}
-              onClose={handleCloseUserManager}
-            />
-          </div>
-        </>
-      )}
+      <BoardUserManager
+        boardId={managingBoardUsersId}
+        open={managingBoardUsersId !== null}
+        onClose={handleCloseUserManager}
+      />
     </>
   );
 }

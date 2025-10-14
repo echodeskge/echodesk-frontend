@@ -198,7 +198,11 @@ export default function MultiUserAssignment({
         </DropdownMenuTrigger>
 
         {/* Dropdown Menu */}
-        <DropdownMenuContent className="w-full bg-white border-2 border-gray-200 shadow-lg p-0" align="start" style={{ backgroundColor: 'white' }}>
+        <DropdownMenuContent
+          className="bg-white border-2 border-gray-200 shadow-lg p-0"
+          align="start"
+          style={{ backgroundColor: 'white', width: 'var(--radix-dropdown-menu-trigger-width)', minWidth: '400px' }}
+        >
           {/* Search Input */}
           <div className="p-3 border-b border-gray-200">
             <div className="relative">

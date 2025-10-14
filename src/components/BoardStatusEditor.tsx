@@ -14,15 +14,45 @@ import {
   TicketColumnUpdate,
   Board,
 } from "../api/generated/interfaces";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
+  Settings,
+  Plus,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  CheckSquare,
+  Star
+} from "lucide-react";
 
 interface BoardStatusEditorProps {
-  boardId: number;
+  boardId: number | null;
+  open: boolean;
   onClose: () => void;
   onStatusChange?: () => void;
 }
 
 const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   boardId,
+  open,
   onClose,
   onStatusChange,
 }) => {
@@ -33,7 +63,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   const [success, setSuccess] = useState<string | null>(null);
 
   // Dialog states
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [editingColumn, setEditingColumn] = useState<TicketColumn | null>(null);
 
   // Form states
@@ -48,6 +78,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   });
 
   const fetchBoard = async () => {
+    if (!boardId) return;
     try {
       const boardData = await boardsRetrieve(boardId.toString());
       setBoard(boardData);
@@ -57,6 +88,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   };
 
   const fetchColumns = async () => {
+    if (!boardId) return;
     setLoading(true);
     setError(null);
 
@@ -71,9 +103,11 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   };
 
   useEffect(() => {
-    fetchBoard();
-    fetchColumns();
-  }, [boardId]);
+    if (open && boardId) {
+      fetchBoard();
+      fetchColumns();
+    }
+  }, [boardId, open]);
 
   const resetForm = () => {
     setFormData({
@@ -90,7 +124,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
 
   const openCreateDialog = () => {
     resetForm();
-    setDialogOpen(true);
+    setFormDialogOpen(true);
   };
 
   const openEditDialog = (column: TicketColumn) => {
@@ -104,16 +138,18 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
       track_time: column.track_time || false,
     });
     setEditingColumn(column);
-    setDialogOpen(true);
+    setFormDialogOpen(true);
   };
 
-  const closeDialog = () => {
-    setDialogOpen(false);
+  const closeFormDialog = () => {
+    setFormDialogOpen(false);
     resetForm();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!boardId) return;
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -151,7 +187,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
 
       // Refresh columns list
       await fetchColumns();
-      closeDialog();
+      closeFormDialog();
       onStatusChange?.();
 
       // Clear success message after 3 seconds
@@ -182,467 +218,250 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   };
 
   return (
-    <div style={{ 
-      position: "fixed", 
-      top: 0, 
-      left: 0, 
-      right: 0, 
-      bottom: 0, 
-      background: "rgba(0, 0, 0, 0.5)", 
-      zIndex: 1000,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}>
-      <div style={{ 
-        background: "white", 
-        borderRadius: "12px", 
-        width: "90vw", 
-        maxWidth: "800px", 
-        maxHeight: "90vh", 
-        overflow: "auto",
-        padding: "20px" 
-      }}>
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "20px",
-            borderBottom: "1px solid #e9ecef",
-            paddingBottom: "15px",
-          }}
-        >
-          <div>
-            <h2 style={{ margin: 0, color: "#333" }}>
-              Edit Statuses - {board?.name}
-            </h2>
-            <p style={{ margin: "5px 0 0 0", color: "#666", fontSize: "14px" }}>
-              Manage ticket status columns for this board
-            </p>
-          </div>
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button
-              onClick={openCreateDialog}
-              style={{
-                backgroundColor: "#007bff",
-                color: "white",
-                border: "none",
-                padding: "10px 16px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              + Create Status
-            </button>
-            <button
-              onClick={onClose}
-              style={{
-                backgroundColor: "#6c757d",
-                color: "white",
-                border: "none",
-                padding: "10px 16px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: "500",
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-
-        {/* Status Messages */}
-        {error && (
-          <div
-            style={{
-              backgroundColor: "#f8d7da",
-              color: "#721c24",
-              padding: "12px",
-              borderRadius: "6px",
-              marginBottom: "20px",
-              border: "1px solid #f5c6cb",
-            }}
-          >
-            {error}
-          </div>
-        )}
-
-        {success && (
-          <div
-            style={{
-              backgroundColor: "#d4edda",
-              color: "#155724",
-              padding: "12px",
-              borderRadius: "6px",
-              marginBottom: "20px",
-              border: "1px solid #c3e6cb",
-            }}
-          >
-            {success}
-          </div>
-        )}
-
-        {/* Loading State */}
-        {loading && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px",
-              color: "#666",
-            }}
-          >
-            <div
-              style={{
-                width: "32px",
-                height: "32px",
-                border: "3px solid #f3f3f3",
-                borderTop: "3px solid #007bff",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-                margin: "0 auto 16px",
-              }}
-            ></div>
-            Loading columns...
-          </div>
-        )}
-
-        {/* Columns List */}
-        {!loading && (
-          <>
-            {columns.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "40px",
-                  color: "#666",
-                }}
-              >
-                <p>No status columns found for this board.</p>
-                <button
-                  onClick={openCreateDialog}
-                  style={{
-                    backgroundColor: "#007bff",
-                    color: "white",
-                    border: "none",
-                    padding: "10px 20px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                  }}
-                >
-                  Create First Status
-                </button>
+    <>
+      {/* Main Status Editor Dialog */}
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-[850px] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="border-b pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  <DialogTitle>Edit Board Statuses</DialogTitle>
+                </div>
+                <DialogDescription className="mt-1">
+                  Manage ticket status columns for <strong>{board?.name}</strong>
+                </DialogDescription>
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {columns
-                  .sort((a, b) => (a.position || 0) - (b.position || 0))
-                  .map((column) => (
-                    <div
-                      key={column.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "16px",
-                        backgroundColor: "#f8f9fa",
-                        borderRadius: "8px",
-                        border: "1px solid #dee2e6",
-                      }}
-                    >
-                      {/* Color indicator */}
-                      <div
-                        style={{
-                          width: "16px",
-                          height: "16px",
-                          borderRadius: "50%",
-                          backgroundColor: column.color || "#6B7280",
-                          marginRight: "12px",
-                        }}
-                      />
+              <Button onClick={openCreateDialog} size="sm">
+                <Plus className="h-4 w-4 mr-1" />
+                Create Status
+              </Button>
+            </div>
+          </DialogHeader>
 
-                      {/* Column info */}
-                      <div style={{ flex: 1 }}>
-                        <h4 style={{ margin: "0 0 4px 0", color: "#333" }}>
-                          {column.name}
-                          {column.is_default && (
-                            <span
-                              style={{
-                                marginLeft: "8px",
-                                fontSize: "12px",
-                                backgroundColor: "#007bff",
-                                color: "white",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              DEFAULT
-                            </span>
-                          )}
-                          {column.is_closed_status && (
-                            <span
-                              style={{
-                                marginLeft: "8px",
-                                fontSize: "12px",
-                                backgroundColor: "#28a745",
-                                color: "white",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              CLOSED
-                            </span>
-                          )}
-                          {column.track_time && (
-                            <span
-                              style={{
-                                marginLeft: "8px",
-                                fontSize: "12px",
-                                backgroundColor: "#fd7e14",
-                                color: "white",
-                                padding: "2px 6px",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              TRACK TIME
-                            </span>
-                          )}
-                        </h4>
-                        <p
-                          style={{
-                            margin: 0,
-                            color: "#666",
-                            fontSize: "14px",
-                          }}
-                        >
-                          {column.description || "No description"}
-                        </p>
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#9ca3af",
-                            marginTop: "4px",
-                          }}
-                        >
-                          Position: {column.position} | Color: {column.color} | {column.tickets_count} tickets
-                        </div>
-                      </div>
+          <div className="flex-1 overflow-y-auto py-4">
+            {/* Status Messages */}
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <XCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-                      {/* Actions */}
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button
-                          onClick={() => openEditDialog(column)}
-                          style={{
-                            backgroundColor: "#ffc107",
-                            color: "#212529",
-                            border: "none",
-                            padding: "6px 12px",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "500",
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(column.id)}
-                          style={{
-                            backgroundColor: "#dc3545",
-                            color: "white",
-                            border: "none",
-                            padding: "6px 12px",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "500",
-                          }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+            {success && (
+              <Alert className="mb-4 bg-green-50 border-green-200">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  {success}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Loading State */}
+            {loading && (
+              <div className="text-center py-10">
+                <Spinner className="h-8 w-8 mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading columns...</p>
               </div>
             )}
-          </>
-        )}
 
-        {/* Form Dialog */}
-        {dialogOpen && (
-          <div style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.5)",
-            zIndex: 2000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}>
-            <div style={{
-              background: "white",
-              borderRadius: "12px",
-              width: "90vw",
-              maxWidth: "500px",
-              padding: "20px",
-            }}>
-              <h3 style={{ marginTop: 0, marginBottom: "20px" }}>
-                {editingColumn ? "Edit Status Column" : "Create New Status Column"}
-              </h3>
-
-              <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: "16px" }}>
-                  <label style={{ display: "block", marginBottom: "4px", fontWeight: "500" }}>
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                      fontSize: "14px",
-                    }}
-                  />
-                </div>
-
-                <div style={{ marginBottom: "16px" }}>
-                  <label style={{ display: "block", marginBottom: "4px", fontWeight: "500" }}>
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                      fontSize: "14px",
-                      resize: "vertical",
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                  <div>
-                    <label style={{ display: "block", marginBottom: "4px", fontWeight: "500" }}>
-                      Color
-                    </label>
-                    <input
-                      type="color"
-                      value={formData.color}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      style={{
-                        width: "100%",
-                        padding: "4px",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                        height: "40px",
-                      }}
-                    />
+            {/* Columns List */}
+            {!loading && (
+              <>
+                {columns.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-muted-foreground mb-4">
+                      No status columns found for this board.
+                    </p>
+                    <Button onClick={openCreateDialog}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create First Status
+                    </Button>
                   </div>
+                ) : (
+                  <div className="space-y-3">
+                    {columns
+                      .sort((a, b) => (a.position || 0) - (b.position || 0))
+                      .map((column) => (
+                        <Card key={column.id} className="bg-muted/30">
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              {/* Color indicator */}
+                              <div
+                                className="w-4 h-4 rounded-full mt-1 flex-shrink-0"
+                                style={{ backgroundColor: column.color || "#6B7280" }}
+                              />
 
-                  <div>
-                    <label style={{ display: "block", marginBottom: "4px", fontWeight: "500" }}>
-                      Position
-                    </label>
-                    <input
-                      type="number"
-                      value={formData.position}
-                      onChange={(e) => setFormData({ ...formData, position: parseInt(e.target.value) || 0 })}
-                      min={0}
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                        fontSize: "14px",
-                      }}
-                    />
+                              {/* Column info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <h4 className="font-semibold">{column.name}</h4>
+                                  {column.is_default && (
+                                    <Badge variant="default">
+                                      <Star className="h-3 w-3 mr-1" />
+                                      Default
+                                    </Badge>
+                                  )}
+                                  {column.is_closed_status && (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                      <CheckSquare className="h-3 w-3 mr-1" />
+                                      Closed
+                                    </Badge>
+                                  )}
+                                  {column.track_time && (
+                                    <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      Track Time
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground mb-1">
+                                  {column.description || "No description"}
+                                </p>
+                                <div className="text-xs text-muted-foreground">
+                                  Position: {column.position} • Color: {column.color} • {column.tickets_count} tickets
+                                </div>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex gap-2 flex-shrink-0">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openEditDialog(column)}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDelete(column.id)}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                   </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.is_default}
-                      onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
-                    />
-                    Default Status
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.is_closed_status}
-                      onChange={(e) => setFormData({ ...formData, is_closed_status: e.target.checked })}
-                    />
-                    Closed Status
-                  </label>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.track_time}
-                      onChange={(e) => setFormData({ ...formData, track_time: e.target.checked })}
-                    />
-                    Track Time
-                  </label>
-                </div>
-
-                <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-                  <button
-                    type="button"
-                    onClick={closeDialog}
-                    style={{
-                      backgroundColor: "#6c757d",
-                      color: "white",
-                      border: "none",
-                      padding: "10px 20px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    style={{
-                      backgroundColor: "#007bff",
-                      color: "white",
-                      border: "none",
-                      padding: "10px 20px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      opacity: loading ? 0.6 : 1,
-                    }}
-                  >
-                    {loading ? "Saving..." : editingColumn ? "Update" : "Create"}
-                  </button>
-                </div>
-              </form>
-            </div>
+                )}
+              </>
+            )}
           </div>
-        )}
-      </div>
-    </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Form Dialog for Create/Edit */}
+      <Dialog open={formDialogOpen} onOpenChange={closeFormDialog}>
+        <DialogContent className="max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingColumn ? "Edit Status Column" : "Create New Status Column"}
+            </DialogTitle>
+            <DialogDescription>
+              Configure the properties of this status column
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  placeholder="e.g., In Progress, Done"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  placeholder="Describe what this status means"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="color">Color</Label>
+                  <Input
+                    id="color"
+                    type="color"
+                    value={formData.color}
+                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    className="h-10"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="position">Position</Label>
+                  <Input
+                    id="position"
+                    type="number"
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: parseInt(e.target.value) || 0 })}
+                    min={0}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_default"
+                    checked={formData.is_default}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_default: checked as boolean })}
+                  />
+                  <Label htmlFor="is_default" className="font-normal cursor-pointer">
+                    Default Status (new tickets will use this)
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="is_closed_status"
+                    checked={formData.is_closed_status}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_closed_status: checked as boolean })}
+                  />
+                  <Label htmlFor="is_closed_status" className="font-normal cursor-pointer">
+                    Closed Status (tickets here are considered completed)
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="track_time"
+                    checked={formData.track_time}
+                    onCheckedChange={(checked) => setFormData({ ...formData, track_time: checked as boolean })}
+                  />
+                  <Label htmlFor="track_time" className="font-normal cursor-pointer">
+                    Track Time (record how long tickets spend in this status)
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={closeFormDialog}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading && <Spinner className="mr-2 h-4 w-4" />}
+                {loading ? "Saving..." : editingColumn ? "Update" : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

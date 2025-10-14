@@ -36,6 +36,7 @@ export default function BoardSwitcher({
   // Use boards from props if available, otherwise fallback to empty array
   const boards = propsBoards || [];
   const loading = !propsBoards;
+  const [open, setOpen] = useState(false);
 
   const selectedBoard = boards.find(board => board.id === selectedBoardId);
 
@@ -49,7 +50,7 @@ export default function BoardSwitcher({
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-full max-w-xs justify-between h-auto py-2">
           <div className="flex items-center gap-2">
@@ -111,6 +112,7 @@ export default function BoardSwitcher({
                       className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setOpen(false);
                         onEditBoardStatuses(board.id);
                       }}
                     >
@@ -126,6 +128,7 @@ export default function BoardSwitcher({
                       className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setOpen(false);
                         onManageBoardUsers(board.id);
                       }}
                     >
