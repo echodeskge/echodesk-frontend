@@ -8,6 +8,7 @@ import { FileText, CheckCircle2, Eye } from "lucide-react";
 import type { Ticket, TicketFormSubmission } from "@/api/generated/interfaces";
 import { ChildFormFillDialog } from "./ChildFormFillDialog";
 import { FormSubmissionViewDialog } from "./FormSubmissionViewDialog";
+import { useTranslations } from 'next-intl';
 
 interface TicketFormsSectionProps {
   ticket: Ticket;
@@ -15,6 +16,7 @@ interface TicketFormsSectionProps {
 }
 
 export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSectionProps) {
+  const t = useTranslations('tickets.detail');
   const [selectedChildFormId, setSelectedChildFormId] = useState<number | null>(null);
   const [childFormDialogOpen, setChildFormDialogOpen] = useState(false);
   const [viewSubmission, setViewSubmission] = useState<TicketFormSubmission | null>(null);
@@ -59,7 +61,7 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Forms
+            {t('forms')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -68,8 +70,8 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
             <div className="flex items-center justify-between mb-2">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-sm">Parent Form</h4>
-                  <Badge variant="outline">Completed</Badge>
+                  <h4 className="font-semibold text-sm">{t('parentForm')}</h4>
+                  <Badge variant="outline">{t('completed')}</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {parentFormSubmission?.form?.title}
@@ -81,7 +83,7 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
                 onClick={() => setViewSubmission(parentFormSubmission)}
               >
                 <Eye className="h-4 w-4 mr-2" />
-                View
+                {t('view')}
               </Button>
             </div>
           </div>
@@ -89,7 +91,7 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
           {/* Child Forms */}
           {hasChildForms && (
             <div className="space-y-3">
-              <h4 className="font-semibold text-sm">Child Forms</h4>
+              <h4 className="font-semibold text-sm">{t('childForms')}</h4>
               {parentFormSubmission?.form?.child_forms?.map((childForm) => {
                 const isSubmitted = submittedChildFormIds.has(childForm.id);
                 const childSubmission = formSubmissions.find(sub => sub.form?.id === childForm.id);
@@ -103,7 +105,7 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
                           {isSubmitted && (
                             <Badge variant="outline" className="text-green-600 border-green-600">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Completed
+                              {t('completed')}
                             </Badge>
                           )}
                         </div>
@@ -121,11 +123,11 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
                             onClick={() => setViewSubmission(childSubmission || null)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
-                            View
+                            {t('view')}
                           </Button>
                         ) : (
                           <Button size="sm" onClick={() => handleFillChildForm(childForm.id)}>
-                            Fill Form
+                            {t('fillForm')}
                           </Button>
                         )}
                       </div>

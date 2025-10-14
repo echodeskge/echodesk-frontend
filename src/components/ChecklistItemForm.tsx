@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { checklistItemsCreate, checklistItemsUpdate } from '@/api/generated/api';
-import type { ChecklistItem, PatchedChecklistItem } from '@/api/generated/interfaces';
+import type { ChecklistItem, PatchedChecklistItem} from '@/api/generated/interfaces';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useTranslations } from 'next-intl';
 
 interface ChecklistItemFormProps {
   ticketId?: number;
@@ -15,13 +16,15 @@ interface ChecklistItemFormProps {
   onCancel?: () => void;
 }
 
-export default function ChecklistItemForm({ 
-  ticketId, 
-  subTicketId, 
-  checklistItem, 
-  onSave, 
-  onCancel 
+export default function ChecklistItemForm({
+  ticketId,
+  subTicketId,
+  checklistItem,
+  onSave,
+  onCancel
 }: ChecklistItemFormProps) {
+  const t = useTranslations('tickets.detail');
+  const tCommon = useTranslations('common');
   const [text, setText] = useState(checklistItem?.text || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -76,7 +79,7 @@ export default function ChecklistItemForm({
   return (
     <div className="p-4">
       <h4 className="text-sm font-semibold text-gray-800 mb-3">
-        {isEditing ? 'Edit Checklist Item' : 'Add Checklist Item'}
+        {isEditing ? t('editChecklistItem') : t('addChecklistItem')}
       </h4>
 
       {error && (
@@ -88,14 +91,14 @@ export default function ChecklistItemForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="checklist-text" className="text-sm">
-            Item Text
+            {t('itemText')}
           </Label>
           <Input
             id="checklist-text"
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Enter checklist item..."
+            placeholder={`${t('addChecklistItem')}...`}
             required
             className="text-sm"
           />
@@ -109,7 +112,7 @@ export default function ChecklistItemForm({
               size="sm"
               onClick={onCancel}
             >
-              Cancel
+              {tCommon('cancel')}
             </Button>
           )}
 
@@ -118,7 +121,7 @@ export default function ChecklistItemForm({
             size="sm"
             disabled={loading || !text.trim()}
           >
-            {loading ? 'Saving...' : (isEditing ? 'Update' : 'Add')}
+            {loading ? t('saving') : (isEditing ? t('update') : tCommon('add'))}
           </Button>
         </div>
       </form>

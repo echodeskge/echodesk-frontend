@@ -6,6 +6,7 @@ import type { ChecklistItem } from '@/api/generated/interfaces';
 import ChecklistItemForm from './ChecklistItemForm';
 import { Button } from './ui/button';
 import { Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface ChecklistItemListProps {
   ticketId?: number;
@@ -15,13 +16,15 @@ interface ChecklistItemListProps {
   showAddButton?: boolean;
 }
 
-export default function ChecklistItemList({ 
-  ticketId, 
-  subTicketId, 
-  items, 
+export default function ChecklistItemList({
+  ticketId,
+  subTicketId,
+  items,
   onItemsChange,
   showAddButton = true
 }: ChecklistItemListProps) {
+  const t = useTranslations('tickets');
+  const tDetail = useTranslations('tickets.detail');
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
 
@@ -39,7 +42,7 @@ export default function ChecklistItemList({
   };
 
   const handleDelete = async (item: ChecklistItem) => {
-    if (confirm('Are you sure you want to delete this checklist item?')) {
+    if (confirm(tDetail('deleteChecklistItem'))) {
       try {
         await checklistItemsDestroy(item.id.toString());
         if (onItemsChange) {
@@ -75,7 +78,7 @@ export default function ChecklistItemList({
     <div className="mt-4">
       <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
         <h5 className="text-sm font-semibold text-gray-800 m-0">
-          Checklist ({completedCount}/{items.length})
+          {t('checklist')} ({completedCount}/{items.length})
         </h5>
         {showAddButton && (
           <Button
@@ -84,7 +87,7 @@ export default function ChecklistItemList({
             variant="default"
           >
             <Plus className="h-4 w-4 mr-1" />
-            Add Item
+            {tDetail('addItem')}
           </Button>
         )}
       </div>
@@ -144,7 +147,7 @@ export default function ChecklistItemList({
 
       {items.length === 0 && (
         <div className="bg-gray-50 border border-dashed border-gray-300 rounded p-4 text-center text-gray-500 text-xs">
-          No checklist items yet. {showAddButton && 'Click "Add Item" to create one.'}
+          {tDetail('noChecklistItems')}
         </div>
       )}
     </div>

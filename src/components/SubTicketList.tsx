@@ -3,6 +3,7 @@
 // import { useState } from 'react';
 import { subTicketsDestroy, subTicketsToggleCompletionPartialUpdate } from '@/api/generated/api';
 import type { SubTicket } from '@/api/generated/interfaces';
+import { useTranslations } from 'next-intl';
 // import SubTicketForm from './SubTicketForm';
 // import { Button } from './ui/button';
 // import { Plus } from 'lucide-react';
@@ -14,6 +15,9 @@ interface SubTicketListProps {
 }
 
 export default function SubTicketList({ parentTicketId, subTickets, onSubTicketsChange }: SubTicketListProps) {
+  const t = useTranslations('tickets');
+  const tDetail = useTranslations('tickets.detail');
+  const tCommon = useTranslations('common');
   // const [showForm, setShowForm] = useState(false);
   // const [editingSubTicket, setEditingSubTicket] = useState<SubTicket | null>(null);
 
@@ -31,7 +35,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
   };
 
   const handleDelete = async (subTicket: SubTicket) => {
-    if (confirm('Are you sure you want to delete this sub-ticket?')) {
+    if (confirm(tDetail('deleteSubTicket'))) {
       try {
         await subTicketsDestroy(subTicket.id.toString());
         if (onSubTicketsChange) {
@@ -75,7 +79,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
     <div className="mt-5">
       <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
         <h4 className="text-base font-semibold text-gray-800 m-0">
-          Sub-Tickets ({subTickets.length})
+          {t('subTickets')} ({subTickets.length})
         </h4>
       </div>
 
@@ -146,7 +150,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
                   onClick={() => handleDelete(subTicket)}
                   className="bg-white text-red-600 border border-red-600 px-2 py-1 rounded text-xs cursor-pointer hover:bg-red-50"
                 >
-                  Delete
+                  {tCommon('delete')}
                 </button>
               </div>
             </div>
@@ -156,7 +160,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
 
       {subTickets.length === 0 && (
         <div className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-5 text-center text-gray-500 text-sm">
-          No sub-tickets yet. Click "Add Sub-Ticket" to create one.
+          {tDetail('noSubTickets')}
         </div>
       )}
     </div>
