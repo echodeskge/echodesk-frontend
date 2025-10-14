@@ -61,54 +61,30 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return '#e74c3c';
-      case 'high': return '#e67e22';
-      case 'medium': return '#f39c12';
-      case 'low': return '#27ae60';
-      default: return '#95a5a6';
+      case 'critical': return 'bg-red-600';
+      case 'high': return 'bg-orange-600';
+      case 'medium': return 'bg-yellow-600';
+      case 'low': return 'bg-green-600';
+      default: return 'bg-gray-500';
     }
   };
 
   return (
-    <div style={{ marginTop: '20px' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '15px'
-      }}>
-        <h4 style={{
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#2c3e50',
-          margin: 0
-        }}>
+    <div className="mt-5">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h4 className="text-base font-semibold text-gray-800 m-0">
           Sub-Tickets ({subTickets.length})
         </h4>
         <button
           onClick={() => setShowForm(true)}
-          style={{
-            background: '#3498db',
-            color: 'white',
-            border: 'none',
-            padding: '6px 12px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            fontWeight: '500',
-            cursor: 'pointer'
-          }}
+          className="bg-blue-500 text-white border-none px-3 py-1.5 rounded text-xs font-medium cursor-pointer hover:bg-blue-600"
         >
           + Add Sub-Ticket
         </button>
       </div>
 
       {showForm && (
-        <div style={{
-          background: '#f8f9fa',
-          border: '1px solid #dee2e6',
-          borderRadius: '6px',
-          marginBottom: '15px'
-        }}>
+        <div className="bg-gray-50 border border-gray-300 rounded-md mb-4">
           <SubTicketForm
             parentTicketId={parentTicketId}
             subTicket={editingSubTicket || undefined}
@@ -118,84 +94,39 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className="flex flex-col gap-2.5">
         {subTickets.map((subTicket) => (
           <div
             key={subTicket.id}
-            style={{
-              background: 'white',
-              border: '1px solid #e1e5e9',
-              borderRadius: '6px',
-              padding: '15px',
-              marginBottom: '10px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-            }}
+            className="bg-white border border-gray-200 rounded-md p-3 shadow-sm"
           >
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              marginBottom: '10px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '5px'
-                }}>
+            <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <button
                     onClick={() => handleToggleCompletion(subTicket)}
-                    style={{
-                      background: subTicket.is_completed ? '#27ae60' : 'white',
-                      color: subTicket.is_completed ? 'white' : '#27ae60',
-                      border: '2px solid #27ae60',
-                      borderRadius: '50%',
-                      width: '20px',
-                      height: '20px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      padding: 0
-                    }}
+                    className={`${
+                      subTicket.is_completed ? 'bg-green-600 text-white' : 'bg-white text-green-600'
+                    } border-2 border-green-600 rounded-full w-5 h-5 flex-shrink-0 cursor-pointer flex items-center justify-center text-xs p-0`}
                   >
                     {subTicket.is_completed && '✓'}
                   </button>
-                  
-                  <h5 style={{
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: subTicket.is_completed ? '#6c757d' : '#2c3e50',
-                    margin: 0,
-                    textDecoration: subTicket.is_completed ? 'line-through' : 'none'
-                  }}>
+
+                  <h5 className={`text-sm font-semibold m-0 break-words ${
+                    subTicket.is_completed ? 'text-gray-500 line-through' : 'text-gray-800'
+                  }`}>
                     {subTicket.title}
                   </h5>
-                  
+
                   {subTicket.priority && (
-                    <span style={{
-                      background: getPriorityColor(subTicket.priority as unknown as string),
-                      color: 'white',
-                      padding: '2px 6px',
-                      borderRadius: '10px',
-                      fontSize: '10px',
-                      fontWeight: '500',
-                      textTransform: 'capitalize'
-                    }}>
+                    <span className={`${getPriorityColor(subTicket.priority as unknown as string)} text-white px-1.5 py-0.5 rounded-full text-xs font-medium capitalize flex-shrink-0`}>
                       {subTicket.priority as unknown as string}
                     </span>
                   )}
                 </div>
 
                 {subTicket.description && (
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#6c757d',
-                    marginBottom: '8px',
-                    lineHeight: '1.4'
-                  }}>
+                  <div className="text-xs text-gray-600 mb-2 leading-tight break-words">
                     {(subTicket.description_format as any) === 'html' && subTicket.rich_description ? (
                       <div dangerouslySetInnerHTML={{ __html: subTicket.rich_description }} />
                     ) : (
@@ -204,55 +135,31 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
                   </div>
                 )}
 
-                <div style={{
-                  display: 'flex',
-                  gap: '15px',
-                  fontSize: '11px',
-                  color: '#95a5a6'
-                }}>
+                <div className="flex gap-3 text-xs text-gray-500 flex-wrap">
                   {subTicket.assigned_to && (
-                    <span>
+                    <span className="truncate">
                       Assigned: {subTicket.assigned_to.first_name} {subTicket.assigned_to.last_name}
                     </span>
                   )}
-                  <span>
+                  <span className="flex-shrink-0">
                     Checklist: {subTicket.completed_items_count}/{subTicket.checklist_items_count}
                   </span>
-                  <span>
+                  <span className="flex-shrink-0">
                     Created: {new Date(subTicket.created_at).toLocaleDateString()}
                   </span>
                 </div>
               </div>
 
-              <div style={{
-                display: 'flex',
-                gap: '5px'
-              }}>
+              <div className="flex gap-1 flex-shrink-0">
                 <button
                   onClick={() => handleEdit(subTicket)}
-                  style={{
-                    background: 'white',
-                    color: '#3498db',
-                    border: '1px solid #3498db',
-                    padding: '4px 8px',
-                    borderRadius: '3px',
-                    fontSize: '11px',
-                    cursor: 'pointer'
-                  }}
+                  className="bg-white text-blue-500 border border-blue-500 px-2 py-1 rounded text-xs cursor-pointer hover:bg-blue-50"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(subTicket)}
-                  style={{
-                    background: 'white',
-                    color: '#e74c3c',
-                    border: '1px solid #e74c3c',
-                    padding: '4px 8px',
-                    borderRadius: '3px',
-                    fontSize: '11px',
-                    cursor: 'pointer'
-                  }}
+                  className="bg-white text-red-600 border border-red-600 px-2 py-1 rounded text-xs cursor-pointer hover:bg-red-50"
                 >
                   Delete
                 </button>
@@ -263,15 +170,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
       </div>
 
       {subTickets.length === 0 && (
-        <div style={{
-          background: '#f8f9fa',
-          border: '1px dashed #dee2e6',
-          borderRadius: '6px',
-          padding: '20px',
-          textAlign: 'center',
-          color: '#6c757d',
-          fontSize: '14px'
-        }}>
+        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-5 text-center text-gray-500 text-sm">
           No sub-tickets yet. Click "Add Sub-Ticket" to create one.
         </div>
       )}

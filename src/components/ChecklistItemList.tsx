@@ -70,34 +70,15 @@ export default function ChecklistItemList({
   const completedCount = items.filter(item => item.is_checked).length;
 
   return (
-    <div style={{ marginTop: '15px' }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '10px'
-      }}>
-        <h5 style={{
-          fontSize: '14px',
-          fontWeight: '600',
-          color: '#2c3e50',
-          margin: 0
-        }}>
+    <div className="mt-4">
+      <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+        <h5 className="text-sm font-semibold text-gray-800 m-0">
           Checklist ({completedCount}/{items.length})
         </h5>
         {showAddButton && (
           <button
             onClick={() => setShowForm(true)}
-            style={{
-              background: '#3498db',
-              color: 'white',
-              border: 'none',
-              padding: '4px 8px',
-              borderRadius: '3px',
-              fontSize: '11px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
+            className="bg-blue-500 text-white border-none px-2 py-1 rounded text-xs font-medium cursor-pointer hover:bg-blue-600"
           >
             + Add Item
           </button>
@@ -105,12 +86,7 @@ export default function ChecklistItemList({
       </div>
 
       {showForm && (
-        <div style={{
-          background: '#f8f9fa',
-          border: '1px solid #dee2e6',
-          borderRadius: '4px',
-          marginBottom: '10px'
-        }}>
+        <div className="bg-gray-50 border border-gray-300 rounded mb-2">
           <ChecklistItemForm
             ticketId={ticketId}
             subTicketId={subTicketId}
@@ -121,78 +97,38 @@ export default function ChecklistItemList({
         </div>
       )}
 
-      <div>
+      <div className="space-y-0">
         {items.map((item) => (
           <div
             key={item.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 0',
-              borderBottom: '1px solid #f1f3f4'
-            }}
+            className="flex items-center gap-2 py-1.5 border-b border-gray-100"
           >
             <button
               onClick={() => handleToggleCheck(item)}
-              style={{
-                background: item.is_checked ? '#27ae60' : 'white',
-                color: item.is_checked ? 'white' : '#27ae60',
-                border: '2px solid #27ae60',
-                borderRadius: '3px',
-                width: '16px',
-                height: '16px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '10px',
-                padding: 0,
-                flexShrink: 0
-              }}
+              className={`${
+                item.is_checked ? 'bg-green-600 text-white' : 'bg-white text-green-600'
+              } border-2 border-green-600 rounded w-4 h-4 flex-shrink-0 cursor-pointer flex items-center justify-center text-xs p-0`}
             >
               {item.is_checked && '✓'}
             </button>
-            
-            <span style={{
-              fontSize: '13px',
-              color: item.is_checked ? '#6c757d' : '#2c3e50',
-              textDecoration: item.is_checked ? 'line-through' : 'none',
-              flex: 1,
-              lineHeight: '1.3'
-            }}>
+
+            <span className={`text-xs flex-1 min-w-0 break-words leading-tight ${
+              item.is_checked ? 'text-gray-500 line-through' : 'text-gray-800'
+            }`}>
               {item.text}
             </span>
 
-            <div style={{
-              display: 'flex',
-              gap: '4px',
-              opacity: 0.7
-            }}>
+            <div className="flex gap-1 opacity-70 flex-shrink-0">
               <button
                 onClick={() => handleEdit(item)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#3498db',
-                  cursor: 'pointer',
-                  fontSize: '10px',
-                  padding: '2px 4px'
-                }}
+                className="bg-transparent border-none text-blue-500 cursor-pointer text-xs px-1 py-0.5"
                 title="Edit"
               >
                 Edit
               </button>
               <button
                 onClick={() => handleDelete(item)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#e74c3c',
-                  cursor: 'pointer',
-                  fontSize: '10px',
-                  padding: '2px 4px'
-                }}
+                className="bg-transparent border-none text-red-600 cursor-pointer text-xs px-1 py-0.5"
                 title="Delete"
               >
                 ×
@@ -203,15 +139,7 @@ export default function ChecklistItemList({
       </div>
 
       {items.length === 0 && (
-        <div style={{
-          background: '#f8f9fa',
-          border: '1px dashed #dee2e6',
-          borderRadius: '4px',
-          padding: '15px',
-          textAlign: 'center',
-          color: '#6c757d',
-          fontSize: '12px'
-        }}>
+        <div className="bg-gray-50 border border-dashed border-gray-300 rounded p-4 text-center text-gray-500 text-xs">
           No checklist items yet. {showAddButton && 'Click "Add Item" to create one.'}
         </div>
       )}
