@@ -1,6 +1,12 @@
 "use client";
 
 import { User } from "@/api/generated/interfaces";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Spinner } from "@/components/ui/spinner";
+import { Eye, Pencil, RotateCw, Lock, Unlock, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationInfo {
   count: number;
@@ -58,43 +64,6 @@ export default function UserTable({
   const isIndeterminate =
     selectedUsers.length > 0 && selectedUsers.length < users.length;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const getRoleColor = (role?: any) => {
-    switch (role?.toString().toLowerCase()) {
-      case "admin":
-        return "role-admin";
-      case "manager":
-        return "role-manager";
-      case "agent":
-        return "role-agent";
-      case "viewer":
-        return "role-viewer";
-      default:
-        return "role-default";
-    }
-  };
-
-  const getStatusColor = (status?: any) => {
-    switch (status?.toString().toLowerCase()) {
-      case "active":
-        return "status-active";
-      case "inactive":
-        return "status-inactive";
-      case "pending":
-        return "status-pending";
-      case "suspended":
-        return "status-suspended";
-      default:
-        return "status-default";
-    }
-  };
 
   const renderPagination = () => {
     const { currentPage, totalPages } = pagination;
@@ -113,444 +82,226 @@ export default function UserTable({
     }
 
     return (
-      <div className="pagination">
-        <button
-          className="pagination-btn"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </button>
-
+      <>
         {startPage > 1 && (
           <>
-            <button className="pagination-btn" onClick={() => onPageChange(1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(1)}
+            >
               1
-            </button>
-            {startPage > 2 && <span className="pagination-ellipsis">...</span>}
+            </Button>
+            {startPage > 2 && <span className="px-2 text-muted-foreground">...</span>}
           </>
         )}
 
         {pageNumbers.map((page) => (
-          <button
+          <Button
             key={page}
-            className={`pagination-btn ${page === currentPage ? "active" : ""}`}
+            variant={page === currentPage ? "default" : "outline"}
+            size="sm"
             onClick={() => onPageChange(page)}
           >
             {page}
-          </button>
+          </Button>
         ))}
 
         {endPage < totalPages && (
           <>
             {endPage < totalPages - 1 && (
-              <span className="pagination-ellipsis">...</span>
+              <span className="px-2 text-muted-foreground">...</span>
             )}
-            <button
-              className="pagination-btn"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onPageChange(totalPages)}
             >
               {totalPages}
-            </button>
+            </Button>
           </>
         )}
-
-        <button
-          className="pagination-btn"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </button>
-      </div>
+      </>
     );
   };
 
   return (
-    <div className="user-table-container">
-      <div className="user-table-wrapper">
-        <table className="user-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={isAllSelected}
-                  ref={(input) => {
-                    if (input) input.indeterminate = isIndeterminate;
-                  }}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                />
-              </th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Department</th>
-              <th>Status</th>
-              <th>Last Login</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={8} className="loading-row">
-                  <div className="loading-spinner"></div>
-                  Loading users...
-                </td>
+    <Card>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="p-3 text-left">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                  />
+                </th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">Name</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">Email</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">Department</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">Status</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">Actions</th>
               </tr>
-            ) : users.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="empty-row">
-                  No users found
-                </td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr
-                  key={user.id}
-                  className={selectedUsers.includes(user.id) ? "selected" : ""}
-                >
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.includes(user.id)}
-                      onChange={(e) =>
-                        handleSelectUser(user.id, e.target.checked)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <div className="user-name" onClick={() => onView(user)}>
-                      <div className="name">
-                        {user.full_name ||
-                          `${user.first_name} ${user.last_name}`}
-                      </div>
-                      {user.job_title && (
-                        <div className="job-title">{user.job_title}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td>{user.email}</td>
-                  <td>
-                    <span className={`role-badge ${getRoleColor(user.role)}`}>
-                      {user.role?.toString() || "User"}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`status-badge ${getStatusColor(user.status)}`}
-                    >
-                      {user.is_active
-                        ? user.status?.toString() || "Active"
-                        : "Inactive"}
-                    </span>
-                  </td>
-                  <td>
-                    {user.last_login ? formatDate(user.last_login) : "Never"}
-                  </td>
-                  <td>
-                    <div className="actions">
-                      <button
-                        className="action-btn view-btn"
-                        onClick={() => onView(user)}
-                        title="View Details"
-                      >
-                        👁️
-                      </button>
-                      <button
-                        className="action-btn edit-btn"
-                        onClick={() => onEdit(user)}
-                        title="Edit User"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className="action-btn reset-btn"
-                        onClick={() => onResetPassword(user.id)}
-                        title="Reset Password"
-                      >
-                        🔄
-                      </button>
-                      <button
-                        className="action-btn status-btn"
-                        onClick={() =>
-                          onChangeStatus(
-                            user.id,
-                            user.is_active ? "inactive" : "active"
-                          )
-                        }
-                        title={user.is_active ? "Deactivate" : "Activate"}
-                      >
-                        {user.is_active ? "🔓" : "🔒"}
-                      </button>
-                      <button
-                        className="action-btn delete-btn"
-                        onClick={() => onDelete(user.id)}
-                        title="Delete User"
-                      >
-                        🗑️
-                      </button>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-muted-foreground">
+                    <div className="flex items-center justify-center space-x-2">
+                      <Spinner className="h-6 w-6" />
+                      <span>Loading users...</span>
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-muted-foreground">
+                    No users found
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr
+                    key={user.id}
+                    className={`border-b transition-colors hover:bg-muted/50 ${
+                      selectedUsers.includes(user.id) ? "bg-muted/50" : ""
+                    }`}
+                  >
+                    <td className="p-3">
+                      <Checkbox
+                        checked={selectedUsers.includes(user.id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectUser(user.id, checked as boolean)
+                        }
+                      />
+                    </td>
+                    <td className="p-3">
+                      <div className="cursor-pointer" onClick={() => onView(user)}>
+                        <div className="font-medium text-foreground">
+                          {user.full_name ||
+                            `${user.first_name} ${user.last_name}`}
+                        </div>
+                        {user.job_title && (
+                          <div className="text-xs text-muted-foreground mt-0.5">{user.job_title}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="p-3 text-muted-foreground">{user.email}</td>
+                    <td className="p-3">
+                      {user.department?.name ? (
+                        <Badge variant="secondary" className="capitalize">
+                          {user.department.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No department</span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      <Badge
+                        variant={user.is_active ? "default" : "destructive"}
+                        className="capitalize"
+                      >
+                        {user.is_active
+                          ? user.status?.toString() || "Active"
+                          : "Inactive"}
+                      </Badge>
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onView(user)}
+                          title="View Details"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(user)}
+                          title="Edit User"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onResetPassword(user.id)}
+                          title="Reset Password"
+                          className="h-8 w-8 p-0"
+                        >
+                          <RotateCw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            onChangeStatus(
+                              user.id,
+                              user.is_active ? "inactive" : "active"
+                            )
+                          }
+                          title={user.is_active ? "Deactivate" : "Activate"}
+                          className="h-8 w-8 p-0"
+                        >
+                          {user.is_active ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onDelete(user.id)}
+                          title="Delete User"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
 
       {pagination.totalPages > 1 && (
-        <div className="table-footer">
-          <div className="results-info">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-t bg-muted/30">
+          <div className="text-sm text-muted-foreground">
             Showing {(pagination.currentPage - 1) * 20 + 1} to{" "}
             {Math.min(pagination.currentPage * 20, pagination.count)} of{" "}
             {pagination.count} users
           </div>
-          {renderPagination()}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+
+            {renderPagination()}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.currentPage + 1)}
+              disabled={pagination.currentPage === pagination.totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
         </div>
       )}
-
-      <style jsx>{`
-        .user-table-container {
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-        }
-
-        .user-table-wrapper {
-          overflow-x: auto;
-        }
-
-        .user-table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 14px;
-        }
-
-        .user-table th,
-        .user-table td {
-          padding: 12px;
-          text-align: left;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        .user-table th {
-          background-color: #f9fafb;
-          font-weight: 600;
-          color: #374151;
-          position: sticky;
-          top: 0;
-          z-index: 10;
-        }
-
-        .user-table tr:hover {
-          background-color: #f9fafb;
-        }
-
-        .user-table tr.selected {
-          background-color: #eff6ff;
-        }
-
-        .user-name {
-          cursor: pointer;
-        }
-
-        .user-name .name {
-          font-weight: 500;
-          color: #1f2937;
-        }
-
-        .user-name .job-title {
-          font-size: 12px;
-          color: #6b7280;
-          margin-top: 2px;
-        }
-
-        .role-badge,
-        .status-badge {
-          display: inline-block;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-          text-transform: capitalize;
-        }
-
-        .role-admin {
-          background-color: #fef2f2;
-          color: #dc2626;
-        }
-        .role-manager {
-          background-color: #fef3c7;
-          color: #d97706;
-        }
-        .role-agent {
-          background-color: #dbeafe;
-          color: #2563eb;
-        }
-        .role-viewer {
-          background-color: #f0fdf4;
-          color: #16a34a;
-        }
-        .role-default {
-          background-color: #f3f4f6;
-          color: #6b7280;
-        }
-
-        .status-active {
-          background-color: #dcfce7;
-          color: #16a34a;
-        }
-        .status-inactive {
-          background-color: #fef2f2;
-          color: #dc2626;
-        }
-        .status-pending {
-          background-color: #fef3c7;
-          color: #d97706;
-        }
-        .status-suspended {
-          background-color: #fee2e2;
-          color: #dc2626;
-        }
-        .status-default {
-          background-color: #f3f4f6;
-          color: #6b7280;
-        }
-
-        .actions {
-          display: flex;
-          gap: 4px;
-        }
-
-        .action-btn {
-          padding: 4px 6px;
-          border: none;
-          background: none;
-          cursor: pointer;
-          border-radius: 4px;
-          font-size: 14px;
-          transition: background-color 0.2s;
-        }
-
-        .action-btn:hover {
-          background-color: #f3f4f6;
-        }
-
-        .delete-btn:hover {
-          background-color: #fef2f2;
-        }
-
-        .loading-row,
-        .empty-row {
-          text-align: center;
-          padding: 40px 12px;
-          color: #6b7280;
-        }
-
-        .loading-spinner {
-          display: inline-block;
-          width: 16px;
-          height: 16px;
-          border: 2px solid #e5e7eb;
-          border-top: 2px solid #3b82f6;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-right: 8px;
-        }
-
-        @keyframes spin {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-
-        .table-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 20px;
-          background-color: #f9fafb;
-          border-top: 1px solid #e5e7eb;
-        }
-
-        .results-info {
-          color: #6b7280;
-          font-size: 14px;
-        }
-
-        .pagination {
-          display: flex;
-          gap: 4px;
-          align-items: center;
-        }
-
-        .pagination-btn {
-          padding: 6px 12px;
-          border: 1px solid #d1d5db;
-          background: white;
-          cursor: pointer;
-          border-radius: 4px;
-          font-size: 14px;
-          transition: all 0.2s;
-        }
-
-        .pagination-btn:hover:not(:disabled) {
-          background-color: #f3f4f6;
-        }
-
-        .pagination-btn.active {
-          background-color: #3b82f6;
-          color: white;
-          border-color: #3b82f6;
-        }
-
-        .pagination-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .pagination-ellipsis {
-          padding: 6px 4px;
-          color: #6b7280;
-        }
-
-        @media (max-width: 768px) {
-          .user-table th,
-          .user-table td {
-            padding: 8px;
-            font-size: 12px;
-          }
-
-          .actions {
-            gap: 2px;
-          }
-
-          .action-btn {
-            padding: 2px 4px;
-            font-size: 12px;
-          }
-
-          .table-footer {
-            flex-direction: column;
-            gap: 12px;
-            align-items: stretch;
-          }
-
-          .pagination {
-            justify-content: center;
-          }
-
-          .results-info {
-            text-align: center;
-          }
-        }
-      `}</style>
-    </div>
+    </Card>
   );
 }
