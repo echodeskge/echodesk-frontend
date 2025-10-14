@@ -65,6 +65,7 @@ import { cn } from "@/lib/utils";
 import { LabelManagementDialog } from "@/components/LabelManagementDialog";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import MultiUserAssignment, { AssignmentData } from "@/components/MultiUserAssignment";
+import { SignatureCanvas } from "@/components/SignatureCanvas";
 
 // Flatten items recursively for search
 function flattenItems(items: any[]): any[] {
@@ -112,6 +113,7 @@ export function TicketCreateSheet() {
   const [selectedItems, setSelectedItems] = useState<Record<number, number | null>>({});
   const [formListsWithItems, setFormListsWithItems] = useState<any[]>([]);
   const [loadingLists, setLoadingLists] = useState(false);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
   const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({});
@@ -264,7 +266,7 @@ export function TicketCreateSheet() {
             ticket: createdTicket.id,
             form_id: selectedForm.id,
             selected_item_ids: selectedItemIds,
-            form_data: {},
+            form_data: customFieldValues,
           } as any);
         } catch (error) {
           console.error("Error creating form submission:", error);
@@ -286,6 +288,7 @@ export function TicketCreateSheet() {
       setSelectedTagIds([]);
       setSelectedGroupIds([]);
       setSelectedAssignments([]);
+      setCustomFieldValues({});
 
       closeTicketCreate();
     } catch (error) {
@@ -307,6 +310,7 @@ export function TicketCreateSheet() {
     setSelectedTagIds([]);
     setSelectedGroupIds([]);
     setSelectedAssignments([]);
+    setCustomFieldValues({});
     closeTicketCreate();
   };
 
@@ -752,6 +756,74 @@ export function TicketCreateSheet() {
                   )}
                 </div>
               )}
+
+            {/* Custom Fields from Selected Form */}
+            {selectedForm && selectedForm.custom_fields && Array.isArray(selectedForm.custom_fields) && selectedForm.custom_fields.length > 0 && (
+              <div className="grid gap-4">
+                <Label>Custom Fields</Label>
+                <div className="space-y-3">
+                  {selectedForm.custom_fields.map((field: any, index: number) => (
+                    <div key={field.name || index} className="grid gap-2">
+                      <Label htmlFor={field.name}>
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </Label>
+
+                      {field.type === "string" && (
+                        <Input
+                          id={field.name}
+                          value={customFieldValues[field.name] || ""}
+                          onChange={(e) => setCustomFieldValues(prev => ({...prev, [field.name]: e.target.value}))}
+                          required={field.required}
+                          placeholder={field.label}
+                        />
+                      )}
+
+                      {field.type === "text" && (
+                        <Textarea
+                          id={field.name}
+                          value={customFieldValues[field.name] || ""}
+                          onChange={(e) => setCustomFieldValues(prev => ({...prev, [field.name]: e.target.value}))}
+                          required={field.required}
+                          rows={3}
+                          placeholder={field.label}
+                        />
+                      )}
+
+                      {field.type === "number" && (
+                        <Input
+                          id={field.name}
+                          type="number"
+                          value={customFieldValues[field.name] || ""}
+                          onChange={(e) => setCustomFieldValues(prev => ({...prev, [field.name]: e.target.value ? parseFloat(e.target.value) : ""}))}
+                          required={field.required}
+                          placeholder={field.label}
+                        />
+                      )}
+
+                      {field.type === "date" && (
+                        <Input
+                          id={field.name}
+                          type="date"
+                          value={customFieldValues[field.name] || ""}
+                          onChange={(e) => setCustomFieldValues(prev => ({...prev, [field.name]: e.target.value}))}
+                          required={field.required}
+                        />
+                      )}
+
+                      {field.type === "signature" && (
+                        <SignatureCanvas
+                          onSignatureChange={(dataUrl) => {
+                            setCustomFieldValues(prev => ({...prev, [field.name]: dataUrl}));
+                          }}
+                          required={field.required}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Button
               type="submit"
