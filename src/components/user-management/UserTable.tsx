@@ -140,7 +140,7 @@ export default function UserTable({
                 </th>
                 <th className="p-3 text-left font-semibold text-muted-foreground">Name</th>
                 <th className="p-3 text-left font-semibold text-muted-foreground">Email</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Department</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">Groups</th>
                 <th className="p-3 text-left font-semibold text-muted-foreground">Status</th>
                 <th className="p-3 text-left font-semibold text-muted-foreground">Actions</th>
               </tr>
@@ -190,12 +190,16 @@ export default function UserTable({
                     </td>
                     <td className="p-3 text-muted-foreground">{user.email}</td>
                     <td className="p-3">
-                      {user.department?.name ? (
-                        <Badge variant="secondary" className="capitalize">
-                          {user.department.name}
-                        </Badge>
+                      {user.tenant_groups && user.tenant_groups.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.tenant_groups.map((group) => (
+                            <Badge key={group.id} variant="secondary" className="capitalize">
+                              {group.name}
+                            </Badge>
+                          ))}
+                        </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">No department</span>
+                        <span className="text-xs text-muted-foreground">No groups</span>
                       )}
                     </td>
                     <td className="p-3">
