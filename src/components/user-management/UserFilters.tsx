@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import type { UserFilters } from "../UserManagement";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, X, Filter, ChevronDown, ChevronUp } from "lucide-react";
 
 interface UserFiltersProps {
   filters: UserFilters;
@@ -15,7 +22,7 @@ export default function UserFilters({
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const roleOptions = [
-    { value: "", label: "All Roles" },
+    { value: "all", label: "All Roles" },
     { value: "admin", label: "Admin" },
     { value: "manager", label: "Manager" },
     { value: "agent", label: "Agent" },
@@ -23,7 +30,7 @@ export default function UserFilters({
   ];
 
   const statusOptions = [
-    { value: "", label: "All Status" },
+    { value: "all", label: "All Status" },
     { value: "active", label: "Active" },
     { value: "inactive", label: "Inactive" },
     { value: "pending", label: "Pending" },
@@ -53,357 +60,238 @@ export default function UserFilters({
   };
 
   return (
-    <div className="user-filters">
-      <div className="filters-main">
-        <div className="search-group">
-          <input
-            type="text"
-            placeholder="Search users by name or email..."
-            value={filters.search}
-            onChange={(e) => onFiltersChange({ search: e.target.value })}
-            className="search-input"
-          />
-        </div>
-
-        <div className="filter-group">
-          <select
-            value={filters.role}
-            onChange={(e) => onFiltersChange({ role: e.target.value })}
-            className="filter-select"
-          >
-            {roleOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <select
-            value={filters.status}
-            onChange={(e) => onFiltersChange({ status: e.target.value })}
-            className="filter-select"
-          >
-            {statusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="filter-actions">
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-          >
-            {showAdvanced ? "Less Filters" : "More Filters"}
-          </button>
-
-          {hasActiveFilters() && (
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={clearFilters}
-            >
-              Clear All
-            </button>
-          )}
-        </div>
-      </div>
-
-      {showAdvanced && (
-        <div className="filters-advanced">
-          <div className="advanced-grid">
-            <div className="filter-group">
-              <label htmlFor="department">Department</label>
-              <input
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex flex-wrap gap-4 items-end">
+          {/* Search */}
+          <div className="flex-1 min-w-[250px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
                 type="text"
-                id="department"
-                placeholder="Filter by department"
-                value={filters.department}
-                onChange={(e) =>
-                  onFiltersChange({ department: e.target.value })
-                }
-                className="filter-input"
+                placeholder="Search users by name or email..."
+                value={filters.search}
+                onChange={(e) => onFiltersChange({ search: e.target.value })}
+                className="pl-9"
               />
             </div>
-
-            <div className="filter-group">
-              <label htmlFor="isActive">Account Status</label>
-              <select
-                id="isActive"
-                value={
-                  filters.isActive === null ? "" : filters.isActive.toString()
-                }
-                onChange={(e) =>
-                  onFiltersChange({
-                    isActive:
-                      e.target.value === "" ? null : e.target.value === "true",
-                  })
-                }
-                className="filter-select"
-              >
-                <option value="">All Accounts</option>
-                <option value="true">Active Accounts</option>
-                <option value="false">Inactive Accounts</option>
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="isStaff">Staff Status</label>
-              <select
-                id="isStaff"
-                value={
-                  filters.isStaff === null ? "" : filters.isStaff.toString()
-                }
-                onChange={(e) =>
-                  onFiltersChange({
-                    isStaff:
-                      e.target.value === "" ? null : e.target.value === "true",
-                  })
-                }
-                className="filter-select"
-              >
-                <option value="">All Users</option>
-                <option value="true">Staff Members</option>
-                <option value="false">Regular Users</option>
-              </select>
-            </div>
           </div>
-        </div>
-      )}
 
-      {hasActiveFilters() && (
-        <div className="active-filters">
-          <span className="active-filters-label">Active filters:</span>
-          <div className="active-filters-list">
-            {filters.search && (
-              <span className="filter-tag">
-                Search: &quot;{filters.search}&quot;
-                <button onClick={() => onFiltersChange({ search: "" })}>
-                  ×
-                </button>
-              </span>
-            )}
-            {filters.role && (
-              <span className="filter-tag">
-                Role: {roleOptions.find((r) => r.value === filters.role)?.label}
-                <button onClick={() => onFiltersChange({ role: "" })}>×</button>
-              </span>
-            )}
-            {filters.status && (
-              <span className="filter-tag">
-                Status:{" "}
-                {statusOptions.find((s) => s.value === filters.status)?.label}
-                <button onClick={() => onFiltersChange({ status: "" })}>
-                  ×
-                </button>
-              </span>
-            )}
-            {filters.department && (
-              <span className="filter-tag">
-                Department: {filters.department}
-                <button onClick={() => onFiltersChange({ department: "" })}>
-                  ×
-                </button>
-              </span>
-            )}
-            {filters.isActive !== null && (
-              <span className="filter-tag">
-                Account: {filters.isActive ? "Active" : "Inactive"}
-                <button onClick={() => onFiltersChange({ isActive: null })}>
-                  ×
-                </button>
-              </span>
-            )}
-            {filters.isStaff !== null && (
-              <span className="filter-tag">
-                Staff: {filters.isStaff ? "Yes" : "No"}
-                <button onClick={() => onFiltersChange({ isStaff: null })}>
-                  ×
-                </button>
-              </span>
+          {/* Role Filter */}
+          <div className="space-y-1">
+            <Select
+              value={filters.role || "all"}
+              onValueChange={(value) => onFiltersChange({ role: value === "all" ? "" : value })}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                {roleOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Status Filter */}
+          <div className="space-y-1">
+            <Select
+              value={filters.status || "all"}
+              onValueChange={(value) => onFiltersChange({ status: value === "all" ? "" : value })}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              {showAdvanced ? (
+                <>
+                  <ChevronUp className="h-4 w-4 ml-1" />
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </>
+              )}
+            </Button>
+
+            {hasActiveFilters() && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
             )}
           </div>
         </div>
-      )}
 
-      <style jsx>{`
-        .user-filters {
-          background: white;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          margin-bottom: 20px;
-        }
+        {/* Advanced Filters */}
+        {showAdvanced && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="department" className="text-xs uppercase text-muted-foreground">
+                  Department
+                </Label>
+                <Input
+                  type="text"
+                  id="department"
+                  placeholder="Filter by department"
+                  value={filters.department}
+                  onChange={(e) => onFiltersChange({ department: e.target.value })}
+                />
+              </div>
 
-        .filters-main {
-          display: flex;
-          gap: 16px;
-          align-items: flex-end;
-          flex-wrap: wrap;
-        }
+              <div className="space-y-2">
+                <Label htmlFor="isActive" className="text-xs uppercase text-muted-foreground">
+                  Account Status
+                </Label>
+                <Select
+                  value={filters.isActive === null ? "all" : filters.isActive.toString()}
+                  onValueChange={(value) =>
+                    onFiltersChange({
+                      isActive: value === "all" ? null : value === "true",
+                    })
+                  }
+                >
+                  <SelectTrigger id="isActive">
+                    <SelectValue placeholder="All Accounts" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                    <SelectItem value="all">All Accounts</SelectItem>
+                    <SelectItem value="true">Active Accounts</SelectItem>
+                    <SelectItem value="false">Inactive Accounts</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        .search-group {
-          flex: 1;
-          min-width: 250px;
-        }
+              <div className="space-y-2">
+                <Label htmlFor="isStaff" className="text-xs uppercase text-muted-foreground">
+                  Staff Status
+                </Label>
+                <Select
+                  value={filters.isStaff === null ? "all" : filters.isStaff.toString()}
+                  onValueChange={(value) =>
+                    onFiltersChange({
+                      isStaff: value === "all" ? null : value === "true",
+                    })
+                  }
+                >
+                  <SelectTrigger id="isStaff">
+                    <SelectValue placeholder="All Users" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="true">Staff Members</SelectItem>
+                    <SelectItem value="false">Regular Users</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        )}
 
-        .filter-group {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .filter-group label {
-          font-size: 12px;
-          font-weight: 500;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .search-input,
-        .filter-input,
-        .filter-select {
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          font-size: 14px;
-          min-width: 150px;
-          transition: border-color 0.2s;
-        }
-
-        .search-input {
-          min-width: 250px;
-        }
-
-        .search-input:focus,
-        .filter-input:focus,
-        .filter-select:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .filter-actions {
-          display: flex;
-          gap: 8px;
-        }
-
-        .btn {
-          padding: 8px 16px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          background: white;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          transition: all 0.2s;
-        }
-
-        .btn-outline:hover {
-          background-color: #f3f4f6;
-          border-color: #9ca3af;
-        }
-
-        .filters-advanced {
-          margin-top: 16px;
-          padding-top: 16px;
-          border-top: 1px solid #e5e7eb;
-        }
-
-        .advanced-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-        }
-
-        .active-filters {
-          margin-top: 16px;
-          padding-top: 16px;
-          border-top: 1px solid #e5e7eb;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          align-items: center;
-        }
-
-        .active-filters-label {
-          font-size: 12px;
-          font-weight: 600;
-          color: #6b7280;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .active-filters-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-        }
-
-        .filter-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 8px;
-          background-color: #dbeafe;
-          color: #1e40af;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-
-        .filter-tag button {
-          background: none;
-          border: none;
-          color: #1e40af;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: bold;
-          padding: 0;
-          margin-left: 2px;
-          line-height: 1;
-        }
-
-        .filter-tag button:hover {
-          color: #1e3a8a;
-        }
-
-        @media (max-width: 768px) {
-          .filters-main {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .search-group {
-            min-width: auto;
-          }
-
-          .search-input {
-            min-width: auto;
-          }
-
-          .filter-group {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-          }
-
-          .advanced-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .active-filters {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-        }
-      `}</style>
-    </div>
+        {/* Active Filters */}
+        {hasActiveFilters() && (
+          <div className="mt-4 pt-4 border-t flex flex-wrap gap-2 items-center">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Active filters:
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {filters.search && (
+                <Badge variant="secondary" className="gap-1">
+                  Search: &quot;{filters.search}&quot;
+                  <button
+                    onClick={() => onFiltersChange({ search: "" })}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.role && (
+                <Badge variant="secondary" className="gap-1">
+                  Role: {roleOptions.find((r) => r.value === filters.role)?.label}
+                  <button
+                    onClick={() => onFiltersChange({ role: "" })}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.status && (
+                <Badge variant="secondary" className="gap-1">
+                  Status: {statusOptions.find((s) => s.value === filters.status)?.label}
+                  <button
+                    onClick={() => onFiltersChange({ status: "" })}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.department && (
+                <Badge variant="secondary" className="gap-1">
+                  Department: {filters.department}
+                  <button
+                    onClick={() => onFiltersChange({ department: "" })}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.isActive !== null && (
+                <Badge variant="secondary" className="gap-1">
+                  Account: {filters.isActive ? "Active" : "Inactive"}
+                  <button
+                    onClick={() => onFiltersChange({ isActive: null })}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+              {filters.isStaff !== null && (
+                <Badge variant="secondary" className="gap-1">
+                  Staff: {filters.isStaff ? "Yes" : "No"}
+                  <button
+                    onClick={() => onFiltersChange({ isStaff: null })}
+                    className="ml-1 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -10,13 +10,15 @@ import {
 } from "@/api/generated/interfaces";
 import * as api from "@/api/generated/api";
 
-import LoadingSpinner from "./LoadingSpinner";
-import ErrorMessage from "./ErrorMessage";
 import UserTable from "./user-management/UserTable";
 import UserBulkActions from "./user-management/UserBulkActions";
 import UserForm from "./user-management/UserForm";
 import UserDetailsModal from "./user-management/UserDetailsModal";
 import UserFilters from "./user-management/UserFilters";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
+import { Plus, XCircle } from "lucide-react";
 
 export interface UserFilters {
   search: string;
@@ -188,25 +190,44 @@ export default function UserManagement() {
   };
 
   if (loading && users.length === 0) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Spinner className="h-8 w-8" />
+          <span className="text-muted-foreground">{tCommon("loading")}</span>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="user-management">
-      <div className="user-management-header">
-        <h1>{t("userManagement")}</h1>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowCreateForm(true)}
-        >
+    <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("userManagement")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage users, roles, and permissions
+          </p>
+        </div>
+        <Button onClick={() => setShowCreateForm(true)}>
+          <Plus className="h-4 w-4 mr-2" />
           {t("addUser")}
-        </button>
+        </Button>
       </div>
 
-      {error && <ErrorMessage error={error} />}
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
+      {/* Filters */}
       <UserFilters filters={filters} onFiltersChange={handleFiltersChange} />
 
+      {/* Bulk Actions */}
       {selectedUsers.length > 0 && (
         <UserBulkActions
           selectedCount={selectedUsers.length}
@@ -215,6 +236,7 @@ export default function UserManagement() {
         />
       )}
 
+      {/* Users Table */}
       <UserTable
         users={users}
         loading={loading}
@@ -229,6 +251,7 @@ export default function UserManagement() {
         onPageChange={handlePageChange}
       />
 
+      {/* Create Form Dialog */}
       <UserForm
         mode="create"
         open={showCreateForm}
@@ -236,6 +259,7 @@ export default function UserManagement() {
         onClose={() => setShowCreateForm(false)}
       />
 
+      {/* Edit Form Dialog */}
       <UserForm
         mode="edit"
         user={editingUser || undefined}
@@ -246,6 +270,7 @@ export default function UserManagement() {
         onClose={() => setEditingUser(null)}
       />
 
+      {/* User Details Modal */}
       {viewingUser && (
         <UserDetailsModal
           user={viewingUser}
@@ -256,63 +281,6 @@ export default function UserManagement() {
           onResetPassword={handleResetPassword}
         />
       )}
-
-      <style jsx>{`
-        .user-management {
-          padding: 20px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .user-management-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 20px;
-        }
-
-        .user-management-header h1 {
-          margin: 0;
-          font-size: 24px;
-          font-weight: 600;
-          color: #1f2937;
-        }
-
-        .btn {
-          padding: 8px 16px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          transition: background-color 0.2s;
-        }
-
-        .btn-primary {
-          background-color: #3b82f6;
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background-color: #2563eb;
-        }
-
-        @media (max-width: 768px) {
-          .user-management {
-            padding: 10px;
-          }
-
-          .user-management-header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: stretch;
-          }
-
-          .user-management-header h1 {
-            text-align: center;
-          }
-        }
-      `}</style>
     </div>
   );
 }
