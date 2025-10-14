@@ -5,7 +5,6 @@ import { checklistItemsCreate, checklistItemsUpdate } from '@/api/generated/api'
 import type { ChecklistItem, PatchedChecklistItem } from '@/api/generated/interfaces';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Alert, AlertDescription } from './ui/alert';
 import { Label } from './ui/label';
 
 interface ChecklistItemFormProps {
@@ -81,11 +80,9 @@ export default function ChecklistItemForm({
       </h4>
 
       {error && (
-        <Alert variant="destructive" className="mb-3">
-          <AlertDescription className="text-xs">
-            {error}
-          </AlertDescription>
-        </Alert>
+        <div className="bg-red-50 border border-red-200 text-red-800 rounded-md p-3 mb-3 text-xs">
+          {error}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
