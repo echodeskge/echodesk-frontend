@@ -442,12 +442,12 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               )}
 
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                   <Label className="text-sm font-medium flex items-center gap-2">
-                    <Tag className="h-4 w-4" />
+                    <Tag className="h-4 w-4 flex-shrink-0" />
                     {t('labels')}
                   </Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-shrink-0">
                     <LabelManagementDialog />
                     {!editingLabels && (
                       <Button
