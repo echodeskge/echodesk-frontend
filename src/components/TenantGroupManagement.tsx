@@ -5,6 +5,17 @@ import { useTranslations } from 'next-intl';
 import { TenantGroup, TenantGroupCreate, PaginatedTenantGroupList } from '../api/generated/interfaces';
 import { tenantGroupsList, tenantGroupsCreate, tenantGroupsPartialUpdate, tenantGroupsDestroy } from '../api/generated/api';
 import { PERMISSION_CATEGORIES } from '@/services/permissionService';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit, Trash2, Search, Users, XCircle } from "lucide-react";
 
 interface TenantGroupFormData extends Omit<TenantGroupCreate, 'name' | 'description'> {
   name: string;
@@ -14,11 +25,12 @@ interface TenantGroupFormData extends Omit<TenantGroupCreate, 'name' | 'descript
 interface TenantGroupFormProps {
   mode: 'create' | 'edit';
   group?: TenantGroup;
+  open: boolean;
   onSubmit: (data: TenantGroupFormData) => Promise<void>;
-  onCancel: () => void;
+  onClose: () => void;
 }
 
-const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit, onCancel }) => {
+const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, onSubmit, onClose }) => {
   const t = useTranslations("groups");
   const tCommon = useTranslations("common");
   const [formData, setFormData] = useState<TenantGroupFormData>({
@@ -104,172 +116,101 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, onSubmit
   };
 
   return (
-    <div style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: "rgba(0, 0, 0, 0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1000,
-    }}>
-      <div style={{
-        background: "white",
-        borderRadius: "12px",
-        padding: "24px",
-        maxWidth: "600px",
-        width: "90%",
-        maxHeight: "80vh",
-        overflowY: "auto",
-      }}>
-        <h2 style={{ margin: "0 0 20px 0" }}>
-          {mode === "create" ? t("createNewGroup") : t("editGroup")}
-        </h2>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-[650px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === "create" ? t("createNewGroup") : t("editGroup")}
+          </DialogTitle>
+          <DialogDescription>
+            {mode === "create"
+              ? "Create a new group and assign permissions"
+              : `Edit group "${group?.name}" and manage permissions`}
+          </DialogDescription>
+        </DialogHeader>
 
-        {errors.submit && (
-          <div style={{
-            background: "#f8d7da",
-            color: "#721c24",
-            padding: "12px",
-            borderRadius: "6px",
-            marginBottom: "20px",
-            fontSize: "14px",
-          }}>
-            {errors.submit}
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {errors.submit && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertDescription>{errors.submit}</AlertDescription>
+            </Alert>
+          )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
-              {t("groupName")} *
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="name">{t("groupName")} *</Label>
+            <Input
+              id="name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              style={{
-                width: "100%",
-                padding: "10px",
-                border: "1px solid #dee2e6",
-                borderRadius: "6px",
-                fontSize: "14px",
-              }}
               required
               disabled={isSubmitting}
+              placeholder="Enter group name"
             />
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600" }}>
-              {t("description")}
-            </label>
-            <textarea
+          <div className="space-y-2">
+            <Label htmlFor="description">{t("description")}</Label>
+            <Textarea
+              id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              style={{
-                width: "100%",
-                padding: "10px",
-                border: "1px solid #dee2e6",
-                borderRadius: "6px",
-                fontSize: "14px",
-                resize: "vertical",
-                minHeight: "80px",
-              }}
               disabled={isSubmitting}
+              placeholder="Enter group description"
+              rows={3}
             />
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
-            <label style={{ display: "block", marginBottom: "12px", fontWeight: "600" }}>
-              {t("permissions")}
-            </label>
-            
-            <div style={{ display: "grid", gap: "16px" }}>
+          <div className="space-y-4 pt-4 border-t">
+            <Label className="text-base">{t("permissions")}</Label>
+
+            <div className="grid gap-4">
               {PERMISSION_CATEGORIES.map((category) => (
-                <div
-                  key={category.id}
-                  style={{
-                    border: "1px solid #dee2e6",
-                    borderRadius: "8px",
-                    padding: "16px",
-                  }}
-                >
-                  <label style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    cursor: "pointer",
-                    marginBottom: "8px",
-                  }}>
-                    <input
-                      type="checkbox"
-                      checked={isCategoryChecked(category.id)}
-                      onChange={(e) => handleCategoryToggle(category.id, e.target.checked)}
-                      disabled={isSubmitting}
-                      style={{ width: "18px", height: "18px" }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: "600", fontSize: "16px" }}>
-                        {category.label}
-                      </div>
-                      <div style={{ fontSize: "14px", color: "#6c757d" }}>
-                        {category.description}
+                <Card key={category.id} className="bg-muted/30">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id={category.id}
+                        checked={isCategoryChecked(category.id)}
+                        onCheckedChange={(checked) => handleCategoryToggle(category.id, checked as boolean)}
+                        disabled={isSubmitting}
+                      />
+                      <div className="flex-1 space-y-1">
+                        <Label
+                          htmlFor={category.id}
+                          className="text-sm font-semibold cursor-pointer"
+                        >
+                          {category.label}
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          {category.description}
+                        </p>
                       </div>
                     </div>
-                  </label>
-                </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
 
-          <div style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "12px",
-            paddingTop: "20px",
-            borderTop: "1px solid #dee2e6",
-          }}>
-            <button
+          <DialogFooter>
+            <Button
               type="button"
-              onClick={onCancel}
+              variant="outline"
+              onClick={onClose}
               disabled={isSubmitting}
-              style={{
-                background: "#6c757d",
-                color: "white",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-                opacity: isSubmitting ? 0.6 : 1,
-              }}
             >
               {tCommon("cancel")}
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              style={{
-                background: isSubmitting ? "#6c757d" : "#28a745",
-                color: "white",
-                border: "none",
-                padding: "10px 20px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-                opacity: isSubmitting ? 0.6 : 1,
-              }}
-            >
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
               {isSubmitting ? t("saving") : mode === "create" ? t("createGroup") : t("updateGroup")}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -330,144 +271,115 @@ const TenantGroupManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ padding: "20px", textAlign: "center" }}>
-        <div>{tCommon("loading")}</div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Spinner className="h-8 w-8" />
+          <span className="text-muted-foreground">{tCommon("loading")}</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "20px",
-      }}>
-        <h1 style={{ margin: 0 }}>{t("groupManagement")}</h1>
-        <button
-          onClick={() => setShowForm({ mode: 'create' })}
-          style={{
-            background: "#28a745",
-            color: "white",
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            fontSize: "14px",
-            cursor: "pointer",
-          }}
-        >
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("groupManagement")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage tenant groups and their permissions
+          </p>
+        </div>
+        <Button onClick={() => setShowForm({ mode: 'create' })}>
+          <Plus className="h-4 w-4 mr-2" />
           {t("createNewGroup")}
-        </button>
+        </Button>
       </div>
 
-      <div style={{ marginBottom: "20px" }}>
-        <input
+      {/* Search */}
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
           type="text"
           placeholder={t("searchGroups")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: "100%",
-            maxWidth: "400px",
-            padding: "10px",
-            border: "1px solid #dee2e6",
-            borderRadius: "6px",
-            fontSize: "14px",
-          }}
+          className="pl-9"
         />
       </div>
 
+      {/* Error Alert */}
       {error && (
-        <div style={{
-          background: "#f8d7da",
-          color: "#721c24",
-          padding: "12px",
-          borderRadius: "6px",
-          marginBottom: "20px",
-        }}>
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <div style={{
-        background: "white",
-        borderRadius: "8px",
-        overflow: "hidden",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-      }}>
-        {filteredGroups.length === 0 ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "#6c757d" }}>
-            {searchTerm ? t("noGroupsMatch") : t("noGroupsFound")}
-          </div>
-        ) : (
-          filteredGroups.map((group) => (
-            <div
-              key={group.id}
-              style={{
-                padding: "16px",
-                borderBottom: "1px solid #dee2e6",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: "600", fontSize: "16px", marginBottom: "4px" }}>
-                  {group.name}
-                </div>
-                {group.description && (
-                  <div style={{ fontSize: "14px", color: "#6c757d", marginBottom: "8px" }}>
-                    {group.description}
-                  </div>
-                )}
-                <div style={{ fontSize: "12px", color: "#6c757d" }}>
-                  {group.member_count} {t("members")} • {t("created")} {new Date(group.created_at).toLocaleDateString()}
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button
-                  onClick={() => setShowForm({ mode: 'edit', group })}
-                  style={{
-                    background: "#007bff",
-                    color: "white",
-                    border: "none",
-                    padding: "6px 12px",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  {tCommon("edit")}
-                </button>
-                <button
-                  onClick={() => handleDeleteGroup(group)}
-                  style={{
-                    background: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    padding: "6px 12px",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                  }}
-                >
-                  {tCommon("delete")}
-                </button>
-              </div>
+      {/* Groups List */}
+      <Card>
+        <CardContent className="p-0">
+          {filteredGroups.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              {searchTerm ? t("noGroupsMatch") : t("noGroupsFound")}
             </div>
-          ))
-        )}
-      </div>
+          ) : (
+            <div className="divide-y">
+              {filteredGroups.map((group) => (
+                <div
+                  key={group.id}
+                  className="p-4 flex justify-between items-start hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-base">{group.name}</h3>
+                      <Badge variant="secondary" className="text-xs">
+                        <Users className="h-3 w-3 mr-1" />
+                        {group.member_count}
+                      </Badge>
+                    </div>
+                    {group.description && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {group.description}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {t("created")} {new Date(group.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowForm({ mode: 'edit', group })}
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      {tCommon("edit")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteGroup(group)}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      {tCommon("delete")}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {showForm && (
-        <TenantGroupForm
-          mode={showForm.mode}
-          group={showForm.group}
-          onSubmit={showForm.mode === 'create' ? handleCreateGroup : handleUpdateGroup}
-          onCancel={() => setShowForm(null)}
-        />
-      )}
+      {/* Form Dialog */}
+      <TenantGroupForm
+        mode={showForm?.mode || 'create'}
+        group={showForm?.group}
+        open={showForm !== null}
+        onSubmit={showForm?.mode === 'create' ? handleCreateGroup : handleUpdateGroup}
+        onClose={() => setShowForm(null)}
+      />
     </div>
   );
 };
