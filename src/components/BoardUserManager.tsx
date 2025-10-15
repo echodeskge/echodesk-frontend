@@ -151,7 +151,7 @@ export default function BoardUserManager({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[700px] max-h-[90vh] overflow-y-auto overflow-x-hidden">
         {loading ? (
           <div className="flex items-center justify-center min-h-[200px]">
             <div className="text-center">
@@ -176,7 +176,7 @@ export default function BoardUserManager({
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4 w-full">
               {/* Success/Error Messages */}
               {success && (
                 <Alert className="bg-green-50 border-green-200">
@@ -195,7 +195,7 @@ export default function BoardUserManager({
               )}
 
               {/* Tabs for different access types */}
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="order-users" className="flex items-center gap-2">
                     <UserCog className="h-4 w-4" />
@@ -248,7 +248,7 @@ export default function BoardUserManager({
                       users={users}
                       selectedAssignments={currentOrderAssignments}
                       onChange={handleOrderUsersChange}
-                      placeholder="Select users who can create orders on this board (leave empty for all users with order permissions)..."
+                      placeholder="Select users who can create orders..."
                     />
                   </div>
 
@@ -276,7 +276,7 @@ export default function BoardUserManager({
                             <>
                               <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground" />
                               <p className="text-sm text-muted-foreground">
-                                No specific users selected - all users can see and access this board
+                                No users assigned - board visible to everyone
                               </p>
                             </>
                           ) : (
@@ -284,7 +284,7 @@ export default function BoardUserManager({
                               <Lock className="h-4 w-4 mt-0.5 text-muted-foreground" />
                               <p className="text-sm text-muted-foreground">
                                 <Badge variant="secondary" className="mr-1">{assignedUserIds.length}</Badge>
-                                specific user{assignedUserIds.length !== 1 ? 's' : ''} can see and access this board
+                                user{assignedUserIds.length !== 1 ? 's' : ''} - board restricted to assigned users only
                               </p>
                             </>
                           )}
@@ -299,7 +299,7 @@ export default function BoardUserManager({
                       users={users}
                       selectedAssignments={currentAssignedUserAssignments}
                       onChange={handleAssignedUsersChange}
-                      placeholder="Select users who can see and access this board (leave empty for all users)..."
+                      placeholder="Select users who can access this board..."
                     />
                   </div>
 
@@ -308,9 +308,9 @@ export default function BoardUserManager({
                     <AlertDescription className="text-blue-800">
                       <p className="font-medium mb-2">Board Visibility:</p>
                       <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>If no users or groups are selected, everyone can see and access the board</li>
-                        <li>If users are selected, only those users (and users in assigned groups) can see the board</li>
-                        <li>This controls board visibility in the board switcher and kanban view</li>
+                        <li>Leave empty: everyone can see the board</li>
+                        <li>If users assigned: ONLY those users can see the board</li>
+                        <li>Users in assigned groups can also see the board</li>
                       </ul>
                     </AlertDescription>
                   </Alert>
@@ -327,7 +327,7 @@ export default function BoardUserManager({
                             <>
                               <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground" />
                               <p className="text-sm text-muted-foreground">
-                                No specific groups selected - all groups can see and access this board
+                                No groups assigned - board visible to everyone
                               </p>
                             </>
                           ) : (
@@ -335,7 +335,7 @@ export default function BoardUserManager({
                               <Lock className="h-4 w-4 mt-0.5 text-muted-foreground" />
                               <p className="text-sm text-muted-foreground">
                                 <Badge variant="secondary" className="mr-1">{assignedGroupIds.length}</Badge>
-                                group{assignedGroupIds.length !== 1 ? 's' : ''} can see and access this board
+                                group{assignedGroupIds.length !== 1 ? 's' : ''} - board restricted to group members only
                               </p>
                             </>
                           )}
@@ -350,7 +350,7 @@ export default function BoardUserManager({
                       groups={groups}
                       selectedGroupIds={assignedGroupIds}
                       onChange={handleAssignedGroupsChange}
-                      placeholder="Select groups whose members can see and access this board (leave empty for all groups)..."
+                      placeholder="Select groups who can access this board..."
                     />
                   </div>
 
@@ -359,10 +359,10 @@ export default function BoardUserManager({
                     <AlertDescription className="text-blue-800">
                       <p className="font-medium mb-2">Group-Based Access:</p>
                       <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>All members of assigned groups will be able to see and access this board</li>
-                        <li>If both users and groups are assigned, anyone in either list can access the board</li>
-                        <li>If no users or groups are selected, everyone can access the board</li>
-                        <li>This is useful for department or team-specific boards</li>
+                        <li>Leave empty: everyone can see the board</li>
+                        <li>If groups assigned: ONLY members of those groups can see the board</li>
+                        <li>Users in "Board Users" tab can also see the board</li>
+                        <li>Perfect for department/team-specific boards</li>
                       </ul>
                     </AlertDescription>
                   </Alert>
