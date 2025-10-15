@@ -18,6 +18,10 @@ export interface Board {
   columns_count: string;
   order_users: UserMinimal[];
   order_user_ids?: number[];
+  assigned_users?: UserMinimal[];
+  assigned_user_ids?: number[];
+  assigned_groups?: TenantGroupMinimal[];
+  assigned_group_ids?: number[];
   payment_summary: string;
 }
 
@@ -530,6 +534,10 @@ export interface PatchedBoard {
   columns_count?: string;
   order_users?: UserMinimal[];
   order_user_ids?: number[];
+  assigned_users?: UserMinimal[];
+  assigned_user_ids?: number[];
+  assigned_groups?: TenantGroupMinimal[];
+  assigned_group_ids?: number[];
   payment_summary?: string;
 }
 
