@@ -259,7 +259,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 onNotificationClick={(notification) => {
                   // Navigate to ticket if ticket_id exists
                   if (notification.ticket_id) {
-                    router.push(`/${locale}/tickets/${notification.ticket_id}`)
+                    router.push(`/tickets/${notification.ticket_id}`)
                   }
                 }}
               />

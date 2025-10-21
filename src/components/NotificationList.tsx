@@ -76,11 +76,7 @@ export function NotificationList({
       }
     }
 
-    // Navigate to ticket if ticket_id exists
-    if (notification.ticket_id) {
-      router.push(`/tickets/${notification.ticket_id}`)
-    }
-
+    // Callback will handle navigation
     onNotificationClick?.(notification)
   }
 

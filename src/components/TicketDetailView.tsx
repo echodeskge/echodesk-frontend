@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { MentionTextarea } from "@/components/MentionTextarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -587,9 +588,9 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={handleAddComment} className="space-y-2">
-                <Textarea
+                <MentionTextarea
                   value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
+                  onChange={setCommentText}
                   placeholder={t('addComment')}
                   className="min-h-[100px]"
                 />
