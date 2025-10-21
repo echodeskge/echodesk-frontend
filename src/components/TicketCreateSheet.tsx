@@ -27,7 +27,6 @@ import type {
 } from "@/api/generated/interfaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -66,6 +65,8 @@ import { LabelManagementDialog } from "@/components/LabelManagementDialog";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import MultiUserAssignment, { AssignmentData } from "@/components/MultiUserAssignment";
 import { SignatureCanvas } from "@/components/SignatureCanvas";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { FileDropzone, type UploadedFile } from "@/components/FileDropzone";
 
 // Flatten items recursively for search
 function flattenItems(items: any[]): any[] {
@@ -98,6 +99,8 @@ export function TicketCreateSheet() {
     board_id: 0,
     column_id: 0,
   });
+
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
 
   const [boards, setBoards] = useState<Board[]>([]);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
@@ -435,14 +438,37 @@ export function TicketCreateSheet() {
 
             <div className="grid gap-2">
               <Label htmlFor="description">{t('description')} (Optional)</Label>
-              <Textarea
-                id="description"
-                placeholder={t('taskDescription')}
-                className="resize-none min-h-[100px]"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+              <RichTextEditor
+                content={formData.description}
+                onChange={(content) =>
+                  setFormData({ ...formData, description: content })
                 }
+                placeholder={t('taskDescription')}
+                onImageUpload={async (file) => {
+                  // TODO: Implement image upload to DO Spaces and return URL
+                  // For now, create a local object URL
+                  return URL.createObjectURL(file)
+                }}
+              />
+            </div>
+
+            {/* File Attachments */}
+            <div className="grid gap-2">
+              <Label>Attachments (Optional)</Label>
+              <FileDropzone
+                onFilesSelected={(files) => {
+                  const newFiles = files.map(file => ({
+                    file,
+                    preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+                  }))
+                  setUploadedFiles(prev => [...prev, ...newFiles])
+                }}
+                files={uploadedFiles}
+                onRemoveFile={(index) => {
+                  setUploadedFiles(prev => prev.filter((_, i) => i !== index))
+                }}
+                maxFiles={10}
+                maxSize={10 * 1024 * 1024} // 10MB
               />
             </div>
 
