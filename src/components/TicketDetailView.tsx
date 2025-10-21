@@ -173,6 +173,17 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
     setIsEditing(false);
   };
 
+  const handleStartEditing = () => {
+    // Update formData with current ticket data when entering edit mode
+    setFormData({
+      title: ticket.title,
+      description: ticket.description,
+      rich_description: ticket.rich_description || ticket.description || '',
+      priority: String(ticket.priority || 'medium'),
+    });
+    setIsEditing(true);
+  };
+
   const handleCancel = () => {
     setFormData({
       title: ticket.title,
@@ -380,7 +391,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                   </div>
                 </div>
                 {!isEditing ? (
-                  <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
+                  <Button onClick={handleStartEditing} variant="outline" size="sm">
                     <Edit className="h-4 w-4 mr-2" />
                     {tCommon('edit')}
                   </Button>
@@ -404,21 +415,21 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                 {isEditing ? (
                   <div className="mt-2">
                     <RichTextEditor
-                      value={formData.rich_description}
+                      content={formData.rich_description}
                       onChange={(value) => setFormData({ ...formData, rich_description: value })}
                       placeholder={t('description')}
                     />
                   </div>
                 ) : (
                   <div className="mt-2">
-                    {ticket.rich_description ? (
+                    {(ticket.rich_description || ticket.description) ? (
                       <div
                         className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: ticket.rich_description }}
+                        dangerouslySetInnerHTML={{ __html: ticket.rich_description || ticket.description || '' }}
                       />
                     ) : (
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {ticket.description || t('description')}
+                      <p className="text-sm text-muted-foreground">
+                        {t('description')}
                       </p>
                     )}
                   </div>
