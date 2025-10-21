@@ -6,11 +6,10 @@ import type { DroppableProvided } from "@hello-pangea/dnd"
 
 import { useKanbanContext } from "../use-kanban-context"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { KanbanAddNewColumnButton } from "./kanban-add-new-column-button"
 import { KanbanColumnItem } from "./kanban-column-item"
 
 export function KanbanColumnList() {
-  const { kanbanState, setKanbanAddColumnSidebarIsOpen } = useKanbanContext()
+  const { kanbanState } = useKanbanContext()
 
   return (
     <ScrollArea orientation="horizontal" className="w-full" style={{ height: 'calc(100vh - 3.5rem)' }}>
@@ -32,9 +31,6 @@ export function KanbanColumnList() {
             ))}
             {/* Placeholder for maintaining layout integrity by creating a visual space for the dragged item */}
             {provided.placeholder}
-            <KanbanAddNewColumnButton
-              setKanbanAddColumnSidebarIsOpen={setKanbanAddColumnSidebarIsOpen}
-            />
           </div>
         )}
       </Droppable>
