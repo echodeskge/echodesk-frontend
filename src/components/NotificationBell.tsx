@@ -35,7 +35,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
       // Check if there are new notifications
       if (newUnreadCount > previousUnreadCount.current && previousUnreadCount.current > 0) {
         // Fetch latest notifications to show browser notification
-        const notifs = await notificationsList({ limit: 5 })
+        const notifs = await notificationsList()
         const latestUnread = notifs.results?.find(n => !n.is_read)
 
         if (latestUnread && canShowNotifications) {
@@ -65,7 +65,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   const fetchNotifications = async () => {
     setLoading(true)
     try {
-      const response = await notificationsList({ limit: 20 })
+      const response = await notificationsList()
       setNotifications(response.results || [])
     } catch (error) {
       console.error('Failed to fetch notifications:', error)

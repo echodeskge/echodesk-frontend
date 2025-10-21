@@ -22,22 +22,22 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
   const [viewSubmission, setViewSubmission] = useState<TicketFormSubmission | null>(null);
 
   // Get all form submissions
-  const formSubmissions = ticket.form_submissions || [];
+  const formSubmissions = (ticket.form_submissions as any as TicketFormSubmission[]) || [];
 
   // Get parent form submission (first one, or the one without a parent_form)
-  const parentFormSubmission = formSubmissions.find(sub => !sub.form?.parent_form) || formSubmissions[0];
+  const parentFormSubmission = formSubmissions.find((sub: TicketFormSubmission) => !sub.form?.parent_form) || formSubmissions[0];
 
   // Check if ticket has a form submission (parent form)
   const hasParentForm = !!parentFormSubmission;
 
   // Check if parent form has child forms
-  const hasChildForms = hasParentForm && parentFormSubmission?.form?.child_forms && parentFormSubmission.form.child_forms.length > 0;
+  const hasChildForms = hasParentForm && parentFormSubmission?.form?.child_forms && (parentFormSubmission.form.child_forms as any).length > 0;
 
   // Get IDs of child forms that have already been submitted
   const submittedChildFormIds = new Set(
     formSubmissions
-      .filter(sub => sub.form?.parent_form)
-      .map(sub => sub.form!.id)
+      .filter((sub: TicketFormSubmission) => sub.form?.parent_form)
+      .map((sub: TicketFormSubmission) => sub.form!.id)
   );
 
   if (!hasParentForm) {
@@ -92,7 +92,7 @@ export function TicketFormsSection({ ticket, onFormSubmitted }: TicketFormsSecti
           {hasChildForms && (
             <div className="space-y-3">
               <h4 className="font-semibold text-sm">{t('childForms')}</h4>
-              {parentFormSubmission?.form?.child_forms?.map((childForm) => {
+              {(parentFormSubmission?.form?.child_forms as any)?.map((childForm: any) => {
                 const isSubmitted = submittedChildFormIds.has(childForm.id);
                 const childSubmission = formSubmissions.find(sub => sub.form?.id === childForm.id);
 

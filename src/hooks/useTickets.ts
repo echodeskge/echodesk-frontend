@@ -54,8 +54,11 @@ export function useMoveTicketToColumn(boardId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { column_id: number; position_in_column: number } }) =>
-      moveTicketToColumn(id, data),
+    mutationFn: async ({ id, data }: { id: number; data: { column_id: number; position_in_column: number } }) => {
+      const axios = (await import('@/api/axios')).default;
+      const response = await axios.patch(`/api/tickets/${id}/move_to_column/`, data);
+      return response.data;
+    },
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {

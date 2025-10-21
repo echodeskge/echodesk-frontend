@@ -69,7 +69,7 @@ export function NotificationList({
     // Mark as read
     if (!notification.is_read) {
       try {
-        await notificationsMarkReadCreate(notification.id.toString())
+        await notificationsMarkReadCreate(notification.id.toString(), {} as any)
         onUpdate?.()
       } catch (error) {
         console.error('Failed to mark notification as read:', error)
@@ -86,7 +86,7 @@ export function NotificationList({
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationsMarkAllReadCreate({})
+      await notificationsMarkAllReadCreate({} as any)
       onUpdate?.()
     } catch (error) {
       console.error('Failed to mark all as read:', error)
@@ -149,9 +149,9 @@ export function NotificationList({
                 <div className="flex gap-3">
                   <div className={cn(
                     'flex-shrink-0 mt-1',
-                    getNotificationColor(notification.notification_type)
+                    getNotificationColor(notification.notification_type as any)
                   )}>
-                    {getNotificationIcon(notification.notification_type)}
+                    {getNotificationIcon(notification.notification_type as any)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className={cn(
