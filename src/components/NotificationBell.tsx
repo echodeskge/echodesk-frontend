@@ -29,7 +29,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   // Fetch unread count
   const fetchUnreadCount = async () => {
     try {
-      const response = await notificationsUnreadCountRetrieve()
+      const response = await notificationsUnreadCountRetrieve() as any
       const newUnreadCount = response.count || 0
 
       // Check if there are new notifications
