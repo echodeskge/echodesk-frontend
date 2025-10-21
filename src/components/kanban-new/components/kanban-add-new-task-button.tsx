@@ -1,6 +1,7 @@
 "use client"
 
 import { Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import type { ColumnType } from "../types"
 
@@ -15,6 +16,7 @@ interface KanbanTaskListProps {
 export function KanbanAddNewTaskButton({ column }: KanbanTaskListProps) {
   const { selectedBoard, apiColumns } = useKanbanContext()
   const { openTicketCreate } = useTicketCreate()
+  const t = useTranslations('tickets')
 
   const handleClick = () => {
     // Find the API column that matches this UI column
@@ -30,7 +32,7 @@ export function KanbanAddNewTaskButton({ column }: KanbanTaskListProps) {
       onClick={handleClick}
     >
       <Plus className="me-2 size-4 text-muted-foreground" />
-      Add New Task
+      {t('addNewTask')}
     </Button>
   )
 }
