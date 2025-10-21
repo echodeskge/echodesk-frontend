@@ -108,7 +108,7 @@
     "ticketDetail": "Ticket Detail",
     "ticketTitle": "Title",
     "description": "Description",
-    "priority": "Priority",
+    "priorityLabel": "Priority",
     "status": "Status",
     "assignedTo": "Assigned To",
     "createdBy": "Created By",

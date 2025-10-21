@@ -108,7 +108,7 @@
     "ticketDetail": "ტიკეტის დეტალები",
     "ticketTitle": "სათაური",
     "description": "აღწერა",
-    "priority": "პრიორიტეტი",
+    "priorityLabel": "პრიორიტეტი",
     "status": "სტატუსი",
     "assignedTo": "პასუხისმგებელი",
     "createdBy": "შემქმნელი",

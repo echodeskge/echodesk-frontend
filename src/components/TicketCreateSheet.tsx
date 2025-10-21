@@ -417,7 +417,7 @@ export function TicketCreateSheet() {
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="priority">Priority (Optional)</Label>
+              <Label htmlFor="priority">{t('priorityLabel')} (Optional)</Label>
               <Select
                 value={formData.priority}
                 onValueChange={(value: any) =>
@@ -425,7 +425,7 @@ export function TicketCreateSheet() {
                 }
               >
                 <SelectTrigger id="priority">
-                  <SelectValue placeholder="Select priority" />
+                  <SelectValue placeholder={t('priorityLabel')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">{t('priority.low')}</SelectItem>
@@ -454,7 +454,7 @@ export function TicketCreateSheet() {
 
             {/* File Attachments */}
             <div className="grid gap-2">
-              <Label>Attachments (Optional)</Label>
+              <Label>{t('attachments')} (Optional)</Label>
               <FileDropzone
                 onFilesSelected={(files) => {
                   const newFiles = files.map(file => ({
