@@ -386,7 +386,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                       {ticket.column?.track_time && <Clock className="ml-1 h-3 w-3" />}
                     </Badge>
                     <Badge variant={getPriorityColor(priorityDisplay) as any}>
-                      {t(`priority.${priorityDisplay.toLowerCase()}`)} {t('priority')}
+                      {t(`priority.${priorityDisplay.toLowerCase()}`)}
                     </Badge>
                   </div>
                 </div>
@@ -588,6 +588,43 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                 items={ticket.checklist_items || []}
                 onItemsChange={fetchTicket}
               />
+
+              {/* Attachments */}
+              {(ticket as any).attachments && (ticket as any).attachments.length > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <h5 className="text-sm font-semibold text-gray-800">Attachments ({(ticket as any).attachments.length})</h5>
+                  </div>
+                  <div className="space-y-2">
+                    {(ticket as any).attachments.map((attachment: any) => (
+                      <a
+                        key={attachment.id}
+                        href={attachment.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+                            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{attachment.filename}</p>
+                          <p className="text-xs text-gray-500">
+                            {(attachment.file_size / 1024).toFixed(2)} KB • Uploaded by {attachment.uploaded_by.first_name} {attachment.uploaded_by.last_name}
+                          </p>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                          <polyline points="15 3 21 3 21 9"/>
+                          <line x1="10" x2="21" y1="14" y2="3"/>
+                        </svg>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
