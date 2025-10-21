@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { MentionTextarea } from "@/components/MentionTextarea";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -85,6 +86,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   const [formData, setFormData] = useState({
     title: ticket.title,
     description: ticket.description,
+    rich_description: ticket.rich_description || '',
     priority: String(ticket.priority || 'medium'),
   });
 
@@ -175,6 +177,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
     setFormData({
       title: ticket.title,
       description: ticket.description,
+      rich_description: ticket.rich_description || '',
       priority: String(ticket.priority || 'medium'),
     });
     setIsEditing(false);
@@ -399,14 +402,16 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               <div>
                 <Label className="text-sm font-medium">{t('description')}</Label>
                 {isEditing ? (
-                  <Textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="mt-2 min-h-[150px]"
-                  />
+                  <div className="mt-2">
+                    <RichTextEditor
+                      value={formData.rich_description}
+                      onChange={(value) => setFormData({ ...formData, rich_description: value })}
+                      placeholder={t('description')}
+                    />
+                  </div>
                 ) : (
                   <div className="mt-2">
-                    {(ticket.description_format as any) === "html" && ticket.rich_description ? (
+                    {ticket.rich_description ? (
                       <div
                         className="prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: ticket.rich_description }}
