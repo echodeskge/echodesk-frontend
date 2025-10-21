@@ -40,7 +40,7 @@ export default function BoardUserManager({
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [orderUserIds, setOrderUserIds] = useState<number[]>([]);
-  const [assignedUserIds, setAssignedUserIds] = useState<number[]>([]);
+  const [boardUserIds, setBoardUserIds] = useState<number[]>([]);
   const [assignedGroupIds, setAssignedGroupIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,12 +75,12 @@ export default function BoardUserManager({
       const currentOrderUserIds = (boardResult.order_users || []).map(user => user.id);
       setOrderUserIds(currentOrderUserIds);
 
-      // Set current assigned users (for board visibility)
-      const currentAssignedUserIds = (boardResult.assigned_users || []).map(user => user.id);
-      setAssignedUserIds(currentAssignedUserIds);
+      // Set current board users
+      const currentBoardUserIds = (boardResult.board_users || []).map(user => user.id);
+      setBoardUserIds(currentBoardUserIds);
 
       // Set current assigned groups
-      const currentAssignedGroupIds = (boardResult.assigned_groups || []).map(group => group.id);
+      const currentAssignedGroupIds = (boardResult.board_groups || []).map(group => group.id);
       setAssignedGroupIds(currentAssignedGroupIds);
     } catch (err: any) {
       console.error("Failed to fetch data:", err);
@@ -95,9 +95,9 @@ export default function BoardUserManager({
     setOrderUserIds(userIds);
   };
 
-  const handleAssignedUsersChange = (assignments: AssignmentData[]) => {
+  const handleBoardUsersChange = (assignments: AssignmentData[]) => {
     const userIds = assignments.map(assignment => assignment.userId);
-    setAssignedUserIds(userIds);
+    setBoardUserIds(userIds);
   };
 
   const handleAssignedGroupsChange = (groupIds: number[]) => {
@@ -114,8 +114,8 @@ export default function BoardUserManager({
 
       await boardsPartialUpdate(board.id.toString(), {
         order_user_ids: orderUserIds,
-        assigned_user_ids: assignedUserIds,
-        assigned_group_ids: assignedGroupIds
+        board_user_ids: boardUserIds,
+        board_group_ids: assignedGroupIds
       });
 
       setSuccess("Board access settings updated successfully!");
@@ -144,7 +144,7 @@ export default function BoardUserManager({
     role: 'collaborator' as const
   }));
 
-  const currentAssignedUserAssignments: AssignmentData[] = assignedUserIds.map(userId => ({
+  const currentBoardUserAssignments: AssignmentData[] = boardUserIds.map(userId => ({
     userId,
     role: 'collaborator' as const
   }));
@@ -272,19 +272,19 @@ export default function BoardUserManager({
                       <div className="space-y-2">
                         <p className="text-sm font-medium">Current Configuration:</p>
                         <div className="flex items-start gap-2">
-                          {assignedUserIds.length === 0 ? (
+                          {boardUserIds.length === 0 ? (
                             <>
                               <BookOpen className="h-4 w-4 mt-0.5 text-muted-foreground" />
                               <p className="text-sm text-muted-foreground">
-                                No users assigned - board visible to everyone
+                                No users assigned - board visibility controlled by other settings
                               </p>
                             </>
                           ) : (
                             <>
                               <Lock className="h-4 w-4 mt-0.5 text-muted-foreground" />
                               <p className="text-sm text-muted-foreground">
-                                <Badge variant="secondary" className="mr-1">{assignedUserIds.length}</Badge>
-                                user{assignedUserIds.length !== 1 ? 's' : ''} - board restricted to assigned users only
+                                <Badge variant="secondary" className="mr-1">{boardUserIds.length}</Badge>
+                                user{boardUserIds.length !== 1 ? 's' : ''} can access this board
                               </p>
                             </>
                           )}
@@ -294,11 +294,11 @@ export default function BoardUserManager({
                   </Card>
 
                   <div className="space-y-2">
-                    <Label className="text-base">Assigned Users</Label>
+                    <Label className="text-base">Board Access Users</Label>
                     <MultiUserAssignment
                       users={users}
-                      selectedAssignments={currentAssignedUserAssignments}
-                      onChange={handleAssignedUsersChange}
+                      selectedAssignments={currentBoardUserAssignments}
+                      onChange={handleBoardUsersChange}
                       placeholder="Select users who can access this board..."
                     />
                   </div>
@@ -308,9 +308,10 @@ export default function BoardUserManager({
                     <AlertDescription className="text-blue-800">
                       <p className="font-medium mb-2">Board Visibility:</p>
                       <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>Leave empty: everyone can see the board</li>
-                        <li>If users assigned: ONLY those users can see the board</li>
+                        <li>These users can view and access the board</li>
+                        <li>Separate from "Order Users" who can create orders</li>
                         <li>Users in assigned groups can also see the board</li>
+                        <li>If no users, no groups assigned: everyone can see the board</li>
                       </ul>
                     </AlertDescription>
                   </Alert>
@@ -359,9 +360,9 @@ export default function BoardUserManager({
                     <AlertDescription className="text-blue-800">
                       <p className="font-medium mb-2">Group-Based Access:</p>
                       <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>Leave empty: everyone can see the board</li>
+                        <li>If no groups AND no order users: everyone can see the board</li>
                         <li>If groups assigned: ONLY members of those groups can see the board</li>
-                        <li>Users in "Board Users" tab can also see the board</li>
+                        <li>Users in "Order Users" tab can also see the board</li>
                         <li>Perfect for department/team-specific boards</li>
                       </ul>
                     </AlertDescription>
