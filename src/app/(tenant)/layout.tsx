@@ -15,6 +15,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { TenantInfo } from "@/types/auth";
 import { tenantService } from "@/services/tenantService";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { NotificationBell } from "@/components/NotificationBell";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
@@ -253,7 +254,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 />
               </div>
             )}
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <NotificationBell
+                onNotificationClick={(notification) => {
+                  // Navigate to ticket if ticket_id exists
+                  if (notification.ticket_id) {
+                    router.push(`/${locale}/tickets/${notification.ticket_id}`)
+                  }
+                }}
+              />
               <LanguageSwitcher currentLocale={locale} />
             </div>
           </div>

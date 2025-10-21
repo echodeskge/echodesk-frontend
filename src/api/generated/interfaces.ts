@@ -18,10 +18,10 @@ export interface Board {
   columns_count: string;
   order_users: UserMinimal[];
   order_user_ids?: number[];
-  assigned_users?: UserMinimal[];
-  assigned_user_ids?: number[];
-  assigned_groups?: TenantGroupMinimal[];
-  assigned_group_ids?: number[];
+  board_groups: TenantGroupMinimal[];
+  board_group_ids?: number[];
+  board_users: UserMinimal[];
+  board_user_ids?: number[];
   payment_summary: string;
 }
 
@@ -291,6 +291,25 @@ export interface ListItemMinimal {
   full_path: string;
 }
 
+export interface Notification {
+  id: number;
+  user: number;
+  user_name: string;
+  notification_type: NotificationTypeEnum;
+  title: string;
+  message: string;
+  ticket_id?: number;
+  metadata?: any;
+  is_read?: boolean;
+  read_at: string;
+  created_at: string;
+  time_ago: string;
+}
+
+export interface NotificationTypeEnum {
+  [key: string]: any;
+}
+
 export interface Package {
   id: number;
   name: string;
@@ -404,6 +423,13 @@ export interface PaginatedListItemMinimalList {
   results: ListItemMinimal[];
 }
 
+export interface PaginatedNotificationList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Notification[];
+}
+
 export interface PaginatedPackageListList {
   count: number;
   next?: string;
@@ -465,6 +491,13 @@ export interface PaginatedTicketAssignmentList {
   next?: string;
   previous?: string;
   results: TicketAssignment[];
+}
+
+export interface PaginatedTicketAttachmentList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TicketAttachment[];
 }
 
 export interface PaginatedTicketColumnList {
@@ -534,10 +567,10 @@ export interface PatchedBoard {
   columns_count?: string;
   order_users?: UserMinimal[];
   order_user_ids?: number[];
-  assigned_users?: UserMinimal[];
-  assigned_user_ids?: number[];
-  assigned_groups?: TenantGroupMinimal[];
-  assigned_group_ids?: number[];
+  board_groups?: TenantGroupMinimal[];
+  board_group_ids?: number[];
+  board_users?: UserMinimal[];
+  board_user_ids?: number[];
   payment_summary?: string;
 }
 
@@ -655,6 +688,21 @@ export interface PatchedListItem {
   created_by?: UserMinimal;
   children?: string;
   full_path?: string;
+}
+
+export interface PatchedNotification {
+  id?: number;
+  user?: number;
+  user_name?: string;
+  notification_type?: NotificationTypeEnum;
+  title?: string;
+  message?: string;
+  ticket_id?: number;
+  metadata?: any;
+  is_read?: boolean;
+  read_at?: string;
+  created_at?: string;
+  time_ago?: string;
 }
 
 export interface PatchedSipConfiguration {
@@ -806,7 +854,7 @@ export interface PatchedTicket {
   remaining_balance?: string;
   payment_status?: string;
   is_overdue?: string;
-  form_submissions?: TicketFormSubmission[];
+  form_submissions?: string;
 }
 
 export interface PatchedTicketAssignment {
@@ -815,6 +863,18 @@ export interface PatchedTicketAssignment {
   role?: Role451enum;
   assigned_at?: string;
   assigned_by?: UserMinimal;
+}
+
+export interface PatchedTicketAttachment {
+  id?: number;
+  ticket?: number;
+  file?: string;
+  file_url?: string;
+  filename?: string;
+  file_size?: number;
+  content_type?: string;
+  uploaded_by?: UserMinimal;
+  uploaded_at?: string;
 }
 
 export interface PatchedTicketColumnUpdate {
@@ -1183,7 +1243,7 @@ export interface Ticket {
   remaining_balance: string;
   payment_status: string;
   is_overdue: string;
-  form_submissions: TicketFormSubmission[];
+  form_submissions: string;
 }
 
 export interface TicketAssignment {
@@ -1192,6 +1252,18 @@ export interface TicketAssignment {
   role?: Role451enum;
   assigned_at: string;
   assigned_by: UserMinimal;
+}
+
+export interface TicketAttachment {
+  id: number;
+  ticket: number;
+  file: string;
+  file_url: string;
+  filename: string;
+  file_size: number;
+  content_type: string;
+  uploaded_by: UserMinimal;
+  uploaded_at: string;
 }
 
 export interface TicketColumn {
@@ -1270,8 +1342,8 @@ export interface TicketFormMinimal {
   is_active: boolean;
   created_at: string;
   created_by: UserMinimal;
-  child_forms: Array<{id: number; title: string; description: string; is_active: boolean}>;
-  parent_form: {id: number; title: string; description: string; is_active: boolean} | null;
+  child_forms: string;
+  parent_form: string;
   item_lists: ItemListMinimal[];
   submissions_count: string;
   custom_fields: any;

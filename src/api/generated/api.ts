@@ -5,6 +5,9 @@
 
 import axios from '../axios';
 import type {
+  PaginatedTicketAttachmentList,
+  TicketAttachment,
+  PatchedTicketAttachment,
   TenantDashboardData,
   TenantLogin,
   PaginatedBoardList,
@@ -51,6 +54,9 @@ import type {
   PaginatedListItemMinimalList,
   ListItem,
   PatchedListItem,
+  PaginatedNotificationList,
+  Notification,
+  PatchedNotification,
   PaginatedPackageListList,
   Package,
   PackageList,
@@ -105,6 +111,57 @@ import type {
   UserUpdate,
   PatchedUserUpdate,
 } from './interfaces';
+
+export async function attachmentsList(
+  page?: number,
+  ticket?: number,
+): Promise<PaginatedTicketAttachmentList> {
+  const response = await axios.get(
+    `/api/attachments/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        ticket ? 'ticket=' + encodeURIComponent(ticket) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function attachmentsCreate(
+  data: TicketAttachment,
+): Promise<TicketAttachment> {
+  const response = await axios.post(`/api/attachments/`, data);
+  return response.data;
+}
+
+export async function attachmentsRetrieve(
+  id: number,
+): Promise<TicketAttachment> {
+  const response = await axios.get(`/api/attachments/${id}/`);
+  return response.data;
+}
+
+export async function attachmentsUpdate(
+  id: number,
+  data: TicketAttachment,
+): Promise<TicketAttachment> {
+  const response = await axios.put(`/api/attachments/${id}/`, data);
+  return response.data;
+}
+
+export async function attachmentsPartialUpdate(
+  id: number,
+  data: PatchedTicketAttachment,
+): Promise<TicketAttachment> {
+  const response = await axios.patch(`/api/attachments/${id}/`, data);
+  return response.data;
+}
+
+export async function attachmentsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/attachments/${id}/`);
+  return response.data;
+}
 
 export async function changeTenantPassword(): Promise<{
   message?: string;
@@ -955,6 +1012,85 @@ export async function listItemsReorderPartialUpdate(
   data: PatchedListItem,
 ): Promise<ListItem> {
   const response = await axios.patch(`/api/list-items/${id}/reorder/`, data);
+  return response.data;
+}
+
+export async function notificationsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedNotificationList> {
+  const response = await axios.get(
+    `/api/notifications/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function notificationsCreate(
+  data: Notification,
+): Promise<Notification> {
+  const response = await axios.post(`/api/notifications/`, data);
+  return response.data;
+}
+
+export async function notificationsRetrieve(id: string): Promise<Notification> {
+  const response = await axios.get(`/api/notifications/${id}/`);
+  return response.data;
+}
+
+export async function notificationsUpdate(
+  id: string,
+  data: Notification,
+): Promise<Notification> {
+  const response = await axios.put(`/api/notifications/${id}/`, data);
+  return response.data;
+}
+
+export async function notificationsPartialUpdate(
+  id: string,
+  data: PatchedNotification,
+): Promise<Notification> {
+  const response = await axios.patch(`/api/notifications/${id}/`, data);
+  return response.data;
+}
+
+export async function notificationsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/notifications/${id}/`);
+  return response.data;
+}
+
+export async function notificationsMarkReadCreate(
+  id: string,
+  data: Notification,
+): Promise<Notification> {
+  const response = await axios.post(
+    `/api/notifications/${id}/mark_read/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function notificationsClearAllDestroy(): Promise<any> {
+  const response = await axios.delete(`/api/notifications/clear_all/`);
+  return response.data;
+}
+
+export async function notificationsMarkAllReadCreate(
+  data: Notification,
+): Promise<Notification> {
+  const response = await axios.post(`/api/notifications/mark_all_read/`, data);
+  return response.data;
+}
+
+export async function notificationsUnreadCountRetrieve(): Promise<Notification> {
+  const response = await axios.get(`/api/notifications/unread_count/`);
   return response.data;
 }
 
@@ -1918,8 +2054,8 @@ export async function ticketsCommentsRetrieve(id: number): Promise<Ticket> {
   return response.data;
 }
 
-export async function moveTicketToColumn(id: number, data: { column_id: number; position_in_column: number }): Promise<Ticket> {
-  const response = await axios.patch(`/api/tickets/${id}/move_to_column/`, data);
+export async function moveTicketToColumn(id: number): Promise<Ticket> {
+  const response = await axios.patch(`/api/tickets/${id}/move_to_column/`);
   return response.data;
 }
 
