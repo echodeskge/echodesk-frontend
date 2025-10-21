@@ -365,49 +365,53 @@ export function TicketCreateSheet() {
               />
             </div>
 
-            <div className="grid gap-2">
-              <Label htmlFor="board">{t('board')} *</Label>
-              <Select
-                value={formData.board_id > 0 ? formData.board_id.toString() : ""}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, board_id: parseInt(value) })
-                }
-                disabled={!!selectedBoard || fetchingData}
-              >
-                <SelectTrigger id="board">
-                  <SelectValue placeholder={t('selectBoard')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {boards.map((board) => (
-                    <SelectItem key={board.id} value={board.id.toString()}>
-                      {board.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!selectedBoard && (
+              <div className="grid gap-2">
+                <Label htmlFor="board">{t('board')} *</Label>
+                <Select
+                  value={formData.board_id > 0 ? formData.board_id.toString() : ""}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, board_id: parseInt(value) })
+                  }
+                  disabled={fetchingData}
+                >
+                  <SelectTrigger id="board">
+                    <SelectValue placeholder={t('selectBoard')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boards.map((board) => (
+                      <SelectItem key={board.id} value={board.id.toString()}>
+                        {board.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            <div className="grid gap-2">
-              <Label htmlFor="column">{t('column')} *</Label>
-              <Select
-                value={formData.column_id > 0 ? formData.column_id.toString() : ""}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, column_id: parseInt(value) })
-                }
-                disabled={!formData.board_id || !!selectedColumn || fetchingData}
-              >
-                <SelectTrigger id="column">
-                  <SelectValue placeholder={t('selectColumn')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns.map((column) => (
-                    <SelectItem key={column.id} value={column.id.toString()}>
-                      {column.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {!selectedColumn && (
+              <div className="grid gap-2">
+                <Label htmlFor="column">{t('column')} *</Label>
+                <Select
+                  value={formData.column_id > 0 ? formData.column_id.toString() : ""}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, column_id: parseInt(value) })
+                  }
+                  disabled={!formData.board_id || fetchingData}
+                >
+                  <SelectTrigger id="column">
+                    <SelectValue placeholder={t('selectColumn')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {columns.map((column) => (
+                      <SelectItem key={column.id} value={column.id.toString()}>
+                        {column.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="grid gap-2">
               <Label htmlFor="priority">{t('priority')} (Optional)</Label>
