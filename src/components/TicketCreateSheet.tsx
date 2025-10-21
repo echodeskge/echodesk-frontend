@@ -417,7 +417,7 @@ export function TicketCreateSheet() {
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="priority">{t('priority')} (Optional)</Label>
+              <Label htmlFor="priority">Priority (Optional)</Label>
               <Select
                 value={formData.priority}
                 onValueChange={(value: any) =>
@@ -425,7 +425,7 @@ export function TicketCreateSheet() {
                 }
               >
                 <SelectTrigger id="priority">
-                  <SelectValue placeholder={t('priority')} />
+                  <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">{t('priority.low')}</SelectItem>
