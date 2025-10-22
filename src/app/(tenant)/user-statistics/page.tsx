@@ -1,7 +1,12 @@
 "use client";
 
 import UserStatistics from "@/components/UserStatistics";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 export default function UserStatisticsPage() {
-  return <UserStatistics />;
+  return (
+    <FeatureGate feature="advanced_analytics" showUpgrade={true}>
+      <UserStatistics />
+    </FeatureGate>
+  );
 }

@@ -1,4 +1,5 @@
 import { User } from "@/api/generated/interfaces";
+import { SubscriptionFeature } from "@/contexts/SubscriptionContext";
 
 export interface MenuItem {
   id: string;
@@ -6,6 +7,9 @@ export interface MenuItem {
   icon: string;
   permission: string | null;
   description?: string;
+  subscriptionFeature?: SubscriptionFeature;
+  isPremium?: boolean;
+  isLocked?: boolean;
 }
 
 export interface PermissionMap {

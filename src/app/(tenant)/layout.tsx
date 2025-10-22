@@ -21,12 +21,15 @@ import type { Locale } from "@/lib/i18n";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
 import BoardUserManager from "@/components/BoardUserManager";
 import { BoardCreateSheet } from "@/components/BoardCreateSheet";
+import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
+import { navigationConfig } from "@/config/navigationConfig";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale() as Locale;
   const t = useTranslations('nav');
+  const { hasFeature, subscription } = useSubscription();
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: boards } = useBoards();
@@ -101,82 +104,29 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     checkSocialConnections();
   }, []);
 
-  const menuItems: MenuItem[] = [
-    {
-      id: "tickets",
-      label: t('tickets'),
-      icon: "🎫",
-      permission: "can_access_tickets",
-      description: t('description.tickets'),
-    },
-    {
-      id: "time-tracking",
-      label: t('timeTracking'),
-      icon: "⏱️",
-      permission: "can_access_tickets",
-      description: t('description.timeTracking'),
-    },
-    {
-      id: "user-statistics",
-      label: t('userStatistics'),
-      icon: "📊",
-      permission: "can_access_user_management",
-      description: t('description.userStatistics'),
-    },
-    {
-      id: "calls",
-      label: t('calls'),
-      icon: "📞",
-      permission: "can_access_calls",
-      description: t('description.calls'),
-    },
-    {
-      id: "orders",
-      label: t('orders'),
-      icon: "📝",
-      permission: "can_access_orders",
-      description: t('description.orders'),
-    },
-    ...(facebookConnected
-      ? [
-          {
-            id: "messages",
-            label: t('messages'),
-            icon: "💬",
-            permission: "can_manage_settings",
-            description: t('description.messages'),
-          },
-        ]
-      : []),
-    {
-      id: "users",
-      label: t('users'),
-      icon: "👥",
-      permission: "can_access_user_management",
-      description: t('description.users'),
-    },
-    {
-      id: "groups",
-      label: t('groups'),
-      icon: "👨‍👩‍👧‍👦",
-      permission: "can_access_user_management",
-      description: t('description.groups'),
-    },
-    {
-      id: "social",
-      label: t('social'),
-      icon: "📱",
-      permission: "can_manage_settings",
-      description: t('description.social'),
-    },
-    {
-      id: "settings",
-      label: t('settings'),
-      icon: "⚙️",
-      permission: "can_manage_settings",
-      description: t('description.settings'),
-    },
-  ];
+  // Build menu items with subscription feature requirements
+  const buildMenuItems = (): MenuItem[] => {
+    const items: MenuItem[] = navigationConfig.map(config => ({
+      ...config,
+      label: t(config.id),
+      description: t(`description.${config.id}`),
+      // Add subscription feature check
+      subscriptionFeature: config.subscriptionFeature,
+      isPremium: config.isPremium,
+      // Check if feature is available
+      isLocked: config.subscriptionFeature ? !hasFeature(config.subscriptionFeature) : false,
+    }));
+
+    // Special handling for messages - only show if Facebook is connected
+    return items.filter(item => {
+      if (item.id === "messages" && !facebookConnected) {
+        return false;
+      }
+      return true;
+    });
+  };
+
+  const menuItems = buildMenuItems();
 
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
@@ -307,10 +257,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
 export default function TenantLayout({ children }: { children: React.ReactNode }) {
   return (
-    <TicketCreateProvider>
-      <BoardProvider>
-        <TenantLayoutContent>{children}</TenantLayoutContent>
-      </BoardProvider>
-    </TicketCreateProvider>
+    <SubscriptionProvider>
+      <TicketCreateProvider>
+        <BoardProvider>
+          <TenantLayoutContent>{children}</TenantLayoutContent>
+        </BoardProvider>
+      </TicketCreateProvider>
+    </SubscriptionProvider>
   );
 }

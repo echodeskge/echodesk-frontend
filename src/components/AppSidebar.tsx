@@ -36,6 +36,8 @@ import { Button } from "@/components/ui/button"
 import { AuthUser, TenantInfo } from "@/types/auth"
 import { User } from "@/api/generated/interfaces"
 import { MenuItem } from "@/services/permissionService"
+import { LockedFeatureBadge, PremiumBadge } from "@/components/subscription/LockedFeatureBadge"
+import { Lock } from "lucide-react"
 
 // Icon mapping for menu items
 const iconMap = {
@@ -107,21 +109,37 @@ export function AppSidebar({
               {visibleMenuItems.map((item) => {
                 const IconComponent = iconMap[item.icon as keyof typeof iconMap]
                 const isActive = currentView === item.id
+                const isLocked = item.isLocked || false
+                const isPremium = item.isPremium || false
 
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
-                      onClick={() => onMenuClick(item.id)}
+                      onClick={() => {
+                        if (isLocked) {
+                          // TODO: Show upgrade dialog
+                          alert(`This feature requires a premium subscription. Please upgrade your plan to access ${item.label}.`)
+                        } else {
+                          onMenuClick(item.id)
+                        }
+                      }}
                       isActive={isActive}
-                      tooltip={item.description}
-                      className="cursor-pointer hover:bg-white hover:shadow-sm transition-all duration-200 data-[active=true]:bg-white data-[active=true]:shadow-md"
+                      tooltip={isLocked ? `🔒 Premium Feature - ${item.description}` : item.description}
+                      className={`cursor-pointer transition-all duration-200 ${
+                        isLocked
+                          ? 'opacity-60 hover:opacity-80'
+                          : 'hover:bg-white hover:shadow-sm data-[active=true]:bg-white data-[active=true]:shadow-md'
+                      }`}
+                      disabled={isLocked}
                     >
                       {IconComponent ? (
-                        <IconComponent className="h-4 w-4" />
+                        <IconComponent className={`h-4 w-4 ${isLocked ? 'text-gray-400' : ''}`} />
                       ) : (
-                        <span className="text-sm">{item.icon}</span>
+                        <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
                       )}
-                      <span>{item.label}</span>
+                      <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
+                      {isLocked && <LockedFeatureBadge className="ml-auto" size="sm" />}
+                      {isPremium && !isLocked && <PremiumBadge className="ml-auto" />}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
