@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { SubscriptionCard, FeatureList } from '@/components/subscription/SubscriptionCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,12 +15,19 @@ import {
   Users,
   MessageSquare,
   HardDrive,
-  CheckCircle2
+  CheckCircle2,
+  Lock,
+  ShoppingCart
 } from 'lucide-react';
 import Link from 'next/link';
+import { UpgradeDialog } from '@/components/subscription/UpgradeDialog';
 
 export default function SubscriptionPage() {
   const { subscription, loading } = useSubscription();
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+
+  // Check if user has no subscription
+  const hasNoSubscription = !subscription?.has_subscription;
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -30,6 +37,32 @@ export default function SubscriptionPage() {
           Manage your subscription plan, view usage statistics, and upgrade your account
         </p>
       </div>
+
+      {/* No Subscription Banner */}
+      {hasNoSubscription && (
+        <Card className="mb-6 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-amber-100 rounded-full">
+                <Lock className="h-6 w-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1">No Active Subscription</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You currently don't have an active subscription. All features are locked until you purchase a plan.
+                </p>
+                <Button
+                  onClick={() => setShowUpgradeDialog(true)}
+                  className="bg-amber-600 hover:bg-amber-700"
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Purchase a Plan
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
@@ -91,7 +124,7 @@ export default function SubscriptionPage() {
           </div>
 
           {/* Upgrade Call to Action */}
-          {subscription?.package?.pricing_model === 'Agent-based' && (
+          {!hasNoSubscription && (
             <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
               <CardHeader>
                 <div className="flex items-center gap-2">
@@ -103,7 +136,10 @@ export default function SubscriptionPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button
+                  onClick={() => setShowUpgradeDialog(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   View Available Plans
                 </Button>
               </CardContent>
@@ -318,6 +354,12 @@ export default function SubscriptionPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Upgrade Dialog */}
+      <UpgradeDialog
+        isOpen={showUpgradeDialog}
+        onClose={() => setShowUpgradeDialog(false)}
+      />
     </div>
   );
 }

@@ -34,16 +34,46 @@ interface Package {
 }
 
 interface UpgradeDialogProps {
-  open: boolean;
+  open?: boolean;
+  isOpen?: boolean;
   onClose: () => void;
   packages?: Package[];
 }
 
-export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ open, onClose, packages: propPackages }) => {
+export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({
+  open,
+  isOpen,
+  onClose,
+  packages: propPackages
+}) => {
   const { subscription, refreshSubscription } = useSubscription();
   const [loading, setLoading] = useState(false);
+  const [packagesLoading, setPackagesLoading] = useState(false);
+  const [packages, setPackages] = useState<Package[]>(propPackages || []);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [agentCount, setAgentCount] = useState(1);
+
+  const isDialogOpen = open ?? isOpen ?? false;
+
+  // Fetch packages if not provided
+  React.useEffect(() => {
+    if (isDialogOpen && !propPackages && packages.length === 0) {
+      fetchPackages();
+    }
+  }, [isDialogOpen, propPackages]);
+
+  const fetchPackages = async () => {
+    try {
+      setPackagesLoading(true);
+      const response = await axios.get('/api/packages/');
+      setPackages(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch packages:', error);
+      toast.error('Failed to load subscription plans');
+    } finally {
+      setPackagesLoading(false);
+    }
+  };
 
   const handleUpgrade = async () => {
     if (!selectedPackage) return;
@@ -80,26 +110,41 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ open, onClose, pac
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isDialogOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Upgrade Your Subscription</DialogTitle>
+          <DialogTitle>
+            {subscription?.has_subscription ? 'Upgrade Your Subscription' : 'Choose a Plan'}
+          </DialogTitle>
           <DialogDescription>
-            Choose a plan that fits your needs. You can upgrade or downgrade at any time.
+            {subscription?.has_subscription
+              ? 'Choose a plan that fits your needs. You can upgrade or downgrade at any time.'
+              : 'Select a subscription plan to unlock all features and start using EchoDesk.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Package Selection */}
-          <RadioGroup
-            value={selectedPackage?.id.toString()}
-            onValueChange={(value) => {
-              const pkg = propPackages?.find((p) => p.id.toString() === value);
-              if (pkg) setSelectedPackage(pkg);
-            }}
-          >
-            <div className="grid gap-4">
-              {propPackages?.map((pkg) => (
+          {packagesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : packages.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>No subscription plans available at the moment.</p>
+              <p className="text-sm mt-2">Please contact support for assistance.</p>
+            </div>
+          ) : (
+            <>
+              {/* Package Selection */}
+              <RadioGroup
+                value={selectedPackage?.id.toString()}
+                onValueChange={(value) => {
+                  const pkg = packages.find((p) => p.id.toString() === value);
+                  if (pkg) setSelectedPackage(pkg);
+                }}
+              >
+                <div className="grid gap-4">
+                  {packages.map((pkg) => (
                 <div
                   key={pkg.id}
                   className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -158,43 +203,45 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({ open, onClose, pac
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </RadioGroup>
-
-          {/* Agent Count Input (for agent-based pricing) */}
-          {selectedPackage?.pricing_model === 'agent' && (
-            <div className="space-y-2 p-4 bg-muted rounded-lg">
-              <Label htmlFor="agent-count" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Number of Agents
-              </Label>
-              <Input
-                id="agent-count"
-                type="number"
-                min="1"
-                value={agentCount}
-                onChange={(e) => setAgentCount(Math.max(1, parseInt(e.target.value) || 1))}
-                className="max-w-xs"
-              />
-              <p className="text-sm text-muted-foreground">
-                Total: <span className="font-semibold">{calculatePrice(selectedPackage)}₾/month</span>
-              </p>
-            </div>
-          )}
-
-          {/* Total Amount */}
-          {selectedPackage && (
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">You will be charged</p>
-                  <p className="text-2xl font-bold">{calculatePrice(selectedPackage)}₾</p>
-                  <p className="text-sm text-muted-foreground">Billed monthly</p>
+                  ))}
                 </div>
-                <CreditCard className="h-12 w-12 text-blue-600 opacity-50" />
-              </div>
-            </div>
+              </RadioGroup>
+
+              {/* Agent Count Input (for agent-based pricing) */}
+              {selectedPackage?.pricing_model === 'agent' && (
+                <div className="space-y-2 p-4 bg-muted rounded-lg">
+                  <Label htmlFor="agent-count" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Number of Agents
+                  </Label>
+                  <Input
+                    id="agent-count"
+                    type="number"
+                    min="1"
+                    value={agentCount}
+                    onChange={(e) => setAgentCount(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="max-w-xs"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Total: <span className="font-semibold">{calculatePrice(selectedPackage)}₾/month</span>
+                  </p>
+                </div>
+              )}
+
+              {/* Total Amount */}
+              {selectedPackage && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">You will be charged</p>
+                      <p className="text-2xl font-bold">{calculatePrice(selectedPackage)}₾</p>
+                      <p className="text-sm text-muted-foreground">Billed monthly</p>
+                    </div>
+                    <CreditCard className="h-12 w-12 text-blue-600 opacity-50" />
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 

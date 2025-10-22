@@ -144,9 +144,9 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, [token, user]);
 
   const hasFeature = (feature: SubscriptionFeature): boolean => {
+    // Lock ALL features if no subscription exists
     if (!subscription || !subscription.has_subscription) {
-      // Return true for basic features even without subscription
-      return feature === 'ticket_management' || feature === 'email_integration';
+      return false;
     }
 
     return subscription.features[feature] || false;
