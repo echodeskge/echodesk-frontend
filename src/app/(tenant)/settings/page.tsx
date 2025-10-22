@@ -3,13 +3,20 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { List, FileText, Settings, ChevronRight } from "lucide-react";
+import { List, FileText, Settings, ChevronRight, CreditCard } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
   const t = useTranslations('settings');
 
   const settingsSections = [
+    {
+      title: "Subscription & Billing",
+      description: "Manage your subscription plan, billing, and usage",
+      icon: CreditCard,
+      href: "/settings/subscription",
+      color: "text-purple-500",
+    },
     {
       title: t('sections.itemLists.title'),
       description: t('sections.itemLists.description'),
