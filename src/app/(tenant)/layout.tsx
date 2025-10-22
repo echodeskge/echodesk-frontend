@@ -104,12 +104,26 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     checkSocialConnections();
   }, []);
 
+  // Translation key mapping for navigation items
+  const translationKeyMap: Record<string, string> = {
+    'tickets': 'tickets',
+    'time-tracking': 'timeTracking',
+    'user-statistics': 'userStatistics',
+    'calls': 'calls',
+    'orders': 'orders',
+    'messages': 'messages',
+    'users': 'users',
+    'groups': 'groups',
+    'social': 'social',
+    'settings': 'settings',
+  };
+
   // Build menu items with subscription feature requirements
   const buildMenuItems = (): MenuItem[] => {
     const items: MenuItem[] = navigationConfig.map(config => ({
       ...config,
-      label: t(config.id),
-      description: t(`description.${config.id}`),
+      label: t(translationKeyMap[config.id] || config.id),
+      description: t(`description.${translationKeyMap[config.id] || config.id}`),
       // Add subscription feature check
       subscriptionFeature: config.subscriptionFeature,
       isPremium: config.isPremium,
