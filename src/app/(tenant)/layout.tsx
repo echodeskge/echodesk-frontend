@@ -20,6 +20,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
 import BoardUserManager from "@/components/BoardUserManager";
+import { BoardCreateSheet } from "@/components/BoardCreateSheet";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -34,6 +35,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
   const [managingBoardUsersId, setManagingBoardUsersId] = useState<number | null>(null);
+  const [isBoardCreateOpen, setIsBoardCreateOpen] = useState(false);
 
   // Load tenant data from subdomain
   useEffect(() => {
@@ -249,6 +251,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                   selectedBoardId={selectedBoardId}
                   boards={boards}
                   onBoardChange={setSelectedBoardId}
+                  onCreateBoard={() => setIsBoardCreateOpen(true)}
                   onEditBoardStatuses={handleEditBoardStatuses}
                   onManageBoardUsers={handleManageBoardUsers}
                 />
@@ -274,6 +277,16 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       </div>
 
       <TicketCreateSheet />
+
+      {/* Board Create Sheet */}
+      <BoardCreateSheet
+        isOpen={isBoardCreateOpen}
+        onClose={() => setIsBoardCreateOpen(false)}
+        onBoardCreated={(board) => {
+          // Switch to the newly created board
+          setSelectedBoardId(board.id);
+        }}
+      />
 
       {/* Board Status Editor Modal */}
       <BoardStatusEditor
