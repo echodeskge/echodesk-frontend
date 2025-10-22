@@ -111,16 +111,27 @@ export default function RegistrationForm() {
     setSuccess('');
 
     try {
-      const data = await registerTenant(formData as unknown as TenantRegistration);
+      // Call the new payment-required registration endpoint
+      const response = await fetch('https://api.echodesk.ge/api/register-with-payment/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      setSuccess(t('registrationSuccess'));
+      const data = await response.json();
 
-      // Redirect after 3 seconds
-      setTimeout(() => {
-        if (data.frontend_url) {
-          window.open(data.frontend_url, '_blank');
-        }
-      }, 3000);
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+
+      // Redirect to Flitt payment page
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        throw new Error('Payment URL not received');
+      }
     } catch (error: any) {
       console.error('Registration error:', error);
       const errorMessage = error.response?.data?.error ||
@@ -129,7 +140,6 @@ export default function RegistrationForm() {
         error.message ||
         t('registrationFailed');
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };
