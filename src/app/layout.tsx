@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TenantProvider } from '@/contexts/TenantContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import QueryProvider from '@/providers/QueryProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -36,7 +37,9 @@ export default async function RootLayout({
           <QueryProvider>
             <TenantProvider>
               <AuthProvider>
-                {children}
+                <SubscriptionProvider>
+                  {children}
+                </SubscriptionProvider>
               </AuthProvider>
             </TenantProvider>
           </QueryProvider>
