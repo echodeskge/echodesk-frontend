@@ -239,8 +239,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
           onLogout={handleLogout}
         />
 
-        <SidebarInset className="flex flex-col h-screen">
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white w-full">
+        <SidebarInset className="flex flex-col h-screen overflow-hidden">
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white sticky top-0 z-10 left-0 right-0">
             <SidebarTrigger className="-ml-1" />
             <h1 className="text-lg font-semibold">{pageTitle}</h1>
             {showBoardSwitcher && (
@@ -267,7 +267,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex-1 bg-white w-full overflow-auto">
+          <div className="flex-1 bg-white overflow-auto">
             {children}
           </div>
         </SidebarInset>
