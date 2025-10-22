@@ -49,11 +49,18 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({
   const { subscription, refreshSubscription } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [packagesLoading, setPackagesLoading] = useState(false);
-  const [packages, setPackages] = useState<Package[]>(propPackages || []);
+  const [packages, setPackages] = useState<Package[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [agentCount, setAgentCount] = useState(1);
 
   const isDialogOpen = open ?? isOpen ?? false;
+
+  // Update packages when propPackages changes
+  React.useEffect(() => {
+    if (propPackages && Array.isArray(propPackages)) {
+      setPackages(propPackages);
+    }
+  }, [propPackages]);
 
   // Fetch packages if not provided
   React.useEffect(() => {
@@ -66,10 +73,23 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({
     try {
       setPackagesLoading(true);
       const response = await axios.get('/api/packages/');
-      setPackages(response.data || []);
+      const data = response.data;
+
+      // Handle different response formats
+      if (Array.isArray(data)) {
+        setPackages(data);
+      } else if (data && Array.isArray(data.results)) {
+        // Handle paginated response
+        setPackages(data.results);
+      } else {
+        console.error('Unexpected packages response format:', data);
+        setPackages([]);
+        toast.error('Invalid package data format');
+      }
     } catch (error) {
       console.error('Failed to fetch packages:', error);
       toast.error('Failed to load subscription plans');
+      setPackages([]);
     } finally {
       setPackagesLoading(false);
     }
@@ -144,7 +164,7 @@ export const UpgradeDialog: React.FC<UpgradeDialogProps> = ({
                 }}
               >
                 <div className="grid gap-4">
-                  {packages.map((pkg) => (
+                  {Array.isArray(packages) && packages.map((pkg) => (
                 <div
                   key={pkg.id}
                   className={`border rounded-lg p-4 cursor-pointer transition-all ${
