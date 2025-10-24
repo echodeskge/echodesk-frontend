@@ -3,7 +3,7 @@ import { useState } from "react";
 
 export default function LandingPage() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [pricingModel, setPricingModel] = useState<'agent' | 'crm'>('agent');
+  const [pricingModel, setPricingModel] = useState<"agent" | "crm">("agent");
 
   const agentBasedPackages = [
     {
@@ -11,14 +11,15 @@ export default function LandingPage() {
       name: "Essential",
       price: "5₾",
       period: "per agent/month",
-      description: "Basic ticket management and communication tools for small teams",
+      description:
+        "Basic ticket management and communication tools for small teams",
       features: [
         "Complete Ticket Management System",
         "Email Integration",
         "Basic Reporting",
         "Team Collaboration",
         "Mobile App Access",
-        "Email Support"
+        "Email Support",
       ],
       highlight: false,
       color: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -35,7 +36,7 @@ export default function LandingPage() {
         "Call Recording & Analytics",
         "Facebook Messenger Integration",
         "Advanced Workflows",
-        "Priority Support"
+        "Priority Support",
       ],
       highlight: true,
       color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
@@ -45,7 +46,8 @@ export default function LandingPage() {
       name: "Enterprise",
       price: "25₾",
       period: "per agent/month",
-      description: "Complete solution with advanced features and custom integrations",
+      description:
+        "Complete solution with advanced features and custom integrations",
       features: [
         "Everything in Professional",
         "Custom Integrations",
@@ -53,7 +55,7 @@ export default function LandingPage() {
         "Multi-tenant Management",
         "API Access",
         "Dedicated Account Manager",
-        "24/7 Premium Support"
+        "24/7 Premium Support",
       ],
       highlight: false,
       color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
@@ -74,7 +76,7 @@ export default function LandingPage() {
         "Basic Reporting",
         "Mobile App Access",
         "Standard Support",
-        "5GB Storage"
+        "5GB Storage",
       ],
       highlight: false,
       color: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
@@ -93,7 +95,7 @@ export default function LandingPage() {
         "Advanced Workflows",
         "Call Recording",
         "Priority Support",
-        "50GB Storage"
+        "50GB Storage",
       ],
       highlight: true,
       color: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
@@ -103,7 +105,8 @@ export default function LandingPage() {
       name: "Corporate",
       price: "699₾",
       period: "per month",
-      description: "Large organizations with up to 100 users and enterprise features",
+      description:
+        "Large organizations with up to 100 users and enterprise features",
       features: [
         "Up to 100 Users",
         "Everything in Business",
@@ -112,14 +115,15 @@ export default function LandingPage() {
         "Multi-tenant Architecture",
         "Dedicated Account Manager",
         "Unlimited Storage",
-        "Custom SLA Agreement"
+        "Custom SLA Agreement",
       ],
       highlight: false,
       color: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
     },
   ];
 
-  const packages = pricingModel === 'agent' ? agentBasedPackages : crmBasedPackages;
+  const packages =
+    pricingModel === "agent" ? agentBasedPackages : crmBasedPackages;
 
   const services = [
     {
@@ -379,62 +383,64 @@ export default function LandingPage() {
           >
             Choose Your Perfect Plan
           </h2>
-          
+
           {/* Pricing Model Toggle */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginBottom: '2rem',
-            gap: '10px'
-          }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "2rem",
+              gap: "10px",
+            }}
+          >
             <button
-              onClick={() => setPricingModel('agent')}
+              onClick={() => setPricingModel("agent")}
               style={{
-                padding: '12px 24px',
-                borderRadius: '50px',
-                border: '2px solid #2A2B7C',
-                background: pricingModel === 'agent' ? '#2A2B7C' : 'transparent',
-                color: pricingModel === 'agent' ? 'white' : '#2A2B7C',
-                fontWeight: '600',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                padding: "12px 24px",
+                borderRadius: "50px",
+                border: "2px solid #2A2B7C",
+                background:
+                  pricingModel === "agent" ? "#2A2B7C" : "transparent",
+                color: pricingModel === "agent" ? "white" : "#2A2B7C",
+                fontWeight: "600",
+                fontSize: "1rem",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
               }}
             >
               Agent-Based Pricing
             </button>
             <button
-              onClick={() => setPricingModel('crm')}
+              onClick={() => setPricingModel("crm")}
               style={{
-                padding: '12px 24px',
-                borderRadius: '50px',
-                border: '2px solid #2A2B7C',
-                background: pricingModel === 'crm' ? '#2A2B7C' : 'transparent',
-                color: pricingModel === 'crm' ? 'white' : '#2A2B7C',
-                fontWeight: '600',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                padding: "12px 24px",
+                borderRadius: "50px",
+                border: "2px solid #2A2B7C",
+                background: pricingModel === "crm" ? "#2A2B7C" : "transparent",
+                color: pricingModel === "crm" ? "white" : "#2A2B7C",
+                fontWeight: "600",
+                fontSize: "1rem",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
               }}
             >
               CRM-Based Pricing
             </button>
           </div>
-          
+
           <p
             style={{
-              fontSize: '1rem',
-              color: '#64748b',
-              marginBottom: '1rem',
-              fontStyle: 'italic'
+              fontSize: "1rem",
+              color: "#64748b",
+              marginBottom: "1rem",
+              fontStyle: "italic",
             }}
           >
-            {pricingModel === 'agent' 
-              ? 'Pay per agent - perfect for teams that want predictable scaling costs'
-              : 'Fixed pricing with user limits - ideal for organizations with defined team sizes'
-            }
+            {pricingModel === "agent"
+              ? "Pay per agent - perfect for teams that want predictable scaling costs"
+              : "Fixed pricing with user limits - ideal for organizations with defined team sizes"}
           </p>
-          
+
           <p
             style={{
               fontSize: "1.2rem",
@@ -671,7 +677,7 @@ export default function LandingPage() {
               Start Free Trial
             </Link>
             <a
-              href="mailto:support@echodesk.ge"
+              href="mailto:info@echodesk.ge"
               style={{
                 background: "transparent",
                 color: "white",
