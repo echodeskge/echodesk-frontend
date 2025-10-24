@@ -708,6 +708,57 @@ export default function LandingPage() {
         }}
       >
         <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "24px",
+              marginBottom: "20px",
+              flexWrap: "wrap",
+            }}
+          >
+            <Link
+              href="/privacy-policy"
+              style={{
+                color: "#94a3b8",
+                textDecoration: "none",
+                fontSize: "0.9rem",
+                transition: "color 0.3s ease",
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.color = "#ffffff")}
+              onMouseOut={(e) => (e.currentTarget.style.color = "#94a3b8")}
+            >
+              Privacy Policy
+            </Link>
+            <span style={{ color: "#475569" }}>•</span>
+            <Link
+              href="/terms-of-service"
+              style={{
+                color: "#94a3b8",
+                textDecoration: "none",
+                fontSize: "0.9rem",
+                transition: "color 0.3s ease",
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.color = "#ffffff")}
+              onMouseOut={(e) => (e.currentTarget.style.color = "#94a3b8")}
+            >
+              Terms of Service
+            </Link>
+            <span style={{ color: "#475569" }}>•</span>
+            <Link
+              href="/refund-policy"
+              style={{
+                color: "#94a3b8",
+                textDecoration: "none",
+                fontSize: "0.9rem",
+                transition: "color 0.3s ease",
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.color = "#ffffff")}
+              onMouseOut={(e) => (e.currentTarget.style.color = "#94a3b8")}
+            >
+              Refund Policy
+            </Link>
+          </div>
           <p style={{ fontSize: "0.9rem" }}>
             © 2025 EchoDesk. All rights reserved. | Built with ❤️ for
             exceptional customer support teams.
