@@ -58,7 +58,10 @@ export default function RefundPolicy() {
               <li>Services already rendered or consumed</li>
               <li>Refund requests made after 30 days from the billing date</li>
               <li>
-                Account termination due to violation of our Terms of Service
+                Account termination due to violation of our{" "}
+                <Link href="/terms-of-service" className="text-blue-600 hover:underline">
+                  Terms of Service
+                </Link>
               </li>
             </ul>
           </section>
