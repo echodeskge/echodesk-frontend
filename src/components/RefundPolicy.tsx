@@ -1,6 +1,6 @@
 "use client";
 
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function RefundPolicy() {
   return (
@@ -59,7 +59,10 @@ export default function RefundPolicy() {
               <li>Refund requests made after 30 days from the billing date</li>
               <li>
                 Account termination due to violation of our{" "}
-                <Link href="/terms-of-service" className="text-blue-600 hover:underline">
+                <Link
+                  href="/terms-of-service"
+                  className="text-blue-600 hover:underline"
+                >
                   Terms of Service
                 </Link>
               </li>
@@ -151,20 +154,28 @@ export default function RefundPolicy() {
                   info@echodesk.ge
                 </a>
               </p>
-              <p>Phone: +995 (597) 147-515</p>
+              <p>Phone: +995 (510) 003-358</p>
             </div>
           </section>
 
           <section className="border-t pt-6 mt-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Related Policies</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              Related Policies
+            </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/terms-of-service" className="text-blue-600 hover:underline">
+                <Link
+                  href="/terms-of-service"
+                  className="text-blue-600 hover:underline"
+                >
                   Terms of Service
                 </Link>
               </li>
               <li>
-                <Link href="/privacy-policy" className="text-blue-600 hover:underline">
+                <Link
+                  href="/privacy-policy"
+                  className="text-blue-600 hover:underline"
+                >
                   Privacy Policy
                 </Link>
               </li>
