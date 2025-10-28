@@ -602,9 +602,9 @@
         "secondary": "Explore Features"
       },
       "features": {
-        "messaging": "Social Media",
-        "calling": "SIP Calling",
-        "email": "Email Integration"
+        "messaging": "Ticketing",
+        "calling": "Social Media Channels",
+        "email": "SIP Calls"
       }
     },
     "features": {
@@ -619,15 +619,19 @@
         "description": "Connect your email accounts and manage all customer emails directly from EchoDesk. No more switching between platforms."
       },
       "sipCalling": {
-        "title": "Integrated SIP Phone System",
+        "title": "SIP Calling Integration",
         "description": "Make and receive calls directly from the platform. Call recording, call history, and real-time call analytics included."
       },
+      "advancedForms": {
+        "title": "Advanced Forms",
+        "description": "Create custom forms attachable to tickets. Collect structured information and streamline your support workflow."
+      },
       "facebook": {
-        "title": "Facebook Messenger",
+        "title": "Messenger API",
         "description": "Respond to Facebook messages from multiple pages in one unified inbox. Never miss a customer message."
       },
       "instagram": {
-        "title": "Instagram Direct Messages",
+        "title": "Instagram API",
         "description": "Manage Instagram DMs alongside all other channels. Keep your social media support organized and efficient."
       },
       "whatsapp": {

@@ -48,10 +48,18 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
         const hostname = window.location.hostname;
 
-        // On localhost, always use "groot" tenant
+        // On localhost, check localStorage for development tenant
         let subdomain: string | null;
         if (hostname.includes('localhost')) {
-          subdomain = 'groot';
+          const storedTenant = localStorage.getItem('dev_tenant');
+          if (storedTenant) {
+            subdomain = storedTenant;
+          } else {
+            // No tenant set, redirect to homepage
+            console.log("No development tenant set. Set one using: localStorage.setItem('dev_tenant', 'groot')");
+            router.push('/');
+            return;
+          }
         } else {
           subdomain = tenantService.getSubdomainFromHostname(hostname);
         }

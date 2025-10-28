@@ -15,13 +15,13 @@ export function Hero() {
     <section className="container space-y-10">
       <div className="grid place-items-center text-center gap-y-6">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
           <MessageSquare className="h-4 w-4" />
           <span>{t('badge')}</span>
         </div>
 
         {/* Main Heading */}
-        <h1 className="text-5xl md:text-6xl font-black leading-tight max-w-4xl">
+        <h1 className="text-5xl md:text-6xl font-black leading-tight max-w-4xl text-foreground">
           {t('title')}
         </h1>
 
@@ -44,17 +44,17 @@ export function Hero() {
         </div>
 
         {/* Feature Icons */}
-        <div className="flex flex-wrap justify-center gap-6 mt-8 text-sm text-muted-foreground">
+        <div className="flex flex-col md:flex-row md:flex-wrap justify-center gap-6 mt-8 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
+            <MessageSquare className="h-5 w-5 text-foreground" />
             <span>{t('features.messaging')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-primary" />
+            <Phone className="h-5 w-5 text-foreground" />
             <span>{t('features.calling')}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-primary" />
+            <Mail className="h-5 w-5 text-foreground" />
             <span>{t('features.email')}</span>
           </div>
         </div>
@@ -68,19 +68,35 @@ export function Hero() {
 
 function HeroImage() {
   return (
-    <Card className="bg-accent p-3 md:p-6">
+    <Card className="p-3 md:p-6" style={{ backgroundColor: '#FCFCFC' }}>
       <Card className="pointer-events-none bg-muted p-6 overflow-hidden" asChild>
-        <AspectRatio ratio={2560 / 1240}>
-          <Image
-            src="/dashboard-preview.png"
-            alt="EchoDesk Dashboard Preview"
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1400px"
-            priority
-            quality={100}
-            className="object-cover object-top rounded-lg"
-          />
-        </AspectRatio>
+        <div className="relative w-full">
+          {/* Desktop Image */}
+          <div className="hidden md:block relative w-full" style={{ aspectRatio: '2560/1240' }}>
+            <Image
+              src="/dashboard-preview.png"
+              alt="EchoDesk Dashboard Preview"
+              fill
+              sizes="(max-width: 1200px) 80vw, 1400px"
+              priority
+              quality={100}
+              className="object-contain object-top rounded-lg"
+            />
+          </div>
+
+          {/* Mobile Image */}
+          <div className="block md:hidden relative w-full" style={{ aspectRatio: '750/1334' }}>
+            <Image
+              src="/dashboard-preview-mobile.png"
+              alt="EchoDesk Dashboard Preview"
+              fill
+              sizes="100vw"
+              priority
+              quality={100}
+              className="object-contain object-top rounded-lg"
+            />
+          </div>
+        </div>
       </Card>
     </Card>
   );

@@ -50,11 +50,11 @@ export function Header() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src="/logo-footer.png"
+            src="/logo-svg.svg"
             alt="EchoDesk"
-            width={120}
-            height={32}
-            className="h-8 w-auto"
+            width={100}
+            height={26}
+            className="h-6 w-auto"
           />
         </Link>
 
@@ -62,25 +62,25 @@ export function Header() {
         <nav className="hidden md:flex items-center gap-6">
           <button
             onClick={() => scrollToSection('features')}
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
           >
             {t('features')}
           </button>
           <button
             onClick={() => scrollToSection('pricing')}
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
           >
             {t('pricing')}
           </button>
           <Link
             href="/privacy-policy"
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
           >
             {t('privacy')}
           </Link>
           <Link
             href="/terms-of-service"
-            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
           >
             {t('terms')}
           </Link>
@@ -98,10 +98,10 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => changeLanguage('ka')}>
-                🇬🇪 ქართული
+                ქართული
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => changeLanguage('en')}>
-                🇬🇧 English
+                English
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -133,26 +133,26 @@ export function Header() {
           <nav className="container py-4 flex flex-col space-y-3">
             <button
               onClick={() => scrollToSection('features')}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors text-left"
+              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors text-left"
             >
               {t('features')}
             </button>
             <button
               onClick={() => scrollToSection('pricing')}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors text-left"
+              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors text-left"
             >
               {t('pricing')}
             </button>
             <Link
               href="/privacy-policy"
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('privacy')}
             </Link>
             <Link
               href="/terms-of-service"
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('terms')}

@@ -15,24 +15,24 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <Image
-              src="/logo-footer.png"
+              src="/logo-svg.svg"
               alt="EchoDesk"
-              width={150}
-              height={40}
-              className="h-10 w-auto"
+              width={140}
+              height={35}
+              className="h-8 w-auto"
             />
             <p className="text-sm text-muted-foreground">{t('tagline')}</p>
             <div className="flex gap-3">
-              <a href="#" className="hover:text-primary transition-colors">
+              <a href="#" className="hover:text-secondary transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="hover:text-primary transition-colors">
+              <a href="#" className="hover:text-secondary transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="hover:text-primary transition-colors">
+              <a href="#" className="hover:text-secondary transition-colors">
                 <Linkedin className="h-5 w-5" />
               </a>
-              <a href="mailto:info@echodesk.ge" className="hover:text-primary transition-colors">
+              <a href="mailto:info@echodesk.ge" className="hover:text-secondary transition-colors">
                 <Mail className="h-5 w-5" />
               </a>
             </div>
@@ -43,17 +43,17 @@ export function Footer() {
             <h4 className="font-semibold">{t('product.title')}</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="#features" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="#features" className="text-muted-foreground hover:text-secondary transition-colors">
                   {t('product.features')}
                 </Link>
               </li>
               <li>
-                <Link href="#pricing" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="#pricing" className="text-muted-foreground hover:text-secondary transition-colors">
                   {t('product.pricing')}
                 </Link>
               </li>
               <li>
-                <Link href="/registration" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/registration" className="text-muted-foreground hover:text-secondary transition-colors">
                   {t('product.signUp')}
                 </Link>
               </li>
@@ -65,17 +65,17 @@ export function Footer() {
             <h4 className="font-semibold">{t('legal.title')}</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/privacy-policy" className="text-muted-foreground hover:text-secondary transition-colors">
                   {t('legal.privacy')}
                 </Link>
               </li>
               <li>
-                <Link href="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/terms-of-service" className="text-muted-foreground hover:text-secondary transition-colors">
                   {t('legal.terms')}
                 </Link>
               </li>
               <li>
-                <Link href="/refund-policy" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/refund-policy" className="text-muted-foreground hover:text-secondary transition-colors">
                   {t('legal.refund')}
                 </Link>
               </li>
@@ -88,13 +88,13 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 {t('contact.email')}:{' '}
-                <a href="mailto:info@echodesk.ge" className="hover:text-primary transition-colors">
+                <a href="mailto:info@echodesk.ge" className="hover:text-secondary transition-colors">
                   info@echodesk.ge
                 </a>
               </li>
               <li>
                 {t('contact.phone')}:{' '}
-                <a href="tel:+995510003358" className="hover:text-primary transition-colors">
+                <a href="tel:+995510003358" className="hover:text-secondary transition-colors">
                   +995 (510) 003-358
                 </a>
               </li>

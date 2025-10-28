@@ -7,6 +7,7 @@ import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import QueryProvider from '@/providers/QueryProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { DevTenantLoader } from '@/components/DevTenantLoader';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} bg-white`}>
+        <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>
             <TenantProvider>

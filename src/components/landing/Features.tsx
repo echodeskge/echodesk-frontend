@@ -13,7 +13,8 @@ import {
   Zap,
   Shield,
   Clock,
-  Globe
+  Globe,
+  FileText
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -26,7 +27,7 @@ const featureIcons = {
   whatsapp: MessageCircle,
   analytics: BarChart3,
   team: Users,
-  automation: Zap,
+  automation: FileText,
   security: Shield,
   realtime: Clock,
   multilingual: Globe,
@@ -42,14 +43,19 @@ export function Features() {
       descKey: 'ticketManagement.description',
     },
     {
-      icon: 'email',
-      titleKey: 'emailIntegration.title',
-      descKey: 'emailIntegration.description',
-    },
-    {
       icon: 'sip',
       titleKey: 'sipCalling.title',
       descKey: 'sipCalling.description',
+    },
+    {
+      icon: 'automation',
+      titleKey: 'advancedForms.title',
+      descKey: 'advancedForms.description',
+    },
+    {
+      icon: 'whatsapp',
+      titleKey: 'whatsapp.title',
+      descKey: 'whatsapp.description',
     },
     {
       icon: 'facebook',
@@ -60,41 +66,6 @@ export function Features() {
       icon: 'instagram',
       titleKey: 'instagram.title',
       descKey: 'instagram.description',
-    },
-    {
-      icon: 'whatsapp',
-      titleKey: 'whatsapp.title',
-      descKey: 'whatsapp.description',
-    },
-    {
-      icon: 'analytics',
-      titleKey: 'analytics.title',
-      descKey: 'analytics.description',
-    },
-    {
-      icon: 'team',
-      titleKey: 'teamCollaboration.title',
-      descKey: 'teamCollaboration.description',
-    },
-    {
-      icon: 'automation',
-      titleKey: 'automation.title',
-      descKey: 'automation.description',
-    },
-    {
-      icon: 'security',
-      titleKey: 'security.title',
-      descKey: 'security.description',
-    },
-    {
-      icon: 'realtime',
-      titleKey: 'realtime.title',
-      descKey: 'realtime.description',
-    },
-    {
-      icon: 'multilingual',
-      titleKey: 'multilingual.title',
-      descKey: 'multilingual.description',
     },
   ];
 
@@ -111,8 +82,8 @@ export function Features() {
           return (
             <Card key={feature.titleKey} className="hover:shadow-lg transition-shadow">
               <CardHeader>
-                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Icon className="h-6 w-6 text-primary" />
+                <div className="h-12 w-12 rounded-lg bg-secondary/10 flex items-center justify-center mb-4">
+                  <Icon className="h-6 w-6 text-secondary" />
                 </div>
                 <CardTitle>{t(feature.titleKey)}</CardTitle>
               </CardHeader>

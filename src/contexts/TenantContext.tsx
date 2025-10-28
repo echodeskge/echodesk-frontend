@@ -38,9 +38,13 @@ export function TenantProvider({ children }: TenantProviderProps) {
       // Try to get tenant identifier from subdomain or path
       let tenantIdentifier: string | null = null;
 
-      // On localhost, always use "groot" tenant
+      // On localhost, check localStorage first for development mode
       if (hostname.includes('localhost')) {
-        tenantIdentifier = 'groot';
+        const storedTenant = localStorage.getItem('dev_tenant');
+        if (storedTenant) {
+          tenantIdentifier = storedTenant;
+        }
+        // If no stored tenant, no tenant will be loaded (allowing homepage access)
       } else {
         // On production, use subdomain-based detection
         tenantIdentifier = tenantService.getSubdomainFromHostname(hostname);
@@ -54,7 +58,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
       }
 
       const tenantConfig = await tenantService.getTenantBySubdomain(tenantIdentifier);
-      
+
       if (tenantConfig) {
         setTenant(tenantConfig);
       } else {
