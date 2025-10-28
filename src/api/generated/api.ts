@@ -1268,13 +1268,17 @@ export async function preflightTestRetrieve(): Promise<any> {
 }
 
 export async function registerTenant(data: TenantRegistration): Promise<{
+  payment_url?: string;
+  order_id?: string;
+  amount?: number;
+  currency?: string;
   message?: string;
   tenant?: Record<string, any>;
   subscription?: Record<string, any>;
   frontend_url?: string;
   api_url?: string;
 }> {
-  const response = await axios.post(`/api/register/`, data);
+  const response = await axios.post(`/api/register-with-payment/`, data);
   return response.data;
 }
 
