@@ -4,7 +4,7 @@ import { useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTenant } from '@/contexts/TenantContext';
 import { useAuth } from '@/contexts/AuthContext';
-import LandingPage from '@/components/LandingPage';
+import { EchoDeskLanding } from '@/components/landing';
 import LoginForm from '@/components/LoginForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
@@ -135,7 +135,7 @@ function HomeContent() {
   }
 
   // If no tenant (main domain), show landing page
-  return <LandingPage />;
+  return <EchoDeskLanding />;
 }
 
 export default function Home() {

@@ -562,5 +562,165 @@
     "loadingCallSystem": "Loading call system...",
     "enterNumberToTransfer": "Enter number to transfer to:",
     "traditionalSipDetected": "Traditional SIP Provider Detected"
+  },
+  "landing": {
+    "hero": {
+      "badge": "All-in-One Customer Support Platform",
+      "title": "Centralize Customer Communication Across All Channels",
+      "subtitle": "Manage tickets, integrate email, social media, WhatsApp, and phone calls in one unified platform. Streamline support operations with powerful analytics and team collaboration tools.",
+      "cta": {
+        "primary": "Get Started Free",
+        "secondary": "Explore Features"
+      },
+      "features": {
+        "messaging": "Social Media",
+        "calling": "SIP Calling",
+        "email": "Email Integration"
+      }
+    },
+    "features": {
+      "title": "Everything You Need for Customer Support",
+      "subtitle": "Powerful features designed to help your team deliver exceptional customer service",
+      "ticketManagement": {
+        "title": "Complete Ticket Management",
+        "description": "Organize, track, and resolve customer issues efficiently with our intuitive ticket system. Assign priorities, set due dates, and collaborate with your team."
+      },
+      "emailIntegration": {
+        "title": "Email Integration",
+        "description": "Connect your email accounts and manage all customer emails directly from EchoDesk. No more switching between platforms."
+      },
+      "sipCalling": {
+        "title": "Integrated SIP Phone System",
+        "description": "Make and receive calls directly from the platform. Call recording, call history, and real-time call analytics included."
+      },
+      "facebook": {
+        "title": "Facebook Messenger",
+        "description": "Respond to Facebook messages from multiple pages in one unified inbox. Never miss a customer message."
+      },
+      "instagram": {
+        "title": "Instagram Direct Messages",
+        "description": "Manage Instagram DMs alongside all other channels. Keep your social media support organized and efficient."
+      },
+      "whatsapp": {
+        "title": "WhatsApp Business API",
+        "description": "Connect your WhatsApp Business account and handle customer conversations at scale with advanced features."
+      },
+      "analytics": {
+        "title": "Advanced Analytics",
+        "description": "Track team performance, response times, resolution rates, and customer satisfaction with detailed reports and dashboards."
+      },
+      "teamCollaboration": {
+        "title": "Team Collaboration",
+        "description": "Assign tickets, mention colleagues, leave internal notes, and work together seamlessly to solve customer issues."
+      },
+      "automation": {
+        "title": "Workflow Automation",
+        "description": "Automate repetitive tasks with custom workflows. Set up rules for automatic ticket routing, responses, and escalations."
+      },
+      "security": {
+        "title": "Enterprise Security",
+        "description": "Your data is protected with industry-standard encryption, secure authentication, and regular backups."
+      },
+      "realtime": {
+        "title": "Real-Time Updates",
+        "description": "Stay in sync with your team with instant notifications and live updates across all devices."
+      },
+      "multilingual": {
+        "title": "Multilingual Support",
+        "description": "Full support for English and Georgian languages. Serve your customers in their preferred language."
+      }
+    },
+    "pricing": {
+      "title": "Simple, Transparent Pricing",
+      "subtitle": "Choose the plan that fits your team size and needs. No hidden fees.",
+      "tabs": {
+        "agentBased": "Agent-Based Pricing",
+        "crmBased": "CRM-Based Pricing"
+      },
+      "popular": "Most Popular",
+      "plans": {
+        "essential": {
+          "name": "Essential",
+          "description": "Perfect for small teams getting started with customer support"
+        },
+        "professional": {
+          "name": "Professional",
+          "description": "Advanced features for growing teams"
+        },
+        "enterprise": {
+          "name": "Enterprise",
+          "description": "Complete solution for large organizations"
+        },
+        "starter": {
+          "name": "Starter",
+          "description": "Basic customer support for small businesses"
+        },
+        "business": {
+          "name": "Business",
+          "description": "Complete features for medium-sized teams"
+        }
+      },
+      "periods": {
+        "perAgentMonth": "per agent/month",
+        "perMonth": "per month"
+      },
+      "users": "Users",
+      "unlimited": "Unlimited",
+      "features": {
+        "tickets": "Complete Ticket Management System",
+        "email": "Email Integration",
+        "basicReporting": "Basic Reporting",
+        "teamCollaboration": "Team Collaboration",
+        "mobileApp": "Mobile App Access",
+        "emailSupport": "Email Support",
+        "allEssential": "Everything in Essential",
+        "sipPhone": "Integrated SIP Phone System",
+        "callRecording": "Call Recording & Analytics",
+        "facebookMessenger": "Facebook Messenger Integration",
+        "advancedWorkflows": "Advanced Workflows",
+        "prioritySupport": "Priority Support",
+        "allProfessional": "Everything in Professional",
+        "instagramDM": "Instagram DM Integration",
+        "whatsappAPI": "WhatsApp Business API",
+        "advancedAnalytics": "Advanced Analytics Dashboard",
+        "apiAccess": "API Access",
+        "customIntegrations": "Custom Integrations",
+        "dedicatedManager": "Dedicated Account Manager",
+        "allStarter": "Everything in Starter",
+        "users5": "Up to 5 users",
+        "users20": "Up to 20 users",
+        "allBusiness": "Everything in Business",
+        "usersUnlimited": "Unlimited users"
+      },
+      "getStarted": "Get Started",
+      "paymentNote": "All payments processed securely through Bank of Georgia"
+    },
+    "cta": {
+      "title": "Ready to Transform Your Customer Support?",
+      "subtitle": "Join hundreds of businesses using EchoDesk to deliver exceptional customer service",
+      "button": "Start Free Trial",
+      "noCreditCard": "No credit card required • 14-day free trial"
+    },
+    "footer": {
+      "tagline": "Centralize customer communication across all channels",
+      "product": {
+        "title": "Product",
+        "features": "Features",
+        "pricing": "Pricing",
+        "signUp": "Sign Up"
+      },
+      "legal": {
+        "title": "Legal",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "refund": "Refund Policy"
+      },
+      "contact": {
+        "title": "Contact",
+        "email": "Email",
+        "address": "Address"
+      },
+      "rights": "All rights reserved."
+    }
   }
 }
