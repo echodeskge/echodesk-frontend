@@ -70,13 +70,14 @@ function HeroImage() {
   return (
     <Card className="bg-accent p-3 md:p-6">
       <Card className="pointer-events-none bg-muted p-6 overflow-hidden" asChild>
-        <AspectRatio ratio={16 / 9}>
+        <AspectRatio ratio={2560 / 1240}>
           <Image
             src="/dashboard-preview.png"
             alt="EchoDesk Dashboard Preview"
             fill
-            sizes="(max-width: 768px) 640px, 1080px"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1400px"
             priority
+            quality={100}
             className="object-cover object-top rounded-lg"
           />
         </AspectRatio>
