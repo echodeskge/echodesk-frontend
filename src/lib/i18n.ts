@@ -1,7 +1,7 @@
 export type Locale = 'en' | 'ka';
 
-export const locales: Locale[] = ['en', 'ka'];
-export const defaultLocale: Locale = 'en';
+export const locales: Locale[] = ['ka', 'en'];
+export const defaultLocale: Locale = 'ka';
 
 export const localeNames: Record<Locale, string> = {
   en: 'English',
