@@ -102,7 +102,26 @@
     "registrationSuccess": "Success! Your tenant has been created successfully!",
     "registrationFailed": "Registration failed. Please check your connection and try again.",
     "subdomain": "Subdomain",
-    "preferredLanguage": "Preferred Language"
+    "preferredLanguage": "Preferred Language",
+    "backToPlans": "Back to Plans",
+    "completeRegistration": "Complete Your Registration",
+    "youSelected": "You selected",
+    "tellUsAbout": "Tell us about your organization",
+    "createAdminCredentials": "Create your admin credentials",
+    "processing": "Processing...",
+    "continueToPayment": "Continue to Payment",
+    "byContinuing": "By continuing, you agree to our",
+    "and": "and",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "totalCost": "Total cost",
+    "backToHome": "Back to Home",
+    "choosePlan": "Choose Your Plan",
+    "selectPackageDesc": "Select the package that best fits your team's needs. You can upgrade or downgrade anytime.",
+    "loadingPackages": "Loading packages...",
+    "noPackagesAvailable": "No packages available for this pricing model",
+    "selected": "Selected",
+    "selectPlan": "Select Plan"
   },
   "tickets": {
     "title": "Tickets",
@@ -566,6 +585,14 @@
     "traditionalSipDetected": "Traditional SIP Provider Detected"
   },
   "landing": {
+    "header": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "language": "Language",
+      "getStarted": "Get Started"
+    },
     "hero": {
       "badge": "All-in-One Customer Support Platform",
       "title": "Centralize Customer Communication Across All Channels",

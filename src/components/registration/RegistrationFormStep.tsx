@@ -74,11 +74,11 @@ export function RegistrationFormStep({
       <div className="text-center space-y-4">
         <Button variant="ghost" onClick={onBack} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Plans
+          {t('backToPlans')}
         </Button>
-        <h1 className="text-4xl font-bold">Complete Your Registration</h1>
+        <h1 className="text-4xl font-bold">{t('completeRegistration')}</h1>
         <p className="text-lg text-muted-foreground">
-          You selected: <span className="font-semibold text-foreground">{selectedPackage.display_name}</span> - {selectedPackage.price_gel}₾/{isAgentBased ? 'agent/' : ''}month
+          {t('youSelected')}: <span className="font-semibold text-foreground">{selectedPackage.display_name}</span> - {selectedPackage.price_gel}₾/{isAgentBased ? 'agent/' : ''}month
         </p>
       </div>
 
@@ -96,9 +96,9 @@ export function RegistrationFormStep({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              Company Information
+              {t('companyInformation')}
             </CardTitle>
-            <CardDescription>Tell us about your organization</CardDescription>
+            <CardDescription>{t('tellUsAbout')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -156,7 +156,7 @@ export function RegistrationFormStep({
                   required
                 />
                 <p className="text-sm text-muted-foreground">
-                  Total cost: {Number(selectedPackage.price_gel) * formData.agent_count}₾/month
+                  {t('totalCost')}: {Number(selectedPackage.price_gel) * formData.agent_count}₾/month
                 </p>
               </div>
             )}
@@ -168,9 +168,9 @@ export function RegistrationFormStep({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Administrator Account
+              {t('administratorAccount')}
             </CardTitle>
-            <CardDescription>Create your admin credentials</CardDescription>
+            <CardDescription>{t('createAdminCredentials')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -257,18 +257,18 @@ export function RegistrationFormStep({
         {/* Submit Button */}
         <div className="flex justify-end">
           <Button type="submit" size="lg" disabled={loading} className="min-w-[200px]">
-            {loading ? 'Processing...' : 'Continue to Payment'}
+            {loading ? t('processing') : t('continueToPayment')}
           </Button>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          By continuing, you agree to our{' '}
+          {t('byContinuing')}{' '}
           <a href="/terms-of-service" className="text-primary hover:underline">
-            Terms of Service
+            {t('termsOfService')}
           </a>{' '}
-          and{' '}
+          {t('and')}{' '}
           <a href="/privacy-policy" className="text-primary hover:underline">
-            Privacy Policy
+            {t('privacyPolicy')}
           </a>
         </p>
       </form>

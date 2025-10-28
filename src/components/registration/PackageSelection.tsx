@@ -25,6 +25,7 @@ export function PackageSelection({
   onBack,
 }: PackageSelectionProps) {
   const t = useTranslations('landing.pricing');
+  const tAuth = useTranslations('auth');
   const [pricingModel, setPricingModel] = useState<PricingModel>('agent');
 
   const getPackagesByModel = (model: PricingModel) => {
@@ -37,7 +38,7 @@ export function PackageSelection({
     return (
       <div className="text-center py-16">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-muted-foreground">Loading packages...</p>
+        <p className="mt-4 text-muted-foreground">{tAuth('loadingPackages')}</p>
       </div>
     );
   }
@@ -48,11 +49,11 @@ export function PackageSelection({
       <div className="text-center space-y-4">
         <Button variant="ghost" onClick={onBack} className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
+          {tAuth('backToHome')}
         </Button>
-        <h1 className="text-4xl font-bold">Choose Your Plan</h1>
+        <h1 className="text-4xl font-bold">{tAuth('choosePlan')}</h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Select the package that best fits your team's needs. You can upgrade or downgrade anytime.
+          {tAuth('selectPackageDesc')}
         </p>
       </div>
 
@@ -70,7 +71,7 @@ export function PackageSelection({
         <TabsContent value={pricingModel} className="mt-8">
           {displayPackages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No packages available for this pricing model
+              {tAuth('noPackagesAvailable')}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -123,7 +124,7 @@ export function PackageSelection({
                         variant={isHighlighted || isSelected ? 'default' : 'outline'}
                         onClick={() => onPackageSelect(pkg)}
                       >
-                        {isSelected ? 'Selected' : 'Select Plan'}
+                        {isSelected ? tAuth('selected') : tAuth('selectPlan')}
                       </Button>
                     </CardFooter>
                   </Card>

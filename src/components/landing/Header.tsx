@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Globe, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function Header() {
+  const t = useTranslations('landing.header');
   const router = useRouter();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -62,25 +64,25 @@ export function Header() {
             onClick={() => scrollToSection('features')}
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
-            Features
+            {t('features')}
           </button>
           <button
             onClick={() => scrollToSection('pricing')}
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
-            Pricing
+            {t('pricing')}
           </button>
           <Link
             href="/privacy-policy"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
-            Privacy
+            {t('privacy')}
           </Link>
           <Link
             href="/terms-of-service"
             className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
           >
-            Terms
+            {t('terms')}
           </Link>
         </nav>
 
@@ -91,7 +93,7 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2">
                 <Globe className="h-4 w-4" />
-                <span className="hidden sm:inline">Language</span>
+                <span className="hidden sm:inline">{t('language')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -106,7 +108,7 @@ export function Header() {
 
           {/* CTA Button */}
           <Button asChild className="hidden sm:flex">
-            <Link href="/registration">Get Started</Link>
+            <Link href="/registration">{t('getStarted')}</Link>
           </Button>
 
           {/* Mobile Menu Toggle */}
@@ -133,30 +135,30 @@ export function Header() {
               onClick={() => scrollToSection('features')}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors text-left"
             >
-              Features
+              {t('features')}
             </button>
             <button
               onClick={() => scrollToSection('pricing')}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors text-left"
             >
-              Pricing
+              {t('pricing')}
             </button>
             <Link
               href="/privacy-policy"
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Privacy Policy
+              {t('privacy')}
             </Link>
             <Link
               href="/terms-of-service"
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Terms of Service
+              {t('terms')}
             </Link>
             <Button asChild className="w-full">
-              <Link href="/registration">Get Started</Link>
+              <Link href="/registration">{t('getStarted')}</Link>
             </Button>
           </nav>
         </div>
