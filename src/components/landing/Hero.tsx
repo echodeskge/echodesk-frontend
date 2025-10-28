@@ -71,13 +71,14 @@ function HeroImage() {
     <Card className="bg-accent p-3 md:p-6">
       <Card className="pointer-events-none bg-muted p-6 overflow-hidden" asChild>
         <AspectRatio ratio={16 / 9}>
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg flex items-center justify-center">
-            {/* Placeholder for dashboard screenshot */}
-            <div className="text-center space-y-4">
-              <div className="text-6xl">📊</div>
-              <p className="text-muted-foreground">Dashboard Preview</p>
-            </div>
-          </div>
+          <Image
+            src="/dashboard-preview.png"
+            alt="EchoDesk Dashboard Preview"
+            fill
+            sizes="(max-width: 768px) 640px, 1080px"
+            priority
+            className="object-cover object-top rounded-lg"
+          />
         </AspectRatio>
       </Card>
     </Card>
