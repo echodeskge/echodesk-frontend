@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { SubscriptionCard, FeatureList } from '@/components/subscription/SubscriptionCard';
+import { SavedCardManager } from '@/components/subscription/SavedCardManager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -295,51 +296,51 @@ export default function SubscriptionPage() {
 
         {/* Billing Tab */}
         <TabsContent value="billing" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Current Plan
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {subscription?.package && subscription?.subscription && (
-                <>
-                  <div className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <p className="font-semibold">{subscription.package.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {subscription.subscription.monthly_cost}₾ per month
-                      </p>
-                    </div>
-                    <Badge>{subscription.subscription.is_active ? 'Active' : 'Inactive'}</Badge>
-                  </div>
-
-                  {subscription.subscription.expires_at && (
-                    <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
-                      <Clock className="h-4 w-4" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Current Plan */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5" />
+                  Current Plan
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {subscription?.package && subscription?.subscription && (
+                  <>
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <p className="text-sm font-medium">Next billing date</p>
+                        <p className="font-semibold">{subscription.package.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(subscription.subscription.expires_at).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
+                          {subscription.subscription.monthly_cost}₾ per month
                         </p>
                       </div>
+                      <Badge>{subscription.subscription.is_active ? 'Active' : 'Inactive'}</Badge>
                     </div>
-                  )}
-                </>
-              )}
 
-              <div className="pt-4 border-t">
-                <Button className="w-full" variant="outline">
-                  Update Payment Method
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                    {subscription.subscription.expires_at && (
+                      <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+                        <Clock className="h-4 w-4" />
+                        <div>
+                          <p className="text-sm font-medium">Next billing date</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(subscription.subscription.expires_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Saved Card Manager */}
+            <SavedCardManager />
+          </div>
 
           <Card>
             <CardHeader>
