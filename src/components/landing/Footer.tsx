@@ -32,7 +32,7 @@ export function Footer() {
               <a href="#" className="hover:text-primary transition-colors">
                 <Linkedin className="h-5 w-5" />
               </a>
-              <a href="mailto:support@echodesk.ge" className="hover:text-primary transition-colors">
+              <a href="mailto:info@echodesk.ge" className="hover:text-primary transition-colors">
                 <Mail className="h-5 w-5" />
               </a>
             </div>
@@ -86,7 +86,18 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="font-semibold">{t('contact.title')}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>{t('contact.email')}: support@echodesk.ge</li>
+              <li>
+                {t('contact.email')}:{' '}
+                <a href="mailto:info@echodesk.ge" className="hover:text-primary transition-colors">
+                  info@echodesk.ge
+                </a>
+              </li>
+              <li>
+                {t('contact.phone')}:{' '}
+                <a href="tel:+995510003358" className="hover:text-primary transition-colors">
+                  +995 (510) 003-358
+                </a>
+              </li>
               <li>{t('contact.address')}: Tbilisi, Georgia</li>
             </ul>
           </div>

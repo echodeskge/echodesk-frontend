@@ -43,6 +43,15 @@ export default function PrivacyPolicy() {
                 </a>
               </p>
               <p>
+                Phone:{" "}
+                <a
+                  href="tel:+995510003358"
+                  className="text-blue-600 hover:underline"
+                >
+                  +995 (510) 003-358
+                </a>
+              </p>
+              <p>
                 Data Protection Officer:{" "}
                 <a
                   href="mailto:info@echodesk.ge"
