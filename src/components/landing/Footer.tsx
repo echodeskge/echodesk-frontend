@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
 
@@ -13,7 +14,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
-            <h3 className="text-xl font-bold">EchoDesk</h3>
+            <Image
+              src="/logo-footer.png"
+              alt="EchoDesk"
+              width={150}
+              height={40}
+              className="h-10 w-auto"
+            />
             <p className="text-sm text-muted-foreground">{t('tagline')}</p>
             <div className="flex gap-3">
               <a href="#" className="hover:text-primary transition-colors">

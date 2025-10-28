@@ -100,7 +100,9 @@
     "backToHome": "Back to Home",
     "loadPackagesFailed": "Failed to load packages. Please try again.",
     "registrationSuccess": "Success! Your tenant has been created successfully!",
-    "registrationFailed": "Registration failed. Please check your connection and try again."
+    "registrationFailed": "Registration failed. Please check your connection and try again.",
+    "subdomain": "Subdomain",
+    "preferredLanguage": "Preferred Language"
   },
   "tickets": {
     "title": "Tickets",

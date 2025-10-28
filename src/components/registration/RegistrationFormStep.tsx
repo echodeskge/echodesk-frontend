@@ -1,0 +1,277 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import { ArrowLeft, Building2, User, Mail, Lock, Globe } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { PackageList } from '@/api/generated/interfaces';
+import type { RegistrationFormData } from './RegistrationFlow';
+
+interface RegistrationFormStepProps {
+  formData: RegistrationFormData;
+  setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
+  selectedPackage: PackageList;
+  loading: boolean;
+  error: string;
+  onSubmit: (data: RegistrationFormData) => void;
+  onBack: () => void;
+}
+
+export function RegistrationFormStep({
+  formData,
+  setFormData,
+  selectedPackage,
+  loading,
+  error,
+  onSubmit,
+  onBack,
+}: RegistrationFormStepProps) {
+  const t = useTranslations('auth');
+  const tCommon = useTranslations('common');
+
+  // Auto-generate domain from company name
+  useEffect(() => {
+    if (formData.company_name) {
+      const generatedDomain = formData.company_name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      setFormData((prev) => ({
+        ...prev,
+        domain: generatedDomain,
+      }));
+    }
+  }, [formData.company_name, setFormData]);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const isAgentBased = formData.pricing_model === 'agent';
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <Button variant="ghost" onClick={onBack} className="mb-4">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Plans
+        </Button>
+        <h1 className="text-4xl font-bold">Complete Your Registration</h1>
+        <p className="text-lg text-muted-foreground">
+          You selected: <span className="font-semibold text-foreground">{selectedPackage.display_name}</span> - {selectedPackage.price_gel}₾/{isAgentBased ? 'agent/' : ''}month
+        </p>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      {/* Registration Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Company Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Company Information
+            </CardTitle>
+            <CardDescription>Tell us about your organization</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="company_name">{t('companyName')} *</Label>
+                <Input
+                  id="company_name"
+                  name="company_name"
+                  value={formData.company_name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Acme Inc"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="domain">{t('subdomain')} *</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="domain"
+                    name="domain"
+                    value={formData.domain}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="acme"
+                  />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    .echodesk.ge
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">{t('description')}</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Brief description of your company..."
+                rows={3}
+              />
+            </div>
+
+            {isAgentBased && (
+              <div className="space-y-2">
+                <Label htmlFor="agent_count">{t('numberOfAgents')} *</Label>
+                <Input
+                  id="agent_count"
+                  name="agent_count"
+                  type="number"
+                  min="1"
+                  value={formData.agent_count}
+                  onChange={handleInputChange}
+                  required
+                />
+                <p className="text-sm text-muted-foreground">
+                  Total cost: {Number(selectedPackage.price_gel) * formData.agent_count}₾/month
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Admin Account */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Administrator Account
+            </CardTitle>
+            <CardDescription>Create your admin credentials</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin_first_name">{t('firstName')} *</Label>
+                <Input
+                  id="admin_first_name"
+                  name="admin_first_name"
+                  value={formData.admin_first_name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="John"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin_last_name">{t('lastName')} *</Label>
+                <Input
+                  id="admin_last_name"
+                  name="admin_last_name"
+                  value={formData.admin_last_name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin_email">
+                <Mail className="h-4 w-4 inline mr-1" />
+                {t('email')} *
+              </Label>
+              <Input
+                id="admin_email"
+                name="admin_email"
+                type="email"
+                value={formData.admin_email}
+                onChange={handleInputChange}
+                required
+                placeholder="john@example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="admin_password">
+                <Lock className="h-4 w-4 inline mr-1" />
+                {t('password')} *
+              </Label>
+              <Input
+                id="admin_password"
+                name="admin_password"
+                type="password"
+                value={formData.admin_password}
+                onChange={handleInputChange}
+                required
+                minLength={8}
+                placeholder="Minimum 8 characters"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="preferred_language">
+                <Globe className="h-4 w-4 inline mr-1" />
+                {t('preferredLanguage')}
+              </Label>
+              <Select
+                value={formData.preferred_language}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, preferred_language: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ka">ქართული</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button type="submit" size="lg" disabled={loading} className="min-w-[200px]">
+            {loading ? 'Processing...' : 'Continue to Payment'}
+          </Button>
+        </div>
+
+        <p className="text-center text-sm text-muted-foreground">
+          By continuing, you agree to our{' '}
+          <a href="/terms-of-service" className="text-primary hover:underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="/privacy-policy" className="text-primary hover:underline">
+            Privacy Policy
+          </a>
+        </p>
+      </form>
+    </div>
+  );
+}
