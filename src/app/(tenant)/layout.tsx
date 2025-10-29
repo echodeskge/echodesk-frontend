@@ -127,7 +127,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   };
 
   // Parse user's feature keys
-  const userFeatureKeys = userProfile?.feature_keys ? JSON.parse(userProfile.feature_keys) : [];
+  // Handle both string (JSON) and array formats from API
+  const userFeatureKeys = userProfile?.feature_keys
+    ? (typeof userProfile.feature_keys === 'string'
+        ? JSON.parse(userProfile.feature_keys)
+        : userProfile.feature_keys)
+    : [];
   const isStaff = userProfile?.is_staff || false;
 
   // Helper function to check if user has a feature key
