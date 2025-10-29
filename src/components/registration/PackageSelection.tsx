@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Check, ArrowLeft } from 'lucide-react';
+import { Check, ArrowLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +14,7 @@ interface PackageSelectionProps {
   loading: boolean;
   selectedPackage: PackageList | null;
   onPackageSelect: (pkg: PackageList) => void;
+  onCustomPackage: () => void;
   onBack: () => void;
 }
 
@@ -22,6 +23,7 @@ export function PackageSelection({
   loading,
   selectedPackage,
   onPackageSelect,
+  onCustomPackage,
   onBack,
 }: PackageSelectionProps) {
   const t = useTranslations('landing.pricing');
@@ -134,6 +136,39 @@ export function PackageSelection({
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Custom Package Option */}
+      <Card className="border-2 border-dashed border-primary/50 bg-primary/5 mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            {tAuth('customPackage') || 'Custom Package'}
+          </CardTitle>
+          <CardDescription>
+            {tAuth('customPackageDesc') || 'Build a package tailored to your specific needs. Select only the features you want and pay for what you use.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-2 mb-4">
+            <li className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-primary" />
+              <span>{tAuth('customFeature1') || 'Choose exactly what you need'}</span>
+            </li>
+            <li className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-primary" />
+              <span>{tAuth('customFeature2') || 'Flexible pricing based on features'}</span>
+            </li>
+            <li className="flex items-center gap-2 text-sm">
+              <Check className="h-4 w-4 text-primary" />
+              <span>{tAuth('customFeature3') || '10% discount on CRM-based pricing'}</span>
+            </li>
+          </ul>
+          <Button className="w-full" variant="default" onClick={onCustomPackage}>
+            <Sparkles className="mr-2 h-4 w-4" />
+            {tAuth('buildCustomPackage') || 'Build Custom Package'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="text-center mt-8 text-sm text-muted-foreground">
         {t('paymentNote')}

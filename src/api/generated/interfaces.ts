@@ -140,6 +140,10 @@ export interface CallTypeEnum {
   [key: string]: any;
 }
 
+export interface CategoryEnum {
+  [key: string]: any;
+}
+
 export interface ChecklistItem {
   id: number;
   ticket?: number;
@@ -215,6 +219,29 @@ export interface FacebookSendMessage {
   recipient_id: string;
   message: string;
   page_id: string;
+}
+
+export interface Feature {
+  id: number;
+  key: string;
+  name: string;
+  description?: string;
+  category?: CategoryEnum;
+  category_display: string;
+  icon?: string;
+  price_per_user_gel?: string;
+  price_unlimited_gel?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  permissions: FeaturePermission[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FeaturePermission {
+  id: number;
+  permission: Permission;
+  is_required?: boolean;
 }
 
 export interface Group {
@@ -317,6 +344,7 @@ export interface Package {
   description: string;
   pricing_model?: PricingModelEnum;
   price_gel: string;
+  calculated_price: string;
   billing_period?: BillingPeriodEnum;
   max_users?: number;
   max_whatsapp_messages: number;
@@ -334,8 +362,10 @@ export interface Package {
   dedicated_account_manager?: boolean;
   is_highlighted?: boolean;
   is_active?: boolean;
+  is_custom?: boolean;
   sort_order?: number;
   features_list: string;
+  dynamic_features: string;
 }
 
 export interface PackageList {
@@ -345,11 +375,14 @@ export interface PackageList {
   description: string;
   pricing_model?: PricingModelEnum;
   price_gel: string;
+  calculated_price: string;
   max_users?: number;
   max_whatsapp_messages: number;
   max_storage_gb?: number;
   is_highlighted?: boolean;
+  is_custom?: boolean;
   features_list: string;
+  dynamic_features: string;
   pricing_suffix: string;
 }
 
@@ -400,6 +433,13 @@ export interface PaginatedFacebookPageConnectionList {
   next?: string;
   previous?: string;
   results: FacebookPageConnection[];
+}
+
+export interface PaginatedFeatureList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Feature[];
 }
 
 export interface PaginatedGroupList {
@@ -472,6 +512,13 @@ export interface PaginatedTagList {
   results: Tag[];
 }
 
+export interface PaginatedTenantFeatureList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TenantFeature[];
+}
+
 export interface PaginatedTenantGroupList {
   count: number;
   next?: string;
@@ -484,6 +531,13 @@ export interface PaginatedTenantList {
   next?: string;
   previous?: string;
   results: Tenant[];
+}
+
+export interface PaginatedTenantPermissionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TenantPermission[];
 }
 
 export interface PaginatedTicketAssignmentList {
@@ -962,11 +1016,13 @@ export interface PaymentMethodEnum {
 
 export interface Permission {
   id: number;
+  key: string;
   name: string;
-  codename: string;
-  content_type: number;
-  app_label: string;
-  model: string;
+  description?: string;
+  module: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface PlanEnum {
@@ -1122,6 +1178,15 @@ export interface TenantDashboardData {
   statistics: string;
 }
 
+export interface TenantFeature {
+  id: number;
+  feature: Feature;
+  is_active?: boolean;
+  enabled_at: string;
+  disabled_at?: string;
+  custom_value?: any;
+}
+
 export interface TenantGroup {
   id: number;
   name: string;
@@ -1184,6 +1249,15 @@ export interface TenantGroupMinimal {
 export interface TenantLogin {
   email: string;
   password: string;
+}
+
+export interface TenantPermission {
+  id: number;
+  permission: Permission;
+  granted_by_feature: Feature;
+  is_active?: boolean;
+  granted_at: string;
+  revoked_at?: string;
 }
 
 export interface TenantRegistration {

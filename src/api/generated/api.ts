@@ -41,6 +41,8 @@ import type {
   PaginatedDepartmentList,
   Department,
   PatchedDepartment,
+  PaginatedFeatureList,
+  Feature,
   PaginatedTicketFormSubmissionList,
   TicketFormSubmission,
   PatchedTicketFormSubmission,
@@ -86,10 +88,14 @@ import type {
   PaginatedTagList,
   Tag,
   PatchedTag,
+  PaginatedTenantFeatureList,
+  TenantFeature,
   PaginatedTenantGroupList,
   TenantGroupCreate,
   TenantGroup,
   PatchedTenantGroup,
+  PaginatedTenantPermissionList,
+  TenantPermission,
   PaginatedTenantList,
   TenantCreate,
   PatchedTenant,
@@ -696,6 +702,31 @@ export async function corsTestRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function cronHealthRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/health/`);
+  return response.data;
+}
+
+export async function cronRecurringPaymentsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/recurring-payments/`);
+  return response.data;
+}
+
+export async function cronRecurringPaymentsCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/recurring-payments/`);
+  return response.data;
+}
+
+export async function cronSubscriptionCheckRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/subscription-check/`);
+  return response.data;
+}
+
+export async function cronSubscriptionCheckCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/subscription-check/`);
+  return response.data;
+}
+
 export async function departmentsList(
   ordering?: string,
   page?: number,
@@ -747,6 +778,29 @@ export async function departmentsDestroy(id: number): Promise<any> {
 
 export async function deploymentStatusRetrieve(tenantId: number): Promise<any> {
   const response = await axios.get(`/api/deployment-status/${tenantId}/`);
+  return response.data;
+}
+
+export async function featuresList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedFeatureList> {
+  const response = await axios.get(
+    `/api/features/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function featuresRetrieve(id: number): Promise<Feature> {
+  const response = await axios.get(`/api/features/${id}/`);
   return response.data;
 }
 
@@ -1144,8 +1198,44 @@ export async function packagesRetrieve(id: number): Promise<Package> {
   return response.data;
 }
 
+export async function listAvailableFeatures(): Promise<{
+  categories?: {
+    category?: string;
+    category_display?: string;
+    features?: {
+      id?: number;
+      key?: string;
+      name?: string;
+      description?: string;
+      icon?: string;
+      price_gel?: string;
+    }[];
+  }[];
+}> {
+  const response = await axios.get(`/api/packages/available-features/`);
+  return response.data;
+}
+
 export async function listPackagesByPricingModel(): Promise<PackageList[]> {
   const response = await axios.get(`/api/packages/by-model/`);
+  return response.data;
+}
+
+export async function calculateCustomPackagePrice(data: {
+  feature_ids: number[];
+}): Promise<{
+  features?: {
+    id?: number;
+    name?: string;
+    price_gel?: string;
+  }[];
+  total_price?: string;
+  currency?: string;
+}> {
+  const response = await axios.post(
+    `/api/packages/calculate-custom-price/`,
+    data,
+  );
   return response.data;
 }
 
@@ -1227,6 +1317,30 @@ export async function paymentsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
+export async function cancelSubscription(): Promise<any> {
+  const response = await axios.post(`/api/payments/cancel/`);
+  return response.data;
+}
+
+export async function createSubscriptionPayment(): Promise<{
+  payment_id?: string;
+  payment_url?: string;
+  amount?: number;
+  currency?: string;
+}> {
+  const response = await axios.post(`/api/payments/create/`);
+  return response.data;
+}
+
+export async function manualPayment(): Promise<{
+  payment_url?: string;
+  order_id?: string;
+  amount?: number;
+}> {
+  const response = await axios.post(`/api/payments/manual/`);
+  return response.data;
+}
+
 export async function paymentsPaymentSummaryRetrieve(): Promise<TicketPayment> {
   const response = await axios.get(`/api/payments/payment_summary/`);
   return response.data;
@@ -1236,6 +1350,36 @@ export async function paymentsProcessPaymentCreate(
   data: TicketPayment,
 ): Promise<TicketPayment> {
   const response = await axios.post(`/api/payments/process_payment/`, data);
+  return response.data;
+}
+
+export async function getSavedCardInfo(): Promise<{
+  has_saved_card?: boolean;
+  last_payment_date?: string;
+  card_saved_date?: string;
+  auto_renew_enabled?: boolean;
+}> {
+  const response = await axios.get(`/api/payments/saved-card/`);
+  return response.data;
+}
+
+export async function deleteSavedCard(): Promise<any> {
+  const response = await axios.delete(`/api/payments/saved-card/delete/`);
+  return response.data;
+}
+
+export async function checkPaymentStatus(paymentId: string): Promise<{
+  payment_id?: string;
+  status?: string;
+  amount?: number;
+  paid?: boolean;
+}> {
+  const response = await axios.get(`/api/payments/status/${paymentId}/`);
+  return response.data;
+}
+
+export async function bogWebhook(): Promise<any> {
+  const response = await axios.post(`/api/payments/webhook/`);
   return response.data;
 }
 
@@ -1268,15 +1412,23 @@ export async function preflightTestRetrieve(): Promise<any> {
 }
 
 export async function registerTenant(data: TenantRegistration): Promise<{
-  payment_url?: string;
-  order_id?: string;
-  amount?: number;
-  currency?: string;
   message?: string;
   tenant?: Record<string, any>;
   subscription?: Record<string, any>;
   frontend_url?: string;
   api_url?: string;
+}> {
+  const response = await axios.post(`/api/register/`, data);
+  return response.data;
+}
+
+export async function registerTenantWithPayment(
+  data: TenantRegistration,
+): Promise<{
+  payment_url?: string;
+  order_id?: string;
+  amount?: number;
+  currency?: string;
 }> {
   const response = await axios.post(`/api/register-with-payment/`, data);
   return response.data;
@@ -1682,6 +1834,29 @@ export async function subTicketsAssignmentsBulkUnassignDestroy(
   return response.data;
 }
 
+export async function getMySubscription(): Promise<{
+  has_subscription?: boolean;
+  package?: {
+    id?: number;
+    name?: string;
+    pricing_model?: string;
+  };
+  subscription?: {
+    is_active?: boolean;
+    starts_at?: string;
+    expires_at?: string;
+    monthly_cost?: number;
+    agent_count?: number;
+  };
+  features?: Record<string, any>;
+  limits?: Record<string, any>;
+  usage?: Record<string, any>;
+  usage_limits?: Record<string, any>;
+}> {
+  const response = await axios.get(`/api/subscription/me/`);
+  return response.data;
+}
+
 export async function tagsList(
   ordering?: string,
   page?: number,
@@ -1725,6 +1900,38 @@ export async function tagsPartialUpdate(
 
 export async function tagsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tags/${id}/`);
+  return response.data;
+}
+
+export async function tenantFeaturesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedTenantFeatureList> {
+  const response = await axios.get(
+    `/api/tenant-features/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function tenantFeaturesRetrieve(
+  id: number,
+): Promise<TenantFeature> {
+  const response = await axios.get(`/api/tenant-features/${id}/`);
+  return response.data;
+}
+
+export async function tenantFeaturesCheckCreate(
+  data: TenantFeature,
+): Promise<TenantFeature> {
+  const response = await axios.post(`/api/tenant-features/check/`, data);
   return response.data;
 }
 
@@ -1805,6 +2012,31 @@ export async function tenantGroupsRemoveUsersCreate(
     `/api/tenant-groups/${id}/remove_users/`,
     data,
   );
+  return response.data;
+}
+
+export async function tenantPermissionsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedTenantPermissionList> {
+  const response = await axios.get(
+    `/api/tenant-permissions/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function tenantPermissionsRetrieve(
+  id: number,
+): Promise<TenantPermission> {
+  const response = await axios.get(`/api/tenant-permissions/${id}/`);
   return response.data;
 }
 
