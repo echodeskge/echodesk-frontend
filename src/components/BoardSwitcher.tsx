@@ -54,14 +54,16 @@ export default function BoardSwitcher({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-full max-w-xs justify-between h-auto py-2">
           <div className="flex items-center gap-2">
-            <div
-              className="w-2 h-2 rounded-full"
-              style={{
-                backgroundColor: selectedBoard?.is_default ? "#007bff" : "#28a745"
-              }}
-            />
+            {boards.length > 0 && (
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{
+                  backgroundColor: selectedBoard?.is_default ? "#007bff" : "#28a745"
+                }}
+              />
+            )}
             <span className="text-sm">
-              {selectedBoard?.name || "Select Board"}
+              {boards.length === 0 ? "No boards - Create one" : (selectedBoard?.name || "Select Board")}
             </span>
           </div>
           <ChevronDown className="h-4 w-4 opacity-50" />
@@ -70,6 +72,13 @@ export default function BoardSwitcher({
 
       <DropdownMenuContent className="w-96 bg-white border border-gray-200 shadow-lg" style={{ backgroundColor: 'white' }}>
         <DropdownMenuLabel>Boards</DropdownMenuLabel>
+
+        {boards.length === 0 && (
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+            <p className="mb-2">No boards available</p>
+            <p className="text-xs">Click "Create New Board" below to get started</p>
+          </div>
+        )}
 
         {boards.map((board) => (
           <DropdownMenuItem

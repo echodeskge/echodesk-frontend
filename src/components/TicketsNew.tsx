@@ -178,19 +178,6 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      {/* Header with Board Creation Button */}
-      <div className="flex items-center justify-between px-6 py-4 border-b">
-        <h1 className="text-2xl font-bold">ტიკეტები</h1>
-        <Button
-          onClick={() => setShowCreateBoardSheet(true)}
-          size="sm"
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          ახალი დაფა
-        </Button>
-      </div>
-
       <KanbanProvider
         kanbanData={kanbanData}
         selectedBoard={selectedBoard || null}
@@ -198,13 +185,6 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
       >
         <Kanban />
       </KanbanProvider>
-
-      {/* Board creation sheet */}
-      <BoardCreateSheet
-        isOpen={showCreateBoardSheet}
-        onClose={() => setShowCreateBoardSheet(false)}
-        onBoardCreated={handleBoardCreated}
-      />
     </div>
   );
 }

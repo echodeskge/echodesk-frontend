@@ -190,8 +190,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const currentMenuItem = visibleMenuItems.find((item) => item.id === currentView);
   const pageTitle = currentMenuItem?.label || t('dashboard');
 
-  // Check if we should show board switcher
-  const showBoardSwitcher = currentView === "tickets" && boards && boards.length > 0;
+  // Check if we should show board switcher (always show on tickets page, even with no boards)
+  const showBoardSwitcher = currentView === "tickets";
 
   if (profileLoading || !tenantInfo) {
     return (
