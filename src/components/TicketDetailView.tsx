@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from 'next-intl';
-import type { Ticket, TicketColumn, User, Tag as TagType, TenantGroup } from "@/api/generated/interfaces";
+import type { Ticket, TicketColumn, User, Tag as TagType, TenantGroup, Board } from "@/api/generated/interfaces";
 import { ticketService } from "@/services/ticketService";
-import { columnsList, tagsList, tenantGroupsList } from "@/api/generated/api";
+import { columnsList, tagsList, tenantGroupsList, boardsList } from "@/api/generated/api";
 import axios from "@/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ChecklistItemList from "./ChecklistItemList";
 import AssigneeList from "./AssigneeList";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
@@ -48,6 +56,7 @@ import {
   Clock,
   Check,
   ChevronsUpDown,
+  ArrowRightLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -104,12 +113,17 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [isLabelPopoverOpen, setIsLabelPopoverOpen] = useState(false);
   const [error, setError] = useState("");
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
+  const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
+  const [transferring, setTransferring] = useState(false);
 
   useEffect(() => {
     fetchUsers();
     fetchColumns();
     fetchTags();
     fetchGroups();
+    fetchBoards();
   }, []);
 
   useEffect(() => {
@@ -164,6 +178,51 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       setGroups(result.results || []);
     } catch (err) {
       console.error("Error fetching groups:", err);
+    }
+  };
+
+  const fetchBoards = async () => {
+    try {
+      const result = await boardsList();
+      // Filter out the current board
+      const otherBoards = (result.results || []).filter(board => board.id !== ticket.column?.board);
+      setBoards(otherBoards);
+    } catch (err) {
+      console.error("Error fetching boards:", err);
+    }
+  };
+
+  const handleTransferToBoard = async () => {
+    if (!selectedBoardId) return;
+
+    setTransferring(true);
+    try {
+      // Get the first column of the target board
+      const allColumnsResult = await columnsList();
+      const targetBoardColumns = (allColumnsResult.results || [])
+        .filter(col => col.board === selectedBoardId)
+        .sort((a, b) => (a.position || 0) - (b.position || 0));
+
+      if (targetBoardColumns.length === 0) {
+        throw new Error("Target board has no columns");
+      }
+
+      const firstColumnId = targetBoardColumns[0].id;
+
+      // Update the ticket's column to the first column of the new board
+      await ticketService.updateTicket(ticket.id, {
+        column_id: firstColumnId,
+      });
+
+      // Refresh the ticket data
+      await fetchTicket();
+      setIsTransferDialogOpen(false);
+      setSelectedBoardId(null);
+    } catch (err) {
+      console.error("Error transferring ticket:", err);
+      setError("Failed to transfer ticket to another board");
+    } finally {
+      setTransferring(false);
     }
   };
 
@@ -391,10 +450,22 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                   </div>
                 </div>
                 {!isEditing ? (
-                  <Button onClick={handleStartEditing} variant="outline" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
-                    {tCommon('edit')}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={handleStartEditing} variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-2" />
+                      {tCommon('edit')}
+                    </Button>
+                    {boards.length > 0 && (
+                      <Button
+                        onClick={() => setIsTransferDialogOpen(true)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <ArrowRightLeft className="h-4 w-4 mr-2" />
+                        {t('transferToBoard')}
+                      </Button>
+                    )}
+                  </div>
                 ) : (
                   <div className="flex gap-2">
                     <Button onClick={handleSave} size="sm">
@@ -876,6 +947,52 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
           <TimeTracking ticket={ticket} />
         </div>
       </div>
+
+      {/* Transfer to Board Dialog */}
+      <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('transferToBoard')}</DialogTitle>
+            <DialogDescription>
+              {t('selectTargetBoard')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Select
+              value={selectedBoardId?.toString() || ""}
+              onValueChange={(value) => setSelectedBoardId(Number(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('selectBoard')} />
+              </SelectTrigger>
+              <SelectContent>
+                {boards.map((board) => (
+                  <SelectItem key={board.id} value={board.id.toString()}>
+                    {board.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsTransferDialogOpen(false);
+                setSelectedBoardId(null);
+              }}
+            >
+              {tCommon('cancel')}
+            </Button>
+            <Button
+              onClick={handleTransferToBoard}
+              disabled={!selectedBoardId || transferring}
+            >
+              {transferring ? t('transferring') : t('transfer')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
