@@ -6,6 +6,8 @@ import { useKanbanBoard } from "@/hooks/useKanbanBoard";
 import { KanbanProvider } from "./kanban-new/kanban-context";
 import { Kanban } from "./kanban-new/components/kanban";
 import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import type { ColumnType, TaskType, UserType } from "./kanban-new/types";
 import type { KanbanBoard, TicketList, TicketColumn } from "@/api/generated/interfaces";
 
@@ -82,6 +84,7 @@ interface TicketsNewProps {
 export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNewProps) {
   const { data: boards, isLoading: boardsLoading } = useBoards();
   const { data: kanbanBoardData, isLoading: kanbanLoading, error: kanbanError } = useKanbanBoard(selectedBoardId);
+  const [showCreateBoardDialog, setShowCreateBoardDialog] = useState(false);
 
   const selectedBoard = boards?.find(b => b.id === selectedBoardId);
 
@@ -147,6 +150,19 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
+      {/* Header with Board Creation Button */}
+      <div className="flex items-center justify-between px-6 py-4 border-b">
+        <h1 className="text-2xl font-bold">ტიკეტები</h1>
+        <Button
+          onClick={() => setShowCreateBoardDialog(true)}
+          size="sm"
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          ახალი დაფა
+        </Button>
+      </div>
+
       <KanbanProvider
         kanbanData={kanbanData}
         selectedBoard={selectedBoard || null}
@@ -154,6 +170,19 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
       >
         <Kanban />
       </KanbanProvider>
+
+      {/* TODO: Add CreateBoardDialog component here */}
+      {showCreateBoardDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg max-w-md w-full">
+            <h2 className="text-lg font-semibold mb-4">შექმენი ახალი დაფა</h2>
+            <p className="text-sm text-muted-foreground">Board creation dialog will be implemented here.</p>
+            <Button onClick={() => setShowCreateBoardDialog(false)} className="mt-4">
+              დახურვა
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
