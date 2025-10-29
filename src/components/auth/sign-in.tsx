@@ -14,6 +14,7 @@ import {
 } from "./auth-layout"
 import { SignInForm } from "./sign-in-form"
 import { ForgotPasswordForm } from "./forgot-password-form"
+import { ChangePasswordForm } from "./change-password-form"
 
 interface SignInProps {
   tenant: TenantConfig
@@ -23,6 +24,11 @@ interface SignInProps {
 export function SignIn({ tenant, onLogin }: SignInProps) {
   const t = useTranslations("auth")
   const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [passwordChangeData, setPasswordChangeData] = useState<{
+    userId: number
+    email: string
+  } | null>(null)
 
   const handleForgotPassword = () => {
     setShowForgotPassword(true)
@@ -30,6 +36,21 @@ export function SignIn({ tenant, onLogin }: SignInProps) {
 
   const handleBackToSignIn = () => {
     setShowForgotPassword(false)
+  }
+
+  const handlePasswordChangeRequired = (userId: number, email: string) => {
+    setPasswordChangeData({ userId, email })
+    setShowChangePassword(true)
+    setShowForgotPassword(false)
+  }
+
+  const handlePasswordChanged = (token: string) => {
+    // After password change, we get a new token and need to fetch user data
+    // For now, we'll just store the token and redirect
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('echodesk_auth_token', token)
+      window.location.href = '/tickets'
+    }
   }
 
   return (
@@ -40,17 +61,28 @@ export function SignIn({ tenant, onLogin }: SignInProps) {
     >
       <AuthHeader>
         <AuthTitle>
-          {showForgotPassword ? t("resetPassword") : t("login")}
+          {showChangePassword
+            ? t("changePassword") || "Change Password"
+            : showForgotPassword
+            ? t("resetPassword")
+            : t("login")}
         </AuthTitle>
         <AuthDescription>
-          {showForgotPassword
+          {showChangePassword
+            ? t("changePasswordDescription") || "Please set a new password for your account"
+            : showForgotPassword
             ? t("resetPasswordDescription")
-            : t("loginSubtitle")
-          }
+            : t("loginSubtitle")}
         </AuthDescription>
       </AuthHeader>
       <AuthForm>
-        {showForgotPassword ? (
+        {showChangePassword && passwordChangeData ? (
+          <ChangePasswordForm
+            userId={passwordChangeData.userId}
+            email={passwordChangeData.email}
+            onPasswordChanged={handlePasswordChanged}
+          />
+        ) : showForgotPassword ? (
           <ForgotPasswordForm
             tenant={tenant}
             onBackToSignIn={handleBackToSignIn}
@@ -59,6 +91,7 @@ export function SignIn({ tenant, onLogin }: SignInProps) {
           <SignInForm
             onLogin={onLogin}
             onForgotPassword={handleForgotPassword}
+            onPasswordChangeRequired={handlePasswordChangeRequired}
           />
         )}
       </AuthForm>

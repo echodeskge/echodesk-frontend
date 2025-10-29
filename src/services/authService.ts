@@ -39,8 +39,11 @@ export interface DashboardData {
 
 export interface LoginResponse {
   message: string;
-  token: string;
-  dashboard_data: DashboardData;
+  token?: string;
+  dashboard_data?: DashboardData;
+  password_change_required?: boolean;
+  user_id?: number;
+  email?: string;
 }
 
 export interface LoginCredentials extends TenantLoginType {
@@ -167,28 +170,60 @@ class AuthService {
     try {
       const response = await tenantLogin(credentials);
 
-      if (response.token) {
+      // Cast response to include password_change_required
+      const responseData = response as LoginResponse;
+
+      // Check if password change is required
+      if (responseData.password_change_required) {
+        return {
+          message: responseData.message || "Password change required",
+          password_change_required: true,
+          user_id: responseData.user_id,
+          email: responseData.email || credentials.email,
+        };
+      }
+
+      if (responseData.token) {
         // Store token and user data
-        this.setToken(response.token);
+        this.setToken(responseData.token);
 
         // If dashboard_data is provided, parse and store it
-        if (response.dashboard_data) {
-          const dashboardData = response.dashboard_data as DashboardData;
+        if (responseData.dashboard_data) {
+          const dashboardData = responseData.dashboard_data as DashboardData;
           this.setUserData(dashboardData);
         }
       }
 
       return {
-        message: response.message || "Login successful",
-        token: response.token || "",
-        dashboard_data: response.dashboard_data as DashboardData,
+        message: responseData.message || "Login successful",
+        token: responseData.token || "",
+        dashboard_data: responseData.dashboard_data as DashboardData,
       };
     } catch (error: unknown) {
       console.error("Login error:", error);
       if (error && typeof error === "object" && "response" in error) {
         const axiosError = error as {
-          response?: { data?: { message?: string } };
+          response?: {
+            status?: number;
+            data?: {
+              message?: string;
+              password_change_required?: boolean;
+              user_id?: number;
+              email?: string;
+            }
+          };
         };
+
+        // Check if this is a 403 with password_change_required
+        if (axiosError.response?.status === 403 && axiosError.response?.data?.password_change_required) {
+          return {
+            message: axiosError.response.data.message || "Password change required",
+            password_change_required: true,
+            user_id: axiosError.response.data.user_id,
+            email: axiosError.response.data.email || credentials.email,
+          };
+        }
+
         const message = axiosError.response?.data?.message || "Login failed";
         throw new Error(message);
       }

@@ -181,6 +181,18 @@ export async function tenantDashboard(): Promise<TenantDashboardData> {
   return response.data;
 }
 
+export async function forcedPasswordChange(data: {
+  email: string;
+  current_password: string;
+  new_password: string;
+}): Promise<{
+  message?: string;
+  token?: string;
+}> {
+  const response = await axios.post(`/api/auth/forced-password-change/`, data);
+  return response.data;
+}
+
 export async function tenantLogin(data: TenantLogin): Promise<{
   message?: string;
   token?: string;
@@ -2052,6 +2064,29 @@ export async function tenantPermissionsRetrieve(
   id: number,
 ): Promise<TenantPermission> {
   const response = await axios.get(`/api/tenant-permissions/${id}/`);
+  return response.data;
+}
+
+export async function tenantSettingsGet(): Promise<{
+  logo?: string;
+  company_name?: string;
+}> {
+  const response = await axios.get(`/api/tenant-settings/`);
+  return response.data;
+}
+
+export async function tenantSettingsRemoveLogo(): Promise<{
+  message?: string;
+}> {
+  const response = await axios.delete(`/api/tenant-settings/remove-logo/`);
+  return response.data;
+}
+
+export async function tenantSettingsUploadLogo(): Promise<{
+  logo_url?: string;
+  message?: string;
+}> {
+  const response = await axios.post(`/api/tenant-settings/upload-logo/`);
   return response.data;
 }
 

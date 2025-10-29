@@ -1474,12 +1474,9 @@ export interface UserCreate {
   email: string;
   first_name?: string;
   last_name?: string;
-  password: string;
-  password_confirm: string;
   role?: Role4c6enum;
   status?: Status336enum;
   phone_number?: string;
-  job_title?: string;
   department_id?: number;
   group_ids?: number[];
   user_permission_ids?: number[];

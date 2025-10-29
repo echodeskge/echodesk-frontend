@@ -24,9 +24,10 @@ import { Input } from "@/components/ui/input"
 interface SignInFormProps {
   onLogin: (token: string, user: AuthUser) => void
   onForgotPassword: () => void
+  onPasswordChangeRequired: (userId: number, email: string) => void
 }
 
-export function SignInForm({ onLogin, onForgotPassword }: SignInFormProps) {
+export function SignInForm({ onLogin, onForgotPassword, onPasswordChangeRequired }: SignInFormProps) {
   const t = useTranslations("auth")
   const tCommon = useTranslations("common")
   const [error, setError] = useState("")
@@ -49,6 +50,18 @@ export function SignInForm({ onLogin, onForgotPassword }: SignInFormProps) {
     try {
       const credentials: LoginCredentials = { email, password }
       const loginResponse = await authService.login(credentials)
+
+      // Check if password change is required
+      if (loginResponse.password_change_required) {
+        if (loginResponse.user_id) {
+          onPasswordChangeRequired(loginResponse.user_id, loginResponse.email || email)
+          return
+        } else {
+          setError("Password change required but user information is missing")
+          return
+        }
+      }
+
       const token = loginResponse.token
 
       if (token) {
