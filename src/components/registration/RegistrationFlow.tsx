@@ -7,7 +7,7 @@ import { PackageSelection } from './PackageSelection';
 import { CustomPackageBuilder } from './CustomPackageBuilder';
 import { RegistrationFormStep } from './RegistrationFormStep';
 import { Footer } from '@/components/landing/Footer';
-import { packagesList, registerTenant } from '@/api/generated/api';
+import { packagesList, registerTenantWithPayment } from '@/api/generated/api';
 import type { PackageList, TenantRegistration } from '@/api/generated/interfaces';
 import { PricingModel } from '@/types/package';
 
@@ -171,12 +171,13 @@ export function RegistrationFlow() {
         registrationData.package_id = data.package_id;
       }
 
-      const response: any = await registerTenant(registrationData);
+      const response: any = await registerTenantWithPayment(registrationData);
 
-      // Redirect to payment URL
+      // Redirect to payment URL (required for trial with card saving)
       if (response.payment_url) {
         window.location.href = response.payment_url;
       } else {
+        // Fallback (should not happen as payment_url is always required)
         router.push('/registration/success');
       }
     } catch (error: any) {

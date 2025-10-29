@@ -54,8 +54,6 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [totalPrice, setTotalPrice] = useState<string>('0');
-  const [subtotal, setSubtotal] = useState<string>('0');
-  const [discount, setDiscount] = useState<string>('0');
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
@@ -67,8 +65,6 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
       calculatePrice();
     } else {
       setTotalPrice('0');
-      setSubtotal('0');
-      setDiscount('0');
     }
   }, [selectedFeatures, pricingModel, userCount, maxUsers]);
 
@@ -95,8 +91,6 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
         max_users: pricingModel === 'crm' ? maxUsers : undefined,
       } as any);
       setTotalPrice(data.total_price || '0');
-      setSubtotal(data.subtotal || '0');
-      setDiscount(data.discount || '0');
     } catch (error) {
       console.error('Failed to calculate price:', error);
     } finally {
@@ -219,7 +213,7 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    {t('crmPricingNote') || 'Flat rate pricing with 10% discount - Unlimited growth potential'}
+                    {t('crmPricingNote') || 'Flat rate pricing - Unlimited growth potential'}
                   </AlertDescription>
                 </Alert>
               </div>
@@ -326,17 +320,7 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
               </div>
 
               <div className="border-t pt-4 space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{t('subtotal') || 'Subtotal'}</span>
-                  <span>{calculating ? '...' : `${subtotal}₾`}</span>
-                </div>
-                {pricingModel === 'crm' && parseFloat(discount) > 0 && (
-                  <div className="flex items-center justify-between text-sm text-green-600">
-                    <span>{t('discount') || 'Discount (10%)'}</span>
-                    <span>-{discount}₾</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between text-lg font-bold pt-2 border-t">
+                <div className="flex items-center justify-between text-lg font-bold pt-2">
                   <span>{t('totalPerMonth') || 'After Trial'}</span>
                   <span className="text-primary">{calculating ? '...' : `${totalPrice}₾/month`}</span>
                 </div>

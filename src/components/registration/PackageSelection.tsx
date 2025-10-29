@@ -202,7 +202,7 @@ export function PackageSelection({
             </li>
             <li className="flex items-center gap-2 text-sm">
               <Check className="h-4 w-4 text-primary" />
-              <span>{tAuth('customFeature3') || '10% discount on CRM-based pricing'}</span>
+              <span>{tAuth('customFeature3') || 'Scale from agent-based to unlimited users'}</span>
             </li>
           </ul>
           <Button className="w-full" variant="default" onClick={onCustomPackage}>
