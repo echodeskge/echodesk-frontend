@@ -20,6 +20,7 @@ export interface AuthUser {
   is_staff?: boolean;
   is_superuser?: boolean;
   date_joined?: string;
+  feature_keys?: string;
 }
 
 export interface TenantInfo {

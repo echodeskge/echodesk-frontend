@@ -126,17 +126,24 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     'settings': 'settings',
   };
 
-  // Build menu items with subscription feature requirements
+  // Parse user's feature keys
+  const userFeatureKeys = userProfile?.feature_keys ? JSON.parse(userProfile.feature_keys) : [];
+
+  // Helper function to check if user has a feature key
+  const hasFeatureKey = (featureKey: string): boolean => {
+    return userFeatureKeys.includes(featureKey);
+  };
+
+  // Build menu items with feature-based requirements
   const buildMenuItems = (): MenuItem[] => {
     const items: MenuItem[] = navigationConfig.map(config => ({
       ...config,
       label: t(translationKeyMap[config.id] || config.id),
       description: t(`description.${translationKeyMap[config.id] || config.id}`),
-      // Add subscription feature check
-      subscriptionFeature: config.subscriptionFeature,
+      requiredFeatureKey: config.requiredFeatureKey,
       isPremium: config.isPremium,
-      // Check if feature is available
-      isLocked: config.subscriptionFeature ? !hasFeature(config.subscriptionFeature) : false,
+      // Check if feature is available based on user's feature keys
+      isLocked: config.requiredFeatureKey ? !hasFeatureKey(config.requiredFeatureKey) : false,
     }));
 
     // Special handling for messages - only show if Facebook is connected
