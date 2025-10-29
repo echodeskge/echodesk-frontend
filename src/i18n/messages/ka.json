@@ -121,7 +121,18 @@
     "loadingPackages": "იტვირთება პაკეტები...",
     "noPackagesAvailable": "პაკეტები მიუწვდომელია ამ ფასების მოდელისთვის",
     "selected": "არჩეული",
-    "selectPlan": "გეგმის არჩევა"
+    "selectPlan": "გეგმის არჩევა",
+    "changePassword": "პაროლის შეცვლა",
+    "changePasswordDescription": "გთხოვთ დააყენოთ ახალი პაროლი თქვენი ანგარიშისთვის",
+    "passwordChangeRequired": "თქვენ უნდა შეცვალოთ პაროლი გაგრძელებამდე",
+    "currentPassword": "მიმდინარე პაროლი",
+    "currentPasswordPlaceholder": "შეიყვანეთ თქვენი დროებითი პაროლი",
+    "newPassword": "ახალი პაროლი",
+    "newPasswordPlaceholder": "შეიყვანეთ თქვენი ახალი პაროლი",
+    "confirmPassword": "დაადასტურეთ ახალი პაროლი",
+    "confirmPasswordPlaceholder": "ხელახლა შეიყვანეთ თქვენი ახალი პაროლი",
+    "changingPassword": "პაროლი იცვლება...",
+    "passwordChangedSuccess": "პაროლი წარმატებით შეიცვალა! გადამისამართება..."
   },
   "tickets": {
     "title": "ტიკეტები",

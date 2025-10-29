@@ -121,7 +121,18 @@
     "loadingPackages": "Loading packages...",
     "noPackagesAvailable": "No packages available for this pricing model",
     "selected": "Selected",
-    "selectPlan": "Select Plan"
+    "selectPlan": "Select Plan",
+    "changePassword": "Change Password",
+    "changePasswordDescription": "Please set a new password for your account",
+    "passwordChangeRequired": "You must change your password before continuing",
+    "currentPassword": "Current Password",
+    "currentPasswordPlaceholder": "Enter your temporary password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "Enter your new password",
+    "confirmPassword": "Confirm New Password",
+    "confirmPasswordPlaceholder": "Re-enter your new password",
+    "changingPassword": "Changing Password...",
+    "passwordChangedSuccess": "Password changed successfully! Redirecting..."
   },
   "tickets": {
     "title": "Tickets",
