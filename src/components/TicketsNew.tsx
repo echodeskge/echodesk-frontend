@@ -139,12 +139,40 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
 
   if (!boards || boards.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-muted-foreground">No boards available</p>
-          <p className="text-xs text-muted-foreground">Create a board to get started</p>
+      <>
+        <div className="flex h-full items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="rounded-full bg-muted p-4">
+              <Plus className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-semibold mb-1">დაფები ვერ მოიძებნა</p>
+              <p className="text-sm text-muted-foreground">შექმენი პირველი დაფა დასაწყებად</p>
+            </div>
+            <Button
+              onClick={() => setShowCreateBoardDialog(true)}
+              size="lg"
+              className="gap-2 mt-2"
+            >
+              <Plus className="h-5 w-5" />
+              შექმენი დაფა
+            </Button>
+          </div>
         </div>
-      </div>
+
+        {/* Board creation dialog */}
+        {showCreateBoardDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-background p-6 rounded-lg max-w-md w-full">
+              <h2 className="text-lg font-semibold mb-4">შექმენი ახალი დაფა</h2>
+              <p className="text-sm text-muted-foreground">Board creation dialog will be implemented here.</p>
+              <Button onClick={() => setShowCreateBoardDialog(false)} className="mt-4">
+                დახურვა
+              </Button>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
