@@ -119,7 +119,7 @@ export function PackageSelection({
                               {feature.icon ? (
                                 <span className="text-lg shrink-0">{feature.icon}</span>
                               ) : (
-                                <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                <Check className="size-4 text-success shrink-0 mt-0.5" />
                               )}
                               <span className="text-sm">{feature.name}</span>
                             </li>
@@ -128,7 +128,7 @@ export function PackageSelection({
                           /* Fallback to legacy features_list */
                           pkg.features_list && Array.isArray(pkg.features_list) && pkg.features_list.map((feature, idx) => (
                             <li key={idx} className="flex items-start gap-2">
-                              <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                              <Check className="size-4 text-success shrink-0 mt-0.5" />
                               <span className="text-sm">{feature}</span>
                             </li>
                           ))
