@@ -144,6 +144,11 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, [token, user]);
 
   const hasFeature = (feature: SubscriptionFeature): boolean => {
+    // Superadmins (staff/superuser) have access to ALL features
+    if (user?.is_staff || user?.is_superuser) {
+      return true;
+    }
+
     // Lock ALL features if no subscription exists
     if (!subscription || !subscription.has_subscription) {
       return false;
