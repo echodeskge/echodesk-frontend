@@ -57,6 +57,22 @@ export function PackageSelection({
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           {tAuth('selectPackageDesc')}
         </p>
+
+        {/* Trial Information Banner */}
+        <div className="max-w-3xl mx-auto mt-6 p-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">🎉</div>
+            <div className="text-left flex-1">
+              <h3 className="font-semibold text-green-900 dark:text-green-100 mb-1">
+                Start Your 14-Day Free Trial
+              </h3>
+              <p className="text-sm text-green-700 dark:text-green-300">
+                No payment required now! We'll only charge your card after your trial ends.
+                You can cancel anytime before the trial ends with no charge.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Pricing Model Tabs */}
@@ -98,11 +114,22 @@ export function PackageSelection({
                       )}
                       <CardTitle className="text-2xl">{pkg.display_name}</CardTitle>
                       <CardDescription>{pkg.description}</CardDescription>
+
+                      {/* Trial Badge */}
+                      <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded-full text-sm font-medium">
+                        <span>🎉</span>
+                        <span>14-Day Free Trial</span>
+                      </div>
+
                       <div className="mt-4">
-                        <span className="text-4xl font-bold">{pkg.price_gel}₾</span>
-                        <span className="text-muted-foreground ml-2">
-                          / {pricingModel === 'agent' ? t('periods.perAgentMonth') : t('periods.perMonth')}
-                        </span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-2xl font-bold text-muted-foreground line-through">{pkg.price_gel}₾</span>
+                          <span className="text-4xl font-bold text-green-600">0₾</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Free for 14 days, then {pkg.price_gel}₾
+                          {pricingModel === 'agent' ? t('periods.perAgentMonth') : t('periods.perMonth')}
+                        </p>
                         {pricingModel === 'crm' && pkg.max_users && (
                           <div className="text-sm text-muted-foreground mt-1">
                             {t('users')}: {pkg.max_users === 999999 ? t('unlimited') : pkg.max_users}

@@ -314,6 +314,17 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
                 )}
               </div>
 
+              {/* Trial Information */}
+              <div className="p-3 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-lg">🎉</span>
+                  <div>
+                    <div className="font-semibold text-green-900 dark:text-green-100">14-Day Free Trial</div>
+                    <div className="text-xs text-green-700 dark:text-green-300">No charge now, only after trial ends</div>
+                  </div>
+                </div>
+              </div>
+
               <div className="border-t pt-4 space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{t('subtotal') || 'Subtotal'}</span>
@@ -326,8 +337,12 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
                   </div>
                 )}
                 <div className="flex items-center justify-between text-lg font-bold pt-2 border-t">
-                  <span>{t('totalPerMonth') || 'Total / Month'}</span>
-                  <span className="text-primary">{calculating ? '...' : `${totalPrice}₾`}</span>
+                  <span>{t('totalPerMonth') || 'After Trial'}</span>
+                  <span className="text-primary">{calculating ? '...' : `${totalPrice}₾/month`}</span>
+                </div>
+                <div className="flex items-center justify-between text-xl font-bold pt-2 border-t text-green-600">
+                  <span>Today's Charge</span>
+                  <span>0₾</span>
                 </div>
               </div>
 

@@ -49,9 +49,17 @@ export function Pricing() {
 
   return (
     <section id="pricing" className="container py-16 space-y-8">
-      <div className="text-center mx-auto space-y-2 max-w-3xl">
+      <div className="text-center mx-auto space-y-4 max-w-3xl">
         <h2 className="text-4xl font-bold">{t("title")}</h2>
         <p className="text-lg text-muted-foreground">{t("subtitle")}</p>
+
+        {/* Trial Information Banner */}
+        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
+          <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
+            <span className="text-2xl">🎉</span>
+            <span className="font-semibold">Start your 14-day free trial today - no credit card required upfront!</span>
+          </div>
+        </div>
       </div>
 
       <Tabs
@@ -94,11 +102,21 @@ export function Pricing() {
                       )}
                       <CardTitle className="text-2xl">{pkg.display_name}</CardTitle>
                       <CardDescription>{pkg.description}</CardDescription>
+
+                      {/* Trial Badge */}
+                      <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 rounded-full text-xs font-medium">
+                        <span>🎉</span>
+                        <span>14-Day Free Trial</span>
+                      </div>
+
                       <div className="mt-4">
                         <span className="text-4xl font-bold">{pkg.price_gel}₾</span>
                         <span className="text-muted-foreground ml-2">
                           / {pricingModel === 'agent' ? t('periods.perAgentMonth') : t('periods.perMonth')}
                         </span>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Free for 14 days
+                        </p>
                         {pricingModel === 'crm' && pkg.max_users && (
                           <div className="text-sm text-muted-foreground mt-1">
                             {t("users")}: {pkg.max_users === 999999 ? t("unlimited") : pkg.max_users}
