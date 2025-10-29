@@ -707,6 +707,16 @@ export async function cronHealthRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function cronProcessTrialExpirationsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/process-trial-expirations/`);
+  return response.data;
+}
+
+export async function cronProcessTrialExpirationsCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/process-trial-expirations/`);
+  return response.data;
+}
+
 export async function cronRecurringPaymentsRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/recurring-payments/`);
   return response.data;
@@ -2012,6 +2022,11 @@ export async function tenantGroupsRemoveUsersCreate(
     `/api/tenant-groups/${id}/remove_users/`,
     data,
   );
+  return response.data;
+}
+
+export async function tenantGroupsAvailableFeaturesRetrieve(): Promise<TenantGroup> {
+  const response = await axios.get(`/api/tenant-groups/available_features/`);
   return response.data;
 }
 

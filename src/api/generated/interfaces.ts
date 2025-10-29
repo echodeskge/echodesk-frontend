@@ -238,6 +238,15 @@ export interface Feature {
   updated_at: string;
 }
 
+export interface FeatureMinimal {
+  id: number;
+  key: string;
+  name: string;
+  description?: string;
+  category?: CategoryEnum;
+  icon?: string;
+}
+
 export interface FeaturePermission {
   id: number;
   permission: Permission;
@@ -364,22 +373,8 @@ export interface Package {
   is_active?: boolean;
   is_custom?: boolean;
   sort_order?: number;
-  features_list: string[];
-  dynamic_features: DynamicFeature[];
-}
-
-export interface DynamicFeature {
-  id: number;
-  key: string;
-  name: string;
-  description: string;
-  category: string;
-  category_display: string;
-  icon: string;
-  price_per_user_gel: string;
-  price_unlimited_gel: string;
-  sort_order: number;
-  is_highlighted: boolean;
+  features_list: string;
+  dynamic_features: string;
 }
 
 export interface PackageList {
@@ -395,8 +390,8 @@ export interface PackageList {
   max_storage_gb?: number;
   is_highlighted?: boolean;
   is_custom?: boolean;
-  features_list: string[];
-  dynamic_features: DynamicFeature[];
+  features_list: string;
+  dynamic_features: string;
   pricing_suffix: string;
 }
 
@@ -858,25 +853,8 @@ export interface PatchedTenantGroup {
   created_at?: string;
   updated_at?: string;
   member_count?: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
-  can_create_tickets?: boolean;
-  can_edit_own_tickets?: boolean;
-  can_edit_all_tickets?: boolean;
-  can_delete_tickets?: boolean;
-  can_assign_tickets?: boolean;
-  can_view_reports?: boolean;
-  can_export_data?: boolean;
-  can_manage_tags?: boolean;
-  can_manage_columns?: boolean;
-  can_view_boards?: boolean;
-  can_create_boards?: boolean;
-  can_edit_boards?: boolean;
-  can_delete_boards?: boolean;
-  can_access_orders?: boolean;
+  features?: FeatureMinimal[];
+  feature_keys?: string;
 }
 
 export interface PatchedTicket {
@@ -1206,49 +1184,14 @@ export interface TenantGroup {
   created_at: string;
   updated_at: string;
   member_count: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
-  can_create_tickets?: boolean;
-  can_edit_own_tickets?: boolean;
-  can_edit_all_tickets?: boolean;
-  can_delete_tickets?: boolean;
-  can_assign_tickets?: boolean;
-  can_view_reports?: boolean;
-  can_export_data?: boolean;
-  can_manage_tags?: boolean;
-  can_manage_columns?: boolean;
-  can_view_boards?: boolean;
-  can_create_boards?: boolean;
-  can_edit_boards?: boolean;
-  can_delete_boards?: boolean;
-  can_access_orders?: boolean;
+  features: FeatureMinimal[];
+  feature_keys: string;
 }
 
 export interface TenantGroupCreate {
   name: string;
   description?: string;
-  can_view_all_tickets?: boolean;
-  can_manage_users?: boolean;
-  can_make_calls?: boolean;
-  can_manage_groups?: boolean;
-  can_manage_settings?: boolean;
-  can_create_tickets?: boolean;
-  can_edit_own_tickets?: boolean;
-  can_edit_all_tickets?: boolean;
-  can_delete_tickets?: boolean;
-  can_assign_tickets?: boolean;
-  can_view_reports?: boolean;
-  can_export_data?: boolean;
-  can_manage_tags?: boolean;
-  can_manage_columns?: boolean;
-  can_view_boards?: boolean;
-  can_create_boards?: boolean;
-  can_edit_boards?: boolean;
-  can_delete_boards?: boolean;
-  can_access_orders?: boolean;
+  feature_ids?: number[];
 }
 
 export interface TenantGroupMinimal {
@@ -1519,6 +1462,7 @@ export interface User {
   permissions: string;
   group_permissions: string;
   all_permissions: string;
+  feature_keys: string;
   groups: Group[];
   group_ids?: number[];
   tenant_groups: TenantGroup[];
