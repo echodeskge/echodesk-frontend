@@ -128,6 +128,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Parse user's feature keys
   const userFeatureKeys = userProfile?.feature_keys ? JSON.parse(userProfile.feature_keys) : [];
+  const isStaff = userProfile?.is_staff || false;
 
   // Helper function to check if user has a feature key
   const hasFeatureKey = (featureKey: string): boolean => {
@@ -142,8 +143,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       description: t(`description.${translationKeyMap[config.id] || config.id}`),
       requiredFeatureKey: config.requiredFeatureKey,
       isPremium: config.isPremium,
-      // Check if feature is available based on user's feature keys
-      isLocked: config.requiredFeatureKey ? !hasFeatureKey(config.requiredFeatureKey) : false,
+      // Staff are never locked
+      // For others: only lock if feature is required AND user doesn't have it
+      isLocked: isStaff ? false : (config.requiredFeatureKey ? !hasFeatureKey(config.requiredFeatureKey) : false),
     }));
 
     // Special handling for messages - only show if Facebook is connected
