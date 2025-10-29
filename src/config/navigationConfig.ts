@@ -68,14 +68,14 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     id: "social",
     icon: "📱",
     permission: "can_manage_settings",
-    // No specific feature - basic access for integrations
+    requiredFeatureKey: "social_integrations",
     isPremium: true,
   },
   {
     id: "settings",
     icon: "⚙️",
     permission: "can_manage_settings",
-    // Basic feature - everyone can access settings
+    requiredFeatureKey: "settings_access",
   },
 ];
 
