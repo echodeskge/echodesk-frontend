@@ -85,8 +85,10 @@ export default function GeneralSettingsPage() {
       setSettings(prev => ({ ...prev, logo: response.data.logo_url }));
       setSuccess('Logo uploaded successfully');
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000);
+      // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err: any) {
       console.error('Failed to upload logo:', err);
       setError(err.response?.data?.error || 'Failed to upload logo');
@@ -106,8 +108,10 @@ export default function GeneralSettingsPage() {
       setSettings(prev => ({ ...prev, logo: undefined }));
       setSuccess('Logo removed successfully');
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000);
+      // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (err: any) {
       console.error('Failed to remove logo:', err);
       setError(err.response?.data?.error || 'Failed to remove logo');

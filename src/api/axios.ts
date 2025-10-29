@@ -8,12 +8,13 @@ const getApiUrl = (): string => {
 
   const hostname = window.location.hostname;
 
-  // On localhost, always use "groot" tenant for development
+  // On localhost, use dev_tenant from localStorage or default to "groot"
   if (hostname.includes('localhost')) {
-    const devTenantUrl = 'https://groot.api.echodesk.ge';
+    const devTenant = localStorage.getItem('dev_tenant') || 'groot';
+    const devTenantUrl = `https://${devTenant}.api.echodesk.ge`;
 
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🏠 Localhost detected -> Using groot tenant: ${devTenantUrl}`);
+      console.log(`🏠 Localhost detected -> Using ${devTenant} tenant: ${devTenantUrl}`);
     }
 
     return devTenantUrl;
