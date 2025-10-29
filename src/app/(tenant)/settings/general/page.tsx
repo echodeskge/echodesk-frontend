@@ -6,14 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
-import { Upload, Image as ImageIcon, X, CheckCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Upload, Image as ImageIcon, X } from "lucide-react";
+import { toast } from "sonner";
 import axios from "@/api/axios";
 
 interface TenantSettings {
   logo?: string;
   company_name?: string;
+  min_users_per_ticket?: number;
+  only_superadmin_can_delete_tickets?: boolean;
 }
 
 export default function GeneralSettingsPage() {
@@ -24,8 +27,6 @@ export default function GeneralSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +45,7 @@ export default function GeneralSettingsPage() {
       }
     } catch (err: any) {
       console.error('Failed to fetch settings:', err);
-      setError(err.response?.data?.error || 'Failed to load settings');
+      toast.error(err.response?.data?.error || 'Failed to load settings');
     } finally {
       setLoading(false);
     }
@@ -56,19 +57,18 @@ export default function GeneralSettingsPage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
+      toast.error('Please select an image file');
       return;
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      setError('File size must be less than 2MB');
+      toast.error('File size must be less than 2MB');
       return;
     }
 
     try {
       setUploading(true);
-      setError(null);
 
       // Create FormData for file upload
       const formData = new FormData();
@@ -83,7 +83,7 @@ export default function GeneralSettingsPage() {
 
       setLogoPreview(response.data.logo_url);
       setSettings(prev => ({ ...prev, logo: response.data.logo_url }));
-      setSuccess('Logo uploaded successfully');
+      toast.success('Logo uploaded successfully');
 
       // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
       setTimeout(() => {
@@ -91,7 +91,7 @@ export default function GeneralSettingsPage() {
       }, 1500);
     } catch (err: any) {
       console.error('Failed to upload logo:', err);
-      setError(err.response?.data?.error || 'Failed to upload logo');
+      toast.error(err.response?.data?.error || 'Failed to upload logo');
     } finally {
       setUploading(false);
     }
@@ -100,13 +100,12 @@ export default function GeneralSettingsPage() {
   const handleRemoveLogo = async () => {
     try {
       setUploading(true);
-      setError(null);
 
       await axios.delete('/api/tenant-settings/remove-logo/');
 
       setLogoPreview(null);
       setSettings(prev => ({ ...prev, logo: undefined }));
-      setSuccess('Logo removed successfully');
+      toast.success('Logo removed successfully');
 
       // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
       setTimeout(() => {
@@ -114,9 +113,32 @@ export default function GeneralSettingsPage() {
       }, 1500);
     } catch (err: any) {
       console.error('Failed to remove logo:', err);
-      setError(err.response?.data?.error || 'Failed to remove logo');
+      toast.error(err.response?.data?.error || 'Failed to remove logo');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSaveTicketSettings = async () => {
+    try {
+      setSaving(true);
+
+      // Save ticket management settings
+      await axios.patch('/api/tenant-settings/', {
+        min_users_per_ticket: settings.min_users_per_ticket || 0,
+        only_superadmin_can_delete_tickets: settings.only_superadmin_can_delete_tickets || false,
+      });
+
+      toast.success('Ticket settings saved successfully');
+    } catch (err: any) {
+      console.error('Failed to save ticket settings:', err);
+      const errorMessage = err.response?.data?.error ||
+                           err.response?.data?.detail ||
+                           err.response?.data?.message ||
+                           'Failed to save ticket settings';
+      toast.error(errorMessage);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -138,19 +160,6 @@ export default function GeneralSettingsPage() {
           <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {success && (
-            <Alert className="border-green-500 bg-green-50 text-green-900">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription>{success}</AlertDescription>
-            </Alert>
-          )}
-
           {/* Logo Upload Section */}
           <div className="space-y-4">
             <div>
@@ -221,6 +230,74 @@ export default function GeneralSettingsPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ticket Management Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('ticketSettingsTitle')}</CardTitle>
+          <CardDescription>{t('ticketSettingsDescription')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Minimum Users Per Ticket */}
+          <div className="space-y-2">
+            <Label htmlFor="min_users_per_ticket">{t('minUsersLabel')}</Label>
+            <p className="text-sm text-muted-foreground">
+              {t('minUsersDescription')}
+            </p>
+            <Input
+              id="min_users_per_ticket"
+              type="number"
+              min="0"
+              value={settings.min_users_per_ticket || 0}
+              onChange={(e) => setSettings(prev => ({
+                ...prev,
+                min_users_per_ticket: parseInt(e.target.value) || 0
+              }))}
+              className="max-w-xs"
+            />
+          </div>
+
+          {/* Only Superadmin Can Delete Tickets */}
+          <div className="flex items-start space-x-3">
+            <Checkbox
+              id="only_superadmin_can_delete_tickets"
+              checked={settings.only_superadmin_can_delete_tickets || false}
+              onCheckedChange={(checked) => setSettings(prev => ({
+                ...prev,
+                only_superadmin_can_delete_tickets: checked === true
+              }))}
+            />
+            <div className="space-y-1 leading-none">
+              <Label
+                htmlFor="only_superadmin_can_delete_tickets"
+                className="cursor-pointer font-medium"
+              >
+                {t('onlySuperadminDeleteLabel')}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t('onlySuperadminDeleteDescription')}
+              </p>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleSaveTicketSettings}
+              disabled={saving}
+            >
+              {saving ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" />
+                  {tCommon('saving')}
+                </>
+              ) : (
+                tCommon('save')
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

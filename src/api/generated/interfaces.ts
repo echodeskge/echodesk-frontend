@@ -849,6 +849,8 @@ export interface PatchedTenant {
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   created_on?: string;
+  min_users_per_ticket?: number;
+  only_superadmin_can_delete_tickets?: boolean;
 }
 
 export interface PatchedTenantGroup {
@@ -1156,6 +1158,8 @@ export interface Tenant {
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   created_on: string;
+  min_users_per_ticket?: number;
+  only_superadmin_can_delete_tickets?: boolean;
 }
 
 export interface TenantCreate {
