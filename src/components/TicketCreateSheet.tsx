@@ -68,6 +68,7 @@ import MultiUserAssignment, { AssignmentData } from "@/components/MultiUserAssig
 import { SignatureCanvas } from "@/components/SignatureCanvas";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FileDropzone, type UploadedFile } from "@/components/FileDropzone";
+import { toast } from "sonner";
 
 // Flatten items recursively for search
 function flattenItems(items: any[]): any[] {
@@ -280,6 +281,9 @@ export function TicketCreateSheet() {
       // Invalidate queries to refetch data
       queryClient.invalidateQueries({ queryKey: ["kanbanBoard", formData.board_id] });
 
+      // Show success toast
+      toast.success(t('ticketCreatedSuccess'));
+
       // Reset form
       setFormData({
         title: "",
@@ -295,8 +299,9 @@ export function TicketCreateSheet() {
       setCustomFieldValues({});
 
       closeTicketCreate();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating ticket:", error);
+      toast.error(error?.response?.data?.error || t('ticketCreatedError'));
     } finally {
       setLoading(false);
     }
