@@ -112,12 +112,27 @@ export function PackageSelection({
                     </CardHeader>
                     <CardContent>
                       <ul className="space-y-3">
-                        {pkg.features_list && Array.isArray(pkg.features_list) && pkg.features_list.map((feature, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                            <span className="text-sm">{feature}</span>
-                          </li>
-                        ))}
+                        {/* Show dynamic features if available */}
+                        {pkg.dynamic_features && pkg.dynamic_features.length > 0 ? (
+                          pkg.dynamic_features.map((feature) => (
+                            <li key={feature.id} className="flex items-start gap-2">
+                              {feature.icon ? (
+                                <span className="text-lg shrink-0">{feature.icon}</span>
+                              ) : (
+                                <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                              )}
+                              <span className="text-sm">{feature.name}</span>
+                            </li>
+                          ))
+                        ) : (
+                          /* Fallback to legacy features_list */
+                          pkg.features_list && Array.isArray(pkg.features_list) && pkg.features_list.map((feature, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                              <span className="text-sm">{feature}</span>
+                            </li>
+                          ))
+                        )}
                       </ul>
                     </CardContent>
                     <CardFooter>

@@ -364,8 +364,22 @@ export interface Package {
   is_active?: boolean;
   is_custom?: boolean;
   sort_order?: number;
-  features_list: string;
-  dynamic_features: string;
+  features_list: string[];
+  dynamic_features: DynamicFeature[];
+}
+
+export interface DynamicFeature {
+  id: number;
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  category_display: string;
+  icon: string;
+  price_per_user_gel: string;
+  price_unlimited_gel: string;
+  sort_order: number;
+  is_highlighted: boolean;
 }
 
 export interface PackageList {
@@ -381,8 +395,8 @@ export interface PackageList {
   max_storage_gb?: number;
   is_highlighted?: boolean;
   is_custom?: boolean;
-  features_list: string;
-  dynamic_features: string;
+  features_list: string[];
+  dynamic_features: DynamicFeature[];
   pricing_suffix: string;
 }
 
