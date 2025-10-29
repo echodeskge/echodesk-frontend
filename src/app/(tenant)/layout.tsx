@@ -168,8 +168,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout/", { method: "POST" });
-      router.push("/");
+      // Clear local auth data using authService
+      const { authService } = await import("@/services/auth");
+      authService.clearLocalAuth();
+
+      // Redirect to home page
+      window.location.href = "/";
     } catch (err) {
       console.error("Logout failed:", err);
     }
