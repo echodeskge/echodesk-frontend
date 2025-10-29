@@ -53,7 +53,7 @@ export function Pricing() {
       setLoading(true);
       const data = await packagesList();
       // Type assertion: API returns dynamic_features as array but TypeScript thinks it's string
-      setPackages((data.results || []) as PackageListExtended[]);
+      setPackages((data.results || []) as unknown as PackageListExtended[]);
     } catch (error) {
       console.error('Failed to load packages:', error);
     } finally {

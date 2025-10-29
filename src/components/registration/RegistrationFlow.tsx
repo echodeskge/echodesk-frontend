@@ -11,6 +11,25 @@ import { packagesList, registerTenantWithPayment } from '@/api/generated/api';
 import type { PackageList, TenantRegistration } from '@/api/generated/interfaces';
 import { PricingModel } from '@/types/package';
 
+// Extend PackageList to fix dynamic_features type
+interface DynamicFeature {
+  id: number;
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  category_display: string;
+  icon?: string;
+  price_per_user_gel: string;
+  price_unlimited_gel: string;
+  sort_order: number;
+  is_highlighted: boolean;
+}
+
+interface PackageListExtended extends Omit<PackageList, 'dynamic_features'> {
+  dynamic_features: DynamicFeature[];
+}
+
 export interface RegistrationFormData {
   company_name: string;
   domain: string;
@@ -36,8 +55,8 @@ export function RegistrationFlow() {
   const t = useTranslations('auth');
 
   const [step, setStep] = useState(1); // 1: Package Selection, 1.5: Custom Builder, 2: Form
-  const [packages, setPackages] = useState<PackageList[]>([]);
-  const [selectedPackage, setSelectedPackage] = useState<PackageList | null>(null);
+  const [packages, setPackages] = useState<PackageListExtended[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<PackageListExtended | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -77,7 +96,8 @@ export function RegistrationFlow() {
     try {
       setLoading(true);
       const data = await packagesList();
-      setPackages(data.results || []);
+      // Type assertion: API returns dynamic_features as array but TypeScript thinks it's string
+      setPackages((data.results || []) as unknown as PackageListExtended[]);
     } catch (error) {
       console.error('Failed to load packages:', error);
       setError(t('loadPackagesFailed'));
@@ -86,7 +106,7 @@ export function RegistrationFlow() {
     }
   };
 
-  const handlePackageSelect = (packageItem: PackageList) => {
+  const handlePackageSelect = (packageItem: PackageListExtended) => {
     setSelectedPackage(packageItem);
     const pricingModelValue = String(packageItem.pricing_model) as PricingModel;
     setFormData((prev) => ({
@@ -139,7 +159,7 @@ export function RegistrationFlow() {
       features_list: [],
       dynamic_features: [],
       pricing_suffix: packageData.pricing_model === 'agent' ? '/agent/month' : '/month',
-    } as any as PackageList);
+    } as any as PackageListExtended);
 
     setStep(2);
   };

@@ -12,10 +12,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { PackageList } from '@/api/generated/interfaces';
 import type { RegistrationFormData } from './RegistrationFlow';
 
+// Extend PackageList to fix dynamic_features type
+interface DynamicFeature {
+  id: number;
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  category_display: string;
+  icon?: string;
+  price_per_user_gel: string;
+  price_unlimited_gel: string;
+  sort_order: number;
+  is_highlighted: boolean;
+}
+
+interface PackageListExtended extends Omit<PackageList, 'dynamic_features'> {
+  dynamic_features: DynamicFeature[];
+}
+
 interface RegistrationFormStepProps {
   formData: RegistrationFormData;
   setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
-  selectedPackage: PackageList;
+  selectedPackage: PackageListExtended;
   loading: boolean;
   error: string;
   onSubmit: (data: RegistrationFormData) => void;
