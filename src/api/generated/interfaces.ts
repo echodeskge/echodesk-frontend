@@ -177,6 +177,12 @@ export interface Department {
   updated_at: string;
 }
 
+export interface DepartmentMinimal {
+  id: number;
+  name: string;
+  description: string;
+}
+
 export interface DeploymentStatusEnum {
   [key: string]: any;
 }
@@ -881,6 +887,8 @@ export interface PatchedTicket {
   assignment_roles?: Record<string, any>;
   assigned_groups?: TenantGroupMinimal[];
   assigned_group_ids?: number[];
+  assigned_department?: DepartmentMinimal;
+  assigned_department_id?: number;
   tags?: Tag[];
   tag_ids?: number[];
   comments?: TicketComment[];
@@ -901,6 +909,7 @@ export interface PatchedTicket {
   payment_status?: string;
   is_overdue?: string;
   form_submissions?: string;
+  attachments?: string;
 }
 
 export interface PatchedTicketAssignment {
@@ -1252,6 +1261,8 @@ export interface Ticket {
   assignment_roles?: Record<string, any>;
   assigned_groups: TenantGroupMinimal[];
   assigned_group_ids?: number[];
+  assigned_department: DepartmentMinimal;
+  assigned_department_id?: number;
   tags: Tag[];
   tag_ids?: number[];
   comments: TicketComment[];
@@ -1272,6 +1283,7 @@ export interface Ticket {
   payment_status: string;
   is_overdue: string;
   form_submissions: string;
+  attachments: string;
 }
 
 export interface TicketAssignment {
@@ -1479,6 +1491,7 @@ export interface UserCreate {
   phone_number?: string;
   department_id?: number;
   group_ids?: number[];
+  tenant_group_ids?: number[];
   user_permission_ids?: number[];
 }
 
