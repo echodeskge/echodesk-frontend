@@ -1030,13 +1030,10 @@ export interface PaymentMethodEnum {
 
 export interface Permission {
   id: number;
-  key: string;
   name: string;
-  description?: string;
-  module: string;
-  is_active?: boolean;
-  created_at: string;
-  updated_at: string;
+  codename: string;
+  app_label: string;
+  model: string;
 }
 
 export interface PlanEnum {
