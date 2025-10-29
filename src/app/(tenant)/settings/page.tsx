@@ -9,7 +9,14 @@ import { useTranslations } from "next-intl";
 export default function SettingsPage() {
   const t = useTranslations('settings');
 
-  const settingsSections = [
+  const settingsSections: Array<{
+    title: string;
+    description: string;
+    icon: any;
+    href: string;
+    color: string;
+    disabled?: boolean;
+  }> = [
     {
       title: "Subscription & Billing",
       description: "Manage your subscription plan, billing, and usage",

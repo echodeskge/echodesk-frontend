@@ -44,6 +44,8 @@ export interface ColumnType {
   order: number
   title: string
   color?: string
+  is_default?: boolean
+  is_closed_status?: boolean
   time_tracking?: boolean
   tasks: TaskType[]
 }
