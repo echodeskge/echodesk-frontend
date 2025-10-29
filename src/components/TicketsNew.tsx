@@ -8,8 +8,9 @@ import { Kanban } from "./kanban-new/components/kanban";
 import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { BoardCreateSheet } from "./BoardCreateSheet";
 import type { ColumnType, TaskType, UserType } from "./kanban-new/types";
-import type { KanbanBoard, TicketList, TicketColumn } from "@/api/generated/interfaces";
+import type { KanbanBoard, TicketList, TicketColumn, Board } from "@/api/generated/interfaces";
 
 // Helper to convert API data to Kanban format
 function convertApiDataToKanbanFormat(kanbanBoardData: KanbanBoard): ColumnType[] {
@@ -84,9 +85,14 @@ interface TicketsNewProps {
 export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNewProps) {
   const { data: boards, isLoading: boardsLoading } = useBoards();
   const { data: kanbanBoardData, isLoading: kanbanLoading, error: kanbanError } = useKanbanBoard(selectedBoardId);
-  const [showCreateBoardDialog, setShowCreateBoardDialog] = useState(false);
+  const [showCreateBoardSheet, setShowCreateBoardSheet] = useState(false);
 
   const selectedBoard = boards?.find(b => b.id === selectedBoardId);
+
+  const handleBoardCreated = (newBoard: Board) => {
+    // Switch to the newly created board
+    onBoardChange(newBoard.id);
+  };
 
   // Set initial board when boards load
   useEffect(() => {
@@ -150,7 +156,7 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
               <p className="text-sm text-muted-foreground">შექმენი პირველი დაფა დასაწყებად</p>
             </div>
             <Button
-              onClick={() => setShowCreateBoardDialog(true)}
+              onClick={() => setShowCreateBoardSheet(true)}
               size="lg"
               className="gap-2 mt-2"
             >
@@ -160,18 +166,12 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
           </div>
         </div>
 
-        {/* Board creation dialog */}
-        {showCreateBoardDialog && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-background p-6 rounded-lg max-w-md w-full">
-              <h2 className="text-lg font-semibold mb-4">შექმენი ახალი დაფა</h2>
-              <p className="text-sm text-muted-foreground">Board creation dialog will be implemented here.</p>
-              <Button onClick={() => setShowCreateBoardDialog(false)} className="mt-4">
-                დახურვა
-              </Button>
-            </div>
-          </div>
-        )}
+        {/* Board creation sheet */}
+        <BoardCreateSheet
+          isOpen={showCreateBoardSheet}
+          onClose={() => setShowCreateBoardSheet(false)}
+          onBoardCreated={handleBoardCreated}
+        />
       </>
     );
   }
@@ -182,7 +182,7 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
       <div className="flex items-center justify-between px-6 py-4 border-b">
         <h1 className="text-2xl font-bold">ტიკეტები</h1>
         <Button
-          onClick={() => setShowCreateBoardDialog(true)}
+          onClick={() => setShowCreateBoardSheet(true)}
           size="sm"
           className="gap-2"
         >
@@ -199,18 +199,12 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
         <Kanban />
       </KanbanProvider>
 
-      {/* TODO: Add CreateBoardDialog component here */}
-      {showCreateBoardDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg max-w-md w-full">
-            <h2 className="text-lg font-semibold mb-4">შექმენი ახალი დაფა</h2>
-            <p className="text-sm text-muted-foreground">Board creation dialog will be implemented here.</p>
-            <Button onClick={() => setShowCreateBoardDialog(false)} className="mt-4">
-              დახურვა
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Board creation sheet */}
+      <BoardCreateSheet
+        isOpen={showCreateBoardSheet}
+        onClose={() => setShowCreateBoardSheet(false)}
+        onBoardCreated={handleBoardCreated}
+      />
     </div>
   );
 }
