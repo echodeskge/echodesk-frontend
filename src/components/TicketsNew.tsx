@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useBoards } from "@/hooks/useBoards";
 import { useKanbanBoard } from "@/hooks/useKanbanBoard";
+import { useAuth } from "@/contexts/AuthContext";
 import { KanbanProvider } from "./kanban-new/kanban-context";
 import { Kanban } from "./kanban-new/components/kanban";
 import { Spinner } from "@/components/ui/spinner";
@@ -83,11 +84,13 @@ interface TicketsNewProps {
 }
 
 export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNewProps) {
-  const { data: boards, isLoading: boardsLoading } = useBoards();
+  const { data: boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const { data: kanbanBoardData, isLoading: kanbanLoading, error: kanbanError } = useKanbanBoard(selectedBoardId);
+  const { user } = useAuth();
   const [showCreateBoardSheet, setShowCreateBoardSheet] = useState(false);
 
   const selectedBoard = boards?.find(b => b.id === selectedBoardId);
+  const isStaff = user?.is_staff || false;
 
   const handleBoardCreated = (newBoard: Board) => {
     // Switch to the newly created board
@@ -130,6 +133,31 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
     );
   }
 
+  // Handle boards loading error
+  if (boardsError) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-sm text-destructive">Error loading boards</p>
+          <p className="text-xs text-muted-foreground">
+            {boardsError instanceof Error ? boardsError.message : 'Failed to load boards'}
+          </p>
+          {isStaff && (
+            <Button
+              onClick={() => setShowCreateBoardSheet(true)}
+              size="sm"
+              variant="outline"
+              className="gap-2 mt-2"
+            >
+              <Plus className="h-4 w-4" />
+              შექმენი დაფა
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (kanbanError) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -153,25 +181,31 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
             </div>
             <div className="text-center">
               <p className="text-lg font-semibold mb-1">დაფები ვერ მოიძებნა</p>
-              <p className="text-sm text-muted-foreground">შექმენი პირველი დაფა დასაწყებად</p>
+              <p className="text-sm text-muted-foreground">
+                {isStaff ? "შექმენი პირველი დაფა დასაწყებად" : "დაფებზე წვდომა არ გაქვთ"}
+              </p>
             </div>
-            <Button
-              onClick={() => setShowCreateBoardSheet(true)}
-              size="lg"
-              className="gap-2 mt-2"
-            >
-              <Plus className="h-5 w-5" />
-              შექმენი დაფა
-            </Button>
+            {isStaff && (
+              <Button
+                onClick={() => setShowCreateBoardSheet(true)}
+                size="lg"
+                className="gap-2 mt-2"
+              >
+                <Plus className="h-5 w-5" />
+                შექმენი დაფა
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Board creation sheet */}
-        <BoardCreateSheet
-          isOpen={showCreateBoardSheet}
-          onClose={() => setShowCreateBoardSheet(false)}
-          onBoardCreated={handleBoardCreated}
-        />
+        {/* Board creation sheet - only for staff */}
+        {isStaff && (
+          <BoardCreateSheet
+            isOpen={showCreateBoardSheet}
+            onClose={() => setShowCreateBoardSheet(false)}
+            onBoardCreated={handleBoardCreated}
+          />
+        )}
       </>
     );
   }
