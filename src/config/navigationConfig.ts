@@ -43,7 +43,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     id: "orders",
     icon: "📝",
     permission: "can_access_orders",
-    requiredFeatureKey: "ticket_management",
+    requiredFeatureKey: "order_management",
   },
   {
     id: "messages",
@@ -56,13 +56,13 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     id: "users",
     icon: "👥",
     permission: "can_access_user_management",
-    requiredFeatureKey: "ticket_management",
+    requiredFeatureKey: "user_management",
   },
   {
     id: "groups",
     icon: "👨‍👩‍👧‍👦",
     permission: "can_access_user_management",
-    requiredFeatureKey: "ticket_management",
+    requiredFeatureKey: "user_management",
   },
   {
     id: "social",

@@ -148,16 +148,27 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       description: t(`description.${translationKeyMap[config.id] || config.id}`),
       requiredFeatureKey: config.requiredFeatureKey,
       isPremium: config.isPremium,
-      // Staff are never locked
-      // For others: only lock if feature is required AND user doesn't have it
-      isLocked: isStaff ? false : (config.requiredFeatureKey ? !hasFeatureKey(config.requiredFeatureKey) : false),
+      isLocked: false, // We'll filter locked items instead of showing them
     }));
 
-    // Special handling for messages - only show if Facebook is connected
+    // Filter items based on feature keys and other conditions
     return items.filter(item => {
+      // Special handling for messages - only show if Facebook is connected
       if (item.id === "messages" && !facebookConnected) {
         return false;
       }
+
+      // Staff see all items
+      if (isStaff) {
+        return true;
+      }
+
+      // If item requires a feature key, check if user has it
+      if (item.requiredFeatureKey) {
+        return hasFeatureKey(item.requiredFeatureKey);
+      }
+
+      // Items without required features are always visible
       return true;
     });
   };
