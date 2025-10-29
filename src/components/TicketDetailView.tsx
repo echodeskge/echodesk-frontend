@@ -61,6 +61,7 @@ import {
   History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface TicketDetailViewProps {
   ticket: Ticket;
@@ -265,9 +266,11 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       await ticketService.addComment(ticket.id, commentText);
       setCommentText("");
       await fetchTicket();
+      toast.success(t('commentAddedSuccess'));
     } catch (err) {
       console.error("Error adding comment:", err);
       setError("Failed to add comment");
+      toast.error(t('commentAddedError'));
     } finally {
       setSubmittingComment(false);
     }
@@ -281,9 +284,11 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       );
       setTicket(response.data);
       onUpdate(response.data);
+      toast.success(t('ticketMovedSuccess'));
     } catch (err) {
       console.error("Error moving ticket:", err);
       setError("Failed to move ticket");
+      toast.error(t('ticketMovedError'));
     }
   };
 
@@ -335,9 +340,11 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       onUpdate(updatedTicket);
       setEditingAssignments(false);
       setTempAssignments([]);
+      toast.success(t('assignmentsUpdatedSuccess'));
     } catch (err) {
       console.error("Error updating assignments:", err);
       setError("Failed to update assignments");
+      toast.error(t('assignmentsUpdatedError'));
     }
   };
 
@@ -361,9 +368,11 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       onUpdate(updatedTicket);
       setEditingLabels(false);
       setSelectedTagIds([]);
+      toast.success(t('labelsUpdatedSuccess'));
     } catch (err) {
       console.error("Error updating labels:", err);
       setError("Failed to update labels");
+      toast.error(t('labelsUpdatedError'));
     }
   };
 
@@ -393,9 +402,11 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       onUpdate(updatedTicket);
       setEditingGroups(false);
       setSelectedGroupIds([]);
+      toast.success(t('groupsUpdatedSuccess'));
     } catch (err) {
       console.error("Error updating groups:", err);
       setError("Failed to update groups");
+      toast.error(t('groupsUpdatedError'));
     }
   };
 
