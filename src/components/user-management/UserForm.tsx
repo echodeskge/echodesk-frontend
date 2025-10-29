@@ -40,12 +40,9 @@ export default function UserForm({
     email: user?.email || "",
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
-    password: "",
-    password_confirm: "",
     is_active: user?.is_active ?? true,
     tenant_group_ids: user?.tenant_group_ids || [],
     phone_number: user?.phone_number || "",
-    job_title: user?.job_title || "",
     status: user?.is_active ? "active" : "inactive",
   });
 
@@ -85,7 +82,6 @@ export default function UserForm({
         is_active: userData.is_active ?? true,
         tenant_group_ids: userData.tenant_group_ids || (userData.tenant_groups ? userData.tenant_groups.map(g => g.id) : []),
         phone_number: userData.phone_number || "",
-        job_title: userData.job_title || "",
         status: userData.is_active ? "active" : "inactive",
       }));
     }
@@ -131,20 +127,6 @@ export default function UserForm({
       newErrors.last_name = "Last name is required";
     }
 
-    if (mode === "create") {
-      if (!formData.password) {
-        newErrors.password = "Password is required";
-      } else if (formData.password.length < 8) {
-        newErrors.password = "Password must be at least 8 characters long";
-      }
-
-      if (!formData.password_confirm) {
-        newErrors.password_confirm = "Please confirm your password";
-      } else if (formData.password !== formData.password_confirm) {
-        newErrors.password_confirm = "Passwords do not match";
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -163,11 +145,8 @@ export default function UserForm({
           email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
-          password: formData.password,
-          password_confirm: formData.password_confirm,
           tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
-          job_title: formData.job_title || undefined,
         };
         await onSubmit(createData);
       } else {
@@ -177,7 +156,6 @@ export default function UserForm({
           status: formData.status as any,
           tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
-          job_title: formData.job_title || undefined,
           is_active: formData.is_active,
         };
         await onSubmit(updateData);
@@ -203,7 +181,7 @@ export default function UserForm({
           <DialogTitle>{mode === "create" ? "Add New User" : "Edit User"}</DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Create a new user account and assign them to groups"
+              ? "Create a new user account. A secure password will be auto-generated and emailed to the user."
               : `Update user information for ${user?.email}`}
           </DialogDescription>
         </DialogHeader>
@@ -276,17 +254,6 @@ export default function UserForm({
               />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="job_title">Job Title</Label>
-              <Input
-                id="job_title"
-                type="text"
-                value={formData.job_title}
-                onChange={(e) => handleChange("job_title", e.target.value)}
-                placeholder="Senior Developer, Sales Manager, etc."
-              />
-            </div>
-
             {mode === "edit" && (
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
@@ -308,44 +275,6 @@ export default function UserForm({
               </div>
             )}
           </div>
-
-          {/* Password Section (Create Mode Only) */}
-          {mode === "create" && (
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="text-sm font-semibold">Password</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => handleChange("password", e.target.value)}
-                    placeholder="Minimum 8 characters"
-                    className={errors.password ? "border-destructive" : ""}
-                  />
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password_confirm">Confirm Password *</Label>
-                  <Input
-                    id="password_confirm"
-                    type="password"
-                    value={formData.password_confirm}
-                    onChange={(e) => handleChange("password_confirm", e.target.value)}
-                    placeholder="Re-enter password"
-                    className={errors.password_confirm ? "border-destructive" : ""}
-                  />
-                  {errors.password_confirm && (
-                    <p className="text-sm text-destructive">{errors.password_confirm}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Group Assignment Section */}
           <div className="space-y-4 pt-4 border-t">
