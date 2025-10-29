@@ -200,6 +200,10 @@
       "columnTitle": "სვეტის სათაური",
       "columnTitlePlaceholder": "მაგ., მუშავდება",
       "columnColor": "სვეტის ფერი",
+      "isDefault": "ნაგულისხმევი სტატუსი",
+      "isDefaultDescription": "ახალი ტიკეტები იქმნება ამ სტატუსით",
+      "isClosedStatus": "დახურული სტატუსი",
+      "isClosedStatusDescription": "ამ სვეტში არსებული ტიკეტები ითვლება დასრულებულად",
       "timeTracking": "დროის აღრიცხვის ჩართვა",
       "timeTrackingDescription": "აღრიცხეთ ამ სვეტში ტიკეტებზე დახარჯული დრო",
       "addColumn": "სვეტის დამატება",
@@ -278,6 +282,16 @@
         "title": "ზოგადი პარამეტრები",
         "description": "კონფიგურაცია გაუკეთეთ ზოგად აპლიკაციის პარამეტრებს"
       }
+    },
+    "general": {
+      "title": "ზოგადი პარამეტრები",
+      "description": "მართეთ თქვენი ორგანიზაციის ზოგადი პარამეტრები და ბრენდინგი",
+      "logoLabel": "კომპანიის ლოგო",
+      "logoDescription": "ატვირთეთ კომპანიის ლოგო რომელიც გამოჩნდება სისტემის სხვადასხვა ადგილებში",
+      "uploadLogo": "ლოგოს ატვირთვა",
+      "changeLogo": "ლოგოს შეცვლა",
+      "uploading": "იტვირთება...",
+      "logoRequirements": "PNG, JPG ან GIF. მაქსიმალური ზომა 2MB."
     },
     "ticketFormsPage": {
       "title": "ტიკეტის ფორმები",

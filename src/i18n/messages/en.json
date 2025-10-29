@@ -200,6 +200,10 @@
       "columnTitle": "Column Title",
       "columnTitlePlaceholder": "e.g., In Progress",
       "columnColor": "Column Color",
+      "isDefault": "Default Status",
+      "isDefaultDescription": "New tickets will be created with this status",
+      "isClosedStatus": "Closed Status",
+      "isClosedStatusDescription": "Tickets in this column are considered completed",
       "timeTracking": "Enable Time Tracking",
       "timeTrackingDescription": "Track time spent on tickets in this column",
       "addColumn": "Add Column",
@@ -278,6 +282,16 @@
         "title": "General Settings",
         "description": "Configure general application settings"
       }
+    },
+    "general": {
+      "title": "General Settings",
+      "description": "Manage your organization's general settings and branding",
+      "logoLabel": "Company Logo",
+      "logoDescription": "Upload your company logo to display throughout the system",
+      "uploadLogo": "Upload Logo",
+      "changeLogo": "Change Logo",
+      "uploading": "Uploading...",
+      "logoRequirements": "PNG, JPG or GIF. Maximum size 2MB."
     },
     "ticketFormsPage": {
       "title": "Ticket Forms",

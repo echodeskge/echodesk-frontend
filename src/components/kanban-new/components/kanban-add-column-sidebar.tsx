@@ -49,6 +49,8 @@ export function KanbanAddColumnSidebar() {
 
   const [title, setTitle] = useState("")
   const [color, setColor] = useState(DEFAULT_COLORS[5]) // Default to green
+  const [isDefault, setIsDefault] = useState(false)
+  const [isClosedStatus, setIsClosedStatus] = useState(false)
   const [timeTracking, setTimeTracking] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -57,6 +59,8 @@ export function KanbanAddColumnSidebar() {
     if (!kanbanAddColumnSidebarIsOpen) {
       setTitle("")
       setColor(DEFAULT_COLORS[5])
+      setIsDefault(false)
+      setIsClosedStatus(false)
       setTimeTracking(false)
       setIsSubmitting(false)
     }
@@ -72,6 +76,8 @@ export function KanbanAddColumnSidebar() {
       await handleAddColumn({
         title: title.trim(),
         color,
+        is_default: isDefault,
+        is_closed_status: isClosedStatus,
         time_tracking: timeTracking,
       })
       handleSidebarClose()
@@ -150,6 +156,46 @@ export function KanbanAddColumnSidebar() {
                   className="flex-1 font-mono"
                   disabled={isSubmitting}
                 />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isDefault"
+                checked={isDefault}
+                onCheckedChange={(checked) => setIsDefault(checked as boolean)}
+                disabled={isSubmitting}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="isDefault"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t('isDefault')}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('isDefaultDescription')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isClosedStatus"
+                checked={isClosedStatus}
+                onCheckedChange={(checked) => setIsClosedStatus(checked as boolean)}
+                disabled={isSubmitting}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="isClosedStatus"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  {t('isClosedStatus')}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t('isClosedStatusDescription')}
+                </p>
               </div>
             </div>
 

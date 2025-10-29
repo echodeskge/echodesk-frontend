@@ -35,9 +35,8 @@ export default function SettingsPage() {
       title: t('sections.generalSettings.title'),
       description: t('sections.generalSettings.description'),
       icon: Settings,
-      href: "#",
+      href: "/settings/general",
       color: "text-gray-500",
-      disabled: true,
     },
   ];
 
