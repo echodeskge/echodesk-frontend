@@ -187,27 +187,13 @@ export class PermissionService {
   }
 
   /**
-   * Main function to get filtered sidebar menu items based on user permissions
+   * Main function to get sidebar menu items
+   * Note: All items are shown - filtering is done by isLocked status in the layout
+   * Permissions are checked at the API level, not for sidebar visibility
    */
   getSidebarMenuItems(userProfile: User | null, menuItems: MenuItem[]): MenuItem[] {
-    // Handle null/undefined user - return only public items
-    if (!userProfile) {
-      return menuItems.filter(item => item.permission === null);
-    }
-
-    // Super admin sees everything
-    if (this.isSuperAdmin(userProfile)) {
-      return menuItems;
-    }
-
-    // Filter menu items based on permissions
-    return menuItems.filter(item => {
-      if (item.permission === null) {
-        return true; // Always visible items (like Dashboard)
-      }
-      
-      return this.hasPermission(userProfile, item.permission);
-    });
+    // Show all menu items - locking is handled by feature keys in the layout
+    return menuItems;
   }
 
   /**
