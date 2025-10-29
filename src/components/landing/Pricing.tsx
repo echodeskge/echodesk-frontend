@@ -18,10 +18,29 @@ import { packagesList } from "@/api/generated/api";
 import type { PackageList } from "@/api/generated/interfaces";
 import type { PricingModel } from "@/types/package";
 
+// Extend PackageList to fix dynamic_features type
+interface DynamicFeature {
+  id: number;
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  category_display: string;
+  icon?: string;
+  price_per_user_gel: string;
+  price_unlimited_gel: string;
+  sort_order: number;
+  is_highlighted: boolean;
+}
+
+interface PackageListExtended extends Omit<PackageList, 'dynamic_features'> {
+  dynamic_features: DynamicFeature[];
+}
+
 export function Pricing() {
   const t = useTranslations("landing.pricing");
   const [pricingModel, setPricingModel] = useState<PricingModel>("crm");
-  const [packages, setPackages] = useState<PackageList[]>([]);
+  const [packages, setPackages] = useState<PackageListExtended[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load packages on mount
@@ -33,7 +52,8 @@ export function Pricing() {
     try {
       setLoading(true);
       const data = await packagesList();
-      setPackages(data.results || []);
+      // Type assertion: API returns dynamic_features as array but TypeScript thinks it's string
+      setPackages((data.results || []) as PackageListExtended[]);
     } catch (error) {
       console.error('Failed to load packages:', error);
     } finally {
