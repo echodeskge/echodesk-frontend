@@ -45,6 +45,7 @@ import MultiGroupSelection from "./MultiGroupSelection";
 import TimeTracking from "./TimeTracking";
 import { LabelManagementDialog } from "./LabelManagementDialog";
 import { TicketFormsSection } from "./TicketFormsSection";
+import { TicketHistoryDialog } from "./ticket/TicketHistoryDialog";
 import {
   Calendar,
   User as UserIcon,
@@ -57,6 +58,7 @@ import {
   Check,
   ChevronsUpDown,
   ArrowRightLeft,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -117,6 +119,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [transferring, setTransferring] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -967,6 +970,19 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                   <div>{t('comments')}: {ticket.comments_count}</div>
                 </div>
               </div>
+
+              <Separator />
+
+              <div>
+                <Button
+                  onClick={() => setIsHistoryDialogOpen(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <History className="h-4 w-4 mr-2" />
+                  {t('viewHistory')}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -1020,6 +1036,13 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Ticket History Dialog */}
+      <TicketHistoryDialog
+        ticketId={ticket.id}
+        open={isHistoryDialogOpen}
+        onOpenChange={setIsHistoryDialogOpen}
+      />
     </div>
   );
 }

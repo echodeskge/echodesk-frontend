@@ -179,6 +179,14 @@
     "editTask": "Edit Task",
     "deleteTask": "Delete Task",
     "deleteTaskConfirm": "Are you sure you want to delete this task? This action cannot be undone.",
+    "viewHistory": "View History",
+    "history": {
+      "title": "Ticket History",
+      "description": "View all changes made to this ticket",
+      "noHistory": "No history available for this ticket yet",
+      "from": "From",
+      "to": "To"
+    },
     "detail": {
       "loadingTicket": "Loading ticket...",
       "ticketNotFound": "Ticket not found",
