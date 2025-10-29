@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { TenantGroup, TenantGroupCreate, PaginatedTenantGroupList } from '../api/generated/interfaces';
+import { TenantGroup, PaginatedTenantGroupList } from '../api/generated/interfaces';
 import { tenantGroupsList, tenantGroupsCreate, tenantGroupsPartialUpdate, tenantGroupsDestroy } from '../api/generated/api';
-import { PERMISSION_CATEGORIES } from '@/services/permissionService';
+import axios from '@/api/axios';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,29 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search, Users, XCircle } from "lucide-react";
 
-interface TenantGroupFormData extends Omit<TenantGroupCreate, 'name' | 'description'> {
+interface Feature {
+  id: number;
+  key: string;
   name: string;
   description: string;
+  icon: string;
+  sort_order: number;
+}
+
+interface FeatureCategory {
+  category: string;
+  category_display: string;
+  features: Feature[];
+}
+
+interface AvailableFeaturesResponse {
+  categories: FeatureCategory[];
+}
+
+interface TenantGroupFormData {
+  name: string;
+  description: string;
+  feature_ids?: number[];
 }
 
 interface TenantGroupFormProps {
@@ -36,67 +56,84 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
   const [formData, setFormData] = useState<TenantGroupFormData>({
     name: group?.name || '',
     description: group?.description || '',
-    can_view_all_tickets: group?.can_view_all_tickets || false,
-    can_manage_users: group?.can_manage_users || false,
-    can_make_calls: group?.can_make_calls || false,
-    can_manage_groups: group?.can_manage_groups || false,
-    can_manage_settings: group?.can_manage_settings || false,
-    can_create_tickets: group?.can_create_tickets || true, // Default to true
-    can_edit_own_tickets: group?.can_edit_own_tickets || true, // Default to true
-    can_edit_all_tickets: group?.can_edit_all_tickets || false,
-    can_delete_tickets: group?.can_delete_tickets || false,
-    can_assign_tickets: group?.can_assign_tickets || false,
-    can_view_reports: group?.can_view_reports || false,
-    can_export_data: group?.can_export_data || false,
-    can_manage_tags: group?.can_manage_tags || false,
-    can_manage_columns: group?.can_manage_columns || false,
-    can_view_boards: group?.can_view_boards || true, // Default to true
-    can_create_boards: group?.can_create_boards || false,
-    can_edit_boards: group?.can_edit_boards || false,
-    can_delete_boards: group?.can_delete_boards || false,
-    can_access_orders: group?.can_access_orders || false,
+    feature_ids: group?.features?.map(f => f.id) || [],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [availableFeatures, setAvailableFeatures] = useState<FeatureCategory[]>([]);
+  const [loadingFeatures, setLoadingFeatures] = useState(true);
 
-  // Map permission categories to form fields
-  const permissionCategoryMapping = {
-    'tickets': [
-      'can_create_tickets',
-      'can_edit_own_tickets', 
-      'can_edit_all_tickets',
-      'can_delete_tickets',
-      'can_assign_tickets',
-      'can_manage_tags',
-      'can_manage_columns',
-      'can_view_all_tickets'
-    ],
-    'orders': ['can_access_orders'],
-    'calls': ['can_make_calls'],
-    'user_management': ['can_manage_users', 'can_manage_groups', 'can_manage_settings'],
-    'boards': ['can_view_boards', 'can_create_boards', 'can_edit_boards', 'can_delete_boards'],
-    'reports': ['can_view_reports', 'can_export_data'],
-  };
+  // Fetch available features
+  useEffect(() => {
+    const fetchFeatures = async () => {
+      try {
+        setLoadingFeatures(true);
+        const response = await axios.get<AvailableFeaturesResponse>('/api/tenant-groups/available_features/');
+        setAvailableFeatures(response.data.categories);
+      } catch (err) {
+        console.error('Failed to fetch available features:', err);
+        setErrors({ fetch: 'Failed to load available features' });
+      } finally {
+        setLoadingFeatures(false);
+      }
+    };
 
-  const handleCategoryToggle = (categoryId: string, checked: boolean) => {
-    const permissions = permissionCategoryMapping[categoryId as keyof typeof permissionCategoryMapping];
-    if (!permissions) return;
+    if (open) {
+      fetchFeatures();
+    }
+  }, [open]);
 
+  // Reset form data when group changes
+  useEffect(() => {
+    setFormData({
+      name: group?.name || '',
+      description: group?.description || '',
+      feature_ids: group?.features?.map(f => f.id) || [],
+    });
+  }, [group]);
+
+  const handleFeatureToggle = (featureId: number, checked: boolean) => {
     setFormData(prev => {
-      const updated = { ...prev };
-      permissions.forEach(permission => {
-        (updated as any)[permission] = checked;
-      });
-      return updated;
+      const currentIds = prev.feature_ids || [];
+      const updatedIds = checked
+        ? [...currentIds, featureId]
+        : currentIds.filter(id => id !== featureId);
+      return {
+        ...prev,
+        feature_ids: updatedIds,
+      };
     });
   };
 
-  const isCategoryChecked = (categoryId: string) => {
-    const permissions = permissionCategoryMapping[categoryId as keyof typeof permissionCategoryMapping];
-    if (!permissions) return false;
-    
-    return permissions.some(permission => (formData as any)[permission] === true);
+  const handleCategoryToggle = (category: FeatureCategory, checked: boolean) => {
+    setFormData(prev => {
+      const currentIds = prev.feature_ids || [];
+      const categoryFeatureIds = category.features.map(f => f.id);
+
+      let updatedIds: number[];
+      if (checked) {
+        // Add all features from this category
+        updatedIds = [...new Set([...currentIds, ...categoryFeatureIds])];
+      } else {
+        // Remove all features from this category
+        updatedIds = currentIds.filter(id => !categoryFeatureIds.includes(id));
+      }
+
+      return {
+        ...prev,
+        feature_ids: updatedIds,
+      };
+    });
+  };
+
+  const isCategoryChecked = (category: FeatureCategory) => {
+    const currentIds = formData.feature_ids || [];
+    return category.features.some(f => currentIds.includes(f.id));
+  };
+
+  const isFeatureChecked = (featureId: number) => {
+    return (formData.feature_ids || []).includes(featureId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,8 +161,8 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
           </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Create a new group and assign permissions"
-              : `Edit group "${group?.name}" and manage permissions`}
+              ? "შექმენით ახალი ჯგუფი და მიამაგრეთ ფუნქციები"
+              : `რედაქტირება ჯგუფი "${group?.name}" და ფუნქციების მართვა`}
           </DialogDescription>
         </DialogHeader>
 
@@ -134,6 +171,13 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
               <AlertDescription>{errors.submit}</AlertDescription>
+            </Alert>
+          )}
+
+          {errors.fetch && (
+            <Alert variant="destructive">
+              <XCircle className="h-4 w-4" />
+              <AlertDescription>{errors.fetch}</AlertDescription>
             </Alert>
           )}
 
@@ -146,7 +190,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               required
               disabled={isSubmitting}
-              placeholder="Enter group name"
+              placeholder="შეიყვანეთ ჯგუფის სახელი"
             />
           </div>
 
@@ -157,41 +201,80 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               disabled={isSubmitting}
-              placeholder="Enter group description"
+              placeholder="შეიყვანეთ ჯგუფის აღწერა"
               rows={3}
             />
           </div>
 
           <div className="space-y-4 pt-4 border-t">
-            <Label className="text-base">{t("permissions")}</Label>
+            <Label className="text-base">ფუნქციები</Label>
+            <p className="text-sm text-muted-foreground">
+              აირჩიეთ ფუნქციები თქვენი გამოწერიდან, რომლებიც ხელმისაწვდომი იქნება ამ ჯგუფის წევრებისთვის
+            </p>
 
-            <div className="grid gap-4">
-              {PERMISSION_CATEGORIES.map((category) => (
-                <Card key={category.id} className="bg-muted/30">
-                  <CardContent className="pt-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        id={category.id}
-                        checked={isCategoryChecked(category.id)}
-                        onCheckedChange={(checked) => handleCategoryToggle(category.id, checked as boolean)}
-                        disabled={isSubmitting}
-                      />
-                      <div className="flex-1 space-y-1">
-                        <Label
-                          htmlFor={category.id}
-                          className="text-sm font-semibold cursor-pointer"
-                        >
-                          {category.label}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {category.description}
-                        </p>
+            {loadingFeatures ? (
+              <div className="flex items-center justify-center py-8">
+                <Spinner className="h-6 w-6 mr-2" />
+                <span className="text-sm text-muted-foreground">ფუნქციების ჩატვირთვა...</span>
+              </div>
+            ) : availableFeatures.length === 0 ? (
+              <Alert>
+                <AlertDescription>
+                  თქვენს გამოწერაში ხელმისაწვდომი ფუნქციები არ მოიძებნა
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="grid gap-4">
+                {availableFeatures.map((category) => (
+                  <Card key={category.category} className="bg-muted/30">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id={category.category}
+                          checked={isCategoryChecked(category)}
+                          onCheckedChange={(checked) => handleCategoryToggle(category, checked as boolean)}
+                          disabled={isSubmitting}
+                        />
+                        <div className="flex-1">
+                          <Label
+                            htmlFor={category.category}
+                            className="text-sm font-semibold cursor-pointer"
+                          >
+                            {category.category_display}
+                          </Label>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {category.features.map((feature) => (
+                        <div key={feature.id} className="flex items-start space-x-3 pl-6">
+                          <Checkbox
+                            id={`feature-${feature.id}`}
+                            checked={isFeatureChecked(feature.id)}
+                            onCheckedChange={(checked) => handleFeatureToggle(feature.id, checked as boolean)}
+                            disabled={isSubmitting}
+                          />
+                          <div className="flex-1 space-y-1">
+                            <Label
+                              htmlFor={`feature-${feature.id}`}
+                              className="text-sm cursor-pointer font-normal"
+                            >
+                              {feature.icon && <span className="mr-2">{feature.icon}</span>}
+                              {feature.name}
+                            </Label>
+                            {feature.description && (
+                              <p className="text-xs text-muted-foreground">
+                                {feature.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -203,7 +286,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
             >
               {tCommon("cancel")}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || loadingFeatures}>
               {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
               {isSubmitting ? t("saving") : mode === "create" ? t("createGroup") : t("updateGroup")}
             </Button>
@@ -241,14 +324,14 @@ const TenantGroupManagement: React.FC = () => {
   }, []);
 
   const handleCreateGroup = async (data: TenantGroupFormData) => {
-    await tenantGroupsCreate(data as TenantGroupCreate);
+    await tenantGroupsCreate(data as any);
     setShowForm(null);
     await loadGroups();
   };
 
   const handleUpdateGroup = async (data: TenantGroupFormData) => {
     if (!showForm?.group) return;
-    await tenantGroupsPartialUpdate(showForm.group.id, data);
+    await tenantGroupsPartialUpdate(showForm.group.id, data as any);
     setShowForm(null);
     await loadGroups();
   };
@@ -287,7 +370,7 @@ const TenantGroupManagement: React.FC = () => {
         <div>
           <h1 className="text-2xl font-semibold">{t("groupManagement")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage tenant groups and their permissions
+            მართეთ ჯგუფები და მათი ფუნქციები
           </p>
         </div>
         <Button onClick={() => setShowForm({ mode: 'create' })}>
@@ -337,13 +420,33 @@ const TenantGroupManagement: React.FC = () => {
                         <Users className="h-3 w-3 mr-1" />
                         {group.member_count}
                       </Badge>
+                      {group.features && group.features.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {group.features.length} ფუნქცია
+                        </Badge>
+                      )}
                     </div>
                     {group.description && (
                       <p className="text-sm text-muted-foreground mb-2">
                         {group.description}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground">
+                    {group.features && group.features.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {group.features.slice(0, 5).map((feature) => (
+                          <Badge key={feature.id} variant="secondary" className="text-xs">
+                            {feature.icon && <span className="mr-1">{feature.icon}</span>}
+                            {feature.name}
+                          </Badge>
+                        ))}
+                        {group.features.length > 5 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{group.features.length - 5} მეტი
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
                       {t("created")} {new Date(group.created_at).toLocaleDateString()}
                     </p>
                   </div>
