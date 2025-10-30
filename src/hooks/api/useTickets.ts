@@ -35,6 +35,8 @@ export function useTickets(filters?: Record<string, any>) {
   return useQuery({
     queryKey: ticketKeys.list(filters || {}),
     queryFn: () => apiTicketsList(...(filters ? [filters.assignedGroups, filters.assignedTo, filters.column, filters.createdBy, filters.ordering, filters.page, filters.priority, filters.search, filters.tags] : [])),
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds (tickets change frequently)
+    gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
   });
 }
 
@@ -43,6 +45,8 @@ export function useTicket(id: string, enabled = true) {
     queryKey: ticketKeys.detail(id),
     queryFn: () => apiTicketsRetrieve(Number(id)),
     enabled: enabled && !!id,
+    staleTime: 1 * 60 * 1000, // Consider data fresh for 1 minute
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 }
 
@@ -69,6 +73,8 @@ export function useKanbanBoard(boardId: string, enabled = true) {
     queryKey: ticketKeys.kanban(boardId),
     queryFn: () => apiBoardsKanbanBoardRetrieve(boardId),
     enabled: enabled && !!boardId,
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds (kanban updates frequently)
+    gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
   });
 }
 
@@ -76,6 +82,8 @@ export function useColumns() {
   return useQuery({
     queryKey: ticketKeys.columns,
     queryFn: () => apiColumnsList(),
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes (columns rarely change)
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
 }
 
@@ -83,6 +91,8 @@ export function useTags() {
   return useQuery({
     queryKey: ticketKeys.tags,
     queryFn: () => apiTagsList(),
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes (tags change occasionally)
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 }
 

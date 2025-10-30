@@ -11,5 +11,7 @@ export const useKanbanBoard = (boardId: number | null) => {
       return response as unknown as KanbanBoard;
     },
     enabled: !!boardId, // Only run query if boardId exists
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds (kanban updates frequently)
+    gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
   });
 };
