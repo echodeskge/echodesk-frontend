@@ -12,7 +12,6 @@ import {
   apiBoardsKanbanBoardRetrieve,
   apiColumnsList,
   apiTagsList,
-  apiTenantGroupsList,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -29,14 +28,13 @@ export const ticketKeys = {
   kanban: (id: string) => [...ticketKeys.boards, 'kanban', id] as const,
   columns: ['columns'] as const,
   tags: ['tags'] as const,
-  groups: ['tenant-groups'] as const,
 };
 
 // Queries
 export function useTickets(filters?: Record<string, any>) {
   return useQuery({
     queryKey: ticketKeys.list(filters || {}),
-    queryFn: () => apiTicketsList(filters),
+    queryFn: () => apiTicketsList(...(filters ? [filters.assignedGroups, filters.assignedTo, filters.column, filters.createdBy, filters.ordering, filters.page, filters.priority, filters.search, filters.tags] : [])),
   });
 }
 
@@ -85,13 +83,6 @@ export function useTags() {
   return useQuery({
     queryKey: ticketKeys.tags,
     queryFn: () => apiTagsList(),
-  });
-}
-
-export function useTenantGroups() {
-  return useQuery({
-    queryKey: ticketKeys.groups,
-    queryFn: () => apiTenantGroupsList(),
   });
 }
 

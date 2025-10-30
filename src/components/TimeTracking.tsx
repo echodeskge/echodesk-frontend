@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Ticket, TicketTimeLog } from '@/api/generated/interfaces';
-import axios from '@/api/axios';
+import { useTimeLogs } from '@/hooks/api';
 
 interface TimeTrackingProps {
   ticket: Ticket;
@@ -210,26 +210,9 @@ function TimeTrackingDisplay({ timeLogs, currentColumn }: TimeTrackingDisplayPro
 }
 
 export default function TimeTracking({ ticket, className }: TimeTrackingProps) {
-  const [timeLogs, setTimeLogs] = useState<TicketTimeLog[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Fetch time logs for the ticket
-  useEffect(() => {
-    const fetchTimeLogs = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`/api/time-logs/?ticket=${ticket.id}`);
-        setTimeLogs(response.data.results || []);
-      } catch (err) {
-        console.error('Error fetching time logs:', err);
-        setTimeLogs([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTimeLogs();
-  }, [ticket.id]);
+  // Use React Query hook to fetch time logs
+  const { data: timeLogsData, isLoading: loading } = useTimeLogs(ticket.id);
+  const timeLogs = timeLogsData?.results || [];
 
   // Check if current column has time tracking enabled
   const currentColumn = ticket.column;
@@ -241,8 +224,8 @@ export default function TimeTracking({ ticket, className }: TimeTrackingProps) {
 
   return (
     <div className={className}>
-      <TimeTrackingDisplay 
-        timeLogs={timeLogs} 
+      <TimeTrackingDisplay
+        timeLogs={timeLogs}
         currentColumn={currentColumn}
       />
     </div>

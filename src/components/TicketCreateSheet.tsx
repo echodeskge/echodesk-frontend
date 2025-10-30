@@ -135,7 +135,7 @@ export function TicketCreateSheet() {
           apiUsersList(),
           apiTicketFormsList(),
           apiTagsList(),
-          tenantGroupsList(),
+          apiTenantGroupsList(),
         ]);
 
         setBoards(boardsRes.results || []);

@@ -2,9 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { TenantGroup, PaginatedTenantGroupList } from '../api/generated/interfaces';
-import { apiTenantGroupsList, apiTenantGroupsCreate, apiTenantGroupsPartialUpdate, apiTenantGroupsDestroy } from '../api/generated/api';
+import { TenantGroup } from '../api/generated/interfaces';
 import axios from '@/api/axios';
+import {
+  useTenantGroups,
+  useCreateTenantGroup,
+  useUpdateTenantGroup,
+  useDeleteTenantGroup
+} from '@/hooks/api';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -300,50 +305,32 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
 const TenantGroupManagement: React.FC = () => {
   const t = useTranslations("groups");
   const tCommon = useTranslations("common");
-  const [groups, setGroups] = useState<TenantGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState<{ mode: 'create' | 'edit'; group?: TenantGroup } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const loadGroups = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response: PaginatedTenantGroupList = await tenantGroupsList();
-      setGroups(response.results);
-    } catch (err: any) {
-      setError(err.message || "Failed to load groups");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query hooks
+  const { data: groupsData, isLoading: loading, error: queryError } = useTenantGroups();
+  const createGroup = useCreateTenantGroup();
+  const updateGroup = useUpdateTenantGroup();
+  const deleteGroupMutation = useDeleteTenantGroup();
 
-  useEffect(() => {
-    loadGroups();
-  }, []);
+  const groups = groupsData?.results || [];
+  const error = queryError ? "Failed to load groups" : null;
 
   const handleCreateGroup = async (data: TenantGroupFormData) => {
-    await tenantGroupsCreate(data as any);
+    await createGroup.mutateAsync(data as any);
     setShowForm(null);
-    await loadGroups();
   };
 
   const handleUpdateGroup = async (data: TenantGroupFormData) => {
     if (!showForm?.group) return;
-    await tenantGroupsPartialUpdate(showForm.group.id, data as any);
+    await updateGroup.mutateAsync({ id: showForm.group.id.toString(), data: data as any });
     setShowForm(null);
-    await loadGroups();
   };
 
   const handleDeleteGroup = async (group: TenantGroup) => {
     if (window.confirm(`${t("areYouSureDelete")} "${group.name}"?`)) {
-      try {
-        await tenantGroupsDestroy(group.id);
-        await loadGroups();
-      } catch (err: any) {
-        setError(err.message || tCommon("error"));
-      }
+      await deleteGroupMutation.mutateAsync(group.id.toString());
     }
   };
 

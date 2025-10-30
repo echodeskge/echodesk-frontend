@@ -88,7 +88,7 @@ export default function UserManagement() {
 
   const handleCreateUser = async (userData: UserCreate | UserUpdate) => {
     try {
-      await api.usersCreate(userData as UserCreate);
+      await api.apiUsersCreate(userData as UserCreate);
       setShowCreateForm(false);
       fetchUsers(); // Refresh the list
     } catch (err: any) {
@@ -103,7 +103,7 @@ export default function UserManagement() {
     userData: UserCreate | UserUpdate
   ) => {
     try {
-      await api.usersUpdate(userId, userData as UserUpdate);
+      await api.apiUsersUpdate(userId, userData as UserUpdate);
       setEditingUser(null);
       fetchUsers(); // Refresh the list
     } catch (err: any) {
@@ -119,7 +119,7 @@ export default function UserManagement() {
     }
 
     try {
-      await api.usersDestroy(userId);
+      await api.apiUsersDestroy(userId);
       fetchUsers(); // Refresh the list
     } catch (err: any) {
       alert(
@@ -130,7 +130,7 @@ export default function UserManagement() {
 
   const handleChangeUserStatus = async (userId: number, status: string) => {
     try {
-      await api.usersPartialUpdate(userId, { status: status as any });
+      await api.apiUsersPartialUpdate(userId, { status: status as any });
       fetchUsers(); // Refresh the list
     } catch (err: any) {
       alert(
@@ -151,7 +151,7 @@ export default function UserManagement() {
     }
 
     try {
-      await api.usersChangePasswordCreate(userId, {} as User);
+      await api.apiUsersChangePasswordCreate(userId, {} as User);
       alert(t("passwordResetSent"));
     } catch (err: any) {
       alert(
@@ -172,7 +172,7 @@ export default function UserManagement() {
         ...additionalData,
       };
 
-      await api.usersBulkActionCreate(bulkActionData);
+      await api.apiUsersBulkActionCreate(bulkActionData);
       setSelectedUsers([]);
       fetchUsers(); // Refresh the list
     } catch (err: any) {

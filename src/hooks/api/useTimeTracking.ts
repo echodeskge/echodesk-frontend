@@ -1,8 +1,30 @@
 "use client";
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiTimeLogsList } from '@/api/generated';
 import axios from '@/api/axios';
 import { ticketKeys } from './useTickets';
+
+// Query keys
+export const timeLogKeys = {
+  all: ['time-logs'] as const,
+  lists: () => [...timeLogKeys.all, 'list'] as const,
+  list: (filters: Record<string, any>) => [...timeLogKeys.lists(), filters] as const,
+};
+
+// Queries
+export function useTimeLogs(ticketId?: number) {
+  return useQuery({
+    queryKey: timeLogKeys.list({ ticket: ticketId }),
+    queryFn: async () => {
+      const response = await axios.get(`/api/time-logs/`, {
+        params: ticketId ? { ticket: ticketId } : undefined,
+      });
+      return response.data;
+    },
+    enabled: !!ticketId,
+  });
+}
 
 // Mutations
 export function useCreateTimeLog() {

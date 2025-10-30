@@ -152,7 +152,7 @@ export default function TicketForm({
         await Promise.all([
           ticketService.getUsers(),
           ticketService.getTags(),
-          tenantGroupsList(),
+          apiTenantGroupsList(),
           apiBoardsList(),
           apiColumnsList(),
         ]);

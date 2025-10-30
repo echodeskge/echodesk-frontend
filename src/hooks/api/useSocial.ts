@@ -100,3 +100,49 @@ export function useSendFacebookMessage() {
     },
   });
 }
+
+export function useConnectFacebook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.get('/api/social/facebook/oauth/start/');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookStatus() });
+    },
+  });
+}
+
+export function useDisconnectFacebook() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/social/facebook/disconnect/');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookPages() });
+    },
+  });
+}
+
+export function useToggleFacebookPage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ pageId, subscribe }: { pageId: string; subscribe: boolean }) => {
+      const url = subscribe
+        ? `/api/social/facebook-pages/${pageId}/subscribe/`
+        : `/api/social/facebook-pages/${pageId}/unsubscribe/`;
+      const response = await axios.post(url);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookPages() });
+    },
+  });
+}

@@ -91,7 +91,7 @@ export default function UserForm({
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const tenantGroupsResponse = await tenantGroupsList();
+        const tenantGroupsResponse = await apiTenantGroupsList();
         setTenantGroups(tenantGroupsResponse.results || []);
       } catch (error) {
         console.error('Failed to load tenant groups:', error);

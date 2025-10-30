@@ -4,10 +4,9 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   notificationsVapidPublicKeyRetrieve,
-  notificationsSubscribeCreate,
-  notificationsUnsubscribeCreate,
   notificationsTestCreate,
 } from '@/api/generated';
+import axios from '@/api/axios';
 
 export interface NotificationPermissionState {
   permission: NotificationPermission;
@@ -58,7 +57,8 @@ export function useNotifications() {
   // Mutation for subscribing
   const subscribeMutation = useMutation({
     mutationFn: async (subscriptionData: any) => {
-      return notificationsSubscribeCreate({ subscription: subscriptionData });
+      const response = await axios.post('/api/notifications/subscribe/', { subscription: subscriptionData });
+      return response.data;
     },
     onSuccess: () => {
       setState(prev => ({ ...prev, isSubscribed: true }));
@@ -69,7 +69,8 @@ export function useNotifications() {
   // Mutation for unsubscribing
   const unsubscribeMutation = useMutation({
     mutationFn: async (endpoint: string) => {
-      return notificationsUnsubscribeCreate({ endpoint });
+      const response = await axios.post('/api/notifications/unsubscribe/', { endpoint });
+      return response.data;
     },
     onSuccess: () => {
       setState(prev => ({ ...prev, isSubscribed: false }));

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import axios from '@/api/axios';
+import { useTenantSubscription } from '@/hooks/api';
 
 // Subscription feature flags
 export type SubscriptionFeature =
@@ -93,55 +93,35 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, token } = useAuth();
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchSubscription = async () => {
-    if (!token) {
-      setSubscription(null);
-      setLoading(false);
-      return;
-    }
+  // Use React Query hook for subscription data
+  const {
+    data: subscriptionData,
+    isLoading: loading,
+    error: queryError,
+    refetch
+  } = useTenantSubscription();
 
-    try {
-      setLoading(true);
-      setError(null);
+  // Process the subscription data or use defaults
+  const subscription: SubscriptionInfo | null = subscriptionData || (queryError ? {
+    has_subscription: false,
+    features: {
+      ticket_management: true,  // Always allow basic features
+      email_integration: true,
+      sip_calling: false,
+      facebook_integration: false,
+      instagram_integration: false,
+      whatsapp_integration: false,
+      advanced_analytics: false,
+      api_access: false,
+      custom_integrations: false,
+      priority_support: false,
+      dedicated_account_manager: false,
+    },
+    error: 'Failed to load subscription',
+  } : null);
 
-      const response = await axios.get('/api/subscription/me/');
-      setSubscription(response.data);
-    } catch (err: any) {
-      console.error('Failed to fetch subscription:', err);
-
-      // Set a default subscription with basic features if fetch fails
-      // This prevents breaking the app if subscription endpoint is unavailable
-      setSubscription({
-        has_subscription: false,
-        features: {
-          ticket_management: true,  // Always allow basic features
-          email_integration: true,
-          sip_calling: false,
-          facebook_integration: false,
-          instagram_integration: false,
-          whatsapp_integration: false,
-          advanced_analytics: false,
-          api_access: false,
-          custom_integrations: false,
-          priority_support: false,
-          dedicated_account_manager: false,
-        },
-        error: err.response?.data?.error || 'Failed to load subscription',
-      });
-
-      setError(err.response?.data?.error || 'Failed to load subscription');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSubscription();
-  }, [token, user]);
+  const error = queryError ? 'Failed to load subscription' : null;
 
   const hasFeature = (feature: SubscriptionFeature): boolean => {
     // Superadmins (staff/superuser) have access to ALL features
@@ -166,7 +146,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   const refreshSubscription = async () => {
-    await fetchSubscription();
+    await refetch();
   };
 
   const value: SubscriptionContextType = {

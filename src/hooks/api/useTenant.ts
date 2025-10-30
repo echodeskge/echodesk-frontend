@@ -112,7 +112,7 @@ export function useUpdateTenantGroup() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      apiTenantGroupsPartialUpdate(id, data),
+      apiTenantGroupsPartialUpdate(Number(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantKeys.groups() });
     },
@@ -123,7 +123,7 @@ export function useDeleteTenantGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiTenantGroupsDestroy(id),
+    mutationFn: (id: string) => apiTenantGroupsDestroy(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantKeys.groups() });
     },

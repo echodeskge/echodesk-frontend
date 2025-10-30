@@ -3,7 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { FacebookPageConnection, FacebookMessage } from "@/api/generated/interfaces";
-import axios from "@/api/axios";
+import {
+  useFacebookStatus,
+  useFacebookPages,
+  useFacebookMessages,
+  useConnectFacebook,
+  useDisconnectFacebook,
+  useToggleFacebookPage
+} from "@/hooks/api";
 
 interface SocialIntegrationsProps {
   onBackToDashboard?: () => void;
@@ -37,80 +44,50 @@ interface PaginatedResponse<T> {
 export default function SocialIntegrations({ onBackToDashboard, onConnectionChange }: SocialIntegrationsProps) {
   const t = useTranslations("social");
   const tCommon = useTranslations("common");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [facebookStatus, setFacebookStatus] = useState<FacebookStatus | null>(null);
-  const [facebookPages, setFacebookPages] = useState<FacebookPageConnection[]>([]);
-  const [connectionStats, setConnectionStats] = useState<ConnectionStats | null>(null);
   const [activeTab, setActiveTab] = useState<"facebook">("facebook");
 
-  const loadFacebookStatus = useCallback(async () => {
-    try {
-      // Get connection status
-      const statusResponse = await axios.get('/api/social/facebook/status/');
-      const status = statusResponse.data;
-      setFacebookStatus(status);
+  // Use React Query hooks
+  const { data: facebookStatusData, isLoading: statusLoading, refetch: refetchStatus } = useFacebookStatus();
+  const { data: facebookPagesData, isLoading: pagesLoading, refetch: refetchPages } = useFacebookPages();
+  const { data: messagesData, refetch: refetchMessages } = useFacebookMessages({ page: 1 });
+  const connectFacebook = useConnectFacebook();
+  const disconnectFacebook = useDisconnectFacebook();
+  const togglePage = useToggleFacebookPage();
 
-      // Notify parent component of connection status change
-      if (onConnectionChange) {
-        onConnectionChange('facebook', status.connected || false);
-      }
+  const handleRefresh = async () => {
+    await Promise.all([refetchStatus(), refetchPages(), refetchMessages()]);
+  };
 
-      // Get connected pages
-      const pagesResponse = await axios.get('/api/social/facebook-pages/');
-      const pagesData = pagesResponse.data as PaginatedResponse<FacebookPageConnection>;
-      setFacebookPages(pagesData.results || []);
+  const facebookStatus = facebookStatusData as FacebookStatus | null;
+  const facebookPages = (facebookPagesData as PaginatedResponse<FacebookPageConnection>)?.results || [];
+  const loading = statusLoading || pagesLoading;
 
-      // Get recent messages for stats
-      if (status.connected) {
-        const messagesResponse = await axios.get('/api/social/facebook-messages/?page=1');
-        const messagesData = messagesResponse.data as PaginatedResponse<FacebookMessage>;
-        setConnectionStats({
-          totalMessages: messagesData.count,
-          recentMessages: messagesData.results.slice(0, 5)
-        });
-      }
-    } catch (err: any) {
-      console.error("Failed to load Facebook status:", err);
-      throw err;
-    }
-  }, [onConnectionChange]);
+  const connectionStats: ConnectionStats | null = facebookStatus?.connected && messagesData ? {
+    totalMessages: (messagesData as PaginatedResponse<FacebookMessage>).count,
+    recentMessages: (messagesData as PaginatedResponse<FacebookMessage>).results.slice(0, 5)
+  } : null;
 
-
-  const loadSocialConnections = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (activeTab === "facebook") {
-        await loadFacebookStatus();
-      }
-      // Add other platforms later
-    } catch (err: any) {
-      console.error("Failed to load social connections:", err);
-      setError(err.message || t("error"));
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, loadFacebookStatus, t]);
-
+  // Notify parent component when connection status changes
   useEffect(() => {
-    loadSocialConnections();
-  }, [loadSocialConnections]);
+    if (facebookStatus && onConnectionChange) {
+      onConnectionChange('facebook', facebookStatus.connected || false);
+    }
+  }, [facebookStatus?.connected, onConnectionChange]);
 
   const handleConnectFacebook = async () => {
-    setLoading(true);
     setError("");
     try {
-      const oauthResponse = await axios.get('/api/social/facebook/oauth/start/');
-      if (oauthResponse.data.oauth_url) {
+      const response = await connectFacebook.mutateAsync();
+      if (response.oauth_url) {
         // Redirect to Facebook OAuth
-        window.location.href = oauthResponse.data.oauth_url;
+        window.location.href = response.oauth_url;
       } else {
         throw new Error("No OAuth URL received");
       }
     } catch (err: any) {
       console.error("Failed to start Facebook OAuth:", err);
       setError(err.response?.data?.error || err.message || t("error"));
-      setLoading(false);
     }
   };
 
@@ -119,28 +96,16 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
       return;
     }
 
-    setLoading(true);
     setError("");
     try {
-      const response = await axios.post('/api/social/facebook/disconnect/');
-
-      // Reload Facebook status
-      await loadFacebookStatus();
-
-      // Notify parent component that Facebook connection changed
-      if (onConnectionChange) {
-        onConnectionChange('facebook', false);
-      }
-
+      const response = await disconnectFacebook.mutateAsync();
       // Show success message if provided
-      if (response.data.message) {
-        console.log("Facebook disconnect successful:", response.data.message);
+      if (response.message) {
+        console.log("Facebook disconnect successful:", response.message);
       }
     } catch (err: any) {
       console.error("Failed to disconnect Facebook:", err);
       setError(err.response?.data?.error || err.message || t("error"));
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -250,7 +215,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
             </button>
           )}
           <button
-            onClick={loadFacebookStatus}
+            onClick={handleRefresh}
             disabled={loading}
             style={{
               background: "#6c757d",

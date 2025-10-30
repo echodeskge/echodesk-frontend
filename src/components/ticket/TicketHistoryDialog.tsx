@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -12,11 +11,10 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import axios from "@/api/axios";
-import { toast } from "sonner";
 import type { TicketHistory } from "@/types/ticket-history";
 import { Clock, User } from "lucide-react";
 import { format } from "date-fns";
+import { useTicketHistory } from "@/hooks/api";
 
 interface TicketHistoryDialogProps {
   ticketId: number;
@@ -30,27 +28,12 @@ export function TicketHistoryDialog({
   onOpenChange,
 }: TicketHistoryDialogProps) {
   const t = useTranslations("tickets.history");
-  const [history, setHistory] = useState<TicketHistory[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (open && ticketId) {
-      fetchHistory();
-    }
-  }, [open, ticketId]);
-
-  const fetchHistory = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`/api/tickets/${ticketId}/history/`);
-      setHistory(response.data);
-    } catch (error: any) {
-      console.error("Failed to fetch ticket history:", error);
-      toast.error(error.response?.data?.error || "Failed to load history");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query hook for ticket history
+  const { data: history = [], isLoading: loading } = useTicketHistory(
+    ticketId.toString(),
+    open // Only fetch when dialog is open
+  );
 
   const getActionColor = (action: string) => {
     const colors: Record<string, string> = {
@@ -96,7 +79,7 @@ export function TicketHistoryDialog({
         ) : (
           <ScrollArea className="h-[500px] pr-4">
             <div className="space-y-4">
-              {history.map((entry) => (
+              {history.map((entry: TicketHistory) => (
                 <div
                   key={entry.id}
                   className="border rounded-lg p-4 space-y-3 hover:bg-muted/50 transition-colors"

@@ -178,7 +178,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchGroups = async () => {
     try {
-      const result = await tenantGroupsList();
+      const result = await apiTenantGroupsList();
       setGroups(result.results || []);
     } catch (err) {
       console.error("Error fetching groups:", err);
