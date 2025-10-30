@@ -251,6 +251,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 <BoardSwitcher
                   selectedBoardId={selectedBoardId}
                   boards={boards}
+                  userProfile={userProfile}
                   onBoardChange={setSelectedBoardId}
                   onCreateBoard={() => setIsBoardCreateOpen(true)}
                   onEditBoardStatuses={handleEditBoardStatuses}

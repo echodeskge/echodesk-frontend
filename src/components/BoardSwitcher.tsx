@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { apiBoardsList } from "@/api/generated/api";
-import type { Board } from "@/api/generated/interfaces";
+import { useState } from "react";
+import { apiBoardsDestroy } from "@/api/generated/api";
+import type { Board, User } from "@/api/generated/interfaces";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,14 +11,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
-import { ChevronDown, Plus, Settings, Users, Circle } from "lucide-react";
+import { ChevronDown, Plus, Settings, Users, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface BoardSwitcherProps {
   selectedBoardId: number | null;
   boards?: Board[]; // Add boards as optional prop
+  userProfile?: User | null; // Add user profile to check permissions
   onBoardChange: (boardId: number) => void;
   onCreateBoard?: () => void;
   onEditBoardStatuses?: (boardId: number) => void;
@@ -28,6 +41,7 @@ interface BoardSwitcherProps {
 export default function BoardSwitcher({
   selectedBoardId,
   boards: propsBoards,
+  userProfile,
   onBoardChange,
   onCreateBoard,
   onEditBoardStatuses,
@@ -37,8 +51,42 @@ export default function BoardSwitcher({
   const boards = propsBoards || [];
   const loading = !propsBoards;
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const selectedBoard = boards.find(board => board.id === selectedBoardId);
+  const isStaff = userProfile?.is_staff || false;
+
+  const handleDeleteBoard = async () => {
+    if (!boardToDelete) return;
+
+    setDeleting(true);
+    try {
+      await apiBoardsDestroy(boardToDelete.id);
+
+      // Invalidate boards query to refetch
+      queryClient.invalidateQueries({ queryKey: ['boards'] });
+
+      // If deleted board was selected, switch to first available board
+      if (selectedBoardId === boardToDelete.id && boards.length > 1) {
+        const nextBoard = boards.find(b => b.id !== boardToDelete.id);
+        if (nextBoard) {
+          onBoardChange(nextBoard.id);
+        }
+      }
+
+      toast.success('Board deleted successfully!');
+      setDeleteDialogOpen(false);
+      setBoardToDelete(null);
+    } catch (error: any) {
+      console.error('Failed to delete board:', error);
+      toast.error(error?.response?.data?.detail || 'Failed to delete board');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -113,39 +161,56 @@ export default function BoardSwitcher({
                   </p>
                 )}
 
-                <div className="flex gap-1 mt-2">
-                  {onEditBoardStatuses && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpen(false);
-                        onEditBoardStatuses(board.id);
-                      }}
-                    >
-                      <Settings className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
-                  )}
+                {isStaff && (
+                  <div className="flex gap-1 mt-2">
+                    {onEditBoardStatuses && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpen(false);
+                          onEditBoardStatuses(board.id);
+                        }}
+                      >
+                        <Settings className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                    )}
 
-                  {onManageBoardUsers && (
+                    {onManageBoardUsers && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpen(false);
+                          onManageBoardUsers(board.id);
+                        }}
+                      >
+                        <Users className="h-3 w-3 mr-1" />
+                        Users
+                      </Button>
+                    )}
+
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
+                      className="text-xs h-6 px-2 text-destructive hover:text-destructive"
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpen(false);
-                        onManageBoardUsers(board.id);
+                        setBoardToDelete(board);
+                        setDeleteDialogOpen(true);
                       }}
                     >
-                      <Users className="h-3 w-3 mr-1" />
-                      Users
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </DropdownMenuItem>
@@ -164,6 +229,29 @@ export default function BoardSwitcher({
           </>
         )}
       </DropdownMenuContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Board</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{boardToDelete?.name}"? This action cannot be undone.
+              All tickets in this board will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteBoard}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DropdownMenu>
   );
 }
