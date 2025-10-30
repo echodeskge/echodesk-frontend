@@ -124,6 +124,54 @@ export function TicketCreateSheet() {
   const [openPopovers, setOpenPopovers] = useState<Record<number, boolean>>({});
   const [isLabelPopoverOpen, setIsLabelPopoverOpen] = useState(false);
 
+  // Filter users based on selected board
+  const filteredUsers = useMemo(() => {
+    const boardId = selectedBoard?.id || formData.board_id;
+
+    if (!boardId) {
+      return users; // If no board selected, show all users
+    }
+
+    const board = boards.find(b => b.id === boardId);
+    if (!board) {
+      return users; // If board not found, show all users
+    }
+
+    const hasUserRestrictions = board.board_users && board.board_users.length > 0;
+    const hasGroupRestrictions = board.board_groups && board.board_groups.length > 0;
+
+    // If board has no restrictions at all, show all users
+    if (!hasUserRestrictions && !hasGroupRestrictions) {
+      return users;
+    }
+
+    // Collect user IDs from both board_users and users in board_groups
+    const allowedUserIds = new Set<number>();
+
+    // Add directly assigned users
+    if (hasUserRestrictions) {
+      board.board_users.forEach(u => allowedUserIds.add(u.id));
+    }
+
+    // Add users from board_groups
+    if (hasGroupRestrictions) {
+      board.board_groups.forEach(group => {
+        // Find users who belong to this group
+        users.forEach(user => {
+          if (user.tenant_groups && user.tenant_groups.some(ug => ug.id === group.id)) {
+            allowedUserIds.add(user.id);
+          }
+        });
+      });
+    }
+
+    // Filter users to only include those allowed
+    // Always include staff/superadmin users (they can access all boards)
+    return users.filter(user =>
+      user.is_staff || allowedUserIds.has(user.id)
+    );
+  }, [selectedBoard, formData.board_id, boards, users]);
+
   // Fetch boards, columns, users, forms, tags, groups on mount
   useEffect(() => {
     const fetchData = async () => {
@@ -538,7 +586,7 @@ export function TicketCreateSheet() {
             <div className="grid gap-2">
               <Label>Assign to Users (Optional)</Label>
               <MultiUserAssignment
-                users={users}
+                users={filteredUsers}
                 selectedAssignments={selectedAssignments}
                 onChange={setSelectedAssignments}
                 placeholder="Select users to assign..."

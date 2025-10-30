@@ -152,13 +152,41 @@ export default function TicketForm({
     }
 
     const selectedBoard = boards.find(board => board.id === formData.board_id);
-    if (!selectedBoard || !selectedBoard.board_users || selectedBoard.board_users.length === 0) {
-      return users; // If board not found or has no users, show all users
+    if (!selectedBoard) {
+      return users; // If board not found, show all users
     }
 
-    // Filter users to only include those in the selected board
-    const boardUserIds = new Set(selectedBoard.board_users.map(u => u.id));
-    return users.filter(user => boardUserIds.has(user.id));
+    const hasUserRestrictions = selectedBoard.board_users && selectedBoard.board_users.length > 0;
+    const hasGroupRestrictions = selectedBoard.board_groups && selectedBoard.board_groups.length > 0;
+
+    // If board has no restrictions at all, show all users
+    if (!hasUserRestrictions && !hasGroupRestrictions) {
+      return users;
+    }
+
+    // Collect user IDs from both board_users and users in board_groups
+    const allowedUserIds = new Set<number>();
+
+    // Add directly assigned users
+    if (hasUserRestrictions) {
+      selectedBoard.board_users.forEach(u => allowedUserIds.add(u.id));
+    }
+
+    // Add users from board_groups
+    if (hasGroupRestrictions) {
+      selectedBoard.board_groups.forEach(group => {
+        // Find users who belong to this group
+        users.forEach(user => {
+          if (user.tenant_groups && user.tenant_groups.some(ug => ug.id === group.id)) {
+            allowedUserIds.add(user.id);
+          }
+        });
+      });
+    }
+
+    // Filter users to only include those allowed
+    // Always include staff/superadmin users (they can access all boards)
+    return users.filter(user => user.is_staff || allowedUserIds.has(user.id));
   })();
 
   const fetchFormData = async () => {
