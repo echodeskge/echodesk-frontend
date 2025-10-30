@@ -46,6 +46,7 @@ import TimeTracking from "./TimeTracking";
 import { LabelManagementDialog } from "./LabelManagementDialog";
 import { TicketFormsSection } from "./TicketFormsSection";
 import { TicketHistoryDialog } from "./ticket/TicketHistoryDialog";
+import { FileDropzone, UploadedFile } from "./FileDropzone";
 import {
   Calendar,
   User as UserIcon,
@@ -59,6 +60,7 @@ import {
   ChevronsUpDown,
   ArrowRightLeft,
   History,
+  Paperclip,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -108,8 +110,21 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   const [tags, setTags] = useState<TagType[]>([]);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [groups, setGroups] = useState<TenantGroup[]>([]);
-  const [editingAssignments, setEditingAssignments] = useState(false);
-  const [tempAssignments, setTempAssignments] = useState<AssignmentData[]>([]);
+  const [tempAssignments, setTempAssignments] = useState<AssignmentData[]>(() => {
+    // Initialize assignments from ticket data
+    if (initialTicket.assignments && initialTicket.assignments.length > 0) {
+      return initialTicket.assignments.map((assignment) => ({
+        userId: assignment.user.id,
+        role: (assignment.role as any) || "collaborator",
+      }));
+    } else if (initialTicket.assigned_to) {
+      return [{
+        userId: initialTicket.assigned_to.id,
+        role: "primary",
+      }];
+    }
+    return [];
+  });
   const [editingGroups, setEditingGroups] = useState(false);
   const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
   const [editingLabels, setEditingLabels] = useState(false);
@@ -121,6 +136,25 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+
+  // Sync tempAssignments when ticket changes
+  useEffect(() => {
+    if (ticket.assignments && ticket.assignments.length > 0) {
+      setTempAssignments(ticket.assignments.map((assignment) => ({
+        userId: assignment.user.id,
+        role: (assignment.role as any) || "collaborator",
+      })));
+    } else if (ticket.assigned_to) {
+      setTempAssignments([{
+        userId: ticket.assigned_to.id,
+        role: "primary",
+      }]);
+    } else {
+      setTempAssignments([]);
+    }
+  }, [ticket.id, ticket.assignments, ticket.assigned_to]);
 
   useEffect(() => {
     fetchUsers();
@@ -193,6 +227,47 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
       setBoards(otherBoards);
     } catch (err) {
       console.error("Error fetching boards:", err);
+    }
+  };
+
+  const handleFilesSelected = (files: File[]) => {
+    const newFiles = files.map(file => ({
+      file,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+    }));
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadFiles = async () => {
+    if (uploadedFiles.length === 0) return;
+
+    setUploadingFiles(true);
+    try {
+      for (const uploadedFile of uploadedFiles) {
+        const formData = new FormData();
+        formData.append('file', uploadedFile.file);
+        formData.append('ticket', ticket.id.toString());
+
+        await axios.post('/api/attachments/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
+
+      // Clear uploaded files and refresh ticket data
+      setUploadedFiles([]);
+      await fetchTicket();
+      toast.success('Files uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast.error('Failed to upload files');
+    } finally {
+      setUploadingFiles(false);
     }
   };
 
@@ -292,42 +367,19 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
     }
   };
 
-  const handleStartEditingAssignments = () => {
-    const currentAssignments: AssignmentData[] = [];
+  const handleAssignmentsChange = async (newAssignments: AssignmentData[]) => {
+    setTempAssignments(newAssignments);
 
-    if (ticket.assignments && ticket.assignments.length > 0) {
-      currentAssignments.push(
-        ...ticket.assignments.map((assignment) => ({
-          userId: assignment.user.id,
-          role: (assignment.role as any) || "collaborator",
-        }))
-      );
-    } else if (ticket.assigned_to) {
-      currentAssignments.push({
-        userId: ticket.assigned_to.id,
-        role: "primary",
-      });
-    }
-
-    setTempAssignments(currentAssignments);
-    setEditingAssignments(true);
-  };
-
-  const handleCancelEditingAssignments = () => {
-    setEditingAssignments(false);
-    setTempAssignments([]);
-  };
-
-  const handleSaveAssignments = async () => {
+    // Auto-save assignments
     try {
-      const assigned_user_ids = tempAssignments.map((a) => a.userId);
+      const assigned_user_ids = newAssignments.map((a) => a.userId);
       const assignment_roles: Record<string, string> = {};
-      tempAssignments.forEach((a) => {
+      newAssignments.forEach((a) => {
         assignment_roles[a.userId.toString()] = a.role;
       });
 
       const primaryAssignment =
-        tempAssignments.find((a) => a.role === "primary") || tempAssignments[0];
+        newAssignments.find((a) => a.role === "primary") || newAssignments[0];
       const assigned_to_id = primaryAssignment?.userId;
 
       const updatedTicket = await ticketService.updateTicket(ticket.id, {
@@ -338,8 +390,6 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
       setTicket(updatedTicket);
       onUpdate(updatedTicket);
-      setEditingAssignments(false);
-      setTempAssignments([]);
       toast.success(t('assignmentsUpdatedSuccess'));
     } catch (err) {
       console.error("Error updating assignments:", err);
@@ -675,11 +725,36 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               />
 
               {/* Attachments */}
-              {(ticket as any).attachments && (ticket as any).attachments.length > 0 && (
-                <div className="mt-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <h5 className="text-sm font-semibold text-gray-800">Attachments ({(ticket as any).attachments.length})</h5>
-                  </div>
+              <div className="mt-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Paperclip className="h-5 w-5 text-gray-600" />
+                  <h5 className="text-sm font-semibold text-gray-800">
+                    Attachments ({((ticket as any).attachments?.length || 0)})
+                  </h5>
+                </div>
+
+                {/* File Upload Section */}
+                <div className="mb-4">
+                  <FileDropzone
+                    onFilesSelected={handleFilesSelected}
+                    files={uploadedFiles}
+                    onRemoveFile={handleRemoveFile}
+                    maxFiles={10}
+                    maxSize={10 * 1024 * 1024}
+                  />
+                  {uploadedFiles.length > 0 && (
+                    <Button
+                      onClick={handleUploadFiles}
+                      disabled={uploadingFiles}
+                      className="mt-3"
+                    >
+                      {uploadingFiles ? 'Uploading...' : `Upload ${uploadedFiles.length} file${uploadedFiles.length > 1 ? 's' : ''}`}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Existing Attachments */}
+                {(ticket as any).attachments && (ticket as any).attachments.length > 0 && (
                   <div className="space-y-2">
                     {(ticket as any).attachments.map((attachment: any) => {
                       const isImage = attachment.content_type?.startsWith('image/');
@@ -735,8 +810,8 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                       );
                     })}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -834,47 +909,14 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
               </div>
 
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <Label className="text-sm">{t('assignedTo')}</Label>
-                  {!editingAssignments && (
-                    <Button
-                      onClick={handleStartEditingAssignments}
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto py-1 px-2 text-xs"
-                    >
-                      {tCommon('edit')}
-                    </Button>
-                  )}
-                </div>
-
-                {editingAssignments ? (
-                  <div className="space-y-2">
-                    <MultiUserAssignment
-                      users={users}
-                      assignments={ticket.assignments}
-                      selectedAssignments={tempAssignments}
-                      onChange={setTempAssignments}
-                      placeholder={t('assignedTo')}
-                    />
-                    <div className="flex gap-2">
-                      <Button onClick={handleSaveAssignments} size="sm" className="flex-1">
-                        {tCommon('save')}
-                      </Button>
-                      <Button onClick={handleCancelEditingAssignments} variant="outline" size="sm" className="flex-1">
-                        {tCommon('cancel')}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <AssigneeList
-                    assigned_to={ticket.assigned_to}
-                    assigned_users={ticket.assigned_users}
-                    assignments={ticket.assignments}
-                    showRoles={true}
-                    size="medium"
-                  />
-                )}
+                <Label className="text-sm mb-2 block">{t('assignedTo')}</Label>
+                <MultiUserAssignment
+                  users={users}
+                  assignments={ticket.assignments}
+                  selectedAssignments={tempAssignments}
+                  onChange={handleAssignmentsChange}
+                  placeholder={t('assignedTo')}
+                />
               </div>
 
               <Separator />

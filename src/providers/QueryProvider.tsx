@@ -14,7 +14,7 @@ export default function QueryProvider({ children }: QueryProviderProps) {
         staleTime: 5 * 60 * 1000, // 5 minutes
         gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
         retry: 1,
-        refetchOnWindowFocus: false,
+        refetchOnWindowFocus: true, // Refetch queries when window regains focus
       },
     },
   }));

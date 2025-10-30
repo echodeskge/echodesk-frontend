@@ -181,6 +181,8 @@
     "deleteTaskConfirm": "Are you sure you want to delete this task? This action cannot be undone.",
     "ticketCreatedSuccess": "Ticket created successfully!",
     "ticketCreatedError": "Failed to create ticket. Please try again.",
+    "ticketDeletedSuccess": "Ticket deleted successfully!",
+    "ticketDeletedError": "Failed to delete ticket. Please try again.",
     "commentAddedSuccess": "Comment added successfully!",
     "commentAddedError": "Failed to add comment. Please try again.",
     "ticketMovedSuccess": "Ticket moved successfully!",

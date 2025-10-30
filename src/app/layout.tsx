@@ -8,6 +8,7 @@ import QueryProvider from '@/providers/QueryProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
+import { Toaster } from 'sonner';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default async function RootLayout({
             </TenantProvider>
           </QueryProvider>
         </NextIntlClientProvider>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

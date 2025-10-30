@@ -20,6 +20,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 interface BoardCreateSheetProps {
   isOpen: boolean;
@@ -67,6 +68,9 @@ export function BoardCreateSheet({ isOpen, onClose, onBoardCreated }: BoardCreat
         description: "",
         is_default: false,
       });
+
+      // Show success toast
+      toast.success('Board created successfully!');
 
       // Call the callback if provided
       onBoardCreated?.(newBoard);

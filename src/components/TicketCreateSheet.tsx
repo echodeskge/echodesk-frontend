@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslations } from 'next-intl';
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
+import axios from "@/api/axios";
 import {
   apiTicketsCreate,
   apiColumnsList,
@@ -309,6 +310,29 @@ export function TicketCreateSheet() {
 
       const createdTicket = await apiTicketsCreate(ticketData);
 
+      // Upload attachments if any
+      if (uploadedFiles.length > 0) {
+        console.log(`📎 Uploading ${uploadedFiles.length} attachment(s) for ticket ${createdTicket.id}`);
+
+        for (const file of uploadedFiles) {
+          try {
+            const formData = new FormData();
+            formData.append('file', file.file);
+            formData.append('ticket', createdTicket.id.toString());
+
+            await axios.post('/api/attachments/', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            });
+            console.log(`✅ Uploaded: ${file.file.name}`);
+          } catch (error) {
+            console.error(`❌ Failed to upload ${file.file.name}:`, error);
+            // Continue uploading other files even if one fails
+          }
+        }
+      }
+
       // If a form is selected, create form submission
       if (selectedForm) {
         try {
@@ -345,6 +369,7 @@ export function TicketCreateSheet() {
       setSelectedGroupIds([]);
       setSelectedAssignments([]);
       setCustomFieldValues({});
+      setUploadedFiles([]); // Clear uploaded files
 
       closeTicketCreate();
     } catch (error: any) {
