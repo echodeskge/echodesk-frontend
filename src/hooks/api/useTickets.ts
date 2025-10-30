@@ -2,17 +2,17 @@
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import {
-  ticketsList,
-  ticketsRetrieve,
-  ticketsCreate,
-  ticketsUpdate,
-  ticketsPartialUpdate,
-  ticketsDestroy,
-  boardsList,
-  boardsKanbanBoardRetrieve,
-  columnsList,
-  tagsList,
-  tenantGroupsList,
+  apiTicketsList,
+  apiTicketsRetrieve,
+  apiTicketsCreate,
+  apiTicketsUpdate,
+  apiTicketsPartialUpdate,
+  apiTicketsDestroy,
+  apiBoardsList,
+  apiBoardsKanbanBoardRetrieve,
+  apiColumnsList,
+  apiTagsList,
+  apiTenantGroupsList,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -36,14 +36,14 @@ export const ticketKeys = {
 export function useTickets(filters?: Record<string, any>) {
   return useQuery({
     queryKey: ticketKeys.list(filters || {}),
-    queryFn: () => ticketsList(filters),
+    queryFn: () => apiTicketsList(filters),
   });
 }
 
 export function useTicket(id: string, enabled = true) {
   return useQuery({
     queryKey: ticketKeys.detail(id),
-    queryFn: () => ticketsRetrieve(id),
+    queryFn: () => apiTicketsRetrieve(Number(id)),
     enabled: enabled && !!id,
   });
 }
@@ -62,14 +62,14 @@ export function useTicketHistory(ticketId: string, enabled = true) {
 export function useBoards() {
   return useQuery({
     queryKey: ticketKeys.boards,
-    queryFn: () => boardsList(),
+    queryFn: () => apiBoardsList(),
   });
 }
 
 export function useKanbanBoard(boardId: string, enabled = true) {
   return useQuery({
     queryKey: ticketKeys.kanban(boardId),
-    queryFn: () => boardsKanbanBoardRetrieve(boardId),
+    queryFn: () => apiBoardsKanbanBoardRetrieve(boardId),
     enabled: enabled && !!boardId,
   });
 }
@@ -77,21 +77,21 @@ export function useKanbanBoard(boardId: string, enabled = true) {
 export function useColumns() {
   return useQuery({
     queryKey: ticketKeys.columns,
-    queryFn: () => columnsList(),
+    queryFn: () => apiColumnsList(),
   });
 }
 
 export function useTags() {
   return useQuery({
     queryKey: ticketKeys.tags,
-    queryFn: () => tagsList(),
+    queryFn: () => apiTagsList(),
   });
 }
 
 export function useTenantGroups() {
   return useQuery({
     queryKey: ticketKeys.groups,
-    queryFn: () => tenantGroupsList(),
+    queryFn: () => apiTenantGroupsList(),
   });
 }
 
@@ -100,7 +100,7 @@ export function useCreateTicket() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ticketsCreate,
+    mutationFn: apiTicketsCreate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
       queryClient.invalidateQueries({ queryKey: ticketKeys.boards });
@@ -113,7 +113,7 @@ export function useUpdateTicket() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      ticketsPartialUpdate(id, data),
+      apiTicketsPartialUpdate(Number(id), data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
@@ -140,7 +140,7 @@ export function useDeleteTicket() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => ticketsDestroy(id),
+    mutationFn: (id: string) => apiTicketsDestroy(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
       queryClient.invalidateQueries({ queryKey: ticketKeys.boards });
