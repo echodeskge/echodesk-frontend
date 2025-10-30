@@ -640,6 +640,23 @@
     "enterNumberToTransfer": "Enter number to transfer to:",
     "traditionalSipDetected": "Traditional SIP Provider Detected"
   },
+  "notifications": {
+    "title": "Browser Notifications",
+    "description": "Get notified about new tickets, comments, and updates even when the tab is not active.",
+    "enable": "Enable Notifications",
+    "enabled": "Notifications Enabled",
+    "enabling": "Enabling...",
+    "enabledDescription": "You will receive browser notifications for important updates.",
+    "disable": "Disable Notifications",
+    "disabled": "Notifications disabled successfully",
+    "disableError": "Failed to disable notifications",
+    "blocked": "Notifications Blocked",
+    "blockedDescription": "You have blocked notifications for this site. Please enable them in your browser settings.",
+    "sendTest": "Send Test Notification",
+    "testSent": "Test notification sent!",
+    "testError": "Failed to send test notification",
+    "enableError": "Failed to enable notifications. Please try again."
+  },
   "landing": {
     "header": {
       "features": "Features",
