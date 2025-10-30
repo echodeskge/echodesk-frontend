@@ -31,6 +31,8 @@ export function useTenantSubscription() {
       const response = await axios.get('/api/subscription/me/');
       return response.data;
     },
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
 }
 
