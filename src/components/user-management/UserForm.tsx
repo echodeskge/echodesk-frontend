@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserCreate, UserUpdate, User, TenantGroup } from "@/api/generated/interfaces";
-import { tenantGroupsList, usersRetrieve } from "@/api/generated/api";
+import { apiTenantGroupsList, apiUsersRetrieve } from "@/api/generated/api";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ export default function UserForm({
       if (mode === 'edit' && user?.id) {
         setLoadingUserDetails(true);
         try {
-          const fullUser = await usersRetrieve(user.id);
+          const fullUser = await apiUsersRetrieve(user.id);
           setFullUserData(fullUser);
         } catch (error) {
           console.error('Failed to fetch full user details:', error);

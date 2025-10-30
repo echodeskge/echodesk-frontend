@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { columnsList } from '@/api/generated/api';
+import { apiColumnsList } from '@/api/generated/api';
 import type { User, Tag, TicketColumn } from '@/api/generated/interfaces';
 import SimpleRichTextEditor from './SimpleRichTextEditor';
 import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
@@ -45,7 +45,7 @@ export default function OrderForm({ boardId, onSave, onCancel }: OrderFormProps)
       const [usersResult, tagsResult, columnsResult] = await Promise.all([
         ticketService.getUsers(),
         ticketService.getTags(),
-        columnsList(boardId) // Get columns for specific board
+        apiColumnsList(boardId) // Get columns for specific board
       ]);
       
       setUsers(usersResult.results || []);

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ticketsRetrieve } from "@/api/generated/api";
+import { apiTicketsRetrieve } from "@/api/generated/api";
 import type { Ticket } from "@/api/generated/interfaces";
 import { TicketDetailView } from "@/components/TicketDetailView";
 import { Spinner } from "@/components/ui/spinner";
@@ -22,7 +22,7 @@ export default function TicketDetailPage() {
     const fetchTicket = async () => {
       try {
         setLoading(true);
-        const data = await ticketsRetrieve(parseInt(ticketId));
+        const data = await apiTicketsRetrieve(parseInt(ticketId));
         setTicket(data);
       } catch (err) {
         console.error("Error fetching ticket:", err);

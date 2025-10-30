@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Board, User, TenantGroup } from "@/api/generated/interfaces";
-import { boardsRetrieve, boardsPartialUpdate, tenantGroupsList } from "@/api/generated/api";
+import { apiBoardsRetrieve, apiBoardsPartialUpdate, apiTenantGroupsList } from "@/api/generated/api";
 import { ticketService } from "@/services/ticketService";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
 import MultiGroupSelection from "./MultiGroupSelection";
@@ -62,9 +62,9 @@ export default function BoardUserManager({
       setError("");
 
       const [boardResult, usersResult, groupsResult] = await Promise.all([
-        boardsRetrieve(boardId.toString()),
+        apiBoardsRetrieve(boardId.toString()),
         ticketService.getUsers(),
-        tenantGroupsList()
+        apiTenantGroupsList()
       ]);
 
       setBoard(boardResult);
@@ -112,7 +112,7 @@ export default function BoardUserManager({
       setError("");
       setSuccess("");
 
-      await boardsPartialUpdate(board.id.toString(), {
+      await apiBoardsPartialUpdate(board.id.toString(), {
         order_user_ids: orderUserIds,
         board_user_ids: boardUserIds,
         board_group_ids: assignedGroupIds

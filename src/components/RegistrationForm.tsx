@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { PricingModel } from "../types/package";
-import { packagesList, registerTenant } from "../api/generated/api";
+import { apiPackagesList, registerTenant } from "../api/generated/api";
 import type {
   PackageList,
   TenantRegistration,
@@ -76,7 +76,7 @@ export default function RegistrationForm() {
   const loadPackages = async () => {
     try {
       setLoading(true);
-      const data = await packagesList();
+      const data = await apiPackagesList();
       setPackages(data.results || []);
     } catch (error) {
       console.error("Failed to load packages:", error);

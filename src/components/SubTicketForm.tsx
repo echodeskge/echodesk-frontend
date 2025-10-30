@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { subTicketsCreate, subTicketsUpdate, usersList } from '@/api/generated/api';
+import { apiSubTicketsCreate, apiSubTicketsUpdate, apiUsersList } from '@/api/generated/api';
 import type { SubTicket, User, PatchedSubTicket } from '@/api/generated/interfaces';
 import SimpleRichTextEditor from './SimpleRichTextEditor';
 import { Spinner } from '@/components/ui/spinner';
@@ -48,7 +48,7 @@ export default function SubTicketForm({ parentTicketId, subTicket, onSave, onCan
   const fetchUsers = async () => {
     try {
       setFetchingData(true);
-      const usersResult = await usersList();
+      const usersResult = await apiUsersList();
       setUsers(usersResult.results || []);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -77,7 +77,7 @@ export default function SubTicketForm({ parentTicketId, subTicket, onSave, onCan
           assigned_to_id: formData.assigned_to_id || undefined
         };
         
-        savedSubTicket = await subTicketsUpdate(subTicket.id.toString(), updateData);
+        savedSubTicket = await apiSubTicketsUpdate(subTicket.id.toString(), updateData);
       } else {
         const createData: SubTicket = {
           id: 0,
@@ -101,7 +101,7 @@ export default function SubTicketForm({ parentTicketId, subTicket, onSave, onCan
           completed_items_count: '0'
         };
         
-        savedSubTicket = await subTicketsCreate(createData);
+        savedSubTicket = await apiSubTicketsCreate(createData);
       }
 
       if (onSave) {

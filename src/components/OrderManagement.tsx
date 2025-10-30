@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Board, User } from "@/api/generated/interfaces";
-import { boardsList } from "@/api/generated/api";
+import { apiBoardsList } from "@/api/generated/api";
 import { AuthService } from "@/services/auth";
 import OrderForm from "./OrderForm";
 
@@ -30,7 +30,7 @@ export default function OrderManagement({}: OrderManagementProps) {
       // Get current user and boards in parallel
       const [userResponse, boardsResponse] = await Promise.all([
         authService.getCurrentUser(),
-        boardsList()
+        apiBoardsList()
       ]);
       
       setCurrentUser(userResponse);

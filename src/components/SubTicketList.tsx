@@ -1,7 +1,7 @@
 'use client';
 
 // import { useState } from 'react';
-import { subTicketsDestroy, subTicketsToggleCompletionPartialUpdate } from '@/api/generated/api';
+import { apiSubTicketsDestroy, apiSubTicketsToggleCompletionPartialUpdate } from '@/api/generated/api';
 import type { SubTicket } from '@/api/generated/interfaces';
 import { useTranslations } from 'next-intl';
 // import SubTicketForm from './SubTicketForm';
@@ -23,7 +23,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
 
   const handleToggleCompletion = async (subTicket: SubTicket) => {
     try {
-      await subTicketsToggleCompletionPartialUpdate(subTicket.id.toString(), {
+      await apiSubTicketsToggleCompletionPartialUpdate(subTicket.id.toString(), {
         is_completed: !subTicket.is_completed
       });
       if (onSubTicketsChange) {
@@ -37,7 +37,7 @@ export default function SubTicketList({ parentTicketId, subTickets, onSubTickets
   const handleDelete = async (subTicket: SubTicket) => {
     if (confirm(tDetail('deleteSubTicket'))) {
       try {
-        await subTicketsDestroy(subTicket.id.toString());
+        await apiSubTicketsDestroy(subTicket.id.toString());
         if (onSubTicketsChange) {
           onSubTicketsChange();
         }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FacebookMessage, FacebookPageConnection } from "@/api/generated/interfaces";
-import { socialFacebookSendMessageCreate } from "@/api/generated/api";
+import { apiSocialFacebookSendMessageCreate } from "@/api/generated/api";
 import axios from "@/api/axios";
 
 interface MessagesManagementProps {
@@ -176,7 +176,7 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
     setSending(true);
     try {
       // Send message via Facebook API using generated function
-      await socialFacebookSendMessageCreate({
+      await apiSocialFacebookSendMessageCreate({
         recipient_id: selectedConversation,
         message: replyText,
         page_id: selectedPage

@@ -8,7 +8,7 @@ import type {
   User,
   TicketColumn,
 } from "@/api/generated/interfaces";
-import { columnsList } from "@/api/generated/api";
+import { apiColumnsList } from "@/api/generated/api";
 import axios from "@/api/axios";
 import ChecklistItemList from "./ChecklistItemList";
 import AssigneeList from "./AssigneeList";
@@ -66,7 +66,7 @@ export default function TicketDetail({
 
   const fetchColumns = async () => {
     try {
-      const result = await columnsList();
+      const result = await apiColumnsList();
       setColumns(result.results || []);
     } catch (err) {
       console.error("Error fetching columns:", err);

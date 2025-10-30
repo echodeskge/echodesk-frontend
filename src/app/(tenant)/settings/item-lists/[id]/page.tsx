@@ -35,10 +35,10 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  itemListsRetrieve,
-  listItemsCreate,
-  listItemsUpdate,
-  listItemsDestroy,
+  apiItemListsRetrieve,
+  apiListItemsCreate,
+  apiListItemsUpdate,
+  apiListItemsDestroy,
 } from "@/api/generated/api";
 import type {
   ItemList,
@@ -87,7 +87,7 @@ export default function ItemListDetailPage() {
     const fetchParentListItems = async () => {
       if (itemList?.parent_list) {
         try {
-          const parentList = await itemListsRetrieve(itemList.parent_list);
+          const parentList = await apiItemListsRetrieve(itemList.parent_list);
           setParentListItems(parentList.items || []);
         } catch (error) {
           console.error("Failed to load parent list items", error);
@@ -105,7 +105,7 @@ export default function ItemListDetailPage() {
   const loadItemList = async () => {
     try {
       setLoading(true);
-      const response = await itemListsRetrieve(listId);
+      const response = await apiItemListsRetrieve(listId);
       setItemList(response);
     } catch (error) {
       toast.error(t("failedToSaveItem"));
@@ -191,14 +191,14 @@ export default function ItemListDetailPage() {
           is_active: formData.is_active,
           custom_data: formData.custom_data,
         };
-        await listItemsUpdate(editingItem.id, patchData as any);
+        await apiListItemsUpdate(editingItem.id, patchData as any);
         toast.success(t("itemUpdated"));
       } else {
         const newItem = {
           ...formData,
           item_list: listId,
         };
-        await listItemsCreate(newItem as any);
+        await apiListItemsCreate(newItem as any);
         toast.success(t("itemCreated"));
       }
       setDialogOpen(false);
@@ -212,7 +212,7 @@ export default function ItemListDetailPage() {
     if (!confirm(t("areYouSureDeleteItem"))) return;
 
     try {
-      await listItemsDestroy(id);
+      await apiListItemsDestroy(id);
       toast.success(t("itemDeleted"));
       loadItemList();
     } catch (error) {

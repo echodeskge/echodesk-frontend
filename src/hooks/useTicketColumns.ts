@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  columnsCreate,
-  columnsUpdate,
-  columnsPartialUpdate,
-  columnsDestroy,
-  columnsReorderCreate
+  apiColumnsCreate,
+  apiColumnsUpdate,
+  apiColumnsPartialUpdate,
+  apiColumnsDestroy,
+  apiColumnsReorderCreate
 } from '@/api/generated/api';
 import type { TicketColumn, PatchedTicketColumnUpdate } from '@/api/generated/interfaces';
 import { toast } from 'sonner';
@@ -14,7 +14,7 @@ export function useCreateColumn(boardId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: Partial<TicketColumn>) => columnsCreate(data as any),
+    mutationFn: (data: Partial<TicketColumn>) => apiColumnsCreate(data as any),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {
@@ -38,7 +38,7 @@ export function useUpdateColumn(boardId?: number | null) {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<TicketColumn> }) =>
-      columnsPartialUpdate(id, data as PatchedTicketColumnUpdate),
+      apiColumnsPartialUpdate(id, data as PatchedTicketColumnUpdate),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {
@@ -61,7 +61,7 @@ export function useDeleteColumn(boardId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => columnsDestroy(id),
+    mutationFn: (id: number) => apiColumnsDestroy(id),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {
@@ -85,7 +85,7 @@ export function useReorderColumn(boardId?: number | null) {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: { position: number } }) =>
-      columnsReorderCreate(id, data as any),
+      apiColumnsReorderCreate(id, data as any),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {

@@ -64,7 +64,7 @@ export default function UserManagement() {
       setLoading(true);
       setError("");
 
-      const response: PaginatedUserList = await api.usersList(
+      const response: PaginatedUserList = await api.apiUsersList(
         undefined, // ordering
         pagination.currentPage,
         filters.search || undefined

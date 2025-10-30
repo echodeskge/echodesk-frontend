@@ -26,10 +26,10 @@ import {
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
-  itemListsList,
-  itemListsCreate,
-  itemListsUpdate,
-  itemListsDestroy,
+  apiItemListsList,
+  apiItemListsCreate,
+  apiItemListsUpdate,
+  apiItemListsDestroy,
 } from "@/api/generated/api";
 import type { ItemList, PatchedItemList } from "@/api/generated/interfaces";
 import Link from "next/link";
@@ -69,7 +69,7 @@ export default function ItemListsPage() {
   const loadItemLists = async () => {
     try {
       setLoading(true);
-      const response = await itemListsList();
+      const response = await apiItemListsList();
       setItemLists(response.results || []);
     } catch (error) {
       toast.error(t('error.load'));
@@ -146,10 +146,10 @@ export default function ItemListsPage() {
           parent_list: formData.parent_list ?? undefined,
           custom_fields_schema: formData.custom_fields_schema,
         };
-        await itemListsUpdate(editingList.id, patchData as any);
+        await apiItemListsUpdate(editingList.id, patchData as any);
         toast.success(t('success.updated'));
       } else {
-        await itemListsCreate(formData as any);
+        await apiItemListsCreate(formData as any);
         toast.success(t('success.created'));
       }
       setDialogOpen(false);
@@ -163,7 +163,7 @@ export default function ItemListsPage() {
     if (!confirm(t('deleteConfirm'))) return;
 
     try {
-      await itemListsDestroy(id);
+      await apiItemListsDestroy(id);
       toast.success(t('success.deleted'));
       loadItemLists();
     } catch (error) {

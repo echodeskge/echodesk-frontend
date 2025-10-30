@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { checklistItemsCreate, checklistItemsUpdate } from '@/api/generated/api';
+import { apiChecklistItemsCreate, apiChecklistItemsUpdate } from '@/api/generated/api';
 import type { ChecklistItem, PatchedChecklistItem} from '@/api/generated/interfaces';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -47,7 +47,7 @@ export default function ChecklistItemForm({
           text: text.trim()
         };
         
-        savedItem = await checklistItemsUpdate(checklistItem.id.toString(), updateData);
+        savedItem = await apiChecklistItemsUpdate(checklistItem.id.toString(), updateData);
       } else {
         const createData: ChecklistItem = {
           id: 0,
@@ -61,7 +61,7 @@ export default function ChecklistItemForm({
           created_by: { id: 0, email: '', first_name: '', last_name: '' }
         };
         
-        savedItem = await checklistItemsCreate(createData);
+        savedItem = await apiChecklistItemsCreate(createData);
       }
 
       if (onSave) {

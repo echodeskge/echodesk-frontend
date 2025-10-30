@@ -7,7 +7,7 @@ import { PackageSelection } from './PackageSelection';
 import { CustomPackageBuilder } from './CustomPackageBuilder';
 import { RegistrationFormStep } from './RegistrationFormStep';
 import { Footer } from '@/components/landing/Footer';
-import { packagesList, registerTenantWithPayment } from '@/api/generated/api';
+import { apiPackagesList, registerTenantWithPayment } from '@/api/generated/api';
 import type { PackageList, TenantRegistration } from '@/api/generated/interfaces';
 import { PricingModel } from '@/types/package';
 
@@ -95,7 +95,7 @@ export function RegistrationFlow() {
   const loadPackages = async () => {
     try {
       setLoading(true);
-      const data = await packagesList();
+      const data = await apiPackagesList();
       // Type assertion: API returns dynamic_features as array but TypeScript thinks it's string
       setPackages((data.results || []) as unknown as PackageListExtended[]);
     } catch (error) {

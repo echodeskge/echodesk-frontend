@@ -20,7 +20,7 @@ import {
   FormLabel,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { socialFacebookSendMessageCreate } from "@/api/generated/api"
+import { apiSocialFacebookSendMessageCreate } from "@/api/generated/api"
 import { toast } from "sonner"
 
 interface TextMessageFormFacebookProps {
@@ -59,7 +59,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
       const recipientId = chatIdParts[2]
 
       // Send via Facebook API
-      await socialFacebookSendMessageCreate({
+      await apiSocialFacebookSendMessageCreate({
         recipient_id: recipientId,
         message: data.text,
         page_id: pageId

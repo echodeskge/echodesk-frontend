@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { kanbanBoard, boardsList, boardsKanbanBoardRetrieve } from "@/api/generated/api";
+import { kanbanBoard, apiBoardsList, apiBoardsKanbanBoardRetrieve } from "@/api/generated/api";
 import axios from "@/api/axios";
 import { useBoards } from "@/hooks/useBoards";
 import { useKanbanBoard } from "@/hooks/useKanbanBoard";

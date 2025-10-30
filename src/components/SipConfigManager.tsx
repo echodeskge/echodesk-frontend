@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import {
-  sipConfigurationsList,
-  sipConfigurationsCreate,
-  sipConfigurationsUpdate,
-  sipConfigurationsDestroy,
-  sipConfigurationsSetDefaultCreate,
-  sipConfigurationsTestConnectionCreate,
-  sipConfigurationsRetrieve,
+  apiSipConfigurationsList,
+  apiSipConfigurationsCreate,
+  apiSipConfigurationsUpdate,
+  apiSipConfigurationsDestroy,
+  apiSipConfigurationsSetDefaultCreate,
+  apiSipConfigurationsTestConnectionCreate,
+  apiSipConfigurationsRetrieve,
 } from '@/api/generated/api';
 import type {
   SipConfigurationList,
@@ -51,7 +51,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
   const fetchSipConfigs = async () => {
     try {
       setLoading(true);
-      const response = await sipConfigurationsList();
+      const response = await apiSipConfigurationsList();
       setSipConfigs(response.results);
       setError('');
     } catch (err: unknown) {
@@ -87,7 +87,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
 
   const loadConfigForEdit = async (configId: number) => {
     try {
-      const config = await sipConfigurationsRetrieve(configId);
+      const config = await apiSipConfigurationsRetrieve(configId);
       setEditingConfig(config);
       setConfigForm({
         name: config.name,
@@ -139,7 +139,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
       
       if (editingConfig) {
         // For updates, include all fields including password
-        await sipConfigurationsUpdate(editingConfig.id, configForm as any);
+        await apiSipConfigurationsUpdate(editingConfig.id, configForm as any);
       } else {
         // For creation, exclude password fields that aren't in SipConfiguration
         const createData = {
@@ -148,7 +148,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
           updated_at: new Date().toISOString(),
           id: 0 // Will be set by backend
         } as SipConfiguration;
-        await sipConfigurationsCreate(createData);
+        await apiSipConfigurationsCreate(createData);
       }
 
       await fetchSipConfigs();
@@ -171,7 +171,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
 
     try {
       setActionLoading(configId);
-      await sipConfigurationsDestroy(configId);
+      await apiSipConfigurationsDestroy(configId);
       await fetchSipConfigs();
       setError('');
       onConfigChange?.();
@@ -187,8 +187,8 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
   const setDefaultConfig = async (configId: number) => {
     try {
       setActionLoading(configId);
-      const config = await sipConfigurationsRetrieve(configId);
-      await sipConfigurationsSetDefaultCreate(configId, config as any);
+      const config = await apiSipConfigurationsRetrieve(configId);
+      await apiSipConfigurationsSetDefaultCreate(configId, config as any);
       await fetchSipConfigs();
       setError('');
       onConfigChange?.();
@@ -204,8 +204,8 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
   const testConnection = async (config: SipConfigurationList) => {
     try {
       setActionLoading(config.id);
-      const fullConfig = await sipConfigurationsRetrieve(config.id);
-      const result = await sipConfigurationsTestConnectionCreate(config.id, fullConfig as any);
+      const fullConfig = await apiSipConfigurationsRetrieve(config.id);
+      const result = await apiSipConfigurationsTestConnectionCreate(config.id, fullConfig as any);
       alert(`Connection test ${result.success ? 'successful' : 'failed'}: ${result.message || ''}`);
     } catch (err: unknown) {
       console.error('Failed to test SIP config:', err);

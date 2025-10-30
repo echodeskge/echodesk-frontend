@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from 'next-intl';
-import { boardsCreate } from "@/api/generated/api";
+import { apiBoardsCreate } from "@/api/generated/api";
 import type { Board } from "@/api/generated/interfaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +52,7 @@ export function BoardCreateSheet({ isOpen, onClose, onBoardCreated }: BoardCreat
       setLoading(true);
       setError("");
 
-      const newBoard = await boardsCreate({
+      const newBoard = await apiBoardsCreate({
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         is_default: formData.is_default,

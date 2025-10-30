@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { NotificationList } from '@/components/NotificationList'
-import { notificationsList, notificationsUnreadCountRetrieve } from '@/api/generated/api'
+import { apiNotificationsList, apiNotificationsUnreadCountRetrieve } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
 
@@ -29,13 +29,13 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   // Fetch unread count
   const fetchUnreadCount = async () => {
     try {
-      const response = await notificationsUnreadCountRetrieve() as any
+      const response = await apiNotificationsUnreadCountRetrieve() as any
       const newUnreadCount = response.count || 0
 
       // Check if there are new notifications
       if (newUnreadCount > previousUnreadCount.current && previousUnreadCount.current > 0) {
         // Fetch latest notifications to show browser notification
-        const notifs = await notificationsList()
+        const notifs = await apiNotificationsList()
         const latestUnread = notifs.results?.find(n => !n.is_read)
 
         if (latestUnread && canShowNotifications) {
@@ -65,7 +65,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   const fetchNotifications = async () => {
     setLoading(true)
     try {
-      const response = await notificationsList()
+      const response = await apiNotificationsList()
       setNotifications(response.results || [])
     } catch (error) {
       console.error('Failed to fetch notifications:', error)

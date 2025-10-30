@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { callLogsStatisticsRetrieve, callLogsList } from '@/api/generated/api';
+import { apiCallLogsStatisticsRetrieve, apiCallLogsList } from '@/api/generated/api';
 import type { CallLog } from '@/api/generated/interfaces';
 
 interface CallStatsDashboardProps {
@@ -22,8 +22,8 @@ export default function CallStatsDashboard({ onClose }: CallStatsDashboardProps)
     try {
       setLoading(true);
       const [stats, calls] = await Promise.all([
-        callLogsStatisticsRetrieve(period),
-        callLogsList('-created_at', 1)
+        apiCallLogsStatisticsRetrieve(period),
+        apiCallLogsList('-created_at', 1)
       ]);
       
       setStatistics(stats);

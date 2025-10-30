@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { boardsCreate } from "@/api/generated/api";
+import { apiBoardsCreate } from "@/api/generated/api";
 import type { Board } from "@/api/generated/interfaces";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -31,7 +31,7 @@ export default function BoardForm({ onSave, onCancel }: BoardFormProps) {
       setLoading(true);
       setError("");
 
-      const newBoard = await boardsCreate({
+      const newBoard = await apiBoardsCreate({
         ...formData,
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from 'next-intl';
 import type { Ticket, TicketColumn, User, Tag as TagType, TenantGroup, Board } from "@/api/generated/interfaces";
 import { ticketService } from "@/services/ticketService";
-import { columnsList, tagsList, tenantGroupsList, boardsList } from "@/api/generated/api";
+import { apiColumnsList, apiTagsList, apiTenantGroupsList, apiBoardsList } from "@/api/generated/api";
 import axios from "@/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -155,7 +155,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchColumns = async () => {
     try {
-      const result = await columnsList();
+      const result = await apiColumnsList();
       // Filter columns to only show those from the ticket's board
       const boardId = ticket.column?.board;
       const filteredColumns = boardId
@@ -169,7 +169,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchTags = async () => {
     try {
-      const result = await tagsList();
+      const result = await apiTagsList();
       setTags(result.results || []);
     } catch (err) {
       console.error("Error fetching tags:", err);
@@ -187,7 +187,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchBoards = async () => {
     try {
-      const result = await boardsList();
+      const result = await apiBoardsList();
       // Filter out the current board
       const otherBoards = (result.results || []).filter(board => board.id !== ticket.column?.board);
       setBoards(otherBoards);
@@ -202,7 +202,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
     setTransferring(true);
     try {
       // Get the first column of the target board
-      const allColumnsResult = await columnsList();
+      const allColumnsResult = await apiColumnsList();
       const targetBoardColumns = (allColumnsResult.results || [])
         .filter(col => col.board === selectedBoardId)
         .sort((a, b) => (a.position || 0) - (b.position || 0));

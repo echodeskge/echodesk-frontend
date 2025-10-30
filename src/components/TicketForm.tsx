@@ -6,7 +6,7 @@ import {
   CreateTicketData,
   UpdateTicketData,
 } from "@/services/ticketService";
-import { columnsList, boardsList, tenantGroupsList } from "@/api/generated/api";
+import { apiColumnsList, apiBoardsList, apiTenantGroupsList } from "@/api/generated/api";
 import type {
   Ticket,
   User,
@@ -153,8 +153,8 @@ export default function TicketForm({
           ticketService.getUsers(),
           ticketService.getTags(),
           tenantGroupsList(),
-          boardsList(),
-          columnsList(),
+          apiBoardsList(),
+          apiColumnsList(),
         ]);
 
       setUsers(usersResult.results || []);

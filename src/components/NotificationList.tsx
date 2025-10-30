@@ -8,9 +8,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import {
-  notificationsMarkReadCreate,
-  notificationsMarkAllReadCreate,
-  notificationsClearAllDestroy
+  apiNotificationsMarkReadCreate,
+  apiNotificationsMarkAllReadCreate,
+  apiNotificationsClearAllDestroy
 } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
 
@@ -69,7 +69,7 @@ export function NotificationList({
     // Mark as read
     if (!notification.is_read) {
       try {
-        await notificationsMarkReadCreate(notification.id.toString(), {} as any)
+        await apiNotificationsMarkReadCreate(notification.id.toString(), {} as any)
         onUpdate?.()
       } catch (error) {
         console.error('Failed to mark notification as read:', error)
@@ -82,7 +82,7 @@ export function NotificationList({
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationsMarkAllReadCreate({} as any)
+      await apiNotificationsMarkAllReadCreate({} as any)
       onUpdate?.()
     } catch (error) {
       console.error('Failed to mark all as read:', error)
@@ -91,7 +91,7 @@ export function NotificationList({
 
   const handleClearAll = async () => {
     try {
-      await notificationsClearAllDestroy()
+      await apiNotificationsClearAllDestroy()
       onUpdate?.()
     } catch (error) {
       console.error('Failed to clear notifications:', error)

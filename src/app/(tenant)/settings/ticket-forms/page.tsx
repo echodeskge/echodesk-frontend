@@ -26,12 +26,12 @@ import {
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
-  ticketFormsList,
-  ticketFormsCreate,
-  ticketFormsUpdate,
-  ticketFormsDestroy,
-  ticketFormsSetDefaultCreate,
-  itemListsList,
+  apiTicketFormsList,
+  apiTicketFormsCreate,
+  apiTicketFormsUpdate,
+  apiTicketFormsDestroy,
+  apiTicketFormsSetDefaultCreate,
+  apiItemListsList,
 } from "@/api/generated/api";
 import type {
   TicketForm,
@@ -76,8 +76,8 @@ export default function TicketFormsPage() {
     try {
       setLoading(true);
       const [formsResponse, listsResponse] = await Promise.all([
-        ticketFormsList(),
-        itemListsList(),
+        apiTicketFormsList(),
+        apiItemListsList(),
       ]);
       setForms(formsResponse.results || []);
       setItemLists(listsResponse.results || []);
@@ -149,10 +149,10 @@ export default function TicketFormsPage() {
           custom_fields: formData.custom_fields,
           is_active: formData.is_active,
         };
-        await ticketFormsUpdate(editingForm.id, patchData as any);
+        await apiTicketFormsUpdate(editingForm.id, patchData as any);
         toast.success(t('success.updated'));
       } else {
-        await ticketFormsCreate(formData as any);
+        await apiTicketFormsCreate(formData as any);
         toast.success(t('success.created'));
       }
       setDialogOpen(false);
@@ -166,7 +166,7 @@ export default function TicketFormsPage() {
     if (!confirm(t('deleteConfirm'))) return;
 
     try {
-      await ticketFormsDestroy(id);
+      await apiTicketFormsDestroy(id);
       toast.success(t('success.deleted'));
       loadData();
     } catch (error) {
@@ -178,7 +178,7 @@ export default function TicketFormsPage() {
     try {
       const form = forms.find(f => f.id === id);
       if (!form) return;
-      await ticketFormsSetDefaultCreate(id, form as any);
+      await apiTicketFormsSetDefaultCreate(id, form as any);
       toast.success(t('success.defaultUpdated'));
       loadData();
     } catch (error) {

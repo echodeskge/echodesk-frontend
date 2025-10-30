@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { formatDuration } from './TimeTracking';
-import { usersList, timeLogsList } from '@/api/generated';
+import { apiUsersList, apiTimeLogsList } from '@/api/generated';
 import { User, TicketTimeLog } from '@/api/generated/interfaces';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -132,7 +132,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
     let hasMore = true;
 
     while (hasMore) {
-      const response = await timeLogsList(undefined, page);
+      const response = await apiTimeLogsList(undefined, page);
       allTimeLogs.push(...response.results);
 
       hasMore = !!response.next;
@@ -149,7 +149,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
 
       // Fetch users and all time logs in parallel
       const [usersResponse, allTimeLogs] = await Promise.all([
-        usersList(),
+        apiUsersList(),
         fetchAllTimeLogs()
       ]);
 

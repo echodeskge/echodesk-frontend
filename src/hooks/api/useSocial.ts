@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { socialFacebookSendMessageCreate } from '@/api/generated';
+import { apiSocialFacebookSendMessageCreate } from '@/api/generated';
 import axios from '@/api/axios';
 
 // Query keys
@@ -94,7 +94,7 @@ export function useSendFacebookMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: socialFacebookSendMessageCreate,
+    mutationFn: apiSocialFacebookSendMessageCreate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
     },

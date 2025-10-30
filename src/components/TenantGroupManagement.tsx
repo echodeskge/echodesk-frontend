@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { TenantGroup, PaginatedTenantGroupList } from '../api/generated/interfaces';
-import { tenantGroupsList, tenantGroupsCreate, tenantGroupsPartialUpdate, tenantGroupsDestroy } from '../api/generated/api';
+import { apiTenantGroupsList, apiTenantGroupsCreate, apiTenantGroupsPartialUpdate, apiTenantGroupsDestroy } from '../api/generated/api';
 import axios from '@/api/axios';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

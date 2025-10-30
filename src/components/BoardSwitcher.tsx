@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { boardsList } from "@/api/generated/api";
+import { apiBoardsList } from "@/api/generated/api";
 import type { Board } from "@/api/generated/interfaces";
 import {
   DropdownMenu,
