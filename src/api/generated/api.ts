@@ -1386,18 +1386,13 @@ export async function apiPaymentsProcessPaymentCreate(
   return response.data;
 }
 
-export async function getSavedCardInfo(): Promise<{
-  has_saved_card?: boolean;
-  last_payment_date?: string;
-  card_saved_date?: string;
-  auto_renew_enabled?: boolean;
-}> {
+export async function getSavedCard(): Promise<any> {
   const response = await axios.get(`/api/payments/saved-card/`);
   return response.data;
 }
 
-export async function deleteSavedCard(): Promise<any> {
-  const response = await axios.delete(`/api/payments/saved-card/delete/`);
+export async function removeSavedCard(): Promise<any> {
+  const response = await axios.delete(`/api/payments/saved-card/`);
   return response.data;
 }
 
