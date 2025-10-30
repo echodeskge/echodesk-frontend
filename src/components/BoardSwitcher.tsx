@@ -198,7 +198,7 @@ export default function BoardSwitcher({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-xs h-6 px-2 text-destructive hover:text-destructive"
+                      className="text-xs h-6 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation();
                         setOpen(false);
@@ -206,7 +206,7 @@ export default function BoardSwitcher({
                         setDeleteDialogOpen(true);
                       }}
                     >
-                      <Trash2 className="h-3 w-3 mr-1" />
+                      <Trash2 className="h-3 w-3 mr-1 text-destructive" />
                       Delete
                     </Button>
                   </div>
