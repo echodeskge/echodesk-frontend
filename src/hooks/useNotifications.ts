@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   notificationsVapidPublicKeyRetrieve,
   notificationsSubscribeCreate,
@@ -15,6 +16,7 @@ export interface NotificationPermissionState {
 }
 
 export function useNotifications() {
+  const queryClient = useQueryClient();
   const [state, setState] = useState<NotificationPermissionState>({
     permission: 'default',
     isSupported: false,
@@ -44,6 +46,41 @@ export function useNotifications() {
       console.error('Error checking subscription:', error);
     }
   };
+
+  // Query for VAPID public key
+  const { data: vapidKey } = useQuery({
+    queryKey: ['vapid-public-key'],
+    queryFn: notificationsVapidPublicKeyRetrieve,
+    enabled: false, // Only fetch when needed
+    staleTime: Infinity, // VAPID key doesn't change
+  });
+
+  // Mutation for subscribing
+  const subscribeMutation = useMutation({
+    mutationFn: async (subscriptionData: any) => {
+      return notificationsSubscribeCreate({ subscription: subscriptionData });
+    },
+    onSuccess: () => {
+      setState(prev => ({ ...prev, isSubscribed: true }));
+      queryClient.invalidateQueries({ queryKey: ['notification-subscriptions'] });
+    },
+  });
+
+  // Mutation for unsubscribing
+  const unsubscribeMutation = useMutation({
+    mutationFn: async (endpoint: string) => {
+      return notificationsUnsubscribeCreate({ endpoint });
+    },
+    onSuccess: () => {
+      setState(prev => ({ ...prev, isSubscribed: false }));
+      queryClient.invalidateQueries({ queryKey: ['notification-subscriptions'] });
+    },
+  });
+
+  // Mutation for sending test notification
+  const testNotificationMutation = useMutation({
+    mutationFn: notificationsTestCreate,
+  });
 
   const requestPermission = async (): Promise<boolean> => {
     if (!state.isSupported) {
@@ -92,12 +129,9 @@ export function useNotifications() {
         });
       }
 
-      // Send subscription to backend
-      await notificationsSubscribeCreate({
-        subscription: subscription.toJSON(),
-      });
+      // Send subscription to backend using React Query mutation
+      await subscribeMutation.mutateAsync(subscription.toJSON());
 
-      setState(prev => ({ ...prev, isSubscribed: true }));
       return subscription;
     } catch (error) {
       console.error('Error subscribing to push notifications:', error);
@@ -113,12 +147,9 @@ export function useNotifications() {
       if (subscription) {
         await subscription.unsubscribe();
 
-        // Notify backend
-        await notificationsUnsubscribeCreate({
-          endpoint: subscription.endpoint,
-        });
+        // Notify backend using React Query mutation
+        await unsubscribeMutation.mutateAsync(subscription.endpoint);
 
-        setState(prev => ({ ...prev, isSubscribed: false }));
         return true;
       }
       return false;
@@ -131,7 +162,7 @@ export function useNotifications() {
   const sendTestNotification = async () => {
     if (state.permission === 'granted') {
       try {
-        await notificationsTestCreate();
+        await testNotificationMutation.mutateAsync();
       } catch (error) {
         console.error('Error sending test notification:', error);
       }
@@ -144,6 +175,9 @@ export function useNotifications() {
     subscribe,
     unsubscribe,
     sendTestNotification,
+    isSubscribing: subscribeMutation.isPending,
+    isUnsubscribing: unsubscribeMutation.isPending,
+    isSendingTest: testNotificationMutation.isPending,
   };
 }
 
