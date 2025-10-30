@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Upload, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
-import axios from "@/api/axios";
+import { useTenantSettings, useUpdateTenantSettings, useUploadTenantLogo, useRemoveTenantLogo } from "@/hooks/api";
 
 interface TenantSettings {
   logo?: string;
@@ -23,33 +23,28 @@ export default function GeneralSettingsPage() {
   const t = useTranslations('settings.general');
   const tCommon = useTranslations('common');
 
-  const [settings, setSettings] = useState<TenantSettings>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [formSettings, setFormSettings] = useState<TenantSettings>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchSettings();
-  }, []);
+  // Use React Query hooks
+  const { data: settingsData, isLoading: loading } = useTenantSettings();
+  const updateSettings = useUpdateTenantSettings();
+  const uploadLogo = useUploadTenantLogo();
+  const removeLogo = useRemoveTenantLogo();
 
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      // Fetch tenant settings from API
-      const response = await axios.get('/api/tenant-settings/');
-      setSettings(response.data);
-      if (response.data.logo) {
-        setLogoPreview(response.data.logo);
+  const saving = updateSettings.isPending;
+  const uploading = uploadLogo.isPending;
+
+  // Initialize form settings when data loads
+  useEffect(() => {
+    if (settingsData) {
+      setFormSettings(settingsData);
+      if (settingsData.logo && !logoPreview) {
+        setLogoPreview(settingsData.logo);
       }
-    } catch (err: any) {
-      console.error('Failed to fetch settings:', err);
-      toast.error(err.response?.data?.error || 'Failed to load settings');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [settingsData, logoPreview]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -68,21 +63,10 @@ export default function GeneralSettingsPage() {
     }
 
     try {
-      setUploading(true);
-
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append('logo', file);
-
-      // Upload logo
-      const response = await axios.post('/api/tenant-settings/upload-logo/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      setLogoPreview(response.data.logo_url);
-      setSettings(prev => ({ ...prev, logo: response.data.logo_url }));
+      const response = await uploadLogo.mutateAsync(formData);
+      setLogoPreview(response.logo_url);
       toast.success('Logo uploaded successfully');
 
       // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
@@ -92,19 +76,13 @@ export default function GeneralSettingsPage() {
     } catch (err: any) {
       console.error('Failed to upload logo:', err);
       toast.error(err.response?.data?.error || 'Failed to upload logo');
-    } finally {
-      setUploading(false);
     }
   };
 
   const handleRemoveLogo = async () => {
     try {
-      setUploading(true);
-
-      await axios.delete('/api/tenant-settings/remove-logo/');
-
+      await removeLogo.mutateAsync();
       setLogoPreview(null);
-      setSettings(prev => ({ ...prev, logo: undefined }));
       toast.success('Logo removed successfully');
 
       // Reload the page after a short delay to refresh tenant info (including logo in sidebar)
@@ -114,21 +92,15 @@ export default function GeneralSettingsPage() {
     } catch (err: any) {
       console.error('Failed to remove logo:', err);
       toast.error(err.response?.data?.error || 'Failed to remove logo');
-    } finally {
-      setUploading(false);
     }
   };
 
   const handleSaveTicketSettings = async () => {
     try {
-      setSaving(true);
-
-      // Save ticket management settings
-      await axios.patch('/api/tenant-settings/', {
-        min_users_per_ticket: settings.min_users_per_ticket || 0,
-        only_superadmin_can_delete_tickets: settings.only_superadmin_can_delete_tickets || false,
+      await updateSettings.mutateAsync({
+        min_users_per_ticket: formSettings.min_users_per_ticket || 0,
+        only_superadmin_can_delete_tickets: formSettings.only_superadmin_can_delete_tickets || false,
       });
-
       toast.success('Ticket settings saved successfully');
     } catch (err: any) {
       console.error('Failed to save ticket settings:', err);
@@ -137,8 +109,6 @@ export default function GeneralSettingsPage() {
                            err.response?.data?.message ||
                            'Failed to save ticket settings';
       toast.error(errorMessage);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -251,8 +221,8 @@ export default function GeneralSettingsPage() {
               id="min_users_per_ticket"
               type="number"
               min="0"
-              value={settings.min_users_per_ticket || 0}
-              onChange={(e) => setSettings(prev => ({
+              value={formSettings.min_users_per_ticket || 0}
+              onChange={(e) => setFormSettings(prev => ({
                 ...prev,
                 min_users_per_ticket: parseInt(e.target.value) || 0
               }))}
@@ -264,8 +234,8 @@ export default function GeneralSettingsPage() {
           <div className="flex items-start space-x-3">
             <Checkbox
               id="only_superadmin_can_delete_tickets"
-              checked={settings.only_superadmin_can_delete_tickets || false}
-              onCheckedChange={(checked) => setSettings(prev => ({
+              checked={formSettings.only_superadmin_can_delete_tickets || false}
+              onCheckedChange={(checked) => setFormSettings(prev => ({
                 ...prev,
                 only_superadmin_can_delete_tickets: checked === true
               }))}

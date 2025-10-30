@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   notificationsVapidPublicKeyRetrieve,
   notificationsTestCreate,
+  apiNotificationsUnreadCountRetrieve,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -180,6 +181,18 @@ export function useNotifications() {
     isUnsubscribing: unsubscribeMutation.isPending,
     isSendingTest: testNotificationMutation.isPending,
   };
+}
+
+// Separate hook for unread notifications count
+export function useNotificationsUnreadCount() {
+  return useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: async () => {
+      const response = await apiNotificationsUnreadCountRetrieve() as any;
+      return response.count || 0;
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 }
 
 // Helper function to convert VAPID key

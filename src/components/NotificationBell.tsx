@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { NotificationList } from '@/components/NotificationList'
-import { apiNotificationsList, apiNotificationsUnreadCountRetrieve } from '@/api/generated/api'
+import { apiNotificationsList } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
+import { useNotificationsUnreadCount } from '@/hooks/useNotifications'
 
 interface NotificationBellProps {
   onNotificationClick?: (notification: Notification) => void
@@ -20,39 +21,13 @@ interface NotificationBellProps {
 
 export function NotificationBell({ onNotificationClick }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
   const previousUnreadCount = useRef(0)
   const { showNotification, canShowNotifications, requestPermission } = useBrowserNotifications()
 
-  // Fetch unread count
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await apiNotificationsUnreadCountRetrieve() as any
-      const newUnreadCount = response.count || 0
-
-      // Check if there are new notifications
-      if (newUnreadCount > previousUnreadCount.current && previousUnreadCount.current > 0) {
-        // Fetch latest notifications to show browser notification
-        const notifs = await apiNotificationsList()
-        const latestUnread = notifs.results?.find(n => !n.is_read)
-
-        if (latestUnread && canShowNotifications) {
-          showNotification(latestUnread, () => {
-            if (latestUnread.ticket_id) {
-              onNotificationClick?.(latestUnread)
-            }
-          })
-        }
-      }
-
-      previousUnreadCount.current = newUnreadCount
-      setUnreadCount(newUnreadCount)
-    } catch (error) {
-      console.error('Failed to fetch unread count:', error)
-    }
-  }
+  // Use React Query hook for unread count
+  const { data: unreadCount = 0, refetch: refetchUnreadCount } = useNotificationsUnreadCount()
 
   // Request notification permission on first render
   useEffect(() => {
@@ -74,16 +49,25 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     }
   }
 
-  // Poll for new notifications every 30 seconds
+  // Show browser notification when unread count increases
   useEffect(() => {
-    fetchUnreadCount()
-
-    const interval = setInterval(() => {
-      fetchUnreadCount()
-    }, 30000) // Poll every 30 seconds
-
-    return () => clearInterval(interval)
-  }, [])
+    if (unreadCount > previousUnreadCount.current && previousUnreadCount.current > 0) {
+      // Only show if we have permission and there's an actual increase
+      if (canShowNotifications) {
+        // Use browser Notification API directly for generic count notification
+        try {
+          const notification = new window.Notification('New Notification', {
+            body: `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`,
+            icon: '/favicon.ico'
+          })
+          setTimeout(() => notification.close(), 5000)
+        } catch (error) {
+          console.error('Failed to show notification:', error)
+        }
+      }
+    }
+    previousUnreadCount.current = unreadCount
+  }, [unreadCount, canShowNotifications])
 
   // Fetch notifications when popover opens
   useEffect(() => {
@@ -94,7 +78,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
 
   const handleNotificationUpdate = () => {
     // Refresh both count and list
-    fetchUnreadCount()
+    refetchUnreadCount()
     fetchNotifications()
   }
 
