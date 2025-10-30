@@ -64,7 +64,7 @@ export default function BoardSwitcher({
 
     setDeleting(true);
     try {
-      await apiBoardsDestroy(boardToDelete.id);
+      await apiBoardsDestroy(boardToDelete.id.toString());
 
       // Invalidate boards query to refetch
       queryClient.invalidateQueries({ queryKey: ['boards'] });
