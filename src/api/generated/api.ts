@@ -118,7 +118,7 @@ import type {
   PatchedUserUpdate,
 } from './interfaces';
 
-export async function attachmentsList(
+export async function apiAttachmentsList(
   page?: number,
   ticket?: number,
 ): Promise<PaginatedTicketAttachmentList> {
@@ -134,21 +134,21 @@ export async function attachmentsList(
   return response.data;
 }
 
-export async function attachmentsCreate(
+export async function apiAttachmentsCreate(
   data: TicketAttachment,
 ): Promise<TicketAttachment> {
   const response = await axios.post(`/api/attachments/`, data);
   return response.data;
 }
 
-export async function attachmentsRetrieve(
+export async function apiAttachmentsRetrieve(
   id: number,
 ): Promise<TicketAttachment> {
   const response = await axios.get(`/api/attachments/${id}/`);
   return response.data;
 }
 
-export async function attachmentsUpdate(
+export async function apiAttachmentsUpdate(
   id: number,
   data: TicketAttachment,
 ): Promise<TicketAttachment> {
@@ -156,7 +156,7 @@ export async function attachmentsUpdate(
   return response.data;
 }
 
-export async function attachmentsPartialUpdate(
+export async function apiAttachmentsPartialUpdate(
   id: number,
   data: PatchedTicketAttachment,
 ): Promise<TicketAttachment> {
@@ -164,7 +164,7 @@ export async function attachmentsPartialUpdate(
   return response.data;
 }
 
-export async function attachmentsDestroy(id: number): Promise<any> {
+export async function apiAttachmentsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/attachments/${id}/`);
   return response.data;
 }
@@ -252,7 +252,7 @@ export async function updateTenantProfile(): Promise<{
   return response.data;
 }
 
-export async function boardsList(
+export async function apiBoardsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -270,22 +270,22 @@ export async function boardsList(
   return response.data;
 }
 
-export async function boardsCreate(data: Board): Promise<Board> {
+export async function apiBoardsCreate(data: Board): Promise<Board> {
   const response = await axios.post(`/api/boards/`, data);
   return response.data;
 }
 
-export async function boardsRetrieve(id: string): Promise<Board> {
+export async function apiBoardsRetrieve(id: string): Promise<Board> {
   const response = await axios.get(`/api/boards/${id}/`);
   return response.data;
 }
 
-export async function boardsUpdate(id: string, data: Board): Promise<Board> {
+export async function apiBoardsUpdate(id: string, data: Board): Promise<Board> {
   const response = await axios.put(`/api/boards/${id}/`, data);
   return response.data;
 }
 
-export async function boardsPartialUpdate(
+export async function apiBoardsPartialUpdate(
   id: string,
   data: PatchedBoard,
 ): Promise<Board> {
@@ -293,17 +293,17 @@ export async function boardsPartialUpdate(
   return response.data;
 }
 
-export async function boardsDestroy(id: string): Promise<any> {
+export async function apiBoardsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/boards/${id}/`);
   return response.data;
 }
 
-export async function boardsKanbanBoardRetrieve(id: string): Promise<Board> {
+export async function apiBoardsKanbanBoardRetrieve(id: string): Promise<Board> {
   const response = await axios.get(`/api/boards/${id}/kanban_board/`);
   return response.data;
 }
 
-export async function boardsSetDefaultCreate(
+export async function apiBoardsSetDefaultCreate(
   id: string,
   data: Board,
 ): Promise<Board> {
@@ -311,12 +311,12 @@ export async function boardsSetDefaultCreate(
   return response.data;
 }
 
-export async function boardsDefaultRetrieve(): Promise<Board> {
+export async function apiBoardsDefaultRetrieve(): Promise<Board> {
   const response = await axios.get(`/api/boards/default/`);
   return response.data;
 }
 
-export async function callLogsList(
+export async function apiCallLogsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -334,19 +334,19 @@ export async function callLogsList(
   return response.data;
 }
 
-export async function callLogsCreate(
+export async function apiCallLogsCreate(
   data: CallLogCreate,
 ): Promise<CallLogCreate> {
   const response = await axios.post(`/api/call-logs/`, data);
   return response.data;
 }
 
-export async function callLogsRetrieve(id: number): Promise<CallLogDetail> {
+export async function apiCallLogsRetrieve(id: number): Promise<CallLogDetail> {
   const response = await axios.get(`/api/call-logs/${id}/`);
   return response.data;
 }
 
-export async function callLogsUpdate(
+export async function apiCallLogsUpdate(
   id: number,
   data: CallLog,
 ): Promise<CallLog> {
@@ -354,7 +354,7 @@ export async function callLogsUpdate(
   return response.data;
 }
 
-export async function callLogsPartialUpdate(
+export async function apiCallLogsPartialUpdate(
   id: number,
   data: PatchedCallLog,
 ): Promise<CallLog> {
@@ -362,12 +362,12 @@ export async function callLogsPartialUpdate(
   return response.data;
 }
 
-export async function callLogsDestroy(id: number): Promise<any> {
+export async function apiCallLogsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/call-logs/${id}/`);
   return response.data;
 }
 
-export async function callLogsAddEventCreate(
+export async function apiCallLogsAddEventCreate(
   id: number,
   data: CallEvent,
 ): Promise<CallEvent> {
@@ -375,7 +375,7 @@ export async function callLogsAddEventCreate(
   return response.data;
 }
 
-export async function callLogsEndCallCreate(
+export async function apiCallLogsEndCallCreate(
   id: number,
   data: CallStatusUpdate,
 ): Promise<CallLog> {
@@ -383,7 +383,7 @@ export async function callLogsEndCallCreate(
   return response.data;
 }
 
-export async function callLogsStartRecordingCreate(
+export async function apiCallLogsStartRecordingCreate(
   id: number,
   data: CallLog,
 ): Promise<CallRecording> {
@@ -394,7 +394,7 @@ export async function callLogsStartRecordingCreate(
   return response.data;
 }
 
-export async function callLogsStopRecordingCreate(
+export async function apiCallLogsStopRecordingCreate(
   id: number,
   data: CallLog,
 ): Promise<CallRecording> {
@@ -405,7 +405,7 @@ export async function callLogsStopRecordingCreate(
   return response.data;
 }
 
-export async function callLogsToggleHoldCreate(
+export async function apiCallLogsToggleHoldCreate(
   id: number,
   data: CallLog,
 ): Promise<CallLog> {
@@ -413,7 +413,7 @@ export async function callLogsToggleHoldCreate(
   return response.data;
 }
 
-export async function callLogsTransferCallCreate(
+export async function apiCallLogsTransferCallCreate(
   id: number,
   data: CallLog,
 ): Promise<CallLog> {
@@ -424,7 +424,7 @@ export async function callLogsTransferCallCreate(
   return response.data;
 }
 
-export async function callLogsUpdateStatusPartialUpdate(
+export async function apiCallLogsUpdateStatusPartialUpdate(
   id: number,
   data: PatchedCallStatusUpdate,
 ): Promise<CallLog> {
@@ -435,21 +435,21 @@ export async function callLogsUpdateStatusPartialUpdate(
   return response.data;
 }
 
-export async function callLogsInitiateCallCreate(
+export async function apiCallLogsInitiateCallCreate(
   data: CallInitiate,
 ): Promise<CallLog> {
   const response = await axios.post(`/api/call-logs/initiate_call/`, data);
   return response.data;
 }
 
-export async function callLogsLogIncomingCallCreate(
+export async function apiCallLogsLogIncomingCallCreate(
   data: CallLogCreate,
 ): Promise<CallLog> {
   const response = await axios.post(`/api/call-logs/log_incoming_call/`, data);
   return response.data;
 }
 
-export async function callLogsStatisticsRetrieve(
+export async function apiCallLogsStatisticsRetrieve(
   period?: 'month' | 'today' | 'week',
 ): Promise<Record<string, any>> {
   const response = await axios.get(
@@ -458,7 +458,7 @@ export async function callLogsStatisticsRetrieve(
   return response.data;
 }
 
-export async function checklistItemsList(
+export async function apiChecklistItemsList(
   ordering?: string,
   page?: number,
 ): Promise<PaginatedChecklistItemList> {
@@ -474,21 +474,21 @@ export async function checklistItemsList(
   return response.data;
 }
 
-export async function checklistItemsCreate(
+export async function apiChecklistItemsCreate(
   data: ChecklistItem,
 ): Promise<ChecklistItem> {
   const response = await axios.post(`/api/checklist-items/`, data);
   return response.data;
 }
 
-export async function checklistItemsRetrieve(
+export async function apiChecklistItemsRetrieve(
   id: string,
 ): Promise<ChecklistItem> {
   const response = await axios.get(`/api/checklist-items/${id}/`);
   return response.data;
 }
 
-export async function checklistItemsUpdate(
+export async function apiChecklistItemsUpdate(
   id: string,
   data: ChecklistItem,
 ): Promise<ChecklistItem> {
@@ -496,7 +496,7 @@ export async function checklistItemsUpdate(
   return response.data;
 }
 
-export async function checklistItemsPartialUpdate(
+export async function apiChecklistItemsPartialUpdate(
   id: string,
   data: PatchedChecklistItem,
 ): Promise<ChecklistItem> {
@@ -504,12 +504,12 @@ export async function checklistItemsPartialUpdate(
   return response.data;
 }
 
-export async function checklistItemsDestroy(id: string): Promise<any> {
+export async function apiChecklistItemsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/checklist-items/${id}/`);
   return response.data;
 }
 
-export async function checklistItemsReorderPartialUpdate(
+export async function apiChecklistItemsReorderPartialUpdate(
   id: string,
   data: PatchedChecklistItem,
 ): Promise<ChecklistItem> {
@@ -520,7 +520,7 @@ export async function checklistItemsReorderPartialUpdate(
   return response.data;
 }
 
-export async function checklistItemsToggleCheckPartialUpdate(
+export async function apiChecklistItemsToggleCheckPartialUpdate(
   id: string,
   data: PatchedChecklistItem,
 ): Promise<ChecklistItem> {
@@ -531,7 +531,7 @@ export async function checklistItemsToggleCheckPartialUpdate(
   return response.data;
 }
 
-export async function clientsList(
+export async function apiClientsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -549,22 +549,25 @@ export async function clientsList(
   return response.data;
 }
 
-export async function clientsCreate(data: Client): Promise<Client> {
+export async function apiClientsCreate(data: Client): Promise<Client> {
   const response = await axios.post(`/api/clients/`, data);
   return response.data;
 }
 
-export async function clientsRetrieve(id: number): Promise<Client> {
+export async function apiClientsRetrieve(id: number): Promise<Client> {
   const response = await axios.get(`/api/clients/${id}/`);
   return response.data;
 }
 
-export async function clientsUpdate(id: number, data: Client): Promise<Client> {
+export async function apiClientsUpdate(
+  id: number,
+  data: Client,
+): Promise<Client> {
   const response = await axios.put(`/api/clients/${id}/`, data);
   return response.data;
 }
 
-export async function clientsPartialUpdate(
+export async function apiClientsPartialUpdate(
   id: number,
   data: PatchedClient,
 ): Promise<Client> {
@@ -572,12 +575,12 @@ export async function clientsPartialUpdate(
   return response.data;
 }
 
-export async function clientsDestroy(id: number): Promise<any> {
+export async function apiClientsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/clients/${id}/`);
   return response.data;
 }
 
-export async function clientsCallHistoryList(
+export async function apiClientsCallHistoryList(
   id: number,
   ordering?: string,
   page?: number,
@@ -596,7 +599,7 @@ export async function clientsCallHistoryList(
   return response.data;
 }
 
-export async function columnsList(
+export async function apiColumnsList(
   board?: number,
   ordering?: string,
   page?: number,
@@ -614,19 +617,19 @@ export async function columnsList(
   return response.data;
 }
 
-export async function columnsCreate(
+export async function apiColumnsCreate(
   data: TicketColumnCreate,
 ): Promise<TicketColumnCreate> {
   const response = await axios.post(`/api/columns/`, data);
   return response.data;
 }
 
-export async function columnsRetrieve(id: number): Promise<TicketColumn> {
+export async function apiColumnsRetrieve(id: number): Promise<TicketColumn> {
   const response = await axios.get(`/api/columns/${id}/`);
   return response.data;
 }
 
-export async function columnsUpdate(
+export async function apiColumnsUpdate(
   id: number,
   data: TicketColumnUpdate,
 ): Promise<TicketColumnUpdate> {
@@ -634,7 +637,7 @@ export async function columnsUpdate(
   return response.data;
 }
 
-export async function columnsPartialUpdate(
+export async function apiColumnsPartialUpdate(
   id: number,
   data: PatchedTicketColumnUpdate,
 ): Promise<TicketColumnUpdate> {
@@ -642,12 +645,12 @@ export async function columnsPartialUpdate(
   return response.data;
 }
 
-export async function columnsDestroy(id: number): Promise<any> {
+export async function apiColumnsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/columns/${id}/`);
   return response.data;
 }
 
-export async function columnsReorderCreate(
+export async function apiColumnsReorderCreate(
   id: number,
   data: TicketColumn,
 ): Promise<TicketColumn> {
@@ -660,7 +663,7 @@ export async function kanbanBoard(): Promise<KanbanBoard> {
   return response.data;
 }
 
-export async function commentsList(
+export async function apiCommentsList(
   ordering?: string,
   page?: number,
 ): Promise<PaginatedTicketCommentList> {
@@ -676,19 +679,19 @@ export async function commentsList(
   return response.data;
 }
 
-export async function commentsCreate(
+export async function apiCommentsCreate(
   data: TicketComment,
 ): Promise<TicketComment> {
   const response = await axios.post(`/api/comments/`, data);
   return response.data;
 }
 
-export async function commentsRetrieve(id: string): Promise<TicketComment> {
+export async function apiCommentsRetrieve(id: string): Promise<TicketComment> {
   const response = await axios.get(`/api/comments/${id}/`);
   return response.data;
 }
 
-export async function commentsUpdate(
+export async function apiCommentsUpdate(
   id: string,
   data: TicketComment,
 ): Promise<TicketComment> {
@@ -696,7 +699,7 @@ export async function commentsUpdate(
   return response.data;
 }
 
-export async function commentsPartialUpdate(
+export async function apiCommentsPartialUpdate(
   id: string,
   data: PatchedTicketComment,
 ): Promise<TicketComment> {
@@ -704,52 +707,52 @@ export async function commentsPartialUpdate(
   return response.data;
 }
 
-export async function commentsDestroy(id: string): Promise<any> {
+export async function apiCommentsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/comments/${id}/`);
   return response.data;
 }
 
-export async function corsTestRetrieve(): Promise<any> {
+export async function apiCorsTestRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cors-test/`);
   return response.data;
 }
 
-export async function cronHealthRetrieve(): Promise<any> {
+export async function apiCronHealthRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/health/`);
   return response.data;
 }
 
-export async function cronProcessTrialExpirationsRetrieve(): Promise<any> {
+export async function apiCronProcessTrialExpirationsRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/process-trial-expirations/`);
   return response.data;
 }
 
-export async function cronProcessTrialExpirationsCreate(): Promise<any> {
+export async function apiCronProcessTrialExpirationsCreate(): Promise<any> {
   const response = await axios.post(`/api/cron/process-trial-expirations/`);
   return response.data;
 }
 
-export async function cronRecurringPaymentsRetrieve(): Promise<any> {
+export async function apiCronRecurringPaymentsRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/recurring-payments/`);
   return response.data;
 }
 
-export async function cronRecurringPaymentsCreate(): Promise<any> {
+export async function apiCronRecurringPaymentsCreate(): Promise<any> {
   const response = await axios.post(`/api/cron/recurring-payments/`);
   return response.data;
 }
 
-export async function cronSubscriptionCheckRetrieve(): Promise<any> {
+export async function apiCronSubscriptionCheckRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/subscription-check/`);
   return response.data;
 }
 
-export async function cronSubscriptionCheckCreate(): Promise<any> {
+export async function apiCronSubscriptionCheckCreate(): Promise<any> {
   const response = await axios.post(`/api/cron/subscription-check/`);
   return response.data;
 }
 
-export async function departmentsList(
+export async function apiDepartmentsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -767,17 +770,19 @@ export async function departmentsList(
   return response.data;
 }
 
-export async function departmentsCreate(data: Department): Promise<Department> {
+export async function apiDepartmentsCreate(
+  data: Department,
+): Promise<Department> {
   const response = await axios.post(`/api/departments/`, data);
   return response.data;
 }
 
-export async function departmentsRetrieve(id: number): Promise<Department> {
+export async function apiDepartmentsRetrieve(id: number): Promise<Department> {
   const response = await axios.get(`/api/departments/${id}/`);
   return response.data;
 }
 
-export async function departmentsUpdate(
+export async function apiDepartmentsUpdate(
   id: number,
   data: Department,
 ): Promise<Department> {
@@ -785,7 +790,7 @@ export async function departmentsUpdate(
   return response.data;
 }
 
-export async function departmentsPartialUpdate(
+export async function apiDepartmentsPartialUpdate(
   id: number,
   data: PatchedDepartment,
 ): Promise<Department> {
@@ -793,17 +798,19 @@ export async function departmentsPartialUpdate(
   return response.data;
 }
 
-export async function departmentsDestroy(id: number): Promise<any> {
+export async function apiDepartmentsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/departments/${id}/`);
   return response.data;
 }
 
-export async function deploymentStatusRetrieve(tenantId: number): Promise<any> {
+export async function apiDeploymentStatusRetrieve(
+  tenantId: number,
+): Promise<any> {
   const response = await axios.get(`/api/deployment-status/${tenantId}/`);
   return response.data;
 }
 
-export async function featuresList(
+export async function apiFeaturesList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -821,12 +828,12 @@ export async function featuresList(
   return response.data;
 }
 
-export async function featuresRetrieve(id: number): Promise<Feature> {
+export async function apiFeaturesRetrieve(id: number): Promise<Feature> {
   const response = await axios.get(`/api/features/${id}/`);
   return response.data;
 }
 
-export async function formSubmissionsList(
+export async function apiFormSubmissionsList(
   form?: number,
   ordering?: string,
   page?: number,
@@ -848,21 +855,21 @@ export async function formSubmissionsList(
   return response.data;
 }
 
-export async function formSubmissionsCreate(
+export async function apiFormSubmissionsCreate(
   data: TicketFormSubmission,
 ): Promise<TicketFormSubmission> {
   const response = await axios.post(`/api/form-submissions/`, data);
   return response.data;
 }
 
-export async function formSubmissionsRetrieve(
+export async function apiFormSubmissionsRetrieve(
   id: number,
 ): Promise<TicketFormSubmission> {
   const response = await axios.get(`/api/form-submissions/${id}/`);
   return response.data;
 }
 
-export async function formSubmissionsUpdate(
+export async function apiFormSubmissionsUpdate(
   id: number,
   data: TicketFormSubmission,
 ): Promise<TicketFormSubmission> {
@@ -870,7 +877,7 @@ export async function formSubmissionsUpdate(
   return response.data;
 }
 
-export async function formSubmissionsPartialUpdate(
+export async function apiFormSubmissionsPartialUpdate(
   id: number,
   data: PatchedTicketFormSubmission,
 ): Promise<TicketFormSubmission> {
@@ -878,22 +885,22 @@ export async function formSubmissionsPartialUpdate(
   return response.data;
 }
 
-export async function formSubmissionsDestroy(id: number): Promise<any> {
+export async function apiFormSubmissionsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/form-submissions/${id}/`);
   return response.data;
 }
 
-export async function formSubmissionsByFormRetrieve(): Promise<TicketFormSubmission> {
+export async function apiFormSubmissionsByFormRetrieve(): Promise<TicketFormSubmission> {
   const response = await axios.get(`/api/form-submissions/by_form/`);
   return response.data;
 }
 
-export async function formSubmissionsByTicketRetrieve(): Promise<TicketFormSubmission> {
+export async function apiFormSubmissionsByTicketRetrieve(): Promise<TicketFormSubmission> {
   const response = await axios.get(`/api/form-submissions/by_ticket/`);
   return response.data;
 }
 
-export async function groupsList(
+export async function apiGroupsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -911,22 +918,22 @@ export async function groupsList(
   return response.data;
 }
 
-export async function groupsCreate(data: GroupCreate): Promise<GroupCreate> {
+export async function apiGroupsCreate(data: GroupCreate): Promise<GroupCreate> {
   const response = await axios.post(`/api/groups/`, data);
   return response.data;
 }
 
-export async function groupsRetrieve(id: number): Promise<Group> {
+export async function apiGroupsRetrieve(id: number): Promise<Group> {
   const response = await axios.get(`/api/groups/${id}/`);
   return response.data;
 }
 
-export async function groupsUpdate(id: number, data: Group): Promise<Group> {
+export async function apiGroupsUpdate(id: number, data: Group): Promise<Group> {
   const response = await axios.put(`/api/groups/${id}/`, data);
   return response.data;
 }
 
-export async function groupsPartialUpdate(
+export async function apiGroupsPartialUpdate(
   id: number,
   data: PatchedGroup,
 ): Promise<Group> {
@@ -934,12 +941,12 @@ export async function groupsPartialUpdate(
   return response.data;
 }
 
-export async function groupsDestroy(id: number): Promise<any> {
+export async function apiGroupsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/groups/${id}/`);
   return response.data;
 }
 
-export async function groupsAddUsersCreate(
+export async function apiGroupsAddUsersCreate(
   id: number,
   data: Group,
 ): Promise<Group> {
@@ -947,7 +954,7 @@ export async function groupsAddUsersCreate(
   return response.data;
 }
 
-export async function groupsRemoveUsersCreate(
+export async function apiGroupsRemoveUsersCreate(
   id: number,
   data: Group,
 ): Promise<Group> {
@@ -955,12 +962,12 @@ export async function groupsRemoveUsersCreate(
   return response.data;
 }
 
-export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
+export async function apiGroupsAvailablePermissionsRetrieve(): Promise<Group> {
   const response = await axios.get(`/api/groups/available_permissions/`);
   return response.data;
 }
 
-export async function itemListsList(
+export async function apiItemListsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -978,17 +985,17 @@ export async function itemListsList(
   return response.data;
 }
 
-export async function itemListsCreate(data: ItemList): Promise<ItemList> {
+export async function apiItemListsCreate(data: ItemList): Promise<ItemList> {
   const response = await axios.post(`/api/item-lists/`, data);
   return response.data;
 }
 
-export async function itemListsRetrieve(id: number): Promise<ItemList> {
+export async function apiItemListsRetrieve(id: number): Promise<ItemList> {
   const response = await axios.get(`/api/item-lists/${id}/`);
   return response.data;
 }
 
-export async function itemListsUpdate(
+export async function apiItemListsUpdate(
   id: number,
   data: ItemList,
 ): Promise<ItemList> {
@@ -996,7 +1003,7 @@ export async function itemListsUpdate(
   return response.data;
 }
 
-export async function itemListsPartialUpdate(
+export async function apiItemListsPartialUpdate(
   id: number,
   data: PatchedItemList,
 ): Promise<ItemList> {
@@ -1004,19 +1011,19 @@ export async function itemListsPartialUpdate(
   return response.data;
 }
 
-export async function itemListsDestroy(id: number): Promise<any> {
+export async function apiItemListsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/item-lists/${id}/`);
   return response.data;
 }
 
-export async function itemListsRootItemsRetrieve(
+export async function apiItemListsRootItemsRetrieve(
   id: number,
 ): Promise<ItemList> {
   const response = await axios.get(`/api/item-lists/${id}/root_items/`);
   return response.data;
 }
 
-export async function listItemsList(
+export async function apiListItemsList(
   isActive?: boolean,
   itemList?: number,
   ordering?: string,
@@ -1040,17 +1047,17 @@ export async function listItemsList(
   return response.data;
 }
 
-export async function listItemsCreate(data: ListItem): Promise<ListItem> {
+export async function apiListItemsCreate(data: ListItem): Promise<ListItem> {
   const response = await axios.post(`/api/list-items/`, data);
   return response.data;
 }
 
-export async function listItemsRetrieve(id: number): Promise<ListItem> {
+export async function apiListItemsRetrieve(id: number): Promise<ListItem> {
   const response = await axios.get(`/api/list-items/${id}/`);
   return response.data;
 }
 
-export async function listItemsUpdate(
+export async function apiListItemsUpdate(
   id: number,
   data: ListItem,
 ): Promise<ListItem> {
@@ -1058,7 +1065,7 @@ export async function listItemsUpdate(
   return response.data;
 }
 
-export async function listItemsPartialUpdate(
+export async function apiListItemsPartialUpdate(
   id: number,
   data: PatchedListItem,
 ): Promise<ListItem> {
@@ -1066,24 +1073,26 @@ export async function listItemsPartialUpdate(
   return response.data;
 }
 
-export async function listItemsDestroy(id: number): Promise<any> {
+export async function apiListItemsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/list-items/${id}/`);
   return response.data;
 }
 
-export async function listItemsAllDescendantsRetrieve(
+export async function apiListItemsAllDescendantsRetrieve(
   id: number,
 ): Promise<ListItem> {
   const response = await axios.get(`/api/list-items/${id}/all_descendants/`);
   return response.data;
 }
 
-export async function listItemsChildrenRetrieve(id: number): Promise<ListItem> {
+export async function apiListItemsChildrenRetrieve(
+  id: number,
+): Promise<ListItem> {
   const response = await axios.get(`/api/list-items/${id}/children/`);
   return response.data;
 }
 
-export async function listItemsReorderPartialUpdate(
+export async function apiListItemsReorderPartialUpdate(
   id: number,
   data: PatchedListItem,
 ): Promise<ListItem> {
@@ -1091,7 +1100,7 @@ export async function listItemsReorderPartialUpdate(
   return response.data;
 }
 
-export async function notificationsList(
+export async function apiNotificationsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1109,19 +1118,21 @@ export async function notificationsList(
   return response.data;
 }
 
-export async function notificationsCreate(
+export async function apiNotificationsCreate(
   data: Notification,
 ): Promise<Notification> {
   const response = await axios.post(`/api/notifications/`, data);
   return response.data;
 }
 
-export async function notificationsRetrieve(id: string): Promise<Notification> {
+export async function apiNotificationsRetrieve(
+  id: string,
+): Promise<Notification> {
   const response = await axios.get(`/api/notifications/${id}/`);
   return response.data;
 }
 
-export async function notificationsUpdate(
+export async function apiNotificationsUpdate(
   id: string,
   data: Notification,
 ): Promise<Notification> {
@@ -1129,7 +1140,7 @@ export async function notificationsUpdate(
   return response.data;
 }
 
-export async function notificationsPartialUpdate(
+export async function apiNotificationsPartialUpdate(
   id: string,
   data: PatchedNotification,
 ): Promise<Notification> {
@@ -1137,12 +1148,12 @@ export async function notificationsPartialUpdate(
   return response.data;
 }
 
-export async function notificationsDestroy(id: string): Promise<any> {
+export async function apiNotificationsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/notifications/${id}/`);
   return response.data;
 }
 
-export async function notificationsMarkReadCreate(
+export async function apiNotificationsMarkReadCreate(
   id: string,
   data: Notification,
 ): Promise<Notification> {
@@ -1153,24 +1164,24 @@ export async function notificationsMarkReadCreate(
   return response.data;
 }
 
-export async function notificationsClearAllDestroy(): Promise<any> {
+export async function apiNotificationsClearAllDestroy(): Promise<any> {
   const response = await axios.delete(`/api/notifications/clear_all/`);
   return response.data;
 }
 
-export async function notificationsMarkAllReadCreate(
+export async function apiNotificationsMarkAllReadCreate(
   data: Notification,
 ): Promise<Notification> {
   const response = await axios.post(`/api/notifications/mark_all_read/`, data);
   return response.data;
 }
 
-export async function notificationsUnreadCountRetrieve(): Promise<Notification> {
+export async function apiNotificationsUnreadCountRetrieve(): Promise<Notification> {
   const response = await axios.get(`/api/notifications/unread_count/`);
   return response.data;
 }
 
-export async function packagesList(
+export async function apiPackagesList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1215,7 +1226,7 @@ export async function getPackageFeatures(packageId: number): Promise<{
   return response.data;
 }
 
-export async function packagesRetrieve(id: number): Promise<Package> {
+export async function apiPackagesRetrieve(id: number): Promise<Package> {
   const response = await axios.get(`/api/packages/${id}/`);
   return response.data;
 }
@@ -1275,7 +1286,7 @@ export async function calculatePricing(): Promise<{
   return response.data;
 }
 
-export async function paymentsList(
+export async function apiPaymentsList(
   currency?: string,
   ordering?: string,
   page?: number,
@@ -1306,19 +1317,19 @@ export async function paymentsList(
   return response.data;
 }
 
-export async function paymentsCreate(
+export async function apiPaymentsCreate(
   data: TicketPayment,
 ): Promise<TicketPayment> {
   const response = await axios.post(`/api/payments/`, data);
   return response.data;
 }
 
-export async function paymentsRetrieve(id: number): Promise<TicketPayment> {
+export async function apiPaymentsRetrieve(id: number): Promise<TicketPayment> {
   const response = await axios.get(`/api/payments/${id}/`);
   return response.data;
 }
 
-export async function paymentsUpdate(
+export async function apiPaymentsUpdate(
   id: number,
   data: TicketPayment,
 ): Promise<TicketPayment> {
@@ -1326,7 +1337,7 @@ export async function paymentsUpdate(
   return response.data;
 }
 
-export async function paymentsPartialUpdate(
+export async function apiPaymentsPartialUpdate(
   id: number,
   data: PatchedTicketPayment,
 ): Promise<TicketPayment> {
@@ -1334,7 +1345,7 @@ export async function paymentsPartialUpdate(
   return response.data;
 }
 
-export async function paymentsDestroy(id: number): Promise<any> {
+export async function apiPaymentsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/payments/${id}/`);
   return response.data;
 }
@@ -1363,12 +1374,12 @@ export async function manualPayment(): Promise<{
   return response.data;
 }
 
-export async function paymentsPaymentSummaryRetrieve(): Promise<TicketPayment> {
+export async function apiPaymentsPaymentSummaryRetrieve(): Promise<TicketPayment> {
   const response = await axios.get(`/api/payments/payment_summary/`);
   return response.data;
 }
 
-export async function paymentsProcessPaymentCreate(
+export async function apiPaymentsProcessPaymentCreate(
   data: TicketPayment,
 ): Promise<TicketPayment> {
   const response = await axios.post(`/api/payments/process_payment/`, data);
@@ -1405,7 +1416,7 @@ export async function bogWebhook(): Promise<any> {
   return response.data;
 }
 
-export async function permissionsList(
+export async function apiPermissionsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1423,12 +1434,12 @@ export async function permissionsList(
   return response.data;
 }
 
-export async function permissionsRetrieve(id: number): Promise<Permission> {
+export async function apiPermissionsRetrieve(id: number): Promise<Permission> {
   const response = await axios.get(`/api/permissions/${id}/`);
   return response.data;
 }
 
-export async function preflightTestRetrieve(): Promise<any> {
+export async function apiPreflightTestRetrieve(): Promise<any> {
   const response = await axios.get(`/api/preflight-test/`);
   return response.data;
 }
@@ -1456,7 +1467,7 @@ export async function registerTenantWithPayment(
   return response.data;
 }
 
-export async function sipConfigurationsList(
+export async function apiSipConfigurationsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1474,21 +1485,21 @@ export async function sipConfigurationsList(
   return response.data;
 }
 
-export async function sipConfigurationsCreate(
+export async function apiSipConfigurationsCreate(
   data: SipConfiguration,
 ): Promise<SipConfiguration> {
   const response = await axios.post(`/api/sip-configurations/`, data);
   return response.data;
 }
 
-export async function sipConfigurationsRetrieve(
+export async function apiSipConfigurationsRetrieve(
   id: number,
 ): Promise<SipConfigurationDetail> {
   const response = await axios.get(`/api/sip-configurations/${id}/`);
   return response.data;
 }
 
-export async function sipConfigurationsUpdate(
+export async function apiSipConfigurationsUpdate(
   id: number,
   data: SipConfiguration,
 ): Promise<SipConfiguration> {
@@ -1496,7 +1507,7 @@ export async function sipConfigurationsUpdate(
   return response.data;
 }
 
-export async function sipConfigurationsPartialUpdate(
+export async function apiSipConfigurationsPartialUpdate(
   id: number,
   data: PatchedSipConfiguration,
 ): Promise<SipConfiguration> {
@@ -1504,12 +1515,12 @@ export async function sipConfigurationsPartialUpdate(
   return response.data;
 }
 
-export async function sipConfigurationsDestroy(id: number): Promise<any> {
+export async function apiSipConfigurationsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/sip-configurations/${id}/`);
   return response.data;
 }
 
-export async function sipConfigurationsSetDefaultCreate(
+export async function apiSipConfigurationsSetDefaultCreate(
   id: number,
   data: SipConfiguration,
 ): Promise<Record<string, any>> {
@@ -1520,7 +1531,7 @@ export async function sipConfigurationsSetDefaultCreate(
   return response.data;
 }
 
-export async function sipConfigurationsTestConnectionCreate(
+export async function apiSipConfigurationsTestConnectionCreate(
   id: number,
   data: SipConfiguration,
 ): Promise<Record<string, any>> {
@@ -1531,7 +1542,7 @@ export async function sipConfigurationsTestConnectionCreate(
   return response.data;
 }
 
-export async function sipConfigurationsWebrtcConfigRetrieve(
+export async function apiSipConfigurationsWebrtcConfigRetrieve(
   id: number,
 ): Promise<SipConfigurationDetail> {
   const response = await axios.get(
@@ -1540,7 +1551,7 @@ export async function sipConfigurationsWebrtcConfigRetrieve(
   return response.data;
 }
 
-export async function socialFacebookMessagesList(
+export async function apiSocialFacebookMessagesList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1558,14 +1569,14 @@ export async function socialFacebookMessagesList(
   return response.data;
 }
 
-export async function socialFacebookMessagesRetrieve(
+export async function apiSocialFacebookMessagesRetrieve(
   id: number,
 ): Promise<FacebookMessage> {
   const response = await axios.get(`/api/social/facebook-messages/${id}/`);
   return response.data;
 }
 
-export async function socialFacebookPagesList(
+export async function apiSocialFacebookPagesList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1583,21 +1594,21 @@ export async function socialFacebookPagesList(
   return response.data;
 }
 
-export async function socialFacebookPagesCreate(
+export async function apiSocialFacebookPagesCreate(
   data: FacebookPageConnection,
 ): Promise<FacebookPageConnection> {
   const response = await axios.post(`/api/social/facebook-pages/`, data);
   return response.data;
 }
 
-export async function socialFacebookPagesRetrieve(
+export async function apiSocialFacebookPagesRetrieve(
   id: number,
 ): Promise<FacebookPageConnection> {
   const response = await axios.get(`/api/social/facebook-pages/${id}/`);
   return response.data;
 }
 
-export async function socialFacebookPagesUpdate(
+export async function apiSocialFacebookPagesUpdate(
   id: number,
   data: FacebookPageConnection,
 ): Promise<FacebookPageConnection> {
@@ -1605,7 +1616,7 @@ export async function socialFacebookPagesUpdate(
   return response.data;
 }
 
-export async function socialFacebookPagesPartialUpdate(
+export async function apiSocialFacebookPagesPartialUpdate(
   id: number,
   data: PatchedFacebookPageConnection,
 ): Promise<FacebookPageConnection> {
@@ -1613,62 +1624,62 @@ export async function socialFacebookPagesPartialUpdate(
   return response.data;
 }
 
-export async function socialFacebookPagesDestroy(id: number): Promise<any> {
+export async function apiSocialFacebookPagesDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/social/facebook-pages/${id}/`);
   return response.data;
 }
 
-export async function socialFacebookApiTestRetrieve(): Promise<any> {
+export async function apiSocialFacebookApiTestRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/api/test/`);
   return response.data;
 }
 
-export async function socialFacebookApiTestCreate(): Promise<any> {
+export async function apiSocialFacebookApiTestCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/api/test/`);
   return response.data;
 }
 
-export async function socialFacebookDatabaseDebugRetrieve(): Promise<any> {
+export async function apiSocialFacebookDatabaseDebugRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/database/debug/`);
   return response.data;
 }
 
-export async function socialFacebookDatabaseTestRetrieve(): Promise<any> {
+export async function apiSocialFacebookDatabaseTestRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/database/test/`);
   return response.data;
 }
 
-export async function socialFacebookDatabaseTestCreate(): Promise<any> {
+export async function apiSocialFacebookDatabaseTestCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/database/test/`);
   return response.data;
 }
 
-export async function socialFacebookDisconnectCreate(): Promise<any> {
+export async function apiSocialFacebookDisconnectCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/disconnect/`);
   return response.data;
 }
 
-export async function socialFacebookOauthCallbackRetrieve(): Promise<any> {
+export async function apiSocialFacebookOauthCallbackRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/oauth/callback/`);
   return response.data;
 }
 
-export async function socialFacebookOauthDebugRetrieve(): Promise<any> {
+export async function apiSocialFacebookOauthDebugRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/oauth/debug/`);
   return response.data;
 }
 
-export async function socialFacebookOauthStartRetrieve(): Promise<any> {
+export async function apiSocialFacebookOauthStartRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/oauth/start/`);
   return response.data;
 }
 
-export async function socialFacebookPagesDebugRetrieve(): Promise<any> {
+export async function apiSocialFacebookPagesDebugRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/pages/debug/`);
   return response.data;
 }
 
-export async function socialFacebookSendMessageCreate(
+export async function apiSocialFacebookSendMessageCreate(
   data: FacebookSendMessage,
 ): Promise<{
   success?: boolean;
@@ -1679,22 +1690,22 @@ export async function socialFacebookSendMessageCreate(
   return response.data;
 }
 
-export async function socialFacebookStatusRetrieve(): Promise<any> {
+export async function apiSocialFacebookStatusRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/status/`);
   return response.data;
 }
 
-export async function socialFacebookWebhookTestRetrieve(): Promise<any> {
+export async function apiSocialFacebookWebhookTestRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/webhook/test/`);
   return response.data;
 }
 
-export async function socialFacebookWebhookTestCreate(): Promise<any> {
+export async function apiSocialFacebookWebhookTestCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/webhook/test/`);
   return response.data;
 }
 
-export async function subTicketsList(
+export async function apiSubTicketsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1712,17 +1723,17 @@ export async function subTicketsList(
   return response.data;
 }
 
-export async function subTicketsCreate(data: SubTicket): Promise<SubTicket> {
+export async function apiSubTicketsCreate(data: SubTicket): Promise<SubTicket> {
   const response = await axios.post(`/api/sub-tickets/`, data);
   return response.data;
 }
 
-export async function subTicketsRetrieve(id: string): Promise<SubTicket> {
+export async function apiSubTicketsRetrieve(id: string): Promise<SubTicket> {
   const response = await axios.get(`/api/sub-tickets/${id}/`);
   return response.data;
 }
 
-export async function subTicketsUpdate(
+export async function apiSubTicketsUpdate(
   id: string,
   data: SubTicket,
 ): Promise<SubTicket> {
@@ -1730,7 +1741,7 @@ export async function subTicketsUpdate(
   return response.data;
 }
 
-export async function subTicketsPartialUpdate(
+export async function apiSubTicketsPartialUpdate(
   id: string,
   data: PatchedSubTicket,
 ): Promise<SubTicket> {
@@ -1738,12 +1749,12 @@ export async function subTicketsPartialUpdate(
   return response.data;
 }
 
-export async function subTicketsDestroy(id: string): Promise<any> {
+export async function apiSubTicketsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/sub-tickets/${id}/`);
   return response.data;
 }
 
-export async function subTicketsReorderPartialUpdate(
+export async function apiSubTicketsReorderPartialUpdate(
   id: string,
   data: PatchedSubTicket,
 ): Promise<SubTicket> {
@@ -1751,7 +1762,7 @@ export async function subTicketsReorderPartialUpdate(
   return response.data;
 }
 
-export async function subTicketsToggleCompletionPartialUpdate(
+export async function apiSubTicketsToggleCompletionPartialUpdate(
   id: string,
   data: PatchedSubTicket,
 ): Promise<SubTicket> {
@@ -1762,7 +1773,7 @@ export async function subTicketsToggleCompletionPartialUpdate(
   return response.data;
 }
 
-export async function subTicketsAssignmentsList(
+export async function apiSubTicketsAssignmentsList(
   subTicketPk: number,
   ordering?: string,
   page?: number,
@@ -1781,7 +1792,7 @@ export async function subTicketsAssignmentsList(
   return response.data;
 }
 
-export async function subTicketsAssignmentsCreate(
+export async function apiSubTicketsAssignmentsCreate(
   subTicketPk: number,
   data: SubTicketAssignment,
 ): Promise<SubTicketAssignment> {
@@ -1792,7 +1803,7 @@ export async function subTicketsAssignmentsCreate(
   return response.data;
 }
 
-export async function subTicketsAssignmentsRetrieve(
+export async function apiSubTicketsAssignmentsRetrieve(
   id: number,
   subTicketPk: number,
 ): Promise<SubTicketAssignment> {
@@ -1802,7 +1813,7 @@ export async function subTicketsAssignmentsRetrieve(
   return response.data;
 }
 
-export async function subTicketsAssignmentsUpdate(
+export async function apiSubTicketsAssignmentsUpdate(
   id: number,
   subTicketPk: number,
   data: SubTicketAssignment,
@@ -1814,7 +1825,7 @@ export async function subTicketsAssignmentsUpdate(
   return response.data;
 }
 
-export async function subTicketsAssignmentsPartialUpdate(
+export async function apiSubTicketsAssignmentsPartialUpdate(
   id: number,
   subTicketPk: number,
   data: PatchedSubTicketAssignment,
@@ -1826,7 +1837,7 @@ export async function subTicketsAssignmentsPartialUpdate(
   return response.data;
 }
 
-export async function subTicketsAssignmentsDestroy(
+export async function apiSubTicketsAssignmentsDestroy(
   id: number,
   subTicketPk: number,
 ): Promise<any> {
@@ -1836,7 +1847,7 @@ export async function subTicketsAssignmentsDestroy(
   return response.data;
 }
 
-export async function subTicketsAssignmentsBulkAssignCreate(
+export async function apiSubTicketsAssignmentsBulkAssignCreate(
   subTicketPk: number,
   data: SubTicketAssignment,
 ): Promise<SubTicketAssignment> {
@@ -1847,7 +1858,7 @@ export async function subTicketsAssignmentsBulkAssignCreate(
   return response.data;
 }
 
-export async function subTicketsAssignmentsBulkUnassignDestroy(
+export async function apiSubTicketsAssignmentsBulkUnassignDestroy(
   subTicketPk: number,
 ): Promise<any> {
   const response = await axios.delete(
@@ -1879,7 +1890,7 @@ export async function getMySubscription(): Promise<{
   return response.data;
 }
 
-export async function tagsList(
+export async function apiTagsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1897,22 +1908,22 @@ export async function tagsList(
   return response.data;
 }
 
-export async function tagsCreate(data: Tag): Promise<Tag> {
+export async function apiTagsCreate(data: Tag): Promise<Tag> {
   const response = await axios.post(`/api/tags/`, data);
   return response.data;
 }
 
-export async function tagsRetrieve(id: number): Promise<Tag> {
+export async function apiTagsRetrieve(id: number): Promise<Tag> {
   const response = await axios.get(`/api/tags/${id}/`);
   return response.data;
 }
 
-export async function tagsUpdate(id: number, data: Tag): Promise<Tag> {
+export async function apiTagsUpdate(id: number, data: Tag): Promise<Tag> {
   const response = await axios.put(`/api/tags/${id}/`, data);
   return response.data;
 }
 
-export async function tagsPartialUpdate(
+export async function apiTagsPartialUpdate(
   id: number,
   data: PatchedTag,
 ): Promise<Tag> {
@@ -1920,12 +1931,12 @@ export async function tagsPartialUpdate(
   return response.data;
 }
 
-export async function tagsDestroy(id: number): Promise<any> {
+export async function apiTagsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tags/${id}/`);
   return response.data;
 }
 
-export async function tenantFeaturesList(
+export async function apiTenantFeaturesList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1943,21 +1954,21 @@ export async function tenantFeaturesList(
   return response.data;
 }
 
-export async function tenantFeaturesRetrieve(
+export async function apiTenantFeaturesRetrieve(
   id: number,
 ): Promise<TenantFeature> {
   const response = await axios.get(`/api/tenant-features/${id}/`);
   return response.data;
 }
 
-export async function tenantFeaturesCheckCreate(
+export async function apiTenantFeaturesCheckCreate(
   data: TenantFeature,
 ): Promise<TenantFeature> {
   const response = await axios.post(`/api/tenant-features/check/`, data);
   return response.data;
 }
 
-export async function tenantGroupsList(
+export async function apiTenantGroupsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -1975,19 +1986,21 @@ export async function tenantGroupsList(
   return response.data;
 }
 
-export async function tenantGroupsCreate(
+export async function apiTenantGroupsCreate(
   data: TenantGroupCreate,
 ): Promise<TenantGroupCreate> {
   const response = await axios.post(`/api/tenant-groups/`, data);
   return response.data;
 }
 
-export async function tenantGroupsRetrieve(id: number): Promise<TenantGroup> {
+export async function apiTenantGroupsRetrieve(
+  id: number,
+): Promise<TenantGroup> {
   const response = await axios.get(`/api/tenant-groups/${id}/`);
   return response.data;
 }
 
-export async function tenantGroupsUpdate(
+export async function apiTenantGroupsUpdate(
   id: number,
   data: TenantGroup,
 ): Promise<TenantGroup> {
@@ -1995,7 +2008,7 @@ export async function tenantGroupsUpdate(
   return response.data;
 }
 
-export async function tenantGroupsPartialUpdate(
+export async function apiTenantGroupsPartialUpdate(
   id: number,
   data: PatchedTenantGroup,
 ): Promise<TenantGroup> {
@@ -2003,12 +2016,12 @@ export async function tenantGroupsPartialUpdate(
   return response.data;
 }
 
-export async function tenantGroupsDestroy(id: number): Promise<any> {
+export async function apiTenantGroupsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tenant-groups/${id}/`);
   return response.data;
 }
 
-export async function tenantGroupsAddUsersCreate(
+export async function apiTenantGroupsAddUsersCreate(
   id: number,
   data: TenantGroup,
 ): Promise<TenantGroup> {
@@ -2019,14 +2032,14 @@ export async function tenantGroupsAddUsersCreate(
   return response.data;
 }
 
-export async function tenantGroupsMembersRetrieve(
+export async function apiTenantGroupsMembersRetrieve(
   id: number,
 ): Promise<TenantGroup> {
   const response = await axios.get(`/api/tenant-groups/${id}/members/`);
   return response.data;
 }
 
-export async function tenantGroupsRemoveUsersCreate(
+export async function apiTenantGroupsRemoveUsersCreate(
   id: number,
   data: TenantGroup,
 ): Promise<TenantGroup> {
@@ -2037,12 +2050,12 @@ export async function tenantGroupsRemoveUsersCreate(
   return response.data;
 }
 
-export async function tenantGroupsAvailableFeaturesRetrieve(): Promise<TenantGroup> {
+export async function apiTenantGroupsAvailableFeaturesRetrieve(): Promise<TenantGroup> {
   const response = await axios.get(`/api/tenant-groups/available_features/`);
   return response.data;
 }
 
-export async function tenantPermissionsList(
+export async function apiTenantPermissionsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -2060,7 +2073,7 @@ export async function tenantPermissionsList(
   return response.data;
 }
 
-export async function tenantPermissionsRetrieve(
+export async function apiTenantPermissionsRetrieve(
   id: number,
 ): Promise<TenantPermission> {
   const response = await axios.get(`/api/tenant-permissions/${id}/`);
@@ -2090,7 +2103,7 @@ export async function tenantSettingsUploadLogo(): Promise<{
   return response.data;
 }
 
-export async function tenantConfigRetrieve(): Promise<any> {
+export async function apiTenantConfigRetrieve(): Promise<any> {
   const response = await axios.get(`/api/tenant/config/`);
   return response.data;
 }
@@ -2104,17 +2117,17 @@ export async function getTenantLanguage(): Promise<{
   return response.data;
 }
 
-export async function tenantLanguageUpdateUpdate(): Promise<any> {
+export async function apiTenantLanguageUpdateUpdate(): Promise<any> {
   const response = await axios.put(`/api/tenant/language/update/`);
   return response.data;
 }
 
-export async function tenantLanguageUpdatePartialUpdate(): Promise<any> {
+export async function apiTenantLanguageUpdatePartialUpdate(): Promise<any> {
   const response = await axios.patch(`/api/tenant/language/update/`);
   return response.data;
 }
 
-export async function tenantsList(
+export async function apiTenantsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -2132,22 +2145,27 @@ export async function tenantsList(
   return response.data;
 }
 
-export async function tenantsCreate(data: TenantCreate): Promise<TenantCreate> {
+export async function apiTenantsCreate(
+  data: TenantCreate,
+): Promise<TenantCreate> {
   const response = await axios.post(`/api/tenants/`, data);
   return response.data;
 }
 
-export async function tenantsRetrieve(id: number): Promise<Tenant> {
+export async function apiTenantsRetrieve(id: number): Promise<Tenant> {
   const response = await axios.get(`/api/tenants/${id}/`);
   return response.data;
 }
 
-export async function tenantsUpdate(id: number, data: Tenant): Promise<Tenant> {
+export async function apiTenantsUpdate(
+  id: number,
+  data: Tenant,
+): Promise<Tenant> {
   const response = await axios.put(`/api/tenants/${id}/`, data);
   return response.data;
 }
 
-export async function tenantsPartialUpdate(
+export async function apiTenantsPartialUpdate(
   id: number,
   data: PatchedTenant,
 ): Promise<Tenant> {
@@ -2155,12 +2173,12 @@ export async function tenantsPartialUpdate(
   return response.data;
 }
 
-export async function tenantsDestroy(id: number): Promise<any> {
+export async function apiTenantsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tenants/${id}/`);
   return response.data;
 }
 
-export async function tenantsCreateAdminUserCreate(
+export async function apiTenantsCreateAdminUserCreate(
   id: number,
   data: Tenant,
 ): Promise<Tenant> {
@@ -2171,17 +2189,17 @@ export async function tenantsCreateAdminUserCreate(
   return response.data;
 }
 
-export async function tenantsUsersRetrieve(id: number): Promise<Tenant> {
+export async function apiTenantsUsersRetrieve(id: number): Promise<Tenant> {
   const response = await axios.get(`/api/tenants/${id}/users/`);
   return response.data;
 }
 
-export async function tenantsListRetrieve(): Promise<any> {
+export async function apiTenantsListRetrieve(): Promise<any> {
   const response = await axios.get(`/api/tenants/list/`);
   return response.data;
 }
 
-export async function ticketFormsList(
+export async function apiTicketFormsList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -2199,17 +2217,19 @@ export async function ticketFormsList(
   return response.data;
 }
 
-export async function ticketFormsCreate(data: TicketForm): Promise<TicketForm> {
+export async function apiTicketFormsCreate(
+  data: TicketForm,
+): Promise<TicketForm> {
   const response = await axios.post(`/api/ticket-forms/`, data);
   return response.data;
 }
 
-export async function ticketFormsRetrieve(id: number): Promise<TicketForm> {
+export async function apiTicketFormsRetrieve(id: number): Promise<TicketForm> {
   const response = await axios.get(`/api/ticket-forms/${id}/`);
   return response.data;
 }
 
-export async function ticketFormsUpdate(
+export async function apiTicketFormsUpdate(
   id: number,
   data: TicketForm,
 ): Promise<TicketForm> {
@@ -2217,7 +2237,7 @@ export async function ticketFormsUpdate(
   return response.data;
 }
 
-export async function ticketFormsPartialUpdate(
+export async function apiTicketFormsPartialUpdate(
   id: number,
   data: PatchedTicketForm,
 ): Promise<TicketForm> {
@@ -2225,12 +2245,12 @@ export async function ticketFormsPartialUpdate(
   return response.data;
 }
 
-export async function ticketFormsDestroy(id: number): Promise<any> {
+export async function apiTicketFormsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/ticket-forms/${id}/`);
   return response.data;
 }
 
-export async function ticketFormsSetDefaultCreate(
+export async function apiTicketFormsSetDefaultCreate(
   id: number,
   data: TicketForm,
 ): Promise<TicketForm> {
@@ -2241,19 +2261,19 @@ export async function ticketFormsSetDefaultCreate(
   return response.data;
 }
 
-export async function ticketFormsWithListsRetrieve(
+export async function apiTicketFormsWithListsRetrieve(
   id: number,
 ): Promise<TicketForm> {
   const response = await axios.get(`/api/ticket-forms/${id}/with_lists/`);
   return response.data;
 }
 
-export async function ticketFormsDefaultRetrieve(): Promise<TicketForm> {
+export async function apiTicketFormsDefaultRetrieve(): Promise<TicketForm> {
   const response = await axios.get(`/api/ticket-forms/default/`);
   return response.data;
 }
 
-export async function ticketsList(
+export async function apiTicketsList(
   assignedGroups?: number[],
   assignedTo?: number,
   column?: number,
@@ -2291,22 +2311,25 @@ export async function ticketsList(
   return response.data;
 }
 
-export async function ticketsCreate(data: Ticket): Promise<Ticket> {
+export async function apiTicketsCreate(data: Ticket): Promise<Ticket> {
   const response = await axios.post(`/api/tickets/`, data);
   return response.data;
 }
 
-export async function ticketsRetrieve(id: number): Promise<Ticket> {
+export async function apiTicketsRetrieve(id: number): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/${id}/`);
   return response.data;
 }
 
-export async function ticketsUpdate(id: number, data: Ticket): Promise<Ticket> {
+export async function apiTicketsUpdate(
+  id: number,
+  data: Ticket,
+): Promise<Ticket> {
   const response = await axios.put(`/api/tickets/${id}/`, data);
   return response.data;
 }
 
-export async function ticketsPartialUpdate(
+export async function apiTicketsPartialUpdate(
   id: number,
   data: PatchedTicket,
 ): Promise<Ticket> {
@@ -2314,12 +2337,12 @@ export async function ticketsPartialUpdate(
   return response.data;
 }
 
-export async function ticketsDestroy(id: number): Promise<any> {
+export async function apiTicketsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tickets/${id}/`);
   return response.data;
 }
 
-export async function ticketsAddCommentCreate(
+export async function apiTicketsAddCommentCreate(
   id: number,
   data: Ticket,
 ): Promise<Ticket> {
@@ -2327,7 +2350,7 @@ export async function ticketsAddCommentCreate(
   return response.data;
 }
 
-export async function ticketsAssignPartialUpdate(
+export async function apiTicketsAssignPartialUpdate(
   id: number,
   data: PatchedTicket,
 ): Promise<Ticket> {
@@ -2335,8 +2358,13 @@ export async function ticketsAssignPartialUpdate(
   return response.data;
 }
 
-export async function ticketsCommentsRetrieve(id: number): Promise<Ticket> {
+export async function apiTicketsCommentsRetrieve(id: number): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/${id}/comments/`);
+  return response.data;
+}
+
+export async function apiTicketsHistoryRetrieve(id: number): Promise<Ticket> {
+  const response = await axios.get(`/api/tickets/${id}/history/`);
   return response.data;
 }
 
@@ -2345,7 +2373,7 @@ export async function moveTicketToColumn(id: number): Promise<Ticket> {
   return response.data;
 }
 
-export async function ticketsReorderInColumnPartialUpdate(
+export async function apiTicketsReorderInColumnPartialUpdate(
   id: number,
   data: PatchedTicket,
 ): Promise<Ticket> {
@@ -2356,7 +2384,7 @@ export async function ticketsReorderInColumnPartialUpdate(
   return response.data;
 }
 
-export async function ticketsAssignmentsList(
+export async function apiTicketsAssignmentsList(
   ticketPk: number,
   ordering?: string,
   page?: number,
@@ -2375,7 +2403,7 @@ export async function ticketsAssignmentsList(
   return response.data;
 }
 
-export async function ticketsAssignmentsCreate(
+export async function apiTicketsAssignmentsCreate(
   ticketPk: number,
   data: TicketAssignment,
 ): Promise<TicketAssignment> {
@@ -2386,7 +2414,7 @@ export async function ticketsAssignmentsCreate(
   return response.data;
 }
 
-export async function ticketsAssignmentsRetrieve(
+export async function apiTicketsAssignmentsRetrieve(
   id: number,
   ticketPk: number,
 ): Promise<TicketAssignment> {
@@ -2396,7 +2424,7 @@ export async function ticketsAssignmentsRetrieve(
   return response.data;
 }
 
-export async function ticketsAssignmentsUpdate(
+export async function apiTicketsAssignmentsUpdate(
   id: number,
   ticketPk: number,
   data: TicketAssignment,
@@ -2408,7 +2436,7 @@ export async function ticketsAssignmentsUpdate(
   return response.data;
 }
 
-export async function ticketsAssignmentsPartialUpdate(
+export async function apiTicketsAssignmentsPartialUpdate(
   id: number,
   ticketPk: number,
   data: PatchedTicketAssignment,
@@ -2420,7 +2448,7 @@ export async function ticketsAssignmentsPartialUpdate(
   return response.data;
 }
 
-export async function ticketsAssignmentsDestroy(
+export async function apiTicketsAssignmentsDestroy(
   id: number,
   ticketPk: number,
 ): Promise<any> {
@@ -2430,7 +2458,7 @@ export async function ticketsAssignmentsDestroy(
   return response.data;
 }
 
-export async function ticketsAssignmentsBulkAssignCreate(
+export async function apiTicketsAssignmentsBulkAssignCreate(
   ticketPk: number,
   data: TicketAssignment,
 ): Promise<TicketAssignment> {
@@ -2441,7 +2469,7 @@ export async function ticketsAssignmentsBulkAssignCreate(
   return response.data;
 }
 
-export async function ticketsAssignmentsBulkUnassignDestroy(
+export async function apiTicketsAssignmentsBulkUnassignDestroy(
   ticketPk: number,
 ): Promise<any> {
   const response = await axios.delete(
@@ -2450,17 +2478,17 @@ export async function ticketsAssignmentsBulkUnassignDestroy(
   return response.data;
 }
 
-export async function ticketsAssignedToMeRetrieve(): Promise<Ticket> {
+export async function apiTicketsAssignedToMeRetrieve(): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/assigned_to_me/`);
   return response.data;
 }
 
-export async function ticketsMyTicketsRetrieve(): Promise<Ticket> {
+export async function apiTicketsMyTicketsRetrieve(): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/my_tickets/`);
   return response.data;
 }
 
-export async function timeLogsList(
+export async function apiTimeLogsList(
   ordering?: string,
   page?: number,
 ): Promise<PaginatedTicketTimeLogList> {
@@ -2476,12 +2504,12 @@ export async function timeLogsList(
   return response.data;
 }
 
-export async function timeLogsRetrieve(id: string): Promise<TicketTimeLog> {
+export async function apiTimeLogsRetrieve(id: string): Promise<TicketTimeLog> {
   const response = await axios.get(`/api/time-logs/${id}/`);
   return response.data;
 }
 
-export async function timeLogsMyTimeSummaryRetrieve(
+export async function apiTimeLogsMyTimeSummaryRetrieve(
   days?: number,
 ): Promise<TimeTrackingSummary> {
   const response = await axios.get(
@@ -2490,7 +2518,7 @@ export async function timeLogsMyTimeSummaryRetrieve(
   return response.data;
 }
 
-export async function usersList(
+export async function apiUsersList(
   ordering?: string,
   page?: number,
   search?: string,
@@ -2508,17 +2536,17 @@ export async function usersList(
   return response.data;
 }
 
-export async function usersCreate(data: UserCreate): Promise<UserCreate> {
+export async function apiUsersCreate(data: UserCreate): Promise<UserCreate> {
   const response = await axios.post(`/api/users/`, data);
   return response.data;
 }
 
-export async function usersRetrieve(id: number): Promise<User> {
+export async function apiUsersRetrieve(id: number): Promise<User> {
   const response = await axios.get(`/api/users/${id}/`);
   return response.data;
 }
 
-export async function usersUpdate(
+export async function apiUsersUpdate(
   id: number,
   data: UserUpdate,
 ): Promise<UserUpdate> {
@@ -2526,7 +2554,7 @@ export async function usersUpdate(
   return response.data;
 }
 
-export async function usersPartialUpdate(
+export async function apiUsersPartialUpdate(
   id: number,
   data: PatchedUserUpdate,
 ): Promise<UserUpdate> {
@@ -2534,12 +2562,12 @@ export async function usersPartialUpdate(
   return response.data;
 }
 
-export async function usersDestroy(id: number): Promise<any> {
+export async function apiUsersDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/users/${id}/`);
   return response.data;
 }
 
-export async function usersChangePasswordCreate(
+export async function apiUsersChangePasswordCreate(
   id: number,
   data: User,
 ): Promise<User> {
@@ -2547,12 +2575,12 @@ export async function usersChangePasswordCreate(
   return response.data;
 }
 
-export async function usersBulkActionCreate(data: User): Promise<User> {
+export async function apiUsersBulkActionCreate(data: User): Promise<User> {
   const response = await axios.post(`/api/users/bulk_action/`, data);
   return response.data;
 }
 
-export async function webhooksRecordingCreate(data: {
+export async function apiWebhooksRecordingCreate(data: {
   call_id: string;
   recording_id?: string;
   status: 'started' | 'completed' | 'failed';
@@ -2565,7 +2593,7 @@ export async function webhooksRecordingCreate(data: {
   return response.data;
 }
 
-export async function webhooksSipCreate(data: {
+export async function apiWebhooksSipCreate(data: {
   event_type:
     | 'call_initiated'
     | 'call_ringing'
@@ -2580,5 +2608,35 @@ export async function webhooksSipCreate(data: {
   metadata?: Record<string, any>;
 }): Promise<Record<string, any>> {
   const response = await axios.post(`/api/webhooks/sip/`, data);
+  return response.data;
+}
+
+export async function notificationsLogsRetrieve(): Promise<any> {
+  const response = await axios.get(`/notifications/logs/`);
+  return response.data;
+}
+
+export async function notificationsSubscribeCreate(): Promise<any> {
+  const response = await axios.post(`/notifications/subscribe/`);
+  return response.data;
+}
+
+export async function notificationsSubscriptionsRetrieve(): Promise<any> {
+  const response = await axios.get(`/notifications/subscriptions/`);
+  return response.data;
+}
+
+export async function notificationsTestCreate(): Promise<any> {
+  const response = await axios.post(`/notifications/test/`);
+  return response.data;
+}
+
+export async function notificationsUnsubscribeCreate(): Promise<any> {
+  const response = await axios.post(`/notifications/unsubscribe/`);
+  return response.data;
+}
+
+export async function notificationsVapidPublicKeyRetrieve(): Promise<any> {
+  const response = await axios.get(`/notifications/vapid-public-key/`);
   return response.data;
 }

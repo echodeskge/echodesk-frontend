@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import axios from '@/api/axios';
+import {
+  notificationsVapidPublicKeyRetrieve,
+  notificationsSubscribeCreate,
+  notificationsUnsubscribeCreate,
+  notificationsTestCreate,
+} from '@/api/generated';
 
 export interface NotificationPermissionState {
   permission: NotificationPermission;
@@ -78,7 +83,7 @@ export function useNotifications() {
 
       if (!subscription) {
         // Get VAPID public key from backend
-        const { data } = await axios.get('/api/notifications/vapid-public-key/');
+        const data = await notificationsVapidPublicKeyRetrieve();
         const vapidPublicKey = data.public_key;
 
         subscription = await registration.pushManager.subscribe({
@@ -88,7 +93,7 @@ export function useNotifications() {
       }
 
       // Send subscription to backend
-      await axios.post('/api/notifications/subscribe/', {
+      await notificationsSubscribeCreate({
         subscription: subscription.toJSON(),
       });
 
@@ -109,7 +114,7 @@ export function useNotifications() {
         await subscription.unsubscribe();
 
         // Notify backend
-        await axios.post('/api/notifications/unsubscribe/', {
+        await notificationsUnsubscribeCreate({
           endpoint: subscription.endpoint,
         });
 
@@ -126,7 +131,7 @@ export function useNotifications() {
   const sendTestNotification = async () => {
     if (state.permission === 'granted') {
       try {
-        await axios.post('/api/notifications/test/');
+        await notificationsTestCreate();
       } catch (error) {
         console.error('Error sending test notification:', error);
       }
