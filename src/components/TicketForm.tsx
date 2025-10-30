@@ -145,6 +145,22 @@ export default function TicketForm({
     }
   }, [formData.board_id, allColumns]);
 
+  // Filter users based on selected board
+  const filteredUsers = (() => {
+    if (!formData.board_id || !boards.length) {
+      return users; // If no board selected, show all users
+    }
+
+    const selectedBoard = boards.find(board => board.id === formData.board_id);
+    if (!selectedBoard || !selectedBoard.board_users || selectedBoard.board_users.length === 0) {
+      return users; // If board not found or has no users, show all users
+    }
+
+    // Filter users to only include those in the selected board
+    const boardUserIds = new Set(selectedBoard.board_users.map(u => u.id));
+    return users.filter(user => boardUserIds.has(user.id));
+  })();
+
   const fetchFormData = async () => {
     try {
       setFetchingData(true);
@@ -521,7 +537,7 @@ export default function TicketForm({
             <div className="space-y-2">
               <Label>Assign Users</Label>
               <MultiUserAssignment
-                users={users}
+                users={filteredUsers}
                 assignments={ticket?.assignments}
                 selectedAssignments={assignments}
                 onChange={setAssignments}
