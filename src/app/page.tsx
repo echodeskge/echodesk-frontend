@@ -8,6 +8,7 @@ import { EchoDeskLanding } from '@/components/landing';
 import LoginForm from '@/components/LoginForm';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ErrorMessage from '@/components/ErrorMessage';
+import { toast } from 'sonner';
 
 function HomeContent() {
   const router = useRouter();
@@ -26,12 +27,16 @@ function HomeContent() {
     if (facebookStatus) {
       if (facebookStatus === 'connected') {
         const successMessage = message || `Successfully connected ${pages || '0'} Facebook page(s)`;
-        showNotification('success', '✅ Facebook Connected', successMessage);
+        toast.success('✅ Facebook Connected', {
+          description: successMessage,
+        });
       } else if (facebookStatus === 'error') {
         const errorMessage = message || 'Failed to connect Facebook';
-        showNotification('error', '❌ Facebook Connection Failed', decodeURIComponent(errorMessage));
+        toast.error('❌ Facebook Connection Failed', {
+          description: decodeURIComponent(errorMessage),
+        });
       }
-      
+
       // Clean up URL parameters
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
@@ -50,92 +55,44 @@ function HomeContent() {
 
     if (tenant && isAuthenticated && user && !authLoading && !tenantLoading) {
       // User is authenticated on a tenant subdomain, redirect to tickets
-      router.push('/tickets');
+      router.replace('/tickets');
     }
   }, [tenant, isAuthenticated, user, authLoading, tenantLoading, router]);
-
-  const showNotification = (type: 'success' | 'error', title: string, message: string) => {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 10000;
-      background: ${type === 'success' ? '#d4f4dd' : '#f8d7da'};
-      color: ${type === 'success' ? '#28a745' : '#721c24'};
-      border: 1px solid ${type === 'success' ? '#28a745' : '#f5c6cb'};
-      border-radius: 8px;
-      padding: 16px 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      max-width: 400px;
-      font-family: system-ui, -apple-system, sans-serif;
-      animation: slideIn 0.3s ease-out;
-    `;
-
-    notification.innerHTML = `
-      <div style="display: flex; align-items: flex-start; gap: 12px;">
-        <div style="flex: 1;">
-          <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">${title}</div>
-          <div style="font-size: 13px; line-height: 1.4;">${message}</div>
-        </div>
-        <button onclick="this.parentElement.parentElement.remove()" style="
-          background: transparent;
-          border: none;
-          font-size: 18px;
-          cursor: pointer;
-          color: inherit;
-          padding: 0;
-          line-height: 1;
-        ">×</button>
-      </div>
-    `;
-
-    // Add animation styles
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-    `;
-    document.head.appendChild(style);
-
-    document.body.appendChild(notification);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-      if (notification.parentElement) {
-        notification.style.animation = 'slideIn 0.3s ease-out reverse';
-        setTimeout(() => notification.remove(), 300);
-      }
-    }, 5000);
-  };
-
-  // Show loading spinner while checking tenant and auth
-  if (tenantLoading || authLoading) {
-    return <LoadingSpinner />;
-  }
 
   // Show error if tenant loading failed
   if (error) {
     return <ErrorMessage error={error} />;
   }
 
-  // If tenant exists (subdomain), show login form
-  // Authenticated users will be redirected to /tickets by useEffect above
-  if (tenant) {
-    if (isAuthenticated && user) {
-      // Redirect will happen via useEffect
-      return <LoadingSpinner message="Redirecting to dashboard..." />;
-    } else {
-      // User is not logged in, show login form
-      return <LoginForm tenant={tenant} onLogin={login} />;
-    }
+  // Default to loading state - this prevents flash of login page
+  if (tenantLoading || authLoading) {
+    return <LoadingSpinner />;
   }
 
-  // If no tenant (main domain), show landing page
-  return <EchoDeskLanding />;
+  // If tenant exists (subdomain), handle authentication
+  if (tenant) {
+    // If authenticated, show loading while redirect happens
+    if (isAuthenticated && user) {
+      return <LoadingSpinner message="Redirecting to dashboard..." />;
+    }
+
+    // Only show login form if we're EXPLICITLY not authenticated
+    // This ensures loading screen shows first
+    if (isAuthenticated === false) {
+      return <LoginForm tenant={tenant} onLogin={login} />;
+    }
+
+    // Default to loading for any uncertain state
+    return <LoadingSpinner />;
+  }
+
+  // If no tenant (main domain), show landing page only after loading completes
+  if (!tenantLoading) {
+    return <EchoDeskLanding />;
+  }
+
+  // Final fallback to loading
+  return <LoadingSpinner />;
 }
 
 export default function Home() {

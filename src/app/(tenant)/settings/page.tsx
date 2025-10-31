@@ -65,7 +65,7 @@ export default function SettingsPage() {
                 return (
                   <div
                     key={section.href}
-                    className="flex items-start gap-4 rounded-lg border p-4 opacity-50"
+                    className="flex items-start gap-4 rounded-lg border p-4 opacity-50 h-full"
                   >
                     <div className={`rounded-lg bg-accent p-2 ${section.color}`}>
                       <Icon className="h-5 w-5" />
@@ -84,8 +84,8 @@ export default function SettingsPage() {
               }
 
               return (
-                <Link key={section.href} href={section.href}>
-                  <div className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-accent cursor-pointer group">
+                <Link key={section.href} href={section.href} className="h-full">
+                  <div className="flex items-start gap-4 rounded-lg border p-4 transition-colors hover:bg-accent cursor-pointer group h-full">
                     <div className={`rounded-lg bg-accent p-2 ${section.color} group-hover:bg-background`}>
                       <Icon className="h-5 w-5" />
                     </div>

@@ -19,7 +19,7 @@ export function KanbanTaskList({ column }: KanbanTaskListProps) {
       {(provided: DroppableProvided, snapshot) => (
         <CardContent
           ref={provided.innerRef}
-          className="flex flex-col gap-y-2 p-2 min-h-44 overflow-y-auto rounded-lg border-2 transition-colors bg-muted/20 flex-1"
+          className="flex flex-col gap-y-2 p-2 min-h-44 overflow-y-auto rounded-lg border-2 transition-colors bg-muted/20 flex-1 scrollbar-hide"
           {...provided.droppableProps}
         >
           {column.tasks.map((task, index) => (

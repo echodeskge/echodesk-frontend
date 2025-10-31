@@ -6,7 +6,11 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { useBoards } from "@/hooks/useBoards";
 import { getSidebarMenuItems, MenuItem } from "@/services/permissionService";
 import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import BoardSwitcher from "@/components/BoardSwitcher";
 import { TicketCreateProvider } from "@/contexts/TicketCreateContext";
 import { TicketCreateSheet } from "@/components/TicketCreateSheet";
@@ -21,14 +25,17 @@ import type { Locale } from "@/lib/i18n";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
 import BoardUserManager from "@/components/BoardUserManager";
 import { BoardCreateSheet } from "@/components/BoardCreateSheet";
-import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
+import {
+  SubscriptionProvider,
+  useSubscription,
+} from "@/contexts/SubscriptionContext";
 import { navigationConfig } from "@/config/navigationConfig";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale() as Locale;
-  const t = useTranslations('nav');
+  const t = useTranslations("nav");
   const { hasFeature, subscription } = useSubscription();
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
@@ -37,27 +44,31 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
-  const [managingBoardUsersId, setManagingBoardUsersId] = useState<number | null>(null);
+  const [managingBoardUsersId, setManagingBoardUsersId] = useState<
+    number | null
+  >(null);
   const [isBoardCreateOpen, setIsBoardCreateOpen] = useState(false);
 
   // Load tenant data from subdomain
   useEffect(() => {
     const loadTenant = async () => {
       try {
-        if (typeof window === 'undefined') return;
+        if (typeof window === "undefined") return;
 
         const hostname = window.location.hostname;
 
         // On localhost, check localStorage for development tenant
         let subdomain: string | null;
-        if (hostname.includes('localhost')) {
-          const storedTenant = localStorage.getItem('dev_tenant');
+        if (hostname.includes("localhost")) {
+          const storedTenant = localStorage.getItem("dev_tenant");
           if (storedTenant) {
             subdomain = storedTenant;
           } else {
             // No tenant set, redirect to homepage
-            console.log("No development tenant set. Set one using: localStorage.setItem('dev_tenant', 'groot')");
-            router.push('/');
+            console.log(
+              "No development tenant set. Set one using: localStorage.setItem('dev_tenant', 'groot')"
+            );
+            router.push("/");
             return;
           }
         } else {
@@ -66,11 +77,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
         if (!subdomain) {
           console.error("No tenant subdomain found");
-          router.push('/');
+          router.push("/");
           return;
         }
 
-        const tenantConfig = await tenantService.getTenantBySubdomain(subdomain);
+        const tenantConfig =
+          await tenantService.getTenantBySubdomain(subdomain);
 
         if (tenantConfig) {
           const info: TenantInfo = {
@@ -84,11 +96,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
           setTenantInfo(info);
         } else {
           console.error("Tenant not found");
-          router.push('/');
+          router.push("/");
         }
       } catch (err) {
         console.error("Failed to load tenant:", err);
-        router.push('/');
+        router.push("/");
       }
     };
 
@@ -101,7 +113,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       try {
         // Check Facebook connection
         const axiosInstance = (await import("@/api/axios")).default;
-        const response = await axiosInstance.get("/api/social/facebook/status/");
+        const response = await axiosInstance.get(
+          "/api/social/facebook/status/"
+        );
         setFacebookConnected(response.data.connected || false);
       } catch (err) {
         console.error("Failed to check social connections:", err);
@@ -114,24 +128,24 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Translation key mapping for navigation items
   const translationKeyMap: Record<string, string> = {
-    'tickets': 'tickets',
-    'time-tracking': 'timeTracking',
-    'user-statistics': 'userStatistics',
-    'calls': 'calls',
-    'orders': 'orders',
-    'messages': 'messages',
-    'users': 'users',
-    'groups': 'groups',
-    'social': 'social',
-    'settings': 'settings',
+    tickets: "tickets",
+    "time-tracking": "timeTracking",
+    "user-statistics": "userStatistics",
+    calls: "calls",
+    orders: "orders",
+    messages: "messages",
+    users: "users",
+    groups: "groups",
+    social: "social",
+    settings: "settings",
   };
 
   // Parse user's feature keys
   // Handle both string (JSON) and array formats from API
   const userFeatureKeys = userProfile?.feature_keys
-    ? (typeof userProfile.feature_keys === 'string'
-        ? JSON.parse(userProfile.feature_keys)
-        : userProfile.feature_keys)
+    ? typeof userProfile.feature_keys === "string"
+      ? JSON.parse(userProfile.feature_keys)
+      : userProfile.feature_keys
     : [];
   const isStaff = userProfile?.is_staff || false;
 
@@ -142,17 +156,19 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Build menu items with feature-based requirements
   const buildMenuItems = (): MenuItem[] => {
-    const items: MenuItem[] = navigationConfig.map(config => ({
+    const items: MenuItem[] = navigationConfig.map((config) => ({
       ...config,
       label: t(translationKeyMap[config.id] || config.id),
-      description: t(`description.${translationKeyMap[config.id] || config.id}`),
+      description: t(
+        `description.${translationKeyMap[config.id] || config.id}`
+      ),
       requiredFeatureKey: config.requiredFeatureKey,
       isPremium: config.isPremium,
       isLocked: false, // We'll filter locked items instead of showing them
     }));
 
     // Filter items based on feature keys and other conditions
-    return items.filter(item => {
+    return items.filter((item) => {
       // Special handling for messages - only show if Facebook is connected
       if (item.id === "messages" && !facebookConnected) {
         return false;
@@ -216,8 +232,10 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const currentView = pathParts[0] || "tickets"; // /tickets -> tickets
 
   // Get page title
-  const currentMenuItem = visibleMenuItems.find((item) => item.id === currentView);
-  const pageTitle = currentMenuItem?.label || t('dashboard');
+  const currentMenuItem = visibleMenuItems.find(
+    (item) => item.id === currentView
+  );
+  const pageTitle = currentMenuItem?.label || t("dashboard");
 
   // Check if we should show board switcher (always show on tickets page, even with no boards)
   const showBoardSwitcher = currentView === "tickets";
@@ -264,7 +282,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 onNotificationClick={(notification) => {
                   // Navigate to ticket if ticket_id exists
                   if (notification.ticket_id) {
-                    router.push(`/tickets/${notification.ticket_id}`)
+                    router.push(`/tickets/${notification.ticket_id}`);
                   }
                 }}
               />
@@ -272,9 +290,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex-1 bg-white overflow-auto">
-            {children}
-          </div>
+          <div className="flex-1 bg-white overflow-auto">{children}</div>
         </SidebarInset>
       </div>
 
@@ -307,7 +323,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function TenantLayout({ children }: { children: React.ReactNode }) {
+export default function TenantLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <SubscriptionProvider>
       <TicketCreateProvider>

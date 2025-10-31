@@ -23,7 +23,7 @@
     "no": "No"
   },
   "nav": {
-    "tickets": "Tickets",
+    "tickets": "Boards",
     "calls": "Calls",
     "messages": "Messages",
     "orders": "Orders",
@@ -35,7 +35,7 @@
     "userStatistics": "Time Statistics",
     "dashboard": "Dashboard",
     "description": {
-      "tickets": "View and manage tickets",
+      "tickets": "View and manage boards",
       "calls": "Handle phone calls",
       "messages": "View and respond to Facebook messages",
       "orders": "Create and manage orders",

@@ -25,7 +25,7 @@ export function KanbanColumnItemHeader({
       <div
         className={cn(
           buttonVariants({ variant: "ghost", size: "icon" }),
-          "text-secondary-foreground/50 cursor-grab"
+          "text-black cursor-grab"
         )}
         {...provided.dragHandleProps} // Draggable props for drag-and-drop functionality
         aria-label="Move task"

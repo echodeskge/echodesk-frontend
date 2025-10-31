@@ -200,14 +200,12 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
   if (loading) {
     return (
       <div className={className}>
-        <Card>
-          <CardContent className="flex items-center justify-center h-64">
-            <div className="flex items-center space-x-2">
-              <Spinner className="h-6 w-6" />
-              <span className="text-muted-foreground">{t("loadingStatistics")}</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Spinner className="h-6 w-6" />
+            <span className="text-muted-foreground">{t("loadingStatistics")}</span>
+          </div>
+        </div>
       </div>
     );
   }

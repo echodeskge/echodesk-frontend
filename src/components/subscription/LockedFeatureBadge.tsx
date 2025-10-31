@@ -43,7 +43,7 @@ export function PremiumBadge({ className }: PremiumBadgeProps) {
       "text-amber-700 border border-amber-200",
       className
     )}>
-      ✨ Pro
+      Pro
     </span>
   );
 }

@@ -41,11 +41,12 @@ export function KanbanTaskItem({ task, index }: KanbanTaskItemProps) {
       {(provided: DraggableProvided) => (
         <Card
           ref={provided.innerRef}
-          className="my-2 w-full cursor-pointer transition-shadow hover:shadow-md"
+          className="my-2 w-full cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md"
           onClick={handleCardClick}
           {...provided.draggableProps}
+          {...provided.dragHandleProps}
         >
-          <KanbanTaskItemHeader task={task} provided={provided} />
+          <KanbanTaskItemHeader task={task} />
           <KanbanTaskItemContent task={task} />
           <KanbanTaskItemFooter task={task} />
         </Card>

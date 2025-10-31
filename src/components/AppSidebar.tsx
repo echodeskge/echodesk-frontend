@@ -36,7 +36,7 @@ import { Button } from "@/components/ui/button"
 import { AuthUser, TenantInfo } from "@/types/auth"
 import { User } from "@/api/generated/interfaces"
 import { MenuItem } from "@/services/permissionService"
-import { LockedFeatureBadge, PremiumBadge } from "@/components/subscription/LockedFeatureBadge"
+import { LockedFeatureBadge } from "@/components/subscription/LockedFeatureBadge"
 import { Lock } from "lucide-react"
 
 // Icon mapping for menu items
@@ -110,7 +110,6 @@ export function AppSidebar({
                 const IconComponent = iconMap[item.icon as keyof typeof iconMap]
                 const isActive = currentView === item.id
                 const isLocked = item.isLocked || false
-                const isPremium = item.isPremium || false
 
                 return (
                   <SidebarMenuItem key={item.id}>
@@ -139,7 +138,6 @@ export function AppSidebar({
                       )}
                       <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
                       {isLocked && <LockedFeatureBadge className="ml-auto" size="sm" />}
-                      {isPremium && !isLocked && <PremiumBadge className="ml-auto" />}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
