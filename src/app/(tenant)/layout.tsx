@@ -147,7 +147,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       ? JSON.parse(userProfile.feature_keys)
       : userProfile.feature_keys
     : [];
-  const isStaff = userProfile?.is_staff || false;
 
   // Helper function to check if user has a feature key
   const hasFeatureKey = (featureKey: string): boolean => {
@@ -174,12 +173,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      // Staff see all items
-      if (isStaff) {
-        return true;
-      }
-
-      // If item requires a feature key, check if user has it
+      // Check if user has required feature key (applies to all users including staff)
       if (item.requiredFeatureKey) {
         return hasFeatureKey(item.requiredFeatureKey);
       }

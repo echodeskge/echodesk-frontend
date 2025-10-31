@@ -4,9 +4,8 @@ export interface MenuItem {
   id: string;
   label: string;
   icon: string;
-  permission: string | null;
   description?: string;
-  requiredFeatureKey?: string;
+  requiredFeatureKey: string; // Feature key required to access this menu item
   isPremium?: boolean;
   isLocked?: boolean;
 }
@@ -35,13 +34,13 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     permissions: [
       // Ticket permissions
       'tickets.add_ticket',
-      'tickets.change_ticket', 
+      'tickets.change_ticket',
       'tickets.delete_ticket',
       'tickets.view_ticket',
       // Tag permissions
       'tickets.add_tag',
       'tickets.change_tag',
-      'tickets.delete_tag', 
+      'tickets.delete_tag',
       'tickets.view_tag',
       // Ticket column permissions
       'tickets.add_ticketcolumn',
@@ -57,7 +56,12 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'tickets.add_ticketstatus',
       'tickets.change_ticketstatus',
       'tickets.delete_ticketstatus',
-      'tickets.view_ticketstatus'
+      'tickets.view_ticketstatus',
+      // Board permissions
+      'tickets.add_board',
+      'tickets.change_board',
+      'tickets.delete_board',
+      'tickets.view_board'
     ]
   },
   {
@@ -77,7 +81,7 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'crm.view_callevent',
       // Call recording permissions
       'crm.add_callrecording',
-      'crm.change_callrecording', 
+      'crm.change_callrecording',
       'crm.delete_callrecording',
       'crm.view_callrecording'
     ]
@@ -87,8 +91,11 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
     label: 'Orders',
     description: 'Access to order management and creation functionality',
     permissions: [
-      // Order permissions use the dedicated access_orders group permission
-      'can_access_orders'
+      // Order permissions
+      'orders.add_order',
+      'orders.change_order',
+      'orders.delete_order',
+      'orders.view_order'
     ]
   },
   {
@@ -102,10 +109,10 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'users.delete_user',
       'users.view_user',
       // Group permissions
-      'users.add_group',
-      'users.change_group',
-      'users.delete_group',
-      'users.view_group',
+      'auth.add_group',
+      'auth.change_group',
+      'auth.delete_group',
+      'auth.view_group',
       // Department permissions
       'users.add_department',
       'users.change_department',
@@ -116,6 +123,16 @@ export const PERMISSION_CATEGORIES: PermissionCategory[] = [
       'auth.change_permission',
       'auth.delete_permission',
       'auth.view_permission'
+    ]
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    description: 'Access to system settings and configuration',
+    permissions: [
+      // Settings permissions
+      'settings.view_settings',
+      'settings.change_settings'
     ]
   }
 ];
@@ -319,7 +336,7 @@ export class PermissionService {
     const permissionMapping: Record<string, string[]> = {
       'can_access_tickets': [
         'tickets.add_ticket',
-        'tickets.view_ticket', 
+        'tickets.view_ticket',
         'tickets.change_ticket',
         'tickets.delete_ticket',
         'tickets.add_tag',
@@ -330,31 +347,18 @@ export class PermissionService {
         'tickets.view_ticketcolumn',
         'tickets.change_ticketcolumn',
         'tickets.delete_ticketcolumn',
-        // Backend permission formats
-        'create_tickets',
-        'view_all_tickets',
-        'edit_own_tickets',
-        'edit_all_tickets',
-        'delete_tickets',
-        'assign_tickets',
-        'manage_tags',
-        'manage_columns',
       ],
       'can_view_boards': [
         'tickets.view_board',
-        'view_boards',  // Backend format
       ],
       'can_create_boards': [
         'tickets.add_board',
-        'create_boards',  // Backend format
       ],
       'can_edit_boards': [
         'tickets.change_board',
-        'edit_boards',  // Backend format
       ],
       'can_delete_boards': [
         'tickets.delete_board',
-        'delete_boards',  // Backend format
       ],
       'can_access_calls': [
         'crm.add_calllog',
@@ -365,8 +369,6 @@ export class PermissionService {
         'crm.view_callrecording',
         'crm.change_callrecording',
         'crm.delete_callrecording',
-        // Backend formats
-        'make_calls',
       ],
       'can_access_user_management': [
         'users.add_user',
@@ -381,16 +383,16 @@ export class PermissionService {
         'auth.view_permission',
         'auth.change_permission',
         'auth.delete_permission',
-        // Backend formats
-        'manage_users',
-        'manage_groups',
       ],
       'can_access_orders': [
-        'can_access_orders',
-        'access_orders',  // Backend returns this format
+        'orders.add_order',
+        'orders.view_order',
+        'orders.change_order',
+        'orders.delete_order',
       ],
       'can_manage_settings': [
-        'manage_settings',  // Backend format
+        'settings.view_settings',
+        'settings.change_settings',
       ]
     };
 
@@ -646,49 +648,50 @@ export class PermissionService {
 // Export singleton instance
 export const permissionService = PermissionService.getInstance();
 
-// Default menu items for the sidebar
+// Default menu items for the sidebar (deprecated - use navigationConfig instead)
+// Kept for backwards compatibility
 export const DEFAULT_MENU_ITEMS: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: "🏠", permission: null },
   {
     id: "tickets",
     label: "Tickets",
     icon: "🎫",
-    permission: "can_access_tickets",
+    requiredFeatureKey: "ticket_management",
     description: "View and manage tickets",
   },
   {
     id: "orders",
     label: "Orders",
     icon: "📦",
-    permission: "can_access_orders",
+    requiredFeatureKey: "order_management",
     description: "Create and manage orders",
   },
   {
     id: "calls",
     label: "Calls",
     icon: "📞",
-    permission: "can_access_calls",
+    requiredFeatureKey: "sip_calling",
     description: "Handle phone calls",
+    isPremium: true,
   },
   {
     id: "users",
     label: "Users",
     icon: "👥",
-    permission: "can_access_user_management",
+    requiredFeatureKey: "user_management",
     description: "Manage user accounts",
   },
   {
     id: "groups",
     label: "Groups",
     icon: "👨‍👩‍👧‍👦",
-    permission: "can_access_user_management",
+    requiredFeatureKey: "user_management",
     description: "Manage user groups and permissions",
   },
   {
     id: "settings",
     label: "Settings",
     icon: "⚙️",
-    permission: "can_manage_settings",
+    requiredFeatureKey: "settings_access",
     description: "Configure system settings",
   },
 ];
