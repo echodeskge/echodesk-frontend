@@ -5,7 +5,7 @@ export interface MenuItem {
   label: string;
   icon: string;
   description?: string;
-  requiredFeatureKey: string; // Feature key required to access this menu item
+  requiredFeatureKey?: string; // Feature key required to access this menu item (optional - items without this are always visible)
   isPremium?: boolean;
   isLocked?: boolean;
 }
@@ -691,8 +691,8 @@ export const DEFAULT_MENU_ITEMS: MenuItem[] = [
     id: "settings",
     label: "Settings",
     icon: "⚙️",
-    requiredFeatureKey: "settings_access",
     description: "Configure system settings",
+    // No requiredFeatureKey - visible to all users
   },
 ];
 

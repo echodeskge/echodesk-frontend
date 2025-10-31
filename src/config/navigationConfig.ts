@@ -1,13 +1,14 @@
 /**
  * Navigation configuration with feature-based access control
  * Access is controlled purely by feature_key - no Django permissions needed
+ * Items without requiredFeatureKey are visible to all users
  */
 
 export interface NavigationItem {
   id: string;
   label: string;
   icon: string;
-  requiredFeatureKey: string; // Feature key from user's feature_keys array
+  requiredFeatureKey?: string; // Feature key from user's feature_keys array (optional - items without this are always visible)
   description: string;
   isPremium?: boolean; // Visual indicator for premium features
 }
@@ -65,7 +66,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
   {
     id: "settings",
     icon: "⚙️",
-    requiredFeatureKey: "settings_access",
+    // No requiredFeatureKey - visible to all users
   },
 ];
 
