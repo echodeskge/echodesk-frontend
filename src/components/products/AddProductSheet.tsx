@@ -91,7 +91,6 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       status: "draft" as any,
       is_featured: false,
       track_inventory: true,
-      product_type: 1,
     };
   };
 
