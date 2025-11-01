@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Sheet,
@@ -44,6 +45,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   const tCommon = useTranslations("common");
   const createProduct = useCreateProduct();
 
+  // Track if user has manually edited SKU or slug
+  const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+
   const form = useForm<Partial<ProductCreateUpdate>>({
     defaultValues: {
       name: { en: "", ka: "" },
@@ -63,17 +68,41 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
     },
   });
 
-  const onSubmit = async (data: Partial<ProductCreateUpdate>) => {
-    try {
-      // Auto-generate slug from name if not provided
-      if (!data.slug && data.name) {
-        const nameEn = typeof data.name === "object" ? data.name.en : data.name;
-        data.slug = nameEn
+  // Watch the name field to auto-generate SKU and slug
+  const nameEn = form.watch("name.en");
+
+  // Reset manual edit flags when sheet opens
+  useEffect(() => {
+    if (open) {
+      setSkuManuallyEdited(false);
+      setSlugManuallyEdited(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (nameEn && open) {
+      // Auto-generate SKU (uppercase with underscores)
+      if (!skuManuallyEdited) {
+        const generatedSku = nameEn
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, "_")
+          .replace(/(^_|_$)/g, "");
+        form.setValue("sku", generatedSku);
+      }
+
+      // Auto-generate slug (lowercase with dashes)
+      if (!slugManuallyEdited) {
+        const generatedSlug = nameEn
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, "");
+        form.setValue("slug", generatedSlug);
       }
+    }
+  }, [nameEn, open, skuManuallyEdited, slugManuallyEdited, form]);
 
+  const onSubmit = async (data: Partial<ProductCreateUpdate>) => {
+    try {
       await createProduct.mutateAsync(data as ProductCreateUpdate);
 
       form.reset();
@@ -137,7 +166,14 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                       <FormItem>
                         <FormLabel>SKU</FormLabel>
                         <FormControl>
-                          <Input placeholder="PROD-001" {...field} />
+                          <Input
+                            placeholder="PROD-001"
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setSkuManuallyEdited(true);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -150,7 +186,14 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                       <FormItem>
                         <FormLabel>{t("slug")}</FormLabel>
                         <FormControl>
-                          <Input placeholder={t("slugPlaceholder")} {...field} />
+                          <Input
+                            placeholder={t("slugPlaceholder")}
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e);
+                              setSlugManuallyEdited(true);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
