@@ -515,6 +515,43 @@
     "ordersAutoAssigned": "Orders created for this board will be automatically assigned to the first column.",
     "loadingBoards": "Loading boards..."
   },
+  "ecommerceOrders": {
+    "title": "Ecommerce Orders",
+    "subtitle": "Manage and track customer orders",
+    "stats": {
+      "total": "Total Orders",
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed"
+    },
+    "ordersTitle": "Orders",
+    "ordersFound": "{count} order(s) found",
+    "searchPlaceholder": "Search by order number or client...",
+    "filterByStatus": "Filter by status",
+    "status": {
+      "all": "All Status",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "table": {
+      "orderNumber": "Order #",
+      "customer": "Customer",
+      "items": "Items",
+      "total": "Total",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions",
+      "itemsCount": "{count} item(s)"
+    },
+    "noOrders": "No orders found",
+    "noOrdersFiltered": "Try adjusting your filters",
+    "noOrdersYet": "Orders will appear here once customers place them",
+    "viewDetails": "View Details"
+  },
   "groups": {
     "title": "Groups",
     "groupManagement": "Group Management",

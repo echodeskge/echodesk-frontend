@@ -514,6 +514,43 @@
     "ordersAutoAssigned": "ამ დაფისთვის შექმნილი შეკვეთები ავტომატურად მიენიჭება პირველ სვეტს.",
     "loadingBoards": "იტვირთება დაფები..."
   },
+  "ecommerceOrders": {
+    "title": "ელ-კომერციის შეკვეთები",
+    "subtitle": "მართეთ და თვალ-ყური ადევნეთ მომხმარებელთა შეკვეთებს",
+    "stats": {
+      "total": "სულ შეკვეთები",
+      "pending": "მოლოდინში",
+      "processing": "მუშავდება",
+      "completed": "დასრულებული"
+    },
+    "ordersTitle": "შეკვეთები",
+    "ordersFound": "ნაპოვნია {count} შეკვეთა",
+    "searchPlaceholder": "ძიება შეკვეთის ნომრით ან კლიენტით...",
+    "filterByStatus": "ფილტრი სტატუსით",
+    "status": {
+      "all": "ყველა სტატუსი",
+      "pending": "მოლოდინში",
+      "confirmed": "დადასტურებული",
+      "processing": "მუშავდება",
+      "shipped": "გაგზავნილი",
+      "delivered": "მიტანილი",
+      "cancelled": "გაუქმებული"
+    },
+    "table": {
+      "orderNumber": "შეკვეთის №",
+      "customer": "მომხმარებელი",
+      "items": "ნივთები",
+      "total": "სულ",
+      "status": "სტატუსი",
+      "date": "თარიღი",
+      "actions": "მოქმედებები",
+      "itemsCount": "{count} ნივთი"
+    },
+    "noOrders": "შეკვეთები ვერ მოიძებნა",
+    "noOrdersFiltered": "სცადეთ ფილტრების რეგულირება",
+    "noOrdersYet": "შეკვეთები გამოჩნდება აქ მას შემდეგ, რაც მომხმარებლები განათავსებენ მათ",
+    "viewDetails": "დეტალების ნახვა"
+  },
   "groups": {
     "title": "ჯგუფები",
     "groupManagement": "ჯგუფების მართვა",

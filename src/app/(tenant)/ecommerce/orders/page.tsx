@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { apiEcommerceOrdersList } from "@/api/generated"
 import { Order } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -43,6 +44,7 @@ const STATUS_ICONS = {
 }
 
 export default function EcommerceOrdersPage() {
+  const t = useTranslations("ecommerceOrders")
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -115,9 +117,9 @@ export default function EcommerceOrdersPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Ecommerce Orders</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Manage and track customer orders
+          {t("subtitle")}
         </p>
       </div>
 
@@ -126,7 +128,7 @@ export default function EcommerceOrdersPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Orders
+              {t("stats.total")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -136,7 +138,7 @@ export default function EcommerceOrdersPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending
+              {t("stats.pending")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -146,7 +148,7 @@ export default function EcommerceOrdersPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Processing
+              {t("stats.processing")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -156,7 +158,7 @@ export default function EcommerceOrdersPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Completed
+              {t("stats.completed")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -170,16 +172,16 @@ export default function EcommerceOrdersPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div>
-              <CardTitle>Orders</CardTitle>
+              <CardTitle>{t("ordersTitle")}</CardTitle>
               <CardDescription>
-                {filteredOrders.length} order(s) found
+                {t("ordersFound", { count: filteredOrders.length })}
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by order number or client..."
+                  placeholder={t("searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8"
@@ -187,16 +189,16 @@ export default function EcommerceOrdersPage() {
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Filter by status" />
+                  <SelectValue placeholder={t("filterByStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="all">{t("status.all")}</SelectItem>
+                  <SelectItem value="pending">{t("status.pending")}</SelectItem>
+                  <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
+                  <SelectItem value="processing">{t("status.processing")}</SelectItem>
+                  <SelectItem value="shipped">{t("status.shipped")}</SelectItem>
+                  <SelectItem value="delivered">{t("status.delivered")}</SelectItem>
+                  <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -206,11 +208,11 @@ export default function EcommerceOrdersPage() {
           {filteredOrders.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No orders found</h3>
+              <h3 className="mt-4 text-lg font-semibold">{t("noOrders")}</h3>
               <p className="text-muted-foreground mt-2">
                 {searchQuery || statusFilter !== "all"
-                  ? "Try adjusting your filters"
-                  : "Orders will appear here once customers place them"}
+                  ? t("noOrdersFiltered")
+                  : t("noOrdersYet")}
               </p>
             </div>
           ) : (
@@ -218,13 +220,13 @@ export default function EcommerceOrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("table.orderNumber")}</TableHead>
+                    <TableHead>{t("table.customer")}</TableHead>
+                    <TableHead>{t("table.items")}</TableHead>
+                    <TableHead>{t("table.total")}</TableHead>
+                    <TableHead>{t("table.status")}</TableHead>
+                    <TableHead>{t("table.date")}</TableHead>
+                    <TableHead className="text-right">{t("table.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -245,7 +247,7 @@ export default function EcommerceOrdersPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{order.total_items} item(s)</TableCell>
+                        <TableCell>{t("table.itemsCount", { count: order.total_items })}</TableCell>
                         <TableCell className="font-medium">
                           {formatCurrency(order.total_amount)}
                         </TableCell>
@@ -255,7 +257,7 @@ export default function EcommerceOrdersPage() {
                             className={STATUS_COLORS[order.status as keyof typeof STATUS_COLORS] || ""}
                           >
                             <StatusIcon className="mr-1 h-3 w-3" />
-                            {order.status}
+                            {t(`status.${order.status}`)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -263,7 +265,7 @@ export default function EcommerceOrdersPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <Button variant="ghost" size="sm">
-                            View Details
+                            {t("viewDetails")}
                           </Button>
                         </TableCell>
                       </TableRow>
