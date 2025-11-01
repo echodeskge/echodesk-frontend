@@ -3,6 +3,26 @@
  * DO NOT EDIT MANUALLY
  */
 
+export interface AttributeDefinition {
+  id: number;
+  name: any;
+  key: string;
+  attribute_type?: AttributeTypeEnum;
+  options?: any;
+  unit?: string;
+  is_required?: boolean;
+  is_variant_attribute?: boolean;
+  is_filterable?: boolean;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AttributeTypeEnum {
+  [key: string]: any;
+}
+
 export interface BillingPeriodEnum {
   [key: string]: any;
 }
@@ -401,6 +421,13 @@ export interface PackageList {
   pricing_suffix: string;
 }
 
+export interface PaginatedAttributeDefinitionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: AttributeDefinition[];
+}
+
 export interface PaginatedBoardList {
   count: number;
   next?: string;
@@ -497,6 +524,41 @@ export interface PaginatedPermissionList {
   next?: string;
   previous?: string;
   results: Permission[];
+}
+
+export interface PaginatedProductCategoryList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ProductCategory[];
+}
+
+export interface PaginatedProductImageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ProductImage[];
+}
+
+export interface PaginatedProductListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ProductList[];
+}
+
+export interface PaginatedProductTypeList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ProductType[];
+}
+
+export interface PaginatedProductVariantList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ProductVariant[];
 }
 
 export interface PaginatedSipConfigurationListList {
@@ -623,6 +685,22 @@ export interface PaginatedUserList {
   next?: string;
   previous?: string;
   results: User[];
+}
+
+export interface PatchedAttributeDefinition {
+  id?: number;
+  name?: any;
+  key?: string;
+  attribute_type?: AttributeTypeEnum;
+  options?: any;
+  unit?: string;
+  is_required?: boolean;
+  is_variant_attribute?: boolean;
+  is_filterable?: boolean;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PatchedBoard {
@@ -772,6 +850,84 @@ export interface PatchedNotification {
   read_at?: string;
   created_at?: string;
   time_ago?: string;
+}
+
+export interface PatchedProductCategory {
+  id?: number;
+  name?: any;
+  description?: any;
+  slug?: string;
+  parent?: number;
+  parent_name?: string;
+  image?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  subcategories?: string;
+}
+
+export interface PatchedProductCreateUpdate {
+  id?: number;
+  sku?: string;
+  slug?: string;
+  name?: any;
+  description?: any;
+  short_description?: any;
+  product_type?: number;
+  category?: number;
+  price?: string;
+  compare_at_price?: string;
+  cost_price?: string;
+  image?: string;
+  track_inventory?: boolean;
+  quantity?: number;
+  low_stock_threshold?: number;
+  status?: Status956enum;
+  is_featured?: boolean;
+  weight?: string;
+  dimensions?: any;
+  meta_title?: any;
+  meta_description?: any;
+  attributes?: Record<string, any>[];
+  images_data?: Record<string, any>[];
+}
+
+export interface PatchedProductImage {
+  id?: number;
+  image?: string;
+  alt_text?: any;
+  sort_order?: number;
+  created_at?: string;
+}
+
+export interface PatchedProductType {
+  id?: number;
+  name?: any;
+  key?: string;
+  description?: any;
+  icon?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  attributes?: string;
+  product_count?: string;
+}
+
+export interface PatchedProductVariant {
+  id?: number;
+  sku?: string;
+  name?: any;
+  price?: string;
+  effective_price?: string;
+  quantity?: number;
+  image?: string;
+  is_active?: boolean;
+  sort_order?: number;
+  attribute_values?: ProductVariantAttributeValue[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PatchedSipConfiguration {
@@ -1041,6 +1197,166 @@ export interface PriorityEnum {
   [key: string]: any;
 }
 
+export interface ProductAttributeValue {
+  id: number;
+  attribute: AttributeDefinition;
+  attribute_id: number;
+  value: string;
+  value_text?: string;
+  value_number?: string;
+  value_boolean?: boolean;
+  value_date?: string;
+  value_json?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductCategory {
+  id: number;
+  name: any;
+  description?: any;
+  slug: string;
+  parent?: number;
+  parent_name: string;
+  image?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  subcategories: string;
+}
+
+export interface ProductCreateUpdate {
+  id: number;
+  sku: string;
+  slug: string;
+  name: any;
+  description?: any;
+  short_description?: any;
+  product_type: number;
+  category?: number;
+  price: string;
+  compare_at_price?: string;
+  cost_price?: string;
+  image?: string;
+  track_inventory?: boolean;
+  quantity?: number;
+  low_stock_threshold?: number;
+  status?: Status956enum;
+  is_featured?: boolean;
+  weight?: string;
+  dimensions?: any;
+  meta_title?: any;
+  meta_description?: any;
+  attributes?: Record<string, any>[];
+  images_data?: Record<string, any>[];
+}
+
+export interface ProductDetail {
+  id: number;
+  sku: string;
+  slug: string;
+  name: any;
+  description?: any;
+  short_description?: any;
+  product_type: number;
+  product_type_detail: ProductType;
+  category?: number;
+  category_detail: ProductCategory;
+  price: string;
+  compare_at_price?: string;
+  cost_price?: string;
+  discount_percentage: number;
+  image?: string;
+  images: ProductImage[];
+  track_inventory?: boolean;
+  quantity?: number;
+  low_stock_threshold?: number;
+  is_low_stock: boolean;
+  is_in_stock: boolean;
+  status?: Status956enum;
+  is_featured?: boolean;
+  weight?: string;
+  dimensions?: any;
+  meta_title?: any;
+  meta_description?: any;
+  attribute_values: ProductAttributeValue[];
+  variants: ProductVariant[];
+  created_at: string;
+  updated_at: string;
+  created_by: number;
+  created_by_name: string;
+  updated_by: number;
+  updated_by_name: string;
+}
+
+export interface ProductImage {
+  id: number;
+  image: string;
+  alt_text?: any;
+  sort_order?: number;
+  created_at: string;
+}
+
+export interface ProductList {
+  id: number;
+  sku: string;
+  slug: string;
+  name: any;
+  short_description?: any;
+  product_type: number;
+  product_type_name: string;
+  category?: number;
+  category_name: string;
+  price: string;
+  compare_at_price?: string;
+  discount_percentage: number;
+  image?: string;
+  quantity?: number;
+  status?: Status956enum;
+  is_featured?: boolean;
+  is_low_stock: boolean;
+  is_in_stock: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductType {
+  id: number;
+  name: any;
+  key: string;
+  description?: any;
+  icon?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+  attributes: string;
+  product_count: string;
+}
+
+export interface ProductVariant {
+  id: number;
+  sku: string;
+  name: any;
+  price?: string;
+  effective_price: string;
+  quantity?: number;
+  image?: string;
+  is_active?: boolean;
+  sort_order?: number;
+  attribute_values: ProductVariantAttributeValue[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductVariantAttributeValue {
+  id: number;
+  attribute: AttributeDefinition;
+  attribute_id: number;
+  value_json: any;
+}
+
 export interface Role451enum {
   [key: string]: any;
 }
@@ -1094,6 +1410,10 @@ export interface SipConfigurationList {
 }
 
 export interface Status336enum {
+  [key: string]: any;
+}
+
+export interface Status956enum {
   [key: string]: any;
 }
 

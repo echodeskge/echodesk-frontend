@@ -133,6 +133,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "user-statistics": "userStatistics",
     calls: "calls",
     orders: "orders",
+    products: "products",
     messages: "messages",
     users: "users",
     groups: "groups",
