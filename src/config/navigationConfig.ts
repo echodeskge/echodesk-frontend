@@ -42,6 +42,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     requiredFeatureKey: "order_management",
   },
   {
+    id: "products",
+    icon: "🛍️",
+    requiredFeatureKey: "ecommerce_crm",
+    isPremium: true,
+  },
+  {
     id: "messages",
     icon: "💬",
     requiredFeatureKey: "facebook_integration",
