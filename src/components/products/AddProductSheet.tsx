@@ -33,6 +33,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreateProduct } from "@/hooks/useProducts";
 import type { ProductCreateUpdate } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
+import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
 
 interface AddProductSheetProps {
   open: boolean;
@@ -59,6 +60,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       price: "0.00",
       compare_at_price: "",
       cost_price: "",
+      image: "",
       quantity: 0,
       low_stock_threshold: 10,
       status: "draft" as any,
@@ -313,6 +315,24 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     )}
                   />
                 </div>
+
+                {/* Product Images */}
+                <FormField
+                  control={form.control}
+                  name="image"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("productImages")}</FormLabel>
+                      <FormControl>
+                        <ImageGalleryPicker
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Status */}
                 <FormField
