@@ -22,6 +22,7 @@ import {
   UsersRound,
   ListTree,
   ChevronDown,
+  Globe,
 } from "lucide-react"
 
 import {
@@ -69,6 +70,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "UsersRound": UsersRound,
   "Share2": Share2,
   "Settings": Settings,
+  "Globe": Globe,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,
@@ -186,6 +188,7 @@ export function AppSidebar({
                                       }
                                     }}
                                     isActive={isChildItemActive}
+                                    className="cursor-pointer"
                                   >
                                     {ChildIconComponent ? (
                                       <ChildIconComponent className={`h-4 w-4 ${isChildLocked ? 'text-gray-400' : ''}`} />

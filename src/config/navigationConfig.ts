@@ -68,7 +68,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
       },
       {
         id: "languages",
-        icon: "Languages",
+        icon: "Globe",
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,
       },

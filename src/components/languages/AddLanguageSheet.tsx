@@ -129,21 +129,22 @@ export function AddLanguageSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[600px] w-full">
-        <SheetHeader>
-          <SheetTitle>
-            {isEditing ? t("editTitle") : t("title")}
-          </SheetTitle>
-          <SheetDescription>
-            {isEditing ? t("editDescription") : t("description")}
-          </SheetDescription>
-        </SheetHeader>
+      <SheetContent className="p-0 w-full sm:max-w-[600px]">
+        <ScrollArea className="h-full">
+          <div className="p-6">
+            <SheetHeader>
+              <SheetTitle>
+                {isEditing ? t("editTitle") : t("title")}
+              </SheetTitle>
+              <SheetDescription>
+                {isEditing ? t("editDescription") : t("description")}
+              </SheetDescription>
+            </SheetHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <ScrollArea className="h-[calc(100vh-200px)] pr-4">
-              <div className="space-y-6 pb-6">
-                {/* Language Code */}
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+                <div className="space-y-6">
+                  {/* Language Code */}
                 <FormField
                   control={form.control}
                   name="code"
@@ -272,26 +273,27 @@ export function AddLanguageSheet({
                     </FormItem>
                   )}
                 />
-              </div>
-            </ScrollArea>
+                </div>
 
-            <SheetFooter className="gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                {tCommon("cancel")}
-              </Button>
-              <Button
-                type="submit"
-                disabled={createLanguage.isPending || updateLanguage.isPending}
-              >
-                {isEditing ? tCommon("save") : tCommon("create")}
-              </Button>
-            </SheetFooter>
-          </form>
-        </Form>
+                <SheetFooter className="gap-2 pt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    {tCommon("cancel")}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createLanguage.isPending || updateLanguage.isPending}
+                  >
+                    {isEditing ? tCommon("save") : tCommon("create")}
+                  </Button>
+                </SheetFooter>
+              </form>
+            </Form>
+          </div>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );
