@@ -15,12 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Package } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { AddProductSheet } from "@/components/products/AddProductSheet";
 import type { Locale } from "@/lib/i18n";
 
 export default function ProductsPage() {
   const locale = useLocale() as Locale;
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
 
   // Fetch products with filters
   const { data: productsData, isLoading, error } = useProducts({
@@ -63,7 +65,7 @@ export default function ProductsPage() {
             Manage your product catalog with multilanguage support
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setIsAddProductOpen(true)}>
           <Plus className="h-4 w-4" />
           Add Product
         </Button>
@@ -109,7 +111,7 @@ export default function ProductsPage() {
               Get started by creating your first product. You can add images,
               set prices, manage inventory, and configure attributes.
             </p>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => setIsAddProductOpen(true)}>
               <Plus className="h-4 w-4" />
               Create Your First Product
             </Button>
@@ -209,6 +211,9 @@ export default function ProductsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Product Sheet */}
+      <AddProductSheet open={isAddProductOpen} onOpenChange={setIsAddProductOpen} />
     </div>
   );
 }

@@ -43,7 +43,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
   },
   {
     id: "products",
-    icon: "🛍️",
+    icon: "ShoppingBag",
     requiredFeatureKey: "ecommerce_crm",
     isPremium: true,
   },
