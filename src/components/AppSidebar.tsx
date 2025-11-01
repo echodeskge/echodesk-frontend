@@ -17,6 +17,10 @@ import {
   Timer,
   Home,
   Package,
+  ShoppingBag,
+  Tags,
+  UsersRound,
+  ListTree,
 } from "lucide-react"
 
 import {
@@ -39,22 +43,38 @@ import { MenuItem } from "@/services/permissionService"
 import { LockedFeatureBadge } from "@/components/subscription/LockedFeatureBadge"
 import { Lock } from "lucide-react"
 
-// Icon mapping for menu items
-const iconMap = {
-  "🏠": Home,           // Dashboard
-  "🎫": Ticket,         // Tickets
-  "📦": Package,        // Orders (from permissionService)
-  "📝": FileText,       // Orders (from Dashboard)
-  "📞": Phone,          // Calls
-  "⏱️": Timer,          // Time tracking
-  "📊": BarChart3,      // Statistics
-  "👥": Users,          // Users
-  "👨‍👩‍👧‍👦": UserCheck,  // Groups
-  "💬": MessageCircle,  // Messages
-  "📱": Share2,         // Social Media
-  "⚙️": Settings,       // Settings
-  "⏰": Clock,          // Alternative time icon
-  "🛒": ShoppingCart,   // Alternative orders icon
+// Icon mapping for menu items (lucide-react icon names)
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  // Lucide icon names (from navigationConfig)
+  "Ticket": Ticket,
+  "Clock": Clock,
+  "BarChart3": BarChart3,
+  "Phone": Phone,
+  "FileText": FileText,
+  "Package": Package,
+  "ShoppingBag": ShoppingBag,
+  "Tags": Tags,
+  "ListTree": ListTree,
+  "MessageSquare": MessageCircle,
+  "Users": Users,
+  "UsersRound": UsersRound,
+  "Share2": Share2,
+  "Settings": Settings,
+  // Legacy emoji support (for backward compatibility)
+  "🏠": Home,
+  "🎫": Ticket,
+  "📦": Package,
+  "📝": FileText,
+  "📞": Phone,
+  "⏱️": Timer,
+  "📊": BarChart3,
+  "👥": Users,
+  "👨‍👩‍👧‍👦": UserCheck,
+  "💬": MessageCircle,
+  "📱": Share2,
+  "⚙️": Settings,
+  "⏰": Clock,
+  "🛒": ShoppingCart,
 }
 
 interface AppSidebarProps {
