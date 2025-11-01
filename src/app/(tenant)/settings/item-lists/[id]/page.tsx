@@ -45,6 +45,8 @@ import type {
   ListItem,
   PatchedListItem,
 } from "@/api/generated/interfaces";
+import { RichTextEditor } from "@/components/RichTextEditor";
+import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
 
 interface CustomField {
   name: string;
@@ -319,13 +321,32 @@ export default function ItemListDetailPage() {
                                     {value ? t("yes") : tCommon("no")}
                                   </Badge>
                                 ) : field.type === "gallery" ? (
-                                  <span className="text-sm text-muted-foreground">
-                                    {value.split(',').filter((url: string) => url.trim()).length} image(s)
-                                  </span>
+                                  <div className="flex gap-1">
+                                    {value.split(',').filter((url: string) => url.trim()).slice(0, 3).map((url: string, idx: number) => (
+                                      <div key={idx} className="w-10 h-10 rounded border overflow-hidden flex-shrink-0">
+                                        <img
+                                          src={url.trim()}
+                                          alt=""
+                                          className="w-full h-full object-cover"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                      </div>
+                                    ))}
+                                    {value.split(',').filter((url: string) => url.trim()).length > 3 && (
+                                      <div className="w-10 h-10 rounded border flex items-center justify-center bg-muted text-xs">
+                                        +{value.split(',').filter((url: string) => url.trim()).length - 3}
+                                      </div>
+                                    )}
+                                  </div>
                                 ) : field.type === "wysiwyg" ? (
-                                  <span className="text-sm text-muted-foreground truncate max-w-xs block">
-                                    {value.replace(/<[^>]*>/g, '').substring(0, 50)}...
-                                  </span>
+                                  <div className="max-w-xs">
+                                    <div
+                                      className="prose prose-sm line-clamp-2 text-sm"
+                                      dangerouslySetInnerHTML={{ __html: value }}
+                                    />
+                                  </div>
                                 ) : (
                                   <span>{value}</span>
                                 )
@@ -545,37 +566,21 @@ export default function ItemListDetailPage() {
                         </div>
                       )}
                       {field.type === "gallery" && (
-                        <div>
-                          <Input
-                            id={`custom_${field.name}`}
-                            value={formData.custom_data[field.name] || ""}
-                            onChange={(e) =>
-                              updateCustomFieldValue(field.name, e.target.value)
-                            }
-                            placeholder="Image URLs (comma-separated)"
-                            required={field.required}
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Enter image URLs separated by commas
-                          </p>
-                        </div>
+                        <ImageGalleryPicker
+                          value={formData.custom_data[field.name] || ""}
+                          onChange={(value) =>
+                            updateCustomFieldValue(field.name, value)
+                          }
+                        />
                       )}
                       {field.type === "wysiwyg" && (
-                        <div>
-                          <Textarea
-                            id={`custom_${field.name}`}
-                            value={formData.custom_data[field.name] || ""}
-                            onChange={(e) =>
-                              updateCustomFieldValue(field.name, e.target.value)
-                            }
-                            placeholder={t("enterField", { field: field.label.toLowerCase() })}
-                            required={field.required}
-                            className="resize-none min-h-[120px] font-mono text-sm"
-                          />
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Rich text content (HTML supported)
-                          </p>
-                        </div>
+                        <RichTextEditor
+                          content={formData.custom_data[field.name] || ""}
+                          onChange={(content) =>
+                            updateCustomFieldValue(field.name, content)
+                          }
+                          placeholder={t("enterField", { field: field.label.toLowerCase() })}
+                        />
                       )}
                     </div>
                   ))}
