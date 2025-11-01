@@ -150,6 +150,17 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       : userProfile.feature_keys
     : [];
 
+  // Debug: Log feature keys for troubleshooting
+  useEffect(() => {
+    if (userProfile) {
+      console.log('[Feature Keys Debug]', {
+        email: userProfile.email,
+        featureKeys: userFeatureKeys,
+        hasEcommerce: userFeatureKeys.includes('ecommerce_crm'),
+      });
+    }
+  }, [userProfile, userFeatureKeys]);
+
   // Helper function to check if user has a feature key
   const hasFeatureKey = (featureKey: string): boolean => {
     return userFeatureKeys.includes(featureKey);

@@ -16,7 +16,11 @@ export type SubscriptionFeature =
   | 'api_access'
   | 'custom_integrations'
   | 'priority_support'
-  | 'dedicated_account_manager';
+  | 'dedicated_account_manager'
+  | 'ecommerce_crm'
+  | 'order_management'
+  | 'user_management'
+  | 'settings';
 
 export interface SubscriptionPackage {
   id: number;
@@ -44,6 +48,10 @@ export interface SubscriptionFeatures {
   custom_integrations: boolean;
   priority_support: boolean;
   dedicated_account_manager: boolean;
+  ecommerce_crm: boolean;
+  order_management: boolean;
+  user_management: boolean;
+  settings: boolean;
 }
 
 export interface SubscriptionLimits {
@@ -117,6 +125,10 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
       custom_integrations: false,
       priority_support: false,
       dedicated_account_manager: false,
+      ecommerce_crm: false,
+      order_management: false,
+      user_management: false,
+      settings: true,  // Always allow settings access
     },
     error: 'Failed to load subscription',
   } : null);
