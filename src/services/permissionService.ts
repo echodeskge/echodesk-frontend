@@ -8,6 +8,7 @@ export interface MenuItem {
   requiredFeatureKey?: string; // Feature key required to access this menu item (optional - items without this are always visible)
   isPremium?: boolean;
   isLocked?: boolean;
+  children?: Omit<MenuItem, 'children'>[]; // Nested menu items (one level deep)
 }
 
 export interface PermissionMap {

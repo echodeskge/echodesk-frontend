@@ -11,6 +11,7 @@ export interface NavigationItem {
   requiredFeatureKey?: string; // Feature key from user's feature_keys array (optional - items without this are always visible)
   description: string;
   isPremium?: boolean; // Visual indicator for premium features
+  children?: Omit<NavigationItem, 'children' | 'label' | 'description'>[]; // Nested navigation items
 }
 
 export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] = [
@@ -42,16 +43,24 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     requiredFeatureKey: "order_management",
   },
   {
-    id: "products",
-    icon: "Package",
+    id: "ecommerce",
+    icon: "ShoppingBag",
     requiredFeatureKey: "ecommerce_crm",
     isPremium: true,
-  },
-  {
-    id: "product-attributes",
-    icon: "ListTree",
-    requiredFeatureKey: "ecommerce_crm",
-    isPremium: true,
+    children: [
+      {
+        id: "products",
+        icon: "Package",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+      {
+        id: "product-attributes",
+        icon: "ListTree",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+    ],
   },
   {
     id: "messages",

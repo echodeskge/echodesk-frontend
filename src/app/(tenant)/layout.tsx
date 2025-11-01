@@ -133,6 +133,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "user-statistics": "userStatistics",
     calls: "calls",
     orders: "orders",
+    ecommerce: "ecommerce",
     products: "products",
     "product-attributes": "productAttributes",
     messages: "messages",
@@ -177,6 +178,17 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       requiredFeatureKey: config.requiredFeatureKey,
       isPremium: config.isPremium,
       isLocked: false, // We'll filter locked items instead of showing them
+      // Process children if they exist
+      children: config.children?.map((child) => ({
+        ...child,
+        label: t(translationKeyMap[child.id] || child.id),
+        description: t(
+          `description.${translationKeyMap[child.id] || child.id}`
+        ),
+        requiredFeatureKey: child.requiredFeatureKey,
+        isPremium: child.isPremium,
+        isLocked: false,
+      })),
     }));
 
     // Filter items based on feature keys and other conditions

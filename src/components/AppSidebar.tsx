@@ -21,6 +21,7 @@ import {
   Tags,
   UsersRound,
   ListTree,
+  ChevronDown,
 } from "lucide-react"
 
 import {
@@ -34,8 +35,16 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
 import { AuthUser, TenantInfo } from "@/types/auth"
 import { User } from "@/api/generated/interfaces"
@@ -130,6 +139,71 @@ export function AppSidebar({
                 const IconComponent = iconMap[item.icon as keyof typeof iconMap]
                 const isActive = currentView === item.id
                 const isLocked = item.isLocked || false
+                const hasChildren = item.children && item.children.length > 0
+
+                // Check if any child is active
+                const isChildActive = hasChildren && item.children!.some(child => currentView === child.id)
+
+                if (hasChildren) {
+                  return (
+                    <SidebarMenuItem key={item.id}>
+                      <Collapsible
+                        className="group/collapsible"
+                        defaultOpen={isChildActive}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton
+                            tooltip={isLocked ? `🔒 Premium Feature - ${item.description}` : item.description}
+                            className="w-full justify-between [&[data-state=open]>svg]:rotate-180"
+                          >
+                            <span className="flex items-center">
+                              {IconComponent ? (
+                                <IconComponent className={`h-4 w-4 ${isLocked ? 'text-gray-400' : ''}`} />
+                              ) : (
+                                <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
+                              )}
+                              <span className={`ms-2 ${isLocked ? 'text-gray-500' : ''}`}>{item.label}</span>
+                              {isLocked && <LockedFeatureBadge className="ms-2" size="sm" />}
+                            </span>
+                            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                          <SidebarMenuSub>
+                            {item.children!.map((child) => {
+                              const ChildIconComponent = iconMap[child.icon as keyof typeof iconMap]
+                              const isChildItemActive = currentView === child.id
+                              const isChildLocked = child.isLocked || false
+
+                              return (
+                                <SidebarMenuSubItem key={child.id}>
+                                  <SidebarMenuSubButton
+                                    onClick={() => {
+                                      if (isChildLocked) {
+                                        alert(`This feature requires a premium subscription. Please upgrade your plan to access ${child.label}.`)
+                                      } else {
+                                        onMenuClick(child.id)
+                                      }
+                                    }}
+                                    isActive={isChildItemActive}
+                                  >
+                                    {ChildIconComponent ? (
+                                      <ChildIconComponent className={`h-4 w-4 ${isChildLocked ? 'text-gray-400' : ''}`} />
+                                    ) : (
+                                      <span className={`text-sm ${isChildLocked ? 'text-gray-400' : ''}`}>{child.icon}</span>
+                                    )}
+                                    <span className={isChildLocked ? 'text-gray-500' : ''}>{child.label}</span>
+                                    {isChildLocked && <LockedFeatureBadge className="ms-auto" size="sm" />}
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              )
+                            })}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </SidebarMenuItem>
+                  )
+                }
 
                 return (
                   <SidebarMenuItem key={item.id}>
