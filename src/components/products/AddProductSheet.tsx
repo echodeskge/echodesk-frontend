@@ -61,6 +61,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
+  // Selected language for form fields (default to 'ka')
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("ka");
+
   // Build initial default values with dynamic languages
   const buildDefaultValues = (): Partial<ProductCreateUpdate> => {
     const nameObj: Record<string, string> = {};
@@ -102,19 +105,21 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       form.reset(buildDefaultValues());
       setSkuManuallyEdited(false);
       setSlugManuallyEdited(false);
+      // Reset to 'ka' or first available language
+      const kaLang = activeLanguages.find(l => l.code === 'ka');
+      setSelectedLanguage(kaLang ? 'ka' : activeLanguages[0]?.code || 'ka');
     }
   }, [open, activeLanguages.length]);
 
-  // Watch the first language's name field to auto-generate SKU and slug
-  const firstLangCode = activeLanguages[0]?.code;
-  const firstLangName = form.watch(`name.${firstLangCode}` as any);
+  // Watch the selected language's name field to auto-generate SKU and slug
+  const selectedLangName = form.watch(`name.${selectedLanguage}` as any);
 
-  // Auto-generate SKU and slug from first language name
+  // Auto-generate SKU and slug from selected language name
   useEffect(() => {
-    if (firstLangName && open && firstLangCode) {
+    if (selectedLangName && open && selectedLanguage) {
       // Auto-generate SKU (uppercase with underscores)
       if (!skuManuallyEdited) {
-        const generatedSku = firstLangName
+        const generatedSku = selectedLangName
           .toUpperCase()
           .replace(/[^A-Z0-9]+/g, "_")
           .replace(/(^_|_$)/g, "");
@@ -123,14 +128,14 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
       // Auto-generate slug (lowercase with dashes)
       if (!slugManuallyEdited) {
-        const generatedSlug = firstLangName
+        const generatedSlug = selectedLangName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, "");
         form.setValue("slug", generatedSlug);
       }
     }
-  }, [firstLangName, open, skuManuallyEdited, slugManuallyEdited, form, firstLangCode]);
+  }, [selectedLangName, open, skuManuallyEdited, slugManuallyEdited, form, selectedLanguage]);
 
   // Helper to get language name
   const getLanguageName = (lang: Language) => {
@@ -211,35 +216,40 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
-                {/* Product Name - Dynamic Languages */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Product Name *</FormLabel>
-                    <FormDescription className="text-xs">
-                      Fill at least one language
-                    </FormDescription>
-                  </div>
-                  <div className={`grid gap-4 ${activeLanguages.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {activeLanguages.map((lang) => (
-                      <FormField
-                        key={lang.code}
-                        control={form.control}
-                        name={`name.${lang.code}` as any}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">
-                              {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                            </FormLabel>
-                            <FormControl>
-                              <Input placeholder={`Name in ${getLanguageName(lang)}`} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                  </div>
+                {/* Language Selector */}
+                <div className="flex items-center gap-2">
+                  <FormLabel className="text-sm font-medium">Language:</FormLabel>
+                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeLanguages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {getLanguageName(lang)} ({lang.code.toUpperCase()})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-xs ml-auto">
+                    Fill at least one language
+                  </FormDescription>
                 </div>
+
+                {/* Product Name - Selected Language */}
+                <FormField
+                  control={form.control}
+                  name={`name.${selectedLanguage}` as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder={t("namePlaceholder")} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* SKU and Slug */}
                 <div className="grid grid-cols-2 gap-4">
@@ -285,35 +295,25 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   />
                 </div>
 
-                {/* Short Description - Dynamic Languages */}
-                <div className="space-y-4">
-                  <FormLabel>Short Description</FormLabel>
-                  <div className={`grid gap-4 ${activeLanguages.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                    {activeLanguages.map((lang) => (
-                      <FormField
-                        key={lang.code}
-                        control={form.control}
-                        name={`short_description.${lang.code}` as any}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs">
-                              {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                            </FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder={`Short description in ${getLanguageName(lang)}`}
-                                className="resize-none"
-                                rows={2}
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
+                {/* Short Description - Selected Language */}
+                <FormField
+                  control={form.control}
+                  name={`short_description.${selectedLanguage}` as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Short Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder={t("shortDescPlaceholder")}
+                          className="resize-none"
+                          rows={2}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Pricing */}
                 <div className="grid grid-cols-3 gap-4">
