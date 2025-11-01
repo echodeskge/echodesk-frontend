@@ -702,6 +702,8 @@
       "shortDescKaPlaceholder": "მოკლე აღწერა",
       "priceLari": "Price (₾)",
       "pricePlaceholder": "0.00",
+      "comparePrice": "Compare at Price",
+      "costPrice": "Cost Price",
       "creating": "Creating...",
       "createProduct": "Create Product"
     }

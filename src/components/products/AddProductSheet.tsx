@@ -261,7 +261,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="compare_at_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("comparePrice", { defaultValue: "Compare Price" })}</FormLabel>
+                        <FormLabel>{t("comparePrice")}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
                         </FormControl>
@@ -274,7 +274,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="cost_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("costPrice", { defaultValue: "Cost Price" })}</FormLabel>
+                        <FormLabel>{t("costPrice")}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
                         </FormControl>

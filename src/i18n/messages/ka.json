@@ -701,6 +701,8 @@
       "shortDescKaPlaceholder": "მოკლე აღწერა",
       "priceLari": "ფასი (₾)",
       "pricePlaceholder": "0.00",
+      "comparePrice": "შედარებითი ფასი",
+      "costPrice": "თვითღირებულება",
       "creating": "იქმნება...",
       "createProduct": "პროდუქტის შექმნა"
     }
