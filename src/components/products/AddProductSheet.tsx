@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Sheet,
   SheetContent,
@@ -40,6 +40,8 @@ interface AddProductSheetProps {
 
 export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   const locale = useLocale() as Locale;
+  const t = useTranslations("products.addProductSheet");
+  const tCommon = useTranslations("common");
   const createProduct = useCreateProduct();
 
   const form = useForm<Partial<ProductCreateUpdate>>({
@@ -88,9 +90,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
         <ScrollArea className="h-full">
           <div className="p-6">
             <SheetHeader>
-              <SheetTitle>Add New Product</SheetTitle>
+              <SheetTitle>{t("title")}</SheetTitle>
               <SheetDescription>
-                Create a new product with multilanguage support
+                {t("description")}
               </SheetDescription>
             </SheetHeader>
 
@@ -103,9 +105,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="name.en"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name (English)</FormLabel>
+                        <FormLabel>{t("nameEn")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Product name" {...field} />
+                          <Input placeholder={t("namePlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -116,9 +118,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="name.ka"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name (Georgian)</FormLabel>
+                        <FormLabel>{t("nameKa")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="პროდუქტის სახელი" {...field} />
+                          <Input placeholder={t("nameKaPlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -146,9 +148,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="slug"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Slug (optional)</FormLabel>
+                        <FormLabel>{t("slug")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="product-slug" {...field} />
+                          <Input placeholder={t("slugPlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -163,10 +165,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="short_description.en"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Short Description (EN)</FormLabel>
+                        <FormLabel>{t("shortDescriptionEn")}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Brief description"
+                            placeholder={t("shortDescPlaceholder")}
                             className="resize-none"
                             rows={2}
                             {...field}
@@ -181,10 +183,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="short_description.ka"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Short Description (KA)</FormLabel>
+                        <FormLabel>{t("shortDescriptionKa")}</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="მოკლე აღწერა"
+                            placeholder={t("shortDescKaPlaceholder")}
                             className="resize-none"
                             rows={2}
                             {...field}
@@ -203,9 +205,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price (₾)</FormLabel>
+                        <FormLabel>{t("priceLari")}</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -216,9 +218,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="compare_at_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Compare Price</FormLabel>
+                        <FormLabel>{t("comparePrice", { defaultValue: "Compare Price" })}</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -229,9 +231,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="cost_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Cost Price</FormLabel>
+                        <FormLabel>{t("costPrice", { defaultValue: "Cost Price" })}</FormLabel>
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                          <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -300,10 +302,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     variant="outline"
                     onClick={() => onOpenChange(false)}
                   >
-                    Cancel
+                    {tCommon("cancel")}
                   </Button>
                   <Button type="submit" disabled={createProduct.isPending}>
-                    {createProduct.isPending ? "Creating..." : "Create Product"}
+                    {createProduct.isPending ? t("creating") : t("createProduct")}
                   </Button>
                 </SheetFooter>
               </form>

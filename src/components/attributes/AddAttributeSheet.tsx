@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Sheet,
   SheetContent,
@@ -41,6 +41,9 @@ interface AddAttributeSheetProps {
 
 export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps) {
   const locale = useLocale() as Locale;
+  const t = useTranslations("productAttributes.addAttributeSheet");
+  const tCommon = useTranslations("common");
+  const tTypes = useTranslations("productAttributes.types");
   const createAttribute = useCreateAttribute();
 
   const form = useForm<Partial<AttributeDefinition>>({
@@ -86,9 +89,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
         <ScrollArea className="h-full">
           <div className="p-6">
             <SheetHeader>
-              <SheetTitle>Add New Attribute</SheetTitle>
+              <SheetTitle>{t("title")}</SheetTitle>
               <SheetDescription>
-                Create a custom attribute for your products
+                {t("description")}
               </SheetDescription>
             </SheetHeader>
 
@@ -101,9 +104,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                     name="name.en"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name (English)</FormLabel>
+                        <FormLabel>{t("nameEn")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="Color" {...field} />
+                          <Input placeholder={t("namePlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -114,9 +117,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                     name="name.ka"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name (Georgian)</FormLabel>
+                        <FormLabel>{t("nameKa")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="ფერი" {...field} />
+                          <Input placeholder={t("nameKaPlaceholder")} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -130,12 +133,12 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                   name="key"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Key (optional)</FormLabel>
+                      <FormLabel>{t("keyLabel")}</FormLabel>
                       <FormControl>
-                        <Input placeholder="color" {...field} />
+                        <Input placeholder={t("keyPlaceholder")} {...field} />
                       </FormControl>
                       <FormDescription>
-                        Auto-generated from name if not provided
+                        {t("keyDescription")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -148,21 +151,21 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                   name="attribute_type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Attribute Type</FormLabel>
+                      <FormLabel>{t("attributeType")}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
+                            <SelectValue placeholder={t("selectType")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="text">Text</SelectItem>
-                          <SelectItem value="number">Number</SelectItem>
-                          <SelectItem value="boolean">Boolean</SelectItem>
-                          <SelectItem value="select">Select</SelectItem>
-                          <SelectItem value="multiselect">Multi-select</SelectItem>
-                          <SelectItem value="color">Color</SelectItem>
-                          <SelectItem value="date">Date</SelectItem>
+                          <SelectItem value="text">{tTypes("text")}</SelectItem>
+                          <SelectItem value="number">{tTypes("number")}</SelectItem>
+                          <SelectItem value="boolean">{tTypes("boolean")}</SelectItem>
+                          <SelectItem value="select">{tTypes("select")}</SelectItem>
+                          <SelectItem value="multiselect">{tTypes("multiselect")}</SelectItem>
+                          <SelectItem value="color">{tTypes("color")}</SelectItem>
+                          <SelectItem value="date">{tTypes("date")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -177,12 +180,12 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                     name="unit"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Unit</FormLabel>
+                        <FormLabel>{t("unitLabel")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="kg, cm, etc." {...field} />
+                          <Input placeholder={t("unitPlaceholder")} {...field} />
                         </FormControl>
                         <FormDescription>
-                          Optional unit for numeric values
+                          {t("unitDescription")}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -196,12 +199,12 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                   name="sort_order"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sort Order</FormLabel>
+                      <FormLabel>{t("sortOrder")}</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="0" {...field} />
+                        <Input type="number" placeholder={t("sortOrderPlaceholder")} {...field} />
                       </FormControl>
                       <FormDescription>
-                        Controls display order (lower numbers first)
+                        {t("sortOrderDescription")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -222,9 +225,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Required</FormLabel>
+                          <FormLabel>{t("requiredLabel")}</FormLabel>
                           <FormDescription>
-                            This attribute must be filled for all products
+                            {t("requiredDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -243,9 +246,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Variant Attribute</FormLabel>
+                          <FormLabel>{t("variantAttributeLabel")}</FormLabel>
                           <FormDescription>
-                            Use this attribute to create product variants
+                            {t("variantAttributeDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -264,9 +267,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Filterable</FormLabel>
+                          <FormLabel>{t("filterableLabel")}</FormLabel>
                           <FormDescription>
-                            Allow customers to filter products by this attribute
+                            {t("filterableDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -285,9 +288,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Active</FormLabel>
+                          <FormLabel>{t("activeLabel")}</FormLabel>
                           <FormDescription>
-                            Enable this attribute for use
+                            {t("activeDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -301,10 +304,10 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                     variant="outline"
                     onClick={() => onOpenChange(false)}
                   >
-                    Cancel
+                    {tCommon("cancel")}
                   </Button>
                   <Button type="submit" disabled={createAttribute.isPending}>
-                    {createAttribute.isPending ? "Creating..." : "Create Attribute"}
+                    {createAttribute.isPending ? t("creating") : t("createAttribute")}
                   </Button>
                 </SheetFooter>
               </form>

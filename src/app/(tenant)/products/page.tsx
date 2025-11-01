@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +20,7 @@ import type { Locale } from "@/lib/i18n";
 
 export default function ProductsPage() {
   const locale = useLocale() as Locale;
+  const t = useTranslations("products");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -60,14 +61,14 @@ export default function ProductsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage your product catalog with multilanguage support
+            {t("subtitle")}
           </p>
         </div>
         <Button className="gap-2" onClick={() => setIsAddProductOpen(true)}>
           <Plus className="h-4 w-4" />
-          Add Product
+          {t("addProduct")}
         </Button>
       </div>
 
@@ -78,7 +79,7 @@ export default function ProductsPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search products by name or SKU..."
+                placeholder={t("searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -89,11 +90,11 @@ export default function ProductsPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 border rounded-md"
             >
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="draft">Draft</option>
-              <option value="inactive">Inactive</option>
-              <option value="out_of_stock">Out of Stock</option>
+              <option value="">{t("allStatus")}</option>
+              <option value="active">{t("active")}</option>
+              <option value="draft">{t("draft")}</option>
+              <option value="inactive">{t("inactive")}</option>
+              <option value="out_of_stock">{t("outOfStock")}</option>
             </select>
           </div>
         </CardContent>
@@ -106,14 +107,13 @@ export default function ProductsPage() {
             <div className="rounded-full bg-primary/10 p-6 mb-4">
               <Package className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No products yet</h3>
+            <h3 className="text-xl font-semibold mb-2">{t("noProductsYet")}</h3>
             <p className="text-muted-foreground text-center mb-6 max-w-md">
-              Get started by creating your first product. You can add images,
-              set prices, manage inventory, and configure attributes.
+              {t("noProductsDescription")}
             </p>
             <Button className="gap-2" onClick={() => setIsAddProductOpen(true)}>
               <Plus className="h-4 w-4" />
-              Create Your First Product
+              {t("createFirstProduct")}
             </Button>
           </CardContent>
         </Card>
@@ -140,12 +140,12 @@ export default function ProductsPage() {
                 )}
                 {!product.is_in_stock && (
                   <Badge className="absolute top-2 left-2 bg-gray-500">
-                    Out of Stock
+                    {t("outOfStock")}
                   </Badge>
                 )}
                 {product.is_low_stock && product.is_in_stock && (
                   <Badge className="absolute top-2 left-2 bg-orange-500">
-                    Low Stock
+                    {t("lowStock")}
                   </Badge>
                 )}
               </div>
@@ -161,7 +161,7 @@ export default function ProductsPage() {
                   </Badge>
                 </div>
                 <CardDescription className="text-xs">
-                  SKU: {product.sku}
+                  {t("sku")}: {product.sku}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
@@ -177,7 +177,7 @@ export default function ProductsPage() {
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Stock: {product.quantity} units
+                    {t("stock")}: {product.quantity} {t("units")}
                   </div>
                 </div>
               </CardContent>
@@ -193,20 +193,20 @@ export default function ProductsPage() {
             <div className="text-center">
               <div className="text-3xl font-bold">{totalCount}</div>
               <div className="text-sm text-muted-foreground">
-                Total Products
+                {t("totalProducts")}
               </div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">{activeCount}</div>
-              <div className="text-sm text-muted-foreground">Active</div>
+              <div className="text-sm text-muted-foreground">{t("active")}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">{lowStockCount}</div>
-              <div className="text-sm text-muted-foreground">Low Stock</div>
+              <div className="text-sm text-muted-foreground">{t("lowStock")}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">{outOfStockCount}</div>
-              <div className="text-sm text-muted-foreground">Out of Stock</div>
+              <div className="text-sm text-muted-foreground">{t("outOfStock")}</div>
             </div>
           </div>
         </CardContent>

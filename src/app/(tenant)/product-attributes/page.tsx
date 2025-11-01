@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,6 +21,7 @@ import type { AttributeDefinition } from "@/api/generated";
 
 export default function ProductAttributesPage() {
   const locale = useLocale() as Locale;
+  const t = useTranslations("productAttributes");
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddAttributeOpen, setIsAddAttributeOpen] = useState(false);
 
@@ -80,14 +81,14 @@ export default function ProductAttributesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Product Attributes</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage dynamic attributes for your products
+            {t("subtitle")}
           </p>
         </div>
         <Button className="gap-2" onClick={() => setIsAddAttributeOpen(true)}>
           <Plus className="h-4 w-4" />
-          Add Attribute
+          {t("addAttribute")}
         </Button>
       </div>
 
@@ -97,7 +98,7 @@ export default function ProductAttributesPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search attributes by name or key..."
+              placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -113,14 +114,13 @@ export default function ProductAttributesPage() {
             <div className="rounded-full bg-primary/10 p-6 mb-4">
               <Tags className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">No attributes yet</h3>
+            <h3 className="text-xl font-semibold mb-2">{t("noAttributesYet")}</h3>
             <p className="text-muted-foreground text-center mb-6 max-w-md">
-              Create custom attributes to add dynamic fields to your products.
-              Attributes can be text, numbers, colors, dates, and more.
+              {t("noAttributesDescription")}
             </p>
             <Button className="gap-2" onClick={() => setIsAddAttributeOpen(true)}>
               <Plus className="h-4 w-4" />
-              Create Your First Attribute
+              {t("createFirstAttribute")}
             </Button>
           </CardContent>
         </Card>
@@ -139,18 +139,18 @@ export default function ProductAttributesPage() {
                         {String(attribute.attribute_type)}
                       </Badge>
                       {attribute.is_required && (
-                        <Badge variant="destructive">Required</Badge>
+                        <Badge variant="destructive">{t("required")}</Badge>
                       )}
                       {attribute.is_variant_attribute && (
-                        <Badge variant="secondary">Variant</Badge>
+                        <Badge variant="secondary">{t("variant")}</Badge>
                       )}
                       {attribute.is_filterable && (
-                        <Badge variant="outline">Filterable</Badge>
+                        <Badge variant="outline">{t("filterable")}</Badge>
                       )}
                     </div>
                     <CardDescription className="flex items-center gap-4">
-                      <span>Key: <code className="bg-muted px-1 rounded">{attribute.key}</code></span>
-                      {attribute.unit && <span>Unit: {attribute.unit}</span>}
+                      <span>{t("key")}: <code className="bg-muted px-1 rounded">{attribute.key}</code></span>
+                      {attribute.unit && <span>{t("unit")}: {attribute.unit}</span>}
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export default function ProductAttributesPage() {
               {attribute.options && (
                 <CardContent>
                   <div className="text-sm">
-                    <span className="font-medium">Options: </span>
+                    <span className="font-medium">{t("options")}: </span>
                     {typeof attribute.options === 'object' && attribute.options !== null
                       ? JSON.stringify(attribute.options)
                       : String(attribute.options)}
@@ -193,25 +193,25 @@ export default function ProductAttributesPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="text-3xl font-bold">{totalCount}</div>
-              <div className="text-sm text-muted-foreground">Total Attributes</div>
+              <div className="text-sm text-muted-foreground">{t("totalAttributes")}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">
                 {attributes.filter((a) => a.is_required).length}
               </div>
-              <div className="text-sm text-muted-foreground">Required</div>
+              <div className="text-sm text-muted-foreground">{t("required")}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">
                 {attributes.filter((a) => a.is_variant_attribute).length}
               </div>
-              <div className="text-sm text-muted-foreground">Variant Attributes</div>
+              <div className="text-sm text-muted-foreground">{t("variantAttributes")}</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">
                 {attributes.filter((a) => a.is_filterable).length}
               </div>
-              <div className="text-sm text-muted-foreground">Filterable</div>
+              <div className="text-sm text-muted-foreground">{t("filterable")}</div>
             </div>
           </div>
         </CardContent>
