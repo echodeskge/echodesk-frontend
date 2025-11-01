@@ -49,7 +49,7 @@ import type {
 interface CustomField {
   name: string;
   label: string;
-  type: "string" | "text" | "number" | "date" | "boolean";
+  type: "string" | "text" | "number" | "date" | "boolean" | "gallery" | "wysiwyg";
   required: boolean;
 }
 
@@ -318,6 +318,14 @@ export default function ItemListDetailPage() {
                                   <Badge variant={value ? "default" : "secondary"}>
                                     {value ? t("yes") : tCommon("no")}
                                   </Badge>
+                                ) : field.type === "gallery" ? (
+                                  <span className="text-sm text-muted-foreground">
+                                    {value.split(',').filter((url: string) => url.trim()).length} image(s)
+                                  </span>
+                                ) : field.type === "wysiwyg" ? (
+                                  <span className="text-sm text-muted-foreground truncate max-w-xs block">
+                                    {value.replace(/<[^>]*>/g, '').substring(0, 50)}...
+                                  </span>
                                 ) : (
                                   <span>{value}</span>
                                 )
@@ -534,6 +542,39 @@ export default function ItemListDetailPage() {
                           >
                             {t("yes")}
                           </Label>
+                        </div>
+                      )}
+                      {field.type === "gallery" && (
+                        <div>
+                          <Input
+                            id={`custom_${field.name}`}
+                            value={formData.custom_data[field.name] || ""}
+                            onChange={(e) =>
+                              updateCustomFieldValue(field.name, e.target.value)
+                            }
+                            placeholder="Image URLs (comma-separated)"
+                            required={field.required}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Enter image URLs separated by commas
+                          </p>
+                        </div>
+                      )}
+                      {field.type === "wysiwyg" && (
+                        <div>
+                          <Textarea
+                            id={`custom_${field.name}`}
+                            value={formData.custom_data[field.name] || ""}
+                            onChange={(e) =>
+                              updateCustomFieldValue(field.name, e.target.value)
+                            }
+                            placeholder={t("enterField", { field: field.label.toLowerCase() })}
+                            required={field.required}
+                            className="resize-none min-h-[120px] font-mono text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Rich text content (HTML supported)
+                          </p>
                         </div>
                       )}
                     </div>
