@@ -72,7 +72,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
   {
     id: "settings",
     icon: "⚙️",
-    // No requiredFeatureKey - visible to all users
+    requiredFeatureKey: "settings",
   },
 ];
 
