@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuthContext } from "@/contexts/AuthContext"
 import { apiEcommerceOrdersList } from "@/api/generated"
 import { Order } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -44,17 +43,14 @@ const STATUS_ICONS = {
 }
 
 export default function EcommerceOrdersPage() {
-  const { tenant } = useAuthContext()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
 
   useEffect(() => {
-    if (tenant) {
-      fetchOrders()
-    }
-  }, [tenant])
+    fetchOrders()
+  }, [])
 
   const fetchOrders = async () => {
     try {

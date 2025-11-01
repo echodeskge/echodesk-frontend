@@ -253,14 +253,32 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     setManagingBoardUsersId(null);
   };
 
-  // Get current view from pathname (first segment)
+  // Get current view from pathname
   const pathParts = pathname.split("/").filter(Boolean);
-  const currentView = pathParts[0] || "tickets"; // /tickets -> tickets
+  // For nested routes like /ecommerce/orders, use the full path
+  // For top-level routes like /tickets, use just the first segment
+  const currentView = pathParts.length > 1 && pathParts[0] === "ecommerce"
+    ? `${pathParts[0]}/${pathParts[1]}`  // ecommerce/orders
+    : pathParts[0] || "tickets";         // tickets
 
-  // Get page title
-  const currentMenuItem = visibleMenuItems.find(
+  // Get page title (check both parent and children)
+  let currentMenuItem = visibleMenuItems.find(
     (item) => item.id === currentView
   );
+
+  // If not found in top-level, search in children
+  if (!currentMenuItem) {
+    for (const item of visibleMenuItems) {
+      if (item.children) {
+        const childItem = item.children.find(child => child.id === currentView);
+        if (childItem) {
+          currentMenuItem = childItem;
+          break;
+        }
+      }
+    }
+  }
+
   const pageTitle = currentMenuItem?.label || t("dashboard");
 
   // Check if we should show board switcher (always show on tickets page, even with no boards)
