@@ -71,16 +71,16 @@ export default function EcommerceOrdersPage() {
       order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.client_details.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter
+    const matchesStatus = statusFilter === "all" || String(order.status) === statusFilter
 
     return matchesSearch && matchesStatus
   })
 
   const stats = {
     total: orders.length,
-    pending: orders.filter(o => o.status === "pending").length,
-    processing: orders.filter(o => o.status === "processing" || o.status === "confirmed").length,
-    completed: orders.filter(o => o.status === "delivered").length,
+    pending: orders.filter(o => String(o.status) === "pending").length,
+    processing: orders.filter(o => String(o.status) === "processing" || String(o.status) === "confirmed").length,
+    completed: orders.filter(o => String(o.status) === "delivered").length,
   }
 
   const formatDate = (dateString: string) => {
@@ -231,7 +231,7 @@ export default function EcommerceOrdersPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredOrders.map((order) => {
-                    const StatusIcon = STATUS_ICONS[order.status as keyof typeof STATUS_ICONS] || Clock
+                    const StatusIcon = STATUS_ICONS[String(order.status) as keyof typeof STATUS_ICONS] || Clock
                     return (
                       <TableRow key={order.id}>
                         <TableCell className="font-medium">
@@ -254,10 +254,10 @@ export default function EcommerceOrdersPage() {
                         <TableCell>
                           <Badge
                             variant="secondary"
-                            className={STATUS_COLORS[order.status as keyof typeof STATUS_COLORS] || ""}
+                            className={STATUS_COLORS[String(order.status) as keyof typeof STATUS_COLORS] || ""}
                           >
                             <StatusIcon className="mr-1 h-3 w-3" />
-                            {t(`status.${order.status}`)}
+                            {t(`status.${String(order.status)}`)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
