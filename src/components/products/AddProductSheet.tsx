@@ -238,6 +238,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
                 {/* Product Name - Selected Language */}
                 <FormField
+                  key={`name-${selectedLanguage}`}
                   control={form.control}
                   name={`name.${selectedLanguage}` as any}
                   render={({ field }) => (
@@ -297,6 +298,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
                 {/* Short Description - Selected Language */}
                 <FormField
+                  key={`short_description-${selectedLanguage}`}
                   control={form.control}
                   name={`short_description.${selectedLanguage}` as any}
                   render={({ field }) => (
