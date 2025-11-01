@@ -38,36 +38,37 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     isPremium: true,
   },
   {
-    id: "orders",
-    icon: "FileText",
-    requiredFeatureKey: "order_management",
-  },
-  {
     id: "ecommerce",
     icon: "ShoppingBag",
     requiredFeatureKey: "ecommerce_crm",
     isPremium: true,
     children: [
       {
-        id: "clients",
+        id: "ecommerce/orders",
+        icon: "ShoppingCart",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+      {
+        id: "ecommerce/clients",
         icon: "Users",
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,
       },
       {
-        id: "products",
+        id: "ecommerce/products",
         icon: "Package",
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,
       },
       {
-        id: "product-attributes",
+        id: "ecommerce/product-attributes",
         icon: "ListTree",
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,
       },
       {
-        id: "languages",
+        id: "ecommerce/languages",
         icon: "Globe",
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,

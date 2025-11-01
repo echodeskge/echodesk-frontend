@@ -63,6 +63,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "FileText": FileText,
   "Package": Package,
   "ShoppingBag": ShoppingBag,
+  "ShoppingCart": ShoppingCart,
   "Tags": Tags,
   "ListTree": ListTree,
   "MessageSquare": MessageCircle,
