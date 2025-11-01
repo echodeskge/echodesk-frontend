@@ -37,7 +37,7 @@ import Link from "next/link";
 interface CustomField {
   name: string;
   label: string;
-  type: "string" | "text" | "number" | "date" | "boolean";
+  type: "string" | "text" | "number" | "date" | "boolean" | "gallery" | "wysiwyg";
   required: boolean;
 }
 
@@ -436,6 +436,8 @@ export default function ItemListsPage() {
                         <SelectItem value="number">{t('customFieldsSection.types.number')}</SelectItem>
                         <SelectItem value="date">{t('customFieldsSection.types.date')}</SelectItem>
                         <SelectItem value="boolean">{t('customFieldsSection.types.boolean')}</SelectItem>
+                        <SelectItem value="gallery">{t('customFieldsSection.types.gallery')}</SelectItem>
+                        <SelectItem value="wysiwyg">{t('customFieldsSection.types.wysiwyg')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

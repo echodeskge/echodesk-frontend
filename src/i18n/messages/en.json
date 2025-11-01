@@ -419,7 +419,9 @@
           "text": "Text (long text)",
           "number": "Number",
           "date": "Date",
-          "boolean": "Boolean (yes/no)"
+          "boolean": "Boolean (yes/no)",
+          "gallery": "Gallery (images)",
+          "wysiwyg": "WYSIWYG (rich text editor)"
         }
       },
       "update": "Update",
