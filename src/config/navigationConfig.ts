@@ -49,6 +49,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     isPremium: true,
     children: [
       {
+        id: "clients",
+        icon: "Users",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+      {
         id: "products",
         icon: "Package",
         requiredFeatureKey: "ecommerce_crm",

@@ -47,6 +47,11 @@ import type {
   PaginatedProductCategoryList,
   ProductCategory,
   PatchedProductCategory,
+  PaginatedEcommerceClientList,
+  EcommerceClient,
+  PatchedEcommerceClient,
+  ClientLogin,
+  ClientRegistration,
   PaginatedProductImageList,
   ProductImage,
   PatchedProductImage,
@@ -956,6 +961,75 @@ export async function apiEcommerceCategoriesDestroy(id: number): Promise<any> {
 
 export async function apiEcommerceCategoriesTreeRetrieve(): Promise<ProductCategory> {
   const response = await axios.get(`/api/ecommerce/categories/tree/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientsList(
+  isActive?: boolean,
+  isVerified?: boolean,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedEcommerceClientList> {
+  const response = await axios.get(
+    `/api/ecommerce/clients/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isVerified ? 'is_verified=' + encodeURIComponent(isVerified) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientsCreate(
+  data: EcommerceClient,
+): Promise<EcommerceClient> {
+  const response = await axios.post(`/api/ecommerce/clients/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientsRetrieve(
+  id: number,
+): Promise<EcommerceClient> {
+  const response = await axios.get(`/api/ecommerce/clients/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientsUpdate(
+  id: number,
+  data: EcommerceClient,
+): Promise<EcommerceClient> {
+  const response = await axios.put(`/api/ecommerce/clients/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientsPartialUpdate(
+  id: number,
+  data: PatchedEcommerceClient,
+): Promise<EcommerceClient> {
+  const response = await axios.patch(`/api/ecommerce/clients/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/clients/${id}/`);
+  return response.data;
+}
+
+export async function loginClient(data: ClientLogin): Promise<EcommerceClient> {
+  const response = await axios.post(`/api/ecommerce/clients/login/`, data);
+  return response.data;
+}
+
+export async function registerClient(
+  data: ClientRegistration,
+): Promise<EcommerceClient> {
+  const response = await axios.post(`/api/ecommerce/clients/register/`, data);
   return response.data;
 }
 
@@ -2941,6 +3015,14 @@ export async function apiTimeLogsMyTimeSummaryRetrieve(
   const response = await axios.get(
     `/api/time-logs/my_time_summary/${days ? '?days=' + encodeURIComponent(days) : ''}`,
   );
+  return response.data;
+}
+
+export async function uploadImage(): Promise<{
+  url?: string;
+  message?: string;
+}> {
+  const response = await axios.post(`/api/upload/image/`);
   return response.data;
 }
 

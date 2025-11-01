@@ -187,6 +187,21 @@ export interface Client {
   is_active?: boolean;
 }
 
+export interface ClientLogin {
+  identifier: string;
+  password: string;
+}
+
+export interface ClientRegistration {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  password: string;
+  password_confirm: string;
+  date_of_birth?: string;
+}
+
 export interface Department {
   id: number;
   name: string;
@@ -213,6 +228,21 @@ export interface DescriptionFormatEnum {
 
 export interface DirectionEnum {
   [key: string]: any;
+}
+
+export interface EcommerceClient {
+  id: number;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  email: string;
+  phone_number: string;
+  date_of_birth?: string;
+  is_active?: boolean;
+  is_verified: boolean;
+  last_login: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EventTypeEnum {
@@ -461,6 +491,13 @@ export interface PaginatedDepartmentList {
   next?: string;
   previous?: string;
   results: Department[];
+}
+
+export interface PaginatedEcommerceClientList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EcommerceClient[];
 }
 
 export interface PaginatedFacebookMessageList {
@@ -784,6 +821,21 @@ export interface PatchedDepartment {
   description?: string;
   is_active?: boolean;
   employee_count?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedEcommerceClient {
+  id?: number;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  email?: string;
+  phone_number?: string;
+  date_of_birth?: string;
+  is_active?: boolean;
+  is_verified?: boolean;
+  last_login?: string;
   created_at?: string;
   updated_at?: string;
 }

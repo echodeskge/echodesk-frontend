@@ -28,6 +28,7 @@
     "messages": "Messages",
     "orders": "Orders",
     "ecommerce": "E-commerce",
+    "clients": "Clients",
     "products": "Products",
     "productAttributes": "Product Attributes",
     "social": "Social Media",
@@ -43,6 +44,7 @@
       "messages": "View and respond to Facebook messages",
       "orders": "Create and manage orders",
       "ecommerce": "Manage your online store",
+      "clients": "Manage ecommerce customers",
       "products": "Manage products with multilanguage support and dynamic attributes",
       "productAttributes": "Manage dynamic attributes for products",
       "social": "Connect social media accounts",
@@ -710,6 +712,36 @@
       "costPrice": "Cost Price",
       "creating": "Creating...",
       "createProduct": "Create Product"
+    }
+  },
+  "clients": {
+    "title": "Ecommerce Clients",
+    "subtitle": "Manage your ecommerce customer accounts",
+    "searchPlaceholder": "Search clients by name, email or phone...",
+    "noClients": "No clients found",
+    "stats": {
+      "total": "Total Clients",
+      "active": "Active Clients",
+      "verified": "Verified Clients"
+    },
+    "filters": {
+      "all": "All Clients",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "dateOfBirth": "Date of Birth",
+      "status": "Status",
+      "verified": "Verified",
+      "lastLogin": "Last Login",
+      "registered": "Registered"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
     }
   },
   "productAttributes": {
