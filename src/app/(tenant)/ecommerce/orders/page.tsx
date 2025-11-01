@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuthContext } from "@/contexts/AuthContext"
-import { MyApi } from "@/api/generated"
+import { apiEcommerceOrdersList } from "@/api/generated"
 import { Order } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -59,9 +59,8 @@ export default function EcommerceOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const api = new MyApi({ baseURL: `https://${tenant}.echodesk.ge` })
-      const response = await api.ecommerceOrdersList()
-      setOrders(response.data.results || response.data as any)
+      const response = await apiEcommerceOrdersList()
+      setOrders(response.results || response as any)
     } catch (error) {
       console.error("Failed to fetch orders:", error)
     } finally {
