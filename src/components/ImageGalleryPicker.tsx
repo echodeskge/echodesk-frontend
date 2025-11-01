@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Plus, Upload } from "lucide-react";
+import React, { useState, useRef, useCallback } from "react";
+import { X, Plus, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import axios from "@/api/axios";
 
 interface ImageGalleryPickerProps {
   value: string; // Comma-separated URLs
@@ -19,6 +21,9 @@ export function ImageGalleryPicker({
   className,
 }: ImageGalleryPickerProps) {
   const [urlInput, setUrlInput] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Parse comma-separated URLs
   const images = value
@@ -45,8 +50,125 @@ export function ImageGalleryPicker({
     }
   };
 
+  const uploadImage = async (file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      setUploading(true);
+      const response = await axios.post("/api/upload/image/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const imageUrl = response.data.url;
+      const newImages = [...images, imageUrl];
+      onChange(newImages.join(", "));
+      toast.success("Image uploaded successfully");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.response?.data?.error || "Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const validFiles = Array.from(files).filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image file`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large (max 5MB)`);
+        return false;
+      }
+      return true;
+    });
+
+    for (const file of validFiles) {
+      await uploadImage(file);
+    }
+  };
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      await handleFileSelect(e.dataTransfer.files);
+    },
+    [images, onChange]
+  );
+
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    await handleFileSelect(e.target.files);
+    // Reset input so the same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className={cn("space-y-3", className)}>
+      {/* Drag and Drop Zone */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={cn(
+          "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+          isDragging
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/25 hover:border-muted-foreground/50"
+        )}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
+
+        {uploading ? (
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Uploading...</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-8 w-8 text-muted-foreground" />
+            <div className="text-sm">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-primary hover:underline font-medium"
+              >
+                Click to upload
+              </button>
+              <span className="text-muted-foreground"> or drag and drop</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              PNG, JPG, GIF, WebP up to 5MB
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Image Grid */}
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
@@ -76,9 +198,9 @@ export function ImageGalleryPicker({
         </div>
       )}
 
-      {/* Add Image URL */}
+      {/* Add Image URL (Optional) */}
       <div className="space-y-2">
-        <Label className="text-sm">Add Image URL</Label>
+        <Label className="text-sm">Or add by URL</Label>
         <div className="flex gap-2">
           <Input
             type="url"
@@ -101,7 +223,7 @@ export function ImageGalleryPicker({
         <p className="text-xs text-muted-foreground">
           {images.length > 0
             ? `${images.length} image(s) added`
-            : "Add images by pasting their URLs"}
+            : "You can also paste image URLs directly"}
         </p>
       </div>
     </div>
