@@ -41,6 +41,9 @@ import type {
   PaginatedDepartmentList,
   Department,
   PatchedDepartment,
+  PaginatedClientAddressList,
+  ClientAddress,
+  PatchedClientAddress,
   PaginatedAttributeDefinitionList,
   AttributeDefinition,
   PatchedAttributeDefinition,
@@ -834,6 +837,72 @@ export async function apiDeploymentStatusRetrieve(
   tenantId: number,
 ): Promise<any> {
   const response = await axios.get(`/api/deployment-status/${tenantId}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAddressesList(
+  client?: number,
+  isDefault?: boolean,
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedClientAddressList> {
+  const response = await axios.get(
+    `/api/ecommerce/addresses/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        isDefault ? 'is_default=' + encodeURIComponent(isDefault) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAddressesCreate(
+  data: ClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.post(`/api/ecommerce/addresses/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceAddressesRetrieve(
+  id: number,
+): Promise<ClientAddress> {
+  const response = await axios.get(`/api/ecommerce/addresses/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAddressesUpdate(
+  id: number,
+  data: ClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.put(`/api/ecommerce/addresses/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceAddressesPartialUpdate(
+  id: number,
+  data: PatchedClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.patch(`/api/ecommerce/addresses/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceAddressesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/addresses/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAddressesSetDefaultCreate(
+  id: number,
+  data: ClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.post(
+    `/api/ecommerce/addresses/${id}/set_default/`,
+    data,
+  );
   return response.data;
 }
 

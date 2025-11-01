@@ -187,6 +187,20 @@ export interface Client {
   is_active?: boolean;
 }
 
+export interface ClientAddress {
+  id: number;
+  client: number;
+  label: string;
+  address: string;
+  city: string;
+  extra_instructions?: string;
+  latitude?: string;
+  longitude?: string;
+  is_default?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ClientLogin {
   identifier: string;
   password: string;
@@ -243,6 +257,7 @@ export interface EcommerceClient {
   last_login: string;
   created_at: string;
   updated_at: string;
+  addresses: ClientAddress[];
 }
 
 export interface EventTypeEnum {
@@ -488,6 +503,13 @@ export interface PaginatedChecklistItemList {
   next?: string;
   previous?: string;
   results: ChecklistItem[];
+}
+
+export interface PaginatedClientAddressList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ClientAddress[];
 }
 
 export interface PaginatedClientList {
@@ -833,6 +855,20 @@ export interface PatchedClient {
   is_active?: boolean;
 }
 
+export interface PatchedClientAddress {
+  id?: number;
+  client?: number;
+  label?: string;
+  address?: string;
+  city?: string;
+  extra_instructions?: string;
+  latitude?: string;
+  longitude?: string;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface PatchedDepartment {
   id?: number;
   name?: string;
@@ -856,6 +892,7 @@ export interface PatchedEcommerceClient {
   last_login?: string;
   created_at?: string;
   updated_at?: string;
+  addresses?: ClientAddress[];
 }
 
 export interface PatchedFacebookPageConnection {
