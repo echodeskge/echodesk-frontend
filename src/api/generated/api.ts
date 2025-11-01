@@ -55,6 +55,9 @@ import type {
   PaginatedProductImageList,
   ProductImage,
   PatchedProductImage,
+  PaginatedLanguageList,
+  Language,
+  PatchedLanguage,
   PaginatedProductListList,
   ProductCreateUpdate,
   ProductDetail,
@@ -1083,6 +1086,57 @@ export async function apiEcommerceImagesPartialUpdate(
 
 export async function apiEcommerceImagesDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/ecommerce/images/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceLanguagesList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedLanguageList> {
+  const response = await axios.get(
+    `/api/ecommerce/languages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceLanguagesCreate(
+  data: Language,
+): Promise<Language> {
+  const response = await axios.post(`/api/ecommerce/languages/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceLanguagesRetrieve(
+  id: number,
+): Promise<Language> {
+  const response = await axios.get(`/api/ecommerce/languages/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceLanguagesUpdate(
+  id: number,
+  data: Language,
+): Promise<Language> {
+  const response = await axios.put(`/api/ecommerce/languages/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceLanguagesPartialUpdate(
+  id: number,
+  data: PatchedLanguage,
+): Promise<Language> {
+  const response = await axios.patch(`/api/ecommerce/languages/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceLanguagesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/languages/${id}/`);
   return response.data;
 }
 

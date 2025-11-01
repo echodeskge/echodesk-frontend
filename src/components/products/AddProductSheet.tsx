@@ -18,6 +18,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,11 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreateProduct } from "@/hooks/useProducts";
-import type { ProductCreateUpdate } from "@/api/generated";
+import { useLanguages } from "@/hooks/useLanguages";
+import type { ProductCreateUpdate, Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 interface AddProductSheetProps {
   open: boolean;
@@ -46,15 +49,34 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   const tCommon = useTranslations("common");
   const createProduct = useCreateProduct();
 
+  // Fetch active languages
+  const { data: languagesData, isLoading: languagesLoading } = useLanguages({
+    is_active: true,
+    ordering: "sort_order,code",
+  });
+
+  const activeLanguages = languagesData?.results || [];
+
   // Track if user has manually edited SKU or slug
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
-  const form = useForm<Partial<ProductCreateUpdate>>({
-    defaultValues: {
-      name: { en: "", ka: "" },
-      description: { en: "", ka: "" },
-      short_description: { en: "", ka: "" },
+  // Build initial default values with dynamic languages
+  const buildDefaultValues = (): Partial<ProductCreateUpdate> => {
+    const nameObj: Record<string, string> = {};
+    const descObj: Record<string, string> = {};
+    const shortDescObj: Record<string, string> = {};
+
+    activeLanguages.forEach((lang) => {
+      nameObj[lang.code] = "";
+      descObj[lang.code] = "";
+      shortDescObj[lang.code] = "";
+    });
+
+    return {
+      name: nameObj,
+      description: descObj,
+      short_description: shortDescObj,
       sku: "",
       slug: "",
       price: "0.00",
@@ -66,26 +88,33 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       status: "draft" as any,
       is_featured: false,
       track_inventory: true,
-      product_type: 1, // Default product type - you may need to adjust this
-    },
+      product_type: 1,
+    };
+  };
+
+  const form = useForm<Partial<ProductCreateUpdate>>({
+    defaultValues: buildDefaultValues(),
   });
 
-  // Watch the name field to auto-generate SKU and slug
-  const nameEn = form.watch("name.en");
-
-  // Reset manual edit flags when sheet opens
+  // Reset form when languages change or sheet opens
   useEffect(() => {
-    if (open) {
+    if (open && activeLanguages.length > 0) {
+      form.reset(buildDefaultValues());
       setSkuManuallyEdited(false);
       setSlugManuallyEdited(false);
     }
-  }, [open]);
+  }, [open, activeLanguages.length]);
 
+  // Watch the first language's name field to auto-generate SKU and slug
+  const firstLangCode = activeLanguages[0]?.code;
+  const firstLangName = form.watch(`name.${firstLangCode}` as any);
+
+  // Auto-generate SKU and slug from first language name
   useEffect(() => {
-    if (nameEn && open) {
+    if (firstLangName && open && firstLangCode) {
       // Auto-generate SKU (uppercase with underscores)
       if (!skuManuallyEdited) {
-        const generatedSku = nameEn
+        const generatedSku = firstLangName
           .toUpperCase()
           .replace(/[^A-Z0-9]+/g, "_")
           .replace(/(^_|_$)/g, "");
@@ -94,26 +123,79 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
       // Auto-generate slug (lowercase with dashes)
       if (!slugManuallyEdited) {
-        const generatedSlug = nameEn
+        const generatedSlug = firstLangName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "-")
           .replace(/(^-|-$)/g, "");
         form.setValue("slug", generatedSlug);
       }
     }
-  }, [nameEn, open, skuManuallyEdited, slugManuallyEdited, form]);
+  }, [firstLangName, open, skuManuallyEdited, slugManuallyEdited, form, firstLangCode]);
+
+  // Helper to get language name
+  const getLanguageName = (lang: Language) => {
+    if (typeof lang.name === "object" && lang.name !== null) {
+      return lang.name[locale] || lang.name.en || lang.code;
+    }
+    return lang.name || lang.code;
+  };
 
   const onSubmit = async (data: Partial<ProductCreateUpdate>) => {
     try {
+      // Auto-fill logic: Find first filled language for each field
+      const fields = ['name', 'description', 'short_description'] as const;
+
+      fields.forEach((fieldName) => {
+        const fieldData = data[fieldName] as Record<string, string>;
+        if (!fieldData || typeof fieldData !== 'object') return;
+
+        // Find first non-empty value
+        let firstFilledValue = "";
+        for (const langCode of Object.keys(fieldData)) {
+          if (fieldData[langCode]?.trim()) {
+            firstFilledValue = fieldData[langCode];
+            break;
+          }
+        }
+
+        // Validate: At least one language must be filled for name
+        if (fieldName === 'name' && !firstFilledValue) {
+          alert("Please fill at least one language for the product name");
+          return;
+        }
+
+        // Fill empty languages with first filled value
+        if (firstFilledValue) {
+          activeLanguages.forEach((lang) => {
+            if (!fieldData[lang.code]?.trim()) {
+              fieldData[lang.code] = firstFilledValue;
+            }
+          });
+        }
+      });
+
       await createProduct.mutateAsync(data as ProductCreateUpdate);
 
-      form.reset();
+      form.reset(buildDefaultValues());
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to create product:", error);
       alert(error.message || "Failed to create product");
     }
   };
+
+  // Show loading state while fetching languages
+  if (languagesLoading || activeLanguages.length === 0) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="p-0 w-full sm:max-w-lg" side="right">
+          <div className="flex items-center justify-center h-full">
+            <LoadingSpinner />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -129,34 +211,34 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
-                {/* Product Name - Multilanguage */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="name.en"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("nameEn")}</FormLabel>
-                        <FormControl>
-                          <Input placeholder={t("namePlaceholder")} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="name.ka"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("nameKa")}</FormLabel>
-                        <FormControl>
-                          <Input placeholder={t("nameKaPlaceholder")} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Product Name - Dynamic Languages */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Product Name *</FormLabel>
+                    <FormDescription className="text-xs">
+                      Fill at least one language
+                    </FormDescription>
+                  </div>
+                  <div className={`grid gap-4 ${activeLanguages.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {activeLanguages.map((lang) => (
+                      <FormField
+                        key={lang.code}
+                        control={form.control}
+                        name={`name.${lang.code}` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">
+                              {getLanguageName(lang)} ({lang.code.toUpperCase()})
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder={`Name in ${getLanguageName(lang)}`} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 {/* SKU and Slug */}
@@ -203,44 +285,34 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   />
                 </div>
 
-                {/* Short Description - Multilanguage */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="short_description.en"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("shortDescriptionEn")}</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder={t("shortDescPlaceholder")}
-                            className="resize-none"
-                            rows={2}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="short_description.ka"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("shortDescriptionKa")}</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder={t("shortDescKaPlaceholder")}
-                            className="resize-none"
-                            rows={2}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Short Description - Dynamic Languages */}
+                <div className="space-y-4">
+                  <FormLabel>Short Description</FormLabel>
+                  <div className={`grid gap-4 ${activeLanguages.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {activeLanguages.map((lang) => (
+                      <FormField
+                        key={lang.code}
+                        control={form.control}
+                        name={`short_description.${lang.code}` as any}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs">
+                              {getLanguageName(lang)} ({lang.code.toUpperCase()})
+                            </FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder={`Short description in ${getLanguageName(lang)}`}
+                                className="resize-none"
+                                rows={2}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 {/* Pricing */}

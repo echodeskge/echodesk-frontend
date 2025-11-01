@@ -355,6 +355,17 @@ export interface KanbanBoard {
   tickets_by_column: string;
 }
 
+export interface Language {
+  id: number;
+  code: string;
+  name: any;
+  is_default?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ListItem {
   id: number;
   item_list: number;
@@ -533,6 +544,13 @@ export interface PaginatedItemListMinimalList {
   next?: string;
   previous?: string;
   results: ItemListMinimal[];
+}
+
+export interface PaginatedLanguageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Language[];
 }
 
 export interface PaginatedListItemMinimalList {
@@ -870,6 +888,17 @@ export interface PatchedItemList {
   items?: ListItem[];
   items_count?: string;
   root_items?: string;
+}
+
+export interface PatchedLanguage {
+  id?: number;
+  code?: string;
+  name?: any;
+  is_default?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PatchedListItem {
