@@ -292,6 +292,20 @@ export interface FacebookSendMessage {
   page_id: string;
 }
 
+export interface FavoriteProduct {
+  id: number;
+  client: number;
+  product: string;
+  created_at: string;
+}
+
+export interface FavoriteProductCreate {
+  id: number;
+  client: number;
+  product: number;
+  created_at: string;
+}
+
 export interface Feature {
   id: number;
   key: string;
@@ -545,6 +559,13 @@ export interface PaginatedFacebookPageConnectionList {
   next?: string;
   previous?: string;
   results: FacebookPageConnection[];
+}
+
+export interface PaginatedFavoriteProductList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: FavoriteProduct[];
 }
 
 export interface PaginatedFeatureList {
@@ -902,6 +923,13 @@ export interface PatchedFacebookPageConnection {
   is_active?: boolean;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface PatchedFavoriteProduct {
+  id?: number;
+  client?: number;
+  product?: string;
+  created_at?: string;
 }
 
 export interface PatchedGroup {

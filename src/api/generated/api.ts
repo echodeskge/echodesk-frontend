@@ -55,6 +55,10 @@ import type {
   PatchedEcommerceClient,
   ClientLogin,
   ClientRegistration,
+  PaginatedFavoriteProductList,
+  FavoriteProductCreate,
+  FavoriteProduct,
+  PatchedFavoriteProduct,
   PaginatedProductImageList,
   ProductImage,
   PatchedProductImage,
@@ -1102,6 +1106,85 @@ export async function registerClient(
   data: ClientRegistration,
 ): Promise<EcommerceClient> {
   const response = await axios.post(`/api/ecommerce/clients/register/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesList(
+  client?: number,
+  ordering?: string,
+  page?: number,
+  product?: number,
+): Promise<PaginatedFavoriteProductList> {
+  const response = await axios.get(
+    `/api/ecommerce/favorites/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        product ? 'product=' + encodeURIComponent(product) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesCreate(
+  data: FavoriteProductCreate,
+): Promise<FavoriteProductCreate> {
+  const response = await axios.post(`/api/ecommerce/favorites/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesRetrieve(
+  id: number,
+): Promise<FavoriteProduct> {
+  const response = await axios.get(`/api/ecommerce/favorites/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesUpdate(
+  id: number,
+  data: FavoriteProduct,
+): Promise<FavoriteProduct> {
+  const response = await axios.put(`/api/ecommerce/favorites/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesPartialUpdate(
+  id: number,
+  data: PatchedFavoriteProduct,
+): Promise<FavoriteProduct> {
+  const response = await axios.patch(`/api/ecommerce/favorites/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/favorites/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesIsFavoritedRetrieve(
+  client: number,
+  product: number,
+): Promise<FavoriteProduct> {
+  const response = await axios.get(
+    `/api/ecommerce/favorites/is_favorited/${(() => {
+      const parts = [
+        'client=' + encodeURIComponent(client),
+        'product=' + encodeURIComponent(product),
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceFavoritesToggleCreate(data: {
+  client?: number;
+  product?: number;
+}): Promise<FavoriteProduct> {
+  const response = await axios.post(`/api/ecommerce/favorites/toggle/`, data);
   return response.data;
 }
 
