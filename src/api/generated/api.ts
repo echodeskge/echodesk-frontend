@@ -47,6 +47,13 @@ import type {
   PaginatedAttributeDefinitionList,
   AttributeDefinition,
   PatchedAttributeDefinition,
+  PaginatedCartList,
+  Cart,
+  PaginatedCartItemList,
+  CartItemCreate,
+  CartItem,
+  PatchedCartItemCreate,
+  PatchedCart,
   PaginatedProductCategoryList,
   ProductCategory,
   PatchedProductCategory,
@@ -65,6 +72,10 @@ import type {
   PaginatedLanguageList,
   Language,
   PatchedLanguage,
+  PaginatedOrderList,
+  OrderCreate,
+  Order,
+  PatchedOrder,
   PaginatedProductListList,
   ProductCreateUpdate,
   ProductDetail,
@@ -982,6 +993,141 @@ export async function apiEcommerceAttributesDestroy(id: number): Promise<any> {
   return response.data;
 }
 
+export async function apiEcommerceCartList(
+  client?: number,
+  ordering?: string,
+  page?: number,
+  status?: 'abandoned' | 'active' | 'converted',
+): Promise<PaginatedCartList> {
+  const response = await axios.get(
+    `/api/ecommerce/cart/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceCartCreate(data: Cart): Promise<Cart> {
+  const response = await axios.post(`/api/ecommerce/cart/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceCartItemsList(
+  cart?: number,
+  page?: number,
+  product?: number,
+): Promise<PaginatedCartItemList> {
+  const response = await axios.get(
+    `/api/ecommerce/cart-items/${(() => {
+      const parts = [
+        cart ? 'cart=' + encodeURIComponent(cart) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        product ? 'product=' + encodeURIComponent(product) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceCartItemsCreate(
+  data: CartItemCreate,
+): Promise<CartItemCreate> {
+  const response = await axios.post(`/api/ecommerce/cart-items/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceCartItemsRetrieve(
+  id: number,
+): Promise<CartItem> {
+  const response = await axios.get(`/api/ecommerce/cart-items/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceCartItemsUpdate(
+  id: number,
+  data: CartItemCreate,
+): Promise<CartItemCreate> {
+  const response = await axios.put(`/api/ecommerce/cart-items/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceCartItemsPartialUpdate(
+  id: number,
+  data: PatchedCartItemCreate,
+): Promise<CartItemCreate> {
+  const response = await axios.patch(`/api/ecommerce/cart-items/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceCartItemsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/cart-items/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceCartRetrieve(id: number): Promise<Cart> {
+  const response = await axios.get(`/api/ecommerce/cart/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceCartUpdate(
+  id: number,
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.put(`/api/ecommerce/cart/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceCartPartialUpdate(
+  id: number,
+  data: PatchedCart,
+): Promise<Cart> {
+  const response = await axios.patch(`/api/ecommerce/cart/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceCartDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/cart/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceCartClearCreate(
+  id: number,
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.post(`/api/ecommerce/cart/${id}/clear/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceCartSetAddressCreate(
+  id: number,
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.post(
+    `/api/ecommerce/cart/${id}/set_address/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceCartGetOrCreateRetrieve(
+  client: number,
+): Promise<Cart> {
+  const response = await axios.get(
+    `/api/ecommerce/cart/get_or_create/${(() => {
+      const parts = ['client=' + encodeURIComponent(client)].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
 export async function apiEcommerceCategoriesList(
   ordering?: string,
   page?: number,
@@ -1289,6 +1435,79 @@ export async function apiEcommerceLanguagesPartialUpdate(
 
 export async function apiEcommerceLanguagesDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/ecommerce/languages/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceOrdersList(
+  client?: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  status?:
+    | 'cancelled'
+    | 'confirmed'
+    | 'delivered'
+    | 'pending'
+    | 'processing'
+    | 'refunded'
+    | 'shipped',
+): Promise<PaginatedOrderList> {
+  const response = await axios.get(
+    `/api/ecommerce/orders/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceOrdersCreate(
+  data: OrderCreate,
+): Promise<OrderCreate> {
+  const response = await axios.post(`/api/ecommerce/orders/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceOrdersRetrieve(id: number): Promise<Order> {
+  const response = await axios.get(`/api/ecommerce/orders/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceOrdersUpdate(
+  id: number,
+  data: Order,
+): Promise<Order> {
+  const response = await axios.put(`/api/ecommerce/orders/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceOrdersPartialUpdate(
+  id: number,
+  data: PatchedOrder,
+): Promise<Order> {
+  const response = await axios.patch(`/api/ecommerce/orders/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceOrdersDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/orders/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceOrdersUpdateStatusCreate(
+  id: number,
+  data: Order,
+): Promise<Order> {
+  const response = await axios.post(
+    `/api/ecommerce/orders/${id}/update_status/`,
+    data,
+  );
   return response.data;
 }
 

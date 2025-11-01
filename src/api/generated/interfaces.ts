@@ -160,6 +160,44 @@ export interface CallTypeEnum {
   [key: string]: any;
 }
 
+export interface Cart {
+  id: number;
+  client: number;
+  delivery_address: ClientAddress;
+  status?: CartStatusEnum;
+  notes?: string;
+  items: CartItem[];
+  total_amount: string;
+  total_items: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CartItem {
+  id: number;
+  cart: number;
+  product: ProductList;
+  variant: ProductVariant;
+  quantity?: number;
+  price_at_add: string;
+  subtotal: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CartItemCreate {
+  id: number;
+  cart: number;
+  product: number;
+  variant?: number;
+  quantity?: number;
+  price_at_add: string;
+}
+
+export interface CartStatusEnum {
+  [key: string]: any;
+}
+
 export interface CategoryEnum {
   [key: string]: any;
 }
@@ -258,6 +296,7 @@ export interface EcommerceClient {
   created_at: string;
   updated_at: string;
   addresses: ClientAddress[];
+  favorites: string;
 }
 
 export interface EventTypeEnum {
@@ -442,6 +481,47 @@ export interface NotificationTypeEnum {
   [key: string]: any;
 }
 
+export interface Order {
+  id: number;
+  order_number: string;
+  client: number;
+  client_details: string;
+  delivery_address: ClientAddress;
+  status?: OrderStatusEnum;
+  total_amount: string;
+  notes?: string;
+  admin_notes?: string;
+  items: OrderItem[];
+  total_items: number;
+  created_at: string;
+  updated_at: string;
+  confirmed_at?: string;
+  shipped_at?: string;
+  delivered_at?: string;
+}
+
+export interface OrderCreate {
+  cart_id: number;
+  delivery_address_id: number;
+  notes?: string;
+}
+
+export interface OrderItem {
+  id: number;
+  order: number;
+  product: number;
+  variant?: number;
+  product_name: any;
+  quantity: number;
+  price: string;
+  subtotal: string;
+  created_at: string;
+}
+
+export interface OrderStatusEnum {
+  [key: string]: any;
+}
+
 export interface Package {
   id: number;
   name: string;
@@ -510,6 +590,20 @@ export interface PaginatedCallLogList {
   next?: string;
   previous?: string;
   results: CallLog[];
+}
+
+export interface PaginatedCartItemList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: CartItem[];
+}
+
+export interface PaginatedCartList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Cart[];
 }
 
 export interface PaginatedChecklistItemList {
@@ -608,6 +702,13 @@ export interface PaginatedNotificationList {
   next?: string;
   previous?: string;
   results: Notification[];
+}
+
+export interface PaginatedOrderList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Order[];
 }
 
 export interface PaginatedPackageListList {
@@ -853,6 +954,28 @@ export interface PatchedCallStatusUpdate {
   recording_url?: string;
 }
 
+export interface PatchedCart {
+  id?: number;
+  client?: number;
+  delivery_address?: ClientAddress;
+  status?: CartStatusEnum;
+  notes?: string;
+  items?: CartItem[];
+  total_amount?: string;
+  total_items?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedCartItemCreate {
+  id?: number;
+  cart?: number;
+  product?: number;
+  variant?: number;
+  quantity?: number;
+  price_at_add?: string;
+}
+
 export interface PatchedChecklistItem {
   id?: number;
   ticket?: number;
@@ -914,6 +1037,7 @@ export interface PatchedEcommerceClient {
   created_at?: string;
   updated_at?: string;
   addresses?: ClientAddress[];
+  favorites?: string;
 }
 
 export interface PatchedFacebookPageConnection {
@@ -996,6 +1120,25 @@ export interface PatchedNotification {
   read_at?: string;
   created_at?: string;
   time_ago?: string;
+}
+
+export interface PatchedOrder {
+  id?: number;
+  order_number?: string;
+  client?: number;
+  client_details?: string;
+  delivery_address?: ClientAddress;
+  status?: OrderStatusEnum;
+  total_amount?: string;
+  notes?: string;
+  admin_notes?: string;
+  items?: OrderItem[];
+  total_items?: number;
+  created_at?: string;
+  updated_at?: string;
+  confirmed_at?: string;
+  shipped_at?: string;
+  delivered_at?: string;
 }
 
 export interface PatchedProductCategory {
