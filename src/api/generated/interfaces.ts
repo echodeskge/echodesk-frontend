@@ -3,6 +3,17 @@
  * DO NOT EDIT MANUALLY
  */
 
+export interface AddNewCardRequest {
+  make_default?: boolean;
+}
+
+export interface AddNewCardResponse {
+  payment_id: string;
+  payment_url: string;
+  amount: number;
+  currency: string;
+}
+
 export interface AttributeDefinition {
   id: number;
   name: any;

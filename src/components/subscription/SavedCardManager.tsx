@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,9 +23,10 @@ import {
   Loader2,
   AlertCircle,
   Check,
-  Star
+  Star,
+  Plus
 } from 'lucide-react';
-import { getSavedCard, removeSavedCard, setDefaultCard } from '@/api/generated/api';
+import { getSavedCard, removeSavedCard, setDefaultCard, addNewCard } from '@/api/generated/api';
 import { toast } from 'sonner';
 
 interface SavedCard {
@@ -41,6 +43,22 @@ export const SavedCardManager: React.FC = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+
+  // Check for card addition result in URL
+  useEffect(() => {
+    const cardAdded = searchParams.get('card_added');
+    if (cardAdded === 'success') {
+      toast.success('Payment card added successfully!');
+      queryClient.invalidateQueries({ queryKey: ['savedCards'] });
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (cardAdded === 'failed') {
+      toast.error('Failed to add payment card. Please try again.');
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [searchParams, queryClient]);
 
   // Fetch saved cards (now returns an array)
   const { data: savedCards, isLoading, error } = useQuery<SavedCard[]>({
@@ -82,6 +100,20 @@ export const SavedCardManager: React.FC = () => {
     },
   });
 
+  // Add new card mutation
+  const addCardMutation = useMutation({
+    mutationFn: (makeDefault: boolean) => addNewCard({ make_default: makeDefault }),
+    onSuccess: (data) => {
+      // Redirect to payment URL to add card
+      if (data.payment_url) {
+        window.location.href = data.payment_url;
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.error || 'Failed to initiate card addition');
+    },
+  });
+
   const handleRemove = (cardId: number) => {
     setCardToDelete(cardId);
     setShowDeleteDialog(true);
@@ -95,6 +127,11 @@ export const SavedCardManager: React.FC = () => {
 
   const handleSetDefault = (cardId: number) => {
     setDefaultMutation.mutate(cardId);
+  };
+
+  const handleAddNewCard = () => {
+    // Add card without making it default (user can set default later)
+    addCardMutation.mutate(false);
   };
 
   if (isLoading) {
@@ -122,17 +159,32 @@ export const SavedCardManager: React.FC = () => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Saved Payment Methods
-          </CardTitle>
-          <CardDescription>Manage your saved payment cards for recurring payments</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Saved Payment Methods
+              </CardTitle>
+              <CardDescription>Manage your saved payment cards for recurring payments</CardDescription>
+            </div>
+            <Button
+              onClick={handleAddNewCard}
+              disabled={addCardMutation.isPending}
+            >
+              {addCardMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Add New Card
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              No saved payment methods found. When you register with a trial payment, your card will be saved here for automatic renewals.
+              No saved payment methods found. Click "Add New Card" to add your first payment card for automatic renewals.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -152,13 +204,29 @@ export const SavedCardManager: React.FC = () => {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Saved Payment Methods
-          </CardTitle>
-          <CardDescription>
-            Manage your saved payment cards for recurring payments ({savedCards.length} {savedCards.length === 1 ? 'card' : 'cards'})
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Saved Payment Methods
+              </CardTitle>
+              <CardDescription>
+                Manage your saved payment cards for recurring payments ({savedCards.length} {savedCards.length === 1 ? 'card' : 'cards'})
+              </CardDescription>
+            </div>
+            <Button
+              onClick={handleAddNewCard}
+              disabled={addCardMutation.isPending}
+              variant="outline"
+            >
+              {addCardMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Add New Card
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Cards List */}

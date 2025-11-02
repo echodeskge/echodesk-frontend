@@ -109,6 +109,8 @@ import type {
   PaginatedTicketPaymentList,
   TicketPayment,
   PatchedTicketPayment,
+  AddNewCardRequest,
+  AddNewCardResponse,
   SetDefaultCardRequest,
   PaginatedPermissionList,
   Permission,
@@ -2650,6 +2652,13 @@ export async function getSavedCard(): Promise<any> {
 
 export async function removeSavedCard(): Promise<any> {
   const response = await axios.delete(`/api/payments/saved-card/`);
+  return response.data;
+}
+
+export async function addNewCard(
+  data: AddNewCardRequest,
+): Promise<AddNewCardResponse> {
+  const response = await axios.post(`/api/payments/saved-card/add/`, data);
   return response.data;
 }
 
