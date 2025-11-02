@@ -4,11 +4,11 @@
  */
 
 import {
-  apiEcommerceProductsList,
-  apiEcommerceProductsRetrieve,
-  apiEcommerceProductsCreate,
-  apiEcommerceProductsPartialUpdate,
-  apiEcommerceProductsDestroy,
+  apiEcommerceAdminProductsList,
+  apiEcommerceAdminProductsRetrieve,
+  apiEcommerceAdminProductsCreate,
+  apiEcommerceAdminProductsPartialUpdate,
+  apiEcommerceAdminProductsDestroy,
 } from "@/api/generated";
 
 import type {
@@ -39,7 +39,7 @@ class ProductService {
    * Get paginated list of products with filters
    */
   async getProducts(filters?: ProductFilters): Promise<PaginatedProductListList> {
-    return apiEcommerceProductsList(
+    return apiEcommerceAdminProductsList(
       filters?.category,
       filters?.category_slug,
       filters?.in_stock,
@@ -60,14 +60,14 @@ class ProductService {
    * Get product detail by ID
    */
   async getProduct(id: number): Promise<ProductDetail> {
-    return apiEcommerceProductsRetrieve(id);
+    return apiEcommerceAdminProductsRetrieve(id);
   }
 
   /**
    * Create a new product
    */
   async createProduct(data: ProductCreateUpdate): Promise<ProductCreateUpdate> {
-    return apiEcommerceProductsCreate(data);
+    return apiEcommerceAdminProductsCreate(data);
   }
 
   /**
@@ -77,14 +77,14 @@ class ProductService {
     id: number,
     data: PatchedProductCreateUpdate
   ): Promise<PatchedProductCreateUpdate> {
-    return apiEcommerceProductsPartialUpdate(id, data);
+    return apiEcommerceAdminProductsPartialUpdate(id, data);
   }
 
   /**
    * Delete a product
    */
   async deleteProduct(id: number): Promise<void> {
-    return apiEcommerceProductsDestroy(id);
+    return apiEcommerceAdminProductsDestroy(id);
   }
 }
 

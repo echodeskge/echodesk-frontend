@@ -4,11 +4,11 @@
  */
 
 import {
-  apiEcommerceAttributesList,
-  apiEcommerceAttributesRetrieve,
-  apiEcommerceAttributesCreate,
-  apiEcommerceAttributesPartialUpdate,
-  apiEcommerceAttributesDestroy,
+  apiEcommerceAdminAttributesList,
+  apiEcommerceAdminAttributesRetrieve,
+  apiEcommerceAdminAttributesCreate,
+  apiEcommerceAdminAttributesPartialUpdate,
+  apiEcommerceAdminAttributesDestroy,
 } from "@/api/generated";
 
 import type {
@@ -31,7 +31,7 @@ class AttributeService {
    * Get paginated list of attribute definitions with filters
    */
   async getAttributes(filters?: AttributeFilters): Promise<PaginatedAttributeDefinitionList> {
-    return apiEcommerceAttributesList(
+    return apiEcommerceAdminAttributesList(
       filters?.attribute_type,
       filters?.is_filterable,
       filters?.is_variant_attribute,
@@ -45,14 +45,14 @@ class AttributeService {
    * Get attribute definition by ID
    */
   async getAttribute(id: number): Promise<AttributeDefinition> {
-    return apiEcommerceAttributesRetrieve(id);
+    return apiEcommerceAdminAttributesRetrieve(id);
   }
 
   /**
    * Create a new attribute definition
    */
   async createAttribute(data: AttributeDefinition): Promise<AttributeDefinition> {
-    return apiEcommerceAttributesCreate(data);
+    return apiEcommerceAdminAttributesCreate(data);
   }
 
   /**
@@ -62,14 +62,14 @@ class AttributeService {
     id: number,
     data: PatchedAttributeDefinition
   ): Promise<PatchedAttributeDefinition> {
-    return apiEcommerceAttributesPartialUpdate(id, data);
+    return apiEcommerceAdminAttributesPartialUpdate(id, data);
   }
 
   /**
    * Delete an attribute definition
    */
   async deleteAttribute(id: number): Promise<void> {
-    return apiEcommerceAttributesDestroy(id);
+    return apiEcommerceAdminAttributesDestroy(id);
   }
 }
 
