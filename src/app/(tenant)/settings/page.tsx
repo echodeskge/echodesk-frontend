@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { List, FileText, Settings, ChevronRight, CreditCard } from "lucide-react";
+import { List, FileText, Settings, ChevronRight, CreditCard, ShoppingBag } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
@@ -23,6 +23,13 @@ export default function SettingsPage() {
       icon: CreditCard,
       href: "/settings/subscription",
       color: "text-purple-500",
+    },
+    {
+      title: "Ecommerce Settings",
+      description: "Configure payment gateway and store settings",
+      icon: ShoppingBag,
+      href: "/ecommerce/settings",
+      color: "text-orange-500",
     },
     {
       title: t('sections.itemLists.title'),

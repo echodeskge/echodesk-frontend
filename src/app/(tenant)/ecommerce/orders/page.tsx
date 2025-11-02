@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, Package, ShoppingCart, Clock, CheckCircle2, Truck, XCircle } from "lucide-react"
+import { Search, Package, ShoppingCart, Clock, CheckCircle2, Truck, XCircle, CreditCard, Banknote, AlertCircle } from "lucide-react"
 
 const STATUS_COLORS = {
   pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
@@ -43,12 +43,29 @@ const STATUS_ICONS = {
   cancelled: XCircle,
 }
 
+const PAYMENT_STATUS_COLORS = {
+  pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  paid: "bg-green-50 text-green-700 border-green-200",
+  failed: "bg-red-50 text-red-700 border-red-200",
+  refunded: "bg-gray-50 text-gray-700 border-gray-200",
+  partially_refunded: "bg-orange-50 text-orange-700 border-orange-200",
+}
+
+const PAYMENT_STATUS_ICONS = {
+  pending: Clock,
+  paid: CheckCircle2,
+  failed: XCircle,
+  refunded: AlertCircle,
+  partially_refunded: AlertCircle,
+}
+
 export default function EcommerceOrdersPage() {
   const t = useTranslations("ecommerceOrders")
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [initiatingPayment, setInitiatingPayment] = useState<number | null>(null)
 
   useEffect(() => {
     fetchOrders()
@@ -63,6 +80,32 @@ export default function EcommerceOrdersPage() {
       console.error("Failed to fetch orders:", error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleInitiatePayment = async (orderId: number, paymentMethod: string = "card") => {
+    try {
+      setInitiatingPayment(orderId)
+
+      // TODO: Replace with actual API call
+      // const response = await apiEcommerceOrdersInitiatePaymentCreate(orderId, {
+      //   payment_method: paymentMethod,
+      //   return_url_success: `${window.location.origin}/ecommerce/orders/payment/success`,
+      //   return_url_fail: `${window.location.origin}/ecommerce/orders/payment/failed`
+      // })
+
+      // if (response.payment_url) {
+      //   // Redirect to BOG payment page
+      //   window.location.href = response.payment_url
+      // }
+
+      // Simulated for now - alert user
+      alert("Payment API integration pending. This will redirect to BOG payment page when connected.")
+      setInitiatingPayment(null)
+    } catch (error) {
+      console.error("Failed to initiate payment:", error)
+      alert("Failed to initiate payment. Please try again.")
+      setInitiatingPayment(null)
     }
   }
 
@@ -224,6 +267,7 @@ export default function EcommerceOrdersPage() {
                     <TableHead>{t("table.customer")}</TableHead>
                     <TableHead>{t("table.items")}</TableHead>
                     <TableHead>{t("table.total")}</TableHead>
+                    <TableHead>Payment</TableHead>
                     <TableHead>{t("table.status")}</TableHead>
                     <TableHead>{t("table.date")}</TableHead>
                     <TableHead className="text-right">{t("table.actions")}</TableHead>
