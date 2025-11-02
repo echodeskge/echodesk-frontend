@@ -96,7 +96,11 @@ const createAxiosInstance = (baseURL?: string): AxiosInstance => {
           localStorage.removeItem('echodesk_auth_token');
           localStorage.removeItem('echodesk_user_data');
           localStorage.removeItem('echodesk_tenant_data');
-          window.location.href = '/';
+
+          // Only redirect if not already on the homepage to avoid infinite loops
+          if (window.location.pathname !== '/') {
+            window.location.href = '/';
+          }
         }
       }
       return Promise.reject(error);
