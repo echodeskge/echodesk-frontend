@@ -73,6 +73,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,
       },
+      {
+        id: "ecommerce/settings",
+        icon: "Settings",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
     ],
   },
   {

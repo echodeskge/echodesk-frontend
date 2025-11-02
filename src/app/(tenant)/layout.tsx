@@ -139,6 +139,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "ecommerce/products": "products",
     "ecommerce/product-attributes": "productAttributes",
     "ecommerce/languages": "languages",
+    "ecommerce/settings": "ecommerceSettings",
     clients: "clients",
     products: "products",
     "product-attributes": "productAttributes",

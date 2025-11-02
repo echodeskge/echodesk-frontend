@@ -230,36 +230,58 @@ export default function EcommerceSettingsPage() {
                 : "Your secret will be encrypted before storing"}
             </p>
           </div>
-
-          <Separator />
-
-          {/* Environment Toggle */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="production_mode">Production Mode</Label>
-              <p className="text-sm text-muted-foreground">
-                Use production BOG API (uncheck for test environment)
-              </p>
-            </div>
-            <Switch
-              id="production_mode"
-              checked={settings.bog_use_production}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, bog_use_production: checked })
-              }
-            />
-          </div>
-
-          {settings.bog_use_production && !settings.bog_client_id && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-sm text-red-800">
-                Production mode requires BOG Client ID and Secret
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {/* Production Mode Toggle - Only shown when tenant has custom credentials */}
+      {hasExistingCredentials && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              <CardTitle>Environment Configuration</CardTitle>
+            </div>
+            <CardDescription>
+              Configure BOG API environment for your custom credentials
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="bog_use_production">Production Mode</Label>
+                <p className="text-sm text-muted-foreground">
+                  Use production BOG API (uncheck for test environment)
+                </p>
+              </div>
+              <Switch
+                id="bog_use_production"
+                checked={settings.bog_use_production}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, bog_use_production: checked })
+                }
+              />
+            </div>
+
+            {settings.bog_use_production && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-blue-600" />
+                <p className="text-sm text-blue-800">
+                  Production mode enabled. Ensure your BOG credentials are valid for production use.
+                </p>
+              </div>
+            )}
+
+            {!settings.bog_use_production && (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <p className="text-sm text-yellow-800">
+                  Test mode enabled. Payments will use BOG test environment.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Payment Methods */}
       <Card>
