@@ -312,6 +312,8 @@ export interface EmailVerificationRequest {
 export interface EmailVerificationResponse {
   message: string;
   client: EcommerceClient;
+  access: string;
+  refresh: string;
 }
 
 export interface EventTypeEnum {
@@ -1555,6 +1557,10 @@ export interface ProductVariantAttributeValue {
 
 export interface Role4c6enum {
   [key: string]: any;
+}
+
+export interface SetDefaultCardRequest {
+  card_id: number;
 }
 
 export interface SipConfiguration {

@@ -109,6 +109,7 @@ import type {
   PaginatedTicketPaymentList,
   TicketPayment,
   PatchedTicketPayment,
+  SetDefaultCardRequest,
   PaginatedPermissionList,
   Permission,
   TenantRegistration,
@@ -1845,19 +1846,18 @@ export async function apiEcommerceClientCartDestroy(id: string): Promise<any> {
   return response.data;
 }
 
-export async function apiEcommerceClientCartSetAddressCreate(
-  id: string,
-  data: Cart,
-): Promise<Cart> {
-  const response = await axios.post(
-    `/api/ecommerce/client/cart/${id}/set_address/`,
-    data,
-  );
+export async function apiEcommerceClientCartGetOrCreateRetrieve(): Promise<Cart> {
+  const response = await axios.get(`/api/ecommerce/client/cart/get_or_create/`);
   return response.data;
 }
 
-export async function apiEcommerceClientCartGetOrCreateRetrieve(): Promise<Cart> {
-  const response = await axios.get(`/api/ecommerce/client/cart/get_or_create/`);
+export async function apiEcommerceClientCartSetAddressCreate(
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.post(
+    `/api/ecommerce/client/cart/set_address/`,
+    data,
+  );
   return response.data;
 }
 
@@ -2000,6 +2000,21 @@ export async function apiEcommerceClientProductsRetrieve(
   id: number,
 ): Promise<ProductDetail> {
   const response = await axios.get(`/api/ecommerce/client/products/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientProfileMeRetrieve(): Promise<EcommerceClient> {
+  const response = await axios.get(`/api/ecommerce/client/profile/me/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientProfileUpdateProfilePartialUpdate(
+  data: PatchedEcommerceClient,
+): Promise<EcommerceClient> {
+  const response = await axios.patch(
+    `/api/ecommerce/client/profile/update_profile/`,
+    data,
+  );
   return response.data;
 }
 
@@ -2635,6 +2650,16 @@ export async function getSavedCard(): Promise<any> {
 
 export async function removeSavedCard(): Promise<any> {
   const response = await axios.delete(`/api/payments/saved-card/`);
+  return response.data;
+}
+
+export async function setDefaultCard(
+  data: SetDefaultCardRequest,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/payments/saved-card/set-default/`,
+    data,
+  );
   return response.data;
 }
 
