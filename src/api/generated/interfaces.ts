@@ -204,8 +204,7 @@ export interface CategoryEnum {
 
 export interface ChecklistItem {
   id: number;
-  ticket?: number;
-  sub_ticket?: number;
+  ticket: number;
   text: string;
   is_checked?: boolean;
   position?: number;
@@ -254,6 +253,12 @@ export interface ClientRegistration {
   date_of_birth?: string;
 }
 
+export interface ClientRegistrationResponse {
+  client: EcommerceClient;
+  verification_token: string;
+  message: string;
+}
+
 export interface Department {
   id: number;
   name: string;
@@ -297,6 +302,16 @@ export interface EcommerceClient {
   updated_at: string;
   addresses: ClientAddress[];
   favorites: string;
+}
+
+export interface EmailVerificationRequest {
+  verification_token: string;
+  code: string;
+}
+
+export interface EmailVerificationResponse {
+  message: string;
+  client: EcommerceClient;
 }
 
 export interface EventTypeEnum {
@@ -493,8 +508,14 @@ export interface Order {
   admin_notes?: string;
   items: OrderItem[];
   total_items: number;
+  payment_status?: PaymentStatusEnum;
+  payment_method?: string;
+  bog_order_id: string;
+  payment_url: string;
+  payment_metadata: any;
   created_at: string;
   updated_at: string;
+  paid_at: string;
   confirmed_at?: string;
   shipped_at?: string;
   delivered_at?: string;
@@ -725,13 +746,6 @@ export interface PaginatedPermissionList {
   results: Permission[];
 }
 
-export interface PaginatedProductCategoryList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: ProductCategory[];
-}
-
 export interface PaginatedProductImageList {
   count: number;
   next?: string;
@@ -746,13 +760,6 @@ export interface PaginatedProductListList {
   results: ProductList[];
 }
 
-export interface PaginatedProductTypeList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: ProductType[];
-}
-
 export interface PaginatedProductVariantList {
   count: number;
   next?: string;
@@ -765,20 +772,6 @@ export interface PaginatedSipConfigurationListList {
   next?: string;
   previous?: string;
   results: SipConfigurationList[];
-}
-
-export interface PaginatedSubTicketAssignmentList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: SubTicketAssignment[];
-}
-
-export interface PaginatedSubTicketList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: SubTicket[];
 }
 
 export interface PaginatedTagList {
@@ -886,6 +879,16 @@ export interface PaginatedUserList {
   results: User[];
 }
 
+export interface PasswordResetConfirm {
+  token: string;
+  new_password: string;
+  new_password_confirm: string;
+}
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
 export interface PatchedAttributeDefinition {
   id?: number;
   name?: any;
@@ -979,7 +982,6 @@ export interface PatchedCartItemCreate {
 export interface PatchedChecklistItem {
   id?: number;
   ticket?: number;
-  sub_ticket?: number;
   text?: string;
   is_checked?: boolean;
   position?: number;
@@ -1134,26 +1136,17 @@ export interface PatchedOrder {
   admin_notes?: string;
   items?: OrderItem[];
   total_items?: number;
+  payment_status?: PaymentStatusEnum;
+  payment_method?: string;
+  bog_order_id?: string;
+  payment_url?: string;
+  payment_metadata?: any;
   created_at?: string;
   updated_at?: string;
+  paid_at?: string;
   confirmed_at?: string;
   shipped_at?: string;
   delivered_at?: string;
-}
-
-export interface PatchedProductCategory {
-  id?: number;
-  name?: any;
-  description?: any;
-  slug?: string;
-  parent?: number;
-  parent_name?: string;
-  image?: string;
-  sort_order?: number;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  subcategories?: string;
 }
 
 export interface PatchedProductCreateUpdate {
@@ -1163,8 +1156,6 @@ export interface PatchedProductCreateUpdate {
   name?: any;
   description?: any;
   short_description?: any;
-  product_type?: number;
-  category?: number;
   price?: string;
   compare_at_price?: string;
   cost_price?: string;
@@ -1188,20 +1179,6 @@ export interface PatchedProductImage {
   alt_text?: any;
   sort_order?: number;
   created_at?: string;
-}
-
-export interface PatchedProductType {
-  id?: number;
-  name?: any;
-  key?: string;
-  description?: any;
-  icon?: string;
-  sort_order?: number;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  attributes?: string;
-  product_count?: string;
 }
 
 export interface PatchedProductVariant {
@@ -1235,38 +1212,6 @@ export interface PatchedSipConfiguration {
   max_concurrent_calls?: number;
   created_at?: string;
   updated_at?: string;
-}
-
-export interface PatchedSubTicket {
-  id?: number;
-  parent_ticket?: number;
-  title?: string;
-  description?: string;
-  rich_description?: any;
-  description_format?: DescriptionFormatEnum;
-  priority?: PriorityEnum;
-  is_completed?: boolean;
-  position?: number;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: UserMinimal;
-  assigned_to?: UserMinimal;
-  assigned_to_id?: number;
-  assigned_users?: UserMinimal[];
-  assignments?: SubTicketAssignment[];
-  assigned_user_ids?: number[];
-  assignment_roles?: Record<string, any>;
-  checklist_items?: ChecklistItem[];
-  checklist_items_count?: string;
-  completed_items_count?: string;
-}
-
-export interface PatchedSubTicketAssignment {
-  id?: number;
-  user?: UserMinimal;
-  role?: Role451enum;
-  assigned_at?: string;
-  assigned_by?: UserMinimal;
 }
 
 export interface PatchedTag {
@@ -1340,9 +1285,6 @@ export interface PatchedTicket {
   tag_ids?: number[];
   comments?: TicketComment[];
   comments_count?: string;
-  sub_tickets?: SubTicket[];
-  sub_tickets_count?: string;
-  completed_sub_tickets_count?: string;
   checklist_items?: ChecklistItem[];
   checklist_items_count?: string;
   completed_checklist_items_count?: string;
@@ -1362,7 +1304,7 @@ export interface PatchedTicket {
 export interface PatchedTicketAssignment {
   id?: number;
   user?: UserMinimal;
-  role?: Role451enum;
+  role?: TicketAssignmentRoleEnum;
   assigned_at?: string;
   assigned_by?: UserMinimal;
 }
@@ -1462,6 +1404,10 @@ export interface PaymentMethodEnum {
   [key: string]: any;
 }
 
+export interface PaymentStatusEnum {
+  [key: string]: any;
+}
+
 export interface Permission {
   id: number;
   name: string;
@@ -1500,21 +1446,6 @@ export interface ProductAttributeValue {
   updated_at: string;
 }
 
-export interface ProductCategory {
-  id: number;
-  name: any;
-  description?: any;
-  slug: string;
-  parent?: number;
-  parent_name: string;
-  image?: string;
-  sort_order?: number;
-  is_active?: boolean;
-  created_at: string;
-  updated_at: string;
-  subcategories: string;
-}
-
 export interface ProductCreateUpdate {
   id: number;
   sku: string;
@@ -1522,8 +1453,6 @@ export interface ProductCreateUpdate {
   name: any;
   description?: any;
   short_description?: any;
-  product_type: number;
-  category?: number;
   price: string;
   compare_at_price?: string;
   cost_price?: string;
@@ -1548,10 +1477,6 @@ export interface ProductDetail {
   name: any;
   description?: any;
   short_description?: any;
-  product_type: number;
-  product_type_detail: ProductType;
-  category?: number;
-  category_detail: ProductCategory;
   price: string;
   compare_at_price?: string;
   cost_price?: string;
@@ -1593,10 +1518,6 @@ export interface ProductList {
   slug: string;
   name: any;
   short_description?: any;
-  product_type: number;
-  product_type_name: string;
-  category?: number;
-  category_name: string;
   price: string;
   compare_at_price?: string;
   discount_percentage: number;
@@ -1608,20 +1529,6 @@ export interface ProductList {
   is_in_stock: boolean;
   created_at: string;
   updated_at: string;
-}
-
-export interface ProductType {
-  id: number;
-  name: any;
-  key: string;
-  description?: any;
-  icon?: string;
-  sort_order?: number;
-  is_active?: boolean;
-  created_at: string;
-  updated_at: string;
-  attributes: string;
-  product_count: string;
 }
 
 export interface ProductVariant {
@@ -1644,10 +1551,6 @@ export interface ProductVariantAttributeValue {
   attribute: AttributeDefinition;
   attribute_id: number;
   value_json: any;
-}
-
-export interface Role451enum {
-  [key: string]: any;
 }
 
 export interface Role4c6enum {
@@ -1708,38 +1611,6 @@ export interface Status956enum {
 
 export interface StatusB9eEnum {
   [key: string]: any;
-}
-
-export interface SubTicket {
-  id: number;
-  parent_ticket: number;
-  title: string;
-  description?: string;
-  rich_description?: any;
-  description_format?: DescriptionFormatEnum;
-  priority?: PriorityEnum;
-  is_completed?: boolean;
-  position?: number;
-  created_at: string;
-  updated_at: string;
-  created_by: UserMinimal;
-  assigned_to: UserMinimal;
-  assigned_to_id?: number;
-  assigned_users: UserMinimal[];
-  assignments: SubTicketAssignment[];
-  assigned_user_ids?: number[];
-  assignment_roles?: Record<string, any>;
-  checklist_items: ChecklistItem[];
-  checklist_items_count: string;
-  completed_items_count: string;
-}
-
-export interface SubTicketAssignment {
-  id: number;
-  user: UserMinimal;
-  role?: Role451enum;
-  assigned_at: string;
-  assigned_by: UserMinimal;
 }
 
 export interface Tag {
@@ -1880,9 +1751,6 @@ export interface Ticket {
   tag_ids?: number[];
   comments: TicketComment[];
   comments_count: string;
-  sub_tickets: SubTicket[];
-  sub_tickets_count: string;
-  completed_sub_tickets_count: string;
   checklist_items: ChecklistItem[];
   checklist_items_count: string;
   completed_checklist_items_count: string;
@@ -1902,9 +1770,13 @@ export interface Ticket {
 export interface TicketAssignment {
   id: number;
   user: UserMinimal;
-  role?: Role451enum;
+  role?: TicketAssignmentRoleEnum;
   assigned_at: string;
   assigned_by: UserMinimal;
+}
+
+export interface TicketAssignmentRoleEnum {
+  [key: string]: any;
 }
 
 export interface TicketAttachment {

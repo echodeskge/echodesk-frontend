@@ -54,14 +54,9 @@ import type {
   CartItem,
   PatchedCartItemCreate,
   PatchedCart,
-  PaginatedProductCategoryList,
-  ProductCategory,
-  PatchedProductCategory,
   PaginatedEcommerceClientList,
   EcommerceClient,
   PatchedEcommerceClient,
-  ClientLogin,
-  ClientRegistration,
   PaginatedFavoriteProductList,
   FavoriteProductCreate,
   FavoriteProduct,
@@ -80,12 +75,16 @@ import type {
   ProductCreateUpdate,
   ProductDetail,
   PatchedProductCreateUpdate,
-  PaginatedProductTypeList,
-  ProductType,
-  PatchedProductType,
   PaginatedProductVariantList,
   ProductVariant,
   PatchedProductVariant,
+  ClientLogin,
+  PasswordResetConfirm,
+  PasswordResetRequest,
+  ClientRegistration,
+  ClientRegistrationResponse,
+  EmailVerificationRequest,
+  EmailVerificationResponse,
   PaginatedFeatureList,
   Feature,
   PaginatedTicketFormSubmissionList,
@@ -124,12 +123,6 @@ import type {
   FacebookPageConnection,
   PatchedFacebookPageConnection,
   FacebookSendMessage,
-  PaginatedSubTicketList,
-  SubTicket,
-  PatchedSubTicket,
-  PaginatedSubTicketAssignmentList,
-  SubTicketAssignment,
-  PatchedSubTicketAssignment,
   PaginatedTagList,
   Tag,
   PatchedTag,
@@ -855,14 +848,14 @@ export async function apiDeploymentStatusRetrieve(
   return response.data;
 }
 
-export async function apiEcommerceAddressesList(
+export async function apiEcommerceAdminAddressesList(
   client?: number,
   isDefault?: boolean,
   ordering?: string,
   page?: number,
 ): Promise<PaginatedClientAddressList> {
   const response = await axios.get(
-    `/api/ecommerce/addresses/${(() => {
+    `/api/ecommerce/admin/addresses/${(() => {
       const parts = [
         client ? 'client=' + encodeURIComponent(client) : null,
         isDefault ? 'is_default=' + encodeURIComponent(isDefault) : null,
@@ -875,53 +868,61 @@ export async function apiEcommerceAddressesList(
   return response.data;
 }
 
-export async function apiEcommerceAddressesCreate(
+export async function apiEcommerceAdminAddressesCreate(
   data: ClientAddress,
 ): Promise<ClientAddress> {
-  const response = await axios.post(`/api/ecommerce/addresses/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/addresses/`, data);
   return response.data;
 }
 
-export async function apiEcommerceAddressesRetrieve(
+export async function apiEcommerceAdminAddressesRetrieve(
   id: number,
 ): Promise<ClientAddress> {
-  const response = await axios.get(`/api/ecommerce/addresses/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/addresses/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceAddressesUpdate(
-  id: number,
-  data: ClientAddress,
-): Promise<ClientAddress> {
-  const response = await axios.put(`/api/ecommerce/addresses/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceAddressesPartialUpdate(
-  id: number,
-  data: PatchedClientAddress,
-): Promise<ClientAddress> {
-  const response = await axios.patch(`/api/ecommerce/addresses/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceAddressesDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/addresses/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceAddressesSetDefaultCreate(
+export async function apiEcommerceAdminAddressesUpdate(
   id: number,
   data: ClientAddress,
 ): Promise<ClientAddress> {
-  const response = await axios.post(
-    `/api/ecommerce/addresses/${id}/set_default/`,
+  const response = await axios.put(
+    `/api/ecommerce/admin/addresses/${id}/`,
     data,
   );
   return response.data;
 }
 
-export async function apiEcommerceAttributesList(
+export async function apiEcommerceAdminAddressesPartialUpdate(
+  id: number,
+  data: PatchedClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/addresses/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminAddressesDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/addresses/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminAddressesSetDefaultCreate(
+  id: number,
+  data: ClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/addresses/${id}/set_default/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminAttributesList(
   attributeType?:
     | 'boolean'
     | 'color'
@@ -937,7 +938,7 @@ export async function apiEcommerceAttributesList(
   search?: string,
 ): Promise<PaginatedAttributeDefinitionList> {
   const response = await axios.get(
-    `/api/ecommerce/attributes/${(() => {
+    `/api/ecommerce/admin/attributes/${(() => {
       const parts = [
         attributeType
           ? 'attribute_type=' + encodeURIComponent(attributeType)
@@ -958,49 +959,57 @@ export async function apiEcommerceAttributesList(
   return response.data;
 }
 
-export async function apiEcommerceAttributesCreate(
+export async function apiEcommerceAdminAttributesCreate(
   data: AttributeDefinition,
 ): Promise<AttributeDefinition> {
-  const response = await axios.post(`/api/ecommerce/attributes/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/attributes/`, data);
   return response.data;
 }
 
-export async function apiEcommerceAttributesRetrieve(
+export async function apiEcommerceAdminAttributesRetrieve(
   id: number,
 ): Promise<AttributeDefinition> {
-  const response = await axios.get(`/api/ecommerce/attributes/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/attributes/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceAttributesUpdate(
+export async function apiEcommerceAdminAttributesUpdate(
   id: number,
   data: AttributeDefinition,
 ): Promise<AttributeDefinition> {
-  const response = await axios.put(`/api/ecommerce/attributes/${id}/`, data);
+  const response = await axios.put(
+    `/api/ecommerce/admin/attributes/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceAttributesPartialUpdate(
+export async function apiEcommerceAdminAttributesPartialUpdate(
   id: number,
   data: PatchedAttributeDefinition,
 ): Promise<AttributeDefinition> {
-  const response = await axios.patch(`/api/ecommerce/attributes/${id}/`, data);
+  const response = await axios.patch(
+    `/api/ecommerce/admin/attributes/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceAttributesDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/attributes/${id}/`);
+export async function apiEcommerceAdminAttributesDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/attributes/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceCartList(
+export async function apiEcommerceAdminCartList(
   client?: number,
   ordering?: string,
   page?: number,
   status?: 'abandoned' | 'active' | 'converted',
 ): Promise<PaginatedCartList> {
   const response = await axios.get(
-    `/api/ecommerce/cart/${(() => {
+    `/api/ecommerce/admin/cart/${(() => {
       const parts = [
         client ? 'client=' + encodeURIComponent(client) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
@@ -1013,18 +1022,18 @@ export async function apiEcommerceCartList(
   return response.data;
 }
 
-export async function apiEcommerceCartCreate(data: Cart): Promise<Cart> {
-  const response = await axios.post(`/api/ecommerce/cart/`, data);
+export async function apiEcommerceAdminCartCreate(data: Cart): Promise<Cart> {
+  const response = await axios.post(`/api/ecommerce/admin/cart/`, data);
   return response.data;
 }
 
-export async function apiEcommerceCartItemsList(
+export async function apiEcommerceAdminCartItemsList(
   cart?: number,
   page?: number,
   product?: number,
 ): Promise<PaginatedCartItemList> {
   const response = await axios.get(
-    `/api/ecommerce/cart-items/${(() => {
+    `/api/ecommerce/admin/cart-items/${(() => {
       const parts = [
         cart ? 'cart=' + encodeURIComponent(cart) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
@@ -1036,157 +1045,98 @@ export async function apiEcommerceCartItemsList(
   return response.data;
 }
 
-export async function apiEcommerceCartItemsCreate(
+export async function apiEcommerceAdminCartItemsCreate(
   data: CartItemCreate,
 ): Promise<CartItemCreate> {
-  const response = await axios.post(`/api/ecommerce/cart-items/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/cart-items/`, data);
   return response.data;
 }
 
-export async function apiEcommerceCartItemsRetrieve(
+export async function apiEcommerceAdminCartItemsRetrieve(
   id: number,
 ): Promise<CartItem> {
-  const response = await axios.get(`/api/ecommerce/cart-items/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/cart-items/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceCartItemsUpdate(
+export async function apiEcommerceAdminCartItemsUpdate(
   id: number,
   data: CartItemCreate,
 ): Promise<CartItemCreate> {
-  const response = await axios.put(`/api/ecommerce/cart-items/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCartItemsPartialUpdate(
-  id: number,
-  data: PatchedCartItemCreate,
-): Promise<CartItemCreate> {
-  const response = await axios.patch(`/api/ecommerce/cart-items/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCartItemsDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/cart-items/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceCartRetrieve(id: number): Promise<Cart> {
-  const response = await axios.get(`/api/ecommerce/cart/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceCartUpdate(
-  id: number,
-  data: Cart,
-): Promise<Cart> {
-  const response = await axios.put(`/api/ecommerce/cart/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCartPartialUpdate(
-  id: number,
-  data: PatchedCart,
-): Promise<Cart> {
-  const response = await axios.patch(`/api/ecommerce/cart/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCartDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/cart/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceCartClearCreate(
-  id: number,
-  data: Cart,
-): Promise<Cart> {
-  const response = await axios.post(`/api/ecommerce/cart/${id}/clear/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCartSetAddressCreate(
-  id: number,
-  data: Cart,
-): Promise<Cart> {
-  const response = await axios.post(
-    `/api/ecommerce/cart/${id}/set_address/`,
+  const response = await axios.put(
+    `/api/ecommerce/admin/cart-items/${id}/`,
     data,
   );
   return response.data;
 }
 
-export async function apiEcommerceCartGetOrCreateRetrieve(
-  client: number,
+export async function apiEcommerceAdminCartItemsPartialUpdate(
+  id: number,
+  data: PatchedCartItemCreate,
+): Promise<CartItemCreate> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/cart-items/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminCartItemsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/cart-items/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminCartRetrieve(id: number): Promise<Cart> {
+  const response = await axios.get(`/api/ecommerce/admin/cart/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminCartUpdate(
+  id: number,
+  data: Cart,
 ): Promise<Cart> {
-  const response = await axios.get(
-    `/api/ecommerce/cart/get_or_create/${(() => {
-      const parts = ['client=' + encodeURIComponent(client)].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
+  const response = await axios.put(`/api/ecommerce/admin/cart/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceAdminCartPartialUpdate(
+  id: number,
+  data: PatchedCart,
+): Promise<Cart> {
+  const response = await axios.patch(`/api/ecommerce/admin/cart/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceAdminCartDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/cart/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminCartClearCreate(
+  id: number,
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/cart/${id}/clear/`,
+    data,
   );
   return response.data;
 }
 
-export async function apiEcommerceCategoriesList(
-  ordering?: string,
-  page?: number,
-  search?: string,
-): Promise<PaginatedProductCategoryList> {
-  const response = await axios.get(
-    `/api/ecommerce/categories/${(() => {
-      const parts = [
-        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
+export async function apiEcommerceAdminCartSetAddressCreate(
+  id: number,
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/cart/${id}/set_address/`,
+    data,
   );
   return response.data;
 }
 
-export async function apiEcommerceCategoriesCreate(
-  data: ProductCategory,
-): Promise<ProductCategory> {
-  const response = await axios.post(`/api/ecommerce/categories/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCategoriesRetrieve(
-  id: number,
-): Promise<ProductCategory> {
-  const response = await axios.get(`/api/ecommerce/categories/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceCategoriesUpdate(
-  id: number,
-  data: ProductCategory,
-): Promise<ProductCategory> {
-  const response = await axios.put(`/api/ecommerce/categories/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCategoriesPartialUpdate(
-  id: number,
-  data: PatchedProductCategory,
-): Promise<ProductCategory> {
-  const response = await axios.patch(`/api/ecommerce/categories/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceCategoriesDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/categories/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceCategoriesTreeRetrieve(): Promise<ProductCategory> {
-  const response = await axios.get(`/api/ecommerce/categories/tree/`);
-  return response.data;
-}
-
-export async function apiEcommerceClientsList(
+export async function apiEcommerceAdminClientsList(
   isActive?: boolean,
   isVerified?: boolean,
   ordering?: string,
@@ -1194,7 +1144,7 @@ export async function apiEcommerceClientsList(
   search?: string,
 ): Promise<PaginatedEcommerceClientList> {
   const response = await axios.get(
-    `/api/ecommerce/clients/${(() => {
+    `/api/ecommerce/admin/clients/${(() => {
       const parts = [
         isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
         isVerified ? 'is_verified=' + encodeURIComponent(isVerified) : null,
@@ -1208,61 +1158,54 @@ export async function apiEcommerceClientsList(
   return response.data;
 }
 
-export async function apiEcommerceClientsCreate(
+export async function apiEcommerceAdminClientsCreate(
   data: EcommerceClient,
 ): Promise<EcommerceClient> {
-  const response = await axios.post(`/api/ecommerce/clients/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/clients/`, data);
   return response.data;
 }
 
-export async function apiEcommerceClientsRetrieve(
+export async function apiEcommerceAdminClientsRetrieve(
   id: number,
 ): Promise<EcommerceClient> {
-  const response = await axios.get(`/api/ecommerce/clients/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/clients/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceClientsUpdate(
+export async function apiEcommerceAdminClientsUpdate(
   id: number,
   data: EcommerceClient,
 ): Promise<EcommerceClient> {
-  const response = await axios.put(`/api/ecommerce/clients/${id}/`, data);
+  const response = await axios.put(`/api/ecommerce/admin/clients/${id}/`, data);
   return response.data;
 }
 
-export async function apiEcommerceClientsPartialUpdate(
+export async function apiEcommerceAdminClientsPartialUpdate(
   id: number,
   data: PatchedEcommerceClient,
 ): Promise<EcommerceClient> {
-  const response = await axios.patch(`/api/ecommerce/clients/${id}/`, data);
+  const response = await axios.patch(
+    `/api/ecommerce/admin/clients/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceClientsDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/clients/${id}/`);
+export async function apiEcommerceAdminClientsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/clients/${id}/`);
   return response.data;
 }
 
-export async function loginClient(data: ClientLogin): Promise<EcommerceClient> {
-  const response = await axios.post(`/api/ecommerce/clients/login/`, data);
-  return response.data;
-}
-
-export async function registerClient(
-  data: ClientRegistration,
-): Promise<EcommerceClient> {
-  const response = await axios.post(`/api/ecommerce/clients/register/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceFavoritesList(
+export async function apiEcommerceAdminFavoritesList(
   client?: number,
   ordering?: string,
   page?: number,
   product?: number,
 ): Promise<PaginatedFavoriteProductList> {
   const response = await axios.get(
-    `/api/ecommerce/favorites/${(() => {
+    `/api/ecommerce/admin/favorites/${(() => {
       const parts = [
         client ? 'client=' + encodeURIComponent(client) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
@@ -1275,47 +1218,55 @@ export async function apiEcommerceFavoritesList(
   return response.data;
 }
 
-export async function apiEcommerceFavoritesCreate(
+export async function apiEcommerceAdminFavoritesCreate(
   data: FavoriteProductCreate,
 ): Promise<FavoriteProductCreate> {
-  const response = await axios.post(`/api/ecommerce/favorites/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/favorites/`, data);
   return response.data;
 }
 
-export async function apiEcommerceFavoritesRetrieve(
+export async function apiEcommerceAdminFavoritesRetrieve(
   id: number,
 ): Promise<FavoriteProduct> {
-  const response = await axios.get(`/api/ecommerce/favorites/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/favorites/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceFavoritesUpdate(
+export async function apiEcommerceAdminFavoritesUpdate(
   id: number,
   data: FavoriteProduct,
 ): Promise<FavoriteProduct> {
-  const response = await axios.put(`/api/ecommerce/favorites/${id}/`, data);
+  const response = await axios.put(
+    `/api/ecommerce/admin/favorites/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceFavoritesPartialUpdate(
+export async function apiEcommerceAdminFavoritesPartialUpdate(
   id: number,
   data: PatchedFavoriteProduct,
 ): Promise<FavoriteProduct> {
-  const response = await axios.patch(`/api/ecommerce/favorites/${id}/`, data);
+  const response = await axios.patch(
+    `/api/ecommerce/admin/favorites/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceFavoritesDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/favorites/${id}/`);
+export async function apiEcommerceAdminFavoritesDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/favorites/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceFavoritesIsFavoritedRetrieve(
+export async function apiEcommerceAdminFavoritesIsFavoritedRetrieve(
   client: number,
   product: number,
 ): Promise<FavoriteProduct> {
   const response = await axios.get(
-    `/api/ecommerce/favorites/is_favorited/${(() => {
+    `/api/ecommerce/admin/favorites/is_favorited/${(() => {
       const parts = [
         'client=' + encodeURIComponent(client),
         'product=' + encodeURIComponent(product),
@@ -1326,21 +1277,24 @@ export async function apiEcommerceFavoritesIsFavoritedRetrieve(
   return response.data;
 }
 
-export async function apiEcommerceFavoritesToggleCreate(data: {
+export async function apiEcommerceAdminFavoritesToggleCreate(data: {
   client?: number;
   product?: number;
 }): Promise<FavoriteProduct> {
-  const response = await axios.post(`/api/ecommerce/favorites/toggle/`, data);
+  const response = await axios.post(
+    `/api/ecommerce/admin/favorites/toggle/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceImagesList(
+export async function apiEcommerceAdminImagesList(
   ordering?: string,
   page?: number,
   product?: number,
 ): Promise<PaginatedProductImageList> {
   const response = await axios.get(
-    `/api/ecommerce/images/${(() => {
+    `/api/ecommerce/admin/images/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
@@ -1352,47 +1306,50 @@ export async function apiEcommerceImagesList(
   return response.data;
 }
 
-export async function apiEcommerceImagesCreate(
+export async function apiEcommerceAdminImagesCreate(
   data: ProductImage,
 ): Promise<ProductImage> {
-  const response = await axios.post(`/api/ecommerce/images/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/images/`, data);
   return response.data;
 }
 
-export async function apiEcommerceImagesRetrieve(
+export async function apiEcommerceAdminImagesRetrieve(
   id: number,
 ): Promise<ProductImage> {
-  const response = await axios.get(`/api/ecommerce/images/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/images/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceImagesUpdate(
+export async function apiEcommerceAdminImagesUpdate(
   id: number,
   data: ProductImage,
 ): Promise<ProductImage> {
-  const response = await axios.put(`/api/ecommerce/images/${id}/`, data);
+  const response = await axios.put(`/api/ecommerce/admin/images/${id}/`, data);
   return response.data;
 }
 
-export async function apiEcommerceImagesPartialUpdate(
+export async function apiEcommerceAdminImagesPartialUpdate(
   id: number,
   data: PatchedProductImage,
 ): Promise<ProductImage> {
-  const response = await axios.patch(`/api/ecommerce/images/${id}/`, data);
+  const response = await axios.patch(
+    `/api/ecommerce/admin/images/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceImagesDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/images/${id}/`);
+export async function apiEcommerceAdminImagesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/images/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceLanguagesList(
+export async function apiEcommerceAdminLanguagesList(
   ordering?: string,
   page?: number,
 ): Promise<PaginatedLanguageList> {
   const response = await axios.get(
-    `/api/ecommerce/languages/${(() => {
+    `/api/ecommerce/admin/languages/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
@@ -1403,42 +1360,50 @@ export async function apiEcommerceLanguagesList(
   return response.data;
 }
 
-export async function apiEcommerceLanguagesCreate(
+export async function apiEcommerceAdminLanguagesCreate(
   data: Language,
 ): Promise<Language> {
-  const response = await axios.post(`/api/ecommerce/languages/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/languages/`, data);
   return response.data;
 }
 
-export async function apiEcommerceLanguagesRetrieve(
+export async function apiEcommerceAdminLanguagesRetrieve(
   id: number,
 ): Promise<Language> {
-  const response = await axios.get(`/api/ecommerce/languages/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/languages/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceLanguagesUpdate(
+export async function apiEcommerceAdminLanguagesUpdate(
   id: number,
   data: Language,
 ): Promise<Language> {
-  const response = await axios.put(`/api/ecommerce/languages/${id}/`, data);
+  const response = await axios.put(
+    `/api/ecommerce/admin/languages/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceLanguagesPartialUpdate(
+export async function apiEcommerceAdminLanguagesPartialUpdate(
   id: number,
   data: PatchedLanguage,
 ): Promise<Language> {
-  const response = await axios.patch(`/api/ecommerce/languages/${id}/`, data);
+  const response = await axios.patch(
+    `/api/ecommerce/admin/languages/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceLanguagesDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/languages/${id}/`);
+export async function apiEcommerceAdminLanguagesDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/languages/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceOrdersList(
+export async function apiEcommerceAdminOrdersList(
   client?: number,
   ordering?: string,
   page?: number,
@@ -1453,7 +1418,7 @@ export async function apiEcommerceOrdersList(
     | 'shipped',
 ): Promise<PaginatedOrderList> {
   const response = await axios.get(
-    `/api/ecommerce/orders/${(() => {
+    `/api/ecommerce/admin/orders/${(() => {
       const parts = [
         client ? 'client=' + encodeURIComponent(client) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
@@ -1467,53 +1432,67 @@ export async function apiEcommerceOrdersList(
   return response.data;
 }
 
-export async function apiEcommerceOrdersCreate(
+export async function apiEcommerceAdminOrdersCreate(
   data: OrderCreate,
 ): Promise<OrderCreate> {
-  const response = await axios.post(`/api/ecommerce/orders/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/orders/`, data);
   return response.data;
 }
 
-export async function apiEcommerceOrdersRetrieve(id: number): Promise<Order> {
-  const response = await axios.get(`/api/ecommerce/orders/${id}/`);
+export async function apiEcommerceAdminOrdersRetrieve(
+  id: number,
+): Promise<Order> {
+  const response = await axios.get(`/api/ecommerce/admin/orders/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceOrdersUpdate(
+export async function apiEcommerceAdminOrdersUpdate(
   id: number,
   data: Order,
 ): Promise<Order> {
-  const response = await axios.put(`/api/ecommerce/orders/${id}/`, data);
+  const response = await axios.put(`/api/ecommerce/admin/orders/${id}/`, data);
   return response.data;
 }
 
-export async function apiEcommerceOrdersPartialUpdate(
+export async function apiEcommerceAdminOrdersPartialUpdate(
   id: number,
   data: PatchedOrder,
 ): Promise<Order> {
-  const response = await axios.patch(`/api/ecommerce/orders/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceOrdersDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/orders/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceOrdersUpdateStatusCreate(
-  id: number,
-  data: Order,
-): Promise<Order> {
-  const response = await axios.post(
-    `/api/ecommerce/orders/${id}/update_status/`,
+  const response = await axios.patch(
+    `/api/ecommerce/admin/orders/${id}/`,
     data,
   );
   return response.data;
 }
 
-export async function apiEcommerceProductsList(
-  category?: number,
-  categorySlug?: string,
+export async function apiEcommerceAdminOrdersDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/orders/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminOrdersInitiatePaymentCreate(
+  id: number,
+  data: Order,
+): Promise<Order> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/orders/${id}/initiate_payment/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminOrdersUpdateStatusCreate(
+  id: number,
+  data: Order,
+): Promise<Order> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/orders/${id}/update_status/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminProductsList(
   inStock?: boolean,
   isFeatured?: boolean,
   lowStock?: boolean,
@@ -1521,18 +1500,12 @@ export async function apiEcommerceProductsList(
   minPrice?: number,
   ordering?: string,
   page?: number,
-  productType?: number,
-  productTypeKey?: string,
   search?: string,
   status?: 'active' | 'draft' | 'inactive' | 'out_of_stock',
 ): Promise<PaginatedProductListList> {
   const response = await axios.get(
-    `/api/ecommerce/products/${(() => {
+    `/api/ecommerce/admin/products/${(() => {
       const parts = [
-        category ? 'category=' + encodeURIComponent(category) : null,
-        categorySlug
-          ? 'category_slug=' + encodeURIComponent(categorySlug)
-          : null,
         inStock ? 'in_stock=' + encodeURIComponent(inStock) : null,
         isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
         lowStock ? 'low_stock=' + encodeURIComponent(lowStock) : null,
@@ -1540,10 +1513,6 @@ export async function apiEcommerceProductsList(
         minPrice ? 'min_price=' + encodeURIComponent(minPrice) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
-        productType ? 'product_type=' + encodeURIComponent(productType) : null,
-        productTypeKey
-          ? 'product_type_key=' + encodeURIComponent(productTypeKey)
-          : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
@@ -1553,137 +1522,92 @@ export async function apiEcommerceProductsList(
   return response.data;
 }
 
-export async function apiEcommerceProductsCreate(
+export async function apiEcommerceAdminProductsCreate(
   data: ProductCreateUpdate,
 ): Promise<ProductCreateUpdate> {
-  const response = await axios.post(`/api/ecommerce/products/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/products/`, data);
   return response.data;
 }
 
-export async function apiEcommerceProductsRetrieve(
+export async function apiEcommerceAdminProductsRetrieve(
   id: number,
 ): Promise<ProductDetail> {
-  const response = await axios.get(`/api/ecommerce/products/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/products/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceProductsUpdate(
+export async function apiEcommerceAdminProductsUpdate(
   id: number,
   data: ProductCreateUpdate,
 ): Promise<ProductCreateUpdate> {
-  const response = await axios.put(`/api/ecommerce/products/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceProductsPartialUpdate(
-  id: number,
-  data: PatchedProductCreateUpdate,
-): Promise<ProductCreateUpdate> {
-  const response = await axios.patch(`/api/ecommerce/products/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceProductsDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/products/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceProductsAddImageCreate(
-  id: number,
-  data: ProductDetail,
-): Promise<ProductDetail> {
-  const response = await axios.post(
-    `/api/ecommerce/products/${id}/add_image/`,
+  const response = await axios.put(
+    `/api/ecommerce/admin/products/${id}/`,
     data,
   );
   return response.data;
 }
 
-export async function apiEcommerceProductsRemoveImageDestroy(
+export async function apiEcommerceAdminProductsPartialUpdate(
+  id: number,
+  data: PatchedProductCreateUpdate,
+): Promise<ProductCreateUpdate> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/products/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminProductsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/products/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminProductsAddImageCreate(
+  id: number,
+  data: ProductDetail,
+): Promise<ProductDetail> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/products/${id}/add_image/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminProductsRemoveImageDestroy(
   id: number,
   imageId: string,
 ): Promise<any> {
   const response = await axios.delete(
-    `/api/ecommerce/products/${id}/remove_image/${imageId}/`,
+    `/api/ecommerce/admin/products/${id}/remove_image/${imageId}/`,
   );
   return response.data;
 }
 
-export async function apiEcommerceProductsUpdateAttributesCreate(
+export async function apiEcommerceAdminProductsUpdateAttributesCreate(
   id: number,
   data: ProductDetail,
 ): Promise<ProductDetail> {
   const response = await axios.post(
-    `/api/ecommerce/products/${id}/update_attributes/`,
+    `/api/ecommerce/admin/products/${id}/update_attributes/`,
     data,
   );
   return response.data;
 }
 
-export async function apiEcommerceProductsFeaturedRetrieve(): Promise<ProductDetail> {
-  const response = await axios.get(`/api/ecommerce/products/featured/`);
+export async function apiEcommerceAdminProductsFeaturedRetrieve(): Promise<ProductDetail> {
+  const response = await axios.get(`/api/ecommerce/admin/products/featured/`);
   return response.data;
 }
 
-export async function apiEcommerceProductsLowStockRetrieve(): Promise<ProductDetail> {
-  const response = await axios.get(`/api/ecommerce/products/low_stock/`);
+export async function apiEcommerceAdminProductsLowStockRetrieve(): Promise<ProductDetail> {
+  const response = await axios.get(`/api/ecommerce/admin/products/low_stock/`);
   return response.data;
 }
 
-export async function apiEcommerceTypesList(
-  ordering?: string,
-  page?: number,
-  search?: string,
-): Promise<PaginatedProductTypeList> {
-  const response = await axios.get(
-    `/api/ecommerce/types/${(() => {
-      const parts = [
-        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
-  );
-  return response.data;
-}
-
-export async function apiEcommerceTypesCreate(
-  data: ProductType,
-): Promise<ProductType> {
-  const response = await axios.post(`/api/ecommerce/types/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceTypesRetrieve(
-  id: number,
-): Promise<ProductType> {
-  const response = await axios.get(`/api/ecommerce/types/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceTypesUpdate(
-  id: number,
-  data: ProductType,
-): Promise<ProductType> {
-  const response = await axios.put(`/api/ecommerce/types/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceTypesPartialUpdate(
-  id: number,
-  data: PatchedProductType,
-): Promise<ProductType> {
-  const response = await axios.patch(`/api/ecommerce/types/${id}/`, data);
-  return response.data;
-}
-
-export async function apiEcommerceTypesDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/types/${id}/`);
-  return response.data;
-}
-
-export async function apiEcommerceVariantsList(
+export async function apiEcommerceAdminVariantsList(
   isActive?: boolean,
   ordering?: string,
   page?: number,
@@ -1691,7 +1615,7 @@ export async function apiEcommerceVariantsList(
   search?: string,
 ): Promise<PaginatedProductVariantList> {
   const response = await axios.get(
-    `/api/ecommerce/variants/${(() => {
+    `/api/ecommerce/admin/variants/${(() => {
       const parts = [
         isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
@@ -1705,38 +1629,426 @@ export async function apiEcommerceVariantsList(
   return response.data;
 }
 
-export async function apiEcommerceVariantsCreate(
+export async function apiEcommerceAdminVariantsCreate(
   data: ProductVariant,
 ): Promise<ProductVariant> {
-  const response = await axios.post(`/api/ecommerce/variants/`, data);
+  const response = await axios.post(`/api/ecommerce/admin/variants/`, data);
   return response.data;
 }
 
-export async function apiEcommerceVariantsRetrieve(
+export async function apiEcommerceAdminVariantsRetrieve(
   id: number,
 ): Promise<ProductVariant> {
-  const response = await axios.get(`/api/ecommerce/variants/${id}/`);
+  const response = await axios.get(`/api/ecommerce/admin/variants/${id}/`);
   return response.data;
 }
 
-export async function apiEcommerceVariantsUpdate(
+export async function apiEcommerceAdminVariantsUpdate(
   id: number,
   data: ProductVariant,
 ): Promise<ProductVariant> {
-  const response = await axios.put(`/api/ecommerce/variants/${id}/`, data);
+  const response = await axios.put(
+    `/api/ecommerce/admin/variants/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceVariantsPartialUpdate(
+export async function apiEcommerceAdminVariantsPartialUpdate(
   id: number,
   data: PatchedProductVariant,
 ): Promise<ProductVariant> {
-  const response = await axios.patch(`/api/ecommerce/variants/${id}/`, data);
+  const response = await axios.patch(
+    `/api/ecommerce/admin/variants/${id}/`,
+    data,
+  );
   return response.data;
 }
 
-export async function apiEcommerceVariantsDestroy(id: number): Promise<any> {
-  const response = await axios.delete(`/api/ecommerce/variants/${id}/`);
+export async function apiEcommerceAdminVariantsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/variants/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientAddressesList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedClientAddressList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/addresses/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientAddressesCreate(
+  data: ClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.post(`/api/ecommerce/client/addresses/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientAddressesRetrieve(
+  id: string,
+): Promise<ClientAddress> {
+  const response = await axios.get(`/api/ecommerce/client/addresses/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientAddressesUpdate(
+  id: string,
+  data: ClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.put(
+    `/api/ecommerce/client/addresses/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientAddressesPartialUpdate(
+  id: string,
+  data: PatchedClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.patch(
+    `/api/ecommerce/client/addresses/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientAddressesDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/client/addresses/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientAddressesSetDefaultCreate(
+  id: string,
+  data: ClientAddress,
+): Promise<ClientAddress> {
+  const response = await axios.post(
+    `/api/ecommerce/client/addresses/${id}/set_default/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientCartList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedCartList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/cart/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientCartCreate(data: Cart): Promise<Cart> {
+  const response = await axios.post(`/api/ecommerce/client/cart/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientCartItemsList(
+  page?: number,
+): Promise<PaginatedCartItemList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/cart-items/${page ? '?page=' + encodeURIComponent(page) : ''}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientCartItemsCreate(
+  data: CartItemCreate,
+): Promise<CartItemCreate> {
+  const response = await axios.post(`/api/ecommerce/client/cart-items/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientCartItemsRetrieve(
+  id: string,
+): Promise<CartItem> {
+  const response = await axios.get(`/api/ecommerce/client/cart-items/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientCartItemsUpdate(
+  id: string,
+  data: CartItemCreate,
+): Promise<CartItemCreate> {
+  const response = await axios.put(
+    `/api/ecommerce/client/cart-items/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientCartItemsPartialUpdate(
+  id: string,
+  data: PatchedCartItemCreate,
+): Promise<CartItemCreate> {
+  const response = await axios.patch(
+    `/api/ecommerce/client/cart-items/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientCartItemsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/ecommerce/client/cart-items/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientCartRetrieve(
+  id: string,
+): Promise<Cart> {
+  const response = await axios.get(`/api/ecommerce/client/cart/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientCartUpdate(
+  id: string,
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.put(`/api/ecommerce/client/cart/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientCartPartialUpdate(
+  id: string,
+  data: PatchedCart,
+): Promise<Cart> {
+  const response = await axios.patch(`/api/ecommerce/client/cart/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientCartDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/client/cart/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientCartSetAddressCreate(
+  id: string,
+  data: Cart,
+): Promise<Cart> {
+  const response = await axios.post(
+    `/api/ecommerce/client/cart/${id}/set_address/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientCartGetOrCreateRetrieve(): Promise<Cart> {
+  const response = await axios.get(`/api/ecommerce/client/cart/get_or_create/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientFavoritesList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedFavoriteProductList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/favorites/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientFavoritesCreate(
+  data: FavoriteProductCreate,
+): Promise<FavoriteProductCreate> {
+  const response = await axios.post(`/api/ecommerce/client/favorites/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientFavoritesRetrieve(
+  id: string,
+): Promise<FavoriteProduct> {
+  const response = await axios.get(`/api/ecommerce/client/favorites/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientFavoritesUpdate(
+  id: string,
+  data: FavoriteProduct,
+): Promise<FavoriteProduct> {
+  const response = await axios.put(
+    `/api/ecommerce/client/favorites/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientFavoritesPartialUpdate(
+  id: string,
+  data: PatchedFavoriteProduct,
+): Promise<FavoriteProduct> {
+  const response = await axios.patch(
+    `/api/ecommerce/client/favorites/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientFavoritesDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/client/favorites/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientOrdersList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedOrderList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/orders/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientOrdersCreate(
+  data: OrderCreate,
+): Promise<OrderCreate> {
+  const response = await axios.post(`/api/ecommerce/client/orders/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientOrdersRetrieve(
+  id: string,
+): Promise<Order> {
+  const response = await axios.get(`/api/ecommerce/client/orders/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientOrdersUpdate(
+  id: string,
+  data: Order,
+): Promise<Order> {
+  const response = await axios.put(`/api/ecommerce/client/orders/${id}/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceClientOrdersPartialUpdate(
+  id: string,
+  data: PatchedOrder,
+): Promise<Order> {
+  const response = await axios.patch(
+    `/api/ecommerce/client/orders/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientOrdersDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/client/orders/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceClientProductsList(
+  isFeatured?: boolean,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedProductListList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/products/${(() => {
+      const parts = [
+        isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceClientProductsRetrieve(
+  id: number,
+): Promise<ProductDetail> {
+  const response = await axios.get(`/api/ecommerce/client/products/${id}/`);
+  return response.data;
+}
+
+export async function loginClient(data: ClientLogin): Promise<EcommerceClient> {
+  const response = await axios.post(`/api/ecommerce/clients/login/`, data);
+  return response.data;
+}
+
+export async function getCurrentClient(): Promise<EcommerceClient> {
+  const response = await axios.get(`/api/ecommerce/clients/me/`);
+  return response.data;
+}
+
+export async function passwordResetConfirm(
+  data: PasswordResetConfirm,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/ecommerce/clients/password-reset/confirm/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function passwordResetRequest(
+  data: PasswordResetRequest,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/ecommerce/clients/password-reset/request/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function registerClient(
+  data: ClientRegistration,
+): Promise<ClientRegistrationResponse> {
+  const response = await axios.post(`/api/ecommerce/clients/register/`, data);
+  return response.data;
+}
+
+export async function verifyEmail(
+  data: EmailVerificationRequest,
+): Promise<EmailVerificationResponse> {
+  const response = await axios.post(`/api/ecommerce/clients/verify/`, data);
+  return response.data;
+}
+
+export async function ecommercePaymentWebhook(): Promise<any> {
+  const response = await axios.post(`/api/ecommerce/payment-webhook/`);
   return response.data;
 }
 
@@ -2627,168 +2939,6 @@ export async function apiSocialFacebookWebhookTestRetrieve(): Promise<any> {
 
 export async function apiSocialFacebookWebhookTestCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/webhook/test/`);
-  return response.data;
-}
-
-export async function apiSubTicketsList(
-  ordering?: string,
-  page?: number,
-  search?: string,
-): Promise<PaginatedSubTicketList> {
-  const response = await axios.get(
-    `/api/sub-tickets/${(() => {
-      const parts = [
-        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsCreate(data: SubTicket): Promise<SubTicket> {
-  const response = await axios.post(`/api/sub-tickets/`, data);
-  return response.data;
-}
-
-export async function apiSubTicketsRetrieve(id: string): Promise<SubTicket> {
-  const response = await axios.get(`/api/sub-tickets/${id}/`);
-  return response.data;
-}
-
-export async function apiSubTicketsUpdate(
-  id: string,
-  data: SubTicket,
-): Promise<SubTicket> {
-  const response = await axios.put(`/api/sub-tickets/${id}/`, data);
-  return response.data;
-}
-
-export async function apiSubTicketsPartialUpdate(
-  id: string,
-  data: PatchedSubTicket,
-): Promise<SubTicket> {
-  const response = await axios.patch(`/api/sub-tickets/${id}/`, data);
-  return response.data;
-}
-
-export async function apiSubTicketsDestroy(id: string): Promise<any> {
-  const response = await axios.delete(`/api/sub-tickets/${id}/`);
-  return response.data;
-}
-
-export async function apiSubTicketsReorderPartialUpdate(
-  id: string,
-  data: PatchedSubTicket,
-): Promise<SubTicket> {
-  const response = await axios.patch(`/api/sub-tickets/${id}/reorder/`, data);
-  return response.data;
-}
-
-export async function apiSubTicketsToggleCompletionPartialUpdate(
-  id: string,
-  data: PatchedSubTicket,
-): Promise<SubTicket> {
-  const response = await axios.patch(
-    `/api/sub-tickets/${id}/toggle_completion/`,
-    data,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsList(
-  subTicketPk: number,
-  ordering?: string,
-  page?: number,
-  search?: string,
-): Promise<PaginatedSubTicketAssignmentList> {
-  const response = await axios.get(
-    `/api/sub-tickets/${subTicketPk}/assignments/${(() => {
-      const parts = [
-        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsCreate(
-  subTicketPk: number,
-  data: SubTicketAssignment,
-): Promise<SubTicketAssignment> {
-  const response = await axios.post(
-    `/api/sub-tickets/${subTicketPk}/assignments/`,
-    data,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsRetrieve(
-  id: number,
-  subTicketPk: number,
-): Promise<SubTicketAssignment> {
-  const response = await axios.get(
-    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsUpdate(
-  id: number,
-  subTicketPk: number,
-  data: SubTicketAssignment,
-): Promise<SubTicketAssignment> {
-  const response = await axios.put(
-    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
-    data,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsPartialUpdate(
-  id: number,
-  subTicketPk: number,
-  data: PatchedSubTicketAssignment,
-): Promise<SubTicketAssignment> {
-  const response = await axios.patch(
-    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
-    data,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsDestroy(
-  id: number,
-  subTicketPk: number,
-): Promise<any> {
-  const response = await axios.delete(
-    `/api/sub-tickets/${subTicketPk}/assignments/${id}/`,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsBulkAssignCreate(
-  subTicketPk: number,
-  data: SubTicketAssignment,
-): Promise<SubTicketAssignment> {
-  const response = await axios.post(
-    `/api/sub-tickets/${subTicketPk}/assignments/bulk_assign/`,
-    data,
-  );
-  return response.data;
-}
-
-export async function apiSubTicketsAssignmentsBulkUnassignDestroy(
-  subTicketPk: number,
-): Promise<any> {
-  const response = await axios.delete(
-    `/api/sub-tickets/${subTicketPk}/assignments/bulk_unassign/`,
-  );
   return response.data;
 }
 

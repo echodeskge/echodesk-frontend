@@ -1,5 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "@/api/axios";
+import {
+  apiEcommerceAdminClientsList,
+  apiEcommerceAdminClientsRetrieve
+} from "@/api/generated";
 import type { PaginatedEcommerceClientList } from "@/api/generated/interfaces";
 
 interface UseClientsParams {
@@ -13,23 +16,19 @@ interface UseClientsParams {
 export function useClients(params?: UseClientsParams) {
   return useQuery({
     queryKey: ["clients", params],
-    queryFn: async () => {
-      const response = await axios.get<PaginatedEcommerceClientList>(
-        "/api/ecommerce/clients/",
-        { params }
-      );
-      return response.data;
-    },
+    queryFn: () => apiEcommerceAdminClientsList(
+      params?.is_active,
+      params?.is_verified,
+      params?.search,
+      params?.page
+    ),
   });
 }
 
 export function useClient(id: number) {
   return useQuery({
     queryKey: ["client", id],
-    queryFn: async () => {
-      const response = await axios.get(`/api/ecommerce/clients/${id}/`);
-      return response.data;
-    },
+    queryFn: () => apiEcommerceAdminClientsRetrieve(id),
     enabled: !!id,
   });
 }
