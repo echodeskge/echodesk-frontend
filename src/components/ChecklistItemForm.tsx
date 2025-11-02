@@ -51,8 +51,7 @@ export default function ChecklistItemForm({
       } else {
         const createData: ChecklistItem = {
           id: 0,
-          ticket: ticketId || undefined,
-          sub_ticket: subTicketId || undefined,
+          ticket: ticketId || 0,
           text: text.trim(),
           is_checked: false,
           position: 0,

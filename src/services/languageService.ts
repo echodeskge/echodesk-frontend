@@ -12,15 +12,15 @@ import {
 import type { Language, PaginatedLanguageList, PatchedLanguage } from "@/api/generated";
 
 export interface LanguageFilters {
-  is_active?: boolean;
   ordering?: string;
+  page?: number;
 }
 
 class LanguageService {
   async getLanguages(filters?: LanguageFilters): Promise<PaginatedLanguageList> {
     return apiEcommerceAdminLanguagesList(
-      filters?.is_active,
-      filters?.ordering
+      filters?.ordering,
+      filters?.page
     );
   }
 

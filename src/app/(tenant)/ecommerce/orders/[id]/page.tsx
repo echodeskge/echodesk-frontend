@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { apiEcommerceAdminOrdersRetrieve } from "@/api/generated"
-import { Order } from "@/api/generated/interfaces"
+import { Order as GeneratedOrder } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,6 +18,16 @@ import {
 } from "@/components/ui/table"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText } from "lucide-react"
+
+// Extend Order type to properly type client_details
+interface Order extends Omit<GeneratedOrder, 'client_details'> {
+  client_details: {
+    id: number
+    full_name: string
+    email: string
+    phone_number?: string
+  }
+}
 
 const STATUS_COLORS = {
   pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
@@ -53,7 +63,7 @@ export default function OrderDetailPage() {
     try {
       setLoading(true)
       const response = await apiEcommerceAdminOrdersRetrieve(id)
-      setOrder(response)
+      setOrder(response as unknown as Order)
     } catch (error) {
       console.error("Failed to fetch order:", error)
     } finally {

@@ -51,7 +51,6 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
   // Fetch active languages
   const { data: languagesData, isLoading: languagesLoading } = useLanguages({
-    is_active: true,
     ordering: "sort_order,code",
   });
 

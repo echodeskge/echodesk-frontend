@@ -20,10 +20,6 @@ import type {
 
 export interface ProductFilters {
   status?: 'active' | 'draft' | 'inactive' | 'out_of_stock';
-  product_type?: number;
-  product_type_key?: string;
-  category?: number;
-  category_slug?: string;
   is_featured?: boolean;
   min_price?: number;
   max_price?: number;
@@ -40,8 +36,6 @@ class ProductService {
    */
   async getProducts(filters?: ProductFilters): Promise<PaginatedProductListList> {
     return apiEcommerceAdminProductsList(
-      filters?.category,
-      filters?.category_slug,
       filters?.in_stock,
       filters?.is_featured,
       filters?.low_stock,
@@ -49,8 +43,6 @@ class ProductService {
       filters?.min_price,
       filters?.ordering,
       filters?.page,
-      filters?.product_type,
-      filters?.product_type_key,
       filters?.search,
       filters?.status
     );
