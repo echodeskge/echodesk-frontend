@@ -205,13 +205,112 @@ export class PermissionService {
   }
 
   /**
-   * Main function to get sidebar menu items
-   * Note: All items are shown - filtering is done by isLocked status in the layout
-   * Permissions are checked at the API level, not for sidebar visibility
+   * Get user's feature keys from their tenant groups
+   */
+  private getUserFeatureKeys(userProfile: User): string[] {
+    const featureKeys: Set<string> = new Set();
+
+    // Add feature keys from tenant_groups
+    if (userProfile.tenant_groups && userProfile.tenant_groups.length > 0) {
+      userProfile.tenant_groups.forEach(group => {
+        if (group.feature_keys) {
+          // Handle both string[] and string types (due to API schema generation bug)
+          let keys: string[] = [];
+          if (Array.isArray(group.feature_keys)) {
+            keys = group.feature_keys;
+          } else if (typeof group.feature_keys === 'string') {
+            try {
+              keys = JSON.parse(group.feature_keys);
+            } catch {
+              // If parsing fails, treat it as a single key
+              keys = [group.feature_keys];
+            }
+          }
+          keys.forEach(key => featureKeys.add(key));
+        }
+      });
+    }
+
+    // Also add feature_keys directly from user if present
+    if (userProfile.feature_keys) {
+      let keys: string[] = [];
+      if (Array.isArray(userProfile.feature_keys)) {
+        keys = userProfile.feature_keys;
+      } else if (typeof userProfile.feature_keys === 'string') {
+        try {
+          keys = JSON.parse(userProfile.feature_keys);
+        } catch {
+          // If parsing fails, treat it as a single key
+          keys = [userProfile.feature_keys];
+        }
+      }
+      keys.forEach(key => featureKeys.add(key));
+    }
+
+    return Array.from(featureKeys);
+  }
+
+  /**
+   * Check if user has access to a specific feature
+   */
+  hasFeatureAccess(userProfile: User | null, featureKey: string): boolean {
+    if (!userProfile) {
+      return false;
+    }
+
+    // Super admin has access to everything
+    if (this.isSuperAdmin(userProfile)) {
+      return true;
+    }
+
+    // Get user's feature keys
+    const userFeatureKeys = this.getUserFeatureKeys(userProfile);
+    return userFeatureKeys.includes(featureKey);
+  }
+
+  /**
+   * Main function to get sidebar menu items filtered by user's feature access
+   * - Superadmin sees all items
+   * - Regular users only see items they have feature access to
+   * - Items without requiredFeatureKey are visible to all authenticated users
    */
   getSidebarMenuItems(userProfile: User | null, menuItems: MenuItem[]): MenuItem[] {
-    // Show all menu items - locking is handled by feature keys in the layout
-    return menuItems;
+    if (!userProfile) {
+      return [];
+    }
+
+    // Super admin sees everything
+    if (this.isSuperAdmin(userProfile)) {
+      return menuItems;
+    }
+
+    // Get user's feature keys
+    const userFeatureKeys = this.getUserFeatureKeys(userProfile);
+
+    // Filter menu items based on feature access
+    return menuItems.filter(item => {
+      // Items without requiredFeatureKey are visible to all authenticated users
+      if (!item.requiredFeatureKey) {
+        return true;
+      }
+
+      // Check if user has the required feature key
+      return userFeatureKeys.includes(item.requiredFeatureKey);
+    }).map(item => {
+      // If item has children, filter them recursively
+      if (item.children && item.children.length > 0) {
+        return {
+          ...item,
+          children: item.children.filter(child => {
+            if (!child.requiredFeatureKey) {
+              return true;
+            }
+            return userFeatureKeys.includes(child.requiredFeatureKey);
+          })
+        };
+      }
+      return item;
+    });
   }
 
   /**
