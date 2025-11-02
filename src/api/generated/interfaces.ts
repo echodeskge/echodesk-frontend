@@ -418,6 +418,10 @@ export interface GroupCreate {
   permission_ids?: number[];
 }
 
+export interface InvoiceListResponse {
+  invoices: Record<string, any>[];
+}
+
 export interface ItemList {
   id: number;
   title: string;
@@ -1256,16 +1260,10 @@ export interface PatchedTenant {
   only_superadmin_can_delete_tickets?: boolean;
 }
 
-export interface PatchedTenantGroup {
-  id?: number;
+export interface PatchedTenantGroupCreate {
   name?: string;
   description?: string;
-  is_active?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  member_count?: string;
-  features?: FeatureMinimal[];
-  feature_keys?: string;
+  feature_ids?: number[];
 }
 
 export interface PatchedTicket {

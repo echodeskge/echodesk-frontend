@@ -109,6 +109,7 @@ import type {
   PaginatedTicketPaymentList,
   TicketPayment,
   PatchedTicketPayment,
+  InvoiceListResponse,
   AddNewCardRequest,
   AddNewCardResponse,
   SetDefaultCardRequest,
@@ -134,7 +135,7 @@ import type {
   PaginatedTenantGroupList,
   TenantGroupCreate,
   TenantGroup,
-  PatchedTenantGroup,
+  PatchedTenantGroupCreate,
   PaginatedTenantPermissionList,
   TenantPermission,
   PaginatedTenantList,
@@ -2624,6 +2625,11 @@ export async function createSubscriptionPayment(): Promise<{
   return response.data;
 }
 
+export async function listInvoices(): Promise<InvoiceListResponse> {
+  const response = await axios.get(`/api/payments/invoices/`);
+  return response.data;
+}
+
 export async function manualPayment(): Promise<{
   payment_url?: string;
   order_id?: string;
@@ -2682,7 +2688,7 @@ export async function checkPaymentStatus(paymentId: string): Promise<{
   return response.data;
 }
 
-export async function bogWebhook(): Promise<any> {
+export async function apiPaymentsWebhookCreate(): Promise<any> {
   const response = await axios.post(`/api/payments/webhook/`);
   return response.data;
 }
@@ -3111,16 +3117,16 @@ export async function apiTenantGroupsRetrieve(
 
 export async function apiTenantGroupsUpdate(
   id: number,
-  data: TenantGroup,
-): Promise<TenantGroup> {
+  data: TenantGroupCreate,
+): Promise<TenantGroupCreate> {
   const response = await axios.put(`/api/tenant-groups/${id}/`, data);
   return response.data;
 }
 
 export async function apiTenantGroupsPartialUpdate(
   id: number,
-  data: PatchedTenantGroup,
-): Promise<TenantGroup> {
+  data: PatchedTenantGroupCreate,
+): Promise<TenantGroupCreate> {
   const response = await axios.patch(`/api/tenant-groups/${id}/`, data);
   return response.data;
 }
