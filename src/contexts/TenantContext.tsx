@@ -36,14 +36,6 @@ export function TenantProvider({ children }: TenantProviderProps) {
       const hostname = window.location.hostname;
       const pathname = window.location.pathname;
 
-      // If we're on the root path "/" (main homepage), don't load any tenant
-      // This prevents infinite 401 loops when visiting the landing page
-      if (pathname === '/') {
-        setTenant(null);
-        setLoading(false);
-        return;
-      }
-
       // Try to get tenant identifier from subdomain or path
       let tenantIdentifier: string | null = null;
 
@@ -57,6 +49,15 @@ export function TenantProvider({ children }: TenantProviderProps) {
       } else {
         // On production, use subdomain-based detection
         tenantIdentifier = tenantService.getSubdomainFromHostname(hostname);
+      }
+
+      // If on root path "/" with no tenant identifier, don't load tenant
+      // This prevents infinite 401 loops when visiting the main landing page (echodesk.ge)
+      // But allows tenant loading for tenant subdomains (artlighthouse.echodesk.ge/)
+      if (pathname === '/' && !tenantIdentifier) {
+        setTenant(null);
+        setLoading(false);
+        return;
       }
 
       if (!tenantIdentifier) {
