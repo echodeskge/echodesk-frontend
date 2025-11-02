@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
+import Link from "next/link"
 import { apiEcommerceAdminOrdersList } from "@/api/generated"
 import { Order } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -310,9 +311,11 @@ export default function EcommerceOrdersPage() {
                           {formatDate(order.created_at)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            {t("viewDetails")}
-                          </Button>
+                          <Link href={`/ecommerce/orders/${order.id}`}>
+                            <Button variant="ghost" size="sm">
+                              {t("viewDetails")}
+                            </Button>
+                          </Link>
                         </TableCell>
                       </TableRow>
                     )
