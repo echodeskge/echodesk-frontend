@@ -18,8 +18,8 @@ export default function SettingsPage() {
     disabled?: boolean;
   }> = [
     {
-      title: "Subscription & Billing",
-      description: "Manage your subscription plan, billing, and usage",
+      title: t('subscription.title'),
+      description: t('subscription.description'),
       icon: CreditCard,
       href: "/settings/subscription",
       color: "text-purple-500",

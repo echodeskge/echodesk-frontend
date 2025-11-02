@@ -1065,5 +1065,132 @@
       },
       "rights": "All rights reserved."
     }
+  },
+  "subscription": {
+    "title": "Subscription & Billing",
+    "description": "Manage your subscription plan, view usage statistics, and upgrade your account",
+    "noSubscriptionTitle": "No Active Subscription",
+    "noSubscriptionMessage": "You currently don't have an active subscription. All features are locked until you purchase a plan.",
+    "purchasePlan": "Purchase a Plan",
+    "tabs": {
+      "overview": "Overview",
+      "features": "Features",
+      "usage": "Usage",
+      "billing": "Billing"
+    },
+    "quickStats": {
+      "title": "Quick Stats",
+      "description": "Your current usage at a glance"
+    },
+    "resources": {
+      "users": "Users",
+      "whatsapp": "WhatsApp",
+      "storage": "Storage"
+    },
+    "upgrade": {
+      "title": "Need More Features?",
+      "description": "Upgrade to a higher tier plan to unlock more features and higher limits",
+      "button": "View Available Plans"
+    },
+    "featuresSection": {
+      "title": "Included Features",
+      "description": "Features available in your current plan",
+      "allTitle": "All Features",
+      "allDescription": "Complete feature comparison for all plans",
+      "upgradeMessage": "Want access to more features? Upgrade your plan to unlock additional capabilities.",
+      "contactSales": "Contact Sales"
+    },
+    "usageTips": {
+      "title": "Usage Tips",
+      "monitor": {
+        "title": "Monitor your usage regularly",
+        "description": "Keep track of your monthly usage to avoid hitting limits"
+      },
+      "upgrade": {
+        "title": "Upgrade before reaching limits",
+        "description": "Plan ahead and upgrade when you're at 80% capacity"
+      },
+      "contact": {
+        "title": "Contact support for custom limits",
+        "description": "Need higher limits? We can create a custom plan for you"
+      }
+    },
+    "currentPlan": {
+      "title": "Current Plan",
+      "perMonth": "per month",
+      "perAgent": "agents",
+      "active": "Active",
+      "inactive": "Inactive",
+      "nextBilling": "Next billing date"
+    },
+    "billingHistory": {
+      "title": "Billing History",
+      "description": "Your payment history and invoices",
+      "noHistory": "No billing history available yet. Invoices will appear here after your first payment."
+    },
+    "card": {
+      "loading": "Loading subscription...",
+      "noSubscription": "No Active Subscription",
+      "noSubscriptionMessage": "You don't have an active subscription. Please contact your administrator.",
+      "viewPlans": "View Plans",
+      "usage": "Usage",
+      "expires": "Expires",
+      "manageSubscription": "Manage Subscription",
+      "exceedLimit": "You have exceeded your WhatsApp message limit",
+      "usagePercentage": "% Used"
+    },
+    "savedCards": {
+      "title": "Saved Payment Methods",
+      "description": "Manage your saved payment cards for recurring payments",
+      "descriptionWithCount": "Manage your saved payment cards for recurring payments ({count} {countLabel})",
+      "card": "card",
+      "cards": "cards",
+      "loading": "Loading...",
+      "noCards": "No saved payment methods found. Click \"Add New Card\" to add your first payment card for automatic renewals.",
+      "addCard": "Add New Card",
+      "default": "Default",
+      "expires": "Expires",
+      "added": "Added",
+      "setDefault": "Set Default",
+      "remove": "Remove",
+      "autoRenewal": {
+        "title": "About Auto-Renewal",
+        "secureStorage": "Your cards are securely stored by Bank of Georgia",
+        "autoCharge": "The default card is charged automatically before subscription expiration",
+        "notifications": "You'll receive email notifications before charges",
+        "manage": "You can manage, add, or remove cards anytime"
+      },
+      "removeDialog": {
+        "title": "Remove Saved Card?",
+        "description": "Are you sure you want to remove this payment method?",
+        "defaultWarning": "This is your default card. Another card will be set as default if available.",
+        "warning": "This action cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Remove Card",
+        "removing": "Removing..."
+      },
+      "messages": {
+        "addSuccess": "Payment card added successfully!",
+        "addFailed": "Failed to add payment card. Please try again.",
+        "removeSuccess": "Card removed successfully",
+        "removeFailed": "Failed to remove card",
+        "defaultSuccess": "Default card updated successfully",
+        "defaultFailed": "Failed to set default card",
+        "initiateFailed": "Failed to initiate card addition"
+      }
+    },
+    "features": {
+      "ticketManagement": "Ticket Management",
+      "emailIntegration": "Email Integration",
+      "sipCalling": "SIP Calling",
+      "facebookIntegration": "Facebook Integration",
+      "instagramIntegration": "Instagram Integration",
+      "whatsappIntegration": "WhatsApp Integration",
+      "advancedAnalytics": "Advanced Analytics",
+      "apiAccess": "API Access",
+      "customIntegrations": "Custom Integrations",
+      "prioritySupport": "Priority Support",
+      "dedicatedAccountManager": "Dedicated Account Manager"
+    }
   }
 }

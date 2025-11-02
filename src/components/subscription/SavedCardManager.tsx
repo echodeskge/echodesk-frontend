@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +41,7 @@ interface SavedCard {
 }
 
 export const SavedCardManager: React.FC = () => {
+  const t = useTranslations('subscription.savedCards');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [cardToDelete, setCardToDelete] = useState<number | null>(null);
   const queryClient = useQueryClient();
@@ -49,16 +51,16 @@ export const SavedCardManager: React.FC = () => {
   useEffect(() => {
     const cardAdded = searchParams.get('card_added');
     if (cardAdded === 'success') {
-      toast.success('Payment card added successfully!');
+      toast.success(t('messages.addSuccess'));
       queryClient.invalidateQueries({ queryKey: ['savedCards'] });
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (cardAdded === 'failed') {
-      toast.error('Failed to add payment card. Please try again.');
+      toast.error(t('messages.addFailed'));
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [searchParams, queryClient]);
+  }, [searchParams, queryClient, t]);
 
   // Fetch saved cards (now returns an array)
   const { data: savedCards, isLoading, error } = useQuery<SavedCard[]>({
@@ -79,12 +81,12 @@ export const SavedCardManager: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savedCards'] });
-      toast.success('Card removed successfully');
+      toast.success(t('messages.removeSuccess'));
       setShowDeleteDialog(false);
       setCardToDelete(null);
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.error || 'Failed to remove card');
+      toast.error(error?.response?.data?.error || t('messages.removeFailed'));
     },
   });
 
@@ -93,10 +95,10 @@ export const SavedCardManager: React.FC = () => {
     mutationFn: (cardId: number) => setDefaultCard({ card_id: cardId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savedCards'] });
-      toast.success('Default card updated successfully');
+      toast.success(t('messages.defaultSuccess'));
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.error || 'Failed to set default card');
+      toast.error(error?.response?.data?.error || t('messages.defaultFailed'));
     },
   });
 
@@ -110,7 +112,7 @@ export const SavedCardManager: React.FC = () => {
       }
     },
     onError: (error: any) => {
-      toast.error(error?.response?.data?.error || 'Failed to initiate card addition');
+      toast.error(error?.response?.data?.error || t('messages.initiateFailed'));
     },
   });
 
@@ -140,14 +142,14 @@ export const SavedCardManager: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            Saved Payment Methods
+            {t('title')}
           </CardTitle>
-          <CardDescription>Manage your saved payment cards for recurring payments</CardDescription>
+          <CardDescription>{t('description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading...</p>
+            <p className="text-sm text-muted-foreground">{t('loading')}</p>
           </div>
         </CardContent>
       </Card>
@@ -163,9 +165,9 @@ export const SavedCardManager: React.FC = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Saved Payment Methods
+                {t('title')}
               </CardTitle>
-              <CardDescription>Manage your saved payment cards for recurring payments</CardDescription>
+              <CardDescription>{t('description')}</CardDescription>
             </div>
             <Button
               onClick={handleAddNewCard}
@@ -176,7 +178,7 @@ export const SavedCardManager: React.FC = () => {
               ) : (
                 <Plus className="h-4 w-4 mr-2" />
               )}
-              Add New Card
+              {t('addCard')}
             </Button>
           </div>
         </CardHeader>
@@ -184,7 +186,7 @@ export const SavedCardManager: React.FC = () => {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              No saved payment methods found. Click "Add New Card" to add your first payment card for automatic renewals.
+              {t('noCards')}
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -200,6 +202,8 @@ export const SavedCardManager: React.FC = () => {
     return '💳';
   };
 
+  const countLabel = savedCards.length === 1 ? t('card') : t('cards');
+
   return (
     <>
       <Card>
@@ -208,10 +212,10 @@ export const SavedCardManager: React.FC = () => {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                Saved Payment Methods
+                {t('title')}
               </CardTitle>
               <CardDescription>
-                Manage your saved payment cards for recurring payments ({savedCards.length} {savedCards.length === 1 ? 'card' : 'cards'})
+                {t('descriptionWithCount', { count: savedCards.length, countLabel })}
               </CardDescription>
             </div>
             <Button
@@ -224,7 +228,7 @@ export const SavedCardManager: React.FC = () => {
               ) : (
                 <Plus className="h-4 w-4 mr-2" />
               )}
-              Add New Card
+              {t('addCard')}
             </Button>
           </div>
         </CardHeader>
@@ -253,13 +257,13 @@ export const SavedCardManager: React.FC = () => {
                         {isDefault && (
                           <Badge variant="default" className="bg-blue-600">
                             <Star className="h-3 w-3 mr-1" />
-                            Default
+                            {t('default')}
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">Expires {card.card_expiry}</p>
+                      <p className="text-sm text-muted-foreground">{t('expires')} {card.card_expiry}</p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Added {new Date(card.saved_at).toLocaleDateString('en-US', {
+                        {t('added')} {new Date(card.saved_at).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'short',
                           day: 'numeric'
@@ -280,7 +284,7 @@ export const SavedCardManager: React.FC = () => {
                         ) : (
                           <>
                             <Check className="h-4 w-4 mr-1" />
-                            Set Default
+                            {t('setDefault')}
                           </>
                         )}
                       </Button>
@@ -292,7 +296,7 @@ export const SavedCardManager: React.FC = () => {
                       disabled={removeMutation.isPending}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
-                      Remove
+                      {t('remove')}
                     </Button>
                   </div>
                 </div>
@@ -304,18 +308,18 @@ export const SavedCardManager: React.FC = () => {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              Your default card will be automatically charged for subscription renewals. You can change the default card or remove cards anytime.
+              {t('autoRenewal.autoCharge')}
             </AlertDescription>
           </Alert>
 
           {/* Information */}
           <div className="pt-2 border-t">
-            <h4 className="text-sm font-semibold mb-2">About Auto-Renewal</h4>
+            <h4 className="text-sm font-semibold mb-2">{t('autoRenewal.title')}</h4>
             <ul className="space-y-1 text-xs text-muted-foreground">
-              <li>• Your cards are securely stored by Bank of Georgia</li>
-              <li>• The default card is charged automatically before subscription expiration</li>
-              <li>• You'll receive email notifications before charges</li>
-              <li>• You can manage, add, or remove cards anytime</li>
+              <li>• {t('autoRenewal.secureStorage')}</li>
+              <li>• {t('autoRenewal.autoCharge')}</li>
+              <li>• {t('autoRenewal.notifications')}</li>
+              <li>• {t('autoRenewal.manage')}</li>
             </ul>
           </div>
         </CardContent>
@@ -325,22 +329,22 @@ export const SavedCardManager: React.FC = () => {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Saved Card?</AlertDialogTitle>
+            <AlertDialogTitle>{t('removeDialog.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this payment method?
+              {t('removeDialog.description')}
               {savedCards.find(c => c.id === cardToDelete)?.is_default &&
-                " This is your default card. Another card will be set as default if available."}
-              {" "}This action cannot be undone.
+                ` ${t('removeDialog.defaultWarning')}`}
+              {" "}{t('removeDialog.warning')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={removeMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={removeMutation.isPending}>{t('removeDialog.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmRemove}
               disabled={removeMutation.isPending}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {removeMutation.isPending ? 'Removing...' : 'Remove Card'}
+              {removeMutation.isPending ? t('removeDialog.removing') : t('removeDialog.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,8 @@ import {
 import Link from 'next/link';
 
 export const SubscriptionCard: React.FC = () => {
+  const t = useTranslations('subscription.card');
+  const tFeatures = useTranslations('subscription.features');
   const { subscription, loading, error } = useSubscription();
 
   if (loading) {
@@ -27,7 +30,7 @@ export const SubscriptionCard: React.FC = () => {
         <CardHeader>
           <div className="flex items-center space-x-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <CardTitle>Loading subscription...</CardTitle>
+            <CardTitle>{t('loading')}</CardTitle>
           </div>
         </CardHeader>
       </Card>
@@ -40,15 +43,15 @@ export const SubscriptionCard: React.FC = () => {
         <CardHeader>
           <div className="flex items-center space-x-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
-            <CardTitle>No Active Subscription</CardTitle>
+            <CardTitle>{t('noSubscription')}</CardTitle>
           </div>
           <CardDescription>
-            {error || 'You don\'t have an active subscription. Please contact your administrator.'}
+            {error || t('noSubscriptionMessage')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Link href="/settings/subscription">
-            <Button>View Plans</Button>
+            <Button>{t('viewPlans')}</Button>
           </Link>
         </CardContent>
       </Card>
@@ -80,7 +83,7 @@ export const SubscriptionCard: React.FC = () => {
         {/* Usage Statistics */}
         {usage_limits && (
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold">Usage</h4>
+            <h4 className="text-sm font-semibold">{t('usage')}</h4>
 
             {/* Users */}
             {usage_limits.users.limit !== null && (
@@ -126,7 +129,7 @@ export const SubscriptionCard: React.FC = () => {
               />
               {!usage_limits.whatsapp.within_limit && (
                 <p className="text-xs text-red-500">
-                  You have exceeded your WhatsApp message limit
+                  {t('exceedLimit')}
                 </p>
               )}
             </div>
@@ -158,7 +161,7 @@ export const SubscriptionCard: React.FC = () => {
         {sub?.expires_at && (
           <div className="pt-4 border-t">
             <p className="text-sm text-muted-foreground">
-              Expires: {new Date(sub.expires_at).toLocaleDateString()}
+              {t('expires')}: {new Date(sub.expires_at).toLocaleDateString()}
             </p>
           </div>
         )}
@@ -167,7 +170,7 @@ export const SubscriptionCard: React.FC = () => {
         <div className="pt-2">
           <Link href="/settings/subscription">
             <Button variant="outline" className="w-full">
-              Manage Subscription
+              {t('manageSubscription')}
             </Button>
           </Link>
         </div>
@@ -181,6 +184,7 @@ interface FeatureListProps {
 }
 
 export const FeatureList: React.FC<FeatureListProps> = ({ showAll = false }) => {
+  const t = useTranslations('subscription.features');
   const { subscription, loading } = useSubscription();
 
   if (loading) {
@@ -196,17 +200,17 @@ export const FeatureList: React.FC<FeatureListProps> = ({ showAll = false }) => 
   }
 
   const features = [
-    { key: 'ticket_management', label: 'Ticket Management' },
-    { key: 'email_integration', label: 'Email Integration' },
-    { key: 'sip_calling', label: 'SIP Calling' },
-    { key: 'facebook_integration', label: 'Facebook Integration' },
-    { key: 'instagram_integration', label: 'Instagram Integration' },
-    { key: 'whatsapp_integration', label: 'WhatsApp Integration' },
-    { key: 'advanced_analytics', label: 'Advanced Analytics' },
-    { key: 'api_access', label: 'API Access' },
-    { key: 'custom_integrations', label: 'Custom Integrations' },
-    { key: 'priority_support', label: 'Priority Support' },
-    { key: 'dedicated_account_manager', label: 'Dedicated Account Manager' },
+    { key: 'ticket_management', label: t('ticketManagement') },
+    { key: 'email_integration', label: t('emailIntegration') },
+    { key: 'sip_calling', label: t('sipCalling') },
+    { key: 'facebook_integration', label: t('facebookIntegration') },
+    { key: 'instagram_integration', label: t('instagramIntegration') },
+    { key: 'whatsapp_integration', label: t('whatsappIntegration') },
+    { key: 'advanced_analytics', label: t('advancedAnalytics') },
+    { key: 'api_access', label: t('apiAccess') },
+    { key: 'custom_integrations', label: t('customIntegrations') },
+    { key: 'priority_support', label: t('prioritySupport') },
+    { key: 'dedicated_account_manager', label: t('dedicatedAccountManager') },
   ] as const;
 
   const displayFeatures = showAll
