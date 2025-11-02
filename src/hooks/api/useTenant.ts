@@ -24,7 +24,7 @@ export function useTenantSettings() {
   });
 }
 
-export function useTenantSubscription() {
+export function useTenantSubscription(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: tenantKeys.subscription(),
     queryFn: async () => {
@@ -33,6 +33,7 @@ export function useTenantSubscription() {
     },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    enabled: options?.enabled ?? true, // Only fetch when enabled (default: true)
   });
 }
 

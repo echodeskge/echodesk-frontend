@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
+import { useTenant } from './TenantContext';
 import { useTenantSubscription } from '@/hooks/api';
 
 // Subscription feature flags
@@ -101,14 +102,16 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user, token } = useAuth();
+  const { tenant } = useTenant();
 
-  // Use React Query hook for subscription data
+  // Only fetch subscription data when tenant exists (not on main homepage)
+  // This prevents unnecessary API calls on the landing page
   const {
     data: subscriptionData,
     isLoading: loading,
     error: queryError,
     refetch
-  } = useTenantSubscription();
+  } = useTenantSubscription({ enabled: !!tenant });
 
   // Process the subscription data or use defaults
   const subscription: SubscriptionInfo | null = subscriptionData || (queryError ? {
