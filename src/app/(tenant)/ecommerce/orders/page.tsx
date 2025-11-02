@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
-import { apiEcommerceOrdersList } from "@/api/generated"
+import { apiEcommerceAdminOrdersList } from "@/api/generated"
 import { Order } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -74,7 +74,7 @@ export default function EcommerceOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const response = await apiEcommerceOrdersList()
+      const response = await apiEcommerceAdminOrdersList()
       setOrders(response.results || response as any)
     } catch (error) {
       console.error("Failed to fetch orders:", error)
