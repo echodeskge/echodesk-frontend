@@ -112,7 +112,8 @@ export default function EcommerceOrdersPage() {
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.client_details.toLowerCase().includes(searchQuery.toLowerCase())
+      order.client_details.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.client_details.email?.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesStatus = statusFilter === "all" || String(order.status) === statusFilter
 
@@ -283,7 +284,8 @@ export default function EcommerceOrdersPage() {
                         </TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{order.client_details}</div>
+                            <div className="font-medium">{order.client_details.full_name}</div>
+                            <div className="text-sm text-muted-foreground">{order.client_details.email}</div>
                             {order.delivery_address && (
                               <div className="text-sm text-muted-foreground">
                                 {order.delivery_address.city}
