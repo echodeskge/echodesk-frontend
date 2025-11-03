@@ -142,6 +142,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "ecommerce/settings": "ecommerceSettings",
     bookings: "bookings",
     "bookings/bookings": "bookingsManagement",
+    "bookings/calendar": "bookingsCalendar",
     "bookings/services": "bookingsServices",
     "bookings/categories": "bookingsCategories",
     "bookings/staff": "bookingsStaff",

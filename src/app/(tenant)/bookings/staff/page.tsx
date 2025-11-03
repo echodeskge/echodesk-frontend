@@ -34,9 +34,9 @@ export default function StaffPage() {
   }
 
   const filteredStaff = staff.filter((member) => {
-    const fullName = `${member.first_name} ${member.last_name}`.toLowerCase()
+    const fullName = `${member.user.first_name} ${member.user.last_name}`.toLowerCase()
     return fullName.includes(searchQuery.toLowerCase()) ||
-           member.email?.toLowerCase().includes(searchQuery.toLowerCase())
+           member.user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
   if (loading) {
@@ -98,22 +98,22 @@ export default function StaffPage() {
                   {filteredStaff.map((member) => (
                     <TableRow key={member.id}>
                       <TableCell className="font-medium">
-                        {member.first_name} {member.last_name}
+                        {member.user.first_name} {member.user.last_name}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Mail className="h-4 w-4" />
-                          {member.email || "N/A"}
+                          {member.user.email || "N/A"}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Phone className="h-4 w-4" />
-                          {member.phone_number || "N/A"}
+                          N/A
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground">{member.service_count || 0} service(s)</span>
+                        <span className="text-muted-foreground">0 service(s)</span>
                       </TableCell>
                       <TableCell>
                         <Badge variant={member.is_active_for_bookings ? "default" : "secondary"}>

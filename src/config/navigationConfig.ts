@@ -94,6 +94,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         isPremium: true,
       },
       {
+        id: "bookings/calendar",
+        icon: "Calendar",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
+      {
         id: "bookings/services",
         icon: "Briefcase",
         requiredFeatureKey: "booking_management",
