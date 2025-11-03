@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { CreditCard, Store, Settings, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react"
+import { CreditCard, Store, Settings, Eye, EyeOff, CheckCircle2, AlertCircle, Link2 } from "lucide-react"
+import * as api from "@/api/generated/api"
+import type { EcommerceSettings as EcommerceSettingsType } from "@/api/generated/interfaces"
 
 interface EcommerceSettings {
   id?: number
   bog_client_id: string
   bog_use_production: boolean
+  bog_return_url_success: string
+  bog_return_url_fail: string
   enable_cash_on_delivery: boolean
   enable_card_payment: boolean
   store_name: string
@@ -29,6 +33,8 @@ export default function EcommerceSettingsPage() {
   const [settings, setSettings] = useState<EcommerceSettings>({
     bog_client_id: "",
     bog_use_production: false,
+    bog_return_url_success: "",
+    bog_return_url_fail: "",
     enable_cash_on_delivery: true,
     enable_card_payment: true,
     store_name: "",
@@ -45,15 +51,25 @@ export default function EcommerceSettingsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true)
-      // TODO: Replace with actual API call
-      // const response = await apiEcommerceSettingsRetrieve()
-      // setSettings(response)
-      // setHasExistingCredentials(!!response.bog_client_id)
+      const response = await api.apiEcommerceAdminSettingsList()
 
-      // Simulated response for now
-      setTimeout(() => {
-        setLoading(false)
-      }, 500)
+      if (response.data && response.data.length > 0) {
+        const settingsData = response.data[0]
+        setSettings({
+          id: settingsData.id,
+          bog_client_id: settingsData.bog_client_id || "",
+          bog_use_production: settingsData.bog_use_production || false,
+          bog_return_url_success: settingsData.bog_return_url_success || "",
+          bog_return_url_fail: settingsData.bog_return_url_fail || "",
+          enable_cash_on_delivery: settingsData.enable_cash_on_delivery ?? true,
+          enable_card_payment: settingsData.enable_card_payment ?? true,
+          store_name: settingsData.store_name || "",
+          store_email: settingsData.store_email || "",
+          store_phone: settingsData.store_phone || "",
+        })
+        setHasExistingCredentials(!!settingsData.bog_client_id)
+      }
+      setLoading(false)
     } catch (error) {
       console.error("Failed to fetch settings:", error)
       alert("Failed to load ecommerce settings")
@@ -65,11 +81,26 @@ export default function EcommerceSettingsPage() {
     try {
       setSaving(true)
 
-      // TODO: Replace with actual API call
-      // await apiEcommerceSettingsUpdate({
-      //   ...settings,
-      //   bog_client_secret: bogSecret || undefined,
-      // })
+      const payload = {
+        bog_client_id: settings.bog_client_id,
+        bog_use_production: settings.bog_use_production,
+        bog_return_url_success: settings.bog_return_url_success,
+        bog_return_url_fail: settings.bog_return_url_fail,
+        enable_cash_on_delivery: settings.enable_cash_on_delivery,
+        enable_card_payment: settings.enable_card_payment,
+        store_name: settings.store_name,
+        store_email: settings.store_email,
+        store_phone: settings.store_phone,
+        ...(bogSecret && { bog_client_secret: bogSecret }),
+      }
+
+      if (settings.id) {
+        // Update existing settings
+        await api.apiEcommerceAdminSettingsPartialUpdate(settings.id, payload)
+      } else {
+        // Create new settings
+        await api.apiEcommerceAdminSettingsCreate(payload)
+      }
 
       alert("Settings saved successfully!")
 
@@ -78,6 +109,9 @@ export default function EcommerceSettingsPage() {
         setHasExistingCredentials(true)
         setBogSecret("") // Clear the input after saving
       }
+
+      // Refresh settings
+      await fetchSettings()
     } catch (error) {
       console.error("Failed to save settings:", error)
       alert("Failed to save settings. Please try again.")
@@ -230,6 +264,63 @@ export default function EcommerceSettingsPage() {
                 : "Your secret will be encrypted before storing"}
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Return URLs */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            <CardTitle>Payment Return URLs</CardTitle>
+          </div>
+          <CardDescription>
+            Configure where customers are redirected after payment completion
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="bog_return_url_success">
+              Success Return URL
+              <span className="text-muted-foreground text-sm ml-2">(After successful payment)</span>
+            </Label>
+            <Input
+              id="bog_return_url_success"
+              type="url"
+              value={settings.bog_return_url_success}
+              onChange={(e) => setSettings({ ...settings, bog_return_url_success: e.target.value })}
+              placeholder="https://yourstore.com/payment/success"
+            />
+            <p className="text-xs text-muted-foreground">
+              Customers will be redirected here after a successful payment
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bog_return_url_fail">
+              Failure Return URL
+              <span className="text-muted-foreground text-sm ml-2">(After failed payment)</span>
+            </Label>
+            <Input
+              id="bog_return_url_fail"
+              type="url"
+              value={settings.bog_return_url_fail}
+              onChange={(e) => setSettings({ ...settings, bog_return_url_fail: e.target.value })}
+              placeholder="https://yourstore.com/payment/failed"
+            />
+            <p className="text-xs text-muted-foreground">
+              Customers will be redirected here if the payment fails
+            </p>
+          </div>
+
+          {(!settings.bog_return_url_success || !settings.bog_return_url_fail) && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+              <p className="text-sm text-yellow-800">
+                Return URLs are optional but recommended for better customer experience
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
