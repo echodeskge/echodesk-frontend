@@ -23,6 +23,10 @@ import {
   ListTree,
   ChevronDown,
   Globe,
+  Calendar,
+  CalendarCheck,
+  Briefcase,
+  FolderTree,
 } from "lucide-react"
 
 import {
@@ -69,9 +73,14 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "MessageSquare": MessageCircle,
   "Users": Users,
   "UsersRound": UsersRound,
+  "UserCheck": UserCheck,
   "Share2": Share2,
   "Settings": Settings,
   "Globe": Globe,
+  "Calendar": Calendar,
+  "CalendarCheck": CalendarCheck,
+  "Briefcase": Briefcase,
+  "FolderTree": FolderTree,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,
