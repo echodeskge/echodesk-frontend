@@ -9,6 +9,7 @@ import {
   UserUpdate,
 } from "@/api/generated/interfaces";
 import * as api from "@/api/generated/api";
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 import UserTable from "./user-management/UserTable";
 import UserBulkActions from "./user-management/UserBulkActions";
@@ -32,6 +33,7 @@ export interface UserFilters {
 export default function UserManagement() {
   const t = useTranslations("users");
   const tCommon = useTranslations("common");
+  const { data: currentUserProfile } = useUserProfile();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
@@ -220,6 +222,14 @@ export default function UserManagement() {
     setPagination((prev) => ({ ...prev, currentPage: 1 })); // Reset to first page
   };
 
+  // Check if user has booking management feature
+  const userFeatureKeys = currentUserProfile?.feature_keys
+    ? typeof currentUserProfile.feature_keys === "string"
+      ? JSON.parse(currentUserProfile.feature_keys)
+      : currentUserProfile.feature_keys
+    : [];
+  const hasBookingManagement = userFeatureKeys.includes('booking_management');
+
   if (loading && users.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -279,6 +289,7 @@ export default function UserManagement() {
         onChangeStatus={handleChangeUserStatus}
         onResetPassword={handleResetPassword}
         onToggleStaff={handleToggleStaff}
+        showStaffColumn={hasBookingManagement}
         pagination={pagination}
         onPageChange={handlePageChange}
       />
