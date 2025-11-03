@@ -136,6 +136,13 @@ export interface BookingStaff {
   is_active_for_bookings?: boolean;
 }
 
+export interface BookingStaffCreate {
+  user_id: number;
+  bio?: string;
+  profile_image?: string;
+  is_active_for_bookings?: boolean;
+}
+
 export interface BookingTypeEnum {
   [key: string]: any;
 }
@@ -1114,13 +1121,10 @@ export interface PatchedBookingList {
   created_at?: string;
 }
 
-export interface PatchedBookingStaff {
-  id?: number;
-  user?: UserMinimal;
+export interface PatchedBookingStaffCreate {
+  user_id?: number;
   bio?: string;
   profile_image?: string;
-  average_rating?: string;
-  total_ratings?: number;
   is_active_for_bookings?: boolean;
 }
 

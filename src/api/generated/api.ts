@@ -36,8 +36,9 @@ import type {
   PatchedServiceDetail,
   ServiceList,
   PaginatedBookingStaffList,
+  BookingStaffCreate,
   BookingStaff,
-  PatchedBookingStaff,
+  PatchedBookingStaffCreate,
   BookingCreate,
   RecurringBookingCreate,
   PaginatedCallLogList,
@@ -1003,8 +1004,8 @@ export async function apiBookingsAdminStaffList(
 }
 
 export async function apiBookingsAdminStaffCreate(
-  data: BookingStaff,
-): Promise<BookingStaff> {
+  data: BookingStaffCreate,
+): Promise<BookingStaffCreate> {
   const response = await axios.post(`/api/bookings/admin/staff/`, data);
   return response.data;
 }
@@ -1018,16 +1019,16 @@ export async function apiBookingsAdminStaffRetrieve(
 
 export async function apiBookingsAdminStaffUpdate(
   id: number,
-  data: BookingStaff,
-): Promise<BookingStaff> {
+  data: BookingStaffCreate,
+): Promise<BookingStaffCreate> {
   const response = await axios.put(`/api/bookings/admin/staff/${id}/`, data);
   return response.data;
 }
 
 export async function apiBookingsAdminStaffPartialUpdate(
   id: number,
-  data: PatchedBookingStaff,
-): Promise<BookingStaff> {
+  data: PatchedBookingStaffCreate,
+): Promise<BookingStaffCreate> {
   const response = await axios.patch(`/api/bookings/admin/staff/${id}/`, data);
   return response.data;
 }
