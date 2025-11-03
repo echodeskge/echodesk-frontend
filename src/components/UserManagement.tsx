@@ -171,7 +171,7 @@ export default function UserManagement() {
         // Create BookingStaff record when enabling staff
         try {
           await api.apiBookingsAdminStaffCreate({
-            user: { id: userId } as any,
+            user_id: userId,
             is_active_for_bookings: true,
           } as any);
         } catch (staffErr: any) {
