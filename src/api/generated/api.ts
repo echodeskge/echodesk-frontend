@@ -103,6 +103,9 @@ import type {
   ProductCreateUpdate,
   ProductDetail,
   PatchedProductCreateUpdate,
+  PaginatedEcommerceSettingsList,
+  EcommerceSettings,
+  PatchedEcommerceSettings,
   PaginatedProductVariantList,
   ProductVariant,
   PatchedProductVariant,
@@ -2613,6 +2616,67 @@ export async function apiEcommerceAdminProductsFeaturedRetrieve(): Promise<Produ
 
 export async function apiEcommerceAdminProductsLowStockRetrieve(): Promise<ProductDetail> {
   const response = await axios.get(`/api/ecommerce/admin/products/low_stock/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminSettingsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedEcommerceSettingsList> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/settings/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminSettingsCreate(
+  data: EcommerceSettings,
+): Promise<EcommerceSettings> {
+  const response = await axios.post(`/api/ecommerce/admin/settings/`, data);
+  return response.data;
+}
+
+export async function apiEcommerceAdminSettingsRetrieve(
+  id: string,
+): Promise<EcommerceSettings> {
+  const response = await axios.get(`/api/ecommerce/admin/settings/${id}/`);
+  return response.data;
+}
+
+export async function apiEcommerceAdminSettingsUpdate(
+  id: string,
+  data: EcommerceSettings,
+): Promise<EcommerceSettings> {
+  const response = await axios.put(
+    `/api/ecommerce/admin/settings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminSettingsPartialUpdate(
+  id: string,
+  data: PatchedEcommerceSettings,
+): Promise<EcommerceSettings> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/settings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiEcommerceAdminSettingsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/settings/${id}/`);
   return response.data;
 }
 

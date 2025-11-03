@@ -414,6 +414,23 @@ export interface EcommerceClient {
   favorites: string;
 }
 
+export interface EcommerceSettings {
+  id: number;
+  tenant: number;
+  bog_client_id?: string;
+  bog_client_secret?: string;
+  bog_use_production?: boolean;
+  bog_return_url_success?: string;
+  bog_return_url_fail?: string;
+  enable_cash_on_delivery?: boolean;
+  enable_card_payment?: boolean;
+  store_name?: string;
+  store_email?: string;
+  store_phone?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EmailVerificationRequest {
   verification_token: string;
   code: string;
@@ -805,6 +822,13 @@ export interface PaginatedEcommerceClientList {
   next?: string;
   previous?: string;
   results: EcommerceClient[];
+}
+
+export interface PaginatedEcommerceSettingsList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EcommerceSettings[];
 }
 
 export interface PaginatedFacebookMessageList {
@@ -1245,6 +1269,23 @@ export interface PatchedEcommerceClient {
   updated_at?: string;
   addresses?: ClientAddress[];
   favorites?: string;
+}
+
+export interface PatchedEcommerceSettings {
+  id?: number;
+  tenant?: number;
+  bog_client_id?: string;
+  bog_client_secret?: string;
+  bog_use_production?: boolean;
+  bog_return_url_success?: string;
+  bog_return_url_fail?: string;
+  enable_cash_on_delivery?: boolean;
+  enable_card_payment?: boolean;
+  store_name?: string;
+  store_email?: string;
+  store_phone?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PatchedFacebookPageConnection {
@@ -2344,6 +2385,7 @@ export interface User {
   department_id?: number;
   is_active?: boolean;
   is_staff?: boolean;
+  is_booking_staff: string;
   date_joined: string;
   last_login: string;
   permissions: string;
