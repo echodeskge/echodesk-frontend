@@ -13,6 +13,33 @@ import type {
   PaginatedBoardList,
   Board,
   PatchedBoard,
+  PaginatedStaffAvailabilityList,
+  StaffAvailability,
+  PatchedStaffAvailability,
+  PaginatedBookingListList,
+  BookingList,
+  BookingDetail,
+  PatchedBookingList,
+  PaginatedServiceCategoryList,
+  ServiceCategory,
+  PatchedServiceCategory,
+  PaginatedBookingClientList,
+  BookingClient,
+  PaginatedStaffExceptionList,
+  StaffException,
+  PatchedStaffException,
+  PaginatedRecurringBookingList,
+  RecurringBooking,
+  PatchedRecurringBooking,
+  PaginatedServiceListList,
+  ServiceDetail,
+  PatchedServiceDetail,
+  ServiceList,
+  PaginatedBookingStaffList,
+  BookingStaff,
+  PatchedBookingStaff,
+  BookingCreate,
+  RecurringBookingCreate,
   PaginatedCallLogList,
   CallLogCreate,
   CallLogDetail,
@@ -355,6 +382,983 @@ export async function apiBoardsSetDefaultCreate(
 
 export async function apiBoardsDefaultRetrieve(): Promise<Board> {
   const response = await axios.get(`/api/boards/default/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminAvailabilityList(
+  dayOfWeek?: number,
+  isAvailable?: boolean,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  staff?: number,
+): Promise<PaginatedStaffAvailabilityList> {
+  const response = await axios.get(
+    `/api/bookings/admin/availability/${(() => {
+      const parts = [
+        dayOfWeek ? 'day_of_week=' + encodeURIComponent(dayOfWeek) : null,
+        isAvailable ? 'is_available=' + encodeURIComponent(isAvailable) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        staff ? 'staff=' + encodeURIComponent(staff) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminAvailabilityCreate(
+  data: StaffAvailability,
+): Promise<StaffAvailability> {
+  const response = await axios.post(`/api/bookings/admin/availability/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminAvailabilityRetrieve(
+  id: number,
+): Promise<StaffAvailability> {
+  const response = await axios.get(`/api/bookings/admin/availability/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminAvailabilityUpdate(
+  id: number,
+  data: StaffAvailability,
+): Promise<StaffAvailability> {
+  const response = await axios.put(
+    `/api/bookings/admin/availability/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminAvailabilityPartialUpdate(
+  id: number,
+  data: PatchedStaffAvailability,
+): Promise<StaffAvailability> {
+  const response = await axios.patch(
+    `/api/bookings/admin/availability/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminAvailabilityDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/bookings/admin/availability/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsList(
+  client?: number,
+  ordering?: string,
+  page?: number,
+  paymentStatus?:
+    | 'deposit_paid'
+    | 'failed'
+    | 'fully_paid'
+    | 'pending'
+    | 'refunded',
+  search?: string,
+  service?: number,
+  staff?: number,
+  status?: 'cancelled' | 'completed' | 'confirmed' | 'in_progress' | 'pending',
+): Promise<PaginatedBookingListList> {
+  const response = await axios.get(
+    `/api/bookings/admin/bookings/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        paymentStatus
+          ? 'payment_status=' + encodeURIComponent(paymentStatus)
+          : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        service ? 'service=' + encodeURIComponent(service) : null,
+        staff ? 'staff=' + encodeURIComponent(staff) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsCreate(
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.post(`/api/bookings/admin/bookings/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsRetrieve(
+  id: number,
+): Promise<BookingDetail> {
+  const response = await axios.get(`/api/bookings/admin/bookings/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsUpdate(
+  id: number,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.put(`/api/bookings/admin/bookings/${id}/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsPartialUpdate(
+  id: number,
+  data: PatchedBookingList,
+): Promise<BookingList> {
+  const response = await axios.patch(
+    `/api/bookings/admin/bookings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/bookings/admin/bookings/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsAssignStaffCreate(
+  id: number,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/assign_staff/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsCancelCreate(
+  id: number,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/cancel/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsCheckPaymentStatusRetrieve(
+  id: number,
+): Promise<BookingList> {
+  const response = await axios.get(
+    `/api/bookings/admin/bookings/${id}/check_payment_status/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsCompleteCreate(
+  id: number,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/complete/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsConfirmCreate(
+  id: number,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/confirm/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminBookingsRescheduleCreate(
+  id: number,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/reschedule/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminCategoriesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedServiceCategoryList> {
+  const response = await axios.get(
+    `/api/bookings/admin/categories/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminCategoriesCreate(
+  data: ServiceCategory,
+): Promise<ServiceCategory> {
+  const response = await axios.post(`/api/bookings/admin/categories/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminCategoriesRetrieve(
+  id: number,
+): Promise<ServiceCategory> {
+  const response = await axios.get(`/api/bookings/admin/categories/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminCategoriesUpdate(
+  id: number,
+  data: ServiceCategory,
+): Promise<ServiceCategory> {
+  const response = await axios.put(
+    `/api/bookings/admin/categories/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminCategoriesPartialUpdate(
+  id: number,
+  data: PatchedServiceCategory,
+): Promise<ServiceCategory> {
+  const response = await axios.patch(
+    `/api/bookings/admin/categories/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminCategoriesDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/bookings/admin/categories/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminClientsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedBookingClientList> {
+  const response = await axios.get(
+    `/api/bookings/admin/clients/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminClientsRetrieve(
+  id: number,
+): Promise<BookingClient> {
+  const response = await axios.get(`/api/bookings/admin/clients/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminClientsBookingsRetrieve(
+  id: number,
+): Promise<BookingClient> {
+  const response = await axios.get(
+    `/api/bookings/admin/clients/${id}/bookings/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminClientsStatsRetrieve(
+  id: number,
+): Promise<BookingClient> {
+  const response = await axios.get(`/api/bookings/admin/clients/${id}/stats/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminDashboardRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/bookings/admin/dashboard/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminExceptionsList(
+  isAvailable?: boolean,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  staff?: number,
+): Promise<PaginatedStaffExceptionList> {
+  const response = await axios.get(
+    `/api/bookings/admin/exceptions/${(() => {
+      const parts = [
+        isAvailable ? 'is_available=' + encodeURIComponent(isAvailable) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        staff ? 'staff=' + encodeURIComponent(staff) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminExceptionsCreate(
+  data: StaffException,
+): Promise<StaffException> {
+  const response = await axios.post(`/api/bookings/admin/exceptions/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminExceptionsRetrieve(
+  id: number,
+): Promise<StaffException> {
+  const response = await axios.get(`/api/bookings/admin/exceptions/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminExceptionsUpdate(
+  id: number,
+  data: StaffException,
+): Promise<StaffException> {
+  const response = await axios.put(
+    `/api/bookings/admin/exceptions/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminExceptionsPartialUpdate(
+  id: number,
+  data: PatchedStaffException,
+): Promise<StaffException> {
+  const response = await axios.patch(
+    `/api/bookings/admin/exceptions/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminExceptionsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/bookings/admin/exceptions/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsList(
+  client?: number,
+  frequency?: 'biweekly' | 'monthly' | 'weekly',
+  ordering?: string,
+  page?: number,
+  search?: string,
+  service?: number,
+  status?: 'active' | 'cancelled' | 'completed' | 'paused',
+): Promise<PaginatedRecurringBookingList> {
+  const response = await axios.get(
+    `/api/bookings/admin/recurring-bookings/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        frequency ? 'frequency=' + encodeURIComponent(frequency) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        service ? 'service=' + encodeURIComponent(service) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsCreate(
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.post(
+    `/api/bookings/admin/recurring-bookings/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsRetrieve(
+  id: number,
+): Promise<RecurringBooking> {
+  const response = await axios.get(
+    `/api/bookings/admin/recurring-bookings/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsUpdate(
+  id: number,
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.put(
+    `/api/bookings/admin/recurring-bookings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsPartialUpdate(
+  id: number,
+  data: PatchedRecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.patch(
+    `/api/bookings/admin/recurring-bookings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/bookings/admin/recurring-bookings/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsCancelCreate(
+  id: number,
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.post(
+    `/api/bookings/admin/recurring-bookings/${id}/cancel/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsPauseCreate(
+  id: number,
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.post(
+    `/api/bookings/admin/recurring-bookings/${id}/pause/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminRecurringBookingsResumeCreate(
+  id: number,
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.post(
+    `/api/bookings/admin/recurring-bookings/${id}/resume/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminScheduleRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/bookings/admin/schedule/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesList(
+  bookingType?: 'duration_based' | 'fixed_slots',
+  category?: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  status?: 'active' | 'coming_soon' | 'inactive',
+): Promise<PaginatedServiceListList> {
+  const response = await axios.get(
+    `/api/bookings/admin/services/${(() => {
+      const parts = [
+        bookingType ? 'booking_type=' + encodeURIComponent(bookingType) : null,
+        category ? 'category=' + encodeURIComponent(category) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesCreate(
+  data: ServiceDetail,
+): Promise<ServiceDetail> {
+  const response = await axios.post(`/api/bookings/admin/services/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesRetrieve(
+  id: number,
+): Promise<ServiceDetail> {
+  const response = await axios.get(`/api/bookings/admin/services/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesUpdate(
+  id: number,
+  data: ServiceDetail,
+): Promise<ServiceDetail> {
+  const response = await axios.put(`/api/bookings/admin/services/${id}/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesPartialUpdate(
+  id: number,
+  data: PatchedServiceDetail,
+): Promise<ServiceDetail> {
+  const response = await axios.patch(
+    `/api/bookings/admin/services/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/bookings/admin/services/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesActivateCreate(
+  id: number,
+  data: ServiceList,
+): Promise<ServiceList> {
+  const response = await axios.post(
+    `/api/bookings/admin/services/${id}/activate/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminServicesDeactivateCreate(
+  id: number,
+  data: ServiceList,
+): Promise<ServiceList> {
+  const response = await axios.post(
+    `/api/bookings/admin/services/${id}/deactivate/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminSettingsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/bookings/admin/settings/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminSettingsUpdate(): Promise<any> {
+  const response = await axios.put(`/api/bookings/admin/settings/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminSettingsPartialUpdate(): Promise<any> {
+  const response = await axios.patch(`/api/bookings/admin/settings/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffList(
+  isActiveForBookings?: boolean,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedBookingStaffList> {
+  const response = await axios.get(
+    `/api/bookings/admin/staff/${(() => {
+      const parts = [
+        isActiveForBookings
+          ? 'is_active_for_bookings=' + encodeURIComponent(isActiveForBookings)
+          : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffCreate(
+  data: BookingStaff,
+): Promise<BookingStaff> {
+  const response = await axios.post(`/api/bookings/admin/staff/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffRetrieve(
+  id: number,
+): Promise<BookingStaff> {
+  const response = await axios.get(`/api/bookings/admin/staff/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffUpdate(
+  id: number,
+  data: BookingStaff,
+): Promise<BookingStaff> {
+  const response = await axios.put(`/api/bookings/admin/staff/${id}/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffPartialUpdate(
+  id: number,
+  data: PatchedBookingStaff,
+): Promise<BookingStaff> {
+  const response = await axios.patch(`/api/bookings/admin/staff/${id}/`, data);
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/bookings/admin/staff/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffAvailabilityRetrieve(
+  id: number,
+): Promise<BookingStaff> {
+  const response = await axios.get(
+    `/api/bookings/admin/staff/${id}/availability/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffBookingsRetrieve(
+  id: number,
+): Promise<BookingStaff> {
+  const response = await axios.get(`/api/bookings/admin/staff/${id}/bookings/`);
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffExceptionsRetrieve(
+  id: number,
+): Promise<BookingStaff> {
+  const response = await axios.get(
+    `/api/bookings/admin/staff/${id}/exceptions/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsAdminStaffToggleActiveCreate(
+  id: number,
+  data: BookingStaff,
+): Promise<BookingStaff> {
+  const response = await axios.post(
+    `/api/bookings/admin/staff/${id}/toggle_active/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientBookingsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedBookingListList> {
+  const response = await axios.get(
+    `/api/bookings/client/bookings/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientBookingsCreate(
+  data: BookingCreate,
+): Promise<BookingCreate> {
+  const response = await axios.post(`/api/bookings/client/bookings/`, data);
+  return response.data;
+}
+
+export async function apiBookingsClientBookingsRetrieve(
+  id: string,
+): Promise<BookingDetail> {
+  const response = await axios.get(`/api/bookings/client/bookings/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsClientBookingsUpdate(
+  id: string,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.put(
+    `/api/bookings/client/bookings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientBookingsPartialUpdate(
+  id: string,
+  data: PatchedBookingList,
+): Promise<BookingList> {
+  const response = await axios.patch(
+    `/api/bookings/client/bookings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientBookingsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/bookings/client/bookings/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsClientBookingsCancelCreate(
+  id: string,
+  data: BookingList,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/client/bookings/${id}/cancel/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientCategoriesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedServiceCategoryList> {
+  const response = await axios.get(
+    `/api/bookings/client/categories/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientCategoriesRetrieve(
+  id: number,
+): Promise<ServiceCategory> {
+  const response = await axios.get(`/api/bookings/client/categories/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedRecurringBookingList> {
+  const response = await axios.get(
+    `/api/bookings/client/recurring-bookings/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsCreate(
+  data: RecurringBookingCreate,
+): Promise<RecurringBookingCreate> {
+  const response = await axios.post(
+    `/api/bookings/client/recurring-bookings/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsRetrieve(
+  id: string,
+): Promise<RecurringBooking> {
+  const response = await axios.get(
+    `/api/bookings/client/recurring-bookings/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsUpdate(
+  id: string,
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.put(
+    `/api/bookings/client/recurring-bookings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsPartialUpdate(
+  id: string,
+  data: PatchedRecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.patch(
+    `/api/bookings/client/recurring-bookings/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/bookings/client/recurring-bookings/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsPauseCreate(
+  id: string,
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.post(
+    `/api/bookings/client/recurring-bookings/${id}/pause/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientRecurringBookingsResumeCreate(
+  id: string,
+  data: RecurringBooking,
+): Promise<RecurringBooking> {
+  const response = await axios.post(
+    `/api/bookings/client/recurring-bookings/${id}/resume/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientServicesList(
+  bookingType?: 'duration_based' | 'fixed_slots',
+  category?: number,
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedServiceListList> {
+  const response = await axios.get(
+    `/api/bookings/client/services/${(() => {
+      const parts = [
+        bookingType ? 'booking_type=' + encodeURIComponent(bookingType) : null,
+        category ? 'category=' + encodeURIComponent(category) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientServicesRetrieve(
+  id: number,
+): Promise<ServiceList> {
+  const response = await axios.get(`/api/bookings/client/services/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsClientServicesSlotsRetrieve(
+  id: number,
+): Promise<ServiceList> {
+  const response = await axios.get(
+    `/api/bookings/client/services/${id}/slots/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientStaffList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedBookingStaffList> {
+  const response = await axios.get(
+    `/api/bookings/client/staff/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientStaffRetrieve(
+  id: number,
+): Promise<BookingStaff> {
+  const response = await axios.get(`/api/bookings/client/staff/${id}/`);
+  return response.data;
+}
+
+export async function apiBookingsClientsLoginCreate(): Promise<any> {
+  const response = await axios.post(`/api/bookings/clients/login/`);
+  return response.data;
+}
+
+export async function apiBookingsClientsPasswordResetConfirmCreate(): Promise<any> {
+  const response = await axios.post(
+    `/api/bookings/clients/password-reset/confirm/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientsPasswordResetRequestCreate(): Promise<any> {
+  const response = await axios.post(
+    `/api/bookings/clients/password-reset/request/`,
+  );
+  return response.data;
+}
+
+export async function apiBookingsClientsProfileRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/bookings/clients/profile/`);
+  return response.data;
+}
+
+export async function apiBookingsClientsProfilePartialUpdate(): Promise<any> {
+  const response = await axios.patch(`/api/bookings/clients/profile/`);
+  return response.data;
+}
+
+export async function apiBookingsClientsRegisterCreate(): Promise<any> {
+  const response = await axios.post(`/api/bookings/clients/register/`);
+  return response.data;
+}
+
+export async function apiBookingsClientsVerifyEmailCreate(): Promise<any> {
+  const response = await axios.post(`/api/bookings/clients/verify-email/`);
   return response.data;
 }
 

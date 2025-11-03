@@ -82,6 +82,50 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     ],
   },
   {
+    id: "bookings",
+    icon: "Calendar",
+    requiredFeatureKey: "booking_management",
+    isPremium: true,
+    children: [
+      {
+        id: "bookings/bookings",
+        icon: "CalendarCheck",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
+      {
+        id: "bookings/services",
+        icon: "Briefcase",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
+      {
+        id: "bookings/categories",
+        icon: "FolderTree",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
+      {
+        id: "bookings/staff",
+        icon: "UserCheck",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
+      {
+        id: "bookings/clients",
+        icon: "Users",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
+      {
+        id: "bookings/settings",
+        icon: "Settings",
+        requiredFeatureKey: "booking_management",
+        isPremium: true,
+      },
+    ],
+  },
+  {
     id: "messages",
     icon: "MessageSquare",
     requiredFeatureKey: "facebook_integration",

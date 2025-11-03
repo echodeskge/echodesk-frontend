@@ -38,6 +38,10 @@ export interface BillingPeriodEnum {
   [key: string]: any;
 }
 
+export interface BlankEnum {
+  [key: string]: any;
+}
+
 export interface Board {
   id: number;
   name: string;
@@ -54,6 +58,86 @@ export interface Board {
   board_users: UserMinimal[];
   board_user_ids?: number[];
   payment_summary: string;
+}
+
+export interface BookingClient {
+  id: number;
+  email: string;
+  phone_number: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  is_verified: boolean;
+  created_at: string;
+}
+
+export interface BookingCreate {
+  service_id: number;
+  staff_id?: number;
+  date: string;
+  start_time: string;
+  client_notes?: string;
+  payment_type?: PaymentTypeEnum;
+}
+
+export interface BookingDetail {
+  id: number;
+  booking_number: string;
+  client: BookingClient;
+  service: ServiceList;
+  staff: BookingStaff;
+  date: string;
+  start_time: string;
+  end_time: string;
+  status?: Status528enum;
+  payment_status?: PaymentStatus0acEnum;
+  total_amount: string;
+  deposit_amount?: string;
+  paid_amount?: string;
+  remaining_amount: string;
+  bog_order_id?: string;
+  payment_url?: string;
+  client_notes?: string;
+  staff_notes?: string;
+  cancelled_at?: string;
+  cancelled_by?: CancelledByEnum | BlankEnum;
+  cancellation_reason?: string;
+  created_at: string;
+  updated_at: string;
+  confirmed_at?: string;
+  completed_at?: string;
+}
+
+export interface BookingList {
+  id: number;
+  booking_number: string;
+  client: BookingClient;
+  service: ServiceList;
+  staff: BookingStaff;
+  date: string;
+  start_time: string;
+  end_time: string;
+  status?: Status528enum;
+  payment_status?: PaymentStatus0acEnum;
+  total_amount: string;
+  deposit_amount?: string;
+  paid_amount?: string;
+  client_notes?: string;
+  created_at: string;
+}
+
+export interface BookingStaff {
+  id: number;
+  user: UserMinimal;
+  bio?: string;
+  profile_image?: string;
+  average_rating: string;
+  total_ratings: number;
+  is_active_for_bookings?: boolean;
+}
+
+export interface BookingTypeEnum {
+  [key: string]: any;
 }
 
 export interface CallEvent {
@@ -171,6 +255,10 @@ export interface CallTypeEnum {
   [key: string]: any;
 }
 
+export interface CancelledByEnum {
+  [key: string]: any;
+}
+
 export interface Cart {
   id: number;
   client: number;
@@ -268,6 +356,10 @@ export interface ClientRegistrationResponse {
   client: EcommerceClient;
   verification_token: string;
   message: string;
+}
+
+export interface DayOfWeekEnum {
+  [key: string]: any;
 }
 
 export interface Department {
@@ -405,6 +497,10 @@ export interface FeaturePermission {
   is_required?: boolean;
 }
 
+export interface FrequencyEnum {
+  [key: string]: any;
+}
+
 export interface Group {
   id: number;
   name: string;
@@ -525,7 +621,7 @@ export interface Order {
   admin_notes?: string;
   items: OrderItem[];
   total_items: number;
-  payment_status?: PaymentStatusEnum;
+  payment_status?: OrderPaymentStatusEnum;
   payment_method?: string;
   bog_order_id: string;
   payment_url: string;
@@ -554,6 +650,10 @@ export interface OrderItem {
   price: string;
   subtotal: string;
   created_at: string;
+}
+
+export interface OrderPaymentStatusEnum {
+  [key: string]: any;
 }
 
 export interface OrderStatusEnum {
@@ -621,6 +721,27 @@ export interface PaginatedBoardList {
   next?: string;
   previous?: string;
   results: Board[];
+}
+
+export interface PaginatedBookingClientList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BookingClient[];
+}
+
+export interface PaginatedBookingListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BookingList[];
+}
+
+export interface PaginatedBookingStaffList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BookingStaff[];
 }
 
 export interface PaginatedCallLogList {
@@ -784,11 +905,46 @@ export interface PaginatedProductVariantList {
   results: ProductVariant[];
 }
 
+export interface PaginatedRecurringBookingList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: RecurringBooking[];
+}
+
+export interface PaginatedServiceCategoryList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ServiceCategory[];
+}
+
+export interface PaginatedServiceListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ServiceList[];
+}
+
 export interface PaginatedSipConfigurationListList {
   count: number;
   next?: string;
   previous?: string;
   results: SipConfigurationList[];
+}
+
+export interface PaginatedStaffAvailabilityList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: StaffAvailability[];
+}
+
+export interface PaginatedStaffExceptionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: StaffException[];
 }
 
 export interface PaginatedTagList {
@@ -938,6 +1094,34 @@ export interface PatchedBoard {
   board_users?: UserMinimal[];
   board_user_ids?: number[];
   payment_summary?: string;
+}
+
+export interface PatchedBookingList {
+  id?: number;
+  booking_number?: string;
+  client?: BookingClient;
+  service?: ServiceList;
+  staff?: BookingStaff;
+  date?: string;
+  start_time?: string;
+  end_time?: string;
+  status?: Status528enum;
+  payment_status?: PaymentStatus0acEnum;
+  total_amount?: string;
+  deposit_amount?: string;
+  paid_amount?: string;
+  client_notes?: string;
+  created_at?: string;
+}
+
+export interface PatchedBookingStaff {
+  id?: number;
+  user?: UserMinimal;
+  bio?: string;
+  profile_image?: string;
+  average_rating?: string;
+  total_ratings?: number;
+  is_active_for_bookings?: boolean;
 }
 
 export interface PatchedCallLog {
@@ -1153,7 +1337,7 @@ export interface PatchedOrder {
   admin_notes?: string;
   items?: OrderItem[];
   total_items?: number;
-  payment_status?: PaymentStatusEnum;
+  payment_status?: OrderPaymentStatusEnum;
   payment_method?: string;
   bog_order_id?: string;
   payment_url?: string;
@@ -1213,6 +1397,53 @@ export interface PatchedProductVariant {
   updated_at?: string;
 }
 
+export interface PatchedRecurringBooking {
+  id?: number;
+  client?: BookingClient;
+  service?: ServiceList;
+  staff?: BookingStaff;
+  frequency?: FrequencyEnum;
+  frequency_display?: string;
+  preferred_day_of_week?: PreferredDayOfWeekEnum;
+  day_name?: string;
+  preferred_time?: string;
+  status?: RecurringBookingStatusEnum;
+  next_booking_date?: string;
+  end_date?: string;
+  max_occurrences?: number;
+  current_occurrences?: number;
+}
+
+export interface PatchedServiceCategory {
+  id?: number;
+  name?: any;
+  description?: any;
+  icon?: string;
+  display_order?: number;
+  is_active?: boolean;
+  name_display?: string;
+  description_display?: string;
+}
+
+export interface PatchedServiceDetail {
+  id?: number;
+  name?: any;
+  description?: any;
+  category?: ServiceCategory;
+  base_price?: string;
+  deposit_percentage?: number;
+  duration_minutes?: number;
+  buffer_time_minutes?: number;
+  booking_type?: BookingTypeEnum;
+  available_time_slots?: any;
+  staff_members?: BookingStaff[];
+  status?: StatusE7cEnum;
+  image?: string;
+  name_display?: string;
+  description_display?: string;
+  deposit_amount?: string;
+}
+
 export interface PatchedSipConfiguration {
   id?: number;
   name?: string;
@@ -1229,6 +1460,28 @@ export interface PatchedSipConfiguration {
   max_concurrent_calls?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface PatchedStaffAvailability {
+  id?: number;
+  staff?: number;
+  day_of_week?: DayOfWeekEnum;
+  day_name?: string;
+  start_time?: string;
+  end_time?: string;
+  is_available?: boolean;
+  break_start?: string;
+  break_end?: string;
+}
+
+export interface PatchedStaffException {
+  id?: number;
+  staff?: number;
+  date?: string;
+  start_time?: string;
+  end_time?: string;
+  is_available?: boolean;
+  reason?: string;
 }
 
 export interface PatchedTag {
@@ -1415,7 +1668,11 @@ export interface PaymentMethodEnum {
   [key: string]: any;
 }
 
-export interface PaymentStatusEnum {
+export interface PaymentStatus0acEnum {
+  [key: string]: any;
+}
+
+export interface PaymentTypeEnum {
   [key: string]: any;
 }
 
@@ -1428,6 +1685,10 @@ export interface Permission {
 }
 
 export interface PlanEnum {
+  [key: string]: any;
+}
+
+export interface PreferredDayOfWeekEnum {
   [key: string]: any;
 }
 
@@ -1564,8 +1825,88 @@ export interface ProductVariantAttributeValue {
   value_json: any;
 }
 
+export interface RecurringBooking {
+  id: number;
+  client: BookingClient;
+  service: ServiceList;
+  staff: BookingStaff;
+  frequency: FrequencyEnum;
+  frequency_display: string;
+  preferred_day_of_week: PreferredDayOfWeekEnum;
+  day_name: string;
+  preferred_time: string;
+  status?: RecurringBookingStatusEnum;
+  next_booking_date: string;
+  end_date?: string;
+  max_occurrences?: number;
+  current_occurrences: number;
+}
+
+export interface RecurringBookingCreate {
+  service_id: number;
+  staff_id?: number;
+  frequency: FrequencyEnum;
+  preferred_day_of_week: PreferredDayOfWeekEnum;
+  preferred_time: string;
+  end_date?: string;
+  max_occurrences?: number;
+}
+
+export interface RecurringBookingStatusEnum {
+  [key: string]: any;
+}
+
 export interface Role4c6enum {
   [key: string]: any;
+}
+
+export interface ServiceCategory {
+  id: number;
+  name: any;
+  description?: any;
+  icon?: string;
+  display_order?: number;
+  is_active?: boolean;
+  name_display: string;
+  description_display: string;
+}
+
+export interface ServiceDetail {
+  id: number;
+  name: any;
+  description?: any;
+  category: ServiceCategory;
+  base_price: string;
+  deposit_percentage?: number;
+  duration_minutes: number;
+  buffer_time_minutes?: number;
+  booking_type?: BookingTypeEnum;
+  available_time_slots?: any;
+  staff_members: BookingStaff[];
+  status?: StatusE7cEnum;
+  image?: string;
+  name_display: string;
+  description_display: string;
+  deposit_amount: string;
+}
+
+export interface ServiceList {
+  id: number;
+  name: any;
+  description?: any;
+  category: ServiceCategory;
+  base_price: string;
+  deposit_percentage?: number;
+  duration_minutes: number;
+  buffer_time_minutes?: number;
+  booking_type?: BookingTypeEnum;
+  available_time_slots?: any;
+  staff_members: BookingStaff[];
+  status?: StatusE7cEnum;
+  image?: string;
+  name_display: string;
+  description_display: string;
+  deposit_amount: string;
 }
 
 export interface SetDefaultCardRequest {
@@ -1616,7 +1957,33 @@ export interface SipConfigurationList {
   is_default?: boolean;
 }
 
+export interface StaffAvailability {
+  id: number;
+  staff: number;
+  day_of_week: DayOfWeekEnum;
+  day_name: string;
+  start_time: string;
+  end_time: string;
+  is_available?: boolean;
+  break_start?: string;
+  break_end?: string;
+}
+
+export interface StaffException {
+  id: number;
+  staff: number;
+  date: string;
+  start_time?: string;
+  end_time?: string;
+  is_available?: boolean;
+  reason?: string;
+}
+
 export interface Status336enum {
+  [key: string]: any;
+}
+
+export interface Status528enum {
   [key: string]: any;
 }
 
@@ -1625,6 +1992,10 @@ export interface Status956enum {
 }
 
 export interface StatusB9eEnum {
+  [key: string]: any;
+}
+
+export interface StatusE7cEnum {
   [key: string]: any;
 }
 
