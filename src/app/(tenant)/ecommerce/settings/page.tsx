@@ -53,8 +53,8 @@ export default function EcommerceSettingsPage() {
       setLoading(true)
       const response = await api.apiEcommerceAdminSettingsList()
 
-      if (response.data && response.data.length > 0) {
-        const settingsData = response.data[0]
+      if (response.results && response.results.length > 0) {
+        const settingsData = response.results[0]
         setSettings({
           id: settingsData.id,
           bog_client_id: settingsData.bog_client_id || "",
@@ -81,7 +81,7 @@ export default function EcommerceSettingsPage() {
     try {
       setSaving(true)
 
-      const payload = {
+      const payload: any = {
         bog_client_id: settings.bog_client_id,
         bog_use_production: settings.bog_use_production,
         bog_return_url_success: settings.bog_return_url_success,
@@ -96,7 +96,7 @@ export default function EcommerceSettingsPage() {
 
       if (settings.id) {
         // Update existing settings
-        await api.apiEcommerceAdminSettingsPartialUpdate(settings.id, payload)
+        await api.apiEcommerceAdminSettingsPartialUpdate(String(settings.id), payload)
       } else {
         // Create new settings
         await api.apiEcommerceAdminSettingsCreate(payload)
