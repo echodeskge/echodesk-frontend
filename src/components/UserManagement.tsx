@@ -160,6 +160,37 @@ export default function UserManagement() {
     }
   };
 
+  const handleToggleStaff = async (userId: number, isStaff: boolean) => {
+    try {
+      // Update user's is_staff field
+      await api.apiUsersPartialUpdate(userId, { is_staff: isStaff } as any);
+
+      if (isStaff) {
+        // Create BookingStaff record when enabling staff
+        try {
+          await api.apiBookingsAdminStaffCreate({
+            user: { id: userId } as any,
+            is_active_for_bookings: true,
+          } as any);
+        } catch (staffErr: any) {
+          // If staff record already exists, that's fine
+          if (staffErr.response?.status !== 400) {
+            throw staffErr;
+          }
+        }
+      }
+
+      fetchUsers(); // Refresh the list
+    } catch (err: any) {
+      alert(
+        err.response?.data?.detail ||
+          err.message ||
+          "Failed to toggle staff status"
+      );
+      fetchUsers(); // Refresh to revert any partial changes
+    }
+  };
+
   const handleBulkAction = async (
     action: string,
     userIds: number[],
@@ -247,6 +278,7 @@ export default function UserManagement() {
         onView={setViewingUser}
         onChangeStatus={handleChangeUserStatus}
         onResetPassword={handleResetPassword}
+        onToggleStaff={handleToggleStaff}
         pagination={pagination}
         onPageChange={handlePageChange}
       />

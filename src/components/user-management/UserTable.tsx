@@ -26,6 +26,7 @@ interface UserTableProps {
   onView: (user: User) => void;
   onChangeStatus: (userId: number, status: string) => void;
   onResetPassword: (userId: number) => void;
+  onToggleStaff: (userId: number, isStaff: boolean) => void;
   pagination: PaginationInfo;
   onPageChange: (page: number) => void;
 }
@@ -40,6 +41,7 @@ export default function UserTable({
   onView,
   onChangeStatus,
   onResetPassword,
+  onToggleStaff,
   pagination,
   onPageChange,
 }: UserTableProps) {
@@ -142,13 +144,14 @@ export default function UserTable({
                 <th className="p-3 text-left font-semibold text-muted-foreground">Email</th>
                 <th className="p-3 text-left font-semibold text-muted-foreground">Groups</th>
                 <th className="p-3 text-left font-semibold text-muted-foreground">Status</th>
+                <th className="p-3 text-center font-semibold text-muted-foreground">Staff</th>
                 <th className="p-3 text-left font-semibold text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-muted-foreground">
+                  <td colSpan={7} className="p-10 text-center text-muted-foreground">
                     <div className="flex items-center justify-center space-x-2">
                       <Spinner className="h-6 w-6" />
                       <span>Loading users...</span>
@@ -157,7 +160,7 @@ export default function UserTable({
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-muted-foreground">
+                  <td colSpan={7} className="p-10 text-center text-muted-foreground">
                     No users found
                   </td>
                 </tr>
@@ -211,6 +214,15 @@ export default function UserTable({
                           ? user.status?.toString() || "Active"
                           : "Inactive"}
                       </Badge>
+                    </td>
+                    <td className="p-3 text-center">
+                      <Checkbox
+                        checked={user.is_staff || false}
+                        onCheckedChange={(checked) =>
+                          onToggleStaff(user.id, checked as boolean)
+                        }
+                        title={user.is_staff ? "Remove from booking staff" : "Add to booking staff"}
+                      />
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-1">
