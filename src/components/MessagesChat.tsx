@@ -32,9 +32,29 @@ interface FacebookMessage {
   recipient_id?: string; // The person receiving the message
 }
 
+interface InstagramMessage {
+  id: number;
+  message_id: string;
+  sender_id: string;
+  sender_username?: string;
+  sender_profile_pic?: string;
+  message_text: string;
+  timestamp: string;
+  is_from_business?: boolean;
+  account_username: string;
+}
+
+interface InstagramAccount {
+  id: number;
+  instagram_account_id: string;
+  username: string;
+  profile_picture_url?: string;
+  is_active: boolean;
+}
+
 interface UnifiedMessage {
   id: string;
-  platform: "facebook";
+  platform: "facebook" | "instagram";
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -50,7 +70,7 @@ interface UnifiedMessage {
 }
 
 interface UnifiedConversation {
-  platform: "facebook";
+  platform: "facebook" | "instagram";
   conversation_id: string;
   sender_id: string;
   sender_name: string;
@@ -188,6 +208,112 @@ export default function MessagesChat() {
         } catch (err) {
           console.error(`Failed to load messages for page ${page.page_id}:`, err);
         }
+      }
+
+      // Load Instagram conversations
+      try {
+        const instagramAccountsResponse = await axios.get("/api/social/instagram-accounts/");
+        const instagramAccounts = (instagramAccountsResponse.data as PaginatedResponse<InstagramAccount>).results || [];
+
+        for (const account of instagramAccounts) {
+          try {
+            const messagesResponse = await axios.get("/api/social/instagram-messages/", {
+              params: { account_id: account.instagram_account_id },
+            });
+
+            const messages = (messagesResponse.data as PaginatedResponse<InstagramMessage>).results || [];
+
+            // Group messages by customer (sender)
+            const customerIds = new Set<string>();
+            messages.forEach((msg) => {
+              if (!msg.is_from_business) {
+                customerIds.add(msg.sender_id);
+              }
+            });
+
+            const conversationMap = new Map<string, InstagramMessage[]>();
+            const sortedMessages = [...messages].sort((a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            );
+
+            let lastCustomerId: string | null = null;
+
+            sortedMessages.forEach((msg) => {
+              let customerId: string;
+
+              if (msg.is_from_business) {
+                if (lastCustomerId) {
+                  customerId = lastCustomerId;
+                } else {
+                  customerId = customerIds.size === 1 ? Array.from(customerIds)[0] : msg.sender_id;
+                }
+              } else {
+                customerId = msg.sender_id;
+                lastCustomerId = customerId;
+              }
+
+              if (!conversationMap.has(customerId)) {
+                conversationMap.set(customerId, []);
+              }
+              conversationMap.get(customerId)!.push(msg);
+            });
+
+            console.log(`Instagram @${account.username}: Found ${messages.length} total messages`);
+            conversationMap.forEach((msgs, key) => {
+              const fromBusiness = msgs.filter(m => m.is_from_business).length;
+              const fromCustomer = msgs.filter(m => !m.is_from_business).length;
+              console.log(`  Conversation ${key}: ${msgs.length} messages (${fromCustomer} from customer, ${fromBusiness} from business)`);
+            });
+
+            // Convert to unified format
+            conversationMap.forEach((msgs, customerId) => {
+              if (msgs.length === 0) return;
+
+              const sortedMsgs = msgs.sort((a, b) =>
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+              );
+              const latestMsg = sortedMsgs[0];
+
+              const customerMsg = msgs.find(m => !m.is_from_business);
+              const customerName = customerMsg?.sender_username || customerMsg?.sender_id || customerId;
+              const customerAvatar = customerMsg?.sender_profile_pic;
+
+              const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
+                id: String(msg.id),
+                platform: "instagram" as const,
+                sender_id: msg.sender_id,
+                sender_name: msg.sender_username || msg.sender_id,
+                profile_pic_url: msg.sender_profile_pic,
+                message_text: msg.message_text,
+                timestamp: msg.timestamp,
+                is_from_business: msg.is_from_business || false,
+                page_name: `@${msg.account_username}`,
+                conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
+                platform_message_id: msg.message_id,
+                account_id: account.instagram_account_id,
+              }));
+
+              const conversation: UnifiedConversation = {
+                platform: "instagram",
+                conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
+                sender_id: customerId,
+                sender_name: customerName,
+                profile_pic_url: customerAvatar,
+                last_message: unifiedMessages[unifiedMessages.length - 1],
+                message_count: msgs.length,
+                account_name: `@${account.username}`,
+                account_id: account.instagram_account_id,
+              };
+
+              allConversations.push(conversation);
+              allMessages.set(conversation.conversation_id, unifiedMessages);
+            });
+          } catch (err) {
+            console.error(`Failed to load messages for Instagram account ${account.instagram_account_id}:`, err);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load Instagram accounts:", err);
       }
 
       setConversations(allConversations);

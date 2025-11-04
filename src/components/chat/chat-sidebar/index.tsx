@@ -20,7 +20,7 @@ export function ChatSidebar() {
 
   // Content to display in the chat sidebar
   const content = (
-    <div className="md:w-72">
+    <div className="md:w-96">
       <ChatSidebarHeader />
       <ChatSidebarList />
     </div>

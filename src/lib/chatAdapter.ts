@@ -1,9 +1,9 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
 
-// Facebook message interfaces from UnifiedMessagesManagement
+// Unified message interfaces supporting both Facebook and Instagram
 interface UnifiedMessage {
   id: string;
-  platform: 'facebook';
+  platform: 'facebook' | 'instagram';
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -19,7 +19,7 @@ interface UnifiedMessage {
 }
 
 interface UnifiedConversation {
-  platform: 'facebook';
+  platform: 'facebook' | 'instagram';
   conversation_id: string;
   sender_id: string;
   sender_name: string;
@@ -31,7 +31,7 @@ interface UnifiedConversation {
 }
 
 /**
- * Converts Facebook messages to full-kit chat format
+ * Converts unified messages (Facebook and Instagram) to full-kit chat format
  */
 export function convertFacebookMessagesToChatFormat(
   conversations: UnifiedConversation[],
@@ -92,6 +92,7 @@ export function convertFacebookMessagesToChatFormat(
       users: [customerUser, businessUser],
       typingUsers: [],
       unreadCount: 0, // We don't track unread count in our system
+      platform: conversation.platform,
     };
   });
 }

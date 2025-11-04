@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { apiSocialFacebookSendMessageCreate } from "@/api/generated/api"
+import axios from "@/api/axios"
 import { toast } from "sonner"
 
 interface TextMessageFormFacebookProps {
@@ -49,21 +50,33 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     setIsSending(true)
     try {
       // Extract conversation details from chat ID
-      // Format: fb_{pageId}_{senderId}
+      // Format: fb_{pageId}_{senderId} or ig_{accountId}_{senderId}
       const chatIdParts = selectedChat.id.split('_')
-      if (chatIdParts.length !== 3 || chatIdParts[0] !== 'fb') {
+      if (chatIdParts.length !== 3) {
         throw new Error('Invalid chat ID format')
       }
 
-      const pageId = chatIdParts[1]
+      const platform = chatIdParts[0]
+      const accountId = chatIdParts[1]
       const recipientId = chatIdParts[2]
 
-      // Send via Facebook API
-      await apiSocialFacebookSendMessageCreate({
-        recipient_id: recipientId,
-        message: data.text,
-        page_id: pageId
-      })
+      if (platform === 'fb') {
+        // Send via Facebook API
+        await apiSocialFacebookSendMessageCreate({
+          recipient_id: recipientId,
+          message: data.text,
+          page_id: accountId
+        })
+      } else if (platform === 'ig') {
+        // Send via Instagram API
+        await axios.post('/api/social/instagram/send-message/', {
+          recipient_id: recipientId,
+          message: data.text,
+          instagram_account_id: accountId
+        })
+      } else {
+        throw new Error('Unsupported platform: ' + platform)
+      }
 
       // Reset form
       form.reset()

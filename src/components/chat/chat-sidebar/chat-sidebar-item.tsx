@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
+import { Facebook, Instagram } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 
@@ -35,13 +36,28 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
       onClick={handleOnCLick}
     >
       <li className="w-full flex items-center gap-2">
-        <ChatAvatar
-          src={chat.avatar}
-          fallback={getInitials(chat.name)}
-          status={chat.status}
-          size={1.75}
-          className="shrink-0"
-        />
+        <div className="relative shrink-0">
+          <ChatAvatar
+            src={chat.avatar}
+            fallback={getInitials(chat.name)}
+            status={chat.status}
+            size={1.75}
+            className="shrink-0"
+          />
+          {/* Platform indicator badge */}
+          {chat.platform && (
+            <div className={cn(
+              "absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ring-2 ring-background",
+              chat.platform === "facebook" ? "bg-blue-600" : "bg-gradient-to-br from-purple-600 to-pink-600"
+            )}>
+              {chat.platform === "facebook" ? (
+                <Facebook className="h-2.5 w-2.5 text-white" />
+              ) : (
+                <Instagram className="h-2.5 w-2.5 text-white" />
+              )}
+            </div>
+          )}
+        </div>
         <div className="h-11 w-full grid grid-cols-3 gap-x-4">
           <div className="col-span-2 grid">
             <span className="truncate">{chat.name}</span>
