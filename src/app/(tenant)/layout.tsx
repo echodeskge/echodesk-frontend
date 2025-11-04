@@ -164,6 +164,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     users: "users",
     groups: "groups",
     social: "social",
+    "social/connections": "socialConnections",
+    "social/messages": "socialMessages",
+    "social/settings": "socialSettings",
     settings: "settings",
   };
 

@@ -202,6 +202,26 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     icon: "Share2",
     requiredFeatureKey: "social_integrations",
     isPremium: true,
+    children: [
+      {
+        id: "social/connections",
+        icon: "Link",
+        requiredFeatureKey: "social_integrations",
+        isPremium: true,
+      },
+      {
+        id: "social/messages",
+        icon: "MessageSquare",
+        requiredFeatureKey: "social_integrations",
+        isPremium: true,
+      },
+      {
+        id: "social/settings",
+        icon: "Settings",
+        requiredFeatureKey: "social_integrations",
+        isPremium: true,
+      },
+    ],
   },
   {
     id: "settings",
