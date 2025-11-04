@@ -27,6 +27,8 @@ import {
   CalendarCheck,
   Briefcase,
   FolderTree,
+  List,
+  PieChart,
 } from "lucide-react"
 
 import {
@@ -81,6 +83,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "CalendarCheck": CalendarCheck,
   "Briefcase": Briefcase,
   "FolderTree": FolderTree,
+  "List": List,
+  "PieChart": PieChart,
+  "CalendarDays": Calendar,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,

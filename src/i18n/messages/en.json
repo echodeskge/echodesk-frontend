@@ -37,6 +37,13 @@
     "bookingsStaff": "Staff",
     "bookingsClients": "Clients",
     "bookingsSettings": "Settings",
+    "leave": "Leave Management",
+    "myRequests": "My Requests",
+    "myBalance": "My Balance",
+    "teamRequests": "Team Requests",
+    "allRequests": "All Requests",
+    "leaveTypes": "Leave Types",
+    "publicHolidays": "Public Holidays",
     "clients": "Clients",
     "products": "Products",
     "productAttributes": "Product Attributes",
@@ -63,6 +70,13 @@
       "bookingsStaff": "Manage staff members who can provide services",
       "bookingsClients": "View and manage booking clients",
       "bookingsSettings": "Configure booking system settings",
+      "leave": "Manage employee leave and absence tracking",
+      "myRequests": "Submit and manage your leave requests",
+      "myBalance": "View your leave balance and entitlements",
+      "teamRequests": "Approve or reject team leave requests",
+      "allRequests": "View and manage all leave requests",
+      "leaveTypes": "Configure leave types and policies",
+      "publicHolidays": "Manage company-wide public holidays",
       "clients": "Manage ecommerce customers",
       "products": "Manage products with multilanguage support and dynamic attributes",
       "productAttributes": "Manage dynamic attributes for products",
@@ -1080,25 +1094,6 @@
         "address": "Address"
       },
       "rights": "All rights reserved."
-    }
-  },
-  "leave": {
-    "title": "Leave Management",
-    "myRequests": "My Requests",
-    "myBalance": "My Balance",
-    "teamRequests": "Team Requests",
-    "allRequests": "All Requests",
-    "leaveTypes": "Leave Types",
-    "publicHolidays": "Public Holidays",
-    "description": {
-      "leave": "Manage employee leave and absence tracking",
-      "myRequests": "Submit and manage your leave requests",
-      "myBalance": "View your leave balance and entitlements",
-      "teamRequests": "Approve or reject team leave requests",
-      "allRequests": "View and manage all leave requests",
-      "leaveTypes": "Configure leave types and policies",
-      "publicHolidays": "Manage company-wide public holidays",
-      "settings": "Configure leave management settings"
     }
   },
   "subscription": {
