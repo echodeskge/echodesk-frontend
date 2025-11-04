@@ -1,7 +1,15 @@
 "use client";
 
-import SocialIntegrations from "@/components/SocialIntegrations";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function SocialPage() {
-  return <SocialIntegrations />;
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to connections page
+    router.replace("/social/connections");
+  }, [router]);
+
+  return null;
 }

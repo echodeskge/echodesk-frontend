@@ -29,6 +29,7 @@ import {
   FolderTree,
   List,
   PieChart,
+  Link,
 } from "lucide-react"
 
 import {
@@ -86,6 +87,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "List": List,
   "PieChart": PieChart,
   "CalendarDays": Calendar,
+  "Link": Link,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,

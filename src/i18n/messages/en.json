@@ -635,7 +635,9 @@
     "step5": "You'll be redirected back here with your pages connected",
     "noteAdmin": "Note: You need to be an admin of the Facebook pages to connect them.",
     "areYouSureDisconnect": "Are you sure you want to disconnect all Facebook pages? This will stop receiving messages.",
-    "loadingFacebookIntegration": "Loading Facebook integration..."
+    "loadingFacebookIntegration": "Loading Facebook integration...",
+    "settings": "Settings",
+    "settingsDescription": "Configure how social media integrations work"
   },
   "timeTracking": {
     "title": "Time Tracking",
