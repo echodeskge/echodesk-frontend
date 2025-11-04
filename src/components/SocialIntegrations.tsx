@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { FacebookPageConnection, FacebookMessage } from "@/api/generated/interfaces";
 import {
@@ -9,8 +9,26 @@ import {
   useFacebookMessages,
   useConnectFacebook,
   useDisconnectFacebook,
-  useToggleFacebookPage
 } from "@/hooks/api";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import {
+  Facebook,
+  RefreshCw,
+  Check,
+  X,
+  MessageSquare,
+  Clock,
+  AlertCircle,
+  Info,
+  ArrowRight
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface SocialIntegrationsProps {
   onBackToDashboard?: () => void;
@@ -29,13 +47,6 @@ interface FacebookStatus {
   }>;
 }
 
-
-interface ConnectionStats {
-  totalMessages: number;
-  recentMessages: FacebookMessage[];
-}
-
-
 interface PaginatedResponse<T> {
   count: number;
   results: T[];
@@ -45,15 +56,14 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   const t = useTranslations("social");
   const tCommon = useTranslations("common");
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<"facebook">("facebook");
+  const router = useRouter();
 
-  // Use React Query hooks
+  // React Query hooks
   const { data: facebookStatusData, isLoading: statusLoading, refetch: refetchStatus } = useFacebookStatus();
   const { data: facebookPagesData, isLoading: pagesLoading, refetch: refetchPages } = useFacebookPages();
   const { data: messagesData, refetch: refetchMessages } = useFacebookMessages({ page: 1 });
   const connectFacebook = useConnectFacebook();
   const disconnectFacebook = useDisconnectFacebook();
-  const togglePage = useToggleFacebookPage();
 
   const handleRefresh = async () => {
     await Promise.all([refetchStatus(), refetchPages(), refetchMessages()]);
@@ -61,26 +71,23 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
 
   const facebookStatus = facebookStatusData as FacebookStatus | null;
   const facebookPages = (facebookPagesData as PaginatedResponse<FacebookPageConnection>)?.results || [];
+  const recentMessages = (messagesData as PaginatedResponse<FacebookMessage>)?.results?.slice(0, 5) || [];
+  const totalMessages = (messagesData as PaginatedResponse<FacebookMessage>)?.count || 0;
   const loading = statusLoading || pagesLoading;
+  const isConnected = facebookStatus?.connected || false;
 
-  const connectionStats: ConnectionStats | null = facebookStatus?.connected && messagesData ? {
-    totalMessages: (messagesData as PaginatedResponse<FacebookMessage>).count,
-    recentMessages: (messagesData as PaginatedResponse<FacebookMessage>).results.slice(0, 5)
-  } : null;
-
-  // Notify parent component when connection status changes
+  // Notify parent when connection status changes
   useEffect(() => {
     if (facebookStatus && onConnectionChange) {
-      onConnectionChange('facebook', facebookStatus.connected || false);
+      onConnectionChange('facebook', isConnected);
     }
-  }, [facebookStatus?.connected, onConnectionChange]);
+  }, [isConnected, onConnectionChange]);
 
   const handleConnectFacebook = async () => {
     setError("");
     try {
       const response = await connectFacebook.mutateAsync();
       if (response.oauth_url) {
-        // Redirect to Facebook OAuth
         window.location.href = response.oauth_url;
       } else {
         throw new Error("No OAuth URL received");
@@ -98,17 +105,12 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
 
     setError("");
     try {
-      const response = await disconnectFacebook.mutateAsync();
-      // Show success message if provided
-      if (response.message) {
-        console.log("Facebook disconnect successful:", response.message);
-      }
+      await disconnectFacebook.mutateAsync();
     } catch (err: any) {
       console.error("Failed to disconnect Facebook:", err);
       setError(err.response?.data?.error || err.message || t("error"));
     }
   };
-
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -120,371 +122,276 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
     });
   };
 
-  const renderFacebookSection = () => (
-    <div style={{ marginTop: "20px" }}>
-      {/* Connection Status */}
-      <div
-        style={{
-          background: facebookStatus?.connected ? "#d4f4dd" : "#f8f9fa",
-          border: `1px solid ${facebookStatus?.connected ? "#28a745" : "#dee2e6"}`,
-          borderRadius: "8px",
-          padding: "20px",
-          marginBottom: "20px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "15px" }}>
-          <div
-            style={{
-              width: "50px",
-              height: "50px",
-              borderRadius: "12px",
-              background: "#1877f2",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontSize: "24px",
-            }}
-          >
-            📘
-          </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "18px", fontWeight: "600", color: "#333" }}>
-              {t("facebookPages")}
-            </h3>
-            <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#666" }}>
-              {facebookStatus?.connected
-                ? t("pagesConnected", { count: facebookStatus.pages_count })
-                : t("notConnected")}
-            </p>
-          </div>
-          <div style={{ marginLeft: "auto" }}>
-            <div
-              style={{
-                width: "12px",
-                height: "12px",
-                borderRadius: "50%",
-                background: facebookStatus?.connected ? "#28a745" : "#dc3545",
-              }}
-            />
-          </div>
-        </div>
+  return (
+    <div className="container mx-auto p-6 max-w-6xl">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold flex items-center gap-2">
+          <Facebook className="h-8 w-8 text-blue-600" />
+          {t("socialMediaIntegrations")}
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          {t("connectAndManage")}
+        </p>
+      </div>
 
-        {facebookStatus?.connected && connectionStats && (
-          <div style={{ marginBottom: "15px", fontSize: "14px", color: "#666" }}>
-            <span>📊 {t("totalMessages", { count: connectionStats.totalMessages })}</span>
-          </div>
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setError("")}
+              className="h-auto p-0 hover:bg-transparent"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="space-y-6">
+        {/* Connection Status Card */}
+        <Card className={cn(
+          "border-2",
+          isConnected ? "border-green-200 bg-green-50/50" : "border-border"
+        )}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-white">
+                  <Facebook className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">{t("facebookPages")}</CardTitle>
+                  <CardDescription className="flex items-center gap-2 mt-1">
+                    {isConnected ? (
+                      <>
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span>{facebookStatus.pages_count} {t("pagesConnected")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-4 w-4 text-muted-foreground" />
+                        <span>{t("notConnected")}</span>
+                      </>
+                    )}
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge
+                variant={isConnected ? "default" : "secondary"}
+                className={cn(
+                  "h-8",
+                  isConnected && "bg-green-600 hover:bg-green-700"
+                )}
+              >
+                {isConnected ? "Connected" : "Not Connected"}
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {isConnected && totalMessages > 0 && (
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 text-sm text-blue-700">
+                  <MessageSquare className="h-4 w-4" />
+                  <span>{totalMessages} {t("totalMessages")}</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-blue-700 hover:text-blue-800 hover:bg-blue-100"
+                  onClick={() => router.push('/social/messages')}
+                >
+                  View Messages
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              {!isConnected ? (
+                <Button
+                  onClick={handleConnectFacebook}
+                  disabled={loading || connectFacebook.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading || connectFacebook.isPending ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      {t("connecting")}
+                    </>
+                  ) : (
+                    <>
+                      <Facebook className="mr-2 h-4 w-4" />
+                      {t("connectFacebookPages")}
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleDisconnectFacebook}
+                  disabled={loading || disconnectFacebook.isPending}
+                  variant="destructive"
+                >
+                  {loading || disconnectFacebook.isPending ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      {t("disconnecting")}
+                    </>
+                  ) : (
+                    <>
+                      <X className="mr-2 h-4 w-4" />
+                      {t("disconnectAllPages")}
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button
+                onClick={handleRefresh}
+                disabled={loading}
+                variant="outline"
+              >
+                <RefreshCw className={cn(
+                  "mr-2 h-4 w-4",
+                  loading && "animate-spin"
+                )} />
+                {t("refreshStatus")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Connected Pages List */}
+        {facebookPages.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t("connectedFacebookPages")}</CardTitle>
+              <CardDescription>
+                {facebookPages.length} page{facebookPages.length !== 1 ? 's' : ''} connected
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {facebookPages.map((page, index) => (
+                  <div key={page.id}>
+                    {index > 0 && <Separator className="my-3" />}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-blue-100 text-blue-600">
+                            {page.page_name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{page.page_name}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>ID: {page.page_id}</span>
+                            <span>•</span>
+                            <Clock className="h-3 w-3" />
+                            <span>{formatDate(page.created_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Badge variant={page.is_active ? "default" : "secondary"}>
+                        {page.is_active ? t("active") : t("inactive")}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <div style={{ display: "flex", gap: "12px" }}>
-          {!facebookStatus?.connected ? (
-            <button
-              onClick={handleConnectFacebook}
-              disabled={loading}
-              style={{
-                background: "#1877f2",
-                color: "white",
-                border: "none",
-                padding: "12px 20px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: loading ? "not-allowed" : "pointer",
-                opacity: loading ? 0.7 : 1,
-              }}
-            >
-              {loading ? t("connecting") : t("connectFacebookPages")}
-            </button>
-          ) : (
-            <button
-              onClick={handleDisconnectFacebook}
-              disabled={loading}
-              style={{
-                background: "#dc3545",
-                color: "white",
-                border: "none",
-                padding: "12px 20px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: loading ? "not-allowed" : "pointer",
-                opacity: loading ? 0.7 : 1,
-              }}
-            >
-              {loading ? t("disconnecting") : t("disconnectAllPages")}
-            </button>
-          )}
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            style={{
-              background: "#6c757d",
-              color: "white",
-              border: "none",
-              padding: "12px 20px",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {t("refreshStatus")}
-          </button>
-        </div>
-      </div>
-
-      {/* Connected Pages List */}
-      {facebookPages.length > 0 && (
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #dee2e6",
-            borderRadius: "8px",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ background: "#f8f9fa", padding: "15px", borderBottom: "1px solid #dee2e6" }}>
-            <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#333" }}>
-              {t("connectedFacebookPages")}
-            </h4>
-          </div>
-          <div style={{ padding: "0" }}>
-            {facebookPages.map((page, index) => (
-              <div
-                key={page.id}
-                style={{
-                  padding: "15px 20px",
-                  borderBottom: index < facebookPages.length - 1 ? "1px solid #f1f3f4" : "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
+        {/* Recent Messages */}
+        {recentMessages.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <div>
-                  <div style={{ fontSize: "14px", fontWeight: "500", color: "#333", marginBottom: "4px" }}>
-                    {page.page_name}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#666" }}>
-                    {t("pageId")}: {page.page_id} • {t("connected")}: {formatDate(page.created_at)}
-                  </div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    {t("recentMessages")}
+                  </CardTitle>
+                  <CardDescription>
+                    Last {recentMessages.length} messages from all connected pages
+                  </CardDescription>
                 </div>
-                <div
-                  style={{
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    fontSize: "11px",
-                    fontWeight: "500",
-                    background: page.is_active ? "#d4f4dd" : "#f8d7da",
-                    color: page.is_active ? "#28a745" : "#dc3545",
-                  }}
+                <Button
+                  size="sm"
+                  onClick={() => router.push('/social/messages')}
                 >
-                  {page.is_active ? t("active") : t("inactive")}
-                </div>
+                  View All
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Messages */}
-      {connectionStats?.recentMessages && connectionStats.recentMessages.length > 0 && (
-        <div
-          style={{
-            background: "white",
-            border: "1px solid #dee2e6",
-            borderRadius: "8px",
-            overflow: "hidden",
-            marginTop: "20px",
-          }}
-        >
-          <div style={{ background: "#f8f9fa", padding: "15px", borderBottom: "1px solid #dee2e6" }}>
-            <h4 style={{ margin: 0, fontSize: "16px", fontWeight: "600", color: "#333" }}>
-              {t("recentMessages")}
-            </h4>
-          </div>
-          <div style={{ padding: "0" }}>
-            {connectionStats.recentMessages.map((message, index) => (
-              <div
-                key={message.id}
-                style={{
-                  padding: "15px 20px",
-                  borderBottom: index < connectionStats.recentMessages.length - 1 ? "1px solid #f1f3f4" : "none",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                  {message.profile_pic_url && (
-                    <img
-                      src={message.profile_pic_url}
-                      alt={message.sender_name || "User"}
-                      style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                      <span style={{ fontSize: "14px", fontWeight: "500", color: "#333" }}>
-                        {message.sender_name || "Unknown User"}
-                      </span>
-                      <span style={{ fontSize: "12px", color: "#666" }}>
-                        {formatDate(message.timestamp)}
-                      </span>
-                      <span style={{ fontSize: "11px", color: "#1877f2", fontWeight: "500" }}>
-                        {message.page_name}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: "13px", color: "#666", lineHeight: "1.4" }}>
-                      {message.message_text}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentMessages.map((message, index) => (
+                  <div key={message.id}>
+                    {index > 0 && <Separator className="my-4" />}
+                    <div className="flex gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={message.profile_pic_url} alt={message.sender_name || "User"} />
+                        <AvatarFallback>
+                          {(message.sender_name || "U").charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-sm">{message.sender_name || "Unknown User"}</span>
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            {message.page_name}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatDate(message.timestamp)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {message.message_text}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Setup Instructions */}
-      {!facebookStatus?.connected && (
-        <div
-          style={{
-            background: "#f8f9fa",
-            border: "1px solid #dee2e6",
-            borderRadius: "8px",
-            padding: "20px",
-            marginTop: "20px",
-          }}
-        >
-          <h4 style={{ margin: "0 0 15px 0", fontSize: "16px", fontWeight: "600", color: "#333" }}>
-            {t("howToConnect")}
-          </h4>
-          <ol style={{ margin: "0", paddingLeft: "20px", color: "#666", fontSize: "14px", lineHeight: "1.6" }}>
-            <li>{t("step1")}</li>
-            <li>{t("step2")}</li>
-            <li>{t("step3")}</li>
-            <li>{t("step4")}</li>
-            <li>{t("step5")}</li>
-          </ol>
-          <div style={{ marginTop: "15px", padding: "12px", background: "#fff3cd", borderRadius: "6px", fontSize: "13px", color: "#856404" }}>
-            <strong>{tCommon("note")}:</strong> {t("noteAdmin")}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-
-
-  return (
-    <div>
-      {/* Header */}
-      <div
-        style={{
-          background: "white",
-          padding: "20px 30px",
-          borderRadius: "12px",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-          marginBottom: "20px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-          {onBackToDashboard && (
-            <button
-              onClick={onBackToDashboard}
-              style={{
-                background: "transparent",
-                border: "1px solid #dee2e6",
-                borderRadius: "8px",
-                padding: "8px 12px",
-                cursor: "pointer",
-                fontSize: "14px",
-                color: "#666",
-              }}
-            >
-              ← {t("backToDashboard")}
-            </button>
-          )}
-          <div>
-            <h1 style={{ margin: 0, fontSize: "24px", fontWeight: "700", color: "#333" }}>
-              {t("socialMediaIntegrations")}
-            </h1>
-            <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#666" }}>
-              {t("connectAndManage")}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div
-          style={{
-            background: "#f8d7da",
-            color: "#721c24",
-            padding: "12px 16px",
-            borderRadius: "8px",
-            marginBottom: "20px",
-            border: "1px solid #f5c6cb",
-          }}
-        >
-          {error}
-          <button
-            onClick={() => setError("")}
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "#721c24",
-              cursor: "pointer",
-              float: "right",
-              fontSize: "16px",
-              fontWeight: "bold",
-            }}
-          >
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Platform Tabs */}
-      <div
-        style={{
-          background: "white",
-          borderRadius: "12px",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            background: "#f8f9fa",
-            borderBottom: "1px solid #dee2e6",
-            padding: "15px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "8px",
-          }}
-        >
-          <span style={{ fontSize: "24px" }}>📘</span>
-          <span style={{ fontSize: "18px", fontWeight: "600", color: "#333" }}>
-            {t("facebookIntegration")}
-          </span>
-        </div>
-
-        <div style={{ padding: "30px" }}>
-          {loading && (
-            <div style={{ textAlign: "center", padding: "40px", color: "#666" }}>
-              <div style={{ fontSize: "24px", marginBottom: "12px" }}>⏳</div>
-              {t("loadingFacebookIntegration")}
-            </div>
-          )}
-
-          {!loading && renderFacebookSection()}
-        </div>
+        {/* Setup Instructions */}
+        {!isConnected && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                {t("howToConnect")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                <li>{t("step1")}</li>
+                <li>{t("step2")}</li>
+                <li>{t("step3")}</li>
+                <li>{t("step4")}</li>
+                <li>{t("step5")}</li>
+              </ol>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>{tCommon("note")}:</strong> {t("noteAdmin")}
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
