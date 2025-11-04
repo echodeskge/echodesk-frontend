@@ -132,6 +132,56 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     ],
   },
   {
+    id: "leave",
+    icon: "Calendar",
+    requiredFeatureKey: "leave_management",
+    isPremium: true,
+    children: [
+      {
+        id: "leave/my-requests",
+        icon: "FileText",
+        requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+      {
+        id: "leave/my-balance",
+        icon: "BarChart3",
+        requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+      {
+        id: "leave/team-requests",
+        icon: "Users",
+        requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+      {
+        id: "leave/all-requests",
+        icon: "CalendarCheck",
+        requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+      {
+        id: "leave/leave-types",
+        icon: "List",
+        requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+      {
+        id: "leave/public-holidays",
+        icon: "CalendarDays",
+        requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+      {
+        id: "leave/settings",
+        icon: "Settings",
+        requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+    ],
+  },
+  {
     id: "messages",
     icon: "MessageSquare",
     requiredFeatureKey: "facebook_integration",

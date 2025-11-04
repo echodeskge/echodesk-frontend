@@ -128,6 +128,33 @@ import type {
   PaginatedItemListMinimalList,
   ItemList,
   PatchedItemList,
+  PaginatedLeaveApprovalChainList,
+  LeaveApprovalChain,
+  PatchedLeaveApprovalChain,
+  PaginatedLeaveBalanceListList,
+  LeaveBalanceDetail,
+  PatchedLeaveBalanceUpdate,
+  LeaveBalanceUpdate,
+  PaginatedLeaveRequestListList,
+  LeaveRequestCreate,
+  LeaveRequestDetail,
+  LeaveRequestUpdate,
+  PatchedLeaveRequestUpdate,
+  LeaveApproval,
+  LeaveCancellation,
+  PaginatedLeaveTypeListList,
+  LeaveTypeCreateUpdate,
+  LeaveTypeDetail,
+  PatchedLeaveTypeCreateUpdate,
+  PaginatedPublicHolidayListList,
+  PublicHolidayCreateUpdate,
+  PublicHolidayDetail,
+  PatchedPublicHolidayCreateUpdate,
+  PaginatedLeaveSettingsList,
+  LeaveSettings,
+  PatchedLeaveSettings,
+  PublicHolidayList,
+  LeaveTypeList,
   PaginatedListItemMinimalList,
   ListItem,
   PatchedListItem,
@@ -3349,6 +3376,650 @@ export async function apiItemListsRootItemsRetrieve(
   id: number,
 ): Promise<ItemList> {
   const response = await axios.get(`/api/item-lists/${id}/root_items/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminApprovalChainsList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedLeaveApprovalChainList> {
+  const response = await axios.get(
+    `/api/leave/admin/approval-chains/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminApprovalChainsCreate(
+  data: LeaveApprovalChain,
+): Promise<LeaveApprovalChain> {
+  const response = await axios.post(`/api/leave/admin/approval-chains/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminApprovalChainsRetrieve(
+  id: string,
+): Promise<LeaveApprovalChain> {
+  const response = await axios.get(`/api/leave/admin/approval-chains/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminApprovalChainsUpdate(
+  id: string,
+  data: LeaveApprovalChain,
+): Promise<LeaveApprovalChain> {
+  const response = await axios.put(
+    `/api/leave/admin/approval-chains/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminApprovalChainsPartialUpdate(
+  id: string,
+  data: PatchedLeaveApprovalChain,
+): Promise<LeaveApprovalChain> {
+  const response = await axios.patch(
+    `/api/leave/admin/approval-chains/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminApprovalChainsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/leave/admin/approval-chains/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveBalancesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedLeaveBalanceListList> {
+  const response = await axios.get(
+    `/api/leave/admin/leave-balances/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveBalancesCreate(
+  data: LeaveBalanceDetail,
+): Promise<LeaveBalanceDetail> {
+  const response = await axios.post(`/api/leave/admin/leave-balances/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveBalancesRetrieve(
+  id: string,
+): Promise<LeaveBalanceDetail> {
+  const response = await axios.get(`/api/leave/admin/leave-balances/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveBalancesPartialUpdate(
+  id: string,
+  data: PatchedLeaveBalanceUpdate,
+): Promise<LeaveBalanceUpdate> {
+  const response = await axios.patch(
+    `/api/leave/admin/leave-balances/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveBalancesDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/leave/admin/leave-balances/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveBalancesCarryForwardCreate(
+  fromYear?: number,
+  toYear?: number,
+  data?: LeaveBalanceDetail,
+): Promise<LeaveBalanceDetail> {
+  const response = await axios.post(
+    `/api/leave/admin/leave-balances/carry_forward/${(() => {
+      const parts = [
+        fromYear ? 'from_year=' + encodeURIComponent(fromYear) : null,
+        toYear ? 'to_year=' + encodeURIComponent(toYear) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveBalancesInitializeUserCreate(
+  userId?: number,
+  year?: number,
+  data?: LeaveBalanceDetail,
+): Promise<LeaveBalanceDetail> {
+  const response = await axios.post(
+    `/api/leave/admin/leave-balances/initialize_user/${(() => {
+      const parts = [
+        userId ? 'user_id=' + encodeURIComponent(userId) : null,
+        year ? 'year=' + encodeURIComponent(year) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedLeaveRequestListList> {
+  const response = await axios.get(
+    `/api/leave/admin/leave-requests/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsCreate(
+  data: LeaveRequestCreate,
+): Promise<LeaveRequestCreate> {
+  const response = await axios.post(`/api/leave/admin/leave-requests/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsRetrieve(
+  id: string,
+): Promise<LeaveRequestDetail> {
+  const response = await axios.get(`/api/leave/admin/leave-requests/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsUpdate(
+  id: string,
+  data: LeaveRequestUpdate,
+): Promise<LeaveRequestUpdate> {
+  const response = await axios.put(
+    `/api/leave/admin/leave-requests/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsPartialUpdate(
+  id: string,
+  data: PatchedLeaveRequestUpdate,
+): Promise<LeaveRequestUpdate> {
+  const response = await axios.patch(
+    `/api/leave/admin/leave-requests/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/leave/admin/leave-requests/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsApproveCreate(
+  id: string,
+  data: LeaveApproval,
+): Promise<LeaveApproval> {
+  const response = await axios.post(
+    `/api/leave/admin/leave-requests/${id}/approve/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsCancelCreate(
+  id: string,
+  data: LeaveCancellation,
+): Promise<LeaveCancellation> {
+  const response = await axios.post(
+    `/api/leave/admin/leave-requests/${id}/cancel/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveRequestsRejectCreate(
+  id: string,
+  data: LeaveApproval,
+): Promise<LeaveApproval> {
+  const response = await axios.post(
+    `/api/leave/admin/leave-requests/${id}/reject/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveTypesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedLeaveTypeListList> {
+  const response = await axios.get(
+    `/api/leave/admin/leave-types/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveTypesCreate(
+  data: LeaveTypeCreateUpdate,
+): Promise<LeaveTypeCreateUpdate> {
+  const response = await axios.post(`/api/leave/admin/leave-types/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveTypesRetrieve(
+  id: string,
+): Promise<LeaveTypeDetail> {
+  const response = await axios.get(`/api/leave/admin/leave-types/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveTypesUpdate(
+  id: string,
+  data: LeaveTypeCreateUpdate,
+): Promise<LeaveTypeCreateUpdate> {
+  const response = await axios.put(`/api/leave/admin/leave-types/${id}/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveTypesPartialUpdate(
+  id: string,
+  data: PatchedLeaveTypeCreateUpdate,
+): Promise<LeaveTypeCreateUpdate> {
+  const response = await axios.patch(
+    `/api/leave/admin/leave-types/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminLeaveTypesDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/leave/admin/leave-types/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminPublicHolidaysList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedPublicHolidayListList> {
+  const response = await axios.get(
+    `/api/leave/admin/public-holidays/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminPublicHolidaysCreate(
+  data: PublicHolidayCreateUpdate,
+): Promise<PublicHolidayCreateUpdate> {
+  const response = await axios.post(`/api/leave/admin/public-holidays/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminPublicHolidaysRetrieve(
+  id: string,
+): Promise<PublicHolidayDetail> {
+  const response = await axios.get(`/api/leave/admin/public-holidays/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminPublicHolidaysUpdate(
+  id: string,
+  data: PublicHolidayCreateUpdate,
+): Promise<PublicHolidayCreateUpdate> {
+  const response = await axios.put(
+    `/api/leave/admin/public-holidays/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminPublicHolidaysPartialUpdate(
+  id: string,
+  data: PatchedPublicHolidayCreateUpdate,
+): Promise<PublicHolidayCreateUpdate> {
+  const response = await axios.patch(
+    `/api/leave/admin/public-holidays/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminPublicHolidaysDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/leave/admin/public-holidays/${id}/`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminSettingsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedLeaveSettingsList> {
+  const response = await axios.get(
+    `/api/leave/admin/settings/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveAdminSettingsCreate(
+  data: LeaveSettings,
+): Promise<LeaveSettings> {
+  const response = await axios.post(`/api/leave/admin/settings/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminSettingsRetrieve(
+  id: string,
+): Promise<LeaveSettings> {
+  const response = await axios.get(`/api/leave/admin/settings/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveAdminSettingsUpdate(
+  id: string,
+  data: LeaveSettings,
+): Promise<LeaveSettings> {
+  const response = await axios.put(`/api/leave/admin/settings/${id}/`, data);
+  return response.data;
+}
+
+export async function apiLeaveAdminSettingsPartialUpdate(
+  id: string,
+  data: PatchedLeaveSettings,
+): Promise<LeaveSettings> {
+  const response = await axios.patch(`/api/leave/admin/settings/${id}/`, data);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeHolidaysList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedPublicHolidayListList> {
+  const response = await axios.get(
+    `/api/leave/employee/holidays/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveEmployeeHolidaysRetrieve(
+  id: string,
+): Promise<PublicHolidayList> {
+  const response = await axios.get(`/api/leave/employee/holidays/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeHolidaysUpcomingRetrieve(): Promise<PublicHolidayList> {
+  const response = await axios.get(`/api/leave/employee/holidays/upcoming/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeLeaveTypesList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedLeaveTypeListList> {
+  const response = await axios.get(
+    `/api/leave/employee/leave-types/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveEmployeeLeaveTypesRetrieve(
+  id: string,
+): Promise<LeaveTypeList> {
+  const response = await axios.get(`/api/leave/employee/leave-types/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyBalanceList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedLeaveBalanceListList> {
+  const response = await axios.get(
+    `/api/leave/employee/my-balance/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyBalanceRetrieve(
+  id: string,
+): Promise<LeaveBalanceDetail> {
+  const response = await axios.get(`/api/leave/employee/my-balance/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyBalanceCurrentRetrieve(): Promise<LeaveBalanceDetail> {
+  const response = await axios.get(`/api/leave/employee/my-balance/current/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyBalanceSummaryRetrieve(): Promise<LeaveBalanceDetail> {
+  const response = await axios.get(`/api/leave/employee/my-balance/summary/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedLeaveRequestListList> {
+  const response = await axios.get(
+    `/api/leave/employee/my-requests/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsCreate(
+  data: LeaveRequestCreate,
+): Promise<LeaveRequestCreate> {
+  const response = await axios.post(`/api/leave/employee/my-requests/`, data);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsRetrieve(
+  id: string,
+): Promise<LeaveRequestDetail> {
+  const response = await axios.get(`/api/leave/employee/my-requests/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsPartialUpdate(
+  id: string,
+  data: PatchedLeaveRequestUpdate,
+): Promise<LeaveRequestUpdate> {
+  const response = await axios.patch(
+    `/api/leave/employee/my-requests/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/leave/employee/my-requests/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsCancelCreate(
+  id: string,
+  data: LeaveCancellation,
+): Promise<LeaveCancellation> {
+  const response = await axios.post(
+    `/api/leave/employee/my-requests/${id}/cancel/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsApprovedRetrieve(): Promise<LeaveRequestDetail> {
+  const response = await axios.get(`/api/leave/employee/my-requests/approved/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsHistoryRetrieve(): Promise<LeaveRequestDetail> {
+  const response = await axios.get(`/api/leave/employee/my-requests/history/`);
+  return response.data;
+}
+
+export async function apiLeaveEmployeeMyRequestsPendingRetrieve(): Promise<LeaveRequestDetail> {
+  const response = await axios.get(`/api/leave/employee/my-requests/pending/`);
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamBalancesList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedLeaveBalanceListList> {
+  const response = await axios.get(
+    `/api/leave/manager/team-balances/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamBalancesRetrieve(
+  id: string,
+): Promise<LeaveBalanceDetail> {
+  const response = await axios.get(`/api/leave/manager/team-balances/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamBalancesSummaryRetrieve(): Promise<LeaveBalanceDetail> {
+  const response = await axios.get(`/api/leave/manager/team-balances/summary/`);
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamRequestsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedLeaveRequestListList> {
+  const response = await axios.get(
+    `/api/leave/manager/team-requests/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamRequestsRetrieve(
+  id: string,
+): Promise<LeaveRequestDetail> {
+  const response = await axios.get(`/api/leave/manager/team-requests/${id}/`);
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamRequestsApproveCreate(
+  id: string,
+  data: LeaveApproval,
+): Promise<LeaveApproval> {
+  const response = await axios.post(
+    `/api/leave/manager/team-requests/${id}/approve/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamRequestsRejectCreate(
+  id: string,
+  data: LeaveApproval,
+): Promise<LeaveApproval> {
+  const response = await axios.post(
+    `/api/leave/manager/team-requests/${id}/reject/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiLeaveManagerTeamRequestsPendingRetrieve(): Promise<LeaveRequestDetail> {
+  const response = await axios.get(`/api/leave/manager/team-requests/pending/`);
   return response.data;
 }
 

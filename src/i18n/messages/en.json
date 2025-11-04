@@ -1082,6 +1082,25 @@
       "rights": "All rights reserved."
     }
   },
+  "leave": {
+    "title": "Leave Management",
+    "myRequests": "My Requests",
+    "myBalance": "My Balance",
+    "teamRequests": "Team Requests",
+    "allRequests": "All Requests",
+    "leaveTypes": "Leave Types",
+    "publicHolidays": "Public Holidays",
+    "description": {
+      "leave": "Manage employee leave and absence tracking",
+      "myRequests": "Submit and manage your leave requests",
+      "myBalance": "View your leave balance and entitlements",
+      "teamRequests": "Approve or reject team leave requests",
+      "allRequests": "View and manage all leave requests",
+      "leaveTypes": "Configure leave types and policies",
+      "publicHolidays": "Manage company-wide public holidays",
+      "settings": "Configure leave management settings"
+    }
+  },
   "subscription": {
     "title": "Subscription & Billing",
     "description": "Manage your subscription plan, view usage statistics, and upgrade your account",

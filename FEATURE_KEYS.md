@@ -114,6 +114,44 @@ if (item.id === "messages" && !facebookConnected) {
 
 ---
 
+### 9. `ecommerce_crm`
+**Controls access to:**
+- **E-commerce (ელექტრონული კომერცია)** - Product and order management
+- Products, Orders, Clients, Languages, Attributes
+
+**Type:** Premium Feature
+**Premium:** Yes ✨
+**Description:** Complete e-commerce solution for managing products, inventory, orders, and online clients. Includes multilingual product support and custom attributes.
+
+---
+
+### 10. `booking_management`
+**Controls access to:**
+- **Bookings (დაჯავშნები)** - Service booking and appointment scheduling
+- Bookings, Calendar, Services, Staff, Clients, Settings
+
+**Type:** Premium Feature
+**Premium:** Yes ✨
+**Description:** Service booking system for appointment-based businesses. Manage bookings, staff availability, service offerings, and client appointments with calendar integration.
+
+---
+
+### 11. `leave_management`
+**Controls access to:**
+- **Leave Management (შვებულებების მართვა)** - Employee leave and absence management
+- Leave Requests, Leave Balances, Team Requests (Manager), Public Holidays
+
+**Type:** Premium Feature
+**Premium:** Yes ✨
+**Description:** Comprehensive leave management system with multi-level approval workflow. Employees can request leave, managers can approve team requests, and admins have full control over leave types, balances, and approval chains.
+
+**Three-Tier Access:**
+- **Employee**: Submit and manage own leave requests, view balance
+- **Manager**: Approve/reject team leave requests, view team balances
+- **Admin**: Full system configuration, all leave requests, balance management
+
+---
+
 ## Feature Key Summary Table
 
 | Feature Key | Menu Items | Type | Premium | Notes |
@@ -126,6 +164,9 @@ if (item.id === "messages" && !facebookConnected) {
 | `user_management` | Users, Groups | Admin | No | Admin only |
 | `social_integrations` | Social Media | Integration | Yes ✨ | Platform connections |
 | `settings_access` | Settings | Admin | No | Admin only |
+| `ecommerce_crm` | E-commerce | Premium | Yes ✨ | Product/order management |
+| `booking_management` | Bookings | Premium | Yes ✨ | Appointment scheduling |
+| `leave_management` | Leave Management | Premium | Yes ✨ | Employee leave system |
 
 ---
 

@@ -3,6 +3,10 @@
  * DO NOT EDIT MANUALLY
  */
 
+export interface ActionEnum {
+  [key: string]: any;
+}
+
 export interface AddNewCardRequest {
   make_default?: boolean;
 }
@@ -12,6 +16,10 @@ export interface AddNewCardResponse {
   payment_url: string;
   amount: number;
   currency: string;
+}
+
+export interface ApproverRoleEnum {
+  [key: string]: any;
 }
 
 export interface AttributeDefinition {
@@ -144,6 +152,10 @@ export interface BookingStaffCreate {
 }
 
 export interface BookingTypeEnum {
+  [key: string]: any;
+}
+
+export interface CalculationMethodEnum {
   [key: string]: any;
 }
 
@@ -586,6 +598,201 @@ export interface Language {
   updated_at: string;
 }
 
+export interface LeaveApproval {
+  action: ActionEnum;
+  comments?: string;
+}
+
+export interface LeaveApprovalChain {
+  id: number;
+  tenant: number;
+  leave_type?: number;
+  leave_type_name: string;
+  level: number;
+  approver_role: ApproverRoleEnum;
+  is_required?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveBalanceDetail {
+  id: number;
+  tenant: number;
+  user: number;
+  employee_name: string;
+  employee_email: string;
+  leave_type: number;
+  leave_type_details: LeaveTypeList;
+  year: number;
+  allocated_days?: string;
+  used_days?: string;
+  carried_forward_days?: string;
+  pending_days?: string;
+  available_days: string;
+  total_allocated: string;
+  last_accrual_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveBalanceList {
+  id: number;
+  user: number;
+  employee_name: string;
+  leave_type: number;
+  leave_type_name: string;
+  leave_type_code: string;
+  year: number;
+  allocated_days?: string;
+  used_days?: string;
+  carried_forward_days?: string;
+  pending_days?: string;
+  available_days: string;
+  total_allocated: string;
+}
+
+export interface LeaveBalanceUpdate {
+  allocated_days?: string;
+  carried_forward_days?: string;
+}
+
+export interface LeaveCancellation {
+  reason?: string;
+}
+
+export interface LeaveRequestCreate {
+  leave_type: number;
+  start_date: string;
+  end_date: string;
+  reason?: string;
+  attachment?: string;
+}
+
+export interface LeaveRequestDetail {
+  id: number;
+  tenant: number;
+  employee: number;
+  employee_name: string;
+  employee_email: string;
+  leave_type: number;
+  leave_type_details: LeaveTypeList;
+  start_date: string;
+  end_date: string;
+  total_days: string;
+  reason?: string;
+  status?: StatusCf2enum;
+  status_display: string;
+  manager_approver?: number;
+  manager_approver_name: string;
+  manager_approved_at?: string;
+  manager_comments?: string;
+  hr_approver?: number;
+  hr_approver_name: string;
+  hr_approved_at?: string;
+  hr_comments?: string;
+  final_approver?: number;
+  final_approver_name: string;
+  final_approved_at?: string;
+  rejected_by?: number;
+  rejected_by_name: string;
+  rejected_at?: string;
+  rejection_reason?: string;
+  cancelled_at?: string;
+  cancellation_reason?: string;
+  attachment?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveRequestList {
+  id: number;
+  employee: number;
+  employee_name: string;
+  leave_type: number;
+  leave_type_name: string;
+  leave_type_color: string;
+  start_date: string;
+  end_date: string;
+  total_days: string;
+  status?: StatusCf2enum;
+  status_display: string;
+  created_at: string;
+}
+
+export interface LeaveRequestUpdate {
+  start_date: string;
+  end_date: string;
+  reason?: string;
+  attachment?: string;
+}
+
+export interface LeaveSettings {
+  id: number;
+  tenant: number;
+  require_manager_approval?: boolean;
+  require_hr_approval?: boolean;
+  allow_negative_balance?: boolean;
+  max_negative_days?: number;
+  working_days_per_week?: number;
+  weekend_days?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveTypeCreateUpdate {
+  name: any;
+  code: string;
+  description?: any;
+  is_paid?: boolean;
+  requires_approval?: boolean;
+  calculation_method?: CalculationMethodEnum;
+  default_days_per_year?: string;
+  accrual_rate_per_month?: string;
+  max_carry_forward_days?: number;
+  carry_forward_expiry_months?: number;
+  color?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export interface LeaveTypeDetail {
+  id: number;
+  tenant: number;
+  code: string;
+  name: any;
+  name_display: string;
+  description?: any;
+  description_display: string;
+  is_paid?: boolean;
+  requires_approval?: boolean;
+  calculation_method?: CalculationMethodEnum;
+  default_days_per_year?: string;
+  accrual_rate_per_month?: string;
+  max_carry_forward_days?: number;
+  carry_forward_expiry_months?: number;
+  color?: string;
+  is_active?: boolean;
+  sort_order?: number;
+  created_by: number;
+  created_by_name: string;
+  updated_by: number;
+  updated_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeaveTypeList {
+  id: number;
+  code: string;
+  name: any;
+  name_display: string;
+  is_paid?: boolean;
+  requires_approval?: boolean;
+  color?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
 export interface ListItem {
   id: number;
   item_list: number;
@@ -880,6 +1087,41 @@ export interface PaginatedLanguageList {
   results: Language[];
 }
 
+export interface PaginatedLeaveApprovalChainList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LeaveApprovalChain[];
+}
+
+export interface PaginatedLeaveBalanceListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LeaveBalanceList[];
+}
+
+export interface PaginatedLeaveRequestListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LeaveRequestList[];
+}
+
+export interface PaginatedLeaveSettingsList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LeaveSettings[];
+}
+
+export interface PaginatedLeaveTypeListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LeaveTypeList[];
+}
+
 export interface PaginatedListItemMinimalList {
   count: number;
   next?: string;
@@ -934,6 +1176,13 @@ export interface PaginatedProductVariantList {
   next?: string;
   previous?: string;
   results: ProductVariant[];
+}
+
+export interface PaginatedPublicHolidayListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: PublicHolidayList[];
 }
 
 export interface PaginatedRecurringBookingList {
@@ -1338,6 +1587,59 @@ export interface PatchedLanguage {
   updated_at?: string;
 }
 
+export interface PatchedLeaveApprovalChain {
+  id?: number;
+  tenant?: number;
+  leave_type?: number;
+  leave_type_name?: string;
+  level?: number;
+  approver_role?: ApproverRoleEnum;
+  is_required?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedLeaveBalanceUpdate {
+  allocated_days?: string;
+  carried_forward_days?: string;
+}
+
+export interface PatchedLeaveRequestUpdate {
+  start_date?: string;
+  end_date?: string;
+  reason?: string;
+  attachment?: string;
+}
+
+export interface PatchedLeaveSettings {
+  id?: number;
+  tenant?: number;
+  require_manager_approval?: boolean;
+  require_hr_approval?: boolean;
+  allow_negative_balance?: boolean;
+  max_negative_days?: number;
+  working_days_per_week?: number;
+  weekend_days?: any;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PatchedLeaveTypeCreateUpdate {
+  name?: any;
+  code?: string;
+  description?: any;
+  is_paid?: boolean;
+  requires_approval?: boolean;
+  calculation_method?: CalculationMethodEnum;
+  default_days_per_year?: string;
+  accrual_rate_per_month?: string;
+  max_carry_forward_days?: number;
+  carry_forward_expiry_months?: number;
+  color?: string;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
 export interface PatchedListItem {
   id?: number;
   item_list?: number;
@@ -1440,6 +1742,13 @@ export interface PatchedProductVariant {
   attribute_values?: ProductVariantAttributeValue[];
   created_at?: string;
   updated_at?: string;
+}
+
+export interface PatchedPublicHolidayCreateUpdate {
+  name?: any;
+  date?: string;
+  is_recurring?: boolean;
+  applies_to_all?: boolean;
 }
 
 export interface PatchedRecurringBooking {
@@ -1870,6 +2179,35 @@ export interface ProductVariantAttributeValue {
   value_json: any;
 }
 
+export interface PublicHolidayCreateUpdate {
+  name: any;
+  date: string;
+  is_recurring?: boolean;
+  applies_to_all?: boolean;
+}
+
+export interface PublicHolidayDetail {
+  id: number;
+  tenant: number;
+  name: any;
+  name_display: string;
+  date: string;
+  is_recurring?: boolean;
+  applies_to_all?: boolean;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicHolidayList {
+  id: number;
+  name: any;
+  name_display: string;
+  date: string;
+  is_recurring?: boolean;
+}
+
 export interface RecurringBooking {
   id: number;
   client: BookingClient;
@@ -2037,6 +2375,10 @@ export interface Status956enum {
 }
 
 export interface StatusB9eEnum {
+  [key: string]: any;
+}
+
+export interface StatusCf2enum {
   [key: string]: any;
 }
 
