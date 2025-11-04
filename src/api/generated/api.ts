@@ -185,6 +185,12 @@ import type {
   FacebookPageConnection,
   PatchedFacebookPageConnection,
   FacebookSendMessage,
+  PaginatedInstagramAccountConnectionList,
+  InstagramAccountConnection,
+  PatchedInstagramAccountConnection,
+  PaginatedInstagramMessageList,
+  InstagramMessage,
+  InstagramSendMessage,
   PaginatedTagList,
   Tag,
   PatchedTag,
@@ -3491,9 +3497,9 @@ export async function apiLeaveAdminLeaveBalancesDestroy(
 }
 
 export async function apiLeaveAdminLeaveBalancesCarryForwardCreate(
+  data: LeaveBalanceDetail,
   fromYear?: number,
   toYear?: number,
-  data?: LeaveBalanceDetail,
 ): Promise<LeaveBalanceDetail> {
   const response = await axios.post(
     `/api/leave/admin/leave-balances/carry_forward/${(() => {
@@ -3509,9 +3515,9 @@ export async function apiLeaveAdminLeaveBalancesCarryForwardCreate(
 }
 
 export async function apiLeaveAdminLeaveBalancesInitializeUserCreate(
+  data: LeaveBalanceDetail,
   userId?: number,
   year?: number,
-  data?: LeaveBalanceDetail,
 ): Promise<LeaveBalanceDetail> {
   const response = await axios.post(
     `/api/leave/admin/leave-balances/initialize_user/${(() => {
@@ -4719,6 +4725,116 @@ export async function apiSocialFacebookWebhookTestRetrieve(): Promise<any> {
 
 export async function apiSocialFacebookWebhookTestCreate(): Promise<any> {
   const response = await axios.post(`/api/social/facebook/webhook/test/`);
+  return response.data;
+}
+
+export async function apiSocialInstagramAccountsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedInstagramAccountConnectionList> {
+  const response = await axios.get(
+    `/api/social/instagram-accounts/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiSocialInstagramAccountsCreate(
+  data: InstagramAccountConnection,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.post(`/api/social/instagram-accounts/`, data);
+  return response.data;
+}
+
+export async function apiSocialInstagramAccountsRetrieve(
+  id: number,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.get(`/api/social/instagram-accounts/${id}/`);
+  return response.data;
+}
+
+export async function apiSocialInstagramAccountsUpdate(
+  id: number,
+  data: InstagramAccountConnection,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.put(
+    `/api/social/instagram-accounts/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiSocialInstagramAccountsPartialUpdate(
+  id: number,
+  data: PatchedInstagramAccountConnection,
+): Promise<InstagramAccountConnection> {
+  const response = await axios.patch(
+    `/api/social/instagram-accounts/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiSocialInstagramAccountsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(`/api/social/instagram-accounts/${id}/`);
+  return response.data;
+}
+
+export async function apiSocialInstagramMessagesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedInstagramMessageList> {
+  const response = await axios.get(
+    `/api/social/instagram-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function apiSocialInstagramMessagesRetrieve(
+  id: number,
+): Promise<InstagramMessage> {
+  const response = await axios.get(`/api/social/instagram-messages/${id}/`);
+  return response.data;
+}
+
+export async function apiSocialInstagramDisconnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/instagram/disconnect/`);
+  return response.data;
+}
+
+export async function apiSocialInstagramSendMessageCreate(
+  data: InstagramSendMessage,
+): Promise<{
+  success?: boolean;
+  message?: string;
+  instagram_message_id?: string;
+}> {
+  const response = await axios.post(
+    `/api/social/instagram/send-message/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function apiSocialInstagramStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/instagram/status/`);
   return response.data;
 }
 

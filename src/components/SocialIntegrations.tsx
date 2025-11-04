@@ -222,7 +222,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                 <div>
                   <CardTitle className="text-xl">{t("facebookPages")}</CardTitle>
                   <CardDescription className="flex items-center gap-2 mt-1">
-                    {isConnected ? (
+                    {isConnected && facebookStatus ? (
                       <>
                         <Check className="h-4 w-4 text-green-600" />
                         <span>{facebookStatus.pages_count} {t("pagesConnected")}</span>
@@ -376,7 +376,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                 <div>
                   <CardTitle className="text-xl">{t("instagramAccounts")}</CardTitle>
                   <CardDescription className="flex items-center gap-2 mt-1">
-                    {isInstagramConnected ? (
+                    {isInstagramConnected && instagramStatus ? (
                       <>
                         <Check className="h-4 w-4 text-green-600" />
                         <span>{instagramStatus.accounts_count} {t("accountsConnected")}</span>

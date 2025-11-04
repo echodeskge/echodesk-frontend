@@ -550,6 +550,36 @@ export interface GroupCreate {
   permission_ids?: number[];
 }
 
+export interface InstagramAccountConnection {
+  id: number;
+  instagram_account_id: string;
+  username: string;
+  profile_picture_url?: string;
+  is_active?: boolean;
+  facebook_page_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InstagramMessage {
+  id: number;
+  message_id: string;
+  sender_id: string;
+  sender_username?: string;
+  sender_profile_pic?: string;
+  message_text?: string;
+  timestamp: string;
+  is_from_business?: boolean;
+  account_username: string;
+  created_at: string;
+}
+
+export interface InstagramSendMessage {
+  recipient_id: string;
+  message: string;
+  instagram_account_id: string;
+}
+
 export interface InvoiceListResponse {
   invoices: Record<string, any>[];
 }
@@ -1073,6 +1103,20 @@ export interface PaginatedGroupList {
   results: Group[];
 }
 
+export interface PaginatedInstagramAccountConnectionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InstagramAccountConnection[];
+}
+
+export interface PaginatedInstagramMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InstagramMessage[];
+}
+
 export interface PaginatedItemListMinimalList {
   count: number;
   next?: string;
@@ -1333,7 +1377,8 @@ export interface PaginatedUserList {
 }
 
 export interface PasswordResetConfirm {
-  token: string;
+  email: string;
+  code: string;
   new_password: string;
   new_password_confirm: string;
 }
@@ -1559,6 +1604,17 @@ export interface PatchedGroup {
   permissions?: Permission[];
   permission_ids?: number[];
   user_count?: string;
+}
+
+export interface PatchedInstagramAccountConnection {
+  id?: number;
+  instagram_account_id?: string;
+  username?: string;
+  profile_picture_url?: string;
+  is_active?: boolean;
+  facebook_page_name?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface PatchedItemList {
