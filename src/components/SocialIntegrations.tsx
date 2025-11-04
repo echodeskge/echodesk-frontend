@@ -9,6 +9,10 @@ import {
   useFacebookMessages,
   useConnectFacebook,
   useDisconnectFacebook,
+  useInstagramStatus,
+  useInstagramAccounts,
+  useInstagramMessages,
+  useDisconnectInstagram,
 } from "@/hooks/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +22,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import {
   Facebook,
+  Instagram,
   RefreshCw,
   Check,
   X,
@@ -47,6 +52,19 @@ interface FacebookStatus {
   }>;
 }
 
+interface InstagramStatus {
+  connected: boolean;
+  accounts_count: number;
+  accounts: Array<{
+    id: number;
+    instagram_account_id: string;
+    username: string;
+    profile_picture_url?: string;
+    is_active: boolean;
+    connected_at: string;
+  }>;
+}
+
 interface PaginatedResponse<T> {
   count: number;
   results: T[];
@@ -58,23 +76,45 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   const [error, setError] = useState("");
   const router = useRouter();
 
-  // React Query hooks
+  // React Query hooks - Facebook
   const { data: facebookStatusData, isLoading: statusLoading, refetch: refetchStatus } = useFacebookStatus();
   const { data: facebookPagesData, isLoading: pagesLoading, refetch: refetchPages } = useFacebookPages();
   const { data: messagesData, refetch: refetchMessages } = useFacebookMessages({ page: 1 });
   const connectFacebook = useConnectFacebook();
   const disconnectFacebook = useDisconnectFacebook();
 
+  // React Query hooks - Instagram
+  const { data: instagramStatusData, isLoading: instagramStatusLoading, refetch: refetchInstagramStatus } = useInstagramStatus();
+  const { data: instagramAccountsData, isLoading: instagramAccountsLoading, refetch: refetchInstagramAccounts } = useInstagramAccounts();
+  const { data: instagramMessagesData, refetch: refetchInstagramMessages } = useInstagramMessages({ page: 1 });
+  const disconnectInstagram = useDisconnectInstagram();
+
   const handleRefresh = async () => {
-    await Promise.all([refetchStatus(), refetchPages(), refetchMessages()]);
+    await Promise.all([
+      refetchStatus(),
+      refetchPages(),
+      refetchMessages(),
+      refetchInstagramStatus(),
+      refetchInstagramAccounts(),
+      refetchInstagramMessages()
+    ]);
   };
 
+  // Facebook data
   const facebookStatus = facebookStatusData as FacebookStatus | null;
   const facebookPages = (facebookPagesData as PaginatedResponse<FacebookPageConnection>)?.results || [];
   const recentMessages = (messagesData as PaginatedResponse<FacebookMessage>)?.results?.slice(0, 5) || [];
   const totalMessages = (messagesData as PaginatedResponse<FacebookMessage>)?.count || 0;
   const loading = statusLoading || pagesLoading;
   const isConnected = facebookStatus?.connected || false;
+
+  // Instagram data
+  const instagramStatus = instagramStatusData as InstagramStatus | null;
+  const instagramAccounts = instagramAccountsData?.results || [];
+  const instagramRecentMessages = instagramMessagesData?.results?.slice(0, 5) || [];
+  const totalInstagramMessages = instagramMessagesData?.count || 0;
+  const instagramLoading = instagramStatusLoading || instagramAccountsLoading;
+  const isInstagramConnected = instagramStatus?.connected || false;
 
   // Notify parent when connection status changes
   useEffect(() => {
@@ -108,6 +148,20 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
       await disconnectFacebook.mutateAsync();
     } catch (err: any) {
       console.error("Failed to disconnect Facebook:", err);
+      setError(err.response?.data?.error || err.message || t("error"));
+    }
+  };
+
+  const handleDisconnectInstagram = async () => {
+    if (!confirm(t("areYouSureDisconnect"))) {
+      return;
+    }
+
+    setError("");
+    try {
+      await disconnectInstagram.mutateAsync();
+    } catch (err: any) {
+      console.error("Failed to disconnect Instagram:", err);
       setError(err.response?.data?.error || err.message || t("error"));
     }
   };
@@ -299,6 +353,139 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                       </div>
                       <Badge variant={page.is_active ? "default" : "secondary"}>
                         {page.is_active ? t("active") : t("inactive")}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Instagram Connection Status Card */}
+        <Card className={cn(
+          "border-2",
+          isInstagramConnected ? "border-pink-200 bg-pink-50/50" : "border-border"
+        )}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 text-white">
+                  <Instagram className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">{t("instagramAccounts")}</CardTitle>
+                  <CardDescription className="flex items-center gap-2 mt-1">
+                    {isInstagramConnected ? (
+                      <>
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span>{instagramStatus.accounts_count} {t("accountsConnected")}</span>
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-4 w-4 text-muted-foreground" />
+                        <span>{t("notConnected")}</span>
+                      </>
+                    )}
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge
+                variant={isInstagramConnected ? "default" : "secondary"}
+                className={cn(
+                  "h-8",
+                  isInstagramConnected && "bg-pink-600 hover:bg-pink-700"
+                )}
+              >
+                {isInstagramConnected ? "Connected" : "Not Connected"}
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {isInstagramConnected && totalInstagramMessages > 0 && (
+              <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg border border-pink-200">
+                <div className="flex items-center gap-2 text-sm text-pink-700">
+                  <MessageSquare className="h-4 w-4" />
+                  <span>{totalInstagramMessages} {t("totalMessages")}</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-pink-700 hover:text-pink-800 hover:bg-pink-100"
+                  onClick={() => router.push('/social/messages')}
+                >
+                  View Messages
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              {isInstagramConnected ? (
+                <Button
+                  onClick={handleDisconnectInstagram}
+                  disabled={instagramLoading || disconnectInstagram.isPending}
+                  variant="destructive"
+                >
+                  {instagramLoading || disconnectInstagram.isPending ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      {t("disconnecting")}
+                    </>
+                  ) : (
+                    <>
+                      <X className="mr-2 h-4 w-4" />
+                      {t("disconnectAllAccounts")}
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    {t("instagramConnectsViaFacebook")}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Connected Instagram Accounts List */}
+        {instagramAccounts.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t("connectedInstagramAccounts")}</CardTitle>
+              <CardDescription>
+                {instagramAccounts.length} account{instagramAccounts.length !== 1 ? 's' : ''} connected
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {instagramAccounts.map((account: any, index: number) => (
+                  <div key={account.id}>
+                    {index > 0 && <Separator className="my-3" />}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={account.profile_picture_url} alt={`@${account.username}`} />
+                          <AvatarFallback className="bg-gradient-to-br from-purple-100 to-pink-100 text-pink-600">
+                            {account.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">@{account.username}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>ID: {account.instagram_account_id}</span>
+                            <span>•</span>
+                            <Clock className="h-3 w-3" />
+                            <span>{formatDate(account.created_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Badge variant={account.is_active ? "default" : "secondary"} className={account.is_active ? "bg-pink-600" : ""}>
+                        {account.is_active ? t("active") : t("inactive")}
                       </Badge>
                     </div>
                   </div>

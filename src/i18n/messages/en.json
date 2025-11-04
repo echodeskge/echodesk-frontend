@@ -615,9 +615,11 @@
     "facebookPages": "Facebook Pages",
     "notConnected": "Not connected",
     "pagesConnected": "page(s) connected",
+    "accountsConnected": "account(s) connected",
     "totalMessages": "total messages received",
     "connectFacebookPages": "Connect Facebook Pages",
     "disconnectAllPages": "Disconnect All Pages",
+    "disconnectAllAccounts": "Disconnect All Accounts",
     "connecting": "Connecting...",
     "disconnecting": "Disconnecting...",
     "refreshStatus": "Refresh Status",
@@ -637,7 +639,10 @@
     "areYouSureDisconnect": "Are you sure you want to disconnect all Facebook pages? This will stop receiving messages.",
     "loadingFacebookIntegration": "Loading Facebook integration...",
     "settings": "Settings",
-    "settingsDescription": "Configure how social media integrations work"
+    "settingsDescription": "Configure how social media integrations work",
+    "instagramAccounts": "Instagram Accounts",
+    "connectedInstagramAccounts": "Connected Instagram Accounts",
+    "instagramConnectsViaFacebook": "Instagram accounts are connected through Facebook Pages. Connect a Facebook Page with an associated Instagram Business account to get started."
   },
   "timeTracking": {
     "title": "Time Tracking",

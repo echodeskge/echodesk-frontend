@@ -616,9 +616,11 @@
     "facebookPages": "Facebook გვერდები",
     "notConnected": "არ არის დაკავშირებული",
     "pagesConnected": "გვერდი დაკავშირებულია",
+    "accountsConnected": "ანგარიში დაკავშირებულია",
     "totalMessages": "ჯამური შეტყობინებები მიღებულია",
     "connectFacebookPages": "Facebook გვერდების დაკავშირება",
     "disconnectAllPages": "ყველა გვერდის გათიშვა",
+    "disconnectAllAccounts": "ყველა ანგარიშის გათიშვა",
     "connecting": "მიმდინარეობს დაკავშირება...",
     "disconnecting": "მიმდინარეობს გათიშვა...",
     "refreshStatus": "სტატუსის განახლება",
@@ -638,7 +640,10 @@
     "areYouSureDisconnect": "დარწმუნებული ხართ, რომ გსურთ ყველა Facebook გვერდის გათიშვა? ეს შეწყვეტს შეტყობინებების მიღებას.",
     "loadingFacebookIntegration": "იტვირთება Facebook ინტეგრაცია...",
     "settings": "პარამეტრები",
-    "settingsDescription": "კონფიგურაცია გაუკეთეთ სოციალური მედიის ინტეგრაციების მუშაობას"
+    "settingsDescription": "კონფიგურაცია გაუკეთეთ სოციალური მედიის ინტეგრაციების მუშაობას",
+    "instagramAccounts": "Instagram ანგარიშები",
+    "connectedInstagramAccounts": "დაკავშირებული Instagram ანგარიშები",
+    "instagramConnectsViaFacebook": "Instagram ანგარიშები დაკავშირებულია Facebook გვერდების მეშვეობით. დააკავშირეთ Facebook გვერდი ასოცირებული Instagram ბიზნეს ანგარიშით დასაწყებად."
   },
   "timeTracking": {
     "title": "დროის აღრიცხვა",

@@ -12,6 +12,11 @@ export const socialKeys = {
   facebookPages: () => [...socialKeys.facebook(), 'pages'] as const,
   facebookMessages: () => [...socialKeys.facebook(), 'messages'] as const,
   facebookMessagesList: (filters: Record<string, any>) => [...socialKeys.facebookMessages(), filters] as const,
+  instagram: () => [...socialKeys.all, 'instagram'] as const,
+  instagramStatus: () => [...socialKeys.instagram(), 'status'] as const,
+  instagramAccounts: () => [...socialKeys.instagram(), 'accounts'] as const,
+  instagramMessages: () => [...socialKeys.instagram(), 'messages'] as const,
+  instagramMessagesList: (filters: Record<string, any>) => [...socialKeys.instagramMessages(), filters] as const,
 };
 
 // Queries
@@ -145,6 +150,115 @@ export function useToggleFacebookPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.facebookPages() });
+    },
+  });
+}
+
+// ============================================================================
+// INSTAGRAM HOOKS
+// ============================================================================
+
+export function useInstagramStatus() {
+  return useQuery({
+    queryKey: socialKeys.instagramStatus(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/instagram/status/');
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+}
+
+export function useInstagramAccounts() {
+  return useQuery({
+    queryKey: socialKeys.instagramAccounts(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/instagram-accounts/');
+      return response.data;
+    },
+  });
+}
+
+export function useInstagramMessages(filters?: {
+  page?: number;
+  account_id?: string;
+  search?: string;
+  unread_only?: boolean;
+}) {
+  return useQuery({
+    queryKey: socialKeys.instagramMessagesList(filters || {}),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.page) params.append('page', filters.page.toString());
+      if (filters?.account_id) params.append('account_id', filters.account_id);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.unread_only) params.append('unread_only', 'true');
+
+      const response = await axios.get(
+        `/api/social/instagram-messages/${params.toString() ? '?' + params.toString() : ''}`
+      );
+      return response.data;
+    },
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+  });
+}
+
+export function useInfiniteInstagramMessages(filters?: {
+  account_id?: string;
+  search?: string;
+  unread_only?: boolean;
+}) {
+  return useInfiniteQuery({
+    queryKey: socialKeys.instagramMessagesList(filters || {}),
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams();
+      params.append('page', pageParam.toString());
+      if (filters?.account_id) params.append('account_id', filters.account_id);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.unread_only) params.append('unread_only', 'true');
+
+      const response = await axios.get(
+        `/api/social/instagram-messages/?${params.toString()}`
+      );
+      return response.data;
+    },
+    getNextPageParam: (lastPage, pages) => {
+      if (lastPage.next) {
+        return pages.length + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+  });
+}
+
+export function useSendInstagramMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { recipient_id: string; message: string; instagram_account_id: string }) => {
+      const response = await axios.post('/api/social/instagram/send-message/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
+    },
+  });
+}
+
+export function useDisconnectInstagram() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/social/instagram/disconnect/');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.instagramStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.instagramAccounts() });
     },
   });
 }
