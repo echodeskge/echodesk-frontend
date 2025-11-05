@@ -28,6 +28,18 @@ export function useMessagesWebSocket({
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldConnectRef = useRef(true);
 
+  // Store callbacks in refs to avoid reconnection on callback changes
+  const onNewMessageRef = useRef(onNewMessage);
+  const onConversationUpdateRef = useRef(onConversationUpdate);
+  const onConnectionChangeRef = useRef(onConnectionChange);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onNewMessageRef.current = onNewMessage;
+    onConversationUpdateRef.current = onConversationUpdate;
+    onConnectionChangeRef.current = onConnectionChange;
+  }, [onNewMessage, onConversationUpdate, onConnectionChange]);
+
   console.log('[useMessagesWebSocket] Hook initialized');
   console.log('[useMessagesWebSocket] Tenant:', tenant);
 
@@ -76,7 +88,7 @@ export function useMessagesWebSocket({
       ws.onopen = () => {
         console.log('[WebSocket] Connected successfully');
         setIsConnected(true);
-        onConnectionChange?.(true);
+        onConnectionChangeRef.current?.(true);
 
         // Start ping interval to keep connection alive
         if (pingIntervalRef.current) {
@@ -104,12 +116,12 @@ export function useMessagesWebSocket({
 
             case 'new_message':
               console.log('[WebSocket] New message:', data);
-              onNewMessage?.(data);
+              onNewMessageRef.current?.(data);
               break;
 
             case 'conversation_update':
               console.log('[WebSocket] Conversation update:', data);
-              onConversationUpdate?.(data);
+              onConversationUpdateRef.current?.(data);
               break;
 
             case 'pong':
@@ -131,13 +143,13 @@ export function useMessagesWebSocket({
       ws.onerror = (error) => {
         console.error('[WebSocket] Error:', error);
         setIsConnected(false);
-        onConnectionChange?.(false);
+        onConnectionChangeRef.current?.(false);
       };
 
       ws.onclose = (event) => {
         console.log('[WebSocket] Connection closed:', event.code, event.reason);
         setIsConnected(false);
-        onConnectionChange?.(false);
+        onConnectionChangeRef.current?.(false);
 
         // Clear ping interval
         if (pingIntervalRef.current) {
@@ -156,9 +168,9 @@ export function useMessagesWebSocket({
     } catch (error) {
       console.error('[WebSocket] Connection error:', error);
       setIsConnected(false);
-      onConnectionChange?.(false);
+      onConnectionChangeRef.current?.(false);
     }
-  }, [tenant?.schema_name, autoReconnect, reconnectInterval, onNewMessage, onConversationUpdate, onConnectionChange]);
+  }, [tenant?.schema_name, autoReconnect, reconnectInterval]);
 
   const disconnect = useCallback(() => {
     shouldConnectRef.current = false;
@@ -182,8 +194,8 @@ export function useMessagesWebSocket({
     }
 
     setIsConnected(false);
-    onConnectionChange?.(false);
-  }, [onConnectionChange]);
+    onConnectionChangeRef.current?.(false);
+  }, []);
 
   const sendMessage = useCallback((message: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
