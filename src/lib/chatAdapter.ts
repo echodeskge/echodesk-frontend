@@ -32,12 +32,13 @@ interface UnifiedConversation {
 
 /**
  * Converts unified messages (Facebook and Instagram) to full-kit chat format
+ * Sorts conversations by last message time (most recent first)
  */
 export function convertFacebookMessagesToChatFormat(
   conversations: UnifiedConversation[],
   conversationMessages: Map<string, UnifiedMessage[]>
 ): ChatType[] {
-  return conversations.map((conversation) => {
+  const chats = conversations.map((conversation) => {
     const messages = conversationMessages.get(conversation.conversation_id) || [];
 
     // Create user for the customer
@@ -95,6 +96,15 @@ export function convertFacebookMessagesToChatFormat(
       platform: conversation.platform,
     };
   });
+
+  // Sort chats by last message time (most recent first)
+  chats.sort((a, b) => {
+    const timeA = a.lastMessage?.createdAt?.getTime() || 0;
+    const timeB = b.lastMessage?.createdAt?.getTime() || 0;
+    return timeB - timeA; // Descending order (newest first)
+  });
+
+  return chats;
 }
 
 /**
