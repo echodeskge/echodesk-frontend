@@ -100,7 +100,7 @@ export function PackageSelection({
         onValueChange={(v) => setPricingModel(v as PricingModel)}
         className="mt-8"
       >
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-2">
           <TabsTrigger value="agent">{t('tabs.agentBased')}</TabsTrigger>
           <TabsTrigger value="crm">{t('tabs.crmBased')}</TabsTrigger>
         </TabsList>
