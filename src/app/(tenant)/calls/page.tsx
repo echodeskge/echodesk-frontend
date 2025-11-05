@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import CallManager from "@/components/CallManager";
-import { FeatureGate } from "@/components/subscription/FeatureGate";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function CallsPage() {
-  const [isCallActive, setIsCallActive] = useState(false);
+  const router = useRouter();
 
-  return (
-    <FeatureGate feature="sip_calling" showUpgrade={true}>
-      <CallManager
-        onCallStatusChange={(isActive) => setIsCallActive(isActive)}
-      />
-    </FeatureGate>
-  );
+  useEffect(() => {
+    // Redirect to dashboard by default
+    router.replace("/calls/dashboard");
+  }, [router]);
+
+  return null;
 }
