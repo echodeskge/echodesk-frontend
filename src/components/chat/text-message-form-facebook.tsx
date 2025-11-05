@@ -3,13 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Send } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import type { TextMessageFormType } from "@/components/chat/types"
 
 import { TextMessageSchema } from "@/components/chat/schemas/text-message-schema"
 
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
+import { useTypingWebSocket } from "@/hooks/useTypingWebSocket"
 import { ButtonLoading } from "@/components/ui/button"
 import { EmojiPicker } from "@/components/ui/emoji-picker"
 import {
@@ -31,6 +32,11 @@ interface TextMessageFormFacebookProps {
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
   const { chatState } = useChatContext()
   const [isSending, setIsSending] = useState(false)
+
+  // Typing indicator WebSocket
+  const { notifyTyping, sendTypingStop } = useTypingWebSocket({
+    conversationId: chatState.selectedChat?.id,
+  })
 
   const form = useForm<TextMessageFormType>({
     resolver: zodResolver(TextMessageSchema),
@@ -81,6 +87,9 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
       // Reset form
       form.reset()
 
+      // Stop typing indicator after sending
+      sendTypingStop()
+
       // Reload messages to show the sent message
       if (onMessageSent) {
         onMessageSent()
@@ -92,6 +101,13 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
       })
     } finally {
       setIsSending(false)
+    }
+  }
+
+  // Handle typing notification
+  const handleInputChange = (value: string) => {
+    if (value.length > 0) {
+      notifyTyping()
     }
   }
 
@@ -122,6 +138,10 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
                   className="bg-accent"
                   disabled={isSending}
                   {...field}
+                  onChange={(e) => {
+                    field.onChange(e)
+                    handleInputChange(e.target.value)
+                  }}
                 />
               </FormControl>
             </FormItem>
