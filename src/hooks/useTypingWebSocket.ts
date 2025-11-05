@@ -58,9 +58,13 @@ export function useTypingWebSocket({
       const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = apiUrl.host;
 
-      const wsUrl = `${protocol}//${host}/ws/typing/${currentTenant.schema_name}/${currentConversationId}/`;
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('access_token');
+      const wsUrl = token
+        ? `${protocol}//${host}/ws/typing/${currentTenant.schema_name}/${currentConversationId}/?token=${token}`
+        : `${protocol}//${host}/ws/typing/${currentTenant.schema_name}/${currentConversationId}/`;
 
-      console.log('[TypingWebSocket] Connecting to:', wsUrl);
+      console.log('[TypingWebSocket] Connecting to:', wsUrl.replace(token || '', '[TOKEN]'));
 
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
