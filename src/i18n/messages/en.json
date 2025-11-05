@@ -1145,8 +1145,8 @@
       "title": "Simple, Transparent Pricing",
       "subtitle": "Choose the plan that fits your team size and needs. No hidden fees.",
       "tabs": {
-        "agentBased": "Agent-Based Pricing",
-        "crmBased": "CRM-Based Pricing"
+        "agentBased": "Agent Based Packages",
+        "crmBased": "CRM Based Packages"
       },
       "popular": "Most Popular",
       "plans": {
