@@ -407,12 +407,36 @@ export default function MessagesChat() {
     loadAllConversations(true);
   }, [loadAllConversations]);
 
+  // Handle WebSocket read receipt
+  const handleReadReceipt = useCallback((data: any) => {
+    console.log('[MessagesChat] WebSocket read receipt received:', data);
+    // For now, reload to get updated status
+    // TODO: Optimize to update specific messages in state
+    loadAllConversations(true);
+  }, [loadAllConversations]);
+
+  // Handle WebSocket delivery receipt
+  const handleDeliveryReceipt = useCallback((data: any) => {
+    console.log('[MessagesChat] WebSocket delivery receipt received:', data);
+    // For now, reload to get updated status
+    // TODO: Optimize to update specific messages in state
+    loadAllConversations(true);
+  }, [loadAllConversations]);
+
   // Handle WebSocket conversation update
   const handleConversationUpdate = useCallback((data: any) => {
     console.log('[MessagesChat] WebSocket conversation update received:', data);
-    // Reload conversations to get the latest data
-    loadAllConversations(true);
-  }, [loadAllConversations]);
+
+    // Check if this is a read or delivery receipt
+    if (data.type === 'read_receipt') {
+      handleReadReceipt(data);
+    } else if (data.type === 'delivery_receipt') {
+      handleDeliveryReceipt(data);
+    } else {
+      // For other updates, reload conversations
+      loadAllConversations(true);
+    }
+  }, [loadAllConversations, handleReadReceipt, handleDeliveryReceipt]);
 
   // Handle WebSocket connection status
   const handleConnectionChange = useCallback((connected: boolean) => {
