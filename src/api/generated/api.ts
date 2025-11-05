@@ -3497,9 +3497,9 @@ export async function apiLeaveAdminLeaveBalancesDestroy(
 }
 
 export async function apiLeaveAdminLeaveBalancesCarryForwardCreate(
-  data: LeaveBalanceDetail,
   fromYear?: number,
   toYear?: number,
+  data: LeaveBalanceDetail,
 ): Promise<LeaveBalanceDetail> {
   const response = await axios.post(
     `/api/leave/admin/leave-balances/carry_forward/${(() => {
@@ -3515,9 +3515,9 @@ export async function apiLeaveAdminLeaveBalancesCarryForwardCreate(
 }
 
 export async function apiLeaveAdminLeaveBalancesInitializeUserCreate(
-  data: LeaveBalanceDetail,
   userId?: number,
   year?: number,
+  data: LeaveBalanceDetail,
 ): Promise<LeaveBalanceDetail> {
   const response = await axios.post(
     `/api/leave/admin/leave-balances/initialize_user/${(() => {
@@ -4835,6 +4835,36 @@ export async function apiSocialInstagramSendMessageCreate(
 
 export async function apiSocialInstagramStatusRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/instagram/status/`);
+  return response.data;
+}
+
+export async function apiSocialSettingsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/settings/`);
+  return response.data;
+}
+
+export async function apiSocialSettingsUpdate(): Promise<any> {
+  const response = await axios.put(`/api/social/settings/`);
+  return response.data;
+}
+
+export async function apiSocialSettingsPartialUpdate(): Promise<any> {
+  const response = await axios.patch(`/api/social/settings/`);
+  return response.data;
+}
+
+export async function apiSocialWebhookLogsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/webhook-logs/`);
+  return response.data;
+}
+
+export async function apiSocialWebhookStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/webhook-status/`);
+  return response.data;
+}
+
+export async function apiSocialWebhookTestCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/webhook-test/`);
   return response.data;
 }
 

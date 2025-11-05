@@ -92,6 +92,7 @@ export default function MessagesChat() {
   const [conversationMessages, setConversationMessages] = useState<Map<string, UnifiedMessage[]>>(new Map());
   const [chatsData, setChatsData] = useState<ChatType[]>([]);
   const [currentUser, setCurrentUser] = useState({ id: "business", name: "Me", status: "online" });
+  const [refreshInterval, setRefreshInterval] = useState(5000); // Default 5 seconds
 
   const loadAllConversations = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -330,9 +331,32 @@ export default function MessagesChat() {
     }
   }, []);
 
+  // Load settings on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await axios.get("/api/social/settings/");
+        setRefreshInterval(response.data.refresh_interval);
+      } catch (error) {
+        console.error("Failed to load settings, using default refresh interval:", error);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
   useEffect(() => {
     loadAllConversations();
   }, [loadAllConversations]);
+
+  // Auto-refresh conversations based on server-side interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadAllConversations(true); // Silent reload
+    }, refreshInterval);
+
+    return () => clearInterval(interval);
+  }, [loadAllConversations, refreshInterval]);
 
   // Define handleMessageSent before any early returns (hooks rule)
   const handleMessageSent = useCallback(() => {

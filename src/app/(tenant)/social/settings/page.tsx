@@ -7,26 +7,72 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Bell, MessageSquare, Clock, User } from "lucide-react";
-import { useState } from "react";
+import { Bell, MessageSquare, Clock, User, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "@/api/axios";
 
 export default function SocialSettingsPage() {
   const t = useTranslations("social");
   const { toast } = useToast();
 
   // State for settings
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(5);
+  const [refreshInterval, setRefreshInterval] = useState(5); // in seconds
   const [notifications, setNotifications] = useState(true);
   const [notificationSound, setNotificationSound] = useState(true);
   const [autoAssign, setAutoAssign] = useState(false);
 
-  const handleSaveSettings = () => {
-    toast({
-      title: "Settings saved",
-      description: "Your social media settings have been updated successfully.",
-    });
+  // Load settings from backend on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const response = await axios.get("/api/social/settings/");
+        const data = response.data;
+
+        // Convert milliseconds to seconds for display
+        setRefreshInterval(Math.round(data.refresh_interval / 1000));
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+        toast({
+          title: "Error loading settings",
+          description: "Using default settings. Changes will be saved.",
+          variant: "destructive",
+        });
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [toast]);
+
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      // Convert seconds to milliseconds for backend
+      const refreshIntervalMs = refreshInterval * 1000;
+
+      await axios.patch("/api/social/settings/", {
+        refresh_interval: refreshIntervalMs,
+      });
+
+      toast({
+        title: "Settings saved",
+        description: "Your social media settings have been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error("Failed to save settings:", error);
+      toast({
+        title: "Error saving settings",
+        description: error.response?.data?.error || "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -182,11 +228,12 @@ export default function SocialSettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => window.history.back()}>
+          <Button variant="outline" onClick={() => window.history.back()} disabled={saving}>
             Cancel
           </Button>
-          <Button onClick={handleSaveSettings}>
-            Save Settings
+          <Button onClick={handleSaveSettings} disabled={saving || loading}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {saving ? "Saving..." : "Save Settings"}
           </Button>
         </div>
       </div>
