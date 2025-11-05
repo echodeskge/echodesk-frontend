@@ -187,7 +187,13 @@
     "confirmPassword": "Confirm New Password",
     "confirmPasswordPlaceholder": "Re-enter your new password",
     "changingPassword": "Changing Password...",
-    "passwordChangedSuccess": "Password changed successfully! Redirecting..."
+    "passwordChangedSuccess": "Password changed successfully! Redirecting...",
+    "customPackage": "Custom Package",
+    "customPackageDesc": "Need a tailored solution? Build your own package with the features you need",
+    "customFeature1": "Choose only the features you need",
+    "customFeature2": "Flexible pricing based on your requirements",
+    "customFeature3": "Dedicated support and onboarding",
+    "buildCustomPackage": "Build Custom Package"
   },
   "tickets": {
     "title": "Tickets",
