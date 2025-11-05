@@ -3497,9 +3497,9 @@ export async function apiLeaveAdminLeaveBalancesDestroy(
 }
 
 export async function apiLeaveAdminLeaveBalancesCarryForwardCreate(
+  data: LeaveBalanceDetail,
   fromYear?: number,
   toYear?: number,
-  data: LeaveBalanceDetail,
 ): Promise<LeaveBalanceDetail> {
   const response = await axios.post(
     `/api/leave/admin/leave-balances/carry_forward/${(() => {
@@ -3515,9 +3515,9 @@ export async function apiLeaveAdminLeaveBalancesCarryForwardCreate(
 }
 
 export async function apiLeaveAdminLeaveBalancesInitializeUserCreate(
+  data: LeaveBalanceDetail,
   userId?: number,
   year?: number,
-  data: LeaveBalanceDetail,
 ): Promise<LeaveBalanceDetail> {
   const response = await axios.post(
     `/api/leave/admin/leave-balances/initialize_user/${(() => {
