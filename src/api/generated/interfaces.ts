@@ -97,8 +97,8 @@ export interface BookingDetail {
   date: string;
   start_time: string;
   end_time: string;
-  status?: Status528enum;
-  payment_status?: PaymentStatus0acEnum;
+  status?: StatusF46enum;
+  payment_status?: PaymentStatusD7dEnum;
   total_amount: string;
   deposit_amount?: string;
   paid_amount?: string;
@@ -125,8 +125,8 @@ export interface BookingList {
   date: string;
   start_time: string;
   end_time: string;
-  status?: Status528enum;
-  payment_status?: PaymentStatus0acEnum;
+  status?: StatusF46enum;
+  payment_status?: PaymentStatusD7dEnum;
   total_amount: string;
   deposit_amount?: string;
   paid_amount?: string;
@@ -186,7 +186,7 @@ export interface CallLog {
   ended_at?: string;
   duration?: string;
   duration_display: string;
-  status?: StatusB9eEnum;
+  status?: Status6efEnum;
   notes?: string;
   sip_call_id?: string;
   client: number;
@@ -223,7 +223,7 @@ export interface CallLogDetail {
   ended_at?: string;
   duration?: string;
   duration_display: string;
-  status?: StatusB9eEnum;
+  status?: Status6efEnum;
   notes?: string;
   sip_call_id?: string;
   client: number;
@@ -264,7 +264,7 @@ export interface CallRecordingStatusEnum {
 }
 
 export interface CallStatusUpdate {
-  status: StatusB9eEnum;
+  status: Status6efEnum;
   notes?: string;
   call_quality_score?: number;
   recording_url?: string;
@@ -468,6 +468,10 @@ export interface FacebookMessage {
   message_text: string;
   timestamp: string;
   is_from_page?: boolean;
+  is_delivered: boolean;
+  delivered_at: string;
+  is_read: boolean;
+  read_at: string;
   page_name: string;
   created_at: string;
 }
@@ -570,6 +574,10 @@ export interface InstagramMessage {
   message_text?: string;
   timestamp: string;
   is_from_business?: boolean;
+  is_delivered: boolean;
+  delivered_at: string;
+  is_read: boolean;
+  read_at: string;
   account_username: string;
   created_at: string;
 }
@@ -710,7 +718,7 @@ export interface LeaveRequestDetail {
   end_date: string;
   total_days: string;
   reason?: string;
-  status?: StatusCf2enum;
+  status?: StatusC7aEnum;
   status_display: string;
   manager_approver?: number;
   manager_approver_name: string;
@@ -744,7 +752,7 @@ export interface LeaveRequestList {
   start_date: string;
   end_date: string;
   total_days: string;
-  status?: StatusCf2enum;
+  status?: StatusC7aEnum;
   status_display: string;
   created_at: string;
 }
@@ -1430,8 +1438,8 @@ export interface PatchedBookingList {
   date?: string;
   start_time?: string;
   end_time?: string;
-  status?: Status528enum;
-  payment_status?: PaymentStatus0acEnum;
+  status?: StatusF46enum;
+  payment_status?: PaymentStatusD7dEnum;
   total_amount?: string;
   deposit_amount?: string;
   paid_amount?: string;
@@ -1458,7 +1466,7 @@ export interface PatchedCallLog {
   ended_at?: string;
   duration?: string;
   duration_display?: string;
-  status?: StatusB9eEnum;
+  status?: Status6efEnum;
   notes?: string;
   sip_call_id?: string;
   client?: number;
@@ -1474,7 +1482,7 @@ export interface PatchedCallLog {
 }
 
 export interface PatchedCallStatusUpdate {
-  status?: StatusB9eEnum;
+  status?: Status6efEnum;
   notes?: string;
   call_quality_score?: number;
   recording_url?: string;
@@ -1767,7 +1775,7 @@ export interface PatchedProductCreateUpdate {
   track_inventory?: boolean;
   quantity?: number;
   low_stock_threshold?: number;
-  status?: Status956enum;
+  status?: StatusF43enum;
   is_featured?: boolean;
   weight?: string;
   dimensions?: any;
@@ -1847,7 +1855,7 @@ export interface PatchedServiceDetail {
   booking_type?: BookingTypeEnum;
   available_time_slots?: any;
   staff_members?: BookingStaff[];
-  status?: StatusE7cEnum;
+  status?: Status711enum;
   image?: string;
   name_display?: string;
   description_display?: string;
@@ -2064,8 +2072,8 @@ export interface PatchedTicketPayment {
 export interface PatchedUserUpdate {
   first_name?: string;
   last_name?: string;
-  role?: Role4c6enum;
-  status?: Status336enum;
+  role?: Role6b8enum;
+  status?: StatusD46enum;
   phone_number?: string;
   job_title?: string;
   is_active?: boolean;
@@ -2078,7 +2086,7 @@ export interface PaymentMethodEnum {
   [key: string]: any;
 }
 
-export interface PaymentStatus0acEnum {
+export interface PaymentStatusD7dEnum {
   [key: string]: any;
 }
 
@@ -2142,7 +2150,7 @@ export interface ProductCreateUpdate {
   track_inventory?: boolean;
   quantity?: number;
   low_stock_threshold?: number;
-  status?: Status956enum;
+  status?: StatusF43enum;
   is_featured?: boolean;
   weight?: string;
   dimensions?: any;
@@ -2170,7 +2178,7 @@ export interface ProductDetail {
   low_stock_threshold?: number;
   is_low_stock: boolean;
   is_in_stock: boolean;
-  status?: Status956enum;
+  status?: StatusF43enum;
   is_featured?: boolean;
   weight?: string;
   dimensions?: any;
@@ -2205,7 +2213,7 @@ export interface ProductList {
   discount_percentage: number;
   image?: string;
   quantity?: number;
-  status?: Status956enum;
+  status?: StatusF43enum;
   is_featured?: boolean;
   is_low_stock: boolean;
   is_in_stock: boolean;
@@ -2295,7 +2303,7 @@ export interface RecurringBookingStatusEnum {
   [key: string]: any;
 }
 
-export interface Role4c6enum {
+export interface Role6b8enum {
   [key: string]: any;
 }
 
@@ -2322,7 +2330,7 @@ export interface ServiceDetail {
   booking_type?: BookingTypeEnum;
   available_time_slots?: any;
   staff_members: BookingStaff[];
-  status?: StatusE7cEnum;
+  status?: Status711enum;
   image?: string;
   name_display: string;
   description_display: string;
@@ -2341,7 +2349,7 @@ export interface ServiceList {
   booking_type?: BookingTypeEnum;
   available_time_slots?: any;
   staff_members: BookingStaff[];
-  status?: StatusE7cEnum;
+  status?: Status711enum;
   image?: string;
   name_display: string;
   description_display: string;
@@ -2418,27 +2426,27 @@ export interface StaffException {
   reason?: string;
 }
 
-export interface Status336enum {
+export interface Status6efEnum {
   [key: string]: any;
 }
 
-export interface Status528enum {
+export interface Status711enum {
   [key: string]: any;
 }
 
-export interface Status956enum {
+export interface StatusC7aEnum {
   [key: string]: any;
 }
 
-export interface StatusB9eEnum {
+export interface StatusD46enum {
   [key: string]: any;
 }
 
-export interface StatusCf2enum {
+export interface StatusF43enum {
   [key: string]: any;
 }
 
-export interface StatusE7cEnum {
+export interface StatusF46enum {
   [key: string]: any;
 }
 
@@ -2775,8 +2783,8 @@ export interface User {
   first_name?: string;
   last_name?: string;
   full_name: string;
-  role?: Role4c6enum;
-  status?: Status336enum;
+  role?: Role6b8enum;
+  status?: StatusD46enum;
   phone_number?: string;
   job_title?: string;
   department: Department;
@@ -2801,8 +2809,8 @@ export interface UserCreate {
   email: string;
   first_name?: string;
   last_name?: string;
-  role?: Role4c6enum;
-  status?: Status336enum;
+  role?: Role6b8enum;
+  status?: StatusD46enum;
   phone_number?: string;
   department_id?: number;
   group_ids?: number[];
@@ -2820,8 +2828,8 @@ export interface UserMinimal {
 export interface UserUpdate {
   first_name?: string;
   last_name?: string;
-  role?: Role4c6enum;
-  status?: Status336enum;
+  role?: Role6b8enum;
+  status?: StatusD46enum;
   phone_number?: string;
   job_title?: string;
   is_active?: boolean;

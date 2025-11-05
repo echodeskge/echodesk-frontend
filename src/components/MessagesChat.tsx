@@ -29,6 +29,10 @@ interface FacebookMessage {
   message_text: string;
   timestamp: string;
   is_from_page?: boolean;
+  is_delivered?: boolean;
+  delivered_at?: string;
+  is_read?: boolean;
+  read_at?: string;
   page_name: string;
   recipient_id?: string; // The person receiving the message
 }
@@ -42,6 +46,10 @@ interface InstagramMessage {
   message_text: string;
   timestamp: string;
   is_from_business?: boolean;
+  is_delivered?: boolean;
+  delivered_at?: string;
+  is_read?: boolean;
+  read_at?: string;
   account_username: string;
 }
 
@@ -64,6 +72,10 @@ interface UnifiedMessage {
   attachment_url?: string;
   timestamp: string;
   is_from_business: boolean;
+  is_delivered?: boolean;
+  delivered_at?: string;
+  is_read?: boolean;
+  read_at?: string;
   page_name?: string;
   conversation_id: string;
   platform_message_id: string;
@@ -194,6 +206,10 @@ export default function MessagesChat() {
               message_text: msg.message_text,
               timestamp: msg.timestamp,
               is_from_business: msg.is_from_page || false,
+              is_delivered: msg.is_delivered,
+              delivered_at: msg.delivered_at,
+              is_read: msg.is_read,
+              read_at: msg.read_at,
               page_name: msg.page_name,
               conversation_id: `fb_${page.page_id}_${customerId}`,
               platform_message_id: msg.message_id,
@@ -210,6 +226,10 @@ export default function MessagesChat() {
               message_text: latestMsg.message_text,
               timestamp: latestMsg.timestamp,
               is_from_business: latestMsg.is_from_page || false,
+              is_delivered: latestMsg.is_delivered,
+              delivered_at: latestMsg.delivered_at,
+              is_read: latestMsg.is_read,
+              read_at: latestMsg.read_at,
               page_name: latestMsg.page_name,
               conversation_id: `fb_${page.page_id}_${customerId}`,
               platform_message_id: latestMsg.message_id,
@@ -313,6 +333,10 @@ export default function MessagesChat() {
                 message_text: msg.message_text,
                 timestamp: msg.timestamp,
                 is_from_business: msg.is_from_business || false,
+                is_delivered: msg.is_delivered,
+                delivered_at: msg.delivered_at,
+                is_read: msg.is_read,
+                read_at: msg.read_at,
                 page_name: `@${msg.account_username}`,
                 conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
                 platform_message_id: msg.message_id,
@@ -329,6 +353,10 @@ export default function MessagesChat() {
                 message_text: latestMsg.message_text,
                 timestamp: latestMsg.timestamp,
                 is_from_business: latestMsg.is_from_business || false,
+                is_delivered: latestMsg.is_delivered,
+                delivered_at: latestMsg.delivered_at,
+                is_read: latestMsg.is_read,
+                read_at: latestMsg.read_at,
                 page_name: `@${latestMsg.account_username}`,
                 conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
                 platform_message_id: latestMsg.message_id,

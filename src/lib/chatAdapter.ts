@@ -12,6 +12,10 @@ interface UnifiedMessage {
   attachment_url?: string;
   timestamp: string;
   is_from_business: boolean;
+  is_delivered?: boolean;
+  delivered_at?: string;
+  is_read?: boolean;
+  read_at?: string;
   page_name?: string;
   conversation_id: string;
   platform_message_id: string;
@@ -59,19 +63,33 @@ export function convertFacebookMessagesToChatFormat(
     };
 
     // Convert messages
-    const chatMessages: MessageType[] = messages.map((msg) => ({
-      id: msg.id,
-      senderId: msg.is_from_business ? businessUser.id : customerUser.id,
-      text: msg.message_text,
-      images: msg.attachment_url && msg.message_type === 'image'
-        ? [{ name: 'attachment', url: msg.attachment_url, size: 0 }]
-        : undefined,
-      files: msg.attachment_url && msg.message_type !== 'image'
-        ? [{ name: 'attachment', url: msg.attachment_url, size: 0 }]
-        : undefined,
-      status: "READ", // We don't track message status, default to READ
-      createdAt: new Date(msg.timestamp),
-    }));
+    const chatMessages: MessageType[] = messages.map((msg) => {
+      // Calculate status for messages sent by business only
+      let status = "SENT"; // Default status
+      if (msg.is_from_business) {
+        if (msg.is_read) {
+          status = "READ";
+        } else if (msg.is_delivered) {
+          status = "DELIVERED";
+        } else {
+          status = "SENT";
+        }
+      }
+
+      return {
+        id: msg.id,
+        senderId: msg.is_from_business ? businessUser.id : customerUser.id,
+        text: msg.message_text,
+        images: msg.attachment_url && msg.message_type === 'image'
+          ? [{ name: 'attachment', url: msg.attachment_url, size: 0 }]
+          : undefined,
+        files: msg.attachment_url && msg.message_type !== 'image'
+          ? [{ name: 'attachment', url: msg.attachment_url, size: 0 }]
+          : undefined,
+        status,
+        createdAt: new Date(msg.timestamp),
+      };
+    });
 
     // Sort messages by date
     chatMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());

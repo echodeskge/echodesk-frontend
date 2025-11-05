@@ -140,6 +140,18 @@ export function useMessagesWebSocket({
               onConversationUpdateRef.current?.(data);
               break;
 
+            case 'read_receipt':
+              console.log('[WebSocket] Read receipt:', data);
+              // Trigger conversation update to refresh message status
+              onConversationUpdateRef.current?.(data);
+              break;
+
+            case 'delivery_receipt':
+              console.log('[WebSocket] Delivery receipt:', data);
+              // Trigger conversation update to refresh message status
+              onConversationUpdateRef.current?.(data);
+              break;
+
             case 'pong':
               // Pong response to ping - connection is alive
               break;
