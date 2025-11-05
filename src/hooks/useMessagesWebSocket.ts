@@ -81,8 +81,8 @@ export function useMessagesWebSocket({
       const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = apiUrl.host; // This will be like 'groot.api.echodesk.ge' or 'localhost:8000'
 
-      // Get JWT token from localStorage
-      const token = localStorage.getItem('access_token');
+      // Get auth token from localStorage (same key as authService)
+      const token = localStorage.getItem('echodesk_auth_token');
       const wsUrl = token
         ? `${protocol}//${host}/ws/messages/${currentTenant.schema_name}/?token=${token}`
         : `${protocol}//${host}/ws/messages/${currentTenant.schema_name}/`;

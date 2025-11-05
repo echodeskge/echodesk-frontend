@@ -22,6 +22,7 @@ export function useTypingWebSocket({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const shouldConnectRef = useRef(true);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Store tenant and conversationId in refs
   const tenantRef = useRef(tenant);
@@ -58,8 +59,8 @@ export function useTypingWebSocket({
       const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = apiUrl.host;
 
-      // Get JWT token from localStorage
-      const token = localStorage.getItem('access_token');
+      // Get auth token from localStorage (same key as authService)
+      const token = localStorage.getItem('echodesk_auth_token');
       const wsUrl = token
         ? `${protocol}//${host}/ws/typing/${currentTenant.schema_name}/${currentConversationId}/?token=${token}`
         : `${protocol}//${host}/ws/typing/${currentTenant.schema_name}/${currentConversationId}/`;
@@ -72,6 +73,14 @@ export function useTypingWebSocket({
       ws.onopen = () => {
         console.log('[TypingWebSocket] Connected');
         setIsConnected(true);
+
+        // Start ping interval to keep connection alive
+        pingIntervalRef.current = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+            console.log('[TypingWebSocket] Ping sent');
+          }
+        }, 30000); // Send ping every 30 seconds
       };
 
       ws.onmessage = (event) => {
@@ -79,7 +88,17 @@ export function useTypingWebSocket({
           const data = JSON.parse(event.data);
           console.log('[TypingWebSocket] Message:', data);
 
-          if (data.type === 'typing_start') {
+          if (data.type === 'error') {
+            console.error('[TypingWebSocket] Server error:', data.message, data.code);
+            if (data.code === 'UNAUTHENTICATED') {
+              console.error('[TypingWebSocket] Authentication failed - check your token');
+              shouldConnectRef.current = false; // Stop reconnection attempts
+            }
+          } else if (data.type === 'pong') {
+            console.log('[TypingWebSocket] Pong received');
+          } else if (data.type === 'connection') {
+            console.log('[TypingWebSocket] Connection confirmed:', data);
+          } else if (data.type === 'typing_start') {
             setTypingUsers((prev) => {
               // Add user if not already in the list
               if (prev.some(u => u.user_id === data.user_id)) {
@@ -106,16 +125,25 @@ export function useTypingWebSocket({
         setIsConnected(false);
       };
 
-      ws.onclose = () => {
-        console.log('[TypingWebSocket] Disconnected');
+      ws.onclose = (event) => {
+        console.log('[TypingWebSocket] Disconnected', 'Code:', event.code, 'Reason:', event.reason);
         setIsConnected(false);
         setTypingUsers([]);
 
-        // Auto-reconnect
-        if (shouldConnectRef.current && currentConversationId) {
+        // Clear ping interval
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
+        }
+
+        // Auto-reconnect only if not intentionally closed or auth failed
+        if (shouldConnectRef.current && currentConversationId && event.code !== 4001) {
+          console.log('[TypingWebSocket] Reconnecting in 3 seconds...');
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, 3000);
+        } else if (event.code === 4001) {
+          console.error('[TypingWebSocket] Not reconnecting - authentication required');
         }
       };
     } catch (error) {
@@ -135,6 +163,11 @@ export function useTypingWebSocket({
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
+    }
+
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = null;
     }
 
     if (wsRef.current) {
