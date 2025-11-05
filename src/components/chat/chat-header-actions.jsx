@@ -1,4 +1,4 @@
-import { EllipsisVertical, Phone, Video } from "lucide-react"
+import { EllipsisVertical, Phone, Video, Wifi, WifiOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -9,9 +9,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export function ChatHeaderActions() {
+export function ChatHeaderActions({ isConnected = false }) {
   return (
     <div className="flex gap-1 ms-auto">
+      {/* WebSocket Connection Status */}
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={isConnected ? "Connected" : "Connecting..."}
+        className={isConnected ? "text-green-600 dark:text-green-500" : "text-muted-foreground"}
+      >
+        {isConnected ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}
+      </Button>
+
       <Button variant="ghost" size="icon">
         <Phone className="size-4" />
       </Button>

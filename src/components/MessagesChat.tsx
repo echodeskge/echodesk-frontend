@@ -12,8 +12,6 @@ import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType } from "@/components/chat/types";
 import { Card } from "@/components/ui/card";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
-import { Badge } from "@/components/ui/badge";
-import { Wifi, WifiOff } from "lucide-react";
 
 interface PaginatedResponse<T> {
   count: number;
@@ -409,26 +407,9 @@ export default function MessagesChat() {
   return (
     <ChatProvider chatsData={chatsData}>
       <div className="relative w-full flex gap-x-4 p-4 h-[calc(100vh-3.5rem)]">
-        {/* WebSocket Status Indicator */}
-        <div className="absolute top-6 right-6 z-10">
-          <Badge variant={isConnected ? "default" : "secondary"} className="flex items-center gap-1">
-            {isConnected ? (
-              <>
-                <Wifi className="h-3 w-3" />
-                <span className="text-xs">Live</span>
-              </>
-            ) : (
-              <>
-                <WifiOff className="h-3 w-3" />
-                <span className="text-xs">Connecting...</span>
-              </>
-            )}
-          </Badge>
-        </div>
-
         <ChatSidebar />
         {chatId ? (
-          <ChatBoxFacebook user={currentUser} onMessageSent={handleMessageSent} />
+          <ChatBoxFacebook user={currentUser} onMessageSent={handleMessageSent} isConnected={isConnected} />
         ) : (
           <ChatBoxPlaceholder />
         )}

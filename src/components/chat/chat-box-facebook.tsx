@@ -15,9 +15,10 @@ import { ChatBoxNotFound } from "./chat-box-not-found"
 interface ChatBoxFacebookProps {
   user: UserType;
   onMessageSent?: () => void;
+  isConnected?: boolean;
 }
 
-export function ChatBoxFacebook({ user, onMessageSent }: ChatBoxFacebookProps) {
+export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: ChatBoxFacebookProps) {
   const { chatState } = useChatContext()
   const params = useParams()
 
@@ -38,7 +39,7 @@ export function ChatBoxFacebook({ user, onMessageSent }: ChatBoxFacebookProps) {
 
   return (
     <Card className="grow grid">
-      <ChatBoxHeader chat={chat} />
+      <ChatBoxHeader chat={chat} isConnected={isConnected} />
       <ChatBoxContent user={user} chat={chat} />
       <ChatBoxFooterFacebook onMessageSent={onMessageSent} />
     </Card>
