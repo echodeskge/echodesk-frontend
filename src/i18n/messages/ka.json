@@ -24,6 +24,10 @@
   },
   "nav": {
     "tickets": "დაფები",
+    "ipCalling": "IP ზარები",
+    "ipCallingDashboard": "მთავარი",
+    "ipCallingLogs": "ზარების ჟურნალი",
+    "ipCallingSettings": "SIP პარამეტრები",
     "calls": "ზარები",
     "messages": "შეტყობინებები",
     "orders": "შეკვეთები",
@@ -61,6 +65,10 @@
     "dashboard": "მთავარი",
     "description": {
       "tickets": "დაფების ნახვა და მართვა",
+      "ipCalling": "VoIP ზარების სისტემა SIP კონფიგურაციით",
+      "ipCallingDashboard": "ზარების სტატისტიკისა და აქტივობის ნახვა",
+      "ipCallingLogs": "ზარების ისტორიის ნახვა და მართვა",
+      "ipCallingSettings": "SIP ანგარიშის პარამეტრების კონფიგურაცია",
       "calls": "ტელეფონის ზარების დამუშავება",
       "messages": "Facebook შეტყობინებების ნახვა და პასუხის გაცემა",
       "orders": "შეკვეთების შექმნა და მართვა",

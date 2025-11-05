@@ -32,10 +32,30 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     isPremium: true,
   },
   {
-    id: "calls",
+    id: "ip-calling",
     icon: "Phone",
-    requiredFeatureKey: "sip_calling",
+    requiredFeatureKey: "ip_calling",
     isPremium: true,
+    children: [
+      {
+        id: "ip-calling/dashboard",
+        icon: "LayoutDashboard",
+        requiredFeatureKey: "ip_calling",
+        isPremium: true,
+      },
+      {
+        id: "ip-calling/logs",
+        icon: "Phone",
+        requiredFeatureKey: "ip_calling",
+        isPremium: true,
+      },
+      {
+        id: "ip-calling/settings",
+        icon: "Settings",
+        requiredFeatureKey: "ip_calling",
+        isPremium: true,
+      },
+    ],
   },
   {
     id: "ecommerce",

@@ -24,6 +24,10 @@
   },
   "nav": {
     "tickets": "Boards",
+    "ipCalling": "IP Calling",
+    "ipCallingDashboard": "Dashboard",
+    "ipCallingLogs": "Call Logs",
+    "ipCallingSettings": "SIP Settings",
     "calls": "Calls",
     "messages": "Messages",
     "orders": "Orders",
@@ -60,6 +64,10 @@
     "dashboard": "Dashboard",
     "description": {
       "tickets": "View and manage boards",
+      "ipCalling": "VoIP calling system with SIP configuration",
+      "ipCallingDashboard": "View call statistics and activity",
+      "ipCallingLogs": "View and manage call history",
+      "ipCallingSettings": "Configure SIP account settings",
       "calls": "Handle phone calls",
       "messages": "View and respond to Facebook messages",
       "orders": "Create and manage orders",
