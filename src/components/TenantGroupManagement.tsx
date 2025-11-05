@@ -74,7 +74,11 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
     const fetchFeatures = async () => {
       try {
         setLoadingFeatures(true);
-        const response = await axios.get<AvailableFeaturesResponse>('/api/tenant-groups/available_features/');
+        // Include group_id when editing to show features already assigned to the group
+        const url = mode === 'edit' && group?.id
+          ? `/api/tenant-groups/available_features/?group_id=${group.id}`
+          : '/api/tenant-groups/available_features/';
+        const response = await axios.get<AvailableFeaturesResponse>(url);
         setAvailableFeatures(response.data.categories);
       } catch (err) {
         console.error('Failed to fetch available features:', err);
@@ -87,7 +91,7 @@ const TenantGroupForm: React.FC<TenantGroupFormProps> = ({ mode, group, open, on
     if (open) {
       fetchFeatures();
     }
-  }, [open]);
+  }, [open, mode, group?.id]);
 
   // Reset form data when group changes
   useEffect(() => {
