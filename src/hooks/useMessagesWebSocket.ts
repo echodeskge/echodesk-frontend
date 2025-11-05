@@ -49,6 +49,9 @@ export function useMessagesWebSocket({
     tenantRef.current = tenant;
   }, [tenant]);
 
+  // Track the schema name we're connected to
+  const connectedSchemaRef = useRef<string | null>(null);
+
   const connect = useCallback(() => {
     const currentTenant = tenantRef.current;
 
@@ -95,6 +98,7 @@ export function useMessagesWebSocket({
 
       ws.onopen = () => {
         console.log('[WebSocket] Connected successfully');
+        connectedSchemaRef.current = currentTenant.schema_name;
         setIsConnected(true);
         onConnectionChangeRef.current?.(true);
 
@@ -182,6 +186,7 @@ export function useMessagesWebSocket({
 
   const disconnect = useCallback(() => {
     shouldConnectRef.current = false;
+    connectedSchemaRef.current = null;
 
     // Clear reconnect timeout
     if (reconnectTimeoutRef.current) {
@@ -230,13 +235,22 @@ export function useMessagesWebSocket({
 
   // Connect on mount and when tenant schema changes
   useEffect(() => {
-    if (!tenant?.schema_name) {
+    const schemaName = tenant?.schema_name;
+
+    if (!schemaName) {
       console.log('[useMessagesWebSocket] Skipping connect - no tenant schema');
+      return;
+    }
+
+    // Check if we're already connected to this schema
+    if (connectedSchemaRef.current === schemaName && wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('[useMessagesWebSocket] Already connected to schema:', schemaName);
       return;
     }
 
     console.log('[useMessagesWebSocket] useEffect running - preparing to connect');
     console.log('[useMessagesWebSocket] tenant in useEffect:', tenant);
+    console.log('[useMessagesWebSocket] Previous schema:', connectedSchemaRef.current, 'New schema:', schemaName);
 
     shouldConnectRef.current = true;
     connect();
