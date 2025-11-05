@@ -8,7 +8,7 @@ export default function CallsDashboardPage() {
   const [isCallActive, setIsCallActive] = useState(false);
 
   return (
-    <FeatureGate feature="sip_calling" showUpgrade={true}>
+    <FeatureGate feature="ip_calling" showUpgrade={true}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Call Dashboard</h1>

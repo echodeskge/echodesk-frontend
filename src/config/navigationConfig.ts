@@ -34,25 +34,25 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
   {
     id: "calls",
     icon: "Phone",
-    requiredFeatureKey: "sip_calling",
+    requiredFeatureKey: "ip_calling",
     isPremium: true,
     children: [
       {
         id: "calls/dashboard",
         icon: "LayoutDashboard",
-        requiredFeatureKey: "sip_calling",
+        requiredFeatureKey: "ip_calling",
         isPremium: true,
       },
       {
         id: "calls/logs",
         icon: "History",
-        requiredFeatureKey: "sip_calling",
+        requiredFeatureKey: "ip_calling",
         isPremium: true,
       },
       {
         id: "calls/settings",
         icon: "Settings",
-        requiredFeatureKey: "sip_calling",
+        requiredFeatureKey: "ip_calling",
         isPremium: true,
       },
     ],

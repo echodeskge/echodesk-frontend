@@ -89,7 +89,7 @@ export default function CallLogsPage() {
   };
 
   return (
-    <FeatureGate feature="sip_calling" showUpgrade={true}>
+    <FeatureGate feature="ip_calling" showUpgrade={true}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
