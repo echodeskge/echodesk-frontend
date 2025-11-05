@@ -9,7 +9,7 @@ import { useTenantSubscription } from '@/hooks/api';
 export type SubscriptionFeature =
   | 'ticket_management'
   | 'email_integration'
-  | 'sip_calling'
+  | 'ip_calling'
   | 'facebook_integration'
   | 'instagram_integration'
   | 'whatsapp_integration'
@@ -40,7 +40,7 @@ export interface SubscriptionDetails {
 export interface SubscriptionFeatures {
   ticket_management: boolean;
   email_integration: boolean;
-  sip_calling: boolean;
+  ip_calling: boolean;
   facebook_integration: boolean;
   instagram_integration: boolean;
   whatsapp_integration: boolean;

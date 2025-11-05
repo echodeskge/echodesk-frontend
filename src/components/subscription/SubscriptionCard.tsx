@@ -202,7 +202,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ showAll = false }) => 
   const features = [
     { key: 'ticket_management', label: t('ticketManagement') },
     { key: 'email_integration', label: t('emailIntegration') },
-    { key: 'sip_calling', label: t('sipCalling') },
+    { key: 'ip_calling', label: t('sipCalling') },
     { key: 'facebook_integration', label: t('facebookIntegration') },
     { key: 'instagram_integration', label: t('instagramIntegration') },
     { key: 'whatsapp_integration', label: t('whatsappIntegration') },
