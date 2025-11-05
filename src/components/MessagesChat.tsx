@@ -200,13 +200,29 @@ export default function MessagesChat() {
               account_id: page.page_id,
             }));
 
+            // Convert latest message to unified format
+            const lastUnifiedMessage: UnifiedMessage = {
+              id: String(latestMsg.id),
+              platform: "facebook" as const,
+              sender_id: latestMsg.sender_id,
+              sender_name: latestMsg.sender_name || "Unknown",
+              profile_pic_url: latestMsg.profile_pic_url,
+              message_text: latestMsg.message_text,
+              timestamp: latestMsg.timestamp,
+              is_from_business: latestMsg.is_from_page || false,
+              page_name: latestMsg.page_name,
+              conversation_id: `fb_${page.page_id}_${customerId}`,
+              platform_message_id: latestMsg.message_id,
+              account_id: page.page_id,
+            };
+
             const conversation: UnifiedConversation = {
               platform: "facebook",
               conversation_id: `fb_${page.page_id}_${customerId}`,
               sender_id: customerId,
               sender_name: customerName,
               profile_pic_url: customerAvatar,
-              last_message: unifiedMessages[unifiedMessages.length - 1],
+              last_message: lastUnifiedMessage,
               message_count: msgs.length,
               account_name: page.page_name,
               account_id: page.page_id,
@@ -303,13 +319,29 @@ export default function MessagesChat() {
                 account_id: account.instagram_account_id,
               }));
 
+              // Convert latest message to unified format
+              const lastUnifiedMessage: UnifiedMessage = {
+                id: String(latestMsg.id),
+                platform: "instagram" as const,
+                sender_id: latestMsg.sender_id,
+                sender_name: latestMsg.sender_username || latestMsg.sender_id,
+                profile_pic_url: latestMsg.sender_profile_pic,
+                message_text: latestMsg.message_text,
+                timestamp: latestMsg.timestamp,
+                is_from_business: latestMsg.is_from_business || false,
+                page_name: `@${latestMsg.account_username}`,
+                conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
+                platform_message_id: latestMsg.message_id,
+                account_id: account.instagram_account_id,
+              };
+
               const conversation: UnifiedConversation = {
                 platform: "instagram",
                 conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
                 sender_id: customerId,
                 sender_name: customerName,
                 profile_pic_url: customerAvatar,
-                last_message: unifiedMessages[unifiedMessages.length - 1],
+                last_message: lastUnifiedMessage,
                 message_count: msgs.length,
                 account_name: `@${account.username}`,
                 account_id: account.instagram_account_id,
