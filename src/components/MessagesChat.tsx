@@ -11,6 +11,9 @@ import { ChatBoxFacebook } from "@/components/chat/chat-box-facebook";
 import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType } from "@/components/chat/types";
 import { Card } from "@/components/ui/card";
+import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
+import { Badge } from "@/components/ui/badge";
+import { Wifi, WifiOff } from "lucide-react";
 
 interface PaginatedResponse<T> {
   count: number;
@@ -92,7 +95,7 @@ export default function MessagesChat() {
   const [conversationMessages, setConversationMessages] = useState<Map<string, UnifiedMessage[]>>(new Map());
   const [chatsData, setChatsData] = useState<ChatType[]>([]);
   const [currentUser, setCurrentUser] = useState({ id: "business", name: "Me", status: "online" });
-  const [refreshInterval, setRefreshInterval] = useState(5000); // Default 5 seconds
+  const [wsConnected, setWsConnected] = useState(false);
 
   const loadAllConversations = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -331,32 +334,42 @@ export default function MessagesChat() {
     }
   }, []);
 
-  // Load settings on mount
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const response = await axios.get("/api/social/settings/");
-        setRefreshInterval(response.data.refresh_interval);
-      } catch (error) {
-        console.error("Failed to load settings, using default refresh interval:", error);
-      }
-    };
+  // Handle WebSocket new message
+  const handleNewMessage = useCallback((data: any) => {
+    console.log('[MessagesChat] WebSocket new message received:', data);
+    // Reload conversations to get the latest data
+    loadAllConversations(true);
+  }, [loadAllConversations]);
 
-    loadSettings();
+  // Handle WebSocket conversation update
+  const handleConversationUpdate = useCallback((data: any) => {
+    console.log('[MessagesChat] WebSocket conversation update received:', data);
+    // Reload conversations to get the latest data
+    loadAllConversations(true);
+  }, [loadAllConversations]);
+
+  // Handle WebSocket connection status
+  const handleConnectionChange = useCallback((connected: boolean) => {
+    console.log('[MessagesChat] WebSocket connection status changed:', connected);
+    setWsConnected(connected);
   }, []);
+
+  console.log('[MessagesChat] About to initialize WebSocket hook');
+
+  // Initialize WebSocket connection
+  const { isConnected } = useMessagesWebSocket({
+    onNewMessage: handleNewMessage,
+    onConversationUpdate: handleConversationUpdate,
+    onConnectionChange: handleConnectionChange,
+    autoReconnect: true,
+    reconnectInterval: 3000,
+  });
+
+  console.log('[MessagesChat] WebSocket hook initialized, isConnected:', isConnected);
 
   useEffect(() => {
     loadAllConversations();
   }, [loadAllConversations]);
-
-  // Auto-refresh conversations based on server-side interval
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadAllConversations(true); // Silent reload
-    }, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [loadAllConversations, refreshInterval]);
 
   // Define handleMessageSent before any early returns (hooks rule)
   const handleMessageSent = useCallback(() => {
@@ -388,6 +401,23 @@ export default function MessagesChat() {
   return (
     <ChatProvider chatsData={chatsData}>
       <div className="relative w-full flex gap-x-4 p-4 h-[calc(100vh-3.5rem)]">
+        {/* WebSocket Status Indicator */}
+        <div className="absolute top-6 right-6 z-10">
+          <Badge variant={isConnected ? "default" : "secondary"} className="flex items-center gap-1">
+            {isConnected ? (
+              <>
+                <Wifi className="h-3 w-3" />
+                <span className="text-xs">Live</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-3 w-3" />
+                <span className="text-xs">Connecting...</span>
+              </>
+            )}
+          </Badge>
+        </div>
+
         <ChatSidebar />
         {chatId ? (
           <ChatBoxFacebook user={currentUser} onMessageSent={handleMessageSent} />
