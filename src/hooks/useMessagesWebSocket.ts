@@ -228,7 +228,7 @@ export function useMessagesWebSocket({
     });
   }, [sendMessage]);
 
-  // Connect on mount and when tenant changes
+  // Connect on mount and when tenant schema changes
   useEffect(() => {
     if (!tenant?.schema_name) {
       console.log('[useMessagesWebSocket] Skipping connect - no tenant schema');
@@ -246,7 +246,8 @@ export function useMessagesWebSocket({
       console.log('[useMessagesWebSocket] useEffect cleanup - disconnecting');
       disconnect();
     };
-  }, [tenant?.schema_name, connect, disconnect]); // Reconnect when tenant schema changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenant?.schema_name]); // Only reconnect when tenant schema changes, connect/disconnect are stable via refs
 
   console.log('[useMessagesWebSocket] Rendering - isConnected:', isConnected);
 
