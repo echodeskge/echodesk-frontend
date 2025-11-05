@@ -87,7 +87,7 @@ export function Pricing() {
         onValueChange={(v) => setPricingModel(v as PricingModel)}
         className="mt-12"
       >
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-1 md:grid-cols-2">
+        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-1 md:grid-cols-2">
           <TabsTrigger value="crm">{t("tabs.crmBased")}</TabsTrigger>
           <TabsTrigger value="agent">{t("tabs.agentBased")}</TabsTrigger>
         </TabsList>
