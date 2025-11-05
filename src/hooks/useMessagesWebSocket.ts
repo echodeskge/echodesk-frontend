@@ -43,12 +43,20 @@ export function useMessagesWebSocket({
   console.log('[useMessagesWebSocket] Hook initialized');
   console.log('[useMessagesWebSocket] Tenant:', tenant);
 
+  // Store tenant in ref to avoid recreating connect when tenant object changes
+  const tenantRef = useRef(tenant);
+  useEffect(() => {
+    tenantRef.current = tenant;
+  }, [tenant]);
+
   const connect = useCallback(() => {
+    const currentTenant = tenantRef.current;
+
     console.log('[useMessagesWebSocket] connect() called');
-    console.log('[useMessagesWebSocket] tenant:', tenant);
+    console.log('[useMessagesWebSocket] tenant:', currentTenant);
     console.log('[useMessagesWebSocket] shouldConnectRef.current:', shouldConnectRef.current);
 
-    if (!tenant?.schema_name) {
+    if (!currentTenant?.schema_name) {
       console.warn('[WebSocket] Cannot connect - no tenant schema name');
       return;
     }
@@ -66,17 +74,17 @@ export function useMessagesWebSocket({
 
     try {
       // Determine WebSocket protocol and host from tenant API URL
-      const apiUrl = new URL(tenant.api_url);
+      const apiUrl = new URL(currentTenant.api_url);
       const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = apiUrl.host; // This will be like 'groot.api.echodesk.ge' or 'localhost:8000'
 
-      const wsUrl = `${protocol}//${host}/ws/messages/${tenant.schema_name}/`;
+      const wsUrl = `${protocol}//${host}/ws/messages/${currentTenant.schema_name}/`;
 
       console.log('[WebSocket] ========================================');
       console.log('[WebSocket] Attempting to connect...');
       console.log('[WebSocket] Protocol:', protocol);
       console.log('[WebSocket] Host:', host);
-      console.log('[WebSocket] Tenant Schema:', tenant.schema_name);
+      console.log('[WebSocket] Tenant Schema:', currentTenant.schema_name);
       console.log('[WebSocket] Full URL:', wsUrl);
       console.log('[WebSocket] ========================================');
 
@@ -170,7 +178,7 @@ export function useMessagesWebSocket({
       setIsConnected(false);
       onConnectionChangeRef.current?.(false);
     }
-  }, [tenant?.schema_name, autoReconnect, reconnectInterval]);
+  }, [autoReconnect, reconnectInterval]); // Removed tenant dependency - using ref instead
 
   const disconnect = useCallback(() => {
     shouldConnectRef.current = false;
@@ -220,20 +228,25 @@ export function useMessagesWebSocket({
     });
   }, [sendMessage]);
 
-  // Connect on mount
+  // Connect on mount and when tenant changes
   useEffect(() => {
+    if (!tenant?.schema_name) {
+      console.log('[useMessagesWebSocket] Skipping connect - no tenant schema');
+      return;
+    }
+
     console.log('[useMessagesWebSocket] useEffect running - preparing to connect');
     console.log('[useMessagesWebSocket] tenant in useEffect:', tenant);
 
     shouldConnectRef.current = true;
     connect();
 
-    // Cleanup on unmount
+    // Cleanup on unmount or tenant change
     return () => {
       console.log('[useMessagesWebSocket] useEffect cleanup - disconnecting');
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [tenant?.schema_name, connect, disconnect]); // Reconnect when tenant schema changes
 
   console.log('[useMessagesWebSocket] Rendering - isConnected:', isConnected);
 
