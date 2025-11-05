@@ -97,6 +97,14 @@ export default function MessagesChat() {
   const [currentUser, setCurrentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [wsConnected, setWsConnected] = useState(false);
 
+  // Track component mount/unmount
+  useEffect(() => {
+    console.log('[MessagesChat] ===== COMPONENT MOUNTED =====');
+    return () => {
+      console.log('[MessagesChat] ===== COMPONENT UNMOUNTED =====');
+    };
+  }, []);
+
   const loadAllConversations = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
