@@ -79,31 +79,28 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   // React Query hooks - Facebook
   const { data: facebookStatusData, isLoading: statusLoading, refetch: refetchStatus } = useFacebookStatus();
   const { data: facebookPagesData, isLoading: pagesLoading, refetch: refetchPages } = useFacebookPages();
-  const { data: messagesData, refetch: refetchMessages } = useFacebookMessages({ page: 1 });
+  const { data: messagesData } = useFacebookMessages({ page: 1 });
   const connectFacebook = useConnectFacebook();
   const disconnectFacebook = useDisconnectFacebook();
 
   // React Query hooks - Instagram
   const { data: instagramStatusData, isLoading: instagramStatusLoading, refetch: refetchInstagramStatus } = useInstagramStatus();
   const { data: instagramAccountsData, isLoading: instagramAccountsLoading, refetch: refetchInstagramAccounts } = useInstagramAccounts();
-  const { data: instagramMessagesData, refetch: refetchInstagramMessages } = useInstagramMessages({ page: 1 });
+  const { data: instagramMessagesData } = useInstagramMessages({ page: 1 });
   const disconnectInstagram = useDisconnectInstagram();
 
   const handleRefresh = async () => {
     await Promise.all([
       refetchStatus(),
       refetchPages(),
-      refetchMessages(),
       refetchInstagramStatus(),
-      refetchInstagramAccounts(),
-      refetchInstagramMessages()
+      refetchInstagramAccounts()
     ]);
   };
 
   // Facebook data
   const facebookStatus = facebookStatusData as FacebookStatus | null;
   const facebookPages = (facebookPagesData as PaginatedResponse<FacebookPageConnection>)?.results || [];
-  const recentMessages = (messagesData as PaginatedResponse<FacebookMessage>)?.results?.slice(0, 5) || [];
   const totalMessages = (messagesData as PaginatedResponse<FacebookMessage>)?.count || 0;
   const loading = statusLoading || pagesLoading;
   const isConnected = facebookStatus?.connected || false;
@@ -111,7 +108,6 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   // Instagram data
   const instagramStatus = instagramStatusData as InstagramStatus | null;
   const instagramAccounts = instagramAccountsData?.results || [];
-  const instagramRecentMessages = instagramMessagesData?.results?.slice(0, 5) || [];
   const totalInstagramMessages = instagramMessagesData?.count || 0;
   const instagramLoading = instagramStatusLoading || instagramAccountsLoading;
   const isInstagramConnected = instagramStatus?.connected || false;
@@ -487,64 +483,6 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                       <Badge variant={account.is_active ? "default" : "secondary"} className={account.is_active ? "bg-pink-600" : ""}>
                         {account.is_active ? t("active") : t("inactive")}
                       </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Recent Messages */}
-        {recentMessages.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5" />
-                    {t("recentMessages")}
-                  </CardTitle>
-                  <CardDescription>
-                    Last {recentMessages.length} messages from all connected pages
-                  </CardDescription>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => router.push('/social/messages')}
-                >
-                  View All
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentMessages.map((message, index) => (
-                  <div key={message.id}>
-                    {index > 0 && <Separator className="my-4" />}
-                    <div className="flex gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={message.profile_pic_url} alt={message.sender_name || "User"} />
-                        <AvatarFallback>
-                          {(message.sender_name || "U").charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm">{message.sender_name || "Unknown User"}</span>
-                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
-                            {message.page_name}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDate(message.timestamp)}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                          {message.message_text}
-                        </p>
-                      </div>
                     </div>
                   </div>
                 ))}
