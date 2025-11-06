@@ -21,7 +21,6 @@ import { TenantInfo } from "@/types/auth";
 import { tenantService } from "@/services/tenantService";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
-import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
 import { BoardCollaborationProvider } from "@/contexts/BoardCollaborationContext";
 import { useTicketBoardWebSocket } from "@/hooks/useTicketBoardWebSocket";
 import { useLocale, useTranslations } from "next-intl";
@@ -403,13 +402,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             )}
             <div className="ml-auto flex items-center gap-2">
-              {/* Board Collaboration Indicators - Only show on tickets page */}
-              {isTicketsPage && (
-                <BoardCollaborationIndicators
-                  isConnected={boardIsConnected}
-                  activeUsers={boardActiveUsers}
-                />
-              )}
               <NotificationBell
                 onNotificationClick={(notification) => {
                   // Navigate to ticket if ticket_id exists
