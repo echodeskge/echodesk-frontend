@@ -128,19 +128,27 @@ export function useTicketBoardWebSocket({
     }
 
     try {
-      // Get auth token
-      const token = Cookies.get('authToken')
+      // Get auth token from localStorage (consistent with notifications)
+      const token = localStorage.getItem('echodesk_auth_token')
       if (!token) {
         console.error('[BoardWS] No auth token found')
         return
       }
 
-      // Construct WebSocket URL
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const host = window.location.host
-      const wsUrl = `${protocol}//${host}/ws/boards/${tenant}/${boardId}/?token=${token}`
+      // Construct WebSocket URL using tenant API URL (like notifications WebSocket)
+      // tenant.api_url example: https://groot.echodesk.ge/api/v1
+      const apiUrl = new URL(tenant.api_url)
+      const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = apiUrl.host
+      const wsUrl = `${protocol}//${host}/ws/boards/${tenant.schema_name}/${boardId}/?token=${token}`
 
-      console.log(`[BoardWS] Connecting to ${wsUrl}`)
+      console.log('[BoardWS] ========================================')
+      console.log('[BoardWS] Protocol:', protocol)
+      console.log('[BoardWS] Host:', host)
+      console.log('[BoardWS] Tenant Schema:', tenant.schema_name)
+      console.log('[BoardWS] Board ID:', boardId)
+      console.log('[BoardWS] Full URL:', wsUrl.replace(token, '[TOKEN]'))
+      console.log('[BoardWS] ========================================')
 
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
