@@ -89,6 +89,7 @@ export function useTicketBoardWebSocket({
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const currentBoardIdRef = useRef<string | number | null>(null)
 
   // Store callbacks in refs to avoid recreating WebSocket on callback changes
   const onTicketMovedRef = useRef(onTicketMoved)
@@ -121,6 +122,12 @@ export function useTicketBoardWebSocket({
       return
     }
 
+    // If already connected to this board, don't reconnect
+    if (currentBoardIdRef.current === boardId && wsRef.current?.readyState === WebSocket.OPEN) {
+      console.log('[BoardWS] Already connected to board', boardId)
+      return
+    }
+
     // Close existing connection if any before opening a new one
     if (wsRef.current) {
       if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
@@ -129,6 +136,9 @@ export function useTicketBoardWebSocket({
       }
       wsRef.current = null
     }
+
+    // Store the current board ID we're connecting to
+    currentBoardIdRef.current = boardId
 
     try {
       // Get auth token from localStorage (consistent with notifications)
@@ -314,6 +324,9 @@ export function useTicketBoardWebSocket({
       wsRef.current = null
     }
 
+    // Clear current board reference
+    currentBoardIdRef.current = null
+
     setIsConnected(false)
     setActiveUsers([])
   }, [])
@@ -348,13 +361,26 @@ export function useTicketBoardWebSocket({
     send({ type: 'get_active_users' })
   }, [send])
 
-  // Connect on mount, disconnect on unmount
+  // Connect when boardId changes, disconnect on unmount
   useEffect(() => {
+    if (!tenant || !boardId || boardId === 'none') {
+      // Disconnect if no valid board
+      if (wsRef.current) {
+        console.log('[BoardWS] No valid board, disconnecting')
+        disconnect()
+      }
+      return
+    }
+
+    // Connect to the board
     connect()
+
+    // Cleanup on unmount or when boardId changes
     return () => {
       disconnect()
     }
-  }, [connect, disconnect])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardId]) // Only depend on boardId, tenant doesn't change during session
 
   return {
     isConnected,
