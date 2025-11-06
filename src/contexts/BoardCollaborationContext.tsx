@@ -18,6 +18,8 @@ interface BoardCollaborationContextType {
   activeUsers: ActiveUser[]
   activeUsersCount: number
   boardId: string | number | null
+  ticketsBeingMoved: Map<number, string>
+  ticketsBeingEdited: Map<number, string>
 }
 
 const BoardCollaborationContext = createContext<BoardCollaborationContextType | null>(null)
@@ -27,11 +29,15 @@ export function BoardCollaborationProvider({
   isConnected,
   activeUsers,
   boardId,
+  ticketsBeingMoved = new Map(),
+  ticketsBeingEdited = new Map(),
 }: {
   children: ReactNode
   isConnected: boolean
   activeUsers: ActiveUser[]
   boardId: string | number | null
+  ticketsBeingMoved?: Map<number, string>
+  ticketsBeingEdited?: Map<number, string>
 }) {
   return (
     <BoardCollaborationContext.Provider
@@ -40,6 +46,8 @@ export function BoardCollaborationProvider({
         activeUsers,
         activeUsersCount: activeUsers.length,
         boardId,
+        ticketsBeingMoved,
+        ticketsBeingEdited,
       }}
     >
       {children}

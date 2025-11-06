@@ -21,7 +21,8 @@ import { tenantService } from "@/services/tenantService";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
-import { useBoardCollaboration } from "@/contexts/BoardCollaborationContext";
+import { BoardCollaborationProvider } from "@/contexts/BoardCollaborationContext";
+import { useTicketBoardWebSocket } from "@/hooks/useTicketBoardWebSocket";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
@@ -43,7 +44,16 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: boards } = useBoards();
   const { selectedBoardId, setSelectedBoardId } = useBoard();
-  const { isConnected, activeUsers } = useBoardCollaboration();
+
+  // Initialize WebSocket for board collaboration only on tickets page
+  const isTicketsPage = pathname.includes('/tickets');
+  const {
+    isConnected: boardIsConnected,
+    activeUsers: boardActiveUsers,
+  } = useTicketBoardWebSocket({
+    boardId: isTicketsPage && selectedBoardId ? selectedBoardId : 'none',
+    // Callbacks can be added here if needed
+  });
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
@@ -349,10 +359,10 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             )}
             <div className="ml-auto flex items-center gap-2">
               {/* Board Collaboration Indicators - Only show on tickets page */}
-              {pathname.includes('/tickets') && (
+              {isTicketsPage && (
                 <BoardCollaborationIndicators
-                  isConnected={isConnected}
-                  activeUsers={activeUsers}
+                  isConnected={boardIsConnected}
+                  activeUsers={boardActiveUsers}
                 />
               )}
               <NotificationBell
@@ -367,7 +377,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex-1 bg-white overflow-auto">{children}</div>
+          <div className="flex-1 bg-white overflow-auto">
+            <BoardCollaborationProvider
+              isConnected={boardIsConnected}
+              activeUsers={boardActiveUsers}
+              boardId={selectedBoardId}
+            >
+              {children}
+            </BoardCollaborationProvider>
+          </div>
         </SidebarInset>
       </div>
 

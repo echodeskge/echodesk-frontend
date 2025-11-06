@@ -2,34 +2,21 @@
 
 import { useBoard } from "@/contexts/BoardContext";
 import TicketsNew from "@/components/TicketsNew";
-import { CollaborativeTicketBoard } from "@/components/CollaborativeTicketBoard";
+import { CollaborativeBadges } from "@/components/CollaborativeBadges";
 
 export default function TicketsPage() {
   const { selectedBoardId, setSelectedBoardId } = useBoard();
 
-  // Don't render if no board is selected
-  if (!selectedBoardId) {
-    return (
-      <TicketsNew
-        selectedBoardId={selectedBoardId}
-        onBoardChange={setSelectedBoardId}
-      />
-    );
-  }
-
+  // WebSocket is initialized at layout level
+  // Context is provided by layout, so components here can access collaboration state
   return (
-    <CollaborativeTicketBoard
-      boardId={selectedBoardId}
-      onTicketUpdate={(ticketId, changes) => {
-        console.log('[TicketsPage] Remote ticket update:', ticketId, changes);
-        // The TicketsNew component should handle its own state updates
-        // You can add custom logic here if needed
-      }}
-    >
+    <>
       <TicketsNew
         selectedBoardId={selectedBoardId}
         onBoardChange={setSelectedBoardId}
       />
-    </CollaborativeTicketBoard>
+      {/* Show floating badges for user actions */}
+      <CollaborativeBadges />
+    </>
   );
 }
