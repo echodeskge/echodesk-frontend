@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useBoards } from "@/hooks/useBoards";
 import { getSidebarMenuItems, MenuItem } from "@/services/permissionService";
@@ -47,12 +48,56 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Initialize WebSocket for board collaboration only on tickets page
   const isTicketsPage = pathname.includes('/tickets');
+  const queryClient = useQueryClient();
+  const [ticketsBeingMoved, setTicketsBeingMoved] = useState<Map<number, string>>(new Map());
+  const [ticketsBeingEdited, setTicketsBeingEdited] = useState<Map<number, string>>(new Map());
+
   const {
     isConnected: boardIsConnected,
     activeUsers: boardActiveUsers,
   } = useTicketBoardWebSocket({
     boardId: isTicketsPage && selectedBoardId ? selectedBoardId : 'none',
-    // Callbacks can be added here if needed
+
+    // Real-time updates: Refetch board data when tickets are moved or updated
+    onTicketMoved: (event) => {
+      console.log('[Layout] Ticket moved, refetching board:', event);
+      queryClient.invalidateQueries({ queryKey: ['kanbanBoard', selectedBoardId] });
+    },
+
+    onTicketUpdated: (event) => {
+      console.log('[Layout] Ticket updated, refetching board:', event);
+      queryClient.invalidateQueries({ queryKey: ['kanbanBoard', selectedBoardId] });
+    },
+
+    // Visual feedback: Someone is dragging a ticket
+    onTicketBeingMoved: (event) => {
+      console.log('[Layout] Ticket being moved by:', event.user_name);
+      setTicketsBeingMoved(prev => new Map(prev).set(event.ticket_id, event.user_name));
+
+      // Remove after 3 seconds (in case drag is abandoned)
+      setTimeout(() => {
+        setTicketsBeingMoved(prev => {
+          const next = new Map(prev);
+          next.delete(event.ticket_id);
+          return next;
+        });
+      }, 3000);
+    },
+
+    // Conflict prevention: Someone is editing a ticket
+    onTicketBeingEdited: (event) => {
+      console.log('[Layout] Ticket being edited by:', event.user_name);
+      setTicketsBeingEdited(prev => new Map(prev).set(event.ticket_id, event.user_name));
+    },
+
+    // Conflict prevention: Someone stopped editing
+    onTicketEditingStopped: (ticketId) => {
+      setTicketsBeingEdited(prev => {
+        const next = new Map(prev);
+        next.delete(ticketId);
+        return next;
+      });
+    },
   });
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
@@ -382,6 +427,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
               isConnected={boardIsConnected}
               activeUsers={boardActiveUsers}
               boardId={selectedBoardId}
+              ticketsBeingMoved={ticketsBeingMoved}
+              ticketsBeingEdited={ticketsBeingEdited}
             >
               {children}
             </BoardCollaborationProvider>

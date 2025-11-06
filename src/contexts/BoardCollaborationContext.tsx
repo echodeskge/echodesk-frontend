@@ -64,6 +64,8 @@ export function useBoardCollaboration() {
       activeUsers: [],
       activeUsersCount: 0,
       boardId: null,
+      ticketsBeingMoved: new Map(),
+      ticketsBeingEdited: new Map(),
     }
   }
   return context
