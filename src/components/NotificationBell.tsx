@@ -12,21 +12,23 @@ import { Badge } from '@/components/ui/badge'
 import { NotificationList } from '@/components/NotificationList'
 import { NotificationToastContainer } from '@/components/NotificationToast'
 import { apiNotificationsList } from '@/api/generated/api'
-import type { Notification } from '@/api/generated/interfaces'
+import type { Notification as NotificationData } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
 import { useNotificationsUnreadCount } from '@/hooks/useNotifications'
 import { useNotificationsWebSocket } from '@/hooks/useNotificationsWebSocket'
+import { useWebPush } from '@/hooks/useWebPush'
 import { getNotificationSound } from '@/utils/notificationSound'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 interface NotificationBellProps {
-  onNotificationClick?: (notification: Notification) => void
+  onNotificationClick?: (notification: NotificationData) => void
 }
 
 export function NotificationBell({ onNotificationClick }: NotificationBellProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [notifications, setNotifications] = useState<NotificationData[]>([])
   const [loading, setLoading] = useState(false)
   const [toasts, setToasts] = useState<Array<{
     id: number
@@ -39,6 +41,21 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   const previousUnreadCount = useRef(0)
   const { showNotification, canShowNotifications, requestPermission } = useBrowserNotifications()
   const notificationSound = useRef(getNotificationSound())
+
+  // Web Push for notifications when app is closed
+  const {
+    subscribe: subscribeToPush,
+    isSubscribed: isPushSubscribed,
+    isSupported: isPushSupported,
+  } = useWebPush({
+    autoSubscribe: true, // Automatically subscribe if permission is granted
+    onSubscriptionChange: (isSubscribed) => {
+      console.log('[NotificationBell] Web Push subscription changed:', isSubscribed)
+    },
+    onError: (error) => {
+      console.error('[NotificationBell] Web Push error:', error)
+    },
+  })
 
   // WebSocket for real-time notifications
   const {
@@ -58,7 +75,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
       setTimeout(() => setShouldPulse(false), 1000)
 
       // Add to notifications list if popover is open
-      setNotifications(prev => [notification as Notification, ...prev])
+      setNotifications(prev => [notification as unknown as NotificationData, ...prev])
 
       // Show toast notification (in-app popup)
       setToasts(prev => [...prev, {
