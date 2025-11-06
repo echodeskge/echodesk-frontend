@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { getNotificationBroadcast } from '@/utils/notificationBroadcast';
+import { getNotificationQueue } from '@/utils/notificationQueue';
+import { useOnlineStatus } from './useOnlineStatus';
 
 interface WebSocketMessage {
   type: string;
@@ -46,6 +48,7 @@ export function useNotificationsWebSocket({
   const shouldConnectRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
   const broadcastManager = useRef(getNotificationBroadcast());
+  const notificationQueue = useRef(getNotificationQueue());
 
   // Store callbacks in refs to avoid reconnection on callback changes
   const onNotificationCreatedRef = useRef(onNotificationCreated);
@@ -71,6 +74,41 @@ export function useNotificationsWebSocket({
   useEffect(() => {
     tenantRef.current = tenant;
   }, [tenant]);
+
+  // Sync queued notifications when back online
+  const syncQueuedNotifications = useCallback(async () => {
+    console.log('[useNotificationsWebSocket] Syncing queued notifications...');
+    const queue = notificationQueue.current;
+    const unsynced = await queue.getUnsynced();
+
+    console.log(`[useNotificationsWebSocket] Found ${unsynced.length} unsynced notifications`);
+
+    for (const queued of unsynced) {
+      // Trigger callbacks for queued notifications
+      onNotificationCreatedRef.current?.(queued.notification, 0);
+
+      // Mark as synced
+      await queue.markSynced(queued.id);
+    }
+
+    console.log('[useNotificationsWebSocket] Sync complete');
+  }, []);
+
+  // Monitor online/offline status
+  const { isOnline } = useOnlineStatus({
+    onOnline: () => {
+      console.log('[useNotificationsWebSocket] Back online - syncing queued notifications');
+      syncQueuedNotifications();
+
+      // Reconnect WebSocket if needed
+      if (!isConnected && shouldConnectRef.current) {
+        connect();
+      }
+    },
+    onOffline: () => {
+      console.log('[useNotificationsWebSocket] Offline - notifications will be queued');
+    }
+  });
 
   // Setup broadcast listeners for cross-tab communication
   useEffect(() => {
@@ -201,6 +239,9 @@ export function useNotificationsWebSocket({
                 setUnreadCount(data.unread_count || 0);
                 onNotificationCreatedRef.current?.(data.notification, data.unread_count || 0);
                 onUnreadCountUpdateRef.current?.(data.unread_count || 0);
+
+                // Queue notification for offline sync
+                notificationQueue.current.enqueue(data.notification);
 
                 // Broadcast to other tabs
                 broadcastManager.current.broadcastNotificationReceived(
@@ -392,6 +433,7 @@ export function useNotificationsWebSocket({
 
   return {
     isConnected,
+    isOnline,
     unreadCount,
     connect,
     disconnect,
