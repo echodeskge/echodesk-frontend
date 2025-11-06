@@ -116,15 +116,18 @@ export function useTicketBoardWebSocket({
   })
 
   const connect = useCallback(() => {
-    if (!tenant || !boardId) {
+    if (!tenant || !boardId || boardId === 'none') {
       console.log('[BoardWS] Missing tenant or boardId, skipping connection')
       return
     }
 
-    // Don't create multiple connections
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('[BoardWS] Already connected')
-      return
+    // Close existing connection if any before opening a new one
+    if (wsRef.current) {
+      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+        console.log('[BoardWS] Closing existing connection before reconnecting')
+        wsRef.current.close(1000, 'Switching boards')
+      }
+      wsRef.current = null
     }
 
     try {
@@ -270,22 +273,25 @@ export function useTicketBoardWebSocket({
 
         // Attempt to reconnect if autoReconnect is enabled
         if (autoReconnect && event.code !== 1000) { // 1000 = normal closure
-          const currentAttempt = reconnectAttempts + 1
-          setReconnectAttempts(currentAttempt)
+          setReconnectAttempts(prev => {
+            const currentAttempt = prev + 1
 
-          // Exponential backoff
-          const delay = Math.min(reconnectInterval * Math.pow(2, currentAttempt - 1), maxReconnectInterval)
-          console.log(`[BoardWS] Reconnecting in ${delay}ms (attempt ${currentAttempt})`)
+            // Exponential backoff
+            const delay = Math.min(reconnectInterval * Math.pow(2, currentAttempt - 1), maxReconnectInterval)
+            console.log(`[BoardWS] Reconnecting in ${delay}ms (attempt ${currentAttempt})`)
 
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect()
-          }, delay)
+            reconnectTimeoutRef.current = setTimeout(() => {
+              connect()
+            }, delay)
+
+            return currentAttempt
+          })
         }
       }
     } catch (error) {
       console.error('[BoardWS] Error creating WebSocket:', error)
     }
-  }, [tenant, boardId, autoReconnect, reconnectInterval, maxReconnectInterval, reconnectAttempts])
+  }, [tenant, boardId, autoReconnect, reconnectInterval, maxReconnectInterval])
 
   const disconnect = useCallback(() => {
     console.log('[BoardWS] Disconnecting...')
