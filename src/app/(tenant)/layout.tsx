@@ -21,6 +21,7 @@ import { TenantInfo } from "@/types/auth";
 import { tenantService } from "@/services/tenantService";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
+import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
 import { BoardCollaborationProvider } from "@/contexts/BoardCollaborationContext";
 import { useTicketBoardWebSocket } from "@/hooks/useTicketBoardWebSocket";
 import { useLocale, useTranslations } from "next-intl";
@@ -98,6 +99,16 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       });
     },
   });
+
+  // Debug logging for WebSocket state
+  console.log('[Layout] WebSocket state:', {
+    isTicketsPage,
+    selectedBoardId,
+    boardIsConnected,
+    boardActiveUsersCount: boardActiveUsers.length,
+    boardActiveUsers,
+  });
+
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
@@ -402,6 +413,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             )}
             <div className="ml-auto flex items-center gap-2">
+              {/* Active Users Indicator - Only show on tickets page */}
+              {isTicketsPage && (
+                <BoardCollaborationIndicators
+                  activeUsers={boardActiveUsers}
+                />
+              )}
               <NotificationBell
                 onNotificationClick={(notification) => {
                   // Navigate to ticket if ticket_id exists
