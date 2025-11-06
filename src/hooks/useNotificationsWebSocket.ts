@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { getNotificationBroadcast } from '@/utils/notificationBroadcast';
 
 interface WebSocketMessage {
   type: string;
@@ -44,6 +45,7 @@ export function useNotificationsWebSocket({
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldConnectRef = useRef(true);
   const reconnectAttemptsRef = useRef(0);
+  const broadcastManager = useRef(getNotificationBroadcast());
 
   // Store callbacks in refs to avoid reconnection on callback changes
   const onNotificationCreatedRef = useRef(onNotificationCreated);
@@ -61,12 +63,45 @@ export function useNotificationsWebSocket({
 
   console.log('[useNotificationsWebSocket] Hook initialized');
   console.log('[useNotificationsWebSocket] Tenant:', tenant);
+  console.log('[useNotificationsWebSocket] Tab ID:', broadcastManager.current.getTabId());
+  console.log('[useNotificationsWebSocket] Is leader:', broadcastManager.current.isLeaderTab());
 
   // Store tenant in ref to avoid recreating connect when tenant object changes
   const tenantRef = useRef(tenant);
   useEffect(() => {
     tenantRef.current = tenant;
   }, [tenant]);
+
+  // Setup broadcast listeners for cross-tab communication
+  useEffect(() => {
+    const broadcast = broadcastManager.current;
+
+    // Listen for notifications from other tabs
+    const unsubNotification = broadcast.on('notification_received', (data) => {
+      console.log('[useNotificationsWebSocket] Received notification from another tab:', data);
+      setUnreadCount(data.count);
+      onNotificationCreatedRef.current?.(data.notification, data.count);
+    });
+
+    const unsubRead = broadcast.on('notification_read', (data) => {
+      console.log('[useNotificationsWebSocket] Notification read in another tab:', data);
+      setUnreadCount(data.count);
+      onNotificationReadRef.current?.(data.notificationId, data.count);
+    });
+
+    const unsubCount = broadcast.on('count_updated', (data) => {
+      console.log('[useNotificationsWebSocket] Count updated in another tab:', data);
+      setUnreadCount(data.count);
+      onUnreadCountUpdateRef.current?.(data.count);
+    });
+
+    // Cleanup
+    return () => {
+      unsubNotification();
+      unsubRead();
+      unsubCount();
+    };
+  }, []);
 
   // Track the schema name we're connected to
   const connectedSchemaRef = useRef<string | null>(null);
@@ -166,6 +201,12 @@ export function useNotificationsWebSocket({
                 setUnreadCount(data.unread_count || 0);
                 onNotificationCreatedRef.current?.(data.notification, data.unread_count || 0);
                 onUnreadCountUpdateRef.current?.(data.unread_count || 0);
+
+                // Broadcast to other tabs
+                broadcastManager.current.broadcastNotificationReceived(
+                  data.notification,
+                  data.unread_count || 0
+                );
               }
               break;
 
@@ -175,6 +216,12 @@ export function useNotificationsWebSocket({
                 setUnreadCount(data.unread_count || 0);
                 onNotificationReadRef.current?.(data.notification_id, data.unread_count || 0);
                 onUnreadCountUpdateRef.current?.(data.unread_count || 0);
+
+                // Broadcast to other tabs
+                broadcastManager.current.broadcastNotificationRead(
+                  data.notification_id,
+                  data.unread_count || 0
+                );
               }
               break;
 
@@ -182,12 +229,18 @@ export function useNotificationsWebSocket({
               console.log('[NotificationWS] All notifications marked as read');
               setUnreadCount(0);
               onUnreadCountUpdateRef.current?.(0);
+
+              // Broadcast to other tabs
+              broadcastManager.current.broadcastCountUpdated(0);
               break;
 
             case 'unread_count_update':
               console.log('[NotificationWS] Unread count update:', data.count);
               setUnreadCount(data.count);
               onUnreadCountUpdateRef.current?.(data.count);
+
+              // Broadcast to other tabs
+              broadcastManager.current.broadcastCountUpdated(data.count);
               break;
 
             case 'pong':
