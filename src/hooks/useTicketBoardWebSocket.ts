@@ -85,11 +85,19 @@ export function useTicketBoardWebSocket({
   const [isConnected, setIsConnected] = useState(false)
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([])
   const [reconnectAttempts, setReconnectAttempts] = useState(0)
+  const [tenantSchema, setTenantSchema] = useState<string | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const currentBoardIdRef = useRef<string | number | null>(null)
+
+  // Update tenant schema state when tenant loads (only once)
+  useEffect(() => {
+    if (tenant?.schema_name && !tenantSchema) {
+      setTenantSchema(tenant.schema_name)
+    }
+  }, [tenant?.schema_name, tenantSchema])
 
   // Store callbacks in refs to avoid recreating WebSocket on callback changes
   const onTicketMovedRef = useRef(onTicketMoved)
@@ -361,12 +369,13 @@ export function useTicketBoardWebSocket({
     send({ type: 'get_active_users' })
   }, [send])
 
-  // Connect when boardId or tenant loads, disconnect on unmount
+  // Connect when boardId changes or tenant schema loads
   useEffect(() => {
-    if (!tenant || !boardId || boardId === 'none') {
-      // Disconnect if no valid board
+    // Check if we have tenant schema and valid board
+    if (!tenantSchema || !boardId || boardId === 'none') {
+      // Disconnect if no valid board or tenant
       if (wsRef.current) {
-        console.log('[BoardWS] No valid board, disconnecting')
+        console.log('[BoardWS] No valid board/tenant, disconnecting')
         disconnect()
       }
       return
@@ -380,7 +389,7 @@ export function useTicketBoardWebSocket({
       disconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, tenant?.schema_name]) // Depend on boardId and tenant schema (for initial load)
+  }, [boardId, tenantSchema]) // Only re-run when boardId or tenantSchema changes
 
   return {
     isConnected,
