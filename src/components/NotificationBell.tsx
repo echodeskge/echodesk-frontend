@@ -10,21 +10,32 @@ import {
 } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { NotificationList } from '@/components/NotificationList'
+import { NotificationToastContainer } from '@/components/NotificationToast'
 import { apiNotificationsList } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
 import { useNotificationsUnreadCount } from '@/hooks/useNotifications'
 import { useNotificationsWebSocket } from '@/hooks/useNotificationsWebSocket'
 import { getNotificationSound } from '@/utils/notificationSound'
+import { useRouter } from 'next/navigation'
 
 interface NotificationBellProps {
   onNotificationClick?: (notification: Notification) => void
 }
 
 export function NotificationBell({ onNotificationClick }: NotificationBellProps) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
+  const [toasts, setToasts] = useState<Array<{
+    id: number
+    title: string
+    message: string
+    type?: string
+    ticketId?: number
+  }>>([])
+  const [shouldPulse, setShouldPulse] = useState(false)
   const previousUnreadCount = useRef(0)
   const { showNotification, canShowNotifications, requestPermission } = useBrowserNotifications()
   const notificationSound = useRef(getNotificationSound())
@@ -42,8 +53,21 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
       // Play notification sound
       notificationSound.current.play()
 
+      // Trigger badge pulse animation
+      setShouldPulse(true)
+      setTimeout(() => setShouldPulse(false), 1000)
+
       // Add to notifications list if popover is open
       setNotifications(prev => [notification as Notification, ...prev])
+
+      // Show toast notification (in-app popup)
+      setToasts(prev => [...prev, {
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.notification_type,
+        ticketId: notification.ticket_id
+      }])
 
       // Show browser notification
       if (canShowNotifications) {
@@ -133,20 +157,40 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     fetchNotifications()
   }
 
+  const handleRemoveToast = (id: number) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }
+
+  const handleToastClick = (ticketId?: number) => {
+    if (ticketId) {
+      router.push(`/tickets/${ticketId}`)
+    }
+  }
+
   return (
+    <>
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
+          className={cn(
+            "relative",
+            shouldPulse && "animate-shake"
+          )}
           aria-label="Notifications"
         >
-          <Bell className="h-5 w-5" />
+          <Bell className={cn(
+            "h-5 w-5 transition-transform",
+            shouldPulse && "scale-110"
+          )} />
           {unreadCount > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+              className={cn(
+                "absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs transition-all",
+                shouldPulse && "animate-pulse scale-110"
+              )}
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
@@ -171,5 +215,13 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
         />
       </PopoverContent>
     </Popover>
+
+    {/* Toast notifications container */}
+    <NotificationToastContainer
+      toasts={toasts}
+      onRemove={handleRemoveToast}
+      onToastClick={handleToastClick}
+    />
+    </>
   )
 }
