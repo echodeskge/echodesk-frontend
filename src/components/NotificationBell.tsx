@@ -15,6 +15,7 @@ import type { Notification } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
 import { useNotificationsUnreadCount } from '@/hooks/useNotifications'
 import { useNotificationsWebSocket } from '@/hooks/useNotificationsWebSocket'
+import { getNotificationSound } from '@/utils/notificationSound'
 
 interface NotificationBellProps {
   onNotificationClick?: (notification: Notification) => void
@@ -26,6 +27,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   const [loading, setLoading] = useState(false)
   const previousUnreadCount = useRef(0)
   const { showNotification, canShowNotifications, requestPermission } = useBrowserNotifications()
+  const notificationSound = useRef(getNotificationSound())
 
   // WebSocket for real-time notifications
   const {
@@ -37,6 +39,9 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     onNotificationCreated: (notification, count) => {
       console.log('[NotificationBell] New notification received:', notification)
 
+      // Play notification sound
+      notificationSound.current.play()
+
       // Add to notifications list if popover is open
       setNotifications(prev => [notification as Notification, ...prev])
 
@@ -47,15 +52,22 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
             body: notification.message,
             icon: '/favicon.ico',
             tag: `notification-${notification.id}`, // Prevent duplicates
+            data: { ticketId: notification.ticket_id }, // Store ticket ID in notification data
           })
 
           // Close after 5 seconds
           setTimeout(() => browserNotification.close(), 5000)
 
-          // Handle click to open app
+          // Handle click to navigate to ticket
           browserNotification.onclick = () => {
             window.focus()
             browserNotification.close()
+
+            // Navigate to ticket if ticket_id exists
+            if (notification.ticket_id) {
+              // Use window.location to navigate (works even when app is not focused)
+              window.location.href = `/tickets/${notification.ticket_id}`
+            }
           }
         } catch (error) {
           console.error('[NotificationBell] Failed to show browser notification:', error)
