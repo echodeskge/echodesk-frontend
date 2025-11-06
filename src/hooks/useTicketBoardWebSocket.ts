@@ -361,7 +361,7 @@ export function useTicketBoardWebSocket({
     send({ type: 'get_active_users' })
   }, [send])
 
-  // Connect when boardId changes, disconnect on unmount
+  // Connect when boardId or tenant loads, disconnect on unmount
   useEffect(() => {
     if (!tenant || !boardId || boardId === 'none') {
       // Disconnect if no valid board
@@ -380,7 +380,7 @@ export function useTicketBoardWebSocket({
       disconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId]) // Only depend on boardId, tenant doesn't change during session
+  }, [boardId, tenant?.schema_name]) // Depend on boardId and tenant schema (for initial load)
 
   return {
     isConnected,
