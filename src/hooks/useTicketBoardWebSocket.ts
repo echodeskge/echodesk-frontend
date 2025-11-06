@@ -130,9 +130,11 @@ export function useTicketBoardWebSocket({
       return
     }
 
-    // If already connected to this board, don't reconnect
+    // If already connected to this board, don't reconnect but ensure state is correct
     if (currentBoardIdRef.current === boardId && wsRef.current?.readyState === WebSocket.OPEN) {
       console.log('[BoardWS] Already connected to board', boardId)
+      // Make sure isConnected state reflects reality
+      setIsConnected(true)
       return
     }
 
