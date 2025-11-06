@@ -20,6 +20,8 @@ import { TenantInfo } from "@/types/auth";
 import { tenantService } from "@/services/tenantService";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
+import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
+import { useBoardCollaboration } from "@/contexts/BoardCollaborationContext";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
@@ -41,6 +43,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { data: boards } = useBoards();
   const { selectedBoardId, setSelectedBoardId } = useBoard();
+  const { isConnected, activeUsers } = useBoardCollaboration();
   const [facebookConnected, setFacebookConnected] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
@@ -345,6 +348,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
               </div>
             )}
             <div className="ml-auto flex items-center gap-2">
+              {/* Board Collaboration Indicators - Only show on tickets page */}
+              {pathname.includes('/tickets') && (
+                <BoardCollaborationIndicators
+                  isConnected={isConnected}
+                  activeUsers={activeUsers}
+                />
+              )}
               <NotificationBell
                 onNotificationClick={(notification) => {
                   // Navigate to ticket if ticket_id exists

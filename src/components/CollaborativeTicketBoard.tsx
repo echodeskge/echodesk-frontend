@@ -7,8 +7,8 @@
 
 import { useState, useEffect } from 'react'
 import { useTicketBoardWebSocket } from '@/hooks/useTicketBoardWebSocket'
+import { BoardCollaborationProvider } from '@/contexts/BoardCollaborationContext'
 import { Badge } from '@/components/ui/badge'
-import { Users, Wifi, WifiOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface CollaborativeTicketBoardProps {
@@ -99,82 +99,42 @@ export function CollaborativeTicketBoard({
   })
 
   return (
-    <div className="relative">
-      {/* Connection Status & Active Users Bar */}
-      <div className="flex items-center justify-between gap-4 mb-4 p-4 bg-card border rounded-lg">
-        {/* Connection Status */}
-        <div className="flex items-center gap-2">
-          {isConnected ? (
-            <>
-              <Wifi className="h-4 w-4 text-green-500" />
-              <span className="text-sm text-muted-foreground">Live updates active</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="h-4 w-4 text-red-500" />
-              <span className="text-sm text-muted-foreground">Reconnecting...</span>
-            </>
-          )}
+    <BoardCollaborationProvider
+      isConnected={isConnected}
+      activeUsers={activeUsers}
+      boardId={boardId}
+    >
+      <div className="relative">
+        {/* Your existing board component */}
+        <div className="relative">
+          {children}
         </div>
 
-        {/* Active Users (Live Presence) */}
-        {activeUsersCount > 0 && (
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {activeUsersCount} {activeUsersCount === 1 ? 'person' : 'people'} viewing
-            </span>
-
-            {/* Show user avatars/names */}
-            <div className="flex -space-x-2">
-              {activeUsers.slice(0, 3).map((user) => (
-                <div
-                  key={user.user_id}
-                  className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium border-2 border-background"
-                  title={user.user_name}
-                >
-                  {user.user_name.substring(0, 2).toUpperCase()}
-                </div>
-              ))}
-              {activeUsersCount > 3 && (
-                <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-xs font-medium border-2 border-background">
-                  +{activeUsersCount - 3}
-                </div>
-              )}
-            </div>
+        {/* Floating indicators for tickets being edited/moved */}
+        {(ticketsBeingMoved.size > 0 || ticketsBeingEdited.size > 0) && (
+          <div className="fixed bottom-4 right-4 space-y-2 z-50">
+            {Array.from(ticketsBeingMoved.entries()).map(([ticketId, userName]) => (
+              <Badge
+                key={`moving-${ticketId}`}
+                variant="default"
+                className="animate-pulse"
+              >
+                {userName} is moving ticket #{ticketId}
+              </Badge>
+            ))}
+            {Array.from(ticketsBeingEdited.entries()).map(([ticketId, userName]) => (
+              <Badge
+                key={`editing-${ticketId}`}
+                variant="secondary"
+                className="animate-pulse"
+              >
+                {userName} is editing ticket #{ticketId}
+              </Badge>
+            ))}
           </div>
         )}
       </div>
-
-      {/* Your existing board component */}
-      <div className="relative">
-        {children}
-      </div>
-
-      {/* Floating indicators for tickets being edited/moved */}
-      {(ticketsBeingMoved.size > 0 || ticketsBeingEdited.size > 0) && (
-        <div className="fixed bottom-4 right-4 space-y-2 z-50">
-          {Array.from(ticketsBeingMoved.entries()).map(([ticketId, userName]) => (
-            <Badge
-              key={`moving-${ticketId}`}
-              variant="default"
-              className="animate-pulse"
-            >
-              {userName} is moving ticket #{ticketId}
-            </Badge>
-          ))}
-          {Array.from(ticketsBeingEdited.entries()).map(([ticketId, userName]) => (
-            <Badge
-              key={`editing-${ticketId}`}
-              variant="secondary"
-              className="animate-pulse"
-            >
-              {userName} is editing ticket #{ticketId}
-            </Badge>
-          ))}
-        </div>
-      )}
-    </div>
+    </BoardCollaborationProvider>
   )
 }
 
