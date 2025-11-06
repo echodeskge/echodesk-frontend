@@ -14,6 +14,7 @@ import { apiNotificationsList } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
 import { useNotificationsUnreadCount } from '@/hooks/useNotifications'
+import { useNotificationsWebSocket } from '@/hooks/useNotificationsWebSocket'
 
 interface NotificationBellProps {
   onNotificationClick?: (notification: Notification) => void
@@ -26,8 +27,66 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   const previousUnreadCount = useRef(0)
   const { showNotification, canShowNotifications, requestPermission } = useBrowserNotifications()
 
-  // Use React Query hook for unread count
-  const { data: unreadCount = 0, refetch: refetchUnreadCount } = useNotificationsUnreadCount()
+  // WebSocket for real-time notifications
+  const {
+    isConnected: wsConnected,
+    unreadCount: wsUnreadCount,
+    markAsRead: wsMarkAsRead,
+    markAllAsRead: wsMarkAllAsRead,
+  } = useNotificationsWebSocket({
+    onNotificationCreated: (notification, count) => {
+      console.log('[NotificationBell] New notification received:', notification)
+
+      // Add to notifications list if popover is open
+      setNotifications(prev => [notification as Notification, ...prev])
+
+      // Show browser notification
+      if (canShowNotifications) {
+        try {
+          const browserNotification = new window.Notification(notification.title, {
+            body: notification.message,
+            icon: '/favicon.ico',
+            tag: `notification-${notification.id}`, // Prevent duplicates
+          })
+
+          // Close after 5 seconds
+          setTimeout(() => browserNotification.close(), 5000)
+
+          // Handle click to open app
+          browserNotification.onclick = () => {
+            window.focus()
+            browserNotification.close()
+          }
+        } catch (error) {
+          console.error('[NotificationBell] Failed to show browser notification:', error)
+        }
+      }
+    },
+    onNotificationRead: (notificationId, count) => {
+      console.log('[NotificationBell] Notification marked as read:', notificationId)
+      // Update local notifications list
+      setNotifications(prev =>
+        prev.map(n =>
+          n.id === notificationId ? { ...n, is_read: true } : n
+        )
+      )
+    },
+    onUnreadCountUpdate: (count) => {
+      console.log('[NotificationBell] Unread count updated:', count)
+    },
+    onConnectionChange: (connected) => {
+      console.log('[NotificationBell] WebSocket connection:', connected ? 'connected' : 'disconnected')
+    }
+  })
+
+  // Fallback to React Query polling when WebSocket is disconnected
+  const { data: pollingUnreadCount = 0, refetch: refetchUnreadCount } = useNotificationsUnreadCount({
+    // Only enable polling when WebSocket is disconnected
+    refetchInterval: wsConnected ? false : 30000,
+  })
+
+  // Use WebSocket count if connected, otherwise use polling count
+  const unreadCount = wsConnected ? wsUnreadCount : pollingUnreadCount
 
   // Request notification permission on first render
   useEffect(() => {
@@ -48,26 +107,6 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
       setLoading(false)
     }
   }
-
-  // Show browser notification when unread count increases
-  useEffect(() => {
-    if (unreadCount > previousUnreadCount.current && previousUnreadCount.current > 0) {
-      // Only show if we have permission and there's an actual increase
-      if (canShowNotifications) {
-        // Use browser Notification API directly for generic count notification
-        try {
-          const notification = new window.Notification('New Notification', {
-            body: `You have ${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`,
-            icon: '/favicon.ico'
-          })
-          setTimeout(() => notification.close(), 5000)
-        } catch (error) {
-          console.error('Failed to show notification:', error)
-        }
-      }
-    }
-    previousUnreadCount.current = unreadCount
-  }, [unreadCount, canShowNotifications])
 
   // Fetch notifications when popover opens
   useEffect(() => {
@@ -115,6 +154,8 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
             onNotificationClick?.(notification)
           }}
           onUpdate={handleNotificationUpdate}
+          wsMarkAsRead={wsMarkAsRead}
+          wsMarkAllAsRead={wsMarkAllAsRead}
         />
       </PopoverContent>
     </Popover>

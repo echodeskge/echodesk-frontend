@@ -184,14 +184,14 @@ export function useNotifications() {
 }
 
 // Separate hook for unread notifications count
-export function useNotificationsUnreadCount() {
+export function useNotificationsUnreadCount(options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
       const response = await apiNotificationsUnreadCountRetrieve() as any;
       return response.count || 0;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: options?.refetchInterval !== undefined ? options.refetchInterval : 30000, // Default to 30 seconds
   });
 }
 

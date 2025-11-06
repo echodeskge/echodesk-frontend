@@ -19,6 +19,8 @@ interface NotificationListProps {
   loading?: boolean
   onNotificationClick?: (notification: Notification) => void
   onUpdate?: () => void
+  wsMarkAsRead?: (notificationId: number) => boolean
+  wsMarkAllAsRead?: () => boolean
 }
 
 const getNotificationIcon = (type: string) => {
@@ -61,16 +63,25 @@ export function NotificationList({
   notifications,
   loading = false,
   onNotificationClick,
-  onUpdate
+  onUpdate,
+  wsMarkAsRead,
+  wsMarkAllAsRead
 }: NotificationListProps) {
   const router = useRouter()
 
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read
+    // Mark as read - try WebSocket first, fallback to API
     if (!notification.is_read) {
       try {
-        await apiNotificationsMarkReadCreate(notification.id.toString(), {} as any)
-        onUpdate?.()
+        // Try WebSocket first (instant)
+        const wsSent = wsMarkAsRead?.(notification.id)
+
+        // If WebSocket not available or failed, use API
+        if (!wsSent) {
+          await apiNotificationsMarkReadCreate(notification.id.toString(), {} as any)
+          onUpdate?.()
+        }
+        // If WebSocket succeeded, the onNotificationRead callback in NotificationBell will handle the update
       } catch (error) {
         console.error('Failed to mark notification as read:', error)
       }
@@ -82,8 +93,15 @@ export function NotificationList({
 
   const handleMarkAllRead = async () => {
     try {
-      await apiNotificationsMarkAllReadCreate({} as any)
-      onUpdate?.()
+      // Try WebSocket first (instant)
+      const wsSent = wsMarkAllAsRead?.()
+
+      // If WebSocket not available or failed, use API
+      if (!wsSent) {
+        await apiNotificationsMarkAllReadCreate({} as any)
+        onUpdate?.()
+      }
+      // If WebSocket succeeded, the callbacks will handle the update
     } catch (error) {
       console.error('Failed to mark all as read:', error)
     }
