@@ -4,17 +4,17 @@
  */
 
 import {
-  apiEcommerceAdminAttributesList,
-  apiEcommerceAdminAttributesRetrieve,
-  apiEcommerceAdminAttributesCreate,
-  apiEcommerceAdminAttributesPartialUpdate,
-  apiEcommerceAdminAttributesDestroy,
+  ecommerceAdminAttributesList,
+  ecommerceAdminAttributesRetrieve,
+  ecommerceAdminAttributesCreate,
+  ecommerceAdminAttributesPartialUpdate,
+  ecommerceAdminAttributesDestroy,
 } from "@/api/generated";
 
 import type {
   PaginatedAttributeDefinitionList,
   AttributeDefinition,
-  PatchedAttributeDefinition,
+  PatchedAttributeDefinitionRequest,
 } from "@/api/generated";
 
 export interface AttributeFilters {
@@ -31,7 +31,7 @@ class AttributeService {
    * Get paginated list of attribute definitions with filters
    */
   async getAttributes(filters?: AttributeFilters): Promise<PaginatedAttributeDefinitionList> {
-    return apiEcommerceAdminAttributesList(
+    return ecommerceAdminAttributesList(
       filters?.attribute_type,
       filters?.is_filterable,
       filters?.is_variant_attribute,
@@ -45,14 +45,14 @@ class AttributeService {
    * Get attribute definition by ID
    */
   async getAttribute(id: number): Promise<AttributeDefinition> {
-    return apiEcommerceAdminAttributesRetrieve(id);
+    return ecommerceAdminAttributesRetrieve(id);
   }
 
   /**
    * Create a new attribute definition
    */
   async createAttribute(data: AttributeDefinition): Promise<AttributeDefinition> {
-    return apiEcommerceAdminAttributesCreate(data);
+    return ecommerceAdminAttributesCreate(data);
   }
 
   /**
@@ -60,16 +60,16 @@ class AttributeService {
    */
   async updateAttribute(
     id: number,
-    data: PatchedAttributeDefinition
-  ): Promise<PatchedAttributeDefinition> {
-    return apiEcommerceAdminAttributesPartialUpdate(id, data);
+    data: PatchedAttributeDefinitionRequest
+  ): Promise<PatchedAttributeDefinitionRequest> {
+    return ecommerceAdminAttributesPartialUpdate(id, data);
   }
 
   /**
    * Delete an attribute definition
    */
   async deleteAttribute(id: number): Promise<void> {
-    return apiEcommerceAdminAttributesDestroy(id);
+    return ecommerceAdminAttributesDestroy(id);
   }
 }
 

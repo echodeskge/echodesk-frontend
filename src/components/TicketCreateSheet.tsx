@@ -5,16 +5,16 @@ import { useTranslations } from 'next-intl';
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
 import axios from "@/api/axios";
 import {
-  apiTicketsCreate,
-  apiColumnsList,
-  apiBoardsList,
-  apiUsersList,
-  apiTagsList,
-  apiTicketFormsList,
-  apiTicketFormsRetrieve,
-  apiFormSubmissionsCreate,
-  apiItemListsRetrieve,
-  apiTenantGroupsList,
+  ticketsCreate,
+  columnsList,
+  boardsList,
+  usersList,
+  tagsList,
+  ticketFormsList,
+  ticketFormsRetrieve,
+  formSubmissionsCreate,
+  itemListsRetrieve,
+  tenantGroupsList,
 } from "@/api/generated/api";
 import type {
   Board,
@@ -179,12 +179,12 @@ export function TicketCreateSheet() {
       try {
         setFetchingData(true);
         const [boardsRes, columnsRes, usersRes, formsRes, tagsRes, groupsRes] = await Promise.all([
-          apiBoardsList(),
-          apiColumnsList(),
-          apiUsersList(),
-          apiTicketFormsList(),
-          apiTagsList(),
-          apiTenantGroupsList(),
+          boardsList(),
+          columnsList(),
+          usersList(),
+          ticketFormsList(),
+          tagsList(),
+          tenantGroupsList(),
         ]);
 
         setBoards(boardsRes.results || []);
@@ -199,7 +199,7 @@ export function TicketCreateSheet() {
           (formsRes.results || []).find((form) => form.is_default);
         if (defaultFormMinimal) {
           try {
-            const fullForm = await apiTicketFormsRetrieve(defaultFormMinimal.id);
+            const fullForm = await ticketFormsRetrieve(defaultFormMinimal.id);
             setSelectedForm(fullForm);
           } catch (error) {
             console.error("Error fetching default form:", error);
@@ -258,7 +258,7 @@ export function TicketCreateSheet() {
         const listsWithItems = await Promise.all(
           selectedForm.item_lists.map(async (list) => {
             try {
-              const fullList = await apiItemListsRetrieve(list.id);
+              const fullList = await itemListsRetrieve(list.id);
               return fullList;
             } catch (error) {
               console.error(`Failed to load list ${list.id}:`, error);
@@ -308,7 +308,7 @@ export function TicketCreateSheet() {
         assignment_roles: Object.keys(assignment_roles).length > 0 ? assignment_roles : undefined,
       } as any;
 
-      const createdTicket = await apiTicketsCreate(ticketData);
+      const createdTicket = await ticketsCreate(ticketData);
 
       // Upload attachments if any
       if (uploadedFiles.length > 0) {
@@ -339,7 +339,7 @@ export function TicketCreateSheet() {
           // Extract selected item IDs from the object (filter out null values)
           const selectedItemIds = Object.values(selectedItems).filter((id): id is number => id !== null);
 
-          await apiFormSubmissionsCreate({
+          await formSubmissionsCreate({
             ticket: createdTicket.id,
             form_id: selectedForm.id,
             selected_item_ids: selectedItemIds,
@@ -529,7 +529,7 @@ export function TicketCreateSheet() {
                       const formId = parseInt(value);
                       setSelectedItems({});
                       try {
-                        const fullForm = await apiTicketFormsRetrieve(formId);
+                        const fullForm = await ticketFormsRetrieve(formId);
                         setSelectedForm(fullForm);
                       } catch (error) {
                         console.error("Error fetching form:", error);

@@ -21,7 +21,7 @@ import {
   FormLabel,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { apiSocialFacebookSendMessageCreate } from "@/api/generated/api"
+import { socialFacebookSendMessageCreate } from "@/api/generated/api"
 import axios from "@/api/axios"
 import { toast } from "sonner"
 
@@ -68,7 +68,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
       if (platform === 'fb') {
         // Send via Facebook API
-        await apiSocialFacebookSendMessageCreate({
+        await socialFacebookSendMessageCreate({
           recipient_id: recipientId,
           message: data.text,
           page_id: accountId

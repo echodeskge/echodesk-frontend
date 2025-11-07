@@ -8,7 +8,7 @@ import {
   changeTenantPassword,
 } from "../api/generated/api";
 import type {
-  TenantLogin as TenantLoginType,
+  TenantLoginRequest as TenantLoginType,
   User as GeneratedUser,
 } from "../api/generated/interfaces";
 

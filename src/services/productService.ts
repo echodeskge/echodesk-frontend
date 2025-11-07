@@ -4,18 +4,18 @@
  */
 
 import {
-  apiEcommerceAdminProductsList,
-  apiEcommerceAdminProductsRetrieve,
-  apiEcommerceAdminProductsCreate,
-  apiEcommerceAdminProductsPartialUpdate,
-  apiEcommerceAdminProductsDestroy,
+  ecommerceAdminProductsList,
+  ecommerceAdminProductsRetrieve,
+  ecommerceAdminProductsCreate,
+  ecommerceAdminProductsPartialUpdate,
+  ecommerceAdminProductsDestroy,
 } from "@/api/generated";
 
 import type {
   PaginatedProductListList,
   ProductDetail,
   ProductCreateUpdate,
-  PatchedProductCreateUpdate,
+  PatchedProductCreateUpdateRequest,
 } from "@/api/generated";
 
 export interface ProductFilters {
@@ -35,7 +35,7 @@ class ProductService {
    * Get paginated list of products with filters
    */
   async getProducts(filters?: ProductFilters): Promise<PaginatedProductListList> {
-    return apiEcommerceAdminProductsList(
+    return ecommerceAdminProductsList(
       filters?.in_stock,
       filters?.is_featured,
       filters?.low_stock,
@@ -52,14 +52,14 @@ class ProductService {
    * Get product detail by ID
    */
   async getProduct(id: number): Promise<ProductDetail> {
-    return apiEcommerceAdminProductsRetrieve(id);
+    return ecommerceAdminProductsRetrieve(id);
   }
 
   /**
    * Create a new product
    */
   async createProduct(data: ProductCreateUpdate): Promise<ProductCreateUpdate> {
-    return apiEcommerceAdminProductsCreate(data);
+    return ecommerceAdminProductsCreate(data);
   }
 
   /**
@@ -67,16 +67,16 @@ class ProductService {
    */
   async updateProduct(
     id: number,
-    data: PatchedProductCreateUpdate
-  ): Promise<PatchedProductCreateUpdate> {
-    return apiEcommerceAdminProductsPartialUpdate(id, data);
+    data: PatchedProductCreateUpdateRequest
+  ): Promise<PatchedProductCreateUpdateRequest> {
+    return ecommerceAdminProductsPartialUpdate(id, data);
   }
 
   /**
    * Delete a product
    */
   async deleteProduct(id: number): Promise<void> {
-    return apiEcommerceAdminProductsDestroy(id);
+    return ecommerceAdminProductsDestroy(id);
   }
 }
 

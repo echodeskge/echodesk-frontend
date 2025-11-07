@@ -53,7 +53,7 @@ export default function AllRequestsPage() {
   const fetchRequests = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveAdminLeaveRequestsList({ status: statusFilter !== 'all' ? statusFilter : undefined })
+      // const response = await leaveAdminLeaveRequestsList({ status: statusFilter !== 'all' ? statusFilter : undefined })
       setRequests([])
     } catch (error) {
       console.error("Failed to fetch requests:", error)

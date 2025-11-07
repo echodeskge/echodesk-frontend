@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  apiColumnsList,
-  apiColumnsCreate,
-  apiColumnsUpdate,
-  apiColumnsDestroy,
-  apiBoardsRetrieve,
+  columnsList,
+  columnsCreate,
+  columnsUpdate,
+  columnsDestroy,
+  boardsRetrieve,
 } from "../api/generated/api";
 import {
   TicketColumn,
@@ -80,7 +80,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   const fetchBoard = async () => {
     if (!boardId) return;
     try {
-      const boardData = await apiBoardsRetrieve(boardId.toString());
+      const boardData = await boardsRetrieve(boardId.toString());
       setBoard(boardData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load board");
@@ -93,7 +93,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
     setError(null);
 
     try {
-      const data = await apiColumnsList(boardId);
+      const data = await columnsList(boardId);
       setColumns(data.results || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -167,7 +167,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
           track_time: formData.track_time,
           board: boardId,
         };
-        await apiColumnsUpdate(editingColumn.id, updateData);
+        await columnsUpdate(editingColumn.id, updateData);
         setSuccess("Column updated successfully!");
       } else {
         // Create new column
@@ -181,7 +181,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
           track_time: formData.track_time,
           board: boardId,
         };
-        await apiColumnsCreate(createData);
+        await columnsCreate(createData);
         setSuccess("Column created successfully!");
       }
 
@@ -205,7 +205,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
     }
 
     try {
-      await apiColumnsDestroy(columnId);
+      await columnsDestroy(columnId);
       setSuccess("Column deleted successfully!");
       await fetchColumns();
       onStatusChange?.();

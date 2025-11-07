@@ -13,12 +13,12 @@ import { AlertCircle, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { Invitation } from "sip.js";
 import {
-  apiSipConfigurationsList,
-  apiSipConfigurationsWebrtcConfigRetrieve,
-  apiCallLogsInitiateCallCreate,
-  apiCallLogsLogIncomingCallCreate,
-  apiCallLogsEndCallCreate,
-  apiCallLogsUpdateStatusPartialUpdate,
+  sipConfigurationsList,
+  sipConfigurationsWebrtcConfigRetrieve,
+  callLogsInitiateCallCreate,
+  callLogsLogIncomingCallCreate,
+  callLogsEndCallCreate,
+  callLogsUpdateStatusPartialUpdate,
 } from "@/api/generated/api";
 import type { SipConfigurationDetail } from "@/api/generated/interfaces";
 
@@ -159,7 +159,7 @@ export default function CallsDashboardPage() {
           invitation.remoteIdentity.uri.user || "Unknown Number";
 
         try {
-          const logResponse = await apiCallLogsLogIncomingCallCreate({
+          const logResponse = await callLogsLogIncomingCallCreate({
             caller_number: phoneNumber,
             recipient_number: activeSipConfig?.username || "",
             direction: "inbound" as any,
@@ -191,7 +191,7 @@ export default function CallsDashboardPage() {
           });
 
           try {
-            await apiCallLogsUpdateStatusPartialUpdate(activeCall.logId, {
+            await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
               status: "answered" as any,
             });
           } catch (error) {
@@ -206,7 +206,7 @@ export default function CallsDashboardPage() {
 
         if (activeCall) {
           try {
-            await apiCallLogsEndCallCreate(activeCall.logId, {
+            await callLogsEndCallCreate(activeCall.logId, {
               status: "ended" as any,
             });
           } catch (error) {
@@ -224,7 +224,7 @@ export default function CallsDashboardPage() {
 
         if (activeCall) {
           try {
-            await apiCallLogsUpdateStatusPartialUpdate(activeCall.logId, {
+            await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
               status: "failed" as any,
             });
           } catch (err) {
@@ -252,7 +252,7 @@ export default function CallsDashboardPage() {
   const loadSipConfiguration = async () => {
     try {
       setLoading(true);
-      const response = await apiSipConfigurationsList();
+      const response = await sipConfigurationsList();
 
       const defaultConfig = response.results.find((config) => config.is_default);
       if (!defaultConfig) {
@@ -261,7 +261,7 @@ export default function CallsDashboardPage() {
         return;
       }
 
-      const webrtcConfig = await apiSipConfigurationsWebrtcConfigRetrieve(
+      const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(
         defaultConfig.id
       );
       setActiveSipConfig(webrtcConfig);
@@ -279,7 +279,7 @@ export default function CallsDashboardPage() {
     if (!dialNumber || !sipServiceRef.current) return;
 
     try {
-      const logResponse = await apiCallLogsInitiateCallCreate({
+      const logResponse = await callLogsInitiateCallCreate({
         recipient_number: dialNumber,
       });
 
@@ -326,7 +326,7 @@ export default function CallsDashboardPage() {
         stopRingtone();
         setActiveCall(null);
 
-        await apiCallLogsUpdateStatusPartialUpdate(activeCall.logId, {
+        await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
           status: "cancelled" as any,
         });
       } catch (error: any) {

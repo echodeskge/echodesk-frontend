@@ -3,13 +3,13 @@
  */
 
 import {
-  apiEcommerceAdminLanguagesList,
-  apiEcommerceAdminLanguagesRetrieve,
-  apiEcommerceAdminLanguagesCreate,
-  apiEcommerceAdminLanguagesPartialUpdate,
-  apiEcommerceAdminLanguagesDestroy
+  ecommerceAdminLanguagesList,
+  ecommerceAdminLanguagesRetrieve,
+  ecommerceAdminLanguagesCreate,
+  ecommerceAdminLanguagesPartialUpdate,
+  ecommerceAdminLanguagesDestroy
 } from "@/api/generated";
-import type { Language, PaginatedLanguageList, PatchedLanguage } from "@/api/generated";
+import type { Language, PaginatedLanguageList, PatchedLanguageRequest } from "@/api/generated";
 
 export interface LanguageFilters {
   ordering?: string;
@@ -18,26 +18,26 @@ export interface LanguageFilters {
 
 class LanguageService {
   async getLanguages(filters?: LanguageFilters): Promise<PaginatedLanguageList> {
-    return apiEcommerceAdminLanguagesList(
+    return ecommerceAdminLanguagesList(
       filters?.ordering,
       filters?.page
     );
   }
 
   async getLanguage(id: number): Promise<Language> {
-    return apiEcommerceAdminLanguagesRetrieve(id);
+    return ecommerceAdminLanguagesRetrieve(id);
   }
 
   async createLanguage(data: Omit<Language, "id" | "created_at" | "updated_at">): Promise<Language> {
-    return apiEcommerceAdminLanguagesCreate(data as Language);
+    return ecommerceAdminLanguagesCreate(data as Language);
   }
 
-  async updateLanguage(id: number, data: PatchedLanguage): Promise<Language> {
-    return apiEcommerceAdminLanguagesPartialUpdate(id, data);
+  async updateLanguage(id: number, data: PatchedLanguageRequest): Promise<Language> {
+    return ecommerceAdminLanguagesPartialUpdate(id, data);
   }
 
   async deleteLanguage(id: number): Promise<void> {
-    await apiEcommerceAdminLanguagesDestroy(id);
+    await ecommerceAdminLanguagesDestroy(id);
   }
 }
 

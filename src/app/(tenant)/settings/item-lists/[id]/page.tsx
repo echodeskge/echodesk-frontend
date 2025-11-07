@@ -35,15 +35,15 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  apiItemListsRetrieve,
-  apiListItemsCreate,
-  apiListItemsUpdate,
-  apiListItemsDestroy,
+  itemListsRetrieve,
+  listItemsCreate,
+  listItemsUpdate,
+  listItemsDestroy,
 } from "@/api/generated/api";
 import type {
   ItemList,
   ListItem,
-  PatchedListItem,
+  PatchedListItemRequest,
 } from "@/api/generated/interfaces";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
@@ -89,7 +89,7 @@ export default function ItemListDetailPage() {
     const fetchParentListItems = async () => {
       if (itemList?.parent_list) {
         try {
-          const parentList = await apiItemListsRetrieve(itemList.parent_list);
+          const parentList = await itemListsRetrieve(itemList.parent_list);
           setParentListItems(parentList.items || []);
         } catch (error) {
           console.error("Failed to load parent list items", error);
@@ -107,7 +107,7 @@ export default function ItemListDetailPage() {
   const loadItemList = async () => {
     try {
       setLoading(true);
-      const response = await apiItemListsRetrieve(listId);
+      const response = await itemListsRetrieve(listId);
       setItemList(response);
     } catch (error) {
       toast.error(t("failedToSaveItem"));
@@ -193,14 +193,14 @@ export default function ItemListDetailPage() {
           is_active: formData.is_active,
           custom_data: formData.custom_data,
         };
-        await apiListItemsUpdate(editingItem.id, patchData as any);
+        await listItemsUpdate(editingItem.id, patchData as any);
         toast.success(t("itemUpdated"));
       } else {
         const newItem = {
           ...formData,
           item_list: listId,
         };
-        await apiListItemsCreate(newItem as any);
+        await listItemsCreate(newItem as any);
         toast.success(t("itemCreated"));
       }
       setDialogOpen(false);
@@ -214,7 +214,7 @@ export default function ItemListDetailPage() {
     if (!confirm(t("areYouSureDeleteItem"))) return;
 
     try {
-      await apiListItemsDestroy(id);
+      await listItemsDestroy(id);
       toast.success(t("itemDeleted"));
       loadItemList();
     } catch (error) {

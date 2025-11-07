@@ -4,7 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { languageService, LanguageFilters } from "@/services/languageService";
-import type { Language, PatchedLanguage } from "@/api/generated";
+import type { Language, PatchedLanguageRequest } from "@/api/generated";
 
 export function useLanguages(filters?: LanguageFilters) {
   return useQuery({
@@ -42,7 +42,7 @@ export function useUpdateLanguage() {
       data,
     }: {
       id: number;
-      data: PatchedLanguage;
+      data: PatchedLanguageRequest;
     }) => languageService.updateLanguage(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["languages"] });

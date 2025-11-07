@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { FacebookPageConnection } from "@/api/generated/interfaces";
-import { apiSocialFacebookSendMessageCreate } from "@/api/generated/api";
+import { socialFacebookSendMessageCreate } from "@/api/generated/api";
 import axios from "@/api/axios";
 
 interface UnifiedMessagesManagementProps {
@@ -224,7 +224,7 @@ export default function UnifiedMessagesManagement({ onBackToDashboard }: Unified
     try {
       if (selectedConversation.platform === 'facebook') {
         // Send Facebook message
-        await apiSocialFacebookSendMessageCreate({
+        await socialFacebookSendMessageCreate({
           recipient_id: selectedConversation.sender_id,
           message: replyText,
           page_id: selectedConversation.account_id

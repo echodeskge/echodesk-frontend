@@ -76,7 +76,7 @@ export default function MyRequestsPage() {
   const fetchRequests = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveEmployeeMyRequestsList()
+      // const response = await leaveEmployeeMyRequestsList()
       setRequests([])
     } catch (error) {
       console.error("Failed to fetch requests:", error)
@@ -88,7 +88,7 @@ export default function MyRequestsPage() {
   const fetchLeaveTypes = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveEmployeeLeaveTypesList()
+      // const response = await leaveEmployeeLeaveTypesList()
       setLeaveTypes([])
     } catch (error) {
       console.error("Failed to fetch leave types:", error)
@@ -99,7 +99,7 @@ export default function MyRequestsPage() {
     e.preventDefault()
     try {
       // TODO: Replace with actual API call
-      // await apiLeaveEmployeeMyRequestsCreate({ ...formData })
+      // await leaveEmployeeMyRequestsCreate({ ...formData })
       setIsDialogOpen(false)
       fetchRequests()
       setFormData({

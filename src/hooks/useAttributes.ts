@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { attributeService, AttributeFilters } from "@/services/attributeService";
 import type {
   AttributeDefinition,
-  PatchedAttributeDefinition,
+  PatchedAttributeDefinitionRequest,
 } from "@/api/generated";
 
 export function useAttributes(filters?: AttributeFilters) {
@@ -45,7 +45,7 @@ export function useUpdateAttribute() {
       data,
     }: {
       id: number;
-      data: PatchedAttributeDefinition;
+      data: PatchedAttributeDefinitionRequest;
     }) => attributeService.updateAttribute(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["attributes"] });

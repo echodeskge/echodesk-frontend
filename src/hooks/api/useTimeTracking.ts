@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiTimeLogsList } from '@/api/generated';
+import { timeLogsList } from '@/api/generated';
 import axios from '@/api/axios';
 import { ticketKeys } from './useTickets';
 

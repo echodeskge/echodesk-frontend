@@ -54,7 +54,7 @@ export default function PublicHolidaysPage() {
   const fetchHolidays = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveAdminPublicHolidaysList()
+      // const response = await leaveAdminPublicHolidaysList()
       setHolidays([])
     } catch (error) {
       console.error("Failed to fetch holidays:", error)
@@ -74,9 +74,9 @@ export default function PublicHolidaysPage() {
       }
 
       if (editingHoliday) {
-        // await apiLeaveAdminPublicHolidaysUpdate(editingHoliday.id, payload)
+        // await leaveAdminPublicHolidaysUpdate(editingHoliday.id, payload)
       } else {
-        // await apiLeaveAdminPublicHolidaysCreate(payload)
+        // await leaveAdminPublicHolidaysCreate(payload)
       }
 
       setIsDialogOpen(false)
@@ -104,7 +104,7 @@ export default function PublicHolidaysPage() {
     if (!confirm("Are you sure you want to delete this holiday?")) return
 
     try {
-      // await apiLeaveAdminPublicHolidaysDelete(id)
+      // await leaveAdminPublicHolidaysDelete(id)
       fetchHolidays()
     } catch (error) {
       console.error("Failed to delete holiday:", error)

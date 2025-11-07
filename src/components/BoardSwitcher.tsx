@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { apiBoardsDestroy } from "@/api/generated/api";
+import { boardsDestroy } from "@/api/generated/api";
 import type { Board, User } from "@/api/generated/interfaces";
 import {
   DropdownMenu,
@@ -64,7 +64,7 @@ export default function BoardSwitcher({
 
     setDeleting(true);
     try {
-      await apiBoardsDestroy(boardToDelete.id.toString());
+      await boardsDestroy(boardToDelete.id.toString());
 
       // Invalidate boards query to refetch
       queryClient.invalidateQueries({ queryKey: ['boards'] });

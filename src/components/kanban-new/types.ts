@@ -91,7 +91,7 @@ export type KanbanActionType =
 export interface KanbanContextType {
   kanbanState: KanbanStateType
   selectedBoard?: any | null
-  apiColumns?: any[]
+  columns?: any[]
   kanbanAddTaskSidebarIsOpen: boolean
   setKanbanAddTaskSidebarIsOpen: (value: boolean) => void
   kanbanUpdateTaskSidebarIsOpen: boolean

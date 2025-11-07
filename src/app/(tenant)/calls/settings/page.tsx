@@ -9,13 +9,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Plus, Zap } from "lucide-react";
 import {
-  apiSipConfigurationsList,
-  apiSipConfigurationsCreate,
-  apiSipConfigurationsUpdate,
-  apiSipConfigurationsDestroy,
-  apiSipConfigurationsSetDefaultCreate,
-  apiSipConfigurationsTestConnectionCreate,
-  apiSipConfigurationsRetrieve,
+  sipConfigurationsList,
+  sipConfigurationsCreate,
+  sipConfigurationsUpdate,
+  sipConfigurationsDestroy,
+  sipConfigurationsSetDefaultCreate,
+  sipConfigurationsTestConnectionCreate,
+  sipConfigurationsRetrieve,
 } from "@/api/generated/api";
 import type {
   SipConfigurationList,
@@ -60,7 +60,7 @@ export default function CallSettingsPage() {
   const fetchSipConfigs = async () => {
     try {
       setLoading(true);
-      const response = await apiSipConfigurationsList();
+      const response = await sipConfigurationsList();
       setSipConfigs(response.results);
       setError("");
     } catch (err: unknown) {
@@ -96,7 +96,7 @@ export default function CallSettingsPage() {
 
   const loadConfigForEdit = async (configId: number) => {
     try {
-      const config = await apiSipConfigurationsRetrieve(configId);
+      const config = await sipConfigurationsRetrieve(configId);
       setEditingConfig(config);
       setConfigForm({
         name: config.name,
@@ -148,7 +148,7 @@ export default function CallSettingsPage() {
       const { password, turn_password, ...apiConfig } = configForm;
 
       if (editingConfig) {
-        await apiSipConfigurationsUpdate(editingConfig.id, configForm as any);
+        await sipConfigurationsUpdate(editingConfig.id, configForm as any);
         toast({
           title: "Success",
           description: "SIP configuration updated successfully",
@@ -160,7 +160,7 @@ export default function CallSettingsPage() {
           updated_at: new Date().toISOString(),
           id: 0,
         } as SipConfiguration;
-        await apiSipConfigurationsCreate(createData);
+        await sipConfigurationsCreate(createData);
         toast({
           title: "Success",
           description: "SIP configuration created successfully",
@@ -189,7 +189,7 @@ export default function CallSettingsPage() {
 
     try {
       setActionLoading(configId);
-      await apiSipConfigurationsDestroy(configId);
+      await sipConfigurationsDestroy(configId);
       await fetchSipConfigs();
       setError("");
       toast({
@@ -211,8 +211,8 @@ export default function CallSettingsPage() {
   const setDefaultConfig = async (configId: number) => {
     try {
       setActionLoading(configId);
-      const config = await apiSipConfigurationsRetrieve(configId);
-      await apiSipConfigurationsSetDefaultCreate(configId, config as any);
+      const config = await sipConfigurationsRetrieve(configId);
+      await sipConfigurationsSetDefaultCreate(configId, config as any);
       await fetchSipConfigs();
       setError("");
       toast({
@@ -234,8 +234,8 @@ export default function CallSettingsPage() {
   const testConnection = async (config: SipConfigurationList) => {
     try {
       setActionLoading(config.id);
-      const fullConfig = await apiSipConfigurationsRetrieve(config.id);
-      const result = await apiSipConfigurationsTestConnectionCreate(
+      const fullConfig = await sipConfigurationsRetrieve(config.id);
+      const result = await sipConfigurationsTestConnectionCreate(
         config.id,
         fullConfig as any
       );

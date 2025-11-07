@@ -34,7 +34,7 @@ export default function MyBalancePage() {
   const fetchBalances = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveEmployeeMyBalanceList({ year: currentYear })
+      // const response = await leaveEmployeeMyBalanceList({ year: currentYear })
       setBalances([])
     } catch (error) {
       console.error("Failed to fetch balances:", error)

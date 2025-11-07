@@ -2,16 +2,16 @@
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import {
-  apiTicketsList,
-  apiTicketsRetrieve,
-  apiTicketsCreate,
-  apiTicketsUpdate,
-  apiTicketsPartialUpdate,
-  apiTicketsDestroy,
-  apiBoardsList,
-  apiBoardsKanbanBoardRetrieve,
-  apiColumnsList,
-  apiTagsList,
+  ticketsList,
+  ticketsRetrieve,
+  ticketsCreate,
+  ticketsUpdate,
+  ticketsPartialUpdate,
+  ticketsDestroy,
+  boardsList,
+  boardsKanbanBoardRetrieve,
+  columnsList,
+  tagsList,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -34,7 +34,7 @@ export const ticketKeys = {
 export function useTickets(filters?: Record<string, any>) {
   return useQuery({
     queryKey: ticketKeys.list(filters || {}),
-    queryFn: () => apiTicketsList(...(filters ? [filters.assignedGroups, filters.assignedTo, filters.column, filters.createdBy, filters.ordering, filters.page, filters.priority, filters.search, filters.tags] : [])),
+    queryFn: () => ticketsList(...(filters ? [filters.assignedGroups, filters.assignedTo, filters.column, filters.createdBy, filters.ordering, filters.page, filters.priority, filters.search, filters.tags] : [])),
     staleTime: 30 * 1000, // Consider data fresh for 30 seconds (tickets change frequently)
     gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
   });
@@ -43,7 +43,7 @@ export function useTickets(filters?: Record<string, any>) {
 export function useTicket(id: string, enabled = true) {
   return useQuery({
     queryKey: ticketKeys.detail(id),
-    queryFn: () => apiTicketsRetrieve(Number(id)),
+    queryFn: () => ticketsRetrieve(Number(id)),
     enabled: enabled && !!id,
     staleTime: 1 * 60 * 1000, // Consider data fresh for 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
@@ -64,14 +64,14 @@ export function useTicketHistory(ticketId: string, enabled = true) {
 export function useBoards() {
   return useQuery({
     queryKey: ticketKeys.boards,
-    queryFn: () => apiBoardsList(),
+    queryFn: () => boardsList(),
   });
 }
 
 export function useKanbanBoard(boardId: string, enabled = true) {
   return useQuery({
     queryKey: ticketKeys.kanban(boardId),
-    queryFn: () => apiBoardsKanbanBoardRetrieve(boardId),
+    queryFn: () => boardsKanbanBoardRetrieve(boardId),
     enabled: enabled && !!boardId,
     staleTime: 30 * 1000, // Consider data fresh for 30 seconds (kanban updates frequently)
     gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
@@ -81,7 +81,7 @@ export function useKanbanBoard(boardId: string, enabled = true) {
 export function useColumns() {
   return useQuery({
     queryKey: ticketKeys.columns,
-    queryFn: () => apiColumnsList(),
+    queryFn: () => columnsList(),
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes (columns rarely change)
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
@@ -90,7 +90,7 @@ export function useColumns() {
 export function useTags() {
   return useQuery({
     queryKey: ticketKeys.tags,
-    queryFn: () => apiTagsList(),
+    queryFn: () => tagsList(),
     staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes (tags change occasionally)
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
@@ -101,7 +101,7 @@ export function useCreateTicket() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: apiTicketsCreate,
+    mutationFn: ticketsCreate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
       queryClient.invalidateQueries({ queryKey: ticketKeys.boards });
@@ -114,7 +114,7 @@ export function useUpdateTicket() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      apiTicketsPartialUpdate(Number(id), data),
+      ticketsPartialUpdate(Number(id), data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
@@ -141,7 +141,7 @@ export function useDeleteTicket() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiTicketsDestroy(Number(id)),
+    mutationFn: (id: string) => ticketsDestroy(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
       queryClient.invalidateQueries({ queryKey: ticketKeys.boards });

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { apiBookingsAdminBookingsList } from "@/api/generated"
+import { bookingsAdminBookingsList } from "@/api/generated"
 import { BookingList } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -40,7 +40,7 @@ export default function BookingCalendarPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true)
-      const response = await apiBookingsAdminBookingsList()
+      const response = await bookingsAdminBookingsList()
       setBookings((response.results || response) as BookingList[])
     } catch (error) {
       console.error("Failed to fetch bookings:", error)

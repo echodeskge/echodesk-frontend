@@ -8,9 +8,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import {
-  apiNotificationsMarkReadCreate,
-  apiNotificationsMarkAllReadCreate,
-  apiNotificationsClearAllDestroy
+  notificationsMarkReadCreate,
+  notificationsMarkAllReadCreate,
+  notificationsClearAllDestroy
 } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
 
@@ -78,7 +78,7 @@ export function NotificationList({
 
         // If WebSocket not available or failed, use API
         if (!wsSent) {
-          await apiNotificationsMarkReadCreate(notification.id.toString(), {} as any)
+          await notificationsMarkReadCreate(notification.id.toString(), {} as any)
           onUpdate?.()
         }
         // If WebSocket succeeded, the onNotificationRead callback in NotificationBell will handle the update
@@ -98,7 +98,7 @@ export function NotificationList({
 
       // If WebSocket not available or failed, use API
       if (!wsSent) {
-        await apiNotificationsMarkAllReadCreate({} as any)
+        await notificationsMarkAllReadCreate({} as any)
         onUpdate?.()
       }
       // If WebSocket succeeded, the callbacks will handle the update
@@ -109,7 +109,7 @@ export function NotificationList({
 
   const handleClearAll = async () => {
     try {
-      await apiNotificationsClearAllDestroy()
+      await notificationsClearAllDestroy()
       onUpdate?.()
     } catch (error) {
       console.error('Failed to clear notifications:', error)

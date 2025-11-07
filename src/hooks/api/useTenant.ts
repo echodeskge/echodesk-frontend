@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiTenantGroupsList, apiTenantGroupsCreate, apiTenantGroupsPartialUpdate, apiTenantGroupsDestroy } from '@/api/generated';
+import { tenantGroupsList, tenantGroupsCreate, tenantGroupsPartialUpdate, tenantGroupsDestroy } from '@/api/generated';
 import axios from '@/api/axios';
 
 // Query keys
@@ -40,7 +40,7 @@ export function useTenantSubscription(options?: { enabled?: boolean }) {
 export function useTenantGroups() {
   return useQuery({
     queryKey: tenantKeys.groups(),
-    queryFn: () => apiTenantGroupsList(),
+    queryFn: () => tenantGroupsList(),
   });
 }
 
@@ -103,7 +103,7 @@ export function useCreateTenantGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: apiTenantGroupsCreate,
+    mutationFn: tenantGroupsCreate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantKeys.groups() });
     },
@@ -115,7 +115,7 @@ export function useUpdateTenantGroup() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      apiTenantGroupsPartialUpdate(Number(id), data),
+      tenantGroupsPartialUpdate(Number(id), data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantKeys.groups() });
     },
@@ -126,7 +126,7 @@ export function useDeleteTenantGroup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => apiTenantGroupsDestroy(Number(id)),
+    mutationFn: (id: string) => tenantGroupsDestroy(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantKeys.groups() });
     },

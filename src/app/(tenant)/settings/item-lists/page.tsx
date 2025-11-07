@@ -26,12 +26,12 @@ import {
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
-  apiItemListsList,
-  apiItemListsCreate,
-  apiItemListsUpdate,
-  apiItemListsDestroy,
+  itemListsList,
+  itemListsCreate,
+  itemListsUpdate,
+  itemListsDestroy,
 } from "@/api/generated/api";
-import type { ItemList, PatchedItemList } from "@/api/generated/interfaces";
+import type { ItemList, PatchedItemListRequest } from "@/api/generated/interfaces";
 import Link from "next/link";
 
 interface CustomField {
@@ -69,7 +69,7 @@ export default function ItemListsPage() {
   const loadItemLists = async () => {
     try {
       setLoading(true);
-      const response = await apiItemListsList();
+      const response = await itemListsList();
       setItemLists(response.results || []);
     } catch (error) {
       toast.error(t('error.load'));
@@ -146,10 +146,10 @@ export default function ItemListsPage() {
           parent_list: formData.parent_list ?? undefined,
           custom_fields_schema: formData.custom_fields_schema,
         };
-        await apiItemListsUpdate(editingList.id, patchData as any);
+        await itemListsUpdate(editingList.id, patchData as any);
         toast.success(t('success.updated'));
       } else {
-        await apiItemListsCreate(formData as any);
+        await itemListsCreate(formData as any);
         toast.success(t('success.created'));
       }
       setDialogOpen(false);
@@ -163,7 +163,7 @@ export default function ItemListsPage() {
     if (!confirm(t('deleteConfirm'))) return;
 
     try {
-      await apiItemListsDestroy(id);
+      await itemListsDestroy(id);
       toast.success(t('success.deleted'));
       loadItemLists();
     } catch (error) {

@@ -81,7 +81,7 @@ export default function LeaveTypesPage() {
   const fetchLeaveTypes = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveAdminLeaveTypesList()
+      // const response = await leaveAdminLeaveTypesList()
       setLeaveTypes([])
     } catch (error) {
       console.error("Failed to fetch leave types:", error)
@@ -110,9 +110,9 @@ export default function LeaveTypesPage() {
       }
 
       if (editingType) {
-        // await apiLeaveAdminLeaveTypesUpdate(editingType.id, payload)
+        // await leaveAdminLeaveTypesUpdate(editingType.id, payload)
       } else {
-        // await apiLeaveAdminLeaveTypesCreate(payload)
+        // await leaveAdminLeaveTypesCreate(payload)
       }
 
       setIsDialogOpen(false)
@@ -150,7 +150,7 @@ export default function LeaveTypesPage() {
     if (!confirm("Are you sure you want to delete this leave type?")) return
 
     try {
-      // await apiLeaveAdminLeaveTypesDelete(id)
+      // await leaveAdminLeaveTypesDelete(id)
       fetchLeaveTypes()
     } catch (error) {
       console.error("Failed to delete leave type:", error)

@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { productService, ProductFilters } from "@/services/productService";
 import type {
   ProductCreateUpdate,
-  PatchedProductCreateUpdate,
+  PatchedProductCreateUpdateRequest,
 } from "@/api/generated";
 
 export function useProducts(filters?: ProductFilters) {
@@ -45,7 +45,7 @@ export function useUpdateProduct() {
       data,
     }: {
       id: number;
-      data: PatchedProductCreateUpdate;
+      data: PatchedProductCreateUpdateRequest;
     }) => productService.updateProduct(id, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });

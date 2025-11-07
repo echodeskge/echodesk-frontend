@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
-  apiEcommerceAdminClientsList,
-  apiEcommerceAdminClientsRetrieve
+  ecommerceAdminClientsList,
+  ecommerceAdminClientsRetrieve
 } from "@/api/generated";
 import type { PaginatedEcommerceClientList } from "@/api/generated/interfaces";
 
@@ -16,7 +16,7 @@ interface UseClientsParams {
 export function useClients(params?: UseClientsParams) {
   return useQuery({
     queryKey: ["clients", params],
-    queryFn: () => apiEcommerceAdminClientsList(
+    queryFn: () => ecommerceAdminClientsList(
       params?.is_active,
       params?.is_verified,
       params?.search,
@@ -28,7 +28,7 @@ export function useClients(params?: UseClientsParams) {
 export function useClient(id: number) {
   return useQuery({
     queryKey: ["client", id],
-    queryFn: () => apiEcommerceAdminClientsRetrieve(id),
+    queryFn: () => ecommerceAdminClientsRetrieve(id),
     enabled: !!id,
   });
 }

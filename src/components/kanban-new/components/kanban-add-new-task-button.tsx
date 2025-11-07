@@ -14,13 +14,13 @@ interface KanbanTaskListProps {
 }
 
 export function KanbanAddNewTaskButton({ column }: KanbanTaskListProps) {
-  const { selectedBoard, apiColumns } = useKanbanContext()
+  const { selectedBoard, columns } = useKanbanContext()
   const { openTicketCreate } = useTicketCreate()
   const t = useTranslations('tickets')
 
   const handleClick = () => {
     // Find the API column that matches this UI column
-    const apiColumn = apiColumns?.find(col => col.id.toString() === column.id)
+    const apiColumn = columns?.find(col => col.id.toString() === column.id)
 
     openTicketCreate(selectedBoard, apiColumn)
   }

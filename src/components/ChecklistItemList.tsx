@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { apiChecklistItemsDestroy, apiChecklistItemsToggleCheckPartialUpdate } from '@/api/generated/api';
+import { checklistItemsDestroy, checklistItemsToggleCheckPartialUpdate } from '@/api/generated/api';
 import type { ChecklistItem } from '@/api/generated/interfaces';
 import ChecklistItemForm from './ChecklistItemForm';
 import { Button } from './ui/button';
@@ -30,7 +30,7 @@ export default function ChecklistItemList({
 
   const handleToggleCheck = async (item: ChecklistItem) => {
     try {
-      await apiChecklistItemsToggleCheckPartialUpdate(item.id.toString(), {
+      await checklistItemsToggleCheckPartialUpdate(item.id.toString(), {
         is_checked: !item.is_checked
       });
       if (onItemsChange) {
@@ -44,7 +44,7 @@ export default function ChecklistItemList({
   const handleDelete = async (item: ChecklistItem) => {
     if (confirm(tDetail('deleteChecklistItem'))) {
       try {
-        await apiChecklistItemsDestroy(item.id.toString());
+        await checklistItemsDestroy(item.id.toString());
         if (onItemsChange) {
           onItemsChange();
         }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ticketService, TicketFilters } from '@/services/ticketService';
-import { apiColumnsList } from '@/api/generated/api';
+import { columnsList } from '@/api/generated/api';
 import type { TicketList, PaginatedTicketListList, TicketColumn } from '@/api/generated/interfaces';
 import AssigneeList from './AssigneeList';
 import BulkAssignmentModal from './BulkAssignmentModal';
@@ -36,7 +36,7 @@ export default function TicketList({ onTicketSelect, onCreateTicket }: TicketLis
     try {
       setLoading(true);
       // Fetch columns first
-      const columnsResult = await apiColumnsList();
+      const columnsResult = await columnsList();
       setColumns(columnsResult.results || []);
       
       // Then fetch tickets

@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   notificationsVapidPublicKeyRetrieve,
   notificationsTestCreate,
-  apiNotificationsUnreadCountRetrieve,
+  notificationsUnreadCountRetrieve,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -188,7 +188,7 @@ export function useNotificationsUnreadCount(options?: { refetchInterval?: number
   return useQuery({
     queryKey: ['notifications', 'unread-count'],
     queryFn: async () => {
-      const response = await apiNotificationsUnreadCountRetrieve() as any;
+      const response = await notificationsUnreadCountRetrieve() as any;
       return response.count || 0;
     },
     refetchInterval: options?.refetchInterval !== undefined ? options.refetchInterval : 30000, // Default to 30 seconds

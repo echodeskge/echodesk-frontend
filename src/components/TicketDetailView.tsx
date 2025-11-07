@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from 'next-intl';
 import type { Ticket, TicketColumn, User, Tag as TagType, TenantGroup, Board } from "@/api/generated/interfaces";
 import { ticketService } from "@/services/ticketService";
-import { apiColumnsList, apiTagsList, apiTenantGroupsList, apiBoardsList } from "@/api/generated/api";
+import { columnsList, tagsList, tenantGroupsList, boardsList } from "@/api/generated/api";
 import axios from "@/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -189,7 +189,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchColumns = async () => {
     try {
-      const result = await apiColumnsList();
+      const result = await columnsList();
       // Filter columns to only show those from the ticket's board
       const boardId = ticket.column?.board;
       const filteredColumns = boardId
@@ -203,7 +203,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchTags = async () => {
     try {
-      const result = await apiTagsList();
+      const result = await tagsList();
       setTags(result.results || []);
     } catch (err) {
       console.error("Error fetching tags:", err);
@@ -212,7 +212,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchGroups = async () => {
     try {
-      const result = await apiTenantGroupsList();
+      const result = await tenantGroupsList();
       setGroups(result.results || []);
     } catch (err) {
       console.error("Error fetching groups:", err);
@@ -221,7 +221,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const fetchBoards = async () => {
     try {
-      const result = await apiBoardsList();
+      const result = await boardsList();
       // Filter out the current board
       const otherBoards = (result.results || []).filter(board => board.id !== ticket.column?.board);
       setBoards(otherBoards);
@@ -277,7 +277,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
     setTransferring(true);
     try {
       // Get the first column of the target board
-      const allColumnsResult = await apiColumnsList();
+      const allColumnsResult = await columnsList();
       const targetBoardColumns = (allColumnsResult.results || [])
         .filter(col => col.board === selectedBoardId)
         .sort((a, b) => (a.position || 0) - (b.position || 0));

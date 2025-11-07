@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, KeyboardEvent } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { apiUsersList } from '@/api/generated/api'
+import { usersList } from '@/api/generated/api'
 import type { User } from '@/api/generated/interfaces'
 import { cn } from '@/lib/utils'
 
@@ -37,7 +37,7 @@ export function MentionTextarea({
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await apiUsersList()
+        const response = await usersList()
         setUsers(response.results || [])
       } catch (error) {
         console.error('Failed to fetch users:', error)

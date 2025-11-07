@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { apiEcommerceAdminOrdersRetrieve } from "@/api/generated"
+import { ecommerceAdminOrdersRetrieve } from "@/api/generated"
 import { Order as GeneratedOrder } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -62,7 +62,7 @@ export default function OrderDetailPage() {
   const fetchOrder = async (id: number) => {
     try {
       setLoading(true)
-      const response = await apiEcommerceAdminOrdersRetrieve(id)
+      const response = await ecommerceAdminOrdersRetrieve(id)
       setOrder(response as unknown as Order)
     } catch (error) {
       console.error("Failed to fetch order:", error)

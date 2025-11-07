@@ -59,7 +59,7 @@ export default function TeamRequestsPage() {
   const fetchRequests = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveManagerTeamRequestsList()
+      // const response = await leaveManagerTeamRequestsList()
       setRequests([])
     } catch (error) {
       console.error("Failed to fetch requests:", error)
@@ -74,9 +74,9 @@ export default function TeamRequestsPage() {
     try {
       // TODO: Replace with actual API call
       if (actionType === "approve") {
-        // await apiLeaveManagerTeamRequestsApprove(selectedRequest.id, { comments })
+        // await leaveManagerTeamRequestsApprove(selectedRequest.id, { comments })
       } else {
-        // await apiLeaveManagerTeamRequestsReject(selectedRequest.id, { comments })
+        // await leaveManagerTeamRequestsReject(selectedRequest.id, { comments })
       }
       setSelectedRequest(null)
       setActionType(null)

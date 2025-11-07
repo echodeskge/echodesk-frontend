@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
-import { apiPackagesList } from "@/api/generated/api";
+import { packagesList } from "@/api/generated/api";
 import type { PackageList } from "@/api/generated/interfaces";
 import type { PricingModel } from "@/types/package";
 
@@ -51,7 +51,7 @@ export function Pricing() {
   const loadPackages = async () => {
     try {
       setLoading(true);
-      const data = await apiPackagesList();
+      const data = await packagesList();
       // Type assertion: API returns dynamic_features as array but TypeScript thinks it's string
       setPackages((data.results || []) as unknown as PackageListExtended[]);
     } catch (error) {

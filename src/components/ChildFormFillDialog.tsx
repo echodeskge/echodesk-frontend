@@ -39,7 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TicketForm, ListItemMinimal } from "@/api/generated/interfaces";
-import { apiTicketFormsRetrieve, apiItemListsRetrieve, apiFormSubmissionsCreate } from "@/api/generated/api";
+import { ticketFormsRetrieve, itemListsRetrieve, formSubmissionsCreate } from "@/api/generated/api";
 
 interface ChildFormFillDialogProps {
   open: boolean;
@@ -90,7 +90,7 @@ export function ChildFormFillDialog({
 
       try {
         setLoadingForm(true);
-        const fullForm = await apiTicketFormsRetrieve(childFormId);
+        const fullForm = await ticketFormsRetrieve(childFormId);
         setChildForm(fullForm);
       } catch (error) {
         console.error("Error fetching child form:", error);
@@ -116,7 +116,7 @@ export function ChildFormFillDialog({
         const listsWithItems = await Promise.all(
           childForm.item_lists.map(async (list) => {
             try {
-              const fullList = await apiItemListsRetrieve(list.id);
+              const fullList = await itemListsRetrieve(list.id);
               return fullList;
             } catch (error) {
               console.error(`Failed to load list ${list.id}:`, error);
@@ -147,7 +147,7 @@ export function ChildFormFillDialog({
       // Extract selected item IDs from the object (filter out null values)
       const selectedItemIds = Object.values(selectedItems).filter((id): id is number => id !== null);
 
-      await apiFormSubmissionsCreate({
+      await formSubmissionsCreate({
         ticket: ticketId,
         form_id: childForm.id,
         selected_item_ids: selectedItemIds,

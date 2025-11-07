@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { NotificationList } from '@/components/NotificationList'
 import { NotificationToastContainer } from '@/components/NotificationToast'
-import { apiNotificationsList } from '@/api/generated/api'
+import { notificationsList } from '@/api/generated/api'
 import type { Notification as NotificationData } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
 import { useNotificationsUnreadCount } from '@/hooks/useNotifications'
@@ -152,7 +152,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   const fetchNotifications = async () => {
     setLoading(true)
     try {
-      const response = await apiNotificationsList()
+      const response = await notificationsList()
       setNotifications(response.results || [])
     } catch (error) {
       console.error('Failed to fetch notifications:', error)

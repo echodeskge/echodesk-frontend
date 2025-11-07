@@ -546,6 +546,35 @@
         "failedToDeleteItem": "Failed to delete item",
         "fieldRequired": "{field} is required"
       }
+    },
+    "subscription": {
+      "title": "Subscription & Billing",
+      "description": "Manage your subscription plan, usage, and billing information",
+      "tabs": {
+        "overview": "Overview",
+        "features": "Features",
+        "usage": "Usage",
+        "billing": "Billing"
+      },
+      "page": {
+        "title": "Subscription & Billing",
+        "description": "Manage your subscription plan, usage, and billing information",
+        "usageDetails": {
+          "title": "Usage Details",
+          "description": "Detailed breakdown of your resource usage across different categories"
+        },
+        "stats": {
+          "currentUsers": "Current Users",
+          "whatsappMessages": "WhatsApp Messages",
+          "storageUsed": "Storage Used"
+        }
+      },
+      "featuresSection": {
+        "title": "Plan Features",
+        "description": "Features included in your current plan",
+        "allTitle": "All Available Features",
+        "allDescription": "Complete list of features available across all plans"
+      }
     }
   },
   "users": {
@@ -1360,6 +1389,161 @@
       "customIntegrations": "Custom Integrations",
       "prioritySupport": "Priority Support",
       "dedicatedAccountManager": "Dedicated Account Manager"
+    },
+    "page": {
+      "title": "Subscription & Billing",
+      "description": "Manage your subscription plan, usage, and billing information",
+      "usageDetails": {
+        "title": "Usage Details",
+        "description": "Detailed breakdown of your resource usage across different categories"
+      },
+      "stats": {
+        "currentUsers": "Current Users",
+        "whatsappMessages": "WhatsApp Messages",
+        "storageUsed": "Storage Used"
+      }
+    },
+    "currentPlanCard": {
+      "noActiveSubscription": "No Active Subscription",
+      "noActiveMessage": "You don't have an active subscription plan yet.",
+      "choosePlan": "Choose a Plan",
+      "currentPlanTitle": "Current Plan",
+      "currentPlanDescription": "Review details of your subscription plan and manage your billing options.",
+      "pendingUpgrade": {
+        "title": "Upgrade Scheduled",
+        "message": "Your plan will upgrade to {packageName} on {date}",
+        "newCost": "New monthly cost: {cost} GEL",
+        "cancelButton": "Cancel Upgrade"
+      },
+      "badges": {
+        "trialPeriod": "Trial Period",
+        "upgrading": "Upgrading"
+      },
+      "monthlyCost": "Monthly Cost",
+      "nextBillingDate": "Next Billing Date",
+      "trialEnds": "Trial Ends",
+      "changePlanButton": "Change Plan"
+    },
+    "changePlanDialog": {
+      "title": "Change Plan",
+      "description": "Select a new plan and choose when to apply the change",
+      "availablePlans": "Available Plans",
+      "currentPlan": "Current Plan",
+      "perMonth": "/ month",
+      "whenToApply": "When to apply?",
+      "scheduledUpgrade": {
+        "title": "Scheduled Upgrade",
+        "badge": "Recommended",
+        "description": "Apply changes at the next billing cycle (no additional charge today)"
+      },
+      "immediateUpgrade": {
+        "title": "Immediate Upgrade",
+        "description": "Apply changes now. You'll be charged immediately for the new plan"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "previewUpgrade": "Preview Upgrade",
+        "back": "Back",
+        "confirmPayNow": "Confirm & Pay Now",
+        "scheduleUpgrade": "Schedule Upgrade"
+      },
+      "loading": "Loading plans...",
+      "noPl​ans": "No plans available",
+      "selectPlan": "Please select a plan to continue"
+    },
+    "upgradePreview": {
+      "title": "Upgrade Preview",
+      "description": "Review the changes to your subscription",
+      "currentPlanLabel": "Current Plan",
+      "newPlanLabel": "New Plan",
+      "pricing": {
+        "currentMonthlyCost": "Current monthly cost",
+        "newMonthlyCost": "New monthly cost",
+        "priceIncrease": "Price Increase",
+        "priceDecrease": "Price Decrease"
+      },
+      "immediate": {
+        "title": "Immediate Upgrade",
+        "note": "Your plan will be upgraded immediately",
+        "daysRemaining": "Days remaining in current period: {days}",
+        "forfeitedAmount": "Forfeited amount: {amount} GEL",
+        "chargeNow": "You will be charged: {amount} GEL now"
+      },
+      "scheduled": {
+        "title": "Scheduled Upgrade",
+        "note": "Your plan will upgrade at the end of your current billing cycle",
+        "effectiveDate": "Effective date: {date}",
+        "chargeAtNextBilling": "You will be charged: {amount} GEL at next billing cycle"
+      },
+      "badges": {
+        "upgrade": "Upgrade",
+        "downgrade": "Downgrade"
+      }
+    },
+    "invoiceHistory": {
+      "title": "Invoice History",
+      "description": "View and download your past invoices",
+      "noInvoices": "No invoices found. Your invoices will appear here after your first payment.",
+      "table": {
+        "invoiceNumber": "Invoice #",
+        "date": "Date",
+        "package": "Package",
+        "amount": "Amount",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "failed": "Failed"
+      },
+      "downloadButton": "Download",
+      "agentsLabel": "{count} agents"
+    },
+    "paymentMethods": {
+      "title": "Payment Methods",
+      "description": "Manage your saved payment cards",
+      "addCardButton": "Add Card",
+      "noCards": "No saved payment methods.",
+      "addFirstCard": "Add a Card",
+      "cardExpires": "Expires {date}",
+      "badges": {
+        "default": "Default",
+        "subscription": "Subscription"
+      },
+      "actions": {
+        "setDefault": "Set as Default",
+        "removeCard": "Remove Card"
+      },
+      "removeDialog": {
+        "title": "Remove Payment Card",
+        "description": "Are you sure you want to remove this payment card? This action cannot be undone.",
+        "defaultCardWarning": "This is your default card. Another card will be set as default if available.",
+        "cancelButton": "Cancel",
+        "confirmButton": "Remove Card"
+      }
+    },
+    "usageStats": {
+      "title": "Resource Usage",
+      "description": "Monitor your current usage across different resources",
+      "activeUsers": "Active Users",
+      "whatsappMessages": "WhatsApp Messages",
+      "storageUsed": "Storage Used",
+      "unlimited": "Unlimited",
+      "badges": {
+        "limitExceeded": "Limit Exceeded",
+        "nearLimit": "Near Limit"
+      },
+      "alerts": {
+        "exceeded": {
+          "title": "Limit Exceeded",
+          "message": "You've exceeded your limit for {resource}. Please upgrade your plan."
+        },
+        "nearLimit": {
+          "title": "Approaching Limit",
+          "message": "You're approaching your limit for {resource}. Consider upgrading your plan."
+        }
+      }
     }
   }
 }

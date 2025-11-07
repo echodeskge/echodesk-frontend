@@ -49,7 +49,7 @@ export default function LeaveSettingsPage() {
   const fetchSettings = async () => {
     try {
       // TODO: Replace with actual API call
-      // const response = await apiLeaveAdminSettingsRetrieve()
+      // const response = await leaveAdminSettingsRetrieve()
       // setSettings(response)
       // setFormData({...response})
     } catch (error) {
@@ -65,7 +65,7 @@ export default function LeaveSettingsPage() {
 
     try {
       // TODO: Replace with actual API call
-      // await apiLeaveAdminSettingsUpdate(formData)
+      // await leaveAdminSettingsUpdate(formData)
       alert("Settings saved successfully!")
     } catch (error) {
       console.error("Failed to save settings:", error)

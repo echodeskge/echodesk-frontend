@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { apiBookingsAdminServicesList, apiBookingsAdminServicesCreate, apiBookingsAdminServicesPartialUpdate, apiBookingsAdminServicesDestroy } from "@/api/generated"
+import { bookingsAdminServicesList, bookingsAdminServicesCreate, bookingsAdminServicesPartialUpdate, bookingsAdminServicesDestroy } from "@/api/generated"
 import { ServiceList } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -38,7 +38,7 @@ export default function ServicesPage() {
   const fetchServices = async () => {
     try {
       setLoading(true)
-      const response = await apiBookingsAdminServicesList()
+      const response = await bookingsAdminServicesList()
       setServices((response.results || response) as ServiceList[])
     } catch (error) {
       console.error("Failed to fetch services:", error)
@@ -76,10 +76,10 @@ export default function ServicesPage() {
   const handleSave = async () => {
     try {
       if (editingService) {
-        await apiBookingsAdminServicesPartialUpdate(editingService.id, formData as any)
+        await bookingsAdminServicesPartialUpdate(editingService.id, formData as any)
         toast({ title: "Success", description: "Service updated successfully" })
       } else {
-        await apiBookingsAdminServicesCreate(formData as any)
+        await bookingsAdminServicesCreate(formData as any)
         toast({ title: "Success", description: "Service created successfully" })
       }
       setIsDialogOpen(false)
@@ -94,7 +94,7 @@ export default function ServicesPage() {
     if (!confirm("Are you sure you want to delete this service?")) return
 
     try {
-      await apiBookingsAdminServicesDestroy(id)
+      await bookingsAdminServicesDestroy(id)
       toast({ title: "Success", description: "Service deleted successfully" })
       fetchServices()
     } catch (error) {

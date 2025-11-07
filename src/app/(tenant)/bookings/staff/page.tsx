@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { apiBookingsAdminStaffList } from "@/api/generated"
+import { bookingsAdminStaffList } from "@/api/generated"
 import { BookingStaff } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,7 @@ export default function StaffPage() {
   const fetchStaff = async () => {
     try {
       setLoading(true)
-      const response = await apiBookingsAdminStaffList()
+      const response = await bookingsAdminStaffList()
       setStaff((response.results || response) as BookingStaff[])
     } catch (error) {
       console.error("Failed to fetch staff:", error)

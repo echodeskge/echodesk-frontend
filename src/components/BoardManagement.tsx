@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Board, User } from "@/api/generated/interfaces";
-import { apiBoardsList, apiBoardsPartialUpdate } from "@/api/generated/api";
+import { boardsList, boardsPartialUpdate } from "@/api/generated/api";
 import { ticketService } from "@/services/ticketService";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
 
@@ -37,7 +37,7 @@ export default function BoardManagement({}: BoardManagementProps) {
     try {
       setLoading(true);
       const [boardsResult, usersResult] = await Promise.all([
-        apiBoardsList(),
+        boardsList(),
         ticketService.getUsers()
       ]);
       
@@ -69,7 +69,7 @@ export default function BoardManagement({}: BoardManagementProps) {
       setError("");
       setSuccess("");
 
-      await apiBoardsPartialUpdate(selectedBoard.id.toString(), {
+      await boardsPartialUpdate(selectedBoard.id.toString(), {
         order_user_ids: orderUserIds
       });
 

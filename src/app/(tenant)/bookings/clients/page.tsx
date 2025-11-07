@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { apiBookingsAdminClientsList } from "@/api/generated"
+import { bookingsAdminClientsList } from "@/api/generated"
 import { BookingClient } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,7 @@ export default function ClientsPage() {
   const fetchClients = async () => {
     try {
       setLoading(true)
-      const response = await apiBookingsAdminClientsList()
+      const response = await bookingsAdminClientsList()
       setClients((response.results || response) as BookingClient[])
     } catch (error) {
       console.error("Failed to fetch clients:", error)

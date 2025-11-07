@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { formatDuration } from './TimeTracking';
-import { apiTimeLogsMyTimeSummaryRetrieve, TimeTrackingSummary as ApiTimeTrackingSummary } from '@/api/generated';
+import { timeLogsMyTimeSummaryRetrieve, TimeTrackingSummary as ApiTimeTrackingSummary } from '@/api/generated';
 
 interface TimeByColumn {
   column__name: string;
@@ -47,7 +47,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
       setLoading(true);
       setError('');
       
-      const data = await apiTimeLogsMyTimeSummaryRetrieve(days);
+      const data = await timeLogsMyTimeSummaryRetrieve(days);
       setData(data);
     } catch (err) {
       console.error('Error fetching time data:', err);

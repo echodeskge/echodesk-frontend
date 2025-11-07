@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiTagsList, apiTagsCreate, apiTagsUpdate, apiTagsDestroy } from "@/api/generated";
-import type { Tag, PatchedTag } from "@/api/generated";
+import { tagsList, tagsCreate, tagsUpdate, tagsDestroy } from "@/api/generated";
+import type { Tag, PatchedTagRequest } from "@/api/generated";
 
 export function useTags() {
   return useQuery({
     queryKey: ["tags"],
-    queryFn: () => apiTagsList(),
+    queryFn: () => tagsList(),
   });
 }
 
@@ -14,7 +14,7 @@ export function useCreateTag() {
 
   return useMutation({
     mutationFn: (data: Omit<Tag, "id" | "created_at" | "created_by">) =>
-      apiTagsCreate(data as Tag),
+      tagsCreate(data as Tag),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
@@ -25,8 +25,8 @@ export function useUpdateTag() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: PatchedTag }) =>
-      apiTagsUpdate(id, data as Tag),
+    mutationFn: ({ id, data }: { id: number; data: PatchedTagRequest }) =>
+      tagsUpdate(id, data as Tag),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
@@ -37,7 +37,7 @@ export function useDeleteTag() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: number) => apiTagsDestroy(id),
+    mutationFn: (id: number) => tagsDestroy(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tags"] });
     },

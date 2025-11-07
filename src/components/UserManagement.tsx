@@ -66,7 +66,7 @@ export default function UserManagement() {
       setLoading(true);
       setError("");
 
-      const response: PaginatedUserList = await api.apiUsersList(
+      const response: PaginatedUserList = await api.usersList(
         undefined, // ordering
         pagination.currentPage,
         filters.search || undefined
@@ -90,7 +90,7 @@ export default function UserManagement() {
 
   const handleCreateUser = async (userData: UserCreate | UserUpdate) => {
     try {
-      await api.apiUsersCreate(userData as UserCreate);
+      await api.usersCreate(userData as UserCreate);
       setShowCreateForm(false);
       fetchUsers(); // Refresh the list
     } catch (err: any) {
@@ -105,7 +105,7 @@ export default function UserManagement() {
     userData: UserCreate | UserUpdate
   ) => {
     try {
-      await api.apiUsersUpdate(userId, userData as UserUpdate);
+      await api.usersUpdate(userId, userData as UserUpdate);
       setEditingUser(null);
       fetchUsers(); // Refresh the list
     } catch (err: any) {
@@ -121,7 +121,7 @@ export default function UserManagement() {
     }
 
     try {
-      await api.apiUsersDestroy(userId);
+      await api.usersDestroy(userId);
       fetchUsers(); // Refresh the list
     } catch (err: any) {
       alert(
@@ -132,7 +132,7 @@ export default function UserManagement() {
 
   const handleChangeUserStatus = async (userId: number, status: string) => {
     try {
-      await api.apiUsersPartialUpdate(userId, { status: status as any });
+      await api.usersPartialUpdate(userId, { status: status as any });
       fetchUsers(); // Refresh the list
     } catch (err: any) {
       alert(
@@ -153,7 +153,7 @@ export default function UserManagement() {
     }
 
     try {
-      await api.apiUsersChangePasswordCreate(userId, {} as User);
+      await api.usersChangePasswordCreate(userId, {} as User);
       alert(t("passwordResetSent"));
     } catch (err: any) {
       alert(
@@ -165,12 +165,12 @@ export default function UserManagement() {
   const handleToggleStaff = async (userId: number, isStaff: boolean) => {
     try {
       // Update user's is_staff field
-      await api.apiUsersPartialUpdate(userId, { is_staff: isStaff } as any);
+      await api.usersPartialUpdate(userId, { is_staff: isStaff } as any);
 
       if (isStaff) {
         // Create BookingStaff record when enabling staff
         try {
-          await api.apiBookingsAdminStaffCreate({
+          await api.bookingsAdminStaffCreate({
             user_id: userId,
             is_active_for_bookings: true,
           } as any);
@@ -205,7 +205,7 @@ export default function UserManagement() {
         ...additionalData,
       };
 
-      await api.apiUsersBulkActionCreate(bulkActionData);
+      await api.usersBulkActionCreate(bulkActionData);
       setSelectedUsers([]);
       fetchUsers(); // Refresh the list
     } catch (err: any) {

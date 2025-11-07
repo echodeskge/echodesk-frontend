@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { apiBookingsAdminCategoriesList, apiBookingsAdminCategoriesCreate, apiBookingsAdminCategoriesPartialUpdate, apiBookingsAdminCategoriesDestroy } from "@/api/generated"
+import { bookingsAdminCategoriesList, bookingsAdminCategoriesCreate, bookingsAdminCategoriesPartialUpdate, bookingsAdminCategoriesDestroy } from "@/api/generated"
 import { ServiceCategory } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -34,7 +34,7 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     try {
       setLoading(true)
-      const response = await apiBookingsAdminCategoriesList()
+      const response = await bookingsAdminCategoriesList()
       setCategories((response.results || response) as ServiceCategory[])
     } catch (error) {
       console.error("Failed to fetch categories:", error)
@@ -66,10 +66,10 @@ export default function CategoriesPage() {
   const handleSave = async () => {
     try {
       if (editingCategory) {
-        await apiBookingsAdminCategoriesPartialUpdate(editingCategory.id, formData as any)
+        await bookingsAdminCategoriesPartialUpdate(editingCategory.id, formData as any)
         toast({ title: "Success", description: "Category updated successfully" })
       } else {
-        await apiBookingsAdminCategoriesCreate(formData as any)
+        await bookingsAdminCategoriesCreate(formData as any)
         toast({ title: "Success", description: "Category created successfully" })
       }
       setIsDialogOpen(false)
@@ -84,7 +84,7 @@ export default function CategoriesPage() {
     if (!confirm("Are you sure you want to delete this category?")) return
 
     try {
-      await apiBookingsAdminCategoriesDestroy(id)
+      await bookingsAdminCategoriesDestroy(id)
       toast({ title: "Success", description: "Category deleted successfully" })
       fetchCategories()
     } catch (error) {

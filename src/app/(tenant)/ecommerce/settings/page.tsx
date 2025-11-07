@@ -51,7 +51,7 @@ export default function EcommerceSettingsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true)
-      const response = await api.apiEcommerceAdminSettingsList()
+      const response = await api.ecommerceAdminSettingsList()
 
       if (response.results && response.results.length > 0) {
         const settingsData = response.results[0]
@@ -96,10 +96,10 @@ export default function EcommerceSettingsPage() {
 
       if (settings.id) {
         // Update existing settings
-        await api.apiEcommerceAdminSettingsPartialUpdate(String(settings.id), payload)
+        await api.ecommerceAdminSettingsPartialUpdate(String(settings.id), payload)
       } else {
         // Create new settings
-        await api.apiEcommerceAdminSettingsCreate(payload)
+        await api.ecommerceAdminSettingsCreate(payload)
       }
 
       alert("Settings saved successfully!")

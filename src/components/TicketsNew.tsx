@@ -215,7 +215,7 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
       <KanbanProvider
         kanbanData={kanbanData}
         selectedBoard={selectedBoard || null}
-        apiColumns={kanbanBoardData?.columns || []}
+        columns={kanbanBoardData?.columns || []}
       >
         <Kanban />
       </KanbanProvider>

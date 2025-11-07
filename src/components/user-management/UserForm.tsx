@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { UserCreate, UserUpdate, User, TenantGroup } from "@/api/generated/interfaces";
-import { apiTenantGroupsList, apiUsersRetrieve } from "@/api/generated/api";
+import { tenantGroupsList, usersRetrieve } from "@/api/generated/api";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export default function UserForm({
     first_name: user?.first_name || "",
     last_name: user?.last_name || "",
     is_active: user?.is_active ?? true,
-    tenant_group_ids: user?.tenant_group_ids || [],
+    tenant_group_ids: user?.tenant_groups?.map(g => g.id) || [],
     phone_number: user?.phone_number || "",
     status: user?.is_active ? "active" : "inactive",
   });
@@ -52,7 +52,7 @@ export default function UserForm({
       if (mode === 'edit' && user?.id) {
         setLoadingUserDetails(true);
         try {
-          const fullUser = await apiUsersRetrieve(user.id);
+          const fullUser = await usersRetrieve(user.id);
           setFullUserData(fullUser);
         } catch (error) {
           console.error('Failed to fetch full user details:', error);
@@ -80,7 +80,7 @@ export default function UserForm({
         first_name: userData.first_name || "",
         last_name: userData.last_name || "",
         is_active: userData.is_active ?? true,
-        tenant_group_ids: userData.tenant_group_ids || (userData.tenant_groups ? userData.tenant_groups.map(g => g.id) : []),
+        tenant_group_ids: userData.tenant_groups ? userData.tenant_groups.map(g => g.id) : [],
         phone_number: userData.phone_number || "",
         status: userData.is_active ? "active" : "inactive",
       }));
@@ -91,7 +91,7 @@ export default function UserForm({
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        const tenantGroupsResponse = await apiTenantGroupsList();
+        const tenantGroupsResponse = await tenantGroupsList();
         setTenantGroups(tenantGroupsResponse.results || []);
       } catch (error) {
         console.error('Failed to load tenant groups:', error);

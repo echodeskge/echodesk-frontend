@@ -6,7 +6,7 @@ import {
   CreateTicketData,
   UpdateTicketData,
 } from "@/services/ticketService";
-import { apiColumnsList, apiBoardsList, apiTenantGroupsList } from "@/api/generated/api";
+import { columnsList, boardsList, tenantGroupsList } from "@/api/generated/api";
 import type {
   Ticket,
   User,
@@ -196,9 +196,9 @@ export default function TicketForm({
         await Promise.all([
           ticketService.getUsers(),
           ticketService.getTags(),
-          apiTenantGroupsList(),
-          apiBoardsList(),
-          apiColumnsList(),
+          tenantGroupsList(),
+          boardsList(),
+          columnsList(),
         ]);
 
       setUsers(usersResult.results || []);

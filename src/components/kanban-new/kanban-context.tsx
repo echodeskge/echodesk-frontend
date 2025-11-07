@@ -25,11 +25,11 @@ export const KanbanContext = createContext<KanbanContextType | undefined>(
 interface KanbanProviderProps {
   kanbanData: ColumnType[]
   selectedBoard?: any | null
-  apiColumns?: any[]
+  columns?: any[]
   children: ReactNode
 }
 
-export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = [], children }: KanbanProviderProps) {
+export function KanbanProvider({ kanbanData, selectedBoard = null, columns = [], children }: KanbanProviderProps) {
   // Reducer to manage Kanban state
   const [kanbanState, dispatch] = useReducer(KanbanReducer, {
     columns: kanbanData,
@@ -85,7 +85,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
 
   const handleUpdateColumn = async (column: ColumnType) => {
     // Find the original API column
-    const apiColumn = apiColumns.find((c: any) => c.id.toString() === column.id)
+    const apiColumn = columns.find((c: any) => c.id.toString() === column.id)
     if (!apiColumn) {
       console.error('Column not found in API columns')
       return
@@ -108,7 +108,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
 
   const handleDeleteColumn = async (columnId: ColumnType["id"]) => {
     // Find the original API column
-    const apiColumn = apiColumns.find((c: any) => c.id.toString() === columnId)
+    const apiColumn = columns.find((c: any) => c.id.toString() === columnId)
     if (!apiColumn) {
       console.error('Column not found in API columns')
       return
@@ -161,7 +161,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
 
     // Get the column that was moved
     const movedColumn = kanbanState.columns[sourceIndex]
-    const apiColumn = apiColumns.find((c: any) => c.id.toString() === movedColumn.id)
+    const apiColumn = columns.find((c: any) => c.id.toString() === movedColumn.id)
 
     if (apiColumn) {
       try {
@@ -202,7 +202,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
     if (!movedTask) return
 
     // Find the API column ID for the destination column
-    const destinationApiColumn = apiColumns.find((c: any) => c.id.toString() === destinationColumnId)
+    const destinationApiColumn = columns.find((c: any) => c.id.toString() === destinationColumnId)
     if (!destinationApiColumn) {
       console.error('Destination column not found in API columns')
       return
@@ -250,7 +250,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, apiColumns = 
       value={{
         kanbanState,
         selectedBoard,
-        apiColumns,
+        columns,
         kanbanAddTaskSidebarIsOpen,
         setKanbanAddTaskSidebarIsOpen,
         kanbanUpdateTaskSidebarIsOpen,

@@ -26,16 +26,16 @@ import {
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import {
-  apiTicketFormsList,
-  apiTicketFormsCreate,
-  apiTicketFormsUpdate,
-  apiTicketFormsDestroy,
-  apiTicketFormsSetDefaultCreate,
-  apiItemListsList,
+  ticketFormsList,
+  ticketFormsCreate,
+  ticketFormsUpdate,
+  ticketFormsDestroy,
+  ticketFormsSetDefaultCreate,
+  itemListsList,
 } from "@/api/generated/api";
 import type {
   TicketForm,
-  PatchedTicketForm,
+  PatchedTicketFormRequest,
   ItemListMinimal,
 } from "@/api/generated/interfaces";
 
@@ -76,8 +76,8 @@ export default function TicketFormsPage() {
     try {
       setLoading(true);
       const [formsResponse, listsResponse] = await Promise.all([
-        apiTicketFormsList(),
-        apiItemListsList(),
+        ticketFormsList(),
+        itemListsList(),
       ]);
       setForms(formsResponse.results || []);
       setItemLists(listsResponse.results || []);
@@ -149,10 +149,10 @@ export default function TicketFormsPage() {
           custom_fields: formData.custom_fields,
           is_active: formData.is_active,
         };
-        await apiTicketFormsUpdate(editingForm.id, patchData as any);
+        await ticketFormsUpdate(editingForm.id, patchData as any);
         toast.success(t('success.updated'));
       } else {
-        await apiTicketFormsCreate(formData as any);
+        await ticketFormsCreate(formData as any);
         toast.success(t('success.created'));
       }
       setDialogOpen(false);
@@ -166,7 +166,7 @@ export default function TicketFormsPage() {
     if (!confirm(t('deleteConfirm'))) return;
 
     try {
-      await apiTicketFormsDestroy(id);
+      await ticketFormsDestroy(id);
       toast.success(t('success.deleted'));
       loadData();
     } catch (error) {
@@ -178,7 +178,7 @@ export default function TicketFormsPage() {
     try {
       const form = forms.find(f => f.id === id);
       if (!form) return;
-      await apiTicketFormsSetDefaultCreate(id, form as any);
+      await ticketFormsSetDefaultCreate(id, form as any);
       toast.success(t('success.defaultUpdated'));
       loadData();
     } catch (error) {

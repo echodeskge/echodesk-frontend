@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import {
-  apiColumnsList,
-  apiColumnsCreate,
-  apiColumnsUpdate,
-  apiColumnsDestroy,
-  apiBoardsList,
-  apiBoardsDefaultRetrieve,
+  columnsList,
+  columnsCreate,
+  columnsUpdate,
+  columnsDestroy,
+  boardsList,
+  boardsDefaultRetrieve,
 } from "../api/generated/api";
 import {
   TicketColumn,
@@ -46,7 +46,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
 
   const fetchBoards = async () => {
     try {
-      const data = await apiBoardsList();
+      const data = await boardsList();
       setBoards(data.results || []);
       
       // Set default board as selected if no board is selected
@@ -67,7 +67,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
 
     try {
       // Filter columns by the selected board
-      const data = await apiColumnsList(selectedBoard.id);
+      const data = await columnsList(selectedBoard.id);
       setColumns(data.results || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -145,7 +145,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           track_time: formData.track_time,
           board: selectedBoard?.id!,
         };
-        await apiColumnsUpdate(editingColumn.id, updateData);
+        await columnsUpdate(editingColumn.id, updateData);
         setSuccess("Column updated successfully!");
       } else {
         // Create new column - include board reference
@@ -159,7 +159,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           track_time: formData.track_time,
           board: selectedBoard?.id!,
         };
-        await apiColumnsCreate(createData);
+        await columnsCreate(createData);
         setSuccess("Column created successfully!");
       }
 
@@ -191,7 +191,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
     setError(null);
 
     try {
-      await apiColumnsDestroy(column.id);
+      await columnsDestroy(column.id);
       setSuccess("Column deleted successfully!");
 
       // Refresh columns list

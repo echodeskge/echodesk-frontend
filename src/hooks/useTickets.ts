@@ -1,15 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiTicketsDestroy, apiTicketsPartialUpdate, moveTicketToColumn } from '@/api/generated/api';
+import { ticketsDestroy, ticketsPartialUpdate, moveTicketToColumn } from '@/api/generated/api';
 import { toast } from 'sonner';
-import type { PatchedTicket } from '@/api/generated/interfaces';
+import type { PatchedTicketRequest } from '@/api/generated/interfaces';
 
 // Update a ticket
 export function useUpdateTicket(boardId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: PatchedTicket }) =>
-      apiTicketsPartialUpdate(id, data),
+    mutationFn: ({ id, data }: { id: number; data: PatchedTicketRequest }) =>
+      ticketsPartialUpdate(id, data),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {
@@ -31,7 +31,7 @@ export function useDeleteTicket(boardId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ticketId: number) => apiTicketsDestroy(ticketId),
+    mutationFn: (ticketId: number) => ticketsDestroy(ticketId),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {
