@@ -156,7 +156,11 @@ function DraggableTicket({
   return (
     <Card
       ref={ref}
-      onClick={() => onTicketClick?.(ticket.id)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onTicketClick?.(ticket.id);
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
       className={`
         mb-2 cursor-pointer transition-all duration-200 shadow-none border-gray-200
         ${isDragging ? 'opacity-50 shadow-lg cursor-grabbing' : 'hover:shadow-md cursor-grab'}
@@ -165,6 +169,7 @@ function DraggableTicket({
       style={{
         borderColor: isDragging ? (column.color || "#007bff") : undefined,
         backgroundColor: isDragging ? "#f8f9fa" : undefined,
+        userSelect: 'none',
       }}
     >
       <CardContent className="p-3">
@@ -308,21 +313,27 @@ function DroppableColumn({
         borderColor: isOver
           ? column.color || "#6c757d"
           : undefined,
+        cursor: 'default',
+        userSelect: 'none',
       }}
+      onDragStart={(e) => e.preventDefault()}
+      draggable={false}
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <CardHeader className="pb-3" draggable={false} onDragStart={(e) => e.preventDefault()}>
+        <div className="flex items-center justify-between" draggable={false}>
+          <div className="flex items-center gap-2" draggable={false}>
             <div
               className="w-4 h-4 rounded shadow-sm"
               style={{
                 backgroundColor: column.color || "#6c757d",
                 boxShadow: `0 2px 4px ${column.color || "#6c757d"}25`,
               }}
+              draggable={false}
             />
             <CardTitle
               className="text-sm font-semibold"
               style={{ color: column.color || "#333" }}
+              draggable={false}
             >
               {column.name}
             </CardTitle>
@@ -334,6 +345,7 @@ function DroppableColumn({
               backgroundColor: `${column.color || "#6c757d"}20`,
               color: column.color || "#495057",
             }}
+            draggable={false}
           >
             {tickets.length}
           </Badge>
@@ -341,7 +353,7 @@ function DroppableColumn({
 
         {/* Column Description */}
         {column.description && (
-          <p className="text-xs text-muted-foreground mt-2 mb-0">
+          <p className="text-xs text-muted-foreground mt-2 mb-0" draggable={false}>
             {column.description}
           </p>
         )}
