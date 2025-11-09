@@ -149,12 +149,31 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
       return false;
     }
 
-    return subscription.features[feature] || false;
+    // Support both new feature-based and legacy boolean-based models
+    // New model: check if feature key exists in features array
+    if (subscription.features[feature] !== undefined) {
+      return subscription.features[feature];
+    }
+
+    // Fallback: check selected_features array (from API)
+    if ((subscriptionData as any)?.selected_features) {
+      const features = (subscriptionData as any).selected_features;
+      return features.some((f: any) => f.key === feature);
+    }
+
+    return false;
   };
 
   const isWithinLimit = (limitType: 'users' | 'whatsapp' | 'storage'): boolean => {
     if (!subscription || !subscription.usage_limits) {
       return true; // Assume within limits if we can't check
+    }
+
+    // For new feature-based model, check against agent_count for users
+    if (limitType === 'users' && (subscriptionData as any)?.agent_count) {
+      const agentCount = (subscriptionData as any).agent_count;
+      const currentUsers = (subscriptionData as any).current_users || 0;
+      return currentUsers <= agentCount;
     }
 
     return subscription.usage_limits[limitType]?.within_limit ?? true;
