@@ -11,25 +11,6 @@ import type { TenantRegistrationRequest } from '@/api/generated/interfaces';
 import type { Feature } from '@/types/package';
 import { PricingModel } from '@/types/package';
 
-// Extend PackageList to fix dynamic_features type
-interface DynamicFeature {
-  id: number;
-  key: string;
-  name: string;
-  description: string;
-  category: string;
-  category_display: string;
-  icon?: string;
-  price_per_user_gel: string;
-  price_unlimited_gel: string;
-  sort_order: number;
-  is_highlighted: boolean;
-}
-
-interface PackageListExtended extends Omit<PackageList, 'dynamic_features'> {
-  dynamic_features: DynamicFeature[];
-}
-
 export interface RegistrationFormData {
   company_name: string;
   domain: string;
@@ -185,8 +166,7 @@ export function RegistrationFlow() {
             loading={loading}
             error={error}
             onSubmit={handleFormSubmit}
-            onBack={() => setStep(1)
-            }}
+            onBack={() => setStep(1)}
           />
         )}
       </div>

@@ -58,6 +58,13 @@ export function RegistrationFormStep({
   const t = useTranslations('auth');
   const tCommon = useTranslations('common');
 
+  // Calculate monthly cost for feature-based model
+  const monthlyTotal = features && agentCount
+    ? features.reduce((sum, f) => sum + parseFloat(f.price_per_user_gel || '0'), 0) * agentCount
+    : selectedPackage
+    ? Number(selectedPackage.price_gel) * formData.agent_count
+    : 0;
+
   // Auto-generate domain from company name
   useEffect(() => {
     if (formData.company_name) {
@@ -102,7 +109,17 @@ export function RegistrationFormStep({
         </Button>
         <h1 className="text-4xl font-bold">{t('completeRegistration')}</h1>
         <p className="text-lg text-muted-foreground">
-          {t('youSelected')}: <span className="font-semibold text-foreground">{selectedPackage.display_name}</span> - {selectedPackage.price_gel}₾/{isAgentBased ? 'agent/' : ''}month
+          {features && agentCount ? (
+            <>
+              Your plan: <span className="font-semibold text-foreground">{features.length} features for {agentCount} agents</span> - {monthlyTotal.toFixed(2)}₾/month
+            </>
+          ) : selectedPackage ? (
+            <>
+              {t('youSelected')}: <span className="font-semibold text-foreground">{selectedPackage.display_name}</span> - {selectedPackage.price_gel}₾/{formData.pricing_model === 'agent' ? 'agent/' : ''}month
+            </>
+          ) : (
+            <>Complete your registration</>
+          )}
         </p>
       </div>
 
@@ -167,23 +184,27 @@ export function RegistrationFormStep({
               />
             </div>
 
-            {isAgentBased && (
+            {/* Show agent count for feature-based OR legacy agent-based */}
+            {(features && agentCount) || isAgentBased ? (
               <div className="space-y-2">
                 <Label htmlFor="agent_count">{t('numberOfAgents')} *</Label>
                 <Input
                   id="agent_count"
                   name="agent_count"
                   type="number"
-                  min="1"
+                  min="10"
+                  step="10"
+                  max="200"
                   value={formData.agent_count}
                   onChange={handleInputChange}
                   required
+                  disabled={!!(features && agentCount)} // Disable if coming from feature selection
                 />
                 <p className="text-sm text-muted-foreground">
-                  {t('totalCost')}: {Number(selectedPackage.price_gel) * formData.agent_count}₾/month
+                  {t('totalCost')}: {monthlyTotal.toFixed(2)}₾/month
                 </p>
               </div>
-            )}
+            ) : null}
           </CardContent>
         </Card>
 
