@@ -107,14 +107,6 @@ export function Pricing() {
         <p className="text-lg text-muted-foreground">
           Pay only for what you need. Select features and team size to see your price.
         </p>
-
-        {/* Trial Information Banner */}
-        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
-          <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-300">
-            <span className="text-2xl">🎉</span>
-            <span className="font-semibold">Start your 14-day free trial today - no credit card required upfront!</span>
-          </div>
-        </div>
       </div>
 
       {loading ? (
@@ -163,22 +155,7 @@ export function Pricing() {
                     <div className="text-4xl font-bold text-primary">
                       {monthlyTotal.toFixed(2)}₾
                     </div>
-                    <div className="text-xs text-muted-foreground">per month after trial</div>
-                  </div>
-
-                  {/* Trial Reminder */}
-                  <div className="p-3 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span>🎉</span>
-                      <div className="flex-1 text-xs">
-                        <div className="font-semibold text-green-900 dark:text-green-100">
-                          Free for 14 days
-                        </div>
-                        <div className="text-green-700 dark:text-green-300">
-                          No payment now
-                        </div>
-                      </div>
-                    </div>
+                    <div className="text-xs text-muted-foreground">per month</div>
                   </div>
                 </div>
 
@@ -186,7 +163,7 @@ export function Pricing() {
                 <Link href={registrationUrl} className="block w-full">
                   <Button size="lg" className="w-full">
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Start Free Trial
+                    Get Started
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -353,10 +330,10 @@ export function Pricing() {
                 </p>
               </div>
               <div className="space-y-2">
-                <div className="text-2xl">🎁</div>
-                <h3 className="font-semibold">14-day free trial</h3>
+                <div className="text-2xl">🔄</div>
+                <h3 className="font-semibold">Cancel anytime</h3>
                 <p className="text-sm text-muted-foreground">
-                  Try all features free for 14 days. No credit card required upfront.
+                  No long-term commitments. Manage your subscription easily from your dashboard.
                 </p>
               </div>
             </div>

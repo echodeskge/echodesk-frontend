@@ -101,22 +101,6 @@ export function FeatureSelection({
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Select the features you need and the number of agents for your team
         </p>
-
-        {/* Trial Information Banner */}
-        <div className="max-w-3xl mx-auto mt-6 p-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <div className="text-2xl">🎉</div>
-            <div className="text-left flex-1">
-              <h3 className="font-semibold text-green-900 dark:text-green-100 mb-1">
-                Start Your 14-Day Free Trial
-              </h3>
-              <p className="text-sm text-green-700 dark:text-green-300">
-                No payment required now! We'll only charge your card after your trial ends.
-                You can cancel anytime before the trial ends with no charge.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -289,21 +273,6 @@ export function FeatureSelection({
                       {monthlyTotal.toFixed(2)}₾
                     </div>
                     <div className="text-xs text-muted-foreground">per month</div>
-                  </div>
-                </div>
-
-                {/* Trial Reminder */}
-                <div className="p-3 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🎉</span>
-                    <div className="flex-1">
-                      <div className="text-sm font-semibold text-green-900 dark:text-green-100">
-                        Free for 14 days
-                      </div>
-                      <div className="text-xs text-green-700 dark:text-green-300">
-                        Then {monthlyTotal.toFixed(2)}₾/month
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
