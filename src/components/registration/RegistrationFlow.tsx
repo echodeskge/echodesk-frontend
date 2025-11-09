@@ -62,6 +62,30 @@ export function RegistrationFlow() {
     loadFeatures();
   }, []);
 
+  // Check for pre-selected features from URL params (from homepage pricing)
+  useEffect(() => {
+    const featuresParam = searchParams.get('features');
+    const agentsParam = searchParams.get('agents');
+
+    if (featuresParam && agentsParam) {
+      // Parse feature IDs from comma-separated string
+      const featureIds = featuresParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      const agents = parseInt(agentsParam, 10);
+
+      if (featureIds.length > 0 && agents >= 10 && agents <= 200) {
+        setSelectedFeatureIds(featureIds);
+        setAgentCount(agents);
+        setFormData(prev => ({
+          ...prev,
+          feature_ids: featureIds,
+          agent_count: agents,
+        }));
+        // Skip to form step
+        setStep(2);
+      }
+    }
+  }, [searchParams]);
+
   const loadFeatures = async () => {
     try {
       setLoading(true);

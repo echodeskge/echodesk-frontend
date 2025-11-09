@@ -81,6 +81,17 @@ export function Pricing() {
     return totalPerAgent * agentCount;
   }, [features, selectedFeatureIds, agentCount]);
 
+  // Generate registration URL with pre-selected features
+  const registrationUrl = useMemo(() => {
+    if (selectedFeatureIds.length === 0) {
+      return '/registration';
+    }
+    const params = new URLSearchParams();
+    params.set('features', selectedFeatureIds.join(','));
+    params.set('agents', agentCount.toString());
+    return `/registration?${params.toString()}`;
+  }, [selectedFeatureIds, agentCount]);
+
   const handleFeatureToggle = (featureId: number) => {
     setSelectedFeatureIds((prev) =>
       prev.includes(featureId)
@@ -172,7 +183,7 @@ export function Pricing() {
                 </div>
 
                 {/* CTA */}
-                <Link href="/registration" className="block w-full">
+                <Link href={registrationUrl} className="block w-full">
                   <Button size="lg" className="w-full">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Start Free Trial
@@ -303,7 +314,7 @@ export function Pricing() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Link href="/registration" className="w-full">
+                  <Link href={registrationUrl} className="w-full">
                     <Button size="lg" className="w-full">
                       Continue with this plan
                       <ArrowRight className="ml-2 h-4 w-4" />
