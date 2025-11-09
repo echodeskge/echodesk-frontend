@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { PackageList } from '@/api/generated/interfaces';
+import type { Feature } from '@/types/package';
 import type { RegistrationFormData } from './RegistrationFlow';
 
 // Extend PackageList to fix dynamic_features type
@@ -34,7 +35,9 @@ interface PackageListExtended extends Omit<PackageList, 'dynamic_features'> {
 interface RegistrationFormStepProps {
   formData: RegistrationFormData;
   setFormData: React.Dispatch<React.SetStateAction<RegistrationFormData>>;
-  selectedPackage: PackageListExtended;
+  selectedPackage?: PackageListExtended | null; // Optional for backward compat
+  features?: Feature[]; // New: selected features
+  agentCount?: number; // New: agent count
   loading: boolean;
   error: string;
   onSubmit: (data: RegistrationFormData) => void;
@@ -45,6 +48,8 @@ export function RegistrationFormStep({
   formData,
   setFormData,
   selectedPackage,
+  features,
+  agentCount,
   loading,
   error,
   onSubmit,
