@@ -249,7 +249,7 @@ export default function LandingPage() {
               View Pricing
             </a>
             <Link
-              href="/register"
+              href="/registration"
               style={{
                 background: "white",
                 color: "#667eea",
@@ -579,7 +579,7 @@ export default function LandingPage() {
                 </ul>
 
                 <Link
-                  href="/register"
+                  href="/registration"
                   style={{
                     display: "inline-block",
                     width: "100%",
@@ -656,7 +656,7 @@ export default function LandingPage() {
             }}
           >
             <Link
-              href="/register"
+              href="/registration"
               style={{
                 background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
                 color: "white",

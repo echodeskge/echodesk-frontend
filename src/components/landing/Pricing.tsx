@@ -172,7 +172,7 @@ export function Pricing() {
                 </div>
 
                 {/* CTA */}
-                <Link href="/register" className="block w-full">
+                <Link href="/registration" className="block w-full">
                   <Button size="lg" className="w-full">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Start Free Trial
@@ -303,7 +303,7 @@ export function Pricing() {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Link href="/register" className="w-full">
+                  <Link href="/registration" className="w-full">
                     <Button size="lg" className="w-full">
                       Continue with this plan
                       <ArrowRight className="ml-2 h-4 w-4" />

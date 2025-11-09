@@ -159,7 +159,7 @@ export function SignInForm({ onLogin, onForgotPassword, onPasswordChangeRequired
 
         <div className="-mt-4 text-center text-sm">
           {t("noAccount")}{" "}
-          <Link href="/register" className="underline hover:no-underline">
+          <Link href="/registration" className="underline hover:no-underline">
             {t("signUp")}
           </Link>
         </div>
