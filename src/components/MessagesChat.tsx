@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FacebookPageConnection } from "@/api/generated/interfaces";
+import { FacebookPageConnection, WhatsAppMessage } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
 import { socialWhatsappMessagesList, socialWhatsappStatusRetrieve } from "@/api/generated";
 import { convertFacebookMessagesToChatFormat } from "@/lib/chatAdapter";
@@ -60,28 +60,6 @@ interface InstagramAccount {
   username: string;
   profile_picture_url?: string;
   is_active: boolean;
-}
-
-interface WhatsAppMessage {
-  id: number;
-  message_id: string;
-  from_number: string;
-  to_number: string;
-  contact_name?: string;
-  profile_pic_url?: string;
-  message_text: string;
-  message_type?: string;
-  media_url?: string;
-  timestamp: string;
-  is_from_business?: boolean;
-  status?: string;
-  is_delivered?: boolean;
-  delivered_at?: string;
-  is_read?: boolean;
-  read_at?: string;
-  business_name: string;
-  business_phone: string;
-  waba_id: string;
 }
 
 interface WhatsAppAccount {
@@ -511,8 +489,8 @@ export default function MessagesChat() {
                 sender_id: msg.is_from_business ? msg.to_number : msg.from_number,
                 sender_name: msg.contact_name || (msg.is_from_business ? account.business_name : msg.from_number),
                 profile_pic_url: msg.profile_pic_url,
-                message_text: msg.message_text,
-                message_type: msg.message_type,
+                message_text: msg.message_text || '',
+                message_type: msg.message_type as string | undefined,
                 attachment_url: msg.media_url,
                 timestamp: msg.timestamp,
                 is_from_business: msg.is_from_business || false,
@@ -532,8 +510,8 @@ export default function MessagesChat() {
                 sender_id: latestMsg.is_from_business ? latestMsg.to_number : latestMsg.from_number,
                 sender_name: latestMsg.contact_name || (latestMsg.is_from_business ? account.business_name : latestMsg.from_number),
                 profile_pic_url: latestMsg.profile_pic_url,
-                message_text: latestMsg.message_text,
-                message_type: latestMsg.message_type,
+                message_text: latestMsg.message_text || '',
+                message_type: latestMsg.message_type as string | undefined,
                 attachment_url: latestMsg.media_url,
                 timestamp: latestMsg.timestamp,
                 is_from_business: latestMsg.is_from_business || false,

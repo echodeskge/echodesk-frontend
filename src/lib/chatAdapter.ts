@@ -1,9 +1,9 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
 
-// Unified message interfaces supporting both Facebook and Instagram
+// Unified message interfaces supporting Facebook, Instagram, and WhatsApp
 interface UnifiedMessage {
   id: string;
-  platform: 'facebook' | 'instagram';
+  platform: 'facebook' | 'instagram' | 'whatsapp';
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -23,7 +23,7 @@ interface UnifiedMessage {
 }
 
 interface UnifiedConversation {
-  platform: 'facebook' | 'instagram';
+  platform: 'facebook' | 'instagram' | 'whatsapp';
   conversation_id: string;
   sender_id: string;
   sender_name: string;
@@ -35,7 +35,7 @@ interface UnifiedConversation {
 }
 
 /**
- * Converts unified messages (Facebook and Instagram) to full-kit chat format
+ * Converts unified messages (Facebook, Instagram, and WhatsApp) to full-kit chat format
  * Sorts conversations by last message time (most recent first)
  */
 export function convertFacebookMessagesToChatFormat(
