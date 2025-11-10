@@ -61,9 +61,39 @@ interface InstagramAccount {
   is_active: boolean;
 }
 
+interface WhatsAppMessage {
+  id: number;
+  message_id: string;
+  from_number: string;
+  to_number: string;
+  contact_name?: string;
+  profile_pic_url?: string;
+  message_text: string;
+  message_type?: string;
+  media_url?: string;
+  timestamp: string;
+  is_from_business?: boolean;
+  status?: string;
+  is_delivered?: boolean;
+  delivered_at?: string;
+  is_read?: boolean;
+  read_at?: string;
+  business_name: string;
+  business_phone: string;
+}
+
+interface WhatsAppAccount {
+  id: number;
+  waba_id: string;
+  business_name: string;
+  phone_number: string;
+  display_phone_number: string;
+  is_active: boolean;
+}
+
 interface UnifiedMessage {
   id: string;
-  platform: "facebook" | "instagram";
+  platform: "facebook" | "instagram" | "whatsapp";
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -83,7 +113,7 @@ interface UnifiedMessage {
 }
 
 interface UnifiedConversation {
-  platform: "facebook" | "instagram";
+  platform: "facebook" | "instagram" | "whatsapp";
   conversation_id: string;
   sender_id: string;
   sender_name: string;
@@ -384,6 +414,142 @@ export default function MessagesChat() {
         }
       } catch (err) {
         console.error("Failed to load Instagram accounts:", err);
+      }
+
+      // Load WhatsApp conversations
+      try {
+        const whatsappAccountsResponse = await axios.get("/api/social/whatsapp/status/");
+        const whatsappAccounts = (whatsappAccountsResponse.data?.accounts as WhatsAppAccount[]) || [];
+
+        for (const account of whatsappAccounts) {
+          try {
+            const messagesResponse = await axios.get("/api/social/whatsapp/messages/", {
+              params: { waba_id: account.waba_id },
+            });
+
+            const messages = (messagesResponse.data as PaginatedResponse<WhatsAppMessage>).results || [];
+
+            // Group messages by customer (sender phone number)
+            const customerIds = new Set<string>();
+            messages.forEach((msg) => {
+              if (!msg.is_from_business) {
+                customerIds.add(msg.from_number);
+              }
+            });
+
+            const conversationMap = new Map<string, WhatsAppMessage[]>();
+            const sortedMessages = [...messages].sort((a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            );
+
+            let lastCustomerId: string | null = null;
+
+            sortedMessages.forEach((msg) => {
+              let customerId: string;
+
+              if (msg.is_from_business) {
+                // Message from business - use to_number as customer
+                customerId = msg.to_number;
+                if (!customerId && lastCustomerId) {
+                  customerId = lastCustomerId;
+                } else if (!customerId && customerIds.size === 1) {
+                  customerId = Array.from(customerIds)[0];
+                }
+              } else {
+                // Message from customer - from_number IS the customer ID
+                customerId = msg.from_number;
+                lastCustomerId = customerId;
+              }
+
+              if (!conversationMap.has(customerId)) {
+                conversationMap.set(customerId, []);
+              }
+              conversationMap.get(customerId)!.push(msg);
+            });
+
+            console.log(`WhatsApp ${account.waba_id}: Found ${messages.length} total messages`);
+            conversationMap.forEach((msgs, key) => {
+              const fromBusiness = msgs.filter(m => m.is_from_business).length;
+              const fromCustomer = msgs.filter(m => !m.is_from_business).length;
+              console.log(`  Conversation ${key}: ${msgs.length} messages (${fromCustomer} from customer, ${fromBusiness} from business)`);
+            });
+
+            // Convert to unified format
+            conversationMap.forEach((msgs, customerId) => {
+              if (msgs.length === 0) return;
+
+              const sortedMsgs = msgs.sort((a, b) =>
+                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+              );
+              const latestMsg = sortedMsgs[0];
+
+              const customerMsg = msgs.find(m => !m.is_from_business);
+              const customerName = customerMsg?.contact_name || customerId;
+              const customerAvatar = customerMsg?.profile_pic_url;
+
+              const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
+                id: String(msg.id),
+                platform: "whatsapp" as const,
+                sender_id: msg.is_from_business ? msg.to_number : msg.from_number,
+                sender_name: msg.contact_name || (msg.is_from_business ? account.business_name : msg.from_number),
+                profile_pic_url: msg.profile_pic_url,
+                message_text: msg.message_text,
+                message_type: msg.message_type,
+                attachment_url: msg.media_url,
+                timestamp: msg.timestamp,
+                is_from_business: msg.is_from_business || false,
+                is_delivered: msg.is_delivered,
+                delivered_at: msg.delivered_at,
+                is_read: msg.is_read,
+                read_at: msg.read_at,
+                page_name: account.business_name,
+                conversation_id: `wa_${account.waba_id}_${customerId}`,
+                platform_message_id: msg.message_id,
+                account_id: account.waba_id,
+              }));
+
+              const lastUnifiedMessage: UnifiedMessage = {
+                id: String(latestMsg.id),
+                platform: "whatsapp" as const,
+                sender_id: latestMsg.is_from_business ? latestMsg.to_number : latestMsg.from_number,
+                sender_name: latestMsg.contact_name || (latestMsg.is_from_business ? account.business_name : latestMsg.from_number),
+                profile_pic_url: latestMsg.profile_pic_url,
+                message_text: latestMsg.message_text,
+                message_type: latestMsg.message_type,
+                attachment_url: latestMsg.media_url,
+                timestamp: latestMsg.timestamp,
+                is_from_business: latestMsg.is_from_business || false,
+                is_delivered: latestMsg.is_delivered,
+                delivered_at: latestMsg.delivered_at,
+                is_read: latestMsg.is_read,
+                read_at: latestMsg.read_at,
+                page_name: account.business_name,
+                conversation_id: `wa_${account.waba_id}_${customerId}`,
+                platform_message_id: latestMsg.message_id,
+                account_id: account.waba_id,
+              };
+
+              const conversation: UnifiedConversation = {
+                platform: "whatsapp",
+                conversation_id: `wa_${account.waba_id}_${customerId}`,
+                sender_id: customerId,
+                sender_name: customerName,
+                profile_pic_url: customerAvatar,
+                last_message: lastUnifiedMessage,
+                message_count: msgs.length,
+                account_name: account.business_name,
+                account_id: account.waba_id,
+              };
+
+              allConversations.push(conversation);
+              allMessages.set(conversation.conversation_id, unifiedMessages);
+            });
+          } catch (err) {
+            console.error(`Failed to load messages for WhatsApp account ${account.waba_id}:`, err);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load WhatsApp accounts:", err);
       }
 
       setConversations(allConversations);
