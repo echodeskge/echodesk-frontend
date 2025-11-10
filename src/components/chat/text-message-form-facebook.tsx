@@ -88,8 +88,10 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         })
       } else if (platform === 'wa') {
         // Send via WhatsApp API
+        // Ensure phone number has + prefix for E.164 format
+        const phoneNumber = recipientId.startsWith('+') ? recipientId : `+${recipientId}`
         const payload: WhatsAppSendMessagePayload = {
-          to_number: recipientId,
+          to_number: phoneNumber,
           message: data.text,
           waba_id: accountId
         }
