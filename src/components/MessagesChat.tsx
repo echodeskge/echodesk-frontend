@@ -427,6 +427,11 @@ export default function MessagesChat() {
         const messagesResponse = await socialWhatsappMessagesList();
         const allWhatsAppMessages = messagesResponse.results || [];
 
+        // Helper function to normalize phone numbers (remove + prefix for consistent conversation IDs)
+        const normalizePhoneNumber = (phone: string): string => {
+          return phone.startsWith('+') ? phone.substring(1) : phone;
+        };
+
         // Group messages by WhatsApp Business Account
         const messagesByAccount = new Map<string, WhatsAppMessage[]>();
         allWhatsAppMessages.forEach(msg => {
@@ -442,11 +447,11 @@ export default function MessagesChat() {
         for (const account of whatsappAccounts) {
           const messages = messagesByAccount.get(account.waba_id) || [];
 
-            // Group messages by customer (sender phone number)
+            // Group messages by customer (sender phone number) - normalized
             const customerIds = new Set<string>();
             messages.forEach((msg) => {
               if (!msg.is_from_business) {
-                customerIds.add(msg.from_number);
+                customerIds.add(normalizePhoneNumber(msg.from_number));
               }
             });
 
@@ -462,7 +467,7 @@ export default function MessagesChat() {
 
               if (msg.is_from_business) {
                 // Message from business - use to_number as customer
-                customerId = msg.to_number;
+                customerId = normalizePhoneNumber(msg.to_number);
                 if (!customerId && lastCustomerId) {
                   customerId = lastCustomerId;
                 } else if (!customerId && customerIds.size === 1) {
@@ -470,7 +475,7 @@ export default function MessagesChat() {
                 }
               } else {
                 // Message from customer - from_number IS the customer ID
-                customerId = msg.from_number;
+                customerId = normalizePhoneNumber(msg.from_number);
                 lastCustomerId = customerId;
               }
 
