@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
+import { useWhatsAppStatus, useDisconnectWhatsApp } from '@/hooks/api/useSocial';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +19,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import axios from 'axios';
 
 // WhatsApp icon component
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -50,14 +50,13 @@ interface WhatsAppStatus {
 
 export function WhatsAppConnection() {
   const { tenant } = useTenant();
-  const [status, setStatus] = useState<WhatsAppStatus | null>(null);
-  const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
-  // Fetch status on mount
-  useEffect(() => {
-    fetchStatus();
-  }, []);
+  // React Query hooks
+  const { data: statusData, isLoading: loading, refetch } = useWhatsAppStatus();
+  const disconnectWhatsApp = useDisconnectWhatsApp();
+
+  const status = statusData as WhatsAppStatus | null;
 
   // Check for OAuth callback parameters on mount
   useEffect(() => {
@@ -69,7 +68,7 @@ export function WhatsAppConnection() {
 
     if (whatsappStatus === 'connected') {
       toast.success(message || 'WhatsApp Business Account connected successfully!');
-      fetchStatus();
+      refetch();
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (whatsappStatus === 'error') {
@@ -78,28 +77,7 @@ export function WhatsAppConnection() {
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, []);
-
-  const fetchStatus = async () => {
-    setLoading(true);
-    try {
-      const apiUrl = `https://api.echodesk.ge/api/social/whatsapp/status/`;
-      const token = localStorage.getItem('echodesk_auth_token');
-
-      const response = await axios.get(apiUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      setStatus(response.data);
-    } catch (error: any) {
-      console.error('Failed to fetch WhatsApp status:', error);
-      toast.error('Failed to load WhatsApp connection status');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [refetch]);
 
   const handleConnect = () => {
     setConnecting(true);
@@ -134,29 +112,12 @@ export function WhatsAppConnection() {
       return;
     }
 
-    setLoading(true);
     try {
-      const apiUrl = 'https://api.echodesk.ge/api/social/whatsapp/disconnect/';
-      const token = localStorage.getItem('echodesk_auth_token');
-
-      await axios.post(
-        apiUrl,
-        { waba_id: wabaId },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
+      await disconnectWhatsApp.mutateAsync(wabaId);
       toast.success('WhatsApp Business Account disconnected successfully');
-      fetchStatus();
     } catch (error: any) {
       console.error('Failed to disconnect WhatsApp:', error);
       toast.error(error.response?.data?.error || 'Failed to disconnect WhatsApp Business Account');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -237,10 +198,10 @@ export function WhatsAppConnection() {
           ) : (
             <Button
               onClick={() => handleDisconnect()}
-              disabled={loading}
+              disabled={loading || disconnectWhatsApp.isPending}
               variant="destructive"
             >
-              {loading ? (
+              {disconnectWhatsApp.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                   Disconnecting...
@@ -253,7 +214,7 @@ export function WhatsAppConnection() {
               )}
             </Button>
           )}
-          <Button onClick={fetchStatus} disabled={loading} variant="outline">
+          <Button onClick={() => refetch()} disabled={loading} variant="outline">
             <RefreshCw
               className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
             />
