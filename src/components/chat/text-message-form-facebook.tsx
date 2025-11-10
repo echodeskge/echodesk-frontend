@@ -29,6 +29,12 @@ interface TextMessageFormFacebookProps {
   onMessageSent?: () => void;
 }
 
+interface WhatsAppSendMessagePayload {
+  to_number: string;
+  message: string;
+  waba_id: string;
+}
+
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
   const { chatState } = useChatContext()
   const [isSending, setIsSending] = useState(false)
@@ -80,6 +86,14 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           message: data.text,
           instagram_account_id: accountId
         })
+      } else if (platform === 'wa') {
+        // Send via WhatsApp API
+        const payload: WhatsAppSendMessagePayload = {
+          to_number: recipientId,
+          message: data.text,
+          waba_id: accountId
+        }
+        await axios.post('/api/social/whatsapp/send-message/', payload)
       } else {
         throw new Error('Unsupported platform: ' + platform)
       }
