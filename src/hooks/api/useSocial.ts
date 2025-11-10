@@ -17,6 +17,10 @@ export const socialKeys = {
   instagramAccounts: () => [...socialKeys.instagram(), 'accounts'] as const,
   instagramMessages: () => [...socialKeys.instagram(), 'messages'] as const,
   instagramMessagesList: (filters: Record<string, any>) => [...socialKeys.instagramMessages(), filters] as const,
+  whatsapp: () => [...socialKeys.all, 'whatsapp'] as const,
+  whatsappStatus: () => [...socialKeys.whatsapp(), 'status'] as const,
+  whatsappMessages: () => [...socialKeys.whatsapp(), 'messages'] as const,
+  whatsappMessagesList: (filters: Record<string, any>) => [...socialKeys.whatsappMessages(), filters] as const,
 };
 
 // Queries
@@ -259,6 +263,120 @@ export function useDisconnectInstagram() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.instagramStatus() });
       queryClient.invalidateQueries({ queryKey: socialKeys.instagramAccounts() });
+    },
+  });
+}
+
+// ============================================================================
+// WHATSAPP HOOKS
+// ============================================================================
+
+export function useWhatsAppStatus() {
+  return useQuery({
+    queryKey: socialKeys.whatsappStatus(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/whatsapp/status/');
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+}
+
+export function useWhatsAppMessages(filters?: {
+  page?: number;
+  waba_id?: string;
+  search?: string;
+  unread_only?: boolean;
+}) {
+  return useQuery({
+    queryKey: socialKeys.whatsappMessagesList(filters || {}),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.page) params.append('page', filters.page.toString());
+      if (filters?.waba_id) params.append('waba_id', filters.waba_id);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.unread_only) params.append('unread_only', 'true');
+
+      const response = await axios.get(
+        `/api/social/whatsapp/messages/${params.toString() ? '?' + params.toString() : ''}`
+      );
+      return response.data;
+    },
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+  });
+}
+
+export function useInfiniteWhatsAppMessages(filters?: {
+  waba_id?: string;
+  search?: string;
+  unread_only?: boolean;
+}) {
+  return useInfiniteQuery({
+    queryKey: socialKeys.whatsappMessagesList(filters || {}),
+    queryFn: async ({ pageParam = 1 }) => {
+      const params = new URLSearchParams();
+      params.append('page', pageParam.toString());
+      if (filters?.waba_id) params.append('waba_id', filters.waba_id);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.unread_only) params.append('unread_only', 'true');
+
+      const response = await axios.get(
+        `/api/social/whatsapp/messages/?${params.toString()}`
+      );
+      return response.data;
+    },
+    getNextPageParam: (lastPage, pages) => {
+      if (lastPage.next) {
+        return pages.length + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
+  });
+}
+
+export function useSendWhatsAppMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { to_number: string; message: string; waba_id: string }) => {
+      const response = await axios.post('/api/social/whatsapp/send-message/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+    },
+  });
+}
+
+export function useDisconnectWhatsApp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (wabaId?: string) => {
+      const response = await axios.post('/api/social/whatsapp/disconnect/', {
+        waba_id: wabaId,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
+    },
+  });
+}
+
+export function useWhatsAppEmbeddedSignupCallback() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { code: string; tenant: string }) => {
+      const response = await axios.post('/api/social/whatsapp/embedded-signup/callback/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
     },
   });
 }

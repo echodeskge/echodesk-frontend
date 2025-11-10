@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 
 interface SocialIntegrationsProps {
   onBackToDashboard?: () => void;
@@ -490,6 +491,9 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
             </CardContent>
           </Card>
         )}
+
+        {/* WhatsApp Connection */}
+        <WhatsAppConnection />
 
         {/* Setup Instructions */}
         {!isConnected && (

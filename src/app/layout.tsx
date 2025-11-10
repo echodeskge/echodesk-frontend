@@ -8,6 +8,7 @@ import QueryProvider from '@/providers/QueryProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
+import { FacebookSDK } from '@/components/FacebookSDK';
 import { Toaster } from 'sonner';
 
 const geistSans = Geist({
@@ -35,6 +36,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} bg-white`}>
+        <FacebookSDK />
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
           <QueryProvider>

@@ -1862,11 +1862,6 @@ export async function commentsDestroy(id: string): Promise<any> {
   return response.data;
 }
 
-export async function corsTestRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/cors-test/`);
-  return response.data;
-}
-
 export async function cronHealthRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/health/`);
   return response.data;
@@ -4533,11 +4528,6 @@ export async function permissionsRetrieve(id: number): Promise<Permission> {
   return response.data;
 }
 
-export async function preflightTestRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/preflight-test/`);
-  return response.data;
-}
-
 export async function registerTenant(data: TenantRegistrationRequest): Promise<{
   message?: string;
   tenant?: Record<string, any>;
@@ -4934,6 +4924,28 @@ export async function socialWebhookStatusRetrieve(): Promise<any> {
 
 export async function socialWebhookTestCreate(): Promise<any> {
   const response = await axios.post(`/api/social/webhook-test/`);
+  return response.data;
+}
+
+export async function socialWhatsappDisconnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/whatsapp/disconnect/`);
+  return response.data;
+}
+
+export async function socialWhatsappEmbeddedSignupCallbackCreate(): Promise<any> {
+  const response = await axios.post(
+    `/api/social/whatsapp/embedded-signup/callback/`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappSendMessageCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/whatsapp/send-message/`);
+  return response.data;
+}
+
+export async function socialWhatsappStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/whatsapp/status/`);
   return response.data;
 }
 
