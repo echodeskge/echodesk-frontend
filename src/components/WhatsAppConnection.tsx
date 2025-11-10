@@ -54,6 +54,11 @@ export function WhatsAppConnection() {
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
+  // Fetch status on mount
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
   // Check for OAuth callback parameters on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -97,11 +102,6 @@ export function WhatsAppConnection() {
   };
 
   const handleConnect = () => {
-    if (!window.FB) {
-      toast.error('Facebook SDK not loaded. Please refresh the page.');
-      return;
-    }
-
     setConnecting(true);
 
     try {
