@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
-import { Facebook, Instagram } from "lucide-react"
+import { Facebook, Instagram, MessageCircle } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 
@@ -48,12 +48,18 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
           {chat.platform && (
             <div className={cn(
               "absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ring-2 ring-background",
-              chat.platform === "facebook" ? "bg-blue-600" : "bg-gradient-to-br from-purple-600 to-pink-600"
+              chat.platform === "facebook"
+                ? "bg-blue-600"
+                : chat.platform === "instagram"
+                ? "bg-gradient-to-br from-purple-600 to-pink-600"
+                : "bg-green-600"
             )}>
               {chat.platform === "facebook" ? (
                 <Facebook className="h-2.5 w-2.5 text-white" />
-              ) : (
+              ) : chat.platform === "instagram" ? (
                 <Instagram className="h-2.5 w-2.5 text-white" />
+              ) : (
+                <MessageCircle className="h-2.5 w-2.5 text-white" />
               )}
             </div>
           )}

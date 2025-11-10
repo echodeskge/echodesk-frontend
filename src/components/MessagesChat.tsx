@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { FacebookPageConnection } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
+import { socialWhatsappMessagesList, socialWhatsappStatusRetrieve } from "@/api/generated";
 import { convertFacebookMessagesToChatFormat } from "@/lib/chatAdapter";
 import { ChatProvider } from "@/components/chat/contexts/chat-context";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
@@ -80,6 +81,7 @@ interface WhatsAppMessage {
   read_at?: string;
   business_name: string;
   business_phone: string;
+  waba_id: string;
 }
 
 interface WhatsAppAccount {
@@ -418,16 +420,27 @@ export default function MessagesChat() {
 
       // Load WhatsApp conversations
       try {
-        const whatsappAccountsResponse = await axios.get("/api/social/whatsapp/status/");
-        const whatsappAccounts = (whatsappAccountsResponse.data?.accounts as WhatsAppAccount[]) || [];
+        const whatsappStatusResponse = await socialWhatsappStatusRetrieve();
+        const whatsappAccounts = (whatsappStatusResponse?.accounts as WhatsAppAccount[]) || [];
 
+        // Load all WhatsApp messages at once (ViewSet returns all messages for all accounts in tenant)
+        const messagesResponse = await socialWhatsappMessagesList();
+        const allWhatsAppMessages = messagesResponse.results || [];
+
+        // Group messages by WhatsApp Business Account
+        const messagesByAccount = new Map<string, WhatsAppMessage[]>();
+        allWhatsAppMessages.forEach(msg => {
+          const wabaId = msg.waba_id;
+          if (!wabaId) return;
+          if (!messagesByAccount.has(wabaId)) {
+            messagesByAccount.set(wabaId, []);
+          }
+          messagesByAccount.get(wabaId)!.push(msg);
+        });
+
+        // Process messages for each account
         for (const account of whatsappAccounts) {
-          try {
-            const messagesResponse = await axios.get("/api/social/whatsapp/messages/", {
-              params: { waba_id: account.waba_id },
-            });
-
-            const messages = (messagesResponse.data as PaginatedResponse<WhatsAppMessage>).results || [];
+          const messages = messagesByAccount.get(account.waba_id) || [];
 
             // Group messages by customer (sender phone number)
             const customerIds = new Set<string>();
@@ -544,9 +557,6 @@ export default function MessagesChat() {
               allConversations.push(conversation);
               allMessages.set(conversation.conversation_id, unifiedMessages);
             });
-          } catch (err) {
-            console.error(`Failed to load messages for WhatsApp account ${account.waba_id}:`, err);
-          }
         }
       } catch (err) {
         console.error("Failed to load WhatsApp accounts:", err);

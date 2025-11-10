@@ -253,6 +253,12 @@ import type {
   PaginatedInstagramMessageList,
   InstagramMessage,
   InstagramSendMessageRequest,
+  PaginatedWhatsAppBusinessAccountList,
+  WhatsAppBusinessAccountRequest,
+  WhatsAppBusinessAccount,
+  PatchedWhatsAppBusinessAccountRequest,
+  PaginatedWhatsAppMessageList,
+  WhatsAppMessage,
   PaginatedTagList,
   TagRequest,
   Tag,
@@ -4927,8 +4933,99 @@ export async function socialWebhookTestCreate(): Promise<any> {
   return response.data;
 }
 
+export async function socialWhatsappAccountsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedWhatsAppBusinessAccountList> {
+  const response = await axios.get(
+    `/api/social/whatsapp-accounts/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappAccountsCreate(
+  data: WhatsAppBusinessAccountRequest,
+): Promise<WhatsAppBusinessAccount> {
+  const response = await axios.post(`/api/social/whatsapp-accounts/`, data);
+  return response.data;
+}
+
+export async function socialWhatsappAccountsRetrieve(
+  id: number,
+): Promise<WhatsAppBusinessAccount> {
+  const response = await axios.get(`/api/social/whatsapp-accounts/${id}/`);
+  return response.data;
+}
+
+export async function socialWhatsappAccountsUpdate(
+  id: number,
+  data: WhatsAppBusinessAccountRequest,
+): Promise<WhatsAppBusinessAccount> {
+  const response = await axios.put(
+    `/api/social/whatsapp-accounts/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappAccountsPartialUpdate(
+  id: number,
+  data: PatchedWhatsAppBusinessAccountRequest,
+): Promise<WhatsAppBusinessAccount> {
+  const response = await axios.patch(
+    `/api/social/whatsapp-accounts/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappAccountsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/social/whatsapp-accounts/${id}/`);
+  return response.data;
+}
+
+export async function socialWhatsappMessagesList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedWhatsAppMessageList> {
+  const response = await axios.get(
+    `/api/social/whatsapp-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappMessagesRetrieve(
+  id: number,
+): Promise<WhatsAppMessage> {
+  const response = await axios.get(`/api/social/whatsapp-messages/${id}/`);
+  return response.data;
+}
+
 export async function socialWhatsappDisconnectCreate(): Promise<any> {
   const response = await axios.post(`/api/social/whatsapp/disconnect/`);
+  return response.data;
+}
+
+export async function socialWhatsappEmbeddedSignupCallbackRetrieve(): Promise<any> {
+  const response = await axios.get(
+    `/api/social/whatsapp/embedded-signup/callback/`,
+  );
   return response.data;
 }
 

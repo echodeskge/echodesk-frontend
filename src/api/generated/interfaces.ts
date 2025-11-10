@@ -1193,6 +1193,10 @@ export interface ListItemRequest {
   custom_data?: any;
 }
 
+export interface MessageTypeEnum {
+  [key: string]: any;
+}
+
 export interface Notification {
   id: number;
   user: number;
@@ -1757,6 +1761,20 @@ export interface PaginatedUserList {
   results: User[];
 }
 
+export interface PaginatedWhatsAppBusinessAccountList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WhatsAppBusinessAccount[];
+}
+
+export interface PaginatedWhatsAppMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WhatsAppMessage[];
+}
+
 export interface PasswordResetConfirmRequest {
   email: string;
   code: string;
@@ -2241,6 +2259,16 @@ export interface PatchedUserUpdateRequest {
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
+}
+
+export interface PatchedWhatsAppBusinessAccountRequest {
+  waba_id?: string;
+  business_name?: string;
+  phone_number_id?: string;
+  phone_number?: string;
+  display_phone_number?: string;
+  quality_rating?: string;
+  is_active?: boolean;
 }
 
 export interface PaymentMethodEnum {
@@ -3364,4 +3392,56 @@ export interface UserUpdateRequest {
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
+}
+
+export interface WhatsAppBusinessAccount {
+  id: number;
+  waba_id: string;
+  business_name: string;
+  phone_number_id: string;
+  phone_number: string;
+  display_phone_number?: string;
+  quality_rating?: string;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WhatsAppBusinessAccountRequest {
+  waba_id: string;
+  business_name: string;
+  phone_number_id: string;
+  phone_number: string;
+  display_phone_number?: string;
+  quality_rating?: string;
+  is_active?: boolean;
+}
+
+export interface WhatsAppMessage {
+  id: number;
+  message_id: string;
+  from_number: string;
+  to_number: string;
+  contact_name?: string;
+  profile_pic_url?: string;
+  message_text?: string;
+  message_type?: MessageTypeEnum;
+  media_url?: string;
+  media_mime_type?: string;
+  timestamp: string;
+  is_from_business?: boolean;
+  status: WhatsAppMessageStatusEnum;
+  is_delivered: boolean;
+  delivered_at: string;
+  is_read: boolean;
+  read_at: string;
+  error_message?: string;
+  business_name: string;
+  business_phone: string;
+  waba_id: string;
+  created_at: string;
+}
+
+export interface WhatsAppMessageStatusEnum {
+  [key: string]: any;
 }
