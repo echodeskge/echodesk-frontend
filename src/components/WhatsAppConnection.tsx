@@ -49,7 +49,7 @@ interface WhatsAppStatus {
 }
 
 export function WhatsAppConnection() {
-  const { tenantData } = useTenant();
+  const { tenant } = useTenant();
   const [status, setStatus] = useState<WhatsAppStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -97,7 +97,7 @@ export function WhatsAppConnection() {
                 apiUrl,
                 {
                   code: code,
-                  tenant: tenantData?.schema_name || 'amanati',
+                  tenant: tenant?.schema_name || 'amanati',
                 },
                 {
                   headers: {
