@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,6 +54,27 @@ export function WhatsAppConnection() {
   const [loading, setLoading] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
+  // Check for OAuth callback parameters on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const whatsappStatus = urlParams.get('whatsapp_status');
+    const message = urlParams.get('message');
+
+    if (whatsappStatus === 'connected') {
+      toast.success(message || 'WhatsApp Business Account connected successfully!');
+      fetchStatus();
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (whatsappStatus === 'error') {
+      toast.error(message || 'Failed to connect WhatsApp Business Account');
+      setConnecting(false);
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const fetchStatus = async () => {
     setLoading(true);
     try {
@@ -82,57 +103,25 @@ export function WhatsAppConnection() {
     }
 
     setConnecting(true);
+
     try {
-      window.FB.login(
-        (response: any) => {
-          if (response.authResponse) {
-            const code = response.authResponse.code;
+      // Build OAuth URL for Embedded Signup
+      const fbAppId = '649149741547110';
+      const configId = '4254308474803749';
+      const redirectUri = 'https://api.echodesk.ge/api/social/whatsapp/embedded-signup/callback/';
+      const state = encodeURIComponent(`tenant=${tenant?.schema_name || 'amanati'}`);
 
-            // Send code to backend
-            const apiUrl = 'https://api.echodesk.ge/api/social/whatsapp/embedded-signup/callback/';
-            const token = localStorage.getItem('echodesk_auth_token');
+      // Use direct OAuth URL for Embedded Signup
+      const oauthUrl = `https://www.facebook.com/v23.0/dialog/oauth?` +
+        `client_id=${fbAppId}&` +
+        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+        `config_id=${configId}&` +
+        `response_type=code&` +
+        `scope=whatsapp_business_management,whatsapp_business_messaging&` +
+        `state=${state}`;
 
-            // Handle async operation without making callback async
-            axios.post(
-              apiUrl,
-              {
-                code: code,
-                tenant: tenant?.schema_name || 'amanati',
-              },
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
-                },
-              }
-            )
-            .then((backendResponse) => {
-              if (backendResponse.data.status === 'success') {
-                toast.success(backendResponse.data.message);
-                fetchStatus();
-              } else {
-                throw new Error(backendResponse.data.error || 'Unknown error');
-              }
-            })
-            .catch((error: any) => {
-              console.error('Failed to complete WhatsApp signup:', error);
-              toast.error(error.response?.data?.error || 'Failed to connect WhatsApp Business Account');
-            })
-            .finally(() => {
-              setConnecting(false);
-            });
-          } else {
-            toast.error('WhatsApp connection was cancelled');
-            setConnecting(false);
-          }
-        },
-        {
-          config_id: '4254308474803749',
-          response_type: 'code',
-          override_default_response_type: true,
-          scope: 'whatsapp_business_management,whatsapp_business_messaging',
-        }
-      );
+      // Redirect to Facebook OAuth
+      window.location.href = oauthUrl;
     } catch (error) {
       console.error('Failed to initiate WhatsApp connection:', error);
       toast.error('Failed to start WhatsApp connection');
