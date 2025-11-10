@@ -75,7 +75,7 @@ export function WhatsAppConnection() {
     }
   };
 
-  const handleConnect = async () => {
+  const handleConnect = () => {
     if (!window.FB) {
       toast.error('Facebook SDK not loaded. Please refresh the page.');
       return;
@@ -84,7 +84,7 @@ export function WhatsAppConnection() {
     setConnecting(true);
     try {
       window.FB.login(
-        async (response: any) => {
+        (response: any) => {
           if (response.authResponse) {
             const code = response.authResponse.code;
 
@@ -92,35 +92,39 @@ export function WhatsAppConnection() {
             const apiUrl = 'https://api.echodesk.ge/api/social/whatsapp/embedded-signup/callback/';
             const token = localStorage.getItem('echodesk_auth_token');
 
-            try {
-              const backendResponse = await axios.post(
-                apiUrl,
-                {
-                  code: code,
-                  tenant: tenant?.schema_name || 'amanati',
+            // Handle async operation without making callback async
+            axios.post(
+              apiUrl,
+              {
+                code: code,
+                tenant: tenant?.schema_name || 'amanati',
+              },
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
                 },
-                {
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                  },
-                }
-              );
-
+              }
+            )
+            .then((backendResponse) => {
               if (backendResponse.data.status === 'success') {
                 toast.success(backendResponse.data.message);
                 fetchStatus();
               } else {
                 throw new Error(backendResponse.data.error || 'Unknown error');
               }
-            } catch (error: any) {
+            })
+            .catch((error: any) => {
               console.error('Failed to complete WhatsApp signup:', error);
               toast.error(error.response?.data?.error || 'Failed to connect WhatsApp Business Account');
-            }
+            })
+            .finally(() => {
+              setConnecting(false);
+            });
           } else {
             toast.error('WhatsApp connection was cancelled');
+            setConnecting(false);
           }
-          setConnecting(false);
         },
         {
           config_id: '4254308474803749',
