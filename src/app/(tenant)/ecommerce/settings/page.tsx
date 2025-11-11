@@ -282,6 +282,7 @@ export default function EcommerceSettingsPage() {
           <div className="space-y-2">
             <Label htmlFor="bog_return_url_success">
               Success Return URL
+              {settings.enable_card_payment && <span className="text-red-500 ml-1">*</span>}
               <span className="text-muted-foreground text-sm ml-2">(After successful payment)</span>
             </Label>
             <Input
@@ -290,15 +291,18 @@ export default function EcommerceSettingsPage() {
               value={settings.bog_return_url_success}
               onChange={(e) => setSettings({ ...settings, bog_return_url_success: e.target.value })}
               placeholder="https://yourstore.com/payment/success"
+              required={settings.enable_card_payment}
             />
             <p className="text-xs text-muted-foreground">
               Customers will be redirected here after a successful payment
+              {settings.enable_card_payment && " (Required when card payment is enabled)"}
             </p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="bog_return_url_fail">
               Failure Return URL
+              {settings.enable_card_payment && <span className="text-red-500 ml-1">*</span>}
               <span className="text-muted-foreground text-sm ml-2">(After failed payment)</span>
             </Label>
             <Input
@@ -307,17 +311,19 @@ export default function EcommerceSettingsPage() {
               value={settings.bog_return_url_fail}
               onChange={(e) => setSettings({ ...settings, bog_return_url_fail: e.target.value })}
               placeholder="https://yourstore.com/payment/failed"
+              required={settings.enable_card_payment}
             />
             <p className="text-xs text-muted-foreground">
               Customers will be redirected here if the payment fails
+              {settings.enable_card_payment && " (Required when card payment is enabled)"}
             </p>
           </div>
 
-          {(!settings.bog_return_url_success || !settings.bog_return_url_fail) && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <p className="text-sm text-yellow-800">
-                Return URLs are optional but recommended for better customer experience
+          {(!settings.bog_return_url_success || !settings.bog_return_url_fail) && settings.enable_card_payment && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <p className="text-sm text-red-800">
+                Return URLs are required when card payment is enabled. Customers will be redirected to these URLs after payment.
               </p>
             </div>
           )}
