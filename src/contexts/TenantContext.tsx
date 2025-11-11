@@ -6,7 +6,7 @@ import { tenantService } from '@/services/tenantService';
 import { useTenantConfig } from '@/hooks/api/useTenant';
 
 interface TenantContextType {
-  tenant: TenantConfig | null;
+  tenant: TenantConfig | null | undefined;
   loading: boolean;
   error: string | null;
   refreshTenant: () => Promise<void>;

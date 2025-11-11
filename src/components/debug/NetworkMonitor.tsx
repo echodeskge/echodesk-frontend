@@ -29,7 +29,7 @@ export function NetworkMonitor() {
 
     window.fetch = async (...args) => {
       const [resource, config] = args;
-      const url = typeof resource === 'string' ? resource : resource.url;
+      const url = typeof resource === 'string' ? resource : resource instanceof URL ? resource.href : resource.url;
       const method = config?.method || 'GET';
       const startTime = Date.now();
 
