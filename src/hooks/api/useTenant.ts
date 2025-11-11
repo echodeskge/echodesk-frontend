@@ -3,10 +3,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tenantGroupsList, tenantGroupsCreate, tenantGroupsPartialUpdate, tenantGroupsDestroy } from '@/api/generated';
 import axios from '@/api/axios';
+import { tenantService } from '@/services/tenantService';
+import { authService } from '@/services/auth';
+import type { TenantConfig } from '@/types/tenant';
 
 // Query keys
 export const tenantKeys = {
   all: ['tenant'] as const,
+  config: (subdomain: string) => [...tenantKeys.all, 'config', subdomain] as const,
   settings: () => [...tenantKeys.all, 'settings'] as const,
   subscription: () => [...tenantKeys.all, 'subscription'] as const,
   groups: () => [...tenantKeys.all, 'groups'] as const,
@@ -14,6 +18,19 @@ export const tenantKeys = {
 };
 
 // Queries
+export function useTenantConfig(subdomain: string | null, options?: { enabled?: boolean }) {
+  return useQuery<TenantConfig | null>({
+    queryKey: tenantKeys.config(subdomain || '_no_subdomain'),
+    queryFn: async () => {
+      if (!subdomain) return null;
+      return await tenantService.getTenantBySubdomain(subdomain);
+    },
+    enabled: options?.enabled !== false && !!subdomain,
+    staleTime: 10 * 60 * 1000, // Consider data fresh for 10 minutes (tenant config rarely changes)
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+  });
+}
+
 export function useTenantSettings() {
   return useQuery({
     queryKey: tenantKeys.settings(),
@@ -37,10 +54,14 @@ export function useTenantSubscription(options?: { enabled?: boolean }) {
   });
 }
 
-export function useTenantGroups() {
+export function useTenantGroups(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: tenantKeys.groups(),
     queryFn: () => tenantGroupsList(),
+    // Only fetch when authenticated
+    enabled: options?.enabled !== false && authService.isAuthenticated(),
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 }
 

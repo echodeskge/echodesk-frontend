@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { TenantConfig } from '@/types/tenant';
 import { tenantService } from '@/services/tenantService';
+import { useTenantConfig } from '@/hooks/api/useTenant';
 
 interface TenantContextType {
   tenant: TenantConfig | null;
@@ -18,76 +19,56 @@ interface TenantProviderProps {
 }
 
 export function TenantProvider({ children }: TenantProviderProps) {
-  const [tenant, setTenant] = useState<TenantConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tenantIdentifier, setTenantIdentifier] = useState<string | null>(null);
+  const [shouldLoadTenant, setShouldLoadTenant] = useState(false);
 
-  const loadTenant = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Determine tenant identifier from hostname
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-      // Get hostname and pathname from window (client-side only)
-      if (typeof window === 'undefined') {
-        setLoading(false);
-        return;
+    const hostname = window.location.hostname;
+    const pathname = window.location.pathname;
+
+    let identifier: string | null = null;
+
+    // On localhost, check localStorage first for development mode
+    if (hostname.includes('localhost')) {
+      const storedTenant = localStorage.getItem('dev_tenant');
+      if (storedTenant) {
+        identifier = storedTenant;
       }
-
-      const hostname = window.location.hostname;
-      const pathname = window.location.pathname;
-
-      // Try to get tenant identifier from subdomain or path
-      let tenantIdentifier: string | null = null;
-
-      // On localhost, check localStorage first for development mode
-      if (hostname.includes('localhost')) {
-        const storedTenant = localStorage.getItem('dev_tenant');
-        if (storedTenant) {
-          tenantIdentifier = storedTenant;
-        }
-        // If no stored tenant, no tenant will be loaded (allowing homepage access)
-      } else {
-        // On production, use subdomain-based detection
-        tenantIdentifier = tenantService.getSubdomainFromHostname(hostname);
-      }
-
-      // If on root path "/" with no tenant identifier, don't load tenant
-      // This prevents infinite 401 loops when visiting the main landing page (echodesk.ge)
-      // But allows tenant loading for tenant subdomains (artlighthouse.echodesk.ge/)
-      if (pathname === '/' && !tenantIdentifier) {
-        setTenant(null);
-        setLoading(false);
-        return;
-      }
-
-      if (!tenantIdentifier) {
-        // Not a tenant domain/path, set tenant to null
-        setTenant(null);
-        setLoading(false);
-        return;
-      }
-
-      const tenantConfig = await tenantService.getTenantBySubdomain(tenantIdentifier);
-
-      if (tenantConfig) {
-        setTenant(tenantConfig);
-      } else {
-        setError(`Tenant not found for identifier: ${tenantIdentifier}`);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tenant');
-    } finally {
-      setLoading(false);
+    } else {
+      // On production, use subdomain-based detection
+      identifier = tenantService.getSubdomainFromHostname(hostname);
     }
-  };
+
+    // If on root path "/" with no tenant identifier, don't load tenant
+    // This prevents infinite 401 loops when visiting the main landing page (echodesk.ge)
+    if (pathname === '/' && !identifier) {
+      setTenantIdentifier(null);
+      setShouldLoadTenant(false);
+      return;
+    }
+
+    setTenantIdentifier(identifier);
+    setShouldLoadTenant(!!identifier);
+  }, []);
+
+  // Use React Query to fetch tenant config
+  const {
+    data: tenant,
+    isLoading: loading,
+    error: queryError,
+    refetch
+  } = useTenantConfig(tenantIdentifier, { enabled: shouldLoadTenant });
+
+  const error = queryError
+    ? (queryError instanceof Error ? queryError.message : 'Failed to load tenant')
+    : (tenant === null && shouldLoadTenant ? `Tenant not found for identifier: ${tenantIdentifier}` : null);
 
   const refreshTenant = async () => {
-    await loadTenant();
+    await refetch();
   };
-
-  useEffect(() => {
-    loadTenant();
-  }, []);
 
   const value = {
     tenant,

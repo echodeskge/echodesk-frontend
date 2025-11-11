@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Board, User, TenantGroup } from "@/api/generated/interfaces";
-import { boardsRetrieve, boardsPartialUpdate, tenantGroupsList } from "@/api/generated/api";
+import { boardsRetrieve, boardsPartialUpdate } from "@/api/generated/api";
 import { ticketService } from "@/services/ticketService";
+import { useTenantGroups } from "@/hooks/api/useTenant";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
 import MultiGroupSelection from "./MultiGroupSelection";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,6 @@ export default function BoardUserManager({
 }: BoardUserManagerProps) {
   const [board, setBoard] = useState<Board | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [orderUserIds, setOrderUserIds] = useState<number[]>([]);
   const [boardUserIds, setBoardUserIds] = useState<number[]>([]);
   const [assignedGroupIds, setAssignedGroupIds] = useState<number[]>([]);
@@ -47,6 +47,10 @@ export default function BoardUserManager({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("order-users");
+
+  // Use React Query hook for tenant groups - only fetch when dialog is open
+  const { data: groupsData } = useTenantGroups({ enabled: open && !!boardId });
+  const groups = groupsData?.results || [];
 
   useEffect(() => {
     if (open && boardId) {
@@ -61,15 +65,14 @@ export default function BoardUserManager({
       setLoading(true);
       setError("");
 
-      const [boardResult, usersResult, groupsResult] = await Promise.all([
+      const [boardResult, usersResult] = await Promise.all([
         boardsRetrieve(boardId.toString()),
         ticketService.getUsers(),
-        tenantGroupsList()
       ]);
 
       setBoard(boardResult);
       setUsers(usersResult.results || []);
-      setGroups(groupsResult.results || []);
+      // Groups are now loaded via React Query hook
 
       // Set current order users
       const currentOrderUserIds = (boardResult.order_users || []).map(user => user.id);

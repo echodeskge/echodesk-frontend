@@ -104,14 +104,14 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   const { user, token } = useAuth();
   const { tenant } = useTenant();
 
-  // Only fetch subscription data when tenant exists (not on main homepage)
-  // This prevents unnecessary API calls on the landing page
+  // Only fetch subscription data when tenant exists AND user has a token
+  // This prevents unnecessary API calls on the landing page and login page
   const {
     data: subscriptionData,
     isLoading: loading,
     error: queryError,
     refetch
-  } = useTenantSubscription({ enabled: !!tenant });
+  } = useTenantSubscription({ enabled: !!tenant && !!token });
 
   // Process the subscription data or use defaults
   const subscription: SubscriptionInfo | null = subscriptionData || (queryError ? {

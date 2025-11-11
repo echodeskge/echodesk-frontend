@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTenant } from './TenantContext';
 import { AuthUser } from '@/types/auth';
 import { authService } from '@/services/auth';
@@ -26,11 +27,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { tenant } = useTenant();
+  const queryClient = useQueryClient();
 
   const login = (authToken: string, userData: AuthUser) => {
     setToken(authToken);
     setUser(userData);
-    
+
+    // Update React Query cache to prevent duplicate fetch
+    queryClient.setQueryData(['userProfile'], userData);
+
     // Also save using authService for consistency
     if (tenant) {
       const tenantInfo = {
@@ -49,12 +54,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setToken(null);
     setUser(null);
     authService.clearLocalAuth();
+
+    // Clear React Query cache
+    queryClient.removeQueries({ queryKey: ['userProfile'] });
   };
 
   const checkAuth = async (): Promise<boolean> => {
     const { token: storedToken, user: storedUser } = authService.getStoredAuthData();
 
-    if (!storedToken || !storedUser || !tenant) {
+    // If no token exists, don't make API call - just set loading to false
+    if (!storedToken) {
+      setLoading(false);
+      return false;
+    }
+
+    // If no user or tenant, clear auth state
+    if (!storedUser || !tenant) {
       setLoading(false);
       return false;
     }
@@ -75,6 +90,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userData = await authService.getCurrentUser();
       setToken(storedToken);
       setUser(userData);
+
+      // Update React Query cache to prevent duplicate fetch
+      queryClient.setQueryData(['userProfile'], userData);
+
       setLoading(false);
       return true;
     } catch (error) {

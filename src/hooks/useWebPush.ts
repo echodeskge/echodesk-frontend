@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import axios from 'axios'
+import axios from '@/api/axios'
 
 interface UseWebPushOptions {
   /**
@@ -137,23 +137,6 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
     registerServiceWorker()
   }, [isSupported, onError])
 
-  // Auto-subscribe if enabled - will request permission if needed
-  useEffect(() => {
-    if (autoSubscribe && !isSubscribed && !isLoading) {
-      // If permission is default, request it first
-      if (permission === 'default') {
-        requestPermission().then((result) => {
-          if (result === 'granted') {
-            subscribe()
-          }
-        })
-      } else if (permission === 'granted') {
-        // Permission already granted, just subscribe
-        subscribe()
-      }
-    }
-  }, [autoSubscribe, permission, isSubscribed, isLoading])
-
   /**
    * Get VAPID public key from backend
    */
@@ -163,13 +146,16 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
     }
 
     try {
+      console.log('[useWebPush] Fetching VAPID public key from backend...')
       const response = await axios.get('/notifications/vapid-public-key/')
       const publicKey = response.data.public_key
       vapidPublicKeyRef.current = publicKey
+      console.log('[useWebPush] VAPID public key fetched successfully')
       return publicKey
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to get VAPID public key')
       console.error('[useWebPush] Failed to get VAPID public key:', error)
+      console.error('[useWebPush] Make sure the backend endpoint /notifications/vapid-public-key/ is available')
       throw error
     }
   }, [])
@@ -180,6 +166,7 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
   const requestPermission = useCallback(async (): Promise<NotificationPermission> => {
     if (!isSupported) {
       const error = new Error('Push notifications are not supported in this browser')
+      console.warn('[useWebPush] Push notifications not supported - this is expected in some browsers')
       setError(error)
       onError?.(error)
       return 'denied'
@@ -346,6 +333,45 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
       setIsLoading(false)
     }
   }, [isSubscribed, onError])
+
+  // Auto-subscribe if enabled - will request permission if needed
+  useEffect(() => {
+    if (!isSupported) {
+      // Don't try to auto-subscribe if push isn't supported
+      return
+    }
+
+    if (autoSubscribe && !isSubscribed && !isLoading) {
+      // Only auto-subscribe once to prevent infinite loops
+      const hasAttemptedAutoSubscribe = sessionStorage.getItem('webpush_auto_subscribe_attempted')
+      if (hasAttemptedAutoSubscribe) {
+        return
+      }
+
+      // If permission is default, request it first
+      if (permission === 'default') {
+        sessionStorage.setItem('webpush_auto_subscribe_attempted', 'true')
+        requestPermission().then((result) => {
+          if (result === 'granted') {
+            subscribe().catch((err) => {
+              console.error('[useWebPush] Auto-subscribe failed:', err)
+              // Don't retry on failure
+            })
+          }
+        }).catch((err) => {
+          console.error('[useWebPush] Permission request failed:', err)
+        })
+      } else if (permission === 'granted') {
+        // Permission already granted, just subscribe
+        sessionStorage.setItem('webpush_auto_subscribe_attempted', 'true')
+        subscribe().catch((err) => {
+          console.error('[useWebPush] Auto-subscribe failed:', err)
+          // Don't retry on failure
+        })
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSubscribe, permission, isSubscribed, isLoading, isSupported])
 
   return {
     isSupported,

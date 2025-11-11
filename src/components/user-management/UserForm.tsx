@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { UserCreate, UserUpdate, User, TenantGroup } from "@/api/generated/interfaces";
-import { tenantGroupsList, usersRetrieve } from "@/api/generated/api";
+import { usersRetrieve } from "@/api/generated/api";
+import { useTenantGroups } from "@/hooks/api/useTenant";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,12 @@ export default function UserForm({
 }: UserFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tenantGroups, setTenantGroups] = useState<TenantGroup[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(true);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
   const [fullUserData, setFullUserData] = useState<User | null>(null);
+
+  // Use React Query hook for tenant groups - only fetch when dialog is open
+  const { data: tenantGroupsData, isLoading: loadingGroups } = useTenantGroups({ enabled: open });
+  const tenantGroups = tenantGroupsData?.results || [];
 
   const [formData, setFormData] = useState({
     email: user?.email || "",
@@ -86,22 +89,6 @@ export default function UserForm({
       }));
     }
   }, [fullUserData, user]);
-
-  // Load tenant groups on component mount
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const tenantGroupsResponse = await tenantGroupsList();
-        setTenantGroups(tenantGroupsResponse.results || []);
-      } catch (error) {
-        console.error('Failed to load tenant groups:', error);
-      } finally {
-        setLoadingGroups(false);
-      }
-    };
-
-    fetchGroups();
-  }, []);
 
   const statusOptions = [
     { value: "active", label: "Active" },

@@ -12,3 +12,6 @@ export * from './usePayments';
 
 // Time tracking hooks
 export * from './useTimeTracking';
+
+// User hooks
+export * from './useUsers';

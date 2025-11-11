@@ -10,6 +10,7 @@ import {
 } from "@/api/generated/interfaces";
 import * as api from "@/api/generated/api";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/api/useUsers";
 
 import UserTable from "./user-management/UserTable";
 import UserBulkActions from "./user-management/UserBulkActions";
@@ -34,20 +35,12 @@ export default function UserManagement() {
   const t = useTranslations("users");
   const tCommon = useTranslations("common");
   const { data: currentUserProfile } = useUserProfile();
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
+
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
-  const [pagination, setPagination] = useState({
-    count: 0,
-    next: null as string | null,
-    previous: null as string | null,
-    currentPage: 1,
-    totalPages: 1,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<UserFilters>({
     search: "",
     role: "",
@@ -57,42 +50,31 @@ export default function UserManagement() {
     isStaff: null,
   });
 
-  useEffect(() => {
-    fetchUsers();
-  }, [filters, pagination.currentPage]);
+  // Use React Query hook for users
+  const { data: usersData, isLoading: loading, error: queryError } = useUsers({
+    page: currentPage,
+    search: filters.search || undefined,
+  });
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response: PaginatedUserList = await api.usersList(
-        undefined, // ordering
-        pagination.currentPage,
-        filters.search || undefined
-      );
-
-      setUsers(response.results);
-      setPagination((prev) => ({
-        ...prev,
-        count: response.count,
-        next: response.next || null,
-        previous: response.previous || null,
-        totalPages: Math.ceil(response.count / 20), // Assuming 20 items per page
-      }));
-    } catch (err: any) {
-      console.error("Failed to fetch users:", err);
-      setError(err.message || "Failed to load users");
-    } finally {
-      setLoading(false);
-    }
+  const users = usersData?.results || [];
+  const error = queryError ? (queryError as Error).message : "";
+  const pagination = {
+    count: usersData?.count || 0,
+    next: usersData?.next || null,
+    previous: usersData?.previous || null,
+    currentPage,
+    totalPages: Math.ceil((usersData?.count || 0) / 20), // Assuming 20 items per page
   };
+
+  // Mutations
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
 
   const handleCreateUser = async (userData: UserCreate | UserUpdate) => {
     try {
-      await api.usersCreate(userData as UserCreate);
+      await createUserMutation.mutateAsync(userData as UserCreate);
       setShowCreateForm(false);
-      fetchUsers(); // Refresh the list
     } catch (err: any) {
       throw new Error(
         err.response?.data?.detail || err.message || "Failed to create user"
@@ -105,9 +87,8 @@ export default function UserManagement() {
     userData: UserCreate | UserUpdate
   ) => {
     try {
-      await api.usersUpdate(userId, userData as UserUpdate);
+      await updateUserMutation.mutateAsync({ id: userId, data: userData as UserUpdate });
       setEditingUser(null);
-      fetchUsers(); // Refresh the list
     } catch (err: any) {
       throw new Error(
         err.response?.data?.detail || err.message || "Failed to update user"
@@ -121,8 +102,7 @@ export default function UserManagement() {
     }
 
     try {
-      await api.usersDestroy(userId);
-      fetchUsers(); // Refresh the list
+      await deleteUserMutation.mutateAsync(userId);
     } catch (err: any) {
       alert(
         err.response?.data?.detail || err.message || tCommon("error")
@@ -133,7 +113,7 @@ export default function UserManagement() {
   const handleChangeUserStatus = async (userId: number, status: string) => {
     try {
       await api.usersPartialUpdate(userId, { status: status as any });
-      fetchUsers(); // Refresh the list
+      // React Query will auto-invalidate and refetch
     } catch (err: any) {
       alert(
         err.response?.data?.detail ||
@@ -182,14 +162,13 @@ export default function UserManagement() {
         }
       }
 
-      fetchUsers(); // Refresh the list
+      // React Query will auto-invalidate and refetch
     } catch (err: any) {
       alert(
         err.response?.data?.detail ||
           err.message ||
           "Failed to toggle staff status"
       );
-      fetchUsers(); // Refresh to revert any partial changes
     }
   };
 
@@ -207,19 +186,19 @@ export default function UserManagement() {
 
       await api.usersBulkActionCreate(bulkActionData);
       setSelectedUsers([]);
-      fetchUsers(); // Refresh the list
+      // React Query will auto-invalidate and refetch
     } catch (err: any) {
       alert(err.response?.data?.detail || err.message || "Bulk action failed");
     }
   };
 
   const handlePageChange = (page: number) => {
-    setPagination((prev) => ({ ...prev, currentPage: page }));
+    setCurrentPage(page);
   };
 
   const handleFiltersChange = (newFilters: Partial<UserFilters>) => {
     setFilters((prev: UserFilters) => ({ ...prev, ...newFilters }));
-    setPagination((prev) => ({ ...prev, currentPage: 1 })); // Reset to first page
+    setCurrentPage(1); // Reset to first page
   };
 
   // Check if user has booking management feature

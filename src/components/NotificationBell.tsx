@@ -53,7 +53,12 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
       console.log('[NotificationBell] Web Push subscription changed:', isSubscribed)
     },
     onError: (error) => {
-      console.error('[NotificationBell] Web Push error:', error)
+      // Use console.warn instead of console.error for browser support issues
+      if (error.message.includes('not supported')) {
+        console.warn('[NotificationBell] Web Push not available in this browser - falling back to WebSocket only')
+      } else {
+        console.error('[NotificationBell] Web Push error:', error)
+      }
     },
   })
 

@@ -14,8 +14,8 @@ import {
   ticketFormsRetrieve,
   formSubmissionsCreate,
   itemListsRetrieve,
-  tenantGroupsList,
 } from "@/api/generated/api";
+import { useTenantGroups } from "@/hooks/api/useTenant";
 import type {
   Board,
   TicketColumn,
@@ -111,8 +111,11 @@ export function TicketCreateSheet() {
   const [users, setUsers] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
-  const [groups, setGroups] = useState<TenantGroup[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([]);
+
+  // Use React Query hook for tenant groups - only fetch when sheet is open
+  const { data: groupsData } = useTenantGroups({ enabled: isOpen });
+  const groups = groupsData?.results || [];
   const [selectedAssignments, setSelectedAssignments] = useState<AssignmentData[]>([]);
   const [ticketForms, setTicketForms] = useState<TicketFormMinimal[]>([]);
   const [selectedForm, setSelectedForm] = useState<TicketForm | null>(null);
@@ -173,18 +176,21 @@ export function TicketCreateSheet() {
     );
   }, [selectedBoard, formData.board_id, boards, users]);
 
-  // Fetch boards, columns, users, forms, tags, groups on mount
+  // Fetch boards, columns, users, forms, tags, groups only when sheet is open
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setFetchingData(true);
-        const [boardsRes, columnsRes, usersRes, formsRes, tagsRes, groupsRes] = await Promise.all([
+        const [boardsRes, columnsRes, usersRes, formsRes, tagsRes] = await Promise.all([
           boardsList(),
           columnsList(),
           usersList(),
           ticketFormsList(),
           tagsList(),
-          tenantGroupsList(),
         ]);
 
         setBoards(boardsRes.results || []);
@@ -192,7 +198,7 @@ export function TicketCreateSheet() {
         setUsers(usersRes.results || []);
         setTicketForms(formsRes.results || []);
         setTags(tagsRes.results || []);
-        setGroups(groupsRes.results || []);
+        // Groups are now loaded via React Query hook
 
         // Set default form if available and fetch full form details
         const defaultFormMinimal =
@@ -213,7 +219,7 @@ export function TicketCreateSheet() {
     };
 
     fetchData();
-  }, []);
+  }, [isOpen]);
 
   // Set board and column from context when available
   useEffect(() => {

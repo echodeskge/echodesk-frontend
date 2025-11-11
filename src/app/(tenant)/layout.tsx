@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useBoards } from "@/hooks/useBoards";
 import { getSidebarMenuItems, MenuItem } from "@/services/permissionService";
@@ -18,7 +18,7 @@ import { TicketCreateSheet } from "@/components/TicketCreateSheet";
 import { BoardProvider, useBoard } from "@/contexts/BoardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { TenantInfo } from "@/types/auth";
-import { tenantService } from "@/services/tenantService";
+import { useTenant } from "@/contexts/TenantContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
 import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
@@ -110,89 +110,52 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   });
 
   const [facebookConnected, setFacebookConnected] = useState(false);
-  const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
   const [managingBoardUsersId, setManagingBoardUsersId] = useState<
     number | null
   >(null);
   const [isBoardCreateOpen, setIsBoardCreateOpen] = useState(false);
 
-  // Load tenant data from subdomain
+  // Get tenant from context (using React Query under the hood)
+  const { tenant: tenantConfig, loading: tenantLoading } = useTenant();
+
+  // Convert tenant config to TenantInfo format
+  const tenantInfo: TenantInfo | null = tenantConfig ? {
+    id: tenantConfig.schema_name,
+    name: tenantConfig.tenant_name,
+    schema_name: tenantConfig.schema_name,
+    domain: `${tenantConfig.schema_name}.echodesk.ge`,
+    api_url: tenantConfig.api_url,
+    theme: tenantConfig.theme,
+  } : null;
+
+  // Redirect if no tenant found
   useEffect(() => {
-    const loadTenant = async () => {
-      try {
-        if (typeof window === "undefined") return;
+    if (!tenantLoading && !tenantConfig) {
+      console.log("No tenant configured, redirecting to homepage");
+      router.push("/");
+    }
+  }, [tenantLoading, tenantConfig, router]);
 
-        const hostname = window.location.hostname;
+  // Check social connections with React Query
+  const { data: facebookStatus } = useQuery({
+    queryKey: ['social', 'facebook', 'status'],
+    queryFn: async () => {
+      const axiosInstance = (await import("@/api/axios")).default;
+      const response = await axiosInstance.get("/api/social/facebook/status/");
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+    enabled: !!tenantInfo, // Only check when tenant is loaded
+  });
 
-        // On localhost, check localStorage for development tenant
-        let subdomain: string | null;
-        if (hostname.includes("localhost")) {
-          const storedTenant = localStorage.getItem("dev_tenant");
-          if (storedTenant) {
-            subdomain = storedTenant;
-          } else {
-            // No tenant set, redirect to homepage
-            console.log(
-              "No development tenant set. Set one using: localStorage.setItem('dev_tenant', 'groot')"
-            );
-            router.push("/");
-            return;
-          }
-        } else {
-          subdomain = tenantService.getSubdomainFromHostname(hostname);
-        }
-
-        if (!subdomain) {
-          console.error("No tenant subdomain found");
-          router.push("/");
-          return;
-        }
-
-        const tenantConfig =
-          await tenantService.getTenantBySubdomain(subdomain);
-
-        if (tenantConfig) {
-          const info: TenantInfo = {
-            id: tenantConfig.schema_name,
-            name: tenantConfig.tenant_name,
-            schema_name: tenantConfig.schema_name,
-            domain: `${tenantConfig.schema_name}.echodesk.ge`,
-            api_url: tenantConfig.api_url,
-            theme: tenantConfig.theme,
-          };
-          setTenantInfo(info);
-        } else {
-          console.error("Tenant not found");
-          router.push("/");
-        }
-      } catch (err) {
-        console.error("Failed to load tenant:", err);
-        router.push("/");
-      }
-    };
-
-    loadTenant();
-  }, [router]);
-
-  // Check social connections
+  // Update state when query data changes
   useEffect(() => {
-    const checkSocialConnections = async () => {
-      try {
-        // Check Facebook connection
-        const axiosInstance = (await import("@/api/axios")).default;
-        const response = await axiosInstance.get(
-          "/api/social/facebook/status/"
-        );
-        setFacebookConnected(response.data.connected || false);
-      } catch (err) {
-        console.error("Failed to check social connections:", err);
-        setFacebookConnected(false);
-      }
-    };
-
-    checkSocialConnections();
-  }, []);
+    if (facebookStatus) {
+      setFacebookConnected(facebookStatus.connected || false);
+    }
+  }, [facebookStatus]);
 
   // Translation key mapping for navigation items
   const translationKeyMap: Record<string, string> = {
@@ -375,7 +338,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Check if we should show board switcher (always show on tickets page, even with no boards)
   const showBoardSwitcher = currentView === "tickets";
 
-  if (profileLoading || !tenantInfo) {
+  if (profileLoading || tenantLoading || !tenantInfo) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingSpinner />
