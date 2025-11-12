@@ -23,8 +23,11 @@ interface FeatureSelectionProps {
   onBack: () => void;
 }
 
-// Agent count options (10, 20, 30... 200)
-const AGENT_COUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 10);
+// Required features that cannot be unchecked
+const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
+
+// Agent count options (5, 10, 15, 20... 200)
+const AGENT_COUNT_OPTIONS = Array.from({ length: 40 }, (_, i) => (i + 1) * 5);
 
 export function FeatureSelection({
   features,
@@ -125,14 +128,14 @@ export function FeatureSelection({
                 <Slider
                   value={[agentCount]}
                   onValueChange={([value]) => onAgentCountChange(value)}
-                  min={10}
+                  min={5}
                   max={200}
-                  step={10}
+                  step={5}
                   className="w-full"
                 />
 
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>10 agents</span>
+                  <span>5 agents</span>
                   <span>200 agents</span>
                 </div>
               </div>
@@ -175,6 +178,7 @@ export function FeatureSelection({
                   <div className="space-y-3">
                     {categoryFeatures.map((feature) => {
                       const isSelected = selectedFeatureIds.includes(feature.id);
+                      const isRequired = REQUIRED_FEATURE_KEYS.includes(feature.key);
                       const pricePerAgent = parseFloat(feature.price_per_user_gel || '0');
 
                       return (
@@ -182,22 +186,29 @@ export function FeatureSelection({
                           key={feature.id}
                           className={`
                             flex items-start gap-3 p-3 rounded-lg border transition-colors
+                            ${isRequired ? 'opacity-75' : ''}
                             ${isSelected ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}
                           `}
                         >
                           <Checkbox
                             id={`feature-${feature.id}`}
                             checked={isSelected}
+                            disabled={isRequired}
                             onCheckedChange={() => onFeatureToggle(feature.id)}
                             className="mt-1"
                           />
                           <div className="flex-1 space-y-1">
                             <Label
                               htmlFor={`feature-${feature.id}`}
-                              className="font-medium cursor-pointer"
+                              className={`font-medium ${isRequired ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                             >
                               {feature.icon && <span className="mr-2">{feature.icon}</span>}
                               {feature.name}
+                              {isRequired && (
+                                <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                  Required
+                                </span>
+                              )}
                             </Label>
                             {feature.description && (
                               <p className="text-sm text-muted-foreground">{feature.description}</p>

@@ -35,10 +35,13 @@ export function RegistrationFlow() {
   const router = useRouter();
   const t = useTranslations('auth');
 
+  // Required features that cannot be unchecked
+  const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
+
   const [step, setStep] = useState(1); // 1: Feature Selection, 2: Form
   const [features, setFeatures] = useState<Feature[]>([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
-  const [agentCount, setAgentCount] = useState(10); // Default 10 agents
+  const [agentCount, setAgentCount] = useState(5); // Default 5 agents
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -48,7 +51,7 @@ export function RegistrationFlow() {
     description: '',
     feature_ids: [],
     pricing_model: 'agent' as PricingModel,
-    agent_count: 10,
+    agent_count: 5,
     admin_email: '',
     admin_password: '',
     admin_first_name: '',
@@ -72,12 +75,18 @@ export function RegistrationFlow() {
       const featureIds = featuresParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
       const agents = parseInt(agentsParam, 10);
 
-      if (featureIds.length > 0 && agents >= 10 && agents <= 200) {
-        setSelectedFeatureIds(featureIds);
+      if (featureIds.length > 0 && agents >= 5 && agents <= 200) {
+        // Ensure required features are always included
+        const requiredIds = features
+          .filter(f => REQUIRED_FEATURE_KEYS.includes(f.key))
+          .map(f => f.id);
+        const allFeatureIds = [...new Set([...requiredIds, ...featureIds])];
+
+        setSelectedFeatureIds(allFeatureIds);
         setAgentCount(agents);
         setFormData(prev => ({
           ...prev,
-          feature_ids: featureIds,
+          feature_ids: allFeatureIds,
           agent_count: agents,
         }));
         // Skip to form step
@@ -90,7 +99,14 @@ export function RegistrationFlow() {
     try {
       setLoading(true);
       const data = await featuresList();
-      setFeatures((data.results || []) as Feature[]);
+      const allFeatures = (data.results || []) as Feature[];
+      setFeatures(allFeatures);
+
+      // Pre-select required features
+      const requiredIds = allFeatures
+        .filter(f => REQUIRED_FEATURE_KEYS.includes(f.key))
+        .map(f => f.id);
+      setSelectedFeatureIds(requiredIds);
     } catch (error) {
       console.error('Failed to load features:', error);
       setError('Failed to load features');
@@ -100,6 +116,12 @@ export function RegistrationFlow() {
   };
 
   const handleFeatureToggle = (featureId: number) => {
+    // Don't allow toggling required features
+    const feature = features.find(f => f.id === featureId);
+    if (feature && REQUIRED_FEATURE_KEYS.includes(feature.key)) {
+      return;
+    }
+
     setSelectedFeatureIds((prev) =>
       prev.includes(featureId)
         ? prev.filter((id) => id !== featureId)

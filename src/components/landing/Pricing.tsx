@@ -24,13 +24,16 @@ export function Pricing() {
   const t = useTranslations("landing.pricing");
   const [features, setFeatures] = useState<Feature[]>([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
-  const [agentCount, setAgentCount] = useState(10);
+  const [agentCount, setAgentCount] = useState(5);
   const [loading, setLoading] = useState(true);
 
   // Load features on mount
   useEffect(() => {
     loadFeatures();
   }, []);
+
+  // Required features that cannot be unchecked
+  const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
 
   const loadFeatures = async () => {
     try {
@@ -39,7 +42,7 @@ export function Pricing() {
       const allFeatures = (data.results || []) as Feature[];
       setFeatures(allFeatures);
 
-      // Pre-select popular features for demo
+      // Pre-select required features + popular features for demo
       const popularKeys = ['ticket_management', 'user_management', 'settings'];
       const popularIds = allFeatures
         .filter(f => popularKeys.includes(f.key))
@@ -93,6 +96,12 @@ export function Pricing() {
   }, [selectedFeatureIds, agentCount]);
 
   const handleFeatureToggle = (featureId: number) => {
+    // Don't allow toggling required features
+    const feature = features.find(f => f.id === featureId);
+    if (feature && REQUIRED_FEATURE_KEYS.includes(feature.key)) {
+      return;
+    }
+
     setSelectedFeatureIds((prev) =>
       prev.includes(featureId)
         ? prev.filter((id) => id !== featureId)
@@ -135,13 +144,13 @@ export function Pricing() {
                   <Slider
                     value={[agentCount]}
                     onValueChange={([value]) => setAgentCount(value)}
-                    min={10}
+                    min={5}
                     max={200}
-                    step={10}
+                    step={5}
                     className="w-full"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>10</span>
+                    <span>5</span>
                     <span>200</span>
                   </div>
                 </div>
@@ -189,6 +198,7 @@ export function Pricing() {
                     <div className="space-y-3">
                       {categoryFeatures.map((feature) => {
                         const isSelected = selectedFeatureIds.includes(feature.id);
+                        const isRequired = REQUIRED_FEATURE_KEYS.includes(feature.key);
                         const pricePerAgent = parseFloat(feature.price_per_user_gel || '0');
                         const totalPrice = pricePerAgent * agentCount;
 
@@ -196,27 +206,34 @@ export function Pricing() {
                           <div
                             key={feature.id}
                             className={`
-                              flex items-start gap-3 p-4 rounded-lg border transition-all cursor-pointer
+                              flex items-start gap-3 p-4 rounded-lg border transition-all
+                              ${isRequired ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}
                               ${isSelected
                                 ? 'border-primary bg-primary/5 shadow-sm'
                                 : 'border-border hover:border-primary/50 hover:bg-accent/50'
                               }
                             `}
-                            onClick={() => handleFeatureToggle(feature.id)}
+                            onClick={() => !isRequired && handleFeatureToggle(feature.id)}
                           >
                             <Checkbox
                               id={`feature-${feature.id}`}
                               checked={isSelected}
+                              disabled={isRequired}
                               onCheckedChange={() => handleFeatureToggle(feature.id)}
                               className="mt-1"
                             />
                             <div className="flex-1 space-y-1">
                               <Label
                                 htmlFor={`feature-${feature.id}`}
-                                className="font-medium cursor-pointer flex items-center gap-2"
+                                className={`font-medium flex items-center gap-2 ${isRequired ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                               >
                                 {feature.icon && <span>{feature.icon}</span>}
                                 {feature.name}
+                                {isRequired && (
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                    Required
+                                  </span>
+                                )}
                               </Label>
                               {feature.description && (
                                 <p className="text-sm text-muted-foreground">

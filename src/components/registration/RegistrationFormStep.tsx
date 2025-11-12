@@ -192,8 +192,8 @@ export function RegistrationFormStep({
                   id="agent_count"
                   name="agent_count"
                   type="number"
-                  min="10"
-                  step="10"
+                  min="5"
+                  step="5"
                   max="200"
                   value={formData.agent_count}
                   onChange={handleInputChange}
