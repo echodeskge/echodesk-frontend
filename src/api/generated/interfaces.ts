@@ -3445,3 +3445,9 @@ export interface WhatsAppMessage {
 export interface WhatsAppMessageStatusEnum {
   [key: string]: any;
 }
+
+export interface WhatsAppSendMessageRequest {
+  to_number: string;
+  message: string;
+  waba_id: string;
+}

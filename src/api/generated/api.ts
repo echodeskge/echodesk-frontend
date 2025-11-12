@@ -259,6 +259,7 @@ import type {
   PatchedWhatsAppBusinessAccountRequest,
   PaginatedWhatsAppMessageList,
   WhatsAppMessage,
+  WhatsAppSendMessageRequest,
   PaginatedTagList,
   TagRequest,
   Tag,
@@ -4469,6 +4470,16 @@ export async function paymentsProcessPaymentCreate(
   return response.data;
 }
 
+export async function reactivateSubscriptionPayment(): Promise<{
+  payment_url?: string;
+  order_id?: string;
+  amount?: number;
+  currency?: string;
+}> {
+  const response = await axios.post(`/api/payments/reactivate/`);
+  return response.data;
+}
+
 export async function getSavedCard(): Promise<any> {
   const response = await axios.get(`/api/payments/saved-card/`);
   return response.data;
@@ -5036,8 +5047,14 @@ export async function socialWhatsappEmbeddedSignupCallbackCreate(): Promise<any>
   return response.data;
 }
 
-export async function socialWhatsappSendMessageCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/whatsapp/send-message/`);
+export async function socialWhatsappSendMessageCreate(
+  data: WhatsAppSendMessageRequest,
+): Promise<{
+  success?: boolean;
+  message?: string;
+  whatsapp_message_id?: string;
+}> {
+  const response = await axios.post(`/api/social/whatsapp/send-message/`, data);
   return response.data;
 }
 

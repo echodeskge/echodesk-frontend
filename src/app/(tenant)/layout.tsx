@@ -34,15 +34,21 @@ import {
   useSubscription,
 } from "@/contexts/SubscriptionContext";
 import { navigationConfig } from "@/config/navigationConfig";
+import { useAuth } from "@/contexts/AuthContext";
+import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
+import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
+import { useReactivateSubscription } from "@/hooks/api/usePayments";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale() as Locale;
   const t = useTranslations("nav");
-  const { hasFeature, subscription } = useSubscription();
+  const { hasFeature, subscription, loading: subscriptionLoading } = useSubscription();
+  const { user } = useAuth();
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
+  const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
   const { data: boards } = useBoards();
   const { selectedBoardId, setSelectedBoardId } = useBoard();
 
@@ -344,6 +350,50 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         <LoadingSpinner />
       </div>
     );
+  }
+
+  // Check if subscription is inactive (after loading completes)
+  if (!subscriptionLoading && subscription?.subscription) {
+    const isActive = subscription.subscription.is_active;
+    const isAdmin = user?.is_staff || user?.is_superuser;
+
+    // If subscription is inactive, show appropriate screen
+    if (!isActive) {
+      // Handle make payment action - reactivates subscription with full payment + saves card
+      const handleMakePayment = async () => {
+        try {
+          const result = await reactivateSubscription();
+          if (result?.payment_url) {
+            window.location.href = result.payment_url;
+          }
+        } catch (error) {
+          console.error('Failed to create reactivation payment:', error);
+        }
+      };
+
+      if (isAdmin) {
+        // Show admin screen with payment options
+        return (
+          <SubscriptionInactiveAdminScreen
+            subscription={subscription}
+            onMakePayment={handleMakePayment}
+            isLoading={subscriptionLoading}
+          />
+        );
+      } else {
+        // Show user screen (contact admin message)
+        return (
+          <SubscriptionInactiveUserScreen
+            subscription={subscription}
+            tenantInfo={{
+              name: tenantConfig?.tenant_name,
+              admin_email: tenantConfig?.admin_email,
+            }}
+            isLoading={subscriptionLoading}
+          />
+        );
+      }
+    }
   }
 
   return (

@@ -201,3 +201,20 @@ export function useSetDefaultCard() {
     },
   });
 }
+
+// Reactivate subscription with payment mutation
+export function useReactivateSubscription() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/payments/reactivate/');
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate subscription and saved card data after successful reactivation
+      queryClient.invalidateQueries({ queryKey: ['tenant', 'subscription'] });
+      queryClient.invalidateQueries({ queryKey: paymentKeys.savedCard() });
+    },
+  });
+}
