@@ -227,14 +227,14 @@ export default function InvoiceSettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="client_itemlist">{t("settings.form.clientItemList")}</Label>
                 <Select
-                  value={settings?.client_itemlist?.toString() || ""}
-                  onValueChange={(value) => setValue("client_itemlist", value ? parseInt(value) : null)}
+                  value={settings?.client_itemlist?.toString() || "none"}
+                  onValueChange={(value) => setValue("client_itemlist", value === "none" ? null : parseInt(value))}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t("settings.form.selectItemList")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">{t("settings.form.selectItemList")}</SelectItem>
+                    <SelectItem value="none">—</SelectItem>
                     {availableItemLists?.map((itemList: any) => (
                       <SelectItem key={itemList.id} value={itemList.id.toString()}>
                         {itemList.title}
