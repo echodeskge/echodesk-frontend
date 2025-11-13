@@ -188,7 +188,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
         attributes: attributes.length > 0 ? attributes : undefined,
       };
 
-      await createProduct.mutateAsync(productData as ProductCreateUpdateRequest);
+      await createProduct.mutateAsync(productData);
 
       form.reset(buildDefaultValues());
       setAttributes([]);

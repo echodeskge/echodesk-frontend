@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,27 +34,62 @@ export function OptionsManager({
   languages,
   disabled = false,
 }: OptionsManagerProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(
-    languages[0]?.code || "en"
-  );
+  const [newOptionValue, setNewOptionValue] = useState("");
+  const [newOptionLabels, setNewOptionLabels] = useState<Record<string, string>>({});
+
+  // Initialize empty labels when languages change
+  React.useEffect(() => {
+    const emptyLabels: Record<string, string> = {};
+    languages.forEach((lang) => {
+      emptyLabels[lang.code] = "";
+    });
+    setNewOptionLabels(emptyLabels);
+  }, [languages]);
 
   const addOption = () => {
-    const newOption: AttributeOption = { value: "" };
-    // Initialize all language fields
+    if (!newOptionValue.trim()) {
+      alert("Please enter a value for the option");
+      return;
+    }
+
+    // Check if at least one language label is filled
+    const hasAnyLabel = Object.values(newOptionLabels).some((label) => label.trim());
+    if (!hasAnyLabel) {
+      alert("Please enter at least one language label");
+      return;
+    }
+
+    // Create new option with all language labels
+    const newOption: AttributeOption = { value: newOptionValue.trim() };
+
+    // Find first filled label for auto-fill
+    let firstFilledLabel = "";
+    for (const langCode of Object.keys(newOptionLabels)) {
+      if (newOptionLabels[langCode]?.trim()) {
+        firstFilledLabel = newOptionLabels[langCode].trim();
+        break;
+      }
+    }
+
+    // Set all language labels (auto-fill empty ones)
     languages.forEach((lang) => {
-      newOption[lang.code] = "";
+      const label = newOptionLabels[lang.code]?.trim();
+      newOption[lang.code] = label || firstFilledLabel;
     });
+
     onChange([...options, newOption]);
+
+    // Reset inputs
+    setNewOptionValue("");
+    const emptyLabels: Record<string, string> = {};
+    languages.forEach((lang) => {
+      emptyLabels[lang.code] = "";
+    });
+    setNewOptionLabels(emptyLabels);
   };
 
   const removeOption = (index: number) => {
     const newOptions = options.filter((_, i) => i !== index);
-    onChange(newOptions);
-  };
-
-  const updateOption = (index: number, field: string, value: string) => {
-    const newOptions = [...options];
-    newOptions[index] = { ...newOptions[index], [field]: value };
     onChange(newOptions);
   };
 
@@ -67,113 +102,123 @@ export function OptionsManager({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div>
         <Label className="text-base font-semibold">Attribute Options</Label>
-        <div className="flex items-center gap-2">
-          <Label className="text-sm font-medium">Language:</Label>
-          <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {languages.map((lang) => (
-                <SelectItem key={lang.code} value={lang.code}>
+        <p className="text-xs text-muted-foreground mt-1">
+          Add option values with labels in all languages
+        </p>
+      </div>
+
+      {/* Add New Option Form */}
+      <Card className="bg-muted/30">
+        <CardContent className="p-4 space-y-3">
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold">Value (identifier)</Label>
+            <Input
+              placeholder="e.g., red, blue, large"
+              value={newOptionValue}
+              onChange={(e) => setNewOptionValue(e.target.value)}
+              disabled={disabled}
+              className="font-mono text-sm"
+            />
+          </div>
+
+          <div className="border-t pt-3 space-y-2">
+            <Label className="text-xs font-semibold">Labels (all languages)</Label>
+            {languages.map((lang) => (
+              <div key={lang.code} className="space-y-1">
+                <Label className="text-xs text-muted-foreground">
                   {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {options.map((option, index) => (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex-1 space-y-3">
-                  {/* Value field (always visible as identifier) */}
-                  <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Value (identifier)
-                    </Label>
-                    <Input
-                      placeholder="e.g., red, blue, large"
-                      value={option.value || ""}
-                      onChange={(e) =>
-                        updateOption(index, "value", e.target.value)
-                      }
-                      disabled={disabled}
-                      className="font-mono text-sm"
-                    />
-                  </div>
-
-                  {/* Label in selected language */}
-                  <div className="grid gap-2">
-                    <Label className="text-xs text-muted-foreground">
-                      Label ({selectedLanguage.toUpperCase()})
-                    </Label>
-                    <Input
-                      placeholder={`Label in ${selectedLanguage}`}
-                      value={option[selectedLanguage] || ""}
-                      onChange={(e) =>
-                        updateOption(index, selectedLanguage, e.target.value)
-                      }
-                      disabled={disabled}
-                    />
-                  </div>
-
-                  {/* Show all filled languages as badges */}
-                  <div className="flex flex-wrap gap-1">
-                    {languages.map((lang) => {
-                      if (option[lang.code] && lang.code !== selectedLanguage) {
-                        return (
-                          <Badge
-                            key={lang.code}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            {lang.code.toUpperCase()}: {option[lang.code]}
-                          </Badge>
-                        );
-                      }
-                      return null;
-                    })}
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeOption(index)}
+                </Label>
+                <Input
+                  placeholder={`Label in ${lang.code}`}
+                  value={newOptionLabels[lang.code] || ""}
+                  onChange={(e) =>
+                    setNewOptionLabels({
+                      ...newOptionLabels,
+                      [lang.code]: e.target.value,
+                    })
+                  }
                   disabled={disabled}
-                  className="shrink-0"
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                />
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            ))}
+            <p className="text-xs text-muted-foreground">
+              Fill at least one language. Empty fields auto-fill.
+            </p>
+          </div>
 
-      {options.length === 0 && (
-        <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-          No options added yet. Click the button below to add options.
+          <Button
+            type="button"
+            onClick={addOption}
+            disabled={disabled}
+            className="w-full"
+            size="sm"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Option
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Existing Options List */}
+      {options.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">Added Options ({options.length})</Label>
+          <div className="space-y-2">
+            {options.map((option, index) => (
+              <Card key={index}>
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <div className="text-sm font-medium truncate">
+                        {languages.map((lang) => option[lang.code]).find(Boolean) || option.value}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-mono truncate">
+                        {option.value}
+                      </div>
+                      {/* Show all language labels as badges */}
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {languages.map((lang) => {
+                          if (option[lang.code]) {
+                            return (
+                              <Badge
+                                key={lang.code}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {lang.code.toUpperCase()}: {option[lang.code]}
+                              </Badge>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeOption(index)}
+                      disabled={disabled}
+                      className="shrink-0 h-8 w-8"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        onClick={addOption}
-        disabled={disabled}
-        className="w-full"
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        Add Option
-      </Button>
+      {options.length === 0 && (
+        <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
+          No options added yet
+        </div>
+      )}
     </div>
   );
 }

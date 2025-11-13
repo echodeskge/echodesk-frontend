@@ -133,8 +133,8 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
   useEffect(() => {
     if (open && nameValues && typeof nameValues === "object" && !form.getValues("key")) {
       // Find first non-empty name value
-      const firstFilledName = Object.values(nameValues).find((val) => val?.trim());
-      if (firstFilledName) {
+      const firstFilledName = Object.values(nameValues).find((val) => typeof val === 'string' && val?.trim());
+      if (firstFilledName && typeof firstFilledName === 'string') {
         const generatedKey = firstFilledName
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "_")

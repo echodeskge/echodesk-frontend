@@ -71,12 +71,18 @@ const createAxiosInstance = (baseURL?: string): AxiosInstance => {
       if (token && config.headers) {
         config.headers.Authorization = `Token ${token}`;
       }
-      
+
       // Add origin header for CORS
       if (typeof window !== 'undefined' && config.headers) {
         config.headers.Origin = window.location.origin;
       }
-      
+
+      // Remove default Content-Type for FormData requests
+      // axios will automatically set the correct Content-Type with boundary
+      if (config.data instanceof FormData && config.headers) {
+        delete config.headers['Content-Type'];
+      }
+
       return config;
     },
     (error) => {
