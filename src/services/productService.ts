@@ -26,8 +26,22 @@ export interface ProductFilters {
   search?: string;
   in_stock?: boolean;
   low_stock?: boolean;
+  attributes?: string; // Format: "color:red,size:large"
   ordering?: string;
   page?: number;
+}
+
+/**
+ * Helper function to build attributes filter string
+ * @param attributesObj Object with attribute keys and values
+ * @returns Formatted string "key1:value1,key2:value2"
+ * @example
+ * buildAttributesFilter({ color: 'red', size: 'large' }) // Returns "color:red,size:large"
+ */
+export function buildAttributesFilter(attributesObj: Record<string, string>): string {
+  return Object.entries(attributesObj)
+    .map(([key, value]) => `${key}:${value}`)
+    .join(',');
 }
 
 class ProductService {
@@ -35,17 +49,26 @@ class ProductService {
    * Get paginated list of products with filters
    */
   async getProducts(filters?: ProductFilters): Promise<PaginatedProductListList> {
-    return ecommerceAdminProductsList(
-      filters?.in_stock,
-      filters?.is_featured,
-      filters?.low_stock,
-      filters?.max_price,
-      filters?.min_price,
-      filters?.ordering,
-      filters?.page,
-      filters?.search,
-      filters?.status
-    );
+    // Build query params manually to include attributes filter
+    const params = new URLSearchParams();
+
+    if (filters?.in_stock !== undefined) params.append('in_stock', String(filters.in_stock));
+    if (filters?.is_featured !== undefined) params.append('is_featured', String(filters.is_featured));
+    if (filters?.low_stock !== undefined) params.append('low_stock', String(filters.low_stock));
+    if (filters?.max_price !== undefined) params.append('max_price', String(filters.max_price));
+    if (filters?.min_price !== undefined) params.append('min_price', String(filters.min_price));
+    if (filters?.ordering) params.append('ordering', filters.ordering);
+    if (filters?.page) params.append('page', String(filters.page));
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.attributes) params.append('attributes', filters.attributes);
+
+    const queryString = params.toString();
+    const url = `/api/ecommerce/admin/products/${queryString ? `?${queryString}` : ''}`;
+
+    const { default: axios } = await import('@/api/axios');
+    const response = await axios.get<PaginatedProductListList>(url);
+    return response.data;
   }
 
   /**
