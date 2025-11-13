@@ -56,11 +56,8 @@ export function ImageGalleryPicker({
 
     try {
       setUploading(true);
-      const response = await axios.post("/api/upload/image/", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      // Don't set Content-Type header - let axios handle it automatically with boundary
+      const response = await axios.post("/api/upload/image/", formData);
 
       const imageUrl = response.data.url;
       const newImages = [...images, imageUrl];
