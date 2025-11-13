@@ -65,13 +65,11 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
 
   const activeLanguages = languagesData?.results || [];
 
-  // Selected language for name field and options
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("ka");
 
   // Options state (for select/multiselect types)
   const [options, setOptions] = useState<AttributeOption[]>([]);
   const [newOptionValue, setNewOptionValue] = useState("");
-  const [newOptionLabel, setNewOptionLabel] = useState("");
+  const [newOptionLabels, setNewOptionLabels] = useState<Record<string, string>>({});
 
   const form = useForm<Partial<AttributeDefinition>>({
     defaultValues: {
@@ -118,25 +116,33 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
       form.reset(buildDefaultValues());
       setOptions([]);
       setNewOptionValue("");
-      setNewOptionLabel("");
-      const kaLang = activeLanguages.find((l) => l.code === "ka");
-      setSelectedLanguage(kaLang ? "ka" : activeLanguages[0]?.code || "ka");
+
+      // Initialize empty labels for all languages
+      const emptyLabels: Record<string, string> = {};
+      activeLanguages.forEach((lang) => {
+        emptyLabels[lang.code] = "";
+      });
+      setNewOptionLabels(emptyLabels);
     }
   }, [open, activeLanguages.length]);
 
-  // Watch the selected language's name field to auto-generate key
-  const selectedLangName = form.watch(`name.${selectedLanguage}` as any);
+  // Watch all name fields to auto-generate key from first filled language
+  const nameValues = form.watch("name");
 
-  // Auto-generate key from selected language name
+  // Auto-generate key from first filled language name
   useEffect(() => {
-    if (selectedLangName && open && selectedLanguage && !form.getValues("key")) {
-      const generatedKey = selectedLangName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "_")
-        .replace(/(^_|_$)/g, "");
-      form.setValue("key", generatedKey);
+    if (open && nameValues && typeof nameValues === "object" && !form.getValues("key")) {
+      // Find first non-empty name value
+      const firstFilledName = Object.values(nameValues).find((val) => val?.trim());
+      if (firstFilledName) {
+        const generatedKey = firstFilledName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "_")
+          .replace(/(^_|_$)/g, "");
+        form.setValue("key", generatedKey);
+      }
     }
-  }, [selectedLangName, open, selectedLanguage, form]);
+  }, [nameValues, open, form]);
 
   // Helper to get language name
   const getLanguageName = (lang: Language) => {
@@ -153,27 +159,40 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
       return;
     }
 
-    if (!newOptionLabel.trim()) {
-      alert(`Please enter a label in ${selectedLanguage.toUpperCase()}`);
+    // Check if at least one language label is filled
+    const hasAnyLabel = Object.values(newOptionLabels).some((label) => label.trim());
+    if (!hasAnyLabel) {
+      alert("Please enter at least one language label");
       return;
     }
 
-    // Create new option with all languages initialized
+    // Create new option with all language labels
     const newOption: AttributeOption = { value: newOptionValue.trim() };
-    activeLanguages.forEach((lang) => {
-      newOption[lang.code] = lang.code === selectedLanguage ? newOptionLabel.trim() : "";
-    });
 
-    // Auto-fill other languages with the entered label
-    activeLanguages.forEach((lang) => {
-      if (lang.code !== selectedLanguage) {
-        newOption[lang.code] = newOptionLabel.trim();
+    // Find first filled label for auto-fill
+    let firstFilledLabel = "";
+    for (const langCode of Object.keys(newOptionLabels)) {
+      if (newOptionLabels[langCode]?.trim()) {
+        firstFilledLabel = newOptionLabels[langCode].trim();
+        break;
       }
+    }
+
+    // Set all language labels (auto-fill empty ones with first filled label)
+    activeLanguages.forEach((lang) => {
+      const label = newOptionLabels[lang.code]?.trim();
+      newOption[lang.code] = label || firstFilledLabel;
     });
 
     setOptions([...options, newOption]);
     setNewOptionValue("");
-    setNewOptionLabel("");
+
+    // Reset all label inputs
+    const emptyLabels: Record<string, string> = {};
+    activeLanguages.forEach((lang) => {
+      emptyLabels[lang.code] = "";
+    });
+    setNewOptionLabels(emptyLabels);
   };
 
   // Remove option
@@ -182,9 +201,10 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
     setOptions(newOptions);
   };
 
-  // Get option label for display
+  // Get option label for display (use first available language)
   const getOptionLabel = (option: AttributeOption) => {
-    return option[selectedLanguage] || option[locale] || option.value;
+    // Try current locale first, then English, then first available language, then value
+    return option[locale] || option.en || activeLanguages.map((lang) => option[lang.code]).find(Boolean) || option.value;
   };
 
   const onSubmit = async (data: Partial<AttributeDefinition>) => {
@@ -212,16 +232,18 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
         });
       }
 
-      // Auto-generate key if not provided
+      // Auto-generate key if not provided (use first filled name value)
       if (!data.key && data.name) {
-        const nameEn =
-          typeof data.name === "object"
-            ? (data.name as any)[selectedLanguage] || (data.name as any).en
-            : data.name;
-        data.key = nameEn
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "_")
-          .replace(/(^_|_$)/g, "");
+        const nameData = data.name as Record<string, string>;
+        const firstFilledName = typeof nameData === "object"
+          ? Object.values(nameData).find((val) => val?.trim())
+          : data.name;
+        if (firstFilledName) {
+          data.key = firstFilledName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/(^_|_$)/g, "");
+        }
       }
 
       // Handle options for select types
@@ -282,42 +304,37 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
-                    {/* Language Selector */}
-                    <div className="flex items-center gap-2">
-                      <FormLabel className="text-sm font-medium">Language:</FormLabel>
-                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="w-[200px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {activeLanguages.map((lang) => (
-                            <SelectItem key={lang.code} value={lang.code}>
-                              {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {/* Attribute Name - All Languages */}
+                    <div className="space-y-3">
+                      <FormLabel className="text-base font-semibold">
+                        {t("nameEn")}
+                      </FormLabel>
+                      <FormDescription>
+                        Fill in at least one language. Others will be auto-filled.
+                      </FormDescription>
 
-                    {/* Attribute Name */}
-                    <FormField
-                      control={form.control}
-                      name={`name.${selectedLanguage}` as any}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>
-                            {t("nameEn")} ({selectedLanguage.toUpperCase()})
-                          </FormLabel>
-                          <FormControl>
-                            <Input placeholder={t("namePlaceholder")} {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Fill in at least one language. Others will be auto-filled.
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                      {activeLanguages.map((lang) => (
+                        <FormField
+                          key={lang.code}
+                          control={form.control}
+                          name={`name.${lang.code}` as any}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-sm text-muted-foreground">
+                                {getLanguageName(lang)} ({lang.code.toUpperCase()})
+                              </FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder={`Name in ${lang.code}`}
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))}
+                    </div>
 
                     {/* Key */}
                     <FormField
@@ -529,13 +546,13 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                   {/* Add New Option Form */}
                   <div className="space-y-3">
                     <div className="space-y-2">
-                      <Label className="text-xs">Value (identifier)</Label>
+                      <Label className="text-xs font-semibold">Value (identifier)</Label>
                       <Input
                         placeholder="e.g., red, large, cotton"
                         value={newOptionValue}
                         onChange={(e) => setNewOptionValue(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                          if (e.key === "Enter" && e.ctrlKey) {
                             e.preventDefault();
                             handleAddOption();
                           }
@@ -544,21 +561,37 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                       />
                     </div>
 
+                    <Separator />
+
+                    {/* All language labels */}
                     <div className="space-y-2">
-                      <Label className="text-xs">
-                        Label ({selectedLanguage.toUpperCase()})
-                      </Label>
-                      <Input
-                        placeholder={`Label in ${selectedLanguage}`}
-                        value={newOptionLabel}
-                        onChange={(e) => setNewOptionLabel(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                            handleAddOption();
-                          }
-                        }}
-                      />
+                      <Label className="text-xs font-semibold">Labels (all languages)</Label>
+                      {activeLanguages.map((lang) => (
+                        <div key={lang.code} className="space-y-1">
+                          <Label className="text-xs text-muted-foreground">
+                            {getLanguageName(lang)} ({lang.code.toUpperCase()})
+                          </Label>
+                          <Input
+                            placeholder={`Label in ${lang.code}`}
+                            value={newOptionLabels[lang.code] || ""}
+                            onChange={(e) =>
+                              setNewOptionLabels({
+                                ...newOptionLabels,
+                                [lang.code]: e.target.value,
+                              })
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && e.ctrlKey) {
+                                e.preventDefault();
+                                handleAddOption();
+                              }
+                            }}
+                          />
+                        </div>
+                      ))}
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Fill at least one language. Empty fields auto-fill with the first filled label.
+                      </p>
                     </div>
 
                     <Button
@@ -568,7 +601,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                       size="sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Value
+                      Add Value (or Ctrl+Enter)
                     </Button>
                   </div>
 
@@ -598,20 +631,17 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                                 <div className="text-xs text-muted-foreground font-mono truncate">
                                   {option.value}
                                 </div>
-                                {/* Show other languages as badges */}
+                                {/* Show all languages as badges */}
                                 <div className="flex flex-wrap gap-1 mt-1">
                                   {activeLanguages.map((lang) => {
-                                    if (
-                                      option[lang.code] &&
-                                      lang.code !== selectedLanguage
-                                    ) {
+                                    if (option[lang.code]) {
                                       return (
                                         <Badge
                                           key={lang.code}
                                           variant="secondary"
                                           className="text-xs"
                                         >
-                                          {lang.code}: {option[lang.code]}
+                                          {lang.code.toUpperCase()}: {option[lang.code]}
                                         </Badge>
                                       );
                                     }

@@ -61,9 +61,6 @@ export function EditAttributeSheet({
 
   const activeLanguages = languagesData?.results || [];
 
-  // Selected language for name field
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("ka");
-
   // Options state (for select/multiselect types)
   const [options, setOptions] = useState<AttributeOption[]>([]);
 
@@ -106,10 +103,6 @@ export function EditAttributeSheet({
       } else {
         setOptions([]);
       }
-
-      // Reset to 'ka' or first available language
-      const kaLang = activeLanguages.find((l) => l.code === "ka");
-      setSelectedLanguage(kaLang ? "ka" : activeLanguages[0]?.code || "ka");
     }
   }, [open, attribute, activeLanguages.length]);
 
@@ -226,42 +219,35 @@ export function EditAttributeSheet({
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
-                {/* Language Selector */}
-                <div className="flex items-center gap-2">
-                  <FormLabel className="text-sm font-medium">Language:</FormLabel>
-                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeLanguages.map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Attribute Name - All Languages */}
+                <div className="space-y-3">
+                  <FormLabel className="text-base font-semibold">Attribute Name</FormLabel>
+                  <FormDescription>
+                    Fill in at least one language. Others will be auto-filled.
+                  </FormDescription>
 
-                {/* Attribute Name - Dynamic per selected language */}
-                <FormField
-                  control={form.control}
-                  name={`name.${selectedLanguage}` as any}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Name ({selectedLanguage.toUpperCase()})
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="Attribute name" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Fill in at least one language. Others will be auto-filled.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  {activeLanguages.map((lang) => (
+                    <FormField
+                      key={lang.code}
+                      control={form.control}
+                      name={`name.${lang.code}` as any}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm text-muted-foreground">
+                            {getLanguageName(lang)} ({lang.code.toUpperCase()})
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder={`Name in ${lang.code}`}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ))}
+                </div>
 
                 {/* Key - Read-only for editing */}
                 <FormField
