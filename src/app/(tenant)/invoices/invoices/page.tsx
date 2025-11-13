@@ -6,11 +6,17 @@
  */
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useInvoices, useInvoiceStats } from "@/hooks/useInvoices";
+import {
+  useInvoices,
+  useInvoiceStats,
+  useDeleteInvoice,
+  useDuplicateInvoice,
+  useDownloadInvoicePDF,
+} from "@/hooks/useInvoices";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -27,31 +33,114 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { FileText, Plus, Download, Send, Eye, Copy, Trash2 } from "lucide-react";
+import { InvoiceStatusBadge } from "@/components/invoices/InvoiceStatusBadge";
+import { CreateInvoiceSheet } from "@/components/invoices/CreateInvoiceSheet";
+import { SendInvoiceDialog } from "@/components/invoices/SendInvoiceDialog";
+import { useToast } from "@/hooks/use-toast";
 import type { InvoiceFilters } from "@/services/invoiceService";
 
 export default function InvoicesPage() {
   const t = useTranslations("invoices");
+  const router = useRouter();
+  const { toast } = useToast();
+
   const [filters, setFilters] = useState<InvoiceFilters>({});
+  const [createSheetOpen, setCreateSheetOpen] = useState(false);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
 
   const { data: invoicesData, isLoading } = useInvoices(filters);
   const { data: stats } = useInvoiceStats();
+  const deleteMutation = useDeleteInvoice();
+  const duplicateMutation = useDuplicateInvoice();
+  const downloadPDFMutation = useDownloadInvoicePDF();
 
   const invoices = invoicesData?.results || [];
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "default";
-      case "partially_paid":
-        return "secondary";
-      case "sent":
-      case "viewed":
-        return "outline";
-      case "overdue":
-        return "destructive";
-      default:
-        return "secondary";
+  const handleView = (invoice: any) => {
+    router.push(`/invoices/invoices/${invoice.id}`);
+  };
+
+  const handleSend = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setSendDialogOpen(true);
+  };
+
+  const handleDownloadPDF = async (invoice: any) => {
+    try {
+      const blob = await downloadPDFMutation.mutateAsync(invoice.id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `invoice-${invoice.invoice_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: t("success.downloaded"),
+        description: t("success.downloadedDesc"),
+      });
+    } catch (error: any) {
+      toast({
+        title: t("errors.downloadFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDuplicate = async (invoice: any) => {
+    try {
+      await duplicateMutation.mutateAsync(invoice.id);
+      toast({
+        title: t("success.duplicated"),
+        description: t("success.duplicatedDesc"),
+      });
+    } catch (error: any) {
+      toast({
+        title: t("errors.duplicateFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedInvoice) return;
+
+    try {
+      await deleteMutation.mutateAsync(selectedInvoice.id);
+      toast({
+        title: t("success.deleted"),
+        description: t("success.deletedDesc"),
+      });
+      setDeleteDialogOpen(false);
+      setSelectedInvoice(null);
+    } catch (error: any) {
+      toast({
+        title: t("errors.deleteFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -63,7 +152,7 @@ export default function InvoicesPage() {
           <h1 className="text-3xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Button>
+        <Button onClick={() => setCreateSheetOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           {t("createInvoice")}
         </Button>
@@ -112,7 +201,7 @@ export default function InvoicesPage() {
           <Select
             value={filters.status || "all"}
             onValueChange={(value) =>
-              setFilters({ ...filters, status: value === "all" ? undefined : value as any })
+              setFilters({ ...filters, status: value === "all" ? undefined : (value as any) })
             }
           >
             <SelectTrigger className="w-[180px]">
@@ -171,28 +260,59 @@ export default function InvoicesPage() {
                   <TableCell>{invoice.client_name}</TableCell>
                   <TableCell>{new Date(invoice.issue_date).toLocaleDateString()}</TableCell>
                   <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
-                  <TableCell>{invoice.total} {invoice.currency}</TableCell>
-                  <TableCell>{invoice.balance} {invoice.currency}</TableCell>
                   <TableCell>
-                    <Badge variant={getStatusBadgeVariant(invoice.status)}>
-                      {t(`status.${invoice.status}`)}
-                    </Badge>
+                    {invoice.total} {invoice.currency}
+                  </TableCell>
+                  <TableCell>
+                    {invoice.balance} {invoice.currency}
+                  </TableCell>
+                  <TableCell>
+                    <InvoiceStatusBadge
+                      status={invoice.status}
+                      isOverdue={invoice.is_overdue}
+                    />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleView(invoice)}
+                        title={t("actions.view")}
+                      >
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleSend(invoice)}
+                        title={t("actions.send")}
+                      >
                         <Send className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDownloadPDF(invoice)}
+                        title={t("actions.download")}
+                      >
                         <Download className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDuplicate(invoice)}
+                        title={t("actions.duplicate")}
+                      >
                         <Copy className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(invoice)}
+                        disabled={invoice.status !== "draft"}
+                        title={t("actions.delete")}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -203,6 +323,40 @@ export default function InvoicesPage() {
           </TableBody>
         </Table>
       </Card>
+
+      {/* Create Invoice Sheet */}
+      <CreateInvoiceSheet open={createSheetOpen} onOpenChange={setCreateSheetOpen} />
+
+      {/* Send Invoice Dialog */}
+      {selectedInvoice && (
+        <SendInvoiceDialog
+          open={sendDialogOpen}
+          onOpenChange={setSendDialogOpen}
+          invoiceId={selectedInvoice.id}
+          clientEmail={selectedInvoice.client_email}
+          invoiceNumber={selectedInvoice.invoice_number}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("actions.deleteInvoice")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("actions.deleteConfirmation", {
+                number: selectedInvoice?.invoice_number,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("actions.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive">
+              {t("actions.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
