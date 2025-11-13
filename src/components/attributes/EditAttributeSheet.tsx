@@ -49,7 +49,7 @@ export function EditAttributeSheet({
   attribute,
 }: EditAttributeSheetProps) {
   const locale = useLocale() as Locale;
-  const t = useTranslations("productAttributes.editAttributeSheet");
+  const t = useTranslations("productAttributes.addAttributeSheet");
   const tCommon = useTranslations("common");
   const tTypes = useTranslations("productAttributes.types");
   const updateAttribute = useUpdateAttribute();

@@ -35,6 +35,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { useCreateAttribute } from "@/hooks/useAttributes";
 import { useLanguages } from "@/hooks/useLanguages";
 import type { AttributeDefinition, Language } from "@/api/generated";
@@ -528,7 +529,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                   {/* Add New Option Form */}
                   <div className="space-y-3">
                     <div className="space-y-2">
-                      <FormLabel className="text-xs">Value (identifier)</FormLabel>
+                      <Label className="text-xs">Value (identifier)</Label>
                       <Input
                         placeholder="e.g., red, large, cotton"
                         value={newOptionValue}
@@ -544,9 +545,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                     </div>
 
                     <div className="space-y-2">
-                      <FormLabel className="text-xs">
+                      <Label className="text-xs">
                         Label ({selectedLanguage.toUpperCase()})
-                      </FormLabel>
+                      </Label>
                       <Input
                         placeholder={`Label in ${selectedLanguage}`}
                         value={newOptionLabel}
