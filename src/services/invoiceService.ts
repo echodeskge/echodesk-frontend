@@ -457,8 +457,10 @@ class InvoiceService {
   /**
    * Get available item lists for client selection
    */
-  async getAvailableItemLists(): Promise<any> {
-    return invoicesSettingsAvailableItemlistsRetrieve();
+  async getAvailableItemLists(): Promise<Array<{ id: number; title: string; description: string }>> {
+    const result = await invoicesSettingsAvailableItemlistsRetrieve();
+    // Backend returns ItemListMinimal array but type is InvoiceSettings
+    return result as any;
   }
 }
 
