@@ -41,9 +41,7 @@ export function AttributeSelector({
   const locale = useLocale() as Locale;
 
   // Fetch all active attributes
-  const { data: attributesData } = useAttributes({
-    is_active: true,
-  });
+  const { data: attributesData } = useAttributes({} as any);
 
   const attributes = attributesData?.results || [];
 

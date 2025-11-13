@@ -17,7 +17,15 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Separator } from "@/components/ui/separator"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText } from "lucide-react"
+import { toast } from "sonner"
 
 // Extend Order type to properly type client_details
 interface Order extends Omit<GeneratedOrder, 'client_details'> {
@@ -52,6 +60,7 @@ export default function OrderDetailPage() {
   const t = useTranslations("ecommerceOrders")
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -83,6 +92,34 @@ export default function OrderDetailPage() {
 
   const formatCurrency = (amount: string) => {
     return `₾${parseFloat(amount).toFixed(2)}`
+  }
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!order) return
+
+    try {
+      setUpdatingStatus(true)
+      const response = await fetch(`/api/ecommerce/orders/${order.id}/update_status/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update status')
+      }
+
+      const updatedOrder = await response.json()
+      setOrder(updatedOrder as unknown as Order)
+      toast.success(`Order status updated to ${newStatus}`)
+    } catch (error) {
+      console.error('Error updating status:', error)
+      toast.error('Failed to update order status')
+    } finally {
+      setUpdatingStatus(false)
+    }
   }
 
   if (loading) {
@@ -136,19 +173,66 @@ export default function OrderDetailPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Badge
-            variant="secondary"
-            className={STATUS_COLORS[String(order.status) as keyof typeof STATUS_COLORS] || ""}
-          >
-            {t(`status.${String(order.status)}`)}
-          </Badge>
-          <Badge
-            variant="outline"
-            className={PAYMENT_STATUS_COLORS[String(order.payment_status) as keyof typeof PAYMENT_STATUS_COLORS] || ""}
-          >
-            {String(order.payment_status).replace("_", " ").toUpperCase()}
-          </Badge>
+        <div className="flex gap-2 items-center">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted-foreground">Order Status</label>
+            <Select
+              value={String(order.status)}
+              onValueChange={handleStatusChange}
+              disabled={updatingStatus}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
+                    {t("status.pending")}
+                  </div>
+                </SelectItem>
+                <SelectItem value="confirmed">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+                    {t("status.confirmed")}
+                  </div>
+                </SelectItem>
+                <SelectItem value="processing">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-purple-500"></span>
+                    {t("status.processing")}
+                  </div>
+                </SelectItem>
+                <SelectItem value="shipped">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-indigo-500"></span>
+                    {t("status.shipped")}
+                  </div>
+                </SelectItem>
+                <SelectItem value="delivered">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                    {t("status.delivered")}
+                  </div>
+                </SelectItem>
+                <SelectItem value="cancelled">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                    {t("status.cancelled")}
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-muted-foreground">Payment Status</label>
+            <Badge
+              variant="outline"
+              className={PAYMENT_STATUS_COLORS[String(order.payment_status) as keyof typeof PAYMENT_STATUS_COLORS] || ""}
+            >
+              {String(order.payment_status).replace("_", " ").toUpperCase()}
+            </Badge>
+          </div>
         </div>
       </div>
 
