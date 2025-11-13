@@ -33,10 +33,11 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreateProduct } from "@/hooks/useProducts";
 import { useLanguages } from "@/hooks/useLanguages";
-import type { ProductCreateUpdate, Language } from "@/api/generated";
+import type { ProductCreateUpdate, ProductCreateUpdateRequest, Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
 
 interface AddProductSheetProps {
   open: boolean;
@@ -62,6 +63,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
   // Selected language for form fields (default to 'ka')
   const [selectedLanguage, setSelectedLanguage] = useState<string>("ka");
+
+  // Product attributes
+  const [attributes, setAttributes] = useState<AttributeValue[]>([]);
 
   // Build initial default values with dynamic languages
   const buildDefaultValues = (): Partial<ProductCreateUpdate> => {
@@ -103,6 +107,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       form.reset(buildDefaultValues());
       setSkuManuallyEdited(false);
       setSlugManuallyEdited(false);
+      setAttributes([]);
       // Reset to 'ka' or first available language
       const kaLang = activeLanguages.find(l => l.code === 'ka');
       setSelectedLanguage(kaLang ? 'ka' : activeLanguages[0]?.code || 'ka');
@@ -177,9 +182,16 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
         }
       });
 
-      await createProduct.mutateAsync(data as ProductCreateUpdate);
+      // Prepare product data with attributes
+      const productData: any = {
+        ...data,
+        attributes: attributes.length > 0 ? attributes : undefined,
+      };
+
+      await createProduct.mutateAsync(productData as ProductCreateUpdateRequest);
 
       form.reset(buildDefaultValues());
+      setAttributes([]);
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to create product:", error);
@@ -405,6 +417,14 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     </FormItem>
                   )}
                 />
+
+                {/* Product Attributes */}
+                <div className="border-t pt-4 mt-4">
+                  <AttributeSelector
+                    value={attributes}
+                    onChange={setAttributes}
+                  />
+                </div>
 
                 {/* Status */}
                 <FormField
