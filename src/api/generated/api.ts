@@ -2899,6 +2899,49 @@ export async function ecommerceClientAddressesSetDefaultCreate(
   return response.data;
 }
 
+export async function ecommerceClientAttributesList(
+  attributeType?:
+    | 'boolean'
+    | 'color'
+    | 'date'
+    | 'multiselect'
+    | 'number'
+    | 'select'
+    | 'text',
+  isVariantAttribute?: boolean,
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedAttributeDefinitionList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/attributes/${(() => {
+      const parts = [
+        attributeType
+          ? 'attribute_type=' + encodeURIComponent(attributeType)
+          : null,
+        isVariantAttribute
+          ? 'is_variant_attribute=' + encodeURIComponent(isVariantAttribute)
+          : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceClientAttributesRetrieve(
+  id: number,
+): Promise<AttributeDefinition> {
+  const response = await axios.get(`/api/ecommerce/client/attributes/${id}/`);
+  return response.data;
+}
+
+export async function ecommerceClientAttributesFacetsRetrieve(): Promise<AttributeDefinition> {
+  const response = await axios.get(`/api/ecommerce/client/attributes/facets/`);
+  return response.data;
+}
+
 export async function ecommerceClientCardsRetrieve(): Promise<any> {
   const response = await axios.get(`/api/ecommerce/client/cards/`);
   return response.data;

@@ -1,0 +1,471 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useLocale, useTranslations } from "next-intl";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+} from "@/components/ui/sheet";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useUpdateAttribute } from "@/hooks/useAttributes";
+import { useLanguages } from "@/hooks/useLanguages";
+import { OptionsManager, type AttributeOption } from "./OptionsManager";
+import type { AttributeDefinition, Language } from "@/api/generated";
+import type { Locale } from "@/lib/i18n";
+
+interface EditAttributeSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  attribute: AttributeDefinition | null;
+}
+
+export function EditAttributeSheet({
+  open,
+  onOpenChange,
+  attribute,
+}: EditAttributeSheetProps) {
+  const locale = useLocale() as Locale;
+  const t = useTranslations("productAttributes.editAttributeSheet");
+  const tCommon = useTranslations("common");
+  const tTypes = useTranslations("productAttributes.types");
+  const updateAttribute = useUpdateAttribute();
+
+  // Fetch active languages
+  const { data: languagesData, isLoading: languagesLoading } = useLanguages({
+    ordering: "sort_order,code",
+  });
+
+  const activeLanguages = languagesData?.results || [];
+
+  // Selected language for name field
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("ka");
+
+  // Options state (for select/multiselect types)
+  const [options, setOptions] = useState<AttributeOption[]>([]);
+
+  const form = useForm<Partial<AttributeDefinition>>({
+    defaultValues: {
+      name: {},
+      key: "",
+      attribute_type: "text" as any,
+      unit: "",
+      is_required: false,
+      is_variant_attribute: false,
+      is_filterable: true,
+      is_active: true,
+      sort_order: 0,
+      options: [],
+    },
+  });
+
+  const attributeType = form.watch("attribute_type");
+
+  // Load attribute data when sheet opens
+  useEffect(() => {
+    if (open && attribute && activeLanguages.length > 0) {
+      // Set form values
+      form.reset({
+        name: attribute.name || {},
+        key: attribute.key,
+        attribute_type: attribute.attribute_type as any,
+        unit: attribute.unit || "",
+        is_required: attribute.is_required,
+        is_variant_attribute: attribute.is_variant_attribute,
+        is_filterable: attribute.is_filterable,
+        is_active: attribute.is_active,
+        sort_order: attribute.sort_order,
+      });
+
+      // Set options if they exist
+      if (attribute.options && Array.isArray(attribute.options)) {
+        setOptions(attribute.options as AttributeOption[]);
+      } else {
+        setOptions([]);
+      }
+
+      // Reset to 'ka' or first available language
+      const kaLang = activeLanguages.find((l) => l.code === "ka");
+      setSelectedLanguage(kaLang ? "ka" : activeLanguages[0]?.code || "ka");
+    }
+  }, [open, attribute, activeLanguages.length]);
+
+  // Helper to get language name
+  const getLanguageName = (lang: Language) => {
+    if (typeof lang.name === "object" && lang.name !== null) {
+      return (lang.name as any)[locale] || (lang.name as any).en || lang.code;
+    }
+    return lang.name || lang.code;
+  };
+
+  const onSubmit = async (data: Partial<AttributeDefinition>) => {
+    if (!attribute?.id) return;
+
+    try {
+      // Auto-fill name: Find first filled language and fill the rest
+      const nameData = data.name as Record<string, string>;
+      if (nameData && typeof nameData === "object") {
+        // Find first non-empty value
+        let firstFilledValue = "";
+        for (const langCode of Object.keys(nameData)) {
+          if (nameData[langCode]?.trim()) {
+            firstFilledValue = nameData[langCode];
+            break;
+          }
+        }
+
+        // Validate: At least one language must be filled for name
+        if (!firstFilledValue) {
+          alert("Please fill at least one language for the attribute name");
+          return;
+        }
+
+        // Fill empty languages with first filled value
+        activeLanguages.forEach((lang) => {
+          if (!nameData[lang.code]?.trim()) {
+            nameData[lang.code] = firstFilledValue;
+          }
+        });
+      }
+
+      // Add options if attribute type is select or multiselect
+      if (
+        (String(attributeType) === "select" ||
+          String(attributeType) === "multiselect") &&
+        options.length > 0
+      ) {
+        // Validate options: each must have value and at least one language
+        const invalidOptions = options.filter((opt) => {
+          if (!opt.value?.trim()) return true;
+          return !activeLanguages.some((lang) => opt[lang.code]?.trim());
+        });
+
+        if (invalidOptions.length > 0) {
+          alert(
+            "Please ensure all options have a value and at least one language label"
+          );
+          return;
+        }
+
+        data.options = options as any;
+      } else if (
+        String(attributeType) === "select" ||
+        String(attributeType) === "multiselect"
+      ) {
+        // Require at least one option for select types
+        alert("Please add at least one option for select/multiselect types");
+        return;
+      } else {
+        // For non-select types, ensure options is empty array
+        data.options = [];
+      }
+
+      await updateAttribute.mutateAsync({
+        id: attribute.id,
+        data: data as any,
+      });
+
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Failed to update attribute:", error);
+      alert(error.message || "Failed to update attribute");
+    }
+  };
+
+  // Show loading state while fetching languages
+  if (languagesLoading || activeLanguages.length === 0) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="p-0 w-full sm:max-w-lg" side="right">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-sm text-muted-foreground">Loading languages...</div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  if (!attribute) {
+    return null;
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="p-0 w-full sm:max-w-lg" side="right">
+        <ScrollArea className="h-full">
+          <div className="p-6">
+            <SheetHeader>
+              <SheetTitle>Edit Attribute</SheetTitle>
+              <SheetDescription>
+                Update attribute definition and options
+              </SheetDescription>
+            </SheetHeader>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
+                {/* Language Selector */}
+                <div className="flex items-center gap-2">
+                  <FormLabel className="text-sm font-medium">Language:</FormLabel>
+                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeLanguages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {getLanguageName(lang)} ({lang.code.toUpperCase()})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Attribute Name - Dynamic per selected language */}
+                <FormField
+                  control={form.control}
+                  name={`name.${selectedLanguage}` as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Name ({selectedLanguage.toUpperCase()})
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="Attribute name" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Fill in at least one language. Others will be auto-filled.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Key - Read-only for editing */}
+                <FormField
+                  control={form.control}
+                  name="key"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("keyLabel")}</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled className="bg-muted" />
+                      </FormControl>
+                      <FormDescription>
+                        Key cannot be changed after creation
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Attribute Type - Read-only for editing */}
+                <FormField
+                  control={form.control}
+                  name="attribute_type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("attributeType")}</FormLabel>
+                      <Select value={String(field.value)} disabled>
+                        <FormControl>
+                          <SelectTrigger className="bg-muted">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="text">{tTypes("text")}</SelectItem>
+                          <SelectItem value="number">{tTypes("number")}</SelectItem>
+                          <SelectItem value="boolean">{tTypes("boolean")}</SelectItem>
+                          <SelectItem value="select">{tTypes("select")}</SelectItem>
+                          <SelectItem value="multiselect">
+                            {tTypes("multiselect")}
+                          </SelectItem>
+                          <SelectItem value="color">{tTypes("color")}</SelectItem>
+                          <SelectItem value="date">{tTypes("date")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Type cannot be changed after creation
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Options Manager (for select/multiselect types) */}
+                {(String(attributeType) === "select" ||
+                  String(attributeType) === "multiselect") && (
+                  <div className="border rounded-lg p-4 bg-muted/30">
+                    <OptionsManager
+                      options={options}
+                      onChange={setOptions}
+                      languages={activeLanguages}
+                    />
+                  </div>
+                )}
+
+                {/* Unit (for number type) */}
+                {String(attributeType) === "number" && (
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("unitLabel")}</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., cm, kg, ml" {...field} />
+                        </FormControl>
+                        <FormDescription>Unit of measurement</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Sort Order */}
+                <FormField
+                  control={form.control}
+                  name="sort_order"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("sortOrder")}</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Controls display order (lower = first)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Checkboxes */}
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="is_required"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>{t("requiredLabel")}</FormLabel>
+                          <FormDescription>
+                            Products must have this attribute
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="is_variant_attribute"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>{t("variantAttributeLabel")}</FormLabel>
+                          <FormDescription>
+                            Can create product variants (e.g., Size, Color)
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="is_filterable"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>{t("filterableLabel")}</FormLabel>
+                          <FormDescription>
+                            Show in product filters on storefront
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="is_active"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>{t("activeLabel")}</FormLabel>
+                          <FormDescription>
+                            Inactive attributes are hidden
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <SheetFooter className="mt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    {tCommon("cancel")}
+                  </Button>
+                  <Button type="submit" disabled={updateAttribute.isPending}>
+                    {updateAttribute.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                </SheetFooter>
+              </form>
+            </Form>
+          </div>
+        </ScrollArea>
+      </SheetContent>
+    </Sheet>
+  );
+}
