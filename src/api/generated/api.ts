@@ -170,6 +170,30 @@ import type {
   Group,
   GroupRequest,
   PatchedGroupRequest,
+  PaginatedInvoiceListList,
+  InvoiceCreateUpdateRequest,
+  InvoiceCreateUpdate,
+  InvoiceDetail,
+  PatchedInvoiceCreateUpdateRequest,
+  InvoiceDetailRequest,
+  PaginatedInvoiceLineItemList,
+  InvoiceLineItemRequest,
+  InvoiceLineItem,
+  PatchedInvoiceLineItemRequest,
+  PaginatedListItemMaterialList,
+  ListItemMaterial,
+  PaginatedInvoicePaymentList,
+  InvoicePaymentRequest,
+  InvoicePayment,
+  PatchedInvoicePaymentRequest,
+  PaginatedInvoiceSettingsList,
+  InvoiceSettingsRequest,
+  InvoiceSettings,
+  PatchedInvoiceSettingsRequest,
+  PaginatedInvoiceTemplateList,
+  InvoiceTemplateRequest,
+  InvoiceTemplate,
+  PatchedInvoiceTemplateRequest,
   ItemListRequest,
   ItemList,
   PatchedItemListRequest,
@@ -3492,6 +3516,428 @@ export async function groupsRemoveUsersCreate(
 
 export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
   const response = await axios.get(`/api/groups/available_permissions/`);
+  return response.data;
+}
+
+export async function invoicesClientsList(
+  page?: number,
+  search?: string,
+): Promise<PaginatedClientList> {
+  const response = await axios.get(
+    `/api/invoices/clients/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function invoicesClientsRetrieve(id: number): Promise<Client> {
+  const response = await axios.get(`/api/invoices/clients/${id}/`);
+  return response.data;
+}
+
+export async function invoicesInvoicesList(
+  client?: number,
+  currency?: string,
+  ordering?: string,
+  page?: number,
+  search?: string,
+  status?:
+    | 'cancelled'
+    | 'draft'
+    | 'overdue'
+    | 'paid'
+    | 'partially_paid'
+    | 'sent'
+    | 'viewed',
+): Promise<PaginatedInvoiceListList> {
+  const response = await axios.get(
+    `/api/invoices/invoices/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        currency ? 'currency=' + encodeURIComponent(currency) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function invoicesInvoicesCreate(
+  data: InvoiceCreateUpdateRequest,
+): Promise<InvoiceCreateUpdate> {
+  const response = await axios.post(`/api/invoices/invoices/`, data);
+  return response.data;
+}
+
+export async function invoicesInvoicesRetrieve(
+  id: number,
+): Promise<InvoiceDetail> {
+  const response = await axios.get(`/api/invoices/invoices/${id}/`);
+  return response.data;
+}
+
+export async function invoicesInvoicesUpdate(
+  id: number,
+  data: InvoiceCreateUpdateRequest,
+): Promise<InvoiceCreateUpdate> {
+  const response = await axios.put(`/api/invoices/invoices/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesInvoicesPartialUpdate(
+  id: number,
+  data: PatchedInvoiceCreateUpdateRequest,
+): Promise<InvoiceCreateUpdate> {
+  const response = await axios.patch(`/api/invoices/invoices/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesInvoicesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/invoices/invoices/${id}/`);
+  return response.data;
+}
+
+export async function invoicesInvoicesDuplicateCreate(
+  id: number,
+  data: InvoiceDetailRequest,
+): Promise<InvoiceDetail> {
+  const response = await axios.post(
+    `/api/invoices/invoices/${id}/duplicate/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function invoicesInvoicesExcelRetrieve(
+  id: number,
+): Promise<InvoiceDetail> {
+  const response = await axios.get(`/api/invoices/invoices/${id}/excel/`);
+  return response.data;
+}
+
+export async function invoicesInvoicesFinalizeCreate(
+  id: number,
+  data: InvoiceDetailRequest,
+): Promise<InvoiceDetail> {
+  const response = await axios.post(
+    `/api/invoices/invoices/${id}/finalize/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function invoicesInvoicesMarkPaidCreate(
+  id: number,
+  data: InvoiceDetailRequest,
+): Promise<InvoiceDetail> {
+  const response = await axios.post(
+    `/api/invoices/invoices/${id}/mark_paid/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function invoicesInvoicesPdfRetrieve(
+  id: number,
+): Promise<InvoiceDetail> {
+  const response = await axios.get(`/api/invoices/invoices/${id}/pdf/`);
+  return response.data;
+}
+
+export async function invoicesInvoicesSendEmailCreate(
+  id: number,
+  data: InvoiceDetailRequest,
+): Promise<InvoiceDetail> {
+  const response = await axios.post(
+    `/api/invoices/invoices/${id}/send_email/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function invoicesInvoicesStatsRetrieve(): Promise<InvoiceDetail> {
+  const response = await axios.get(`/api/invoices/invoices/stats/`);
+  return response.data;
+}
+
+export async function invoicesLineItemsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedInvoiceLineItemList> {
+  const response = await axios.get(
+    `/api/invoices/line-items/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function invoicesLineItemsCreate(
+  data: InvoiceLineItemRequest,
+): Promise<InvoiceLineItem> {
+  const response = await axios.post(`/api/invoices/line-items/`, data);
+  return response.data;
+}
+
+export async function invoicesLineItemsRetrieve(
+  id: number,
+): Promise<InvoiceLineItem> {
+  const response = await axios.get(`/api/invoices/line-items/${id}/`);
+  return response.data;
+}
+
+export async function invoicesLineItemsUpdate(
+  id: number,
+  data: InvoiceLineItemRequest,
+): Promise<InvoiceLineItem> {
+  const response = await axios.put(`/api/invoices/line-items/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesLineItemsPartialUpdate(
+  id: number,
+  data: PatchedInvoiceLineItemRequest,
+): Promise<InvoiceLineItem> {
+  const response = await axios.patch(`/api/invoices/line-items/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesLineItemsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/invoices/line-items/${id}/`);
+  return response.data;
+}
+
+export async function invoicesLineItemsReorderCreate(
+  data: InvoiceLineItemRequest,
+): Promise<InvoiceLineItem> {
+  const response = await axios.post(`/api/invoices/line-items/reorder/`, data);
+  return response.data;
+}
+
+export async function invoicesMaterialsList(
+  page?: number,
+  search?: string,
+): Promise<PaginatedListItemMaterialList> {
+  const response = await axios.get(
+    `/api/invoices/materials/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function invoicesMaterialsRetrieve(
+  id: number,
+): Promise<ListItemMaterial> {
+  const response = await axios.get(`/api/invoices/materials/${id}/`);
+  return response.data;
+}
+
+export async function invoicesPaymentsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedInvoicePaymentList> {
+  const response = await axios.get(
+    `/api/invoices/payments/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function invoicesPaymentsCreate(
+  data: InvoicePaymentRequest,
+): Promise<InvoicePayment> {
+  const response = await axios.post(`/api/invoices/payments/`, data);
+  return response.data;
+}
+
+export async function invoicesPaymentsRetrieve(
+  id: number,
+): Promise<InvoicePayment> {
+  const response = await axios.get(`/api/invoices/payments/${id}/`);
+  return response.data;
+}
+
+export async function invoicesPaymentsUpdate(
+  id: number,
+  data: InvoicePaymentRequest,
+): Promise<InvoicePayment> {
+  const response = await axios.put(`/api/invoices/payments/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesPaymentsPartialUpdate(
+  id: number,
+  data: PatchedInvoicePaymentRequest,
+): Promise<InvoicePayment> {
+  const response = await axios.patch(`/api/invoices/payments/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesPaymentsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/invoices/payments/${id}/`);
+  return response.data;
+}
+
+export async function invoicesSettingsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedInvoiceSettingsList> {
+  const response = await axios.get(
+    `/api/invoices/settings/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function invoicesSettingsCreate(
+  data: InvoiceSettingsRequest,
+): Promise<InvoiceSettings> {
+  const response = await axios.post(`/api/invoices/settings/`, data);
+  return response.data;
+}
+
+export async function invoicesSettingsRetrieve(
+  id: number,
+): Promise<InvoiceSettings> {
+  const response = await axios.get(`/api/invoices/settings/${id}/`);
+  return response.data;
+}
+
+export async function invoicesSettingsUpdate(
+  id: number,
+  data: InvoiceSettingsRequest,
+): Promise<InvoiceSettings> {
+  const response = await axios.put(`/api/invoices/settings/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesSettingsPartialUpdate(
+  id: number,
+  data: PatchedInvoiceSettingsRequest,
+): Promise<InvoiceSettings> {
+  const response = await axios.patch(`/api/invoices/settings/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesSettingsUploadBadgeCreate(
+  data: InvoiceSettingsRequest,
+): Promise<InvoiceSettings> {
+  const response = await axios.post(
+    `/api/invoices/settings/upload-badge/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function invoicesSettingsUploadLogoCreate(
+  data: InvoiceSettingsRequest,
+): Promise<InvoiceSettings> {
+  const response = await axios.post(
+    `/api/invoices/settings/upload-logo/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function invoicesSettingsUploadSignatureCreate(
+  data: InvoiceSettingsRequest,
+): Promise<InvoiceSettings> {
+  const response = await axios.post(
+    `/api/invoices/settings/upload-signature/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function invoicesTemplatesList(
+  page?: number,
+  search?: string,
+): Promise<PaginatedInvoiceTemplateList> {
+  const response = await axios.get(
+    `/api/invoices/templates/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function invoicesTemplatesCreate(
+  data: InvoiceTemplateRequest,
+): Promise<InvoiceTemplate> {
+  const response = await axios.post(`/api/invoices/templates/`, data);
+  return response.data;
+}
+
+export async function invoicesTemplatesRetrieve(
+  id: number,
+): Promise<InvoiceTemplate> {
+  const response = await axios.get(`/api/invoices/templates/${id}/`);
+  return response.data;
+}
+
+export async function invoicesTemplatesUpdate(
+  id: number,
+  data: InvoiceTemplateRequest,
+): Promise<InvoiceTemplate> {
+  const response = await axios.put(`/api/invoices/templates/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesTemplatesPartialUpdate(
+  id: number,
+  data: PatchedInvoiceTemplateRequest,
+): Promise<InvoiceTemplate> {
+  const response = await axios.patch(`/api/invoices/templates/${id}/`, data);
+  return response.data;
+}
+
+export async function invoicesTemplatesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/invoices/templates/${id}/`);
+  return response.data;
+}
+
+export async function invoicesTemplatesPreviewRetrieve(
+  id: number,
+): Promise<InvoiceTemplate> {
+  const response = await axios.get(`/api/invoices/templates/${id}/preview/`);
   return response.data;
 }
 

@@ -202,6 +202,26 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     ],
   },
   {
+    id: "invoices",
+    icon: "FileText",
+    requiredFeatureKey: "invoice_management",
+    isPremium: true,
+    children: [
+      {
+        id: "invoices/invoices",
+        icon: "FileText",
+        requiredFeatureKey: "invoice_management",
+        isPremium: true,
+      },
+      {
+        id: "invoices/settings",
+        icon: "Settings",
+        requiredFeatureKey: "invoice_management",
+        isPremium: true,
+      },
+    ],
+  },
+  {
     id: "messages",
     icon: "MessageSquare",
     requiredFeatureKey: "facebook_integration",

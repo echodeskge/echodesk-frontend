@@ -818,8 +818,244 @@ export interface InstagramSendMessageRequest {
   instagram_account_id: string;
 }
 
+export interface InvoiceCreateUpdate {
+  client: number;
+  issue_date?: string;
+  due_date: string;
+  currency?: string;
+  discount_amount?: string;
+  notes?: string;
+  terms_and_conditions?: string;
+  template?: number;
+  line_items?: InvoiceLineItem[];
+}
+
+export interface InvoiceCreateUpdateRequest {
+  client: number;
+  issue_date?: string;
+  due_date: string;
+  currency?: string;
+  discount_amount?: string;
+  notes?: string;
+  terms_and_conditions?: string;
+  template?: number;
+  line_items?: InvoiceLineItemRequest[];
+}
+
+export interface InvoiceDetail {
+  id: number;
+  client_details: string;
+  line_items: InvoiceLineItem[];
+  payments: InvoicePayment[];
+  balance: string;
+  is_overdue: string;
+  created_by_name: string;
+  template_name: string;
+  pdf_url: string;
+  invoice_number: string;
+  status?: StatusDf1enum;
+  issue_date?: string;
+  due_date: string;
+  sent_date?: string;
+  paid_date?: string;
+  currency?: string;
+  subtotal: string;
+  tax_amount: string;
+  discount_amount?: string;
+  total: string;
+  paid_amount: string;
+  notes?: string;
+  terms_and_conditions?: string;
+  pdf_file?: string;
+  pdf_generated_at: string;
+  created_at: string;
+  updated_at: string;
+  uuid: string;
+  client: number;
+  template?: number;
+  created_by: number;
+}
+
+export interface InvoiceDetailRequest {
+  status?: StatusDf1enum;
+  issue_date?: string;
+  due_date: string;
+  sent_date?: string;
+  paid_date?: string;
+  currency?: string;
+  discount_amount?: string;
+  notes?: string;
+  terms_and_conditions?: string;
+  pdf_file?: string;
+  client: number;
+  template?: number;
+}
+
+export interface InvoiceLineItem {
+  id: number;
+  line_subtotal: string;
+  discount_amount: string;
+  taxable_amount: string;
+  tax_amount: string;
+  line_total: string;
+  product_name: string;
+  list_item_label: string;
+  item_source?: ItemSourceEnum;
+  description: string;
+  quantity: string;
+  unit?: string;
+  unit_price: string;
+  tax_rate?: string;
+  discount_percent?: string;
+  position?: number;
+  created_at: string;
+  updated_at: string;
+  invoice: number;
+  product?: number;
+  list_item?: number;
+}
+
+export interface InvoiceLineItemRequest {
+  item_source?: ItemSourceEnum;
+  description: string;
+  quantity: string;
+  unit?: string;
+  unit_price: string;
+  tax_rate?: string;
+  discount_percent?: string;
+  position?: number;
+  invoice: number;
+  product?: number;
+  list_item?: number;
+}
+
+export interface InvoiceList {
+  id: number;
+  uuid: string;
+  invoice_number: string;
+  status?: StatusDf1enum;
+  client: number;
+  client_name: string;
+  issue_date?: string;
+  due_date: string;
+  currency?: string;
+  total?: string;
+  paid_amount?: string;
+  balance: string;
+  is_overdue: string;
+  line_items_count: string;
+  created_at: string;
+}
+
 export interface InvoiceListResponse {
   invoices: Record<string, any>[];
+}
+
+export interface InvoicePayment {
+  id: number;
+  recorded_by_name: string;
+  payment_date?: string;
+  amount: string;
+  payment_method?: InvoicePaymentPaymentMethodEnum;
+  reference_number?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  invoice: number;
+  recorded_by: number;
+}
+
+export interface InvoicePaymentPaymentMethodEnum {
+  [key: string]: any;
+}
+
+export interface InvoicePaymentRequest {
+  payment_date?: string;
+  amount: string;
+  payment_method?: InvoicePaymentPaymentMethodEnum;
+  reference_number?: string;
+  notes?: string;
+  invoice: number;
+}
+
+export interface InvoiceSettings {
+  id: number;
+  company_name?: string;
+  tax_id?: string;
+  registration_number?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: string;
+  badge?: string;
+  signature?: string;
+  invoice_prefix?: string;
+  starting_number?: number;
+  default_currency?: string;
+  default_tax_rate?: string;
+  default_due_days?: number;
+  bank_accounts?: any;
+  email_from?: string;
+  email_from_name?: string;
+  email_cc?: string;
+  email_subject_template?: string;
+  email_message_template?: string;
+  footer_text?: string;
+  default_terms?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvoiceSettingsRequest {
+  company_name?: string;
+  tax_id?: string;
+  registration_number?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: string;
+  badge?: string;
+  signature?: string;
+  invoice_prefix?: string;
+  starting_number?: number;
+  default_currency?: string;
+  default_tax_rate?: string;
+  default_due_days?: number;
+  bank_accounts?: any;
+  email_from?: string;
+  email_from_name?: string;
+  email_cc?: string;
+  email_subject_template?: string;
+  email_message_template?: string;
+  footer_text?: string;
+  default_terms?: string;
+}
+
+export interface InvoiceTemplate {
+  id: number;
+  created_by_name: string;
+  name: string;
+  description?: string;
+  html_content: string;
+  css_styles?: string;
+  is_default?: boolean;
+  is_active?: boolean;
+  supported_languages?: any;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
+}
+
+export interface InvoiceTemplateRequest {
+  name: string;
+  description?: string;
+  html_content: string;
+  css_styles?: string;
+  is_default?: boolean;
+  is_active?: boolean;
+  supported_languages?: any;
 }
 
 export interface ItemList {
@@ -867,6 +1103,10 @@ export interface ItemListRequest {
   is_active?: boolean;
   parent_list?: number;
   custom_fields_schema?: any;
+}
+
+export interface ItemSourceEnum {
+  [key: string]: any;
 }
 
 export interface KanbanBoard {
@@ -1180,6 +1420,15 @@ export interface ListItem {
   created_by: UserMinimal;
   children: string;
   full_path: string;
+}
+
+export interface ListItemMaterial {
+  id: number;
+  label: string;
+  custom_data?: any;
+  price: string;
+  unit: string;
+  description: string;
 }
 
 export interface ListItemMinimal {
@@ -1513,6 +1762,41 @@ export interface PaginatedInstagramMessageList {
   results: InstagramMessage[];
 }
 
+export interface PaginatedInvoiceLineItemList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InvoiceLineItem[];
+}
+
+export interface PaginatedInvoiceListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InvoiceList[];
+}
+
+export interface PaginatedInvoicePaymentList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InvoicePayment[];
+}
+
+export interface PaginatedInvoiceSettingsList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InvoiceSettings[];
+}
+
+export interface PaginatedInvoiceTemplateList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InvoiceTemplate[];
+}
+
 export interface PaginatedItemListMinimalList {
   count: number;
   next?: string;
@@ -1560,6 +1844,13 @@ export interface PaginatedLeaveTypeListList {
   next?: string;
   previous?: string;
   results: LeaveTypeList[];
+}
+
+export interface PaginatedListItemMaterialList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ListItemMaterial[];
 }
 
 export interface PaginatedListItemMinimalList {
@@ -1951,6 +2242,77 @@ export interface PatchedInstagramAccountConnectionRequest {
   is_active?: boolean;
 }
 
+export interface PatchedInvoiceCreateUpdateRequest {
+  client?: number;
+  issue_date?: string;
+  due_date?: string;
+  currency?: string;
+  discount_amount?: string;
+  notes?: string;
+  terms_and_conditions?: string;
+  template?: number;
+  line_items?: InvoiceLineItemRequest[];
+}
+
+export interface PatchedInvoiceLineItemRequest {
+  item_source?: ItemSourceEnum;
+  description?: string;
+  quantity?: string;
+  unit?: string;
+  unit_price?: string;
+  tax_rate?: string;
+  discount_percent?: string;
+  position?: number;
+  invoice?: number;
+  product?: number;
+  list_item?: number;
+}
+
+export interface PatchedInvoicePaymentRequest {
+  payment_date?: string;
+  amount?: string;
+  payment_method?: InvoicePaymentPaymentMethodEnum;
+  reference_number?: string;
+  notes?: string;
+  invoice?: number;
+}
+
+export interface PatchedInvoiceSettingsRequest {
+  company_name?: string;
+  tax_id?: string;
+  registration_number?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  logo?: string;
+  badge?: string;
+  signature?: string;
+  invoice_prefix?: string;
+  starting_number?: number;
+  default_currency?: string;
+  default_tax_rate?: string;
+  default_due_days?: number;
+  bank_accounts?: any;
+  email_from?: string;
+  email_from_name?: string;
+  email_cc?: string;
+  email_subject_template?: string;
+  email_message_template?: string;
+  footer_text?: string;
+  default_terms?: string;
+}
+
+export interface PatchedInvoiceTemplateRequest {
+  name?: string;
+  description?: string;
+  html_content?: string;
+  css_styles?: string;
+  is_default?: boolean;
+  is_active?: boolean;
+  supported_languages?: any;
+}
+
 export interface PatchedItemListRequest {
   title?: string;
   description?: string;
@@ -2232,7 +2594,7 @@ export interface PatchedTicketPaymentRequest {
   ticket?: number;
   amount?: string;
   currency?: string;
-  payment_method?: PaymentMethodEnum;
+  payment_method?: TicketPaymentPaymentMethodEnum;
   payment_reference?: string;
   notes?: string;
 }
@@ -2280,10 +2642,6 @@ export interface PatchedWhatsAppBusinessAccountRequest {
   display_phone_number?: string;
   quality_rating?: string;
   is_active?: boolean;
-}
-
-export interface PaymentMethodEnum {
-  [key: string]: any;
 }
 
 export interface PaymentStatusD7dEnum {
@@ -2833,6 +3191,10 @@ export interface StatusD46enum {
   [key: string]: any;
 }
 
+export interface StatusDf1enum {
+  [key: string]: any;
+}
+
 export interface StatusF43enum {
   [key: string]: any;
 }
@@ -3246,18 +3608,22 @@ export interface TicketPayment {
   ticket: number;
   amount: string;
   currency?: string;
-  payment_method?: PaymentMethodEnum;
+  payment_method?: TicketPaymentPaymentMethodEnum;
   payment_reference?: string;
   notes?: string;
   processed_by: UserMinimal;
   processed_at: string;
 }
 
+export interface TicketPaymentPaymentMethodEnum {
+  [key: string]: any;
+}
+
 export interface TicketPaymentRequest {
   ticket: number;
   amount: string;
   currency?: string;
-  payment_method?: PaymentMethodEnum;
+  payment_method?: TicketPaymentPaymentMethodEnum;
   payment_reference?: string;
   notes?: string;
 }
