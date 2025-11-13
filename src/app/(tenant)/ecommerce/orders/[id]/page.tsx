@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ecommerceAdminOrdersRetrieve } from "@/api/generated"
+import { ecommerceAdminOrdersRetrieve, ecommerceAdminOrdersUpdateStatusCreate } from "@/api/generated"
 import { Order as GeneratedOrder } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText } from "lucide-react"
 import { toast } from "sonner"
 
@@ -61,6 +71,8 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null)
 
   useEffect(() => {
     if (params.id) {
@@ -94,26 +106,25 @@ export default function OrderDetailPage() {
     return `₾${parseFloat(amount).toFixed(2)}`
   }
 
-  const handleStatusChange = async (newStatus: string) => {
-    if (!order) return
+  const handleStatusChangeRequest = (newStatus: string) => {
+    setPendingStatus(newStatus)
+    setConfirmDialogOpen(true)
+  }
+
+  const handleConfirmStatusChange = async () => {
+    if (!order || !pendingStatus) return
 
     try {
       setUpdatingStatus(true)
-      const response = await fetch(`/api/ecommerce/orders/${order.id}/update_status/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      setConfirmDialogOpen(false)
 
-      if (!response.ok) {
-        throw new Error('Failed to update status')
-      }
+      const updatedOrder = await ecommerceAdminOrdersUpdateStatusCreate(order.id, {
+        status: pendingStatus
+      } as any)
 
-      const updatedOrder = await response.json()
       setOrder(updatedOrder as unknown as Order)
-      toast.success(`Order status updated to ${newStatus}`)
+      toast.success(`Order status updated to ${pendingStatus}`)
+      setPendingStatus(null)
     } catch (error) {
       console.error('Error updating status:', error)
       toast.error('Failed to update order status')
@@ -178,7 +189,7 @@ export default function OrderDetailPage() {
             <label className="text-xs text-muted-foreground">Order Status</label>
             <Select
               value={String(order.status)}
-              onValueChange={handleStatusChange}
+              onValueChange={handleStatusChangeRequest}
               disabled={updatingStatus}
             >
               <SelectTrigger className="w-[180px]">
@@ -435,6 +446,27 @@ export default function OrderDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to change the order status to <strong>{pendingStatus}</strong>?
+              This action will update the order and may trigger notifications to the customer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingStatus(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmStatusChange}>
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

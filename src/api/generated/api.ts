@@ -147,6 +147,8 @@ import type {
   ProductVariantRequest,
   ProductVariant,
   PatchedProductVariantRequest,
+  PaginatedItemListMinimalList,
+  ItemListDetail,
   ClientLoginRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequestRequest,
@@ -168,7 +170,6 @@ import type {
   Group,
   GroupRequest,
   PatchedGroupRequest,
-  PaginatedItemListMinimalList,
   ItemListRequest,
   ItemList,
   PatchedItemListRequest,
@@ -3136,6 +3137,31 @@ export async function ecommerceClientFavoritesDestroy(
   id: string,
 ): Promise<any> {
   const response = await axios.delete(`/api/ecommerce/client/favorites/${id}/`);
+  return response.data;
+}
+
+export async function ecommerceClientItemListsList(
+  ordering?: string,
+  page?: number,
+  search?: string,
+): Promise<PaginatedItemListMinimalList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/item-lists/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceClientItemListsRetrieve(
+  id: number,
+): Promise<ItemListDetail> {
+  const response = await axios.get(`/api/ecommerce/client/item-lists/${id}/`);
   return response.data;
 }
 

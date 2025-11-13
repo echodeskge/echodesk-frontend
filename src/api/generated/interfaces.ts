@@ -837,17 +837,28 @@ export interface ItemList {
   root_items: string;
 }
 
+export interface ItemListDetail {
+  id: number;
+  title: string;
+  description?: string;
+  is_public?: boolean;
+  is_active?: boolean;
+  custom_fields_schema?: any;
+  items: string;
+  items_count: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ItemListMinimal {
   id: number;
   title: string;
-  description: string;
-  is_active: boolean;
-  parent_list: number;
-  custom_fields_schema: any;
+  description?: string;
+  is_public?: boolean;
+  is_active?: boolean;
+  items_count: string;
   created_at: string;
   updated_at: string;
-  created_by: UserMinimal;
-  items_count: string;
 }
 
 export interface ItemListRequest {
