@@ -2595,6 +2595,7 @@ export async function ecommerceAdminOrdersUpdateStatusCreate(
 }
 
 export async function ecommerceAdminProductsList(
+  attributes?: string,
   inStock?: boolean,
   isFeatured?: boolean,
   lowStock?: boolean,
@@ -2608,6 +2609,7 @@ export async function ecommerceAdminProductsList(
   const response = await axios.get(
     `/api/ecommerce/admin/products/${(() => {
       const parts = [
+        attributes ? 'attributes=' + encodeURIComponent(attributes) : null,
         inStock ? 'in_stock=' + encodeURIComponent(inStock) : null,
         isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
         lowStock ? 'low_stock=' + encodeURIComponent(lowStock) : null,
@@ -3518,10 +3520,22 @@ export async function itemListsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
+export async function itemListsPublicItemsRetrieve(
+  id: number,
+): Promise<ItemList> {
+  const response = await axios.get(`/api/item-lists/${id}/public_items/`);
+  return response.data;
+}
+
 export async function itemListsRootItemsRetrieve(
   id: number,
 ): Promise<ItemList> {
   const response = await axios.get(`/api/item-lists/${id}/root_items/`);
+  return response.data;
+}
+
+export async function itemListsPublicRetrieve(): Promise<ItemList> {
+  const response = await axios.get(`/api/item-lists/public/`);
   return response.data;
 }
 
