@@ -17,6 +17,7 @@ import {
   useRemoveLogo,
   useRemoveBadge,
   useRemoveSignature,
+  useAvailableItemLists,
 } from "@/hooks/useInvoices";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ export default function InvoiceSettingsPage() {
   const { toast } = useToast();
 
   const { data: settings, isLoading } = useInvoiceSettings();
+  const { data: availableItemLists } = useAvailableItemLists();
   const updateMutation = useUpdateInvoiceSettings();
   const uploadLogoMutation = useUploadLogo();
   const uploadBadgeMutation = useUploadBadge();
@@ -60,6 +62,7 @@ export default function InvoiceSettingsPage() {
           phone: settings.phone || "",
           email: settings.email || "",
           website: settings.website || "",
+          client_itemlist: settings.client_itemlist || null,
           invoice_prefix: settings.invoice_prefix || "INV",
           next_invoice_number: settings.next_invoice_number || 1,
           default_currency: settings.default_currency || "GEL",
@@ -219,6 +222,29 @@ export default function InvoiceSettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="website">{t("settings.form.website")}</Label>
                 <Input id="website" type="url" {...register("website")} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="client_itemlist">{t("settings.form.clientItemList")}</Label>
+                <Select
+                  value={settings?.client_itemlist?.toString() || ""}
+                  onValueChange={(value) => setValue("client_itemlist", value ? parseInt(value) : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("settings.form.selectItemList")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">{t("settings.form.selectItemList")}</SelectItem>
+                    {availableItemLists?.map((itemList: any) => (
+                      <SelectItem key={itemList.id} value={itemList.id.toString()}>
+                        {itemList.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.form.clientItemListHint")}
+                </p>
               </div>
             </Card>
           </TabsContent>

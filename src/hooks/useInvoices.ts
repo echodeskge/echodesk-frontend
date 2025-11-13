@@ -235,6 +235,13 @@ export function useRemoveSignature() {
   });
 }
 
+export function useAvailableItemLists() {
+  return useQuery({
+    queryKey: ["available-itemlists"],
+    queryFn: () => invoiceService.getAvailableItemLists(),
+  });
+}
+
 // ==================== Line Items ====================
 
 export function useLineItems(invoiceId: number) {

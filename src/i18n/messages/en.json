@@ -1818,7 +1818,10 @@
         "emailSubject": "Email Subject Template",
         "emailSubjectHint": "Use {invoice_number}, {client_name}, {total} as variables",
         "emailMessage": "Email Message Template",
-        "emailMessageHint": "Use {invoice_number}, {client_name}, {total}, {due_date} as variables"
+        "emailMessageHint": "Use {invoice_number}, {client_name}, {total}, {due_date} as variables",
+        "clientItemList": "Client Item List",
+        "clientItemListHint": "Select which item list to use for invoice clients",
+        "selectItemList": "Select an item list"
       },
       "validation": {
         "companyNameRequired": "Company name is required",

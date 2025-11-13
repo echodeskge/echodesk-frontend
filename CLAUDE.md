@@ -92,3 +92,13 @@ export function MessagesPage() {
 - Always adapt full-kit components to work with our API data structure
 - Maintain the visual design from full-kit for consistency
 - Document any deviations from full-kit patterns
+
+## Backend/Frontend Deployment Workflow
+
+**IMPORTANT**: After every backend push, WAIT for user signal before continuing with frontend work.
+
+This ensures:
+- Backend changes are deployed and tested first
+- Frontend can be developed against live backend
+- User can verify backend functionality before frontend implementation
+- Prevents integration issues between frontend and backend

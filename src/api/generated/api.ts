@@ -3853,6 +3853,13 @@ export async function invoicesSettingsPartialUpdate(
   return response.data;
 }
 
+export async function invoicesSettingsAvailableItemlistsRetrieve(): Promise<InvoiceSettings> {
+  const response = await axios.get(
+    `/api/invoices/settings/available-itemlists/`,
+  );
+  return response.data;
+}
+
 export async function invoicesSettingsUploadBadgeCreate(
   data: InvoiceSettingsRequest,
 ): Promise<InvoiceSettings> {

@@ -980,6 +980,7 @@ export interface InvoicePaymentRequest {
 
 export interface InvoiceSettings {
   id: number;
+  client_itemlist_details: string;
   company_name?: string;
   tax_id?: string;
   registration_number?: string;
@@ -1005,6 +1006,7 @@ export interface InvoiceSettings {
   default_terms?: string;
   created_at: string;
   updated_at: string;
+  client_itemlist?: number;
 }
 
 export interface InvoiceSettingsRequest {
@@ -1031,6 +1033,7 @@ export interface InvoiceSettingsRequest {
   email_message_template?: string;
   footer_text?: string;
   default_terms?: string;
+  client_itemlist?: number;
 }
 
 export interface InvoiceTemplate {
@@ -2301,6 +2304,7 @@ export interface PatchedInvoiceSettingsRequest {
   email_message_template?: string;
   footer_text?: string;
   default_terms?: string;
+  client_itemlist?: number;
 }
 
 export interface PatchedInvoiceTemplateRequest {

@@ -24,6 +24,7 @@ import {
   invoicesSettingsRemoveLogoDestroy,
   invoicesSettingsRemoveBadgeDestroy,
   invoicesSettingsRemoveSignatureDestroy,
+  invoicesSettingsAvailableItemlistsRetrieve,
   invoicesLineItemsList,
   invoicesLineItemsCreate,
   invoicesLineItemsRetrieve,
@@ -451,6 +452,13 @@ class InvoiceService {
    */
   async deleteTemplate(id: number): Promise<void> {
     return invoicesTemplatesDestroy(id);
+  }
+
+  /**
+   * Get available item lists for client selection
+   */
+  async getAvailableItemLists(): Promise<any> {
+    return invoicesSettingsAvailableItemlistsRetrieve();
   }
 }
 
