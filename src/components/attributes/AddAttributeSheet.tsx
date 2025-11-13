@@ -246,6 +246,12 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
         }
       }
 
+      // Validate key is required
+      if (!data.key?.trim()) {
+        alert("Please provide a key for the attribute");
+        return;
+      }
+
       // Handle options for select types
       if (
         String(attributeType) === "select" ||
@@ -342,9 +348,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                       name="key"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("keyLabel")}</FormLabel>
+                          <FormLabel>{t("keyLabel")} <span className="text-destructive">*</span></FormLabel>
                           <FormControl>
-                            <Input placeholder={t("keyPlaceholder")} {...field} />
+                            <Input placeholder={t("keyPlaceholder")} {...field} required />
                           </FormControl>
                           <FormDescription>{t("keyDescription")}</FormDescription>
                           <FormMessage />
