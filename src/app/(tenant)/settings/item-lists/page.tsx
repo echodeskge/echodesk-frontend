@@ -52,6 +52,7 @@ export default function ItemListsPage() {
     title: "",
     description: "",
     is_active: true,
+    is_public: false,
     parent_list: null as number | null,
     custom_fields_schema: [] as CustomField[],
   });
@@ -84,6 +85,7 @@ export default function ItemListsPage() {
       title: "",
       description: "",
       is_active: true,
+      is_public: false,
       parent_list: null,
       custom_fields_schema: [],
     });
@@ -96,6 +98,7 @@ export default function ItemListsPage() {
       title: list.title,
       description: list.description || "",
       is_active: list.is_active ?? true,
+      is_public: (list as any).is_public ?? false,
       parent_list: list.parent_list || null,
       custom_fields_schema: (list.custom_fields_schema as CustomField[]) || [],
     });
@@ -143,6 +146,7 @@ export default function ItemListsPage() {
           title: formData.title,
           description: formData.description,
           is_active: formData.is_active,
+          is_public: formData.is_public,
           parent_list: formData.parent_list ?? undefined,
           custom_fields_schema: formData.custom_fields_schema,
         };
@@ -335,6 +339,17 @@ export default function ItemListsPage() {
                 }
               />
               <Label htmlFor="is_active">{t('active')}</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_public"
+                checked={formData.is_public}
+                onChange={(e) =>
+                  setFormData({ ...formData, is_public: e.target.checked })
+                }
+              />
+              <Label htmlFor="is_public">Public (visible to ecommerce clients)</Label>
             </div>
 
             {/* Custom Fields Section */}
