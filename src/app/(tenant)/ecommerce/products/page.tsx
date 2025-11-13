@@ -12,10 +12,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package } from "lucide-react";
-import { useProducts } from "@/hooks/useProducts";
+import { Search, Plus, Package, Edit, Eye } from "lucide-react";
+import { useProducts, useProduct } from "@/hooks/useProducts";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AddProductSheet } from "@/components/products/AddProductSheet";
+import { EditProductSheet } from "@/components/products/EditProductSheet";
 import type { Locale } from "@/lib/i18n";
 
 export default function ProductsPage() {
@@ -24,6 +25,8 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("active");
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [isEditProductOpen, setIsEditProductOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
 
   // Fetch products with filters
   const { data: productsData, isLoading, error } = useProducts({
@@ -31,6 +34,9 @@ export default function ProductsPage() {
     status: statusFilter as any || undefined,
     page: 1,
   });
+
+  // Fetch selected product details
+  const { data: selectedProduct } = useProduct(selectedProductId!);
 
   const products = productsData?.results || [];
   const totalCount = productsData?.count || 0;
@@ -46,6 +52,12 @@ export default function ProductsPage() {
       return product.name[locale] || product.name.en || "Unnamed Product";
     }
     return product.name || "Unnamed Product";
+  };
+
+  // Handle product edit
+  const handleEditProduct = (productId: number) => {
+    setSelectedProductId(productId);
+    setIsEditProductOpen(true);
   };
 
   if (isLoading) {
@@ -120,8 +132,14 @@ export default function ProductsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.map((product) => (
-            <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-square bg-gray-100 relative">
+            <Card
+              key={product.id}
+              className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group relative"
+            >
+              <div
+                className="aspect-square bg-gray-100 relative"
+                onClick={() => handleEditProduct(product.id)}
+              >
                 {product.image ? (
                   <img
                     src={product.image}
@@ -148,8 +166,25 @@ export default function ProductsPage() {
                     {t("lowStock")}
                   </Badge>
                 )}
+                {/* Edit overlay on hover */}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    className="rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditProduct(product.id);
+                    }}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <CardHeader className="pb-3">
+              <CardHeader
+                className="pb-3"
+                onClick={() => handleEditProduct(product.id)}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base line-clamp-2">
                     {getProductName(product)}
@@ -164,7 +199,10 @@ export default function ProductsPage() {
                   {t("sku")}: {product.sku}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent
+                className="pt-0"
+                onClick={() => handleEditProduct(product.id)}
+              >
                 <div className="space-y-2">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold">
@@ -214,6 +252,13 @@ export default function ProductsPage() {
 
       {/* Add Product Sheet */}
       <AddProductSheet open={isAddProductOpen} onOpenChange={setIsAddProductOpen} />
+
+      {/* Edit Product Sheet */}
+      <EditProductSheet
+        open={isEditProductOpen}
+        onOpenChange={setIsEditProductOpen}
+        product={selectedProduct || null}
+      />
     </div>
   );
 }
