@@ -44,7 +44,7 @@ export function useCreateInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: InvoiceCreateUpdate) =>
+    mutationFn: (data: InvoiceCreateUpdate & { client: number }) =>
       invoiceService.createInvoice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });
@@ -261,9 +261,11 @@ export function useCreateLineItem() {
     mutationFn: (data: InvoiceLineItemRequest) =>
       invoiceService.createLineItem(data),
     onSuccess: (data) => {
-      if (data.invoice) {
-        queryClient.invalidateQueries({ queryKey: ["invoice-line-items", data.invoice] });
-        queryClient.invalidateQueries({ queryKey: ["invoice", data.invoice] });
+      // Type assertion needed as the API returns invoice field but it's not in the generated type
+      const invoiceId = (data as any).invoice;
+      if (invoiceId) {
+        queryClient.invalidateQueries({ queryKey: ["invoice-line-items", invoiceId] });
+        queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
         queryClient.invalidateQueries({ queryKey: ["invoices"] });
       }
     },
@@ -282,9 +284,11 @@ export function useUpdateLineItem() {
       data: PatchedInvoiceLineItemRequest;
     }) => invoiceService.updateLineItem(id, data),
     onSuccess: (data) => {
-      if (data.invoice) {
-        queryClient.invalidateQueries({ queryKey: ["invoice-line-items", data.invoice] });
-        queryClient.invalidateQueries({ queryKey: ["invoice", data.invoice] });
+      // Type assertion needed as the API returns invoice field but it's not in the generated type
+      const invoiceId = (data as any).invoice;
+      if (invoiceId) {
+        queryClient.invalidateQueries({ queryKey: ["invoice-line-items", invoiceId] });
+        queryClient.invalidateQueries({ queryKey: ["invoice", invoiceId] });
         queryClient.invalidateQueries({ queryKey: ["invoices"] });
       }
     },
@@ -334,7 +338,8 @@ export function useRecordPayment() {
     mutationFn: (data: InvoicePaymentRequest) =>
       invoiceService.recordPayment(data),
     onSuccess: (data) => {
-      if (data.invoice) {
+      // InvoicePayment includes invoice field
+      if (data?.invoice) {
         queryClient.invalidateQueries({ queryKey: ["invoice-payments", data.invoice] });
         queryClient.invalidateQueries({ queryKey: ["invoice", data.invoice] });
         queryClient.invalidateQueries({ queryKey: ["invoices"] });
@@ -356,7 +361,8 @@ export function useUpdatePayment() {
       data: PatchedInvoicePaymentRequest;
     }) => invoiceService.updatePayment(id, data),
     onSuccess: (data) => {
-      if (data.invoice) {
+      // InvoicePayment includes invoice field
+      if (data?.invoice) {
         queryClient.invalidateQueries({ queryKey: ["invoice-payments", data.invoice] });
         queryClient.invalidateQueries({ queryKey: ["invoice", data.invoice] });
         queryClient.invalidateQueries({ queryKey: ["invoices"] });

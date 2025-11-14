@@ -21,9 +21,6 @@ import {
   invoicesSettingsUploadLogoCreate,
   invoicesSettingsUploadBadgeCreate,
   invoicesSettingsUploadSignatureCreate,
-  invoicesSettingsRemoveLogoDestroy,
-  invoicesSettingsRemoveBadgeDestroy,
-  invoicesSettingsRemoveSignatureDestroy,
   invoicesSettingsAvailableItemlistsRetrieve,
   invoicesLineItemsList,
   invoicesLineItemsCreate,
@@ -49,6 +46,7 @@ import type {
   PaginatedInvoiceListList,
   InvoiceDetail,
   InvoiceCreateUpdate,
+  InvoiceCreateUpdateRequest,
   PatchedInvoiceCreateUpdateRequest,
   PaginatedInvoiceLineItemList,
   InvoiceLineItem,
@@ -137,7 +135,7 @@ class InvoiceService {
   /**
    * Create a new invoice
    */
-  async createInvoice(data: InvoiceCreateUpdate): Promise<InvoiceDetail> {
+  async createInvoice(data: InvoiceCreateUpdateRequest): Promise<InvoiceDetail> {
     return invoicesInvoicesCreate(data) as Promise<InvoiceDetail>;
   }
 
@@ -162,21 +160,21 @@ class InvoiceService {
    * Duplicate an invoice
    */
   async duplicateInvoice(id: number): Promise<InvoiceDetail> {
-    return invoicesInvoicesDuplicateCreate(id) as Promise<InvoiceDetail>;
+    return invoicesInvoicesDuplicateCreate(id, {} as any) as Promise<InvoiceDetail>;
   }
 
   /**
    * Finalize invoice and generate PDF
    */
   async finalizeInvoice(id: number): Promise<InvoiceDetail> {
-    return invoicesInvoicesFinalizeCreate(id) as Promise<InvoiceDetail>;
+    return invoicesInvoicesFinalizeCreate(id, {} as any) as Promise<InvoiceDetail>;
   }
 
   /**
    * Mark invoice as paid
    */
   async markInvoiceAsPaid(id: number): Promise<InvoiceDetail> {
-    return invoicesInvoicesMarkPaidCreate(id) as Promise<InvoiceDetail>;
+    return invoicesInvoicesMarkPaidCreate(id, {} as any) as Promise<InvoiceDetail>;
   }
 
   /**
