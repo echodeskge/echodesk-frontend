@@ -154,6 +154,8 @@ export function useInvoiceSettings() {
   return useQuery({
     queryKey: ["invoice-settings"],
     queryFn: () => invoiceService.getSettings(),
+    staleTime: 0, // Always refetch
+    refetchOnMount: true,
   });
 }
 
