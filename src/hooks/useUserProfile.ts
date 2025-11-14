@@ -14,6 +14,7 @@ export const useUserProfile = () => {
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
     retry: 1, // Only retry once on failure for auth endpoints
     refetchOnWindowFocus: false, // Don't refetch on window focus - profile rarely changes
-    refetchOnMount: false, // Don't refetch on mount if data exists in cache
+    // Always fetch on mount - ensures profile loads immediately after login
+    refetchOnMount: 'always',
   });
 };
