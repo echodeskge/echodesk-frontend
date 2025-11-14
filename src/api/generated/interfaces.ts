@@ -819,7 +819,6 @@ export interface InstagramSendMessageRequest {
 }
 
 export interface InvoiceCreateUpdate {
-  client: number;
   issue_date?: string;
   due_date: string;
   currency?: string;
@@ -854,6 +853,7 @@ export interface InvoiceDetail {
   pdf_url: string;
   invoice_number: string;
   status?: StatusDf1enum;
+  client_name?: string;
   issue_date?: string;
   due_date: string;
   sent_date?: string;
@@ -871,13 +871,15 @@ export interface InvoiceDetail {
   created_at: string;
   updated_at: string;
   uuid: string;
-  client: number;
+  client?: number;
+  client_itemlist_item?: number;
   template?: number;
   created_by: number;
 }
 
 export interface InvoiceDetailRequest {
   status?: StatusDf1enum;
+  client_name?: string;
   issue_date?: string;
   due_date: string;
   sent_date?: string;
@@ -887,7 +889,8 @@ export interface InvoiceDetailRequest {
   notes?: string;
   terms_and_conditions?: string;
   pdf_file?: string;
-  client: number;
+  client?: number;
+  client_itemlist_item?: number;
   template?: number;
 }
 
@@ -910,7 +913,6 @@ export interface InvoiceLineItem {
   position?: number;
   created_at: string;
   updated_at: string;
-  invoice: number;
   product?: number;
   list_item?: number;
 }
@@ -924,7 +926,6 @@ export interface InvoiceLineItemRequest {
   tax_rate?: string;
   discount_percent?: string;
   position?: number;
-  invoice: number;
   product?: number;
   list_item?: number;
 }
@@ -934,7 +935,7 @@ export interface InvoiceList {
   uuid: string;
   invoice_number: string;
   status?: StatusDf1enum;
-  client: number;
+  client?: number;
   client_name: string;
   issue_date?: string;
   due_date: string;
@@ -2266,7 +2267,6 @@ export interface PatchedInvoiceLineItemRequest {
   tax_rate?: string;
   discount_percent?: string;
   position?: number;
-  invoice?: number;
   product?: number;
   list_item?: number;
 }

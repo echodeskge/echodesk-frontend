@@ -3535,7 +3535,7 @@ export async function invoicesClientsList(
   return response.data;
 }
 
-export async function invoicesClientsRetrieve(id: number): Promise<Client> {
+export async function invoicesClientsRetrieve(id: string): Promise<Client> {
   const response = await axios.get(`/api/invoices/clients/${id}/`);
   return response.data;
 }
@@ -3856,6 +3856,13 @@ export async function invoicesSettingsPartialUpdate(
 export async function invoicesSettingsAvailableItemlistsRetrieve(): Promise<InvoiceSettings> {
   const response = await axios.get(
     `/api/invoices/settings/available-itemlists/`,
+  );
+  return response.data;
+}
+
+export async function invoicesSettingsDebugSubscriptionRetrieve(): Promise<InvoiceSettings> {
+  const response = await axios.get(
+    `/api/invoices/settings/debug-subscription/`,
   );
   return response.data;
 }

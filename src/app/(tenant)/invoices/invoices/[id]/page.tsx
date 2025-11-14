@@ -195,13 +195,13 @@ export default function InvoiceDetailPage() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold">{invoice.invoice_number}</h1>
-              <InvoiceStatusBadge status={invoice.status} isOverdue={invoice.is_overdue} />
+              <InvoiceStatusBadge status={invoice.status as any} isOverdue={!!invoice.is_overdue} />
             </div>
             <p className="text-muted-foreground">{invoice.client_name}</p>
           </div>
         </div>
         <div className="flex gap-2">
-          {invoice.status === "draft" && (
+          {(invoice.status as any) === "draft" && (
             <Button onClick={() => setFinalizeDialogOpen(true)}>
               <CheckCircle className="w-4 h-4 mr-2" />
               {t("actions.finalize")}
@@ -219,7 +219,7 @@ export default function InvoiceDetailPage() {
             <Copy className="w-4 h-4 mr-2" />
             {t("actions.duplicate")}
           </Button>
-          {invoice.status === "draft" && (
+          {(invoice.status as any) === "draft" && (
             <Button variant="outline" onClick={() => setDeleteDialogOpen(true)}>
               <Trash2 className="w-4 h-4 mr-2" />
               {t("actions.delete")}
@@ -245,11 +245,11 @@ export default function InvoiceDetailPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("table.issueDate")}:</span>
-                  <span>{new Date(invoice.issue_date).toLocaleDateString()}</span>
+                  <span>{invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString() : '-'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("table.dueDate")}:</span>
-                  <span>{new Date(invoice.due_date).toLocaleDateString()}</span>
+                  <span>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '-'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("form.currency")}:</span>
@@ -262,7 +262,7 @@ export default function InvoiceDetailPage() {
               <h3 className="font-semibold mb-3">{t("details.clientDetails")}</h3>
               <div className="space-y-1 text-sm">
                 <p className="font-medium">{invoice.client_name}</p>
-                {invoice.client_email && <p className="text-muted-foreground">{invoice.client_email}</p>}
+                {(invoice.client_details as any)?.email && <p className="text-muted-foreground">{(invoice.client_details as any).email}</p>}
               </div>
             </Card>
 
@@ -341,7 +341,7 @@ export default function InvoiceDetailPage() {
           </Card>
 
           {/* Notes & Terms */}
-          {(invoice.notes || invoice.terms_conditions) && (
+          {(invoice.notes || invoice.terms_and_conditions) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {invoice.notes && (
                 <Card className="p-4">
@@ -349,11 +349,11 @@ export default function InvoiceDetailPage() {
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">{invoice.notes}</p>
                 </Card>
               )}
-              {invoice.terms_conditions && (
+              {invoice.terms_and_conditions && (
                 <Card className="p-4">
                   <h3 className="font-semibold mb-2">{t("form.termsConditions")}</h3>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {invoice.terms_conditions}
+                    {invoice.terms_and_conditions}
                   </p>
                 </Card>
               )}
@@ -426,7 +426,7 @@ export default function InvoiceDetailPage() {
         open={sendDialogOpen}
         onOpenChange={setSendDialogOpen}
         invoiceId={invoiceId}
-        clientEmail={invoice.client_email}
+        clientEmail={(invoice.client_details as any)?.email || ''}
         invoiceNumber={invoice.invoice_number}
       />
 
@@ -436,7 +436,7 @@ export default function InvoiceDetailPage() {
         onOpenChange={setPaymentDialogOpen}
         invoiceId={invoiceId}
         balance={parseFloat(invoice.balance)}
-        currency={invoice.currency}
+        currency={invoice.currency || 'GEL'}
       />
 
       {/* Finalize Confirmation */}
