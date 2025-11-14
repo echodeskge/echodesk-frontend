@@ -83,11 +83,6 @@ export default function InvoiceSettingsPage() {
   const clientItemListValue = watch("client_itemlist");
   const defaultCurrencyValue = watch("default_currency");
 
-  // Debug: Log settings and form values
-  console.log("Settings data:", settings);
-  console.log("Client ItemList Value:", clientItemListValue);
-  console.log("Form values:", watch());
-
   const handleFileUpload = async (
     file: File | null,
     type: "logo" | "badge" | "signature"

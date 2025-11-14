@@ -226,9 +226,9 @@ class InvoiceService {
    */
   async getSettings(): Promise<InvoiceSettings> {
     const { default: axios } = await import('@/api/axios');
-    const response = await axios.get<PaginatedInvoiceSettingsList>('/api/invoices/settings/');
-    // Backend returns singleton, so we take the first result
-    return response.data.results?.[0] || {} as InvoiceSettings;
+    const response = await axios.get<InvoiceSettings>('/api/invoices/settings/');
+    // Backend returns singleton object directly (not paginated)
+    return response.data;
   }
 
   /**
