@@ -236,8 +236,9 @@ class InvoiceService {
    */
   async updateSettings(data: PatchedInvoiceSettingsRequest): Promise<InvoiceSettings> {
     const { default: axios } = await import('@/api/axios');
-    // Get settings ID first (it's a singleton)
+    // Settings is a singleton - get current settings first
     const settings = await this.getSettings();
+    // Use PATCH with the settings ID
     const response = await axios.patch<InvoiceSettings>(`/api/invoices/settings/${settings.id}/`, data);
     return response.data;
   }

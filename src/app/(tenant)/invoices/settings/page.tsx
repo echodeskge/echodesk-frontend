@@ -70,7 +70,7 @@ export default function InvoiceSettingsPage() {
           default_due_days: settings.default_due_days || 30,
           email_from: settings.email_from || "",
           email_cc: settings.email_cc || "",
-          email_subject_template: settings.email_subject_template || "",
+          email_subject_template: settings.email_subject_template || "Invoice {invoice_number} from {company_name}",
           email_message_template: settings.email_message_template || "",
           default_terms_conditions: settings.default_terms_conditions || "",
         }
