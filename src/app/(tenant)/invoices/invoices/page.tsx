@@ -258,8 +258,8 @@ export default function InvoicesPage() {
                     </div>
                   </TableCell>
                   <TableCell>{invoice.client_name}</TableCell>
-                  <TableCell>{new Date(invoice.issue_date).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(invoice.due_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>
                     {invoice.total} {invoice.currency}
                   </TableCell>
@@ -268,8 +268,8 @@ export default function InvoicesPage() {
                   </TableCell>
                   <TableCell>
                     <InvoiceStatusBadge
-                      status={invoice.status}
-                      isOverdue={invoice.is_overdue}
+                      status={invoice.status as any}
+                      isOverdue={!!invoice.is_overdue}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -310,7 +310,7 @@ export default function InvoicesPage() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(invoice)}
-                        disabled={invoice.status !== "draft"}
+                        disabled={(invoice.status as any) !== "draft"}
                         title={t("actions.delete")}
                       >
                         <Trash2 className="w-4 h-4" />

@@ -132,13 +132,13 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
 
   const onSubmit = async (data: any) => {
     try {
-      const payload: InvoiceCreateUpdate = {
+      const payload: any = {
         client: parseInt(data.client),
         issue_date: data.issue_date,
         due_date: data.due_date,
         currency: data.currency,
         notes: data.notes || "",
-        terms_conditions: data.terms_conditions || "",
+        terms_and_conditions: data.terms_conditions || "",
         line_items: lineItems.map((item, index) => ({
           item_source: "manual",
           description: item.description,
