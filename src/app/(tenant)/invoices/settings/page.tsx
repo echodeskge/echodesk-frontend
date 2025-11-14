@@ -78,6 +78,7 @@ export default function InvoiceSettingsPage() {
   });
 
   const clientItemListValue = watch("client_itemlist");
+  const defaultCurrencyValue = watch("default_currency");
 
   const handleFileUpload = async (
     file: File | null,
@@ -412,8 +413,8 @@ export default function InvoiceSettingsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="default_currency">{t("settings.form.defaultCurrency")}</Label>
                   <Select
-                    value={settings?.default_currency}
-                    onValueChange={(value) => setValue("default_currency", value)}
+                    value={defaultCurrencyValue || "GEL"}
+                    onValueChange={(value) => setValue("default_currency", value, { shouldDirty: true })}
                   >
                     <SelectTrigger>
                       <SelectValue />
