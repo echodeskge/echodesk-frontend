@@ -53,7 +53,7 @@ export default function InvoiceSettingsPage() {
   const [uploadingBadge, setUploadingBadge] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
 
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     values: settings
       ? {
           company_name: settings.company_name || "",
@@ -76,6 +76,8 @@ export default function InvoiceSettingsPage() {
         }
       : undefined,
   });
+
+  const clientItemListValue = watch("client_itemlist");
 
   const handleFileUpload = async (
     file: File | null,
@@ -227,8 +229,10 @@ export default function InvoiceSettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="client_itemlist">{t("settings.form.clientItemList")}</Label>
                 <Select
-                  value={settings?.client_itemlist?.toString() || "none"}
-                  onValueChange={(value) => setValue("client_itemlist", value === "none" ? null : parseInt(value))}
+                  value={clientItemListValue?.toString() || "none"}
+                  onValueChange={(value) => {
+                    setValue("client_itemlist", value === "none" ? null : parseInt(value), { shouldDirty: true });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder={t("settings.form.selectItemList")} />
