@@ -58,21 +58,24 @@ export default function InvoiceSettingsPage() {
       ? {
           company_name: settings.company_name || "",
           tax_id: settings.tax_id || "",
+          registration_number: settings.registration_number || "",
           address: settings.address || "",
           phone: settings.phone || "",
           email: settings.email || "",
           website: settings.website || "",
           client_itemlist: settings.client_itemlist || null,
           invoice_prefix: settings.invoice_prefix || "INV",
-          next_invoice_number: settings.next_invoice_number || 1,
+          starting_number: settings.starting_number || 1,
           default_currency: settings.default_currency || "GEL",
           default_tax_rate: settings.default_tax_rate || "18",
           default_due_days: settings.default_due_days || 30,
           email_from: settings.email_from || "",
+          email_from_name: settings.email_from_name || "",
           email_cc: settings.email_cc || "",
           email_subject_template: settings.email_subject_template || "Invoice {invoice_number} from {company_name}",
           email_message_template: settings.email_message_template || "",
-          default_terms_conditions: settings.default_terms_conditions || "",
+          footer_text: settings.footer_text || "",
+          default_terms: settings.default_terms || "",
         }
       : undefined,
   });
@@ -304,10 +307,10 @@ export default function InvoiceSettingsPage() {
               <div className="space-y-3">
                 <Label>{t("settings.form.badge")}</Label>
                 <div className="flex items-center gap-4">
-                  {settings?.document_badge ? (
+                  {settings?.badge ? (
                     <div className="relative">
                       <img
-                        src={settings.document_badge}
+                        src={settings.badge}
                         alt="Badge"
                         className="h-20 w-auto object-contain border rounded"
                       />
@@ -398,13 +401,13 @@ export default function InvoiceSettingsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="next_invoice_number">
+                  <Label htmlFor="starting_number">
                     {t("settings.form.nextInvoiceNumber")}
                   </Label>
                   <Input
-                    id="next_invoice_number"
+                    id="starting_number"
                     type="number"
-                    {...register("next_invoice_number")}
+                    {...register("starting_number")}
                   />
                 </div>
               </div>
@@ -444,12 +447,12 @@ export default function InvoiceSettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="default_terms_conditions">
+                <Label htmlFor="default_terms">
                   {t("settings.form.defaultTerms")}
                 </Label>
                 <Textarea
-                  id="default_terms_conditions"
-                  {...register("default_terms_conditions")}
+                  id="default_terms"
+                  {...register("default_terms")}
                   rows={6}
                   placeholder={t("settings.form.defaultTermsPlaceholder")}
                 />
