@@ -7,6 +7,18 @@ export interface ActionEnum {
   [key: string]: any;
 }
 
+export interface AddDomainRequestRequest {
+  domain: string;
+}
+
+export interface AddDomainResponse {
+  success: boolean;
+  domain: string;
+  verified: boolean;
+  verification: Record<string, any>[];
+  dns_instructions: Record<string, any>;
+}
+
 export interface AddNewCardRequestRequest {
   make_default?: boolean;
 }
@@ -546,6 +558,14 @@ export interface DepartmentRequest {
   is_active?: boolean;
 }
 
+export interface DeploymentResponse {
+  success: boolean;
+  message: string;
+  url: string;
+  project_id: string;
+  project_name: string;
+}
+
 export interface DeploymentStatusEnum {
   [key: string]: any;
 }
@@ -556,6 +576,11 @@ export interface DescriptionFormatEnum {
 
 export interface DirectionEnum {
   [key: string]: any;
+}
+
+export interface DomainsListResponse {
+  success: boolean;
+  domains: Record<string, any>[];
 }
 
 export interface EcommerceClient {
@@ -596,6 +621,10 @@ export interface EcommerceSettings {
   store_name?: string;
   store_email?: string;
   store_phone?: string;
+  ecommerce_frontend_url: string;
+  deployment_status: DeploymentStatusEnum;
+  vercel_project_id: string;
+  custom_domain: string;
   created_at: string;
   updated_at: string;
 }
@@ -2841,6 +2870,7 @@ export interface ProductList {
   is_featured?: boolean;
   is_low_stock: boolean;
   is_in_stock: boolean;
+  attribute_values: ProductAttributeValue[];
   created_at: string;
   updated_at: string;
 }
@@ -2977,6 +3007,10 @@ export interface RecurringBookingRequest {
 
 export interface RecurringBookingStatusEnum {
   [key: string]: any;
+}
+
+export interface RemoveDomainRequestRequest {
+  domain: string;
 }
 
 export interface ResendVerificationCodeRequestRequest {
@@ -3773,6 +3807,16 @@ export interface UserUpdateRequest {
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
+}
+
+export interface VerifyDomainRequestRequest {
+  domain: string;
+}
+
+export interface VerifyDomainResponse {
+  success: boolean;
+  verified: boolean;
+  verification: Record<string, any>[];
 }
 
 export interface WhatsAppBusinessAccount {

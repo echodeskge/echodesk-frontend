@@ -143,6 +143,13 @@ import type {
   EcommerceSettingsRequest,
   EcommerceSettings,
   PatchedEcommerceSettingsRequest,
+  AddDomainRequestRequest,
+  AddDomainResponse,
+  DeploymentResponse,
+  DomainsListResponse,
+  RemoveDomainRequestRequest,
+  VerifyDomainRequestRequest,
+  VerifyDomainResponse,
   PaginatedProductVariantList,
   ProductVariantRequest,
   ProductVariant,
@@ -1988,6 +1995,33 @@ export async function deploymentStatusRetrieve(tenantId: number): Promise<any> {
   return response.data;
 }
 
+export async function deploymentDeleteDestroy(tenantId: number): Promise<any> {
+  const response = await axios.delete(`/api/deployment/${tenantId}/delete/`);
+  return response.data;
+}
+
+export async function deploymentDeployCreate(tenantId: number): Promise<any> {
+  const response = await axios.post(`/api/deployment/${tenantId}/deploy/`);
+  return response.data;
+}
+
+export async function deploymentEnvUpdate(tenantId: number): Promise<any> {
+  const response = await axios.put(`/api/deployment/${tenantId}/env/`);
+  return response.data;
+}
+
+export async function deploymentRedeployCreate(tenantId: number): Promise<any> {
+  const response = await axios.post(`/api/deployment/${tenantId}/redeploy/`);
+  return response.data;
+}
+
+export async function deploymentStatusRetrieve2(
+  tenantId: number,
+): Promise<any> {
+  const response = await axios.get(`/api/deployment/${tenantId}/status/`);
+  return response.data;
+}
+
 export async function ecommerceAdminAddressesList(
   client?: number,
   isDefault?: boolean,
@@ -2796,6 +2830,58 @@ export async function ecommerceAdminSettingsDestroy(id: string): Promise<any> {
   return response.data;
 }
 
+export async function ecommerceAdminSettingsAddDomainCreate(
+  data: AddDomainRequestRequest,
+): Promise<AddDomainResponse> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/settings/add-domain/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminSettingsDeleteDeploymentDestroy(): Promise<any> {
+  const response = await axios.delete(
+    `/api/ecommerce/admin/settings/delete-deployment/`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminSettingsDeployFrontendCreate(
+  data: EcommerceSettingsRequest,
+): Promise<DeploymentResponse> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/settings/deploy-frontend/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminSettingsDomainsRetrieve(): Promise<DomainsListResponse> {
+  const response = await axios.get(`/api/ecommerce/admin/settings/domains/`);
+  return response.data;
+}
+
+export async function ecommerceAdminSettingsRemoveDomainCreate(
+  data: RemoveDomainRequestRequest,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/settings/remove-domain/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminSettingsVerifyDomainCreate(
+  data: VerifyDomainRequestRequest,
+): Promise<VerifyDomainResponse> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/settings/verify-domain/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function ecommerceAdminVariantsList(
   isActive?: boolean,
   ordering?: string,
@@ -3247,7 +3333,15 @@ export async function ecommerceClientOrdersDestroy(id: string): Promise<any> {
 }
 
 export async function ecommerceClientProductsList(
+  attrCategory?: string,
+  attrMaterial?: string,
+  attrNumberOfLamps?: string,
+  attrSubcategory?: string,
   isFeatured?: boolean,
+  language?: string,
+  maxPrice?: number,
+  minPrice?: number,
+  onSale?: boolean,
   ordering?: string,
   page?: number,
   search?: string,
@@ -3255,7 +3349,23 @@ export async function ecommerceClientProductsList(
   const response = await axios.get(
     `/api/ecommerce/client/products/${(() => {
       const parts = [
+        attrCategory
+          ? 'attr_category=' + encodeURIComponent(attrCategory)
+          : null,
+        attrMaterial
+          ? 'attr_material=' + encodeURIComponent(attrMaterial)
+          : null,
+        attrNumberOfLamps
+          ? 'attr_number_of_lamps=' + encodeURIComponent(attrNumberOfLamps)
+          : null,
+        attrSubcategory
+          ? 'attr_subcategory=' + encodeURIComponent(attrSubcategory)
+          : null,
         isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
+        language ? 'language=' + encodeURIComponent(language) : null,
+        maxPrice ? 'max_price=' + encodeURIComponent(maxPrice) : null,
+        minPrice ? 'min_price=' + encodeURIComponent(minPrice) : null,
+        onSale ? 'on_sale=' + encodeURIComponent(onSale) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
@@ -3292,6 +3402,13 @@ export async function loginClient(
   data: ClientLoginRequest,
 ): Promise<EcommerceClient> {
   const response = await axios.post(`/api/ecommerce/clients/login/`, data);
+  return response.data;
+}
+
+export async function logoutClient(data: { refresh: string }): Promise<{
+  message?: string;
+}> {
+  const response = await axios.post(`/api/ecommerce/clients/logout/`, data);
   return response.data;
 }
 
