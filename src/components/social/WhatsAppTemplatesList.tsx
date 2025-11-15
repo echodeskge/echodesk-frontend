@@ -21,6 +21,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import TemplateCard from "./TemplateCard";
+import { cn } from "@/lib/utils";
 
 interface WhatsAppStatus {
   connected: boolean;
