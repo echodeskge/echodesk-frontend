@@ -83,21 +83,10 @@ export function WhatsAppConnection() {
     setConnecting(true);
 
     try {
-      // Build OAuth URL for Embedded Signup
-      const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '778228344659402';
-      const redirectUri = 'https://api.echodesk.ge/api/social/whatsapp/embedded-signup/callback/';
-      const state = encodeURIComponent(`tenant=${tenant?.schema_name || 'amanati'}`);
-
-      // Use direct OAuth URL without config_id to test
-      const oauthUrl = `https://www.facebook.com/v23.0/dialog/oauth?` +
-        `client_id=${fbAppId}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `response_type=code&` +
-        `scope=whatsapp_business_management,whatsapp_business_messaging&` +
-        `state=${state}`;
-
-      // Redirect to Facebook OAuth
-      window.location.href = oauthUrl;
+      // Redirect to backend OAuth start endpoint
+      // Backend will initiate the OAuth flow from api.echodesk.ge domain
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.echodesk.ge';
+      window.location.href = `${apiBaseUrl}/api/social/whatsapp/oauth/start/`;
     } catch (error) {
       console.error('Failed to initiate WhatsApp connection:', error);
       toast.error('Failed to start WhatsApp connection');
