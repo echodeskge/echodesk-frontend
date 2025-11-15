@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
-import { useWhatsAppStatus, useDisconnectWhatsApp } from '@/hooks/api/useSocial';
+import { useWhatsAppStatus, useConnectWhatsApp, useDisconnectWhatsApp } from '@/hooks/api/useSocial';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,10 +50,10 @@ interface WhatsAppStatus {
 
 export function WhatsAppConnection() {
   const { tenant } = useTenant();
-  const [connecting, setConnecting] = useState(false);
 
   // React Query hooks
   const { data: statusData, isLoading: loading, refetch } = useWhatsAppStatus();
+  const connectWhatsApp = useConnectWhatsApp();
   const disconnectWhatsApp = useDisconnectWhatsApp();
 
   const status = statusData as WhatsAppStatus | null;
@@ -79,18 +79,17 @@ export function WhatsAppConnection() {
     }
   }, [refetch]);
 
-  const handleConnect = () => {
-    setConnecting(true);
-
+  const handleConnect = async () => {
     try {
-      // Redirect to backend OAuth start endpoint
-      // Backend will initiate the OAuth flow from api.echodesk.ge domain
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.echodesk.ge';
-      window.location.href = `${apiBaseUrl}/api/social/whatsapp/oauth/start/`;
-    } catch (error) {
-      console.error('Failed to initiate WhatsApp connection:', error);
-      toast.error('Failed to start WhatsApp connection');
-      setConnecting(false);
+      const response = await connectWhatsApp.mutateAsync();
+      if (response.oauth_url) {
+        window.location.href = response.oauth_url;
+      } else {
+        throw new Error('No OAuth URL received');
+      }
+    } catch (error: any) {
+      console.error('Failed to start WhatsApp OAuth:', error);
+      toast.error(error.response?.data?.error || error.message || 'Failed to start WhatsApp connection');
     }
   };
 
@@ -167,10 +166,10 @@ export function WhatsAppConnection() {
           {!isConnected ? (
             <Button
               onClick={handleConnect}
-              disabled={loading || connecting}
+              disabled={loading || connectWhatsApp.isPending}
               className="bg-[#25D366] hover:bg-[#20BA59]"
             >
-              {connecting ? (
+              {loading || connectWhatsApp.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                   Connecting...

@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import {
   socialFacebookSendMessageCreate,
+  socialWhatsappOauthStartRetrieve,
   socialWhatsappTemplatesList,
   socialWhatsappTemplatesSyncCreate,
   socialWhatsappTemplatesCreateCreate,
@@ -358,6 +359,17 @@ export function useSendWhatsAppMessage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+    },
+  });
+}
+
+export function useConnectWhatsApp() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: socialWhatsappOauthStartRetrieve,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
     },
   });
 }

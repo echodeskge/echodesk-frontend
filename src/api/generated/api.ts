@@ -5609,6 +5609,11 @@ export async function socialWhatsappEmbeddedSignupCallbackCreate(): Promise<any>
   return response.data;
 }
 
+export async function socialWhatsappOauthStartRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/whatsapp/oauth/start/`);
+  return response.data;
+}
+
 export async function socialWhatsappSendMessageCreate(
   data: WhatsAppSendMessageRequest,
 ): Promise<{
