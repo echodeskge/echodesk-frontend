@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { useCreateProduct } from "@/hooks/useProducts";
 import { useLanguages } from "@/hooks/useLanguages";
 import type { ProductCreateUpdate, ProductCreateUpdateRequest, Language } from "@/api/generated";
@@ -447,6 +448,28 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Featured Product */}
+                <FormField
+                  control={form.control}
+                  name="is_featured"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Featured Product</FormLabel>
+                        <FormDescription>
+                          Display this product in the featured products section on the homepage
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
                     </FormItem>
                   )}
                 />

@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package, Edit, Eye } from "lucide-react";
+import { Search, Plus, Package, Edit, Eye, Star } from "lucide-react";
 import { useProducts, useProduct } from "@/hooks/useProducts";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AddProductSheet } from "@/components/products/AddProductSheet";
@@ -165,6 +165,11 @@ export default function ProductsPage() {
                   <Badge className="absolute top-2 left-2 bg-orange-500">
                     {t("lowStock")}
                   </Badge>
+                )}
+                {product.is_featured && (
+                  <div className="absolute bottom-2 right-2 bg-amber-500 text-white rounded-full p-1.5">
+                    <Star className="h-4 w-4 fill-current" />
+                  </div>
                 )}
                 {/* Edit overlay on hover */}
                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
