@@ -84,16 +84,14 @@ export function WhatsAppConnection() {
 
     try {
       // Build OAuth URL for Embedded Signup
-      const fbAppId = '649149741547110';
-      const configId = '4254308474803749';
+      const fbAppId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '778228344659402';
       const redirectUri = 'https://api.echodesk.ge/api/social/whatsapp/embedded-signup/callback/';
       const state = encodeURIComponent(`tenant=${tenant?.schema_name || 'amanati'}`);
 
-      // Use direct OAuth URL for Embedded Signup
+      // Use direct OAuth URL without config_id to test
       const oauthUrl = `https://www.facebook.com/v23.0/dialog/oauth?` +
         `client_id=${fbAppId}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `config_id=${configId}&` +
         `response_type=code&` +
         `scope=whatsapp_business_management,whatsapp_business_messaging&` +
         `state=${state}`;

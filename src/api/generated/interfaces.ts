@@ -433,7 +433,7 @@ export interface CartStatusEnum {
   [key: string]: any;
 }
 
-export interface CategoryEnum {
+export interface CategoryAf8enum {
   [key: string]: any;
 }
 
@@ -695,7 +695,7 @@ export interface Feature {
   key: string;
   name: string;
   description?: string;
-  category?: CategoryEnum;
+  category?: CategoryAf8enum;
   category_display: string;
   icon?: string;
   price_per_user_gel?: string;
@@ -712,7 +712,7 @@ export interface FeatureMinimal {
   key: string;
   name: string;
   description?: string;
-  category?: CategoryEnum;
+  category?: CategoryAf8enum;
   icon?: string;
 }
 
@@ -720,7 +720,7 @@ export interface FeatureMinimalRequest {
   key: string;
   name: string;
   description?: string;
-  category?: CategoryEnum;
+  category?: CategoryAf8enum;
   icon?: string;
 }
 
@@ -738,7 +738,7 @@ export interface FeatureRequest {
   key: string;
   name: string;
   description?: string;
-  category?: CategoryEnum;
+  category?: CategoryAf8enum;
   icon?: string;
   price_per_user_gel?: string;
   price_unlimited_gel?: string;
@@ -3820,6 +3820,9 @@ export interface WhatsAppMessage {
   business_name: string;
   business_phone: string;
   waba_id: string;
+  template?: number;
+  template_name: string;
+  template_parameters?: any;
   created_at: string;
 }
 
@@ -3827,8 +3830,51 @@ export interface WhatsAppMessageStatusEnum {
   [key: string]: any;
 }
 
+export interface WhatsAppMessageTemplate {
+  id: number;
+  business_account: number;
+  template_id: string;
+  name: string;
+  language?: string;
+  status?: WhatsAppMessageTemplateStatusEnum;
+  category?: WhatsAppMessageTemplateCategoryEnum;
+  components?: any;
+  created_by?: number;
+  created_by_name: string;
+  business_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WhatsAppMessageTemplateCategoryEnum {
+  [key: string]: any;
+}
+
+export interface WhatsAppMessageTemplateStatusEnum {
+  [key: string]: any;
+}
+
 export interface WhatsAppSendMessageRequest {
   to_number: string;
   message: string;
   waba_id: string;
+}
+
+export interface WhatsAppTemplateCreateCategoryEnum {
+  [key: string]: any;
+}
+
+export interface WhatsAppTemplateCreateRequest {
+  waba_id: string;
+  name: string;
+  language?: string;
+  category?: WhatsAppTemplateCreateCategoryEnum;
+  components: Record<string, any>[];
+}
+
+export interface WhatsAppTemplateSendRequest {
+  waba_id: string;
+  template_id: number;
+  to_number: string;
+  parameters?: Record<string, any>;
 }

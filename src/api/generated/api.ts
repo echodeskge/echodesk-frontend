@@ -284,7 +284,10 @@ import type {
   PatchedWhatsAppBusinessAccountRequest,
   PaginatedWhatsAppMessageList,
   WhatsAppMessage,
+  WhatsAppMessageTemplate,
   WhatsAppSendMessageRequest,
+  WhatsAppTemplateCreateRequest,
+  WhatsAppTemplateSendRequest,
   PaginatedTagList,
   TagRequest,
   Tag,
@@ -5571,6 +5574,22 @@ export async function socialWhatsappMessagesRetrieve(
   return response.data;
 }
 
+export async function socialWhatsappTemplatesList(
+  wabaId: string,
+): Promise<WhatsAppMessageTemplate[]> {
+  const response = await axios.get(`/api/social/whatsapp/${wabaId}/templates/`);
+  return response.data;
+}
+
+export async function socialWhatsappTemplatesSyncCreate(
+  wabaId: string,
+): Promise<WhatsAppMessageTemplate[]> {
+  const response = await axios.post(
+    `/api/social/whatsapp/${wabaId}/templates/sync/`,
+  );
+  return response.data;
+}
+
 export async function socialWhatsappDisconnectCreate(): Promise<any> {
   const response = await axios.post(`/api/social/whatsapp/disconnect/`);
   return response.data;
@@ -5603,6 +5622,35 @@ export async function socialWhatsappSendMessageCreate(
 
 export async function socialWhatsappStatusRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/whatsapp/status/`);
+  return response.data;
+}
+
+export async function socialWhatsappTemplatesDeleteDestroy(
+  templateId: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/social/whatsapp/templates/${templateId}/delete/`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappTemplatesCreateCreate(
+  data: WhatsAppTemplateCreateRequest,
+): Promise<WhatsAppMessageTemplate> {
+  const response = await axios.post(
+    `/api/social/whatsapp/templates/create/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappTemplatesSendCreate(
+  data: WhatsAppTemplateSendRequest,
+): Promise<WhatsAppMessage> {
+  const response = await axios.post(
+    `/api/social/whatsapp/templates/send/`,
+    data,
+  );
   return response.data;
 }
 

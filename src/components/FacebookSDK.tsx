@@ -14,7 +14,7 @@ export function FacebookSDK() {
     // Load Facebook SDK
     window.fbAsyncInit = function() {
       window.FB.init({
-        appId: '649149741547110',
+        appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '778228344659402',
         cookie: true,
         xfbml: true,
         version: 'v23.0'

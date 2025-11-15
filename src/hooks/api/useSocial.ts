@@ -1,7 +1,16 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { socialFacebookSendMessageCreate } from '@/api/generated';
+import {
+  socialFacebookSendMessageCreate,
+  socialWhatsappTemplatesList,
+  socialWhatsappTemplatesSyncCreate,
+  socialWhatsappTemplatesCreateCreate,
+  socialWhatsappTemplatesDeleteDestroy,
+  socialWhatsappTemplatesSendCreate,
+  WhatsAppTemplateCreateRequest,
+  WhatsAppTemplateSendRequest,
+} from '@/api/generated';
 import axios from '@/api/axios';
 
 // Query keys
@@ -21,6 +30,8 @@ export const socialKeys = {
   whatsappStatus: () => [...socialKeys.whatsapp(), 'status'] as const,
   whatsappMessages: () => [...socialKeys.whatsapp(), 'messages'] as const,
   whatsappMessagesList: (filters: Record<string, any>) => [...socialKeys.whatsappMessages(), filters] as const,
+  whatsappTemplates: () => [...socialKeys.whatsapp(), 'templates'] as const,
+  whatsappTemplatesList: (wabaId: string) => [...socialKeys.whatsappTemplates(), wabaId] as const,
 };
 
 // Queries
@@ -377,6 +388,67 @@ export function useWhatsAppEmbeddedSignupCallback() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
+    },
+  });
+}
+
+// ============================================================================
+// WHATSAPP TEMPLATE HOOKS
+// ============================================================================
+
+export function useWhatsAppTemplates(wabaId: string) {
+  return useQuery({
+    queryKey: socialKeys.whatsappTemplatesList(wabaId),
+    queryFn: () => socialWhatsappTemplatesList(wabaId),
+    enabled: !!wabaId,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+  });
+}
+
+export function useSyncWhatsAppTemplates() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (wabaId: string) => socialWhatsappTemplatesSyncCreate(wabaId),
+    onSuccess: (_, wabaId) => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappTemplatesList(wabaId) });
+    },
+  });
+}
+
+export function useCreateWhatsAppTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: WhatsAppTemplateCreateRequest) => socialWhatsappTemplatesCreateCreate(data),
+    onSuccess: (_, variables) => {
+      // Invalidate the templates list for the specific WABA
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappTemplatesList(variables.waba_id) });
+    },
+  });
+}
+
+export function useDeleteWhatsAppTemplate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (templateId: number) => socialWhatsappTemplatesDeleteDestroy(templateId),
+    onSuccess: () => {
+      // Invalidate all template lists since we don't know which WABA it belongs to
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappTemplates() });
+    },
+  });
+}
+
+export function useSendWhatsAppTemplateMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: WhatsAppTemplateSendRequest) => socialWhatsappTemplatesSendCreate(data),
+    onSuccess: () => {
+      // Invalidate messages to show the newly sent template message
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
     },
   });
 }
