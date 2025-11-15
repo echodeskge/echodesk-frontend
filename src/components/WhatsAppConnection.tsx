@@ -73,7 +73,6 @@ export function WhatsAppConnection() {
       window.history.replaceState({}, '', window.location.pathname);
     } else if (whatsappStatus === 'error') {
       toast.error(message || 'Failed to connect WhatsApp Business Account');
-      setConnecting(false);
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }

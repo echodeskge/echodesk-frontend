@@ -108,7 +108,7 @@ export default function CreateTemplatePage() {
           <ul className="list-disc list-inside space-y-1 text-sm">
             <li>Templates must be approved by Meta before use (usually 24-48 hours)</li>
             <li>Template names cannot be changed after creation</li>
-            <li>Use parameters ({{`{{1}}`}}, {{`{{2}}`}}) for dynamic content in the body</li>
+            <li>{"Use parameters ({{1}}, {{2}}) for dynamic content in the body"}</li>
             <li>Marketing templates require opt-in from recipients</li>
           </ul>
         </AlertDescription>

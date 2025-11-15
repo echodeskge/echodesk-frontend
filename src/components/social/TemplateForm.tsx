@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { WhatsAppTemplateCreateRequest } from "@/api/generated";
+import { WhatsAppTemplateCreateRequest, WhatsAppTemplateCreateCategoryEnum } from "@/api/generated";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,7 +62,7 @@ export default function TemplateForm({
 }: TemplateFormProps) {
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("en");
-  const [category, setCategory] = useState<"MARKETING" | "UTILITY" | "AUTHENTICATION">("UTILITY");
+  const [category, setCategory] = useState<string>("UTILITY");
   const [components, setComponents] = useState<TemplateComponent[]>([
     { type: "BODY", text: "" },
   ]);
@@ -143,7 +143,7 @@ export default function TemplateForm({
   const updateButton = (
     componentIndex: number,
     buttonIndex: number,
-    updates: Partial<TemplateComponent["buttons"][0]>
+    updates: Partial<NonNullable<TemplateComponent["buttons"]>[0]>
   ) => {
     const component = components[componentIndex];
     if (component.buttons) {
@@ -183,7 +183,7 @@ export default function TemplateForm({
       waba_id: wabaId,
       name,
       language,
-      category,
+      category: category as any as WhatsAppTemplateCreateCategoryEnum,
       components: apiComponents,
     };
 
@@ -398,7 +398,7 @@ export default function TemplateForm({
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>
                         {component.type === "BODY"
-                          ? `Use {{1}}, {{2}}, etc. for parameters. Current: ${getParameterCount(component.text || 0)}`
+                          ? `Use {{1}}, {{2}}, etc. for parameters. Current: ${getParameterCount(component.text || "")}`
                           : "Max 60 characters"}
                       </span>
                       <span>{component.text?.length || 0}/{component.type === "BODY" ? 1024 : 60}</span>

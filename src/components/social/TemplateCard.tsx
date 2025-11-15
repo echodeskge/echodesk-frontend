@@ -1,6 +1,6 @@
 "use client";
 
-import { WhatsAppMessageTemplate } from "@/api/generated";
+import { WhatsAppMessageTemplate, WhatsAppMessageTemplateStatusEnum, WhatsAppMessageTemplateCategoryEnum } from "@/api/generated";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +22,9 @@ export default function TemplateCard({
   onDelete,
   isDeleting = false,
 }: TemplateCardProps) {
-  const getStatusBadge = (status?: string) => {
-    switch (status) {
+  const getStatusBadge = (status?: WhatsAppMessageTemplateStatusEnum | string) => {
+    const statusStr = typeof status === 'string' ? status : status?.toString();
+    switch (statusStr) {
       case "APPROVED":
         return (
           <Badge variant="default" className="bg-green-500 hover:bg-green-600">
@@ -50,18 +51,19 @@ export default function TemplateCard({
     }
   };
 
-  const getCategoryBadge = (category?: string) => {
+  const getCategoryBadge = (category?: WhatsAppMessageTemplateCategoryEnum | string) => {
+    const categoryStr = typeof category === 'string' ? category : category?.toString();
     const categoryColors: Record<string, string> = {
       MARKETING: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       UTILITY: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
       AUTHENTICATION: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
     };
 
-    if (!category) return null;
+    if (!categoryStr) return null;
 
     return (
-      <Badge variant="outline" className={cn(categoryColors[category])}>
-        {category}
+      <Badge variant="outline" className={cn(categoryColors[categoryStr])}>
+        {categoryStr}
       </Badge>
     );
   };
@@ -117,7 +119,7 @@ export default function TemplateCard({
               size="sm"
               className="flex-1"
               onClick={() => onSend(template.id!)}
-              disabled={template.status !== "APPROVED"}
+              disabled={template.status?.toString() !== "APPROVED"}
             >
               <Send className="w-3 h-3 mr-1" />
               Send
