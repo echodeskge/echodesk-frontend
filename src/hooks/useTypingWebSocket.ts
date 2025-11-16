@@ -24,7 +24,6 @@ export function useTypingWebSocket({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Store tenant and conversationId in refs
   const tenantRef = useRef(tenant);
   const conversationIdRef = useRef(conversationId);
   const onTypingUsersChangeRef = useRef(onTypingUsersChange);
@@ -40,7 +39,6 @@ export function useTypingWebSocket({
     const currentConversationId = conversationIdRef.current;
 
     if (!currentTenant?.schema_name || !currentConversationId) {
-      console.log('[TypingWebSocket] Cannot connect - missing tenant or conversation ID');
       return;
     }
 
@@ -48,7 +46,6 @@ export function useTypingWebSocket({
       return;
     }
 
-    // Close existing connection
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -59,48 +56,38 @@ export function useTypingWebSocket({
       const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
       const host = apiUrl.host;
 
-      // Get auth token from localStorage (same key as authService)
       const token = localStorage.getItem('echodesk_auth_token');
       const wsUrl = token
         ? `${protocol}//${host}/ws/typing/${currentTenant.schema_name}/${currentConversationId}/?token=${token}`
         : `${protocol}//${host}/ws/typing/${currentTenant.schema_name}/${currentConversationId}/`;
 
-      console.log('[TypingWebSocket] Connecting to:', wsUrl.replace(token || '', '[TOKEN]'));
-
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('[TypingWebSocket] Connected');
         setIsConnected(true);
-
-        // Start ping interval to keep connection alive
         pingIntervalRef.current = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
-            console.log('[TypingWebSocket] Ping sent');
           }
-        }, 30000); // Send ping every 30 seconds
+        }, 30000);
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log('[TypingWebSocket] Message:', data);
 
           if (data.type === 'error') {
             console.error('[TypingWebSocket] Server error:', data.message, data.code);
             if (data.code === 'UNAUTHENTICATED') {
-              console.error('[TypingWebSocket] Authentication failed - check your token');
-              shouldConnectRef.current = false; // Stop reconnection attempts
+              shouldConnectRef.current = false;
             }
           } else if (data.type === 'pong') {
-            console.log('[TypingWebSocket] Pong received');
+            // Pong received
           } else if (data.type === 'connection') {
-            console.log('[TypingWebSocket] Connection confirmed:', data);
+            // Connection confirmed
           } else if (data.type === 'typing_start') {
             setTypingUsers((prev) => {
-              // Add user if not already in the list
               if (prev.some(u => u.user_id === data.user_id)) {
                 return prev;
               }
@@ -120,30 +107,23 @@ export function useTypingWebSocket({
         }
       };
 
-      ws.onerror = (error) => {
-        console.error('[TypingWebSocket] Error:', error);
+      ws.onerror = () => {
         setIsConnected(false);
       };
 
       ws.onclose = (event) => {
-        console.log('[TypingWebSocket] Disconnected', 'Code:', event.code, 'Reason:', event.reason);
         setIsConnected(false);
         setTypingUsers([]);
 
-        // Clear ping interval
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
         }
 
-        // Auto-reconnect only if not intentionally closed or auth failed
         if (shouldConnectRef.current && currentConversationId && event.code !== 4001) {
-          console.log('[TypingWebSocket] Reconnecting in 3 seconds...');
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, 3000);
-        } else if (event.code === 4001) {
-          console.error('[TypingWebSocket] Not reconnecting - authentication required');
         }
       };
     } catch (error) {
@@ -195,25 +175,20 @@ export function useTypingWebSocket({
     return false;
   }, []);
 
-  // Debounced typing notification
   const notifyTyping = useCallback(() => {
     if (!isConnected) return;
 
-    // Send typing start
     sendTypingStart();
 
-    // Clear existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
 
-    // Send typing stop after 3 seconds of inactivity
     typingTimeoutRef.current = setTimeout(() => {
       sendTypingStop();
     }, 3000);
   }, [isConnected, sendTypingStart, sendTypingStop]);
 
-  // Connect when conversation changes
   useEffect(() => {
     if (!conversationId) {
       disconnect();

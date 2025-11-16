@@ -1,47 +1,48 @@
-'use client';
+"use client";
 
-import { useEffect, Suspense, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useTenant } from '@/contexts/TenantContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { EchoDeskLanding } from '@/components/landing';
-import LoginForm from '@/components/LoginForm';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import ErrorMessage from '@/components/ErrorMessage';
-import { toast } from 'sonner';
+import { useEffect, Suspense, useCallback } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useTenant } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { EchoDeskLanding } from "@/components/landing";
+import LoginForm from "@/components/LoginForm";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import ErrorMessage from "@/components/ErrorMessage";
+import { toast } from "sonner";
 
 function HomeContent() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { tenant, loading: tenantLoading, error } = useTenant();
-  const { isAuthenticated, user, loading: authLoading, login } = useAuth();
+  const { isAuthenticated, user, login } = useAuth();
 
   const handleOAuthCallback = useCallback(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
-    const facebookStatus = searchParams.get('facebook_status');
-    const message = searchParams.get('message');
-    const pages = searchParams.get('pages');
+    const facebookStatus = searchParams.get("facebook_status");
+    const message = searchParams.get("message");
+    const pages = searchParams.get("pages");
 
     // Handle Facebook OAuth callback
     if (facebookStatus) {
-      if (facebookStatus === 'connected') {
-        const successMessage = message || `Successfully connected ${pages || '0'} Facebook page(s)`;
-        toast.success('✅ Facebook Connected', {
+      if (facebookStatus === "connected") {
+        const successMessage =
+          message || `Successfully connected ${pages || "0"} Facebook page(s)`;
+        toast.success("✅ Facebook Connected", {
           description: successMessage,
         });
-      } else if (facebookStatus === 'error') {
-        const errorMessage = message || 'Failed to connect Facebook';
-        toast.error('❌ Facebook Connection Failed', {
+      } else if (facebookStatus === "error") {
+        const errorMessage = message || "Failed to connect Facebook";
+        toast.error("❌ Facebook Connection Failed", {
           description: decodeURIComponent(errorMessage),
         });
       }
 
       // Clean up URL parameters
       const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+      window.history.replaceState({}, "", newUrl);
     }
-
   }, [searchParams]);
 
   useEffect(() => {
@@ -49,60 +50,46 @@ function HomeContent() {
     handleOAuthCallback();
   }, [handleOAuthCallback]);
 
-  // Redirect authenticated users on tenant subdomains to tickets
+  // Redirect authenticated users to tickets (only on root path)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (tenant && isAuthenticated && user && !authLoading && !tenantLoading) {
-      // User is authenticated on a tenant subdomain, redirect to tickets
-      // Only redirect if we're on the root path - don't interfere with other routes
-      if (window.location.pathname === '/') {
-        // Check if there's a saved redirect path (e.g., from a 401 redirect)
-        const savedPath = localStorage.getItem('echodesk_redirect_after_login');
-        if (savedPath) {
-          localStorage.removeItem('echodesk_redirect_after_login');
-          router.replace(savedPath);
-        } else {
-          router.replace('/tickets');
-        }
+    if (tenant && isAuthenticated && user && pathname === "/") {
+      const savedPath = localStorage.getItem("echodesk_redirect_after_login");
+      if (savedPath) {
+        localStorage.removeItem("echodesk_redirect_after_login");
+        router.replace(savedPath);
+      } else {
+        router.replace("/tickets");
       }
     }
-  }, [tenant, isAuthenticated, user, authLoading, tenantLoading, router]);
+  }, [tenant, isAuthenticated, user, pathname, router]);
 
   // Show error if tenant loading failed
   if (error) {
     return <ErrorMessage error={error} />;
   }
 
-  // Default to loading state - this prevents flash of login page
-  if (tenantLoading || authLoading) {
+  // Wait for tenant to load
+  if (tenantLoading) {
     return <LoadingSpinner />;
   }
 
   // If tenant exists (subdomain), handle authentication
   if (tenant) {
-    // If authenticated, show loading while redirect happens
-    if (isAuthenticated && user) {
+    // If authenticated and on root path only, show loading while redirecting
+    if (isAuthenticated && user && pathname === "/") {
       return <LoadingSpinner message="Redirecting to dashboard..." />;
     }
-
-    // Only show login form if we're EXPLICITLY not authenticated
-    // This ensures loading screen shows first
-    if (isAuthenticated === false) {
-      return <LoginForm tenant={tenant} onLogin={login} />;
+    // If not on root path, this component shouldn't be rendered, but just in case
+    if (isAuthenticated && user) {
+      return null;
     }
 
-    // Default to loading for any uncertain state
-    return <LoadingSpinner />;
+    // Show login form
+    return <LoginForm tenant={tenant} onLogin={login} />;
   }
 
-  // If no tenant (main domain), show landing page only after loading completes
-  if (!tenantLoading) {
-    return <EchoDeskLanding />;
-  }
-
-  // Final fallback to loading
-  return <LoadingSpinner />;
+  // If no tenant (main domain), show landing page
+  return <EchoDeskLanding />;
 }
 
 export default function Home() {

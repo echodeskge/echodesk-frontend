@@ -40,9 +40,6 @@ export function useMessagesWebSocket({
     onConnectionChangeRef.current = onConnectionChange;
   }, [onNewMessage, onConversationUpdate, onConnectionChange]);
 
-  console.log('[useMessagesWebSocket] Hook initialized');
-  console.log('[useMessagesWebSocket] Tenant:', tenant);
-
   // Store tenant in ref to avoid recreating connect when tenant object changes
   const tenantRef = useRef(tenant);
   useEffect(() => {
@@ -55,17 +52,11 @@ export function useMessagesWebSocket({
   const connect = useCallback(() => {
     const currentTenant = tenantRef.current;
 
-    console.log('[useMessagesWebSocket] connect() called');
-    console.log('[useMessagesWebSocket] tenant:', currentTenant);
-    console.log('[useMessagesWebSocket] shouldConnectRef.current:', shouldConnectRef.current);
-
     if (!currentTenant?.schema_name) {
-      console.warn('[WebSocket] Cannot connect - no tenant schema name');
       return;
     }
 
     if (!shouldConnectRef.current) {
-      console.warn('[WebSocket] Cannot connect - shouldConnect is false');
       return;
     }
 
@@ -79,7 +70,7 @@ export function useMessagesWebSocket({
       // Determine WebSocket protocol and host from tenant API URL
       const apiUrl = new URL(currentTenant.api_url);
       const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = apiUrl.host; // This will be like 'groot.api.echodesk.ge' or 'localhost:8000'
+      const host = apiUrl.host;
 
       // Get auth token from localStorage (same key as authService)
       const token = localStorage.getItem('echodesk_auth_token');
@@ -87,21 +78,10 @@ export function useMessagesWebSocket({
         ? `${protocol}//${host}/ws/messages/${currentTenant.schema_name}/?token=${token}`
         : `${protocol}//${host}/ws/messages/${currentTenant.schema_name}/`;
 
-      console.log('[WebSocket] ========================================');
-      console.log('[WebSocket] Attempting to connect...');
-      console.log('[WebSocket] Protocol:', protocol);
-      console.log('[WebSocket] Host:', host);
-      console.log('[WebSocket] Tenant Schema:', currentTenant.schema_name);
-      console.log('[WebSocket] Full URL:', wsUrl.replace(token || '', '[TOKEN]'));
-      console.log('[WebSocket] ========================================');
-
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      console.log('[WebSocket] WebSocket object created:', ws);
-
       ws.onopen = () => {
-        console.log('[WebSocket] Connected successfully');
         connectedSchemaRef.current = currentTenant.schema_name;
         setIsConnected(true);
         onConnectionChangeRef.current?.(true);
@@ -123,37 +103,28 @@ export function useMessagesWebSocket({
       ws.onmessage = (event) => {
         try {
           const data: WebSocketMessage = JSON.parse(event.data);
-          console.log('[WebSocket] Message received:', data.type);
 
           switch (data.type) {
             case 'connection':
-              console.log('[WebSocket] Connection confirmed:', data);
               break;
 
             case 'new_message':
-              console.log('[WebSocket] New message:', data);
               onNewMessageRef.current?.(data);
               break;
 
             case 'conversation_update':
-              console.log('[WebSocket] Conversation update:', data);
               onConversationUpdateRef.current?.(data);
               break;
 
             case 'read_receipt':
-              console.log('[WebSocket] Read receipt:', data);
-              // Trigger conversation update to refresh message status
               onConversationUpdateRef.current?.(data);
               break;
 
             case 'delivery_receipt':
-              console.log('[WebSocket] Delivery receipt:', data);
-              // Trigger conversation update to refresh message status
               onConversationUpdateRef.current?.(data);
               break;
 
             case 'pong':
-              // Pong response to ping - connection is alive
               break;
 
             case 'error':
@@ -161,21 +132,19 @@ export function useMessagesWebSocket({
               break;
 
             default:
-              console.log('[WebSocket] Unknown message type:', data.type);
+              break;
           }
         } catch (error) {
           console.error('[WebSocket] Error parsing message:', error);
         }
       };
 
-      ws.onerror = (error) => {
-        console.error('[WebSocket] Error:', error);
+      ws.onerror = () => {
         setIsConnected(false);
         onConnectionChangeRef.current?.(false);
       };
 
-      ws.onclose = (event) => {
-        console.log('[WebSocket] Connection closed:', event.code, event.reason);
+      ws.onclose = () => {
         setIsConnected(false);
         onConnectionChangeRef.current?.(false);
 
@@ -187,7 +156,6 @@ export function useMessagesWebSocket({
 
         // Attempt to reconnect if enabled and component is still mounted
         if (autoReconnect && shouldConnectRef.current) {
-          console.log(`[WebSocket] Reconnecting in ${reconnectInterval}ms...`);
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, reconnectInterval);
@@ -198,7 +166,7 @@ export function useMessagesWebSocket({
       setIsConnected(false);
       onConnectionChangeRef.current?.(false);
     }
-  }, [autoReconnect, reconnectInterval]); // Removed tenant dependency - using ref instead
+  }, [autoReconnect, reconnectInterval]);
 
   const disconnect = useCallback(() => {
     shouldConnectRef.current = false;
@@ -231,7 +199,6 @@ export function useMessagesWebSocket({
       wsRef.current.send(JSON.stringify(message));
       return true;
     }
-    console.warn('[WebSocket] Cannot send message - not connected');
     return false;
   }, []);
 
@@ -254,32 +221,23 @@ export function useMessagesWebSocket({
     const schemaName = tenant?.schema_name;
 
     if (!schemaName) {
-      console.log('[useMessagesWebSocket] Skipping connect - no tenant schema');
       return;
     }
 
     // Check if we're already connected to this schema
     if (connectedSchemaRef.current === schemaName && wsRef.current?.readyState === WebSocket.OPEN) {
-      console.log('[useMessagesWebSocket] Already connected to schema:', schemaName);
       return;
     }
-
-    console.log('[useMessagesWebSocket] useEffect running - preparing to connect');
-    console.log('[useMessagesWebSocket] tenant in useEffect:', tenant);
-    console.log('[useMessagesWebSocket] Previous schema:', connectedSchemaRef.current, 'New schema:', schemaName);
 
     shouldConnectRef.current = true;
     connect();
 
     // Cleanup on unmount or tenant change
     return () => {
-      console.log('[useMessagesWebSocket] useEffect cleanup - disconnecting');
       disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenant?.schema_name]); // Only reconnect when tenant schema changes, connect/disconnect are stable via refs
-
-  console.log('[useMessagesWebSocket] Rendering - isConnected:', isConnected);
+  }, [tenant?.schema_name]);
 
   return {
     isConnected,

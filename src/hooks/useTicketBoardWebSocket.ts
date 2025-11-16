@@ -5,7 +5,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTenant } from '@/contexts/TenantContext'
-import Cookies from 'js-cookie'
 
 interface ActiveUser {
   user_id: number
@@ -92,14 +91,12 @@ export function useTicketBoardWebSocket({
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const currentBoardIdRef = useRef<string | number | null>(null)
 
-  // Update tenant schema state when tenant loads (only once)
   useEffect(() => {
     if (tenant?.schema_name && !tenantSchema) {
       setTenantSchema(tenant.schema_name)
     }
   }, [tenant?.schema_name, tenantSchema])
 
-  // Store callbacks in refs to avoid recreating WebSocket on callback changes
   const onTicketMovedRef = useRef(onTicketMoved)
   const onTicketUpdatedRef = useRef(onTicketUpdated)
   const onTicketCreatedRef = useRef(onTicketCreated)
@@ -126,65 +123,45 @@ export function useTicketBoardWebSocket({
 
   const connect = useCallback(() => {
     if (!tenant || !boardId || boardId === 'none') {
-      console.log('[BoardWS] Missing tenant or boardId, skipping connection')
       return
     }
 
-    // If already connected or connecting to this board, don't interrupt
     const currentState = wsRef.current?.readyState
     if (currentBoardIdRef.current === boardId &&
         (currentState === WebSocket.OPEN || currentState === WebSocket.CONNECTING)) {
-      console.log('[BoardWS] Already', currentState === WebSocket.OPEN ? 'connected' : 'connecting', 'to board', boardId)
-      // Update state to reflect reality (true if OPEN, false if still CONNECTING)
       setIsConnected(currentState === WebSocket.OPEN)
       return
     }
 
-    // Close existing connection if any before opening a new one
     if (wsRef.current) {
       if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
-        console.log('[BoardWS] Closing existing connection before reconnecting')
         wsRef.current.close(1000, 'Switching boards')
       }
       wsRef.current = null
     }
 
-    // Store the current board ID we're connecting to
     currentBoardIdRef.current = boardId
 
     try {
-      // Get auth token from localStorage (consistent with notifications)
       const token = localStorage.getItem('echodesk_auth_token')
       if (!token) {
         console.error('[BoardWS] No auth token found')
         return
       }
 
-      // Construct WebSocket URL using tenant API URL (like notifications WebSocket)
-      // tenant.api_url example: https://groot.echodesk.ge/api/v1
       const apiUrl = new URL(tenant.api_url)
       const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:'
       const host = apiUrl.host
       const wsUrl = `${protocol}//${host}/ws/boards/${tenant.schema_name}/${boardId}/?token=${token}`
 
-      console.log('[BoardWS] ========================================')
-      console.log('[BoardWS] Protocol:', protocol)
-      console.log('[BoardWS] Host:', host)
-      console.log('[BoardWS] Tenant Schema:', tenant.schema_name)
-      console.log('[BoardWS] Board ID:', boardId)
-      console.log('[BoardWS] Full URL:', wsUrl.replace(token, '[TOKEN]'))
-      console.log('[BoardWS] ========================================')
-
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
       ws.onopen = () => {
-        console.log('[BoardWS] Connected successfully')
         setIsConnected(true)
         setReconnectAttempts(0)
         onConnectionChangeRef.current?.(true)
 
-        // Start ping interval to keep connection alive
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current)
         }
@@ -192,57 +169,47 @@ export function useTicketBoardWebSocket({
           if (ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }))
           }
-        }, 30000) // Ping every 30 seconds
+        }, 30000)
       }
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          console.log('[BoardWS] Message received:', data.type)
 
           switch (data.type) {
             case 'connection':
-              console.log('[BoardWS] Connection confirmed:', data)
               setActiveUsers(data.active_users || [])
               break
 
             case 'ticket_moved':
-              console.log('[BoardWS] Ticket moved:', data)
               onTicketMovedRef.current?.(data)
               break
 
             case 'ticket_updated':
-              console.log('[BoardWS] Ticket updated:', data)
               onTicketUpdatedRef.current?.(data)
               break
 
             case 'ticket_created':
-              console.log('[BoardWS] Ticket created:', data)
               onTicketCreatedRef.current?.(data.ticket)
               break
 
             case 'ticket_deleted':
-              console.log('[BoardWS] Ticket deleted:', data)
               onTicketDeletedRef.current?.(data.ticket_id)
               break
 
             case 'ticket_being_moved':
-              console.log('[BoardWS] Ticket being moved:', data)
               onTicketBeingMovedRef.current?.(data)
               break
 
             case 'ticket_being_edited':
-              console.log('[BoardWS] Ticket being edited:', data)
               onTicketBeingEditedRef.current?.(data)
               break
 
             case 'ticket_editing_stopped':
-              console.log('[BoardWS] Ticket editing stopped:', data)
               onTicketEditingStoppedRef.current?.(data.ticket_id, data.user_id)
               break
 
             case 'user_joined':
-              console.log('[BoardWS] User joined:', data)
               setActiveUsers(prev => [...prev, {
                 user_id: data.user_id,
                 user_name: data.user_name,
@@ -252,18 +219,15 @@ export function useTicketBoardWebSocket({
               break
 
             case 'user_left':
-              console.log('[BoardWS] User left:', data)
               setActiveUsers(prev => prev.filter(u => u.user_id !== data.user_id))
               onUserLeftRef.current?.(data.user_id, data.user_name)
               break
 
             case 'active_users':
-              console.log('[BoardWS] Active users:', data)
               setActiveUsers(data.users || [])
               break
 
             case 'pong':
-              // Heartbeat response
               break
 
             case 'error':
@@ -271,36 +235,30 @@ export function useTicketBoardWebSocket({
               break
 
             default:
-              console.log('[BoardWS] Unknown message type:', data.type)
+              break
           }
         } catch (error) {
           console.error('[BoardWS] Error parsing message:', error)
         }
       }
 
-      ws.onerror = (error) => {
-        console.error('[BoardWS] WebSocket error:', error)
+      ws.onerror = () => {
+        // Error handled in onclose
       }
 
       ws.onclose = (event) => {
-        console.log(`[BoardWS] Disconnected (code: ${event.code}, reason: ${event.reason})`)
         setIsConnected(false)
         onConnectionChangeRef.current?.(false)
 
-        // Clear ping interval
         if (pingIntervalRef.current) {
           clearInterval(pingIntervalRef.current)
           pingIntervalRef.current = null
         }
 
-        // Attempt to reconnect if autoReconnect is enabled
-        if (autoReconnect && event.code !== 1000) { // 1000 = normal closure
+        if (autoReconnect && event.code !== 1000) {
           setReconnectAttempts(prev => {
             const currentAttempt = prev + 1
-
-            // Exponential backoff
             const delay = Math.min(reconnectInterval * Math.pow(2, currentAttempt - 1), maxReconnectInterval)
-            console.log(`[BoardWS] Reconnecting in ${delay}ms (attempt ${currentAttempt})`)
 
             reconnectTimeoutRef.current = setTimeout(() => {
               connect()
@@ -316,84 +274,66 @@ export function useTicketBoardWebSocket({
   }, [tenant, boardId, autoReconnect, reconnectInterval, maxReconnectInterval])
 
   const disconnect = useCallback(() => {
-    console.log('[BoardWS] Disconnecting...')
-
-    // Clear reconnect timeout
     if (reconnectTimeoutRef.current) {
       clearTimeout(reconnectTimeoutRef.current)
       reconnectTimeoutRef.current = null
     }
 
-    // Clear ping interval
     if (pingIntervalRef.current) {
       clearInterval(pingIntervalRef.current)
       pingIntervalRef.current = null
     }
 
-    // Close WebSocket
     if (wsRef.current) {
       wsRef.current.close(1000, 'Component unmounted')
       wsRef.current = null
     }
 
-    // Clear current board reference
     currentBoardIdRef.current = null
 
     setIsConnected(false)
     setActiveUsers([])
   }, [])
 
-  // Send message to server
   const send = useCallback((data: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(data))
       return true
     }
-    console.warn('[BoardWS] Cannot send message, not connected')
     return false
   }, [])
 
-  // Notify server that user is moving a ticket
   const notifyTicketMoving = useCallback((ticketId: number, fromColumn: number) => {
     send({ type: 'ticket_moving', ticket_id: ticketId, from_column: fromColumn })
   }, [send])
 
-  // Notify server that user started editing a ticket
   const notifyTicketEditing = useCallback((ticketId: number) => {
     send({ type: 'ticket_editing', ticket_id: ticketId })
   }, [send])
 
-  // Notify server that user stopped editing a ticket
   const notifyTicketEditingStopped = useCallback((ticketId: number) => {
     send({ type: 'ticket_editing_stopped', ticket_id: ticketId })
   }, [send])
 
-  // Request active users list
   const requestActiveUsers = useCallback(() => {
     send({ type: 'get_active_users' })
   }, [send])
 
-  // Connect when boardId changes or tenant schema loads
   useEffect(() => {
-    // Check if we have tenant schema and valid board
     if (!tenantSchema || !boardId || boardId === 'none') {
-      // Disconnect if no valid board or tenant
       if (wsRef.current) {
-        console.log('[BoardWS] No valid board/tenant, disconnecting')
         disconnect()
       }
       return
     }
 
-    // Connect to the board
     connect()
 
-    // Cleanup on unmount or when boardId changes
     return () => {
       disconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardId, tenantSchema]) // Only re-run when boardId or tenantSchema changes
+  }, [boardId, tenantSchema])
 
   return {
     isConnected,

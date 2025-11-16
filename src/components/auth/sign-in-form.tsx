@@ -66,6 +66,9 @@ export function SignInForm({ onLogin, onForgotPassword, onPasswordChangeRequired
 
       if (token) {
         const storedUser = authService.getUser()
+        console.log('[SignInForm] Login successful, token received')
+        console.log('[SignInForm] Stored user:', storedUser)
+
         if (storedUser) {
           const authUser: AuthUser = {
             id: storedUser.id,
@@ -76,6 +79,36 @@ export function SignInForm({ onLogin, onForgotPassword, onPasswordChangeRequired
             is_staff: storedUser.is_staff,
             date_joined: storedUser.date_joined
           }
+
+          console.log('[SignInForm] Syncing to NextAuth session...')
+          console.log('[SignInForm] Auth user data:', authUser)
+
+          // Sync to NextAuth session via server-side route (non-blocking)
+          fetch('/api/auth/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token,
+              userId: authUser.id,
+              email: authUser.email,
+              firstName: authUser.first_name,
+              lastName: authUser.last_name,
+              isStaff: authUser.is_staff,
+              isActive: authUser.is_active,
+              dateJoined: authUser.date_joined,
+            }),
+          }).then(async (response) => {
+            const result = await response.json()
+            console.log('[NextAuth] Session sync result:', result)
+            if (!response.ok) {
+              console.error('[NextAuth] Session sync error:', result.error)
+            } else {
+              console.log('[NextAuth] Session sync successful')
+            }
+          }).catch((err) => {
+            console.error('[NextAuth] Session sync failed:', err)
+          })
+
           onLogin(token, authUser)
         } else {
           const fallbackUser: AuthUser = {
@@ -87,9 +120,40 @@ export function SignInForm({ onLogin, onForgotPassword, onPasswordChangeRequired
             is_staff: false,
             date_joined: new Date().toISOString()
           }
+
+          console.log('[SignInForm] Using fallback user:', fallbackUser)
+          console.log('[SignInForm] Syncing to NextAuth session...')
+
+          // Sync to NextAuth session via server-side route (non-blocking)
+          fetch('/api/auth/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token,
+              userId: fallbackUser.id,
+              email: fallbackUser.email,
+              firstName: fallbackUser.first_name,
+              lastName: fallbackUser.last_name,
+              isStaff: fallbackUser.is_staff,
+              isActive: fallbackUser.is_active,
+              dateJoined: fallbackUser.date_joined,
+            }),
+          }).then(async (response) => {
+            const result = await response.json()
+            console.log('[NextAuth] Session sync result:', result)
+            if (!response.ok) {
+              console.error('[NextAuth] Session sync error:', result.error)
+            } else {
+              console.log('[NextAuth] Session sync successful')
+            }
+          }).catch((err) => {
+            console.error('[NextAuth] Session sync failed:', err)
+          })
+
           onLogin(token, fallbackUser)
         }
       } else {
+        console.error('[SignInForm] No token in response:', loginResponse)
         setError(t("invalidResponse"))
       }
     } catch (err: unknown) {

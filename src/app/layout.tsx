@@ -5,6 +5,7 @@ import { TenantProvider } from '@/contexts/TenantContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import QueryProvider from '@/providers/QueryProvider';
+import { SessionProvider } from '@/providers/SessionProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
@@ -38,15 +39,17 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} bg-white`}>
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
-          <QueryProvider>
-            <TenantProvider>
-              <AuthProvider>
-                <SubscriptionProvider>
-                  {children}
-                </SubscriptionProvider>
-              </AuthProvider>
-            </TenantProvider>
-          </QueryProvider>
+          <SessionProvider>
+            <QueryProvider>
+              <TenantProvider>
+                <AuthProvider>
+                  <SubscriptionProvider>
+                    {children}
+                  </SubscriptionProvider>
+                </AuthProvider>
+              </TenantProvider>
+            </QueryProvider>
+          </SessionProvider>
         </NextIntlClientProvider>
         <Toaster position="top-right" richColors />
         <NetworkMonitor />

@@ -359,10 +359,8 @@ export default function OrderManagement({}: OrderManagementProps) {
             <div style={{ padding: "0" }}>
               <OrderForm
                 boardId={selectedBoard.id}
-                onSave={(orderId) => {
+                onSave={() => {
                   setShowCreateForm(false);
-                  // TODO: Refresh orders list or show success message
-                  console.log('Order created with ID:', orderId);
                 }}
                 onCancel={() => setShowCreateForm(false)}
               />

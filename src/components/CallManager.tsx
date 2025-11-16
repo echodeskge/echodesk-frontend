@@ -304,7 +304,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
         // Don't auto-retry for compatibility issues
         if (!error.includes('WebRTC Compatibility') && !error.includes('WebSocket') && !error.includes('CORS')) {
           setTimeout(() => {
-            console.log('🔄 Retrying SIP registration...');
             if (sipServiceRef.current) {
               sipServiceRef.current.initialize(sipConfig).catch(console.error);
             }
@@ -788,8 +787,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
     try {
       setError('');
-      console.log('🧪 Testing SIP connection...');
-      
+
       // Use the backend API to test the connection
       const now = new Date().toISOString();
       const testData: SipConfiguration = {

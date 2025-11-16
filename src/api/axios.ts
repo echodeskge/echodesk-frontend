@@ -12,11 +12,6 @@ const getApiUrl = (): string => {
   if (hostname.includes('localhost')) {
     const devTenant = localStorage.getItem('dev_tenant') || 'groot';
     const devTenantUrl = `https://${devTenant}.api.echodesk.ge`;
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🏠 Localhost detected -> Using ${devTenant} tenant: ${devTenantUrl}`);
-    }
-
     return devTenantUrl;
   }
 
@@ -24,21 +19,11 @@ const getApiUrl = (): string => {
   if (hostname.endsWith('.echodesk.ge') && hostname !== 'echodesk.ge') {
     const subdomain = hostname.split('.')[0];
     const apiUrl = `https://${subdomain}.api.echodesk.ge`;
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`🔗 Subdomain detected: ${subdomain} -> API URL: ${apiUrl}`);
-    }
-
     return apiUrl;
   }
 
   // Default fallback to main API
   const fallbackUrl = 'https://api.echodesk.ge';
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`⚠️  Fallback mode -> API URL: ${fallbackUrl}`);
-  }
-
   return fallbackUrl;
 };
 
@@ -60,11 +45,6 @@ const createAxiosInstance = (baseURL?: string): AxiosInstance => {
         config.baseURL = getApiUrl();
       } else if (baseURL) {
         config.baseURL = baseURL;
-      }
-
-      // Log API calls in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
       }
 
       const token = typeof window !== 'undefined' ? localStorage.getItem('echodesk_auth_token') : null;

@@ -45,7 +45,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const locale = useLocale() as Locale;
   const t = useTranslations("nav");
   const { hasFeature, subscription, loading: subscriptionLoading } = useSubscription();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
@@ -123,8 +123,10 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   } : null;
 
   // Redirect if no tenant found
+  // Only redirect if tenant loading has completed AND tenant is null
+  // Don't redirect if tenant is undefined (still initializing)
   useEffect(() => {
-    if (!tenantLoading && !tenantConfig) {
+    if (!tenantLoading && tenantConfig === null) {
       router.push("/");
     }
   }, [tenantLoading, tenantConfig, router]);
@@ -267,9 +269,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
-      // Clear local auth data using authService
-      const { authService } = await import("@/services/auth");
-      authService.clearLocalAuth();
+      // Use auth context logout to clear both local and NextAuth session
+      logout();
 
       // Redirect to home page
       window.location.href = "/";
