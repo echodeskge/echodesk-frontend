@@ -27,12 +27,9 @@ export const GroupPermissionForm: React.FC<GroupPermissionFormProps> = ({
   const [permissions, setPermissions] = useState<SimplifiedPermission[]>([]);
 
   useEffect(() => {
-    console.log('GroupPermissionForm: selectedPermissions changed:', selectedPermissions);
-    
     // Use the utility function to determine which categories should be checked
     const selectedCategoryIds = djangoPermissionsToCategories(selectedPermissions);
-    console.log('Determined selected categories:', selectedCategoryIds);
-    
+
     // Initialize permissions based on categories
     const initialPermissions: SimplifiedPermission[] = PERMISSION_CATEGORIES.map(category => ({
       id: category.id,
@@ -42,18 +39,10 @@ export const GroupPermissionForm: React.FC<GroupPermissionFormProps> = ({
       checked: selectedCategoryIds.includes(category.id)
     }));
 
-    console.log('Initialized permissions:', initialPermissions.map(p => ({
-      id: p.id,
-      label: p.label,
-      checked: p.checked
-    })));
-
     setPermissions(initialPermissions);
   }, [selectedPermissions]);
 
   const handlePermissionChange = (categoryId: string, checked: boolean) => {
-    console.log(`Permission change: ${categoryId} = ${checked}`);
-    
     const updatedPermissions = permissions.map(perm => {
       if (perm.id === categoryId) {
         return { ...perm, checked };
@@ -65,15 +54,13 @@ export const GroupPermissionForm: React.FC<GroupPermissionFormProps> = ({
 
     // Calculate all Django permissions based on selected categories
     const allSelectedPermissions: string[] = [];
-    
+
     updatedPermissions.forEach(perm => {
       if (perm.checked) {
-        console.log(`Adding permissions for category ${perm.id}:`, perm.djangoPermissions);
         allSelectedPermissions.push(...perm.djangoPermissions);
       }
     });
 
-    console.log('Final selected permissions being sent to parent:', allSelectedPermissions);
     onPermissionsChange(allSelectedPermissions);
   };
 

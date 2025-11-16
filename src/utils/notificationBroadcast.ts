@@ -84,8 +84,6 @@ class NotificationBroadcastManager {
         }
       };
 
-      console.log(`[NotificationBroadcast] Initialized for tab ${this.tabId}`);
-
       // Start leader election
       this.startLeaderElection();
     } catch (error) {
@@ -140,7 +138,6 @@ class NotificationBroadcastManager {
 
   private claimLeadership() {
     this.isLeader = true;
-    console.log(`[NotificationBroadcast] Tab ${this.tabId} claiming leadership`);
 
     this.sendMessage({
       type: 'claim_leader',

@@ -179,7 +179,6 @@ export default function WhatsAppTemplatesList() {
               onView={(id) => router.push(`/social/templates/${id}`)}
               onSend={(id) => {
                 // TODO: Implement send template message dialog
-                console.log("Send template:", id);
               }}
               onDelete={handleDelete}
               isDeleting={deleteTemplate.isPending}

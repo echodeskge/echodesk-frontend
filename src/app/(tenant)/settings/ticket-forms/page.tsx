@@ -67,9 +67,8 @@ export default function TicketFormsPage() {
     loadData();
   }, []);
 
-  // Debug: Log when formData changes
   useEffect(() => {
-    console.log('formData changed:', formData);
+    // formData changed
   }, [formData]);
 
   const loadData = async () => {
@@ -102,11 +101,6 @@ export default function TicketFormsPage() {
   };
 
   const handleEdit = (form: TicketForm) => {
-    console.log('Editing form:', form);
-    console.log('Form custom_fields type:', typeof form.custom_fields, 'value:', form.custom_fields);
-    console.log('Form item_lists:', form.item_lists);
-    console.log('Form parent_form:', form.parent_form);
-
     // Ensure custom_fields is an array
     let customFields: CustomField[] = [];
     if (form.custom_fields) {
@@ -126,8 +120,6 @@ export default function TicketFormsPage() {
       custom_fields: customFields,
       is_active: form.is_active ?? true,
     };
-
-    console.log('Setting formData to:', formDataToSet);
 
     // Set formData first, then editingForm, then open dialog
     // This ensures formData is updated before the dialog renders

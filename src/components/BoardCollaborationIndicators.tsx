@@ -30,21 +30,14 @@ export function BoardCollaborationIndicators({
   activeUsers,
   className,
 }: BoardCollaborationIndicatorsProps) {
-  // Debug logging
-  console.log('[BoardCollaborationIndicators] activeUsers:', activeUsers)
-
   // Don't show indicator if no active users at all
   if (!activeUsers || activeUsers.length === 0) {
-    console.log('[BoardCollaborationIndicators] No active users, returning null')
     return null
   }
 
   // Filter out superadmin users for display
   const filteredUsers = activeUsers.filter(user => !user.is_superuser && !user.user_email.includes('superadmin'))
   const activeUsersCount = activeUsers.length // Show total count, not filtered
-
-  console.log('[BoardCollaborationIndicators] filteredUsers:', filteredUsers)
-  console.log('[BoardCollaborationIndicators] activeUsersCount:', activeUsersCount)
 
   return (
     <TooltipProvider>

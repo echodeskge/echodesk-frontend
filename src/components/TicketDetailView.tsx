@@ -307,7 +307,6 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
 
   const handleSave = async () => {
     // TODO: Implement update API call
-    console.log("Saving ticket:", formData);
     setIsEditing(false);
   };
 

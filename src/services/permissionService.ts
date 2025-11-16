@@ -368,26 +368,21 @@ export class PermissionService {
    * NEW: Check permissions based on user's Django groups and their permissions
    */
   private checkGroupBasedPermission(userProfile: User, permission: string): boolean | null {
-    console.log(`Checking group-based permission "${permission}" for user:`, userProfile.email);
-    
     // Get all permission codenames from user's groups
     const userPermissionCodenames = this.getUserPermissionCodenames(userProfile);
-    
+
     if (userPermissionCodenames.length === 0) {
-      console.log('User has no permissions from groups');
       return null; // Let it fall back to legacy methods
     }
 
     // Map the requested permission to required Django permission codenames
     const requiredPermissions = this.getRequiredDjangoPermissions(permission);
-    console.log(`Permission "${permission}" requires Django permissions:`, requiredPermissions);
-    
+
     // Check if user has any of the required permissions
-    const hasPermission = requiredPermissions.some(requiredPerm => 
+    const hasPermission = requiredPermissions.some(requiredPerm =>
       userPermissionCodenames.some(userPerm => this.permissionMatches(userPerm, requiredPerm))
     );
-    
-    console.log(`User ${hasPermission ? 'HAS' : 'DOES NOT HAVE'} permission "${permission}"`);
+
     return hasPermission;
   }
 

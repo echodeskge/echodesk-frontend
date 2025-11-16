@@ -119,6 +119,11 @@ import type {
   FavoriteProduct,
   FavoriteProductRequest,
   PatchedFavoriteProductRequest,
+  PaginatedHomepageSectionList,
+  HomepageSectionRequest,
+  HomepageSection,
+  PatchedHomepageSectionRequest,
+  HomepageSectionReorderRequest,
   PaginatedProductImageList,
   ProductImageRequest,
   ProductImage,
@@ -154,8 +159,10 @@ import type {
   ProductVariantRequest,
   ProductVariant,
   PatchedProductVariantRequest,
+  HomepageSectionPublic,
   PaginatedItemListMinimalList,
   ItemListDetail,
+  ListItem,
   ClientLoginRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequestRequest,
@@ -245,7 +252,6 @@ import type {
   LeaveTypeList,
   PaginatedListItemMinimalList,
   ListItemRequest,
-  ListItem,
   PatchedListItemRequest,
   PaginatedNotificationList,
   NotificationRequest,
@@ -2457,6 +2463,119 @@ export async function ecommerceAdminFavoritesToggleCreate(data: {
   return response.data;
 }
 
+export async function ecommerceAdminHomepageSectionsList(
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  sectionType?:
+    | 'branches'
+    | 'category_grid'
+    | 'custom_content'
+    | 'featured_products'
+    | 'hero_banner'
+    | 'product_by_attribute'
+    | 'statistics',
+): Promise<PaginatedHomepageSectionList> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/homepage-sections/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        sectionType ? 'section_type=' + encodeURIComponent(sectionType) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsCreate(
+  data: HomepageSectionRequest,
+): Promise<HomepageSection> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/homepage-sections/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsRetrieve(
+  id: number,
+): Promise<HomepageSection> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/homepage-sections/${id}/`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsUpdate(
+  id: number,
+  data: HomepageSectionRequest,
+): Promise<HomepageSection> {
+  const response = await axios.put(
+    `/api/ecommerce/admin/homepage-sections/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsPartialUpdate(
+  id: number,
+  data: PatchedHomepageSectionRequest,
+): Promise<HomepageSection> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/homepage-sections/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/ecommerce/admin/homepage-sections/${id}/`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsChoicesRetrieve(): Promise<HomepageSection> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/homepage-sections/choices/`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsReorderCreate(
+  data: HomepageSectionReorderRequest,
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  sectionType?:
+    | 'branches'
+    | 'category_grid'
+    | 'custom_content'
+    | 'featured_products'
+    | 'hero_banner'
+    | 'product_by_attribute'
+    | 'statistics',
+): Promise<PaginatedHomepageSectionList> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/homepage-sections/reorder/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        sectionType ? 'section_type=' + encodeURIComponent(sectionType) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+    data,
+  );
+  return response.data;
+}
+
 export async function ecommerceAdminImagesList(
   ordering?: string,
   page?: number,
@@ -3254,6 +3373,13 @@ export async function ecommerceClientFavoritesDestroy(
   return response.data;
 }
 
+export async function ecommerceClientHomepageList(): Promise<
+  HomepageSectionPublic[]
+> {
+  const response = await axios.get(`/api/ecommerce/client/homepage/`);
+  return response.data;
+}
+
 export async function ecommerceClientItemListsList(
   ordering?: string,
   page?: number,
@@ -3276,6 +3402,16 @@ export async function ecommerceClientItemListsRetrieve(
   id: number,
 ): Promise<ItemListDetail> {
   const response = await axios.get(`/api/ecommerce/client/item-lists/${id}/`);
+  return response.data;
+}
+
+export async function ecommerceClientItemListsItemsRetrieve(
+  id: number,
+  itemId: string,
+): Promise<ListItem> {
+  const response = await axios.get(
+    `/api/ecommerce/client/item-lists/${id}/items/${itemId}/`,
+  );
   return response.data;
 }
 

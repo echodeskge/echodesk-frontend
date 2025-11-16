@@ -66,18 +66,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
     // Real-time updates: Refetch board data when tickets are moved or updated
     onTicketMoved: (event) => {
-      console.log('[Layout] Ticket moved, refetching board:', event);
       queryClient.invalidateQueries({ queryKey: ['kanbanBoard', selectedBoardId] });
     },
 
     onTicketUpdated: (event) => {
-      console.log('[Layout] Ticket updated, refetching board:', event);
       queryClient.invalidateQueries({ queryKey: ['kanbanBoard', selectedBoardId] });
     },
 
     // Visual feedback: Someone is dragging a ticket
     onTicketBeingMoved: (event) => {
-      console.log('[Layout] Ticket being moved by:', event.user_name);
       setTicketsBeingMoved(prev => new Map(prev).set(event.ticket_id, event.user_name));
 
       // Remove after 3 seconds (in case drag is abandoned)
@@ -92,7 +89,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
     // Conflict prevention: Someone is editing a ticket
     onTicketBeingEdited: (event) => {
-      console.log('[Layout] Ticket being edited by:', event.user_name);
       setTicketsBeingEdited(prev => new Map(prev).set(event.ticket_id, event.user_name));
     },
 
@@ -104,15 +100,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         return next;
       });
     },
-  });
-
-  // Debug logging for WebSocket state
-  console.log('[Layout] WebSocket state:', {
-    isTicketsPage,
-    selectedBoardId,
-    boardIsConnected,
-    boardActiveUsersCount: boardActiveUsers.length,
-    boardActiveUsers,
   });
 
   const [facebookConnected, setFacebookConnected] = useState(false);
@@ -138,7 +125,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Redirect if no tenant found
   useEffect(() => {
     if (!tenantLoading && !tenantConfig) {
-      console.log("No tenant configured, redirecting to homepage");
       router.push("/");
     }
   }, [tenantLoading, tenantConfig, router]);
@@ -179,6 +165,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "ecommerce/products": "products",
     "ecommerce/product-attributes": "productAttributes",
     "ecommerce/languages": "languages",
+    "ecommerce/homepage-builder": "homepageBuilder",
     "ecommerce/settings": "ecommerceSettings",
     bookings: "bookings",
     "bookings/bookings": "bookingsManagement",
@@ -222,16 +209,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       : userProfile.feature_keys
     : [];
 
-  // Debug: Log feature keys for troubleshooting
-  useEffect(() => {
-    if (userProfile) {
-      console.log('[Feature Keys Debug]', {
-        email: userProfile.email,
-        featureKeys: userFeatureKeys,
-        hasEcommerce: userFeatureKeys.includes('ecommerce_crm'),
-      });
-    }
-  }, [userProfile, userFeatureKeys]);
 
   // Helper function to check if user has a feature key
   const hasFeatureKey = (featureKey: string): boolean => {

@@ -464,17 +464,8 @@ function KanbanBoardContent({
       sourceIndex: number,
       destIndex: number
     ) => {
-      console.log("Moving ticket:", {
-        ticketId,
-        sourceColumnId,
-        destColumnId,
-        sourceIndex,
-        destIndex,
-      });
-
       // Prevent moves during API calls
       if (isMoving) {
-        console.log("Already moving, ignoring move");
         return;
       }
 
@@ -483,16 +474,12 @@ function KanbanBoardContent({
         setIsMoving(true);
 
         try {
-          console.log("Starting API update...");
-          console.log("Moving ticket to column:", destColumnId);
-
           // Use the move_to_column endpoint to trigger time tracking
           await axios.patch(`/api/tickets/${ticketId}/move_to_column/`, {
             column_id: destColumnId,
             position_in_column: destIndex,
           });
 
-          console.log("Ticket move successful");
           // Refresh the board data to get the updated state
           if (selectedBoardId) {
             await refetchBoardData();
@@ -504,13 +491,10 @@ function KanbanBoardContent({
           // Clear error after 3 seconds
           setTimeout(() => setError(""), 3000);
         } finally {
-          console.log("Setting isMoving to false");
           setIsMoving(false);
         }
       } else {
-        console.log(
-          "Same column, no API call needed - would need reorder endpoint"
-        );
+        // Same column, no API call needed - would need reorder endpoint
       }
     },
     [isMoving, selectedBoardId]
@@ -685,14 +669,6 @@ function KanbanBoardContent({
             const { columnWidth: calculatedWidth } = calculateColumnDimensions(numColumns);
             const columnWidth = calculatedWidth + 'px';
 
-            console.log(
-              "Rendering column:",
-              column.id,
-              "with tickets:",
-              columnTickets.length,
-              "width:",
-              columnWidth
-            );
             return (
               <DroppableColumn
                 key={column.id}

@@ -183,7 +183,6 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
   // Separate effect for SIP initialization after audio elements are ready
   useEffect(() => {
     if (activeSipConfig && localAudioRef.current && remoteAudioRef.current && !sipServiceRef.current) {
-      console.log('🔧 Initializing SIP service with config:', activeSipConfig.name);
       initializeSipService(activeSipConfig).catch(err => {
         console.error('Failed to initialize SIP service:', err);
       });
@@ -230,12 +229,10 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       // Get the default SIP configuration for WebRTC
       const defaultSipConfig = sipConfigsResponse.results.find(config => config.is_default);
       if (defaultSipConfig) {
-        console.log('📞 Found default SIP config:', defaultSipConfig.name);
         const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultSipConfig.id);
         setActiveSipConfig(webrtcConfig);
-        console.log('✅ SIP config loaded, will initialize service when audio elements are ready');
       } else {
-        console.warn('⚠️ No default SIP configuration found');
+        console.warn('No default SIP configuration found');
         setError('No SIP configuration found. Please add a SIP configuration.');
       }
 
@@ -250,24 +247,14 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
 
   const initializeSipService = async (sipConfig: SipConfigurationDetail) => {
     if (!localAudioRef.current || !remoteAudioRef.current) {
-      console.warn('⚠️ Audio elements not ready yet, retrying in 1 second...');
+      console.warn('Audio elements not ready yet, retrying in 1 second...');
       setTimeout(() => initializeSipService(sipConfig), 1000);
       return;
     }
 
     try {
-      console.log('🔧 Starting SIP service initialization...');
-      console.log('📞 SIP Config:', {
-        name: sipConfig.name,
-        server: sipConfig.sip_server,
-        port: sipConfig.sip_port,
-        username: sipConfig.username,
-        realm: sipConfig.realm
-      });
-
       // Disconnect existing service if any
       if (sipServiceRef.current) {
-        console.log('🔌 Disconnecting existing SIP service...');
         await sipServiceRef.current.disconnect();
         sipServiceRef.current = null;
       }
@@ -282,12 +269,10 @@ export default function CallManager({ onCallStatusChange }: CallManagerProps) {
       sipServiceRef.current.on('onRegistered', () => {
         setSipRegistered(true);
         setError('');
-        console.log('✅ SIP registered successfully with', sipConfig.sip_server);
       });
 
       sipServiceRef.current.on('onUnregistered', () => {
         setSipRegistered(false);
-        console.log('📴 SIP unregistered from', sipConfig.sip_server);
       });
 
       sipServiceRef.current.on('onRegistrationFailed', (error: string) => {
@@ -332,7 +317,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       });
 
       sipServiceRef.current.on('onCallProgress', () => {
-        console.log('📞 Call progress - updating to ringing state');
         setActiveCall(prev => {
           if (prev) {
             // Update backend status to ringing
@@ -348,7 +332,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       });
 
       sipServiceRef.current.on('onCallAccepted', () => {
-        console.log('✅ Call accepted - updating to active state');
         stopRingtone(); // Stop ringtone when call is accepted
         setActiveCall(prev => {
           if (prev) {
@@ -372,7 +355,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       });
 
       sipServiceRef.current.on('onCallRejected', () => {
-        console.log('❌ Call rejected');
         stopRingtone(); // Stop ringtone when call is rejected
         setActiveCall(prev => {
           if (prev?.logId) {
@@ -389,7 +371,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       });
 
       sipServiceRef.current.on('onCallEnded', () => {
-        console.log('📞 Call ended normally');
         stopRingtone(); // Stop ringtone when call ends
         setActiveCall(prev => {
           if (prev?.logId) {
@@ -422,12 +403,10 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       });
 
       // Initialize the SIP service
-      console.log('🚀 Initializing SIP connection...');
       await sipServiceRef.current.initialize(sipConfig);
-      console.log('📞 SIP service initialized, waiting for registration...');
 
     } catch (err) {
-      console.error('❌ Failed to initialize SIP service:', err);
+      console.error('Failed to initialize SIP service:', err);
       setError(`SIP initialization failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setSipRegistered(false);
     }
@@ -437,13 +416,10 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     const callerNumber = invitation.remoteIdentity.uri.user || 'Unknown';
     const callerDomain = invitation.remoteIdentity.uri.host || '';
     const fullCallerInfo = `${callerNumber}${callerDomain ? `@${callerDomain}` : ''}`;
-    
-    console.log('📞 Handling incoming call from:', fullCallerInfo);
-    
+
     // Play ringtone sound
     try {
       playRingtone();
-      console.log('🔔 Playing ringtone for incoming call');
     } catch (error) {
       console.warn('Could not play ringtone:', error);
     }
@@ -473,8 +449,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
         invitation
       });
 
-      console.log('📋 Incoming call logged with ID:', callLog.call_id, 'from:', fullCallerInfo);
-      
       // Refresh call logs to show the incoming call immediately
       fetchCallLogs();
       
@@ -511,8 +485,7 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       };
 
       const callLog = await callLogsInitiateCallCreate(callData);
-      console.log('📋 Call log created:', callLog.call_id);
-      
+
       // Set initial call state
       setActiveCall({
         id: `call-${Date.now()}`,
@@ -526,7 +499,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       // Use SIP service to make the call
       await sipServiceRef.current.makeCall(number);
-      console.log('📞 SIP call initiated successfully');
 
     } catch (err: unknown) {
       console.error('Failed to initiate call:', err);
@@ -551,19 +523,16 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     if (!activeCall?.invitation || !sipServiceRef.current) return;
 
     try {
-      console.log('📞 Answering incoming call');
-      
       // Stop ringtone
       stopRingtone();
-      
+
       await sipServiceRef.current.acceptCall();
-      
+
       // Update backend status to answered
       if (activeCall.logId) {
         await callLogsUpdateStatusPartialUpdate(activeCall.logId, {
           status: 'answered' as any,
         });
-        console.log('📋 Call status updated to answered');
       }
 
     } catch (err: unknown) {
@@ -591,7 +560,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     if (!activeCall || !sipServiceRef.current) return;
 
     try {
-      console.log('📞 Ending call, current status:', activeCall.status);
       setActiveCall(prev => prev ? { ...prev, status: 'ending' } : null);
 
       // Stop ringtone if it's playing
@@ -623,8 +591,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
           status: finalStatus as any,
           notes: notes
         });
-        
-        console.log(`📋 Call status updated to ${finalStatus}`);
       }
 
       setActiveCall(null);
@@ -694,7 +660,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
         metadata: metadata,
         user: undefined
       });
-      console.log(`📝 Call event added: ${eventType}`);
     } catch (err: unknown) {
       console.error('Failed to add call event:', err);
     }
@@ -720,7 +685,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       setActiveCall(prev => prev ? { ...prev, isRecording: true, recording } : null);
       await addCallEvent('recording_started', { recording_id: recording.recording_id });
-      console.log('🎙️ Recording started');
     } catch (err: unknown) {
       console.error('Failed to start recording:', err);
       setError('Failed to start recording');
@@ -747,7 +711,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
 
       setActiveCall(prev => prev ? { ...prev, isRecording: false, recording } : null);
       await addCallEvent('recording_stopped', { recording_id: recording.recording_id });
-      console.log('🎙️ Recording stopped');
     } catch (err: unknown) {
       console.error('Failed to stop recording:', err);
       setError('Failed to stop recording');
@@ -775,7 +738,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       const newHoldState = !activeCall.isOnHold;
       setActiveCall(prev => prev ? { ...prev, isOnHold: newHoldState } : null);
       await addCallEvent(newHoldState ? 'hold' : 'unhold');
-      console.log(`📞 Call ${newHoldState ? 'put on hold' : 'resumed from hold'}`);
     } catch (err: unknown) {
       console.error('Failed to toggle hold:', err);
       setError('Failed to toggle hold');
@@ -805,7 +767,6 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       setActiveCall(null);
       setCallDuration(0);
       fetchCallLogs();
-      console.log(`📞 Call transferred to ${transferNumber}`);
     } catch (err: unknown) {
       console.error('Failed to transfer call:', err);
       setError('Failed to transfer call');
@@ -850,17 +811,16 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
       };
       
       const testResult = await sipConfigurationsTestConnectionCreate(activeSipConfig.id, testData);
-      
+
       if (testResult) {
-        setError('✅ SIP configuration test successful');
-        console.log('✅ SIP test successful:', testResult);
+        setError('SIP configuration test successful');
       } else {
-        setError('❌ SIP test failed: No response from server');
+        setError('SIP test failed: No response from server');
       }
-      
+
     } catch (err) {
-      console.error('❌ SIP test failed:', err);
-      setError(`❌ SIP test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      console.error('SIP test failed:', err);
+      setError(`SIP test failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -874,12 +834,11 @@ Consider using a WebRTC-compatible provider or setting up a SIP gateway.`);
     try {
       setError('');
       setSipRegistered(false);
-      console.log('🔄 Manually reconnecting SIP...');
-      
+
       await initializeSipService(activeSipConfig);
-      
+
     } catch (err) {
-      console.error('❌ SIP reconnect failed:', err);
+      console.error('SIP reconnect failed:', err);
       setError(`SIP reconnect failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };

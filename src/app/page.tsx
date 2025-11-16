@@ -55,7 +55,17 @@ function HomeContent() {
 
     if (tenant && isAuthenticated && user && !authLoading && !tenantLoading) {
       // User is authenticated on a tenant subdomain, redirect to tickets
-      router.replace('/tickets');
+      // Only redirect if we're on the root path - don't interfere with other routes
+      if (window.location.pathname === '/') {
+        // Check if there's a saved redirect path (e.g., from a 401 redirect)
+        const savedPath = localStorage.getItem('echodesk_redirect_after_login');
+        if (savedPath) {
+          localStorage.removeItem('echodesk_redirect_after_login');
+          router.replace(savedPath);
+        } else {
+          router.replace('/tickets');
+        }
+      }
     }
   }, [tenant, isAuthenticated, user, authLoading, tenantLoading, router]);
 

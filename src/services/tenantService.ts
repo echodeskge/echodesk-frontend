@@ -53,12 +53,8 @@ class TenantService {
         mode: 'cors', // Explicitly set CORS mode
       });
 
-      console.log(`Tenant API call: ${apiUrl}${endpoint}?subdomain=${subdomain}`);
-      console.log(`Response status: ${response.status}`);
-
       if (response.ok) {
         const data = await response.json();
-        console.log('Tenant config loaded:', data);
         return data;
       }
       

@@ -288,9 +288,9 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
 
             {currentView === "calls" && (
               <CallManager
-                onCallStatusChange={(isActive) =>
-                  console.log("Call status:", isActive)
-                }
+                onCallStatusChange={(isActive) => {
+                  // Call status changed
+                }}
               />
             )}
 

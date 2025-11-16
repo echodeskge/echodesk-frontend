@@ -50,7 +50,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   } = useWebPush({
     autoSubscribe: true, // Automatically subscribe if permission is granted
     onSubscriptionChange: (isSubscribed) => {
-      console.log('[NotificationBell] Web Push subscription changed:', isSubscribed)
+      // Web Push subscription changed
     },
     onError: (error) => {
       // Use console.warn instead of console.error for browser support issues
@@ -70,8 +70,6 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     markAllAsRead: wsMarkAllAsRead,
   } = useNotificationsWebSocket({
     onNotificationCreated: (notification, count) => {
-      console.log('[NotificationBell] New notification received:', notification)
-
       // Play notification sound
       notificationSound.current.play()
 
@@ -121,7 +119,6 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
       }
     },
     onNotificationRead: (notificationId, count) => {
-      console.log('[NotificationBell] Notification marked as read:', notificationId)
       // Update local notifications list
       setNotifications(prev =>
         prev.map(n =>
@@ -130,10 +127,10 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
       )
     },
     onUnreadCountUpdate: (count) => {
-      console.log('[NotificationBell] Unread count updated:', count)
+      // Unread count updated
     },
     onConnectionChange: (connected) => {
-      console.log('[NotificationBell] WebSocket connection:', connected ? 'connected' : 'disconnected')
+      // WebSocket connection status changed
     }
   })
 

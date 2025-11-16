@@ -147,45 +147,31 @@ export default function CallDebugger({ sipService, isVisible, onClose }: CallDeb
       const audioInputs = devices.filter(device => device.kind === 'audioinput');
       const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
 
-      console.log('🎤 Audio Input Devices:', audioInputs.length);
-      audioInputs.forEach((device, index) => {
-        console.log(`  ${index + 1}. ${device.label || 'Unknown Device'} (${device.deviceId})`);
-      });
-
-      console.log('🔊 Audio Output Devices:', audioOutputs.length);
-      audioOutputs.forEach((device, index) => {
-        console.log(`  ${index + 1}. ${device.label || 'Unknown Device'} (${device.deviceId})`);
-      });
-
       // Test microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('✅ Microphone access granted');
       stream.getTracks().forEach(track => track.stop());
     } catch (error) {
-      console.error('❌ Audio device test failed:', error);
+      console.error('Audio device test failed:', error);
     }
   };
 
   const testVitalPbxConnection = async () => {
     try {
-      console.log('🧪 Testing VitalPBX WebSocket connection...');
-      
       const ws = new WebSocket('wss://pbx.echodesk.ge:8089/ws');
-      
+
       ws.onopen = () => {
-        console.log('✅ WebSocket connection opened');
         ws.close();
       };
-      
+
       ws.onerror = (error) => {
-        console.error('❌ WebSocket connection failed:', error);
+        console.error('WebSocket connection failed:', error);
       };
-      
+
       ws.onclose = (event) => {
-        console.log('📴 WebSocket connection closed:', event.code, event.reason);
+        // WebSocket connection closed
       };
     } catch (error) {
-      console.error('❌ WebSocket test failed:', error);
+      console.error('WebSocket test failed:', error);
     }
   };
 

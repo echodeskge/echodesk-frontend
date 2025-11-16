@@ -37,7 +37,6 @@ export function CollaborativeTicketBoard({
 
     // 1. Real-time Collaboration: When someone moves a ticket
     onTicketMoved: (event) => {
-      console.log('[CollaborativeBoard] Ticket moved:', event)
       // Update your local state to reflect the movement
       onTicketUpdate?.(event.ticket_id, {
         column_id: event.to_column_id,
@@ -47,14 +46,12 @@ export function CollaborativeTicketBoard({
 
     // 2. Real-time Collaboration: When someone updates ticket fields
     onTicketUpdated: (event) => {
-      console.log('[CollaborativeBoard] Ticket updated:', event)
       // Update your local state with the changes
       onTicketUpdate?.(event.ticket_id, event.changes)
     },
 
     // 3. Visual Feedback: Someone is dragging a ticket
     onTicketBeingMoved: (event) => {
-      console.log('[CollaborativeBoard] Ticket being moved by:', event.user_name)
       setTicketsBeingMoved(prev => new Map(prev).set(event.ticket_id, event.user_name))
 
       // Remove after 3 seconds (in case drag is abandoned)
@@ -69,7 +66,6 @@ export function CollaborativeTicketBoard({
 
     // 4. Conflict Prevention: Someone is editing a ticket
     onTicketBeingEdited: (event) => {
-      console.log('[CollaborativeBoard] Ticket being edited by:', event.user_name)
       setTicketsBeingEdited(prev => new Map(prev).set(event.ticket_id, event.user_name))
     },
 
@@ -84,17 +80,15 @@ export function CollaborativeTicketBoard({
 
     // 5. Live Presence: User joined/left notifications
     onUserJoined: (user) => {
-      console.log('[CollaborativeBoard] User joined:', user.user_name)
       // Optional: Show toast notification
     },
 
     onUserLeft: (userId, userName) => {
-      console.log('[CollaborativeBoard] User left:', userName)
       // Optional: Show toast notification
     },
 
     onConnectionChange: (connected) => {
-      console.log('[CollaborativeBoard] Connection status:', connected ? 'connected' : 'disconnected')
+      // Connection status changed
     },
   })
 

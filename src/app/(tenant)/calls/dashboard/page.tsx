@@ -124,7 +124,6 @@ export default function CallsDashboardPage() {
       }
 
       setSipConnecting(true);
-      console.log("🔧 Initializing SIP service...");
 
       const sipService = new SipService(
         localAudioRef.current,
@@ -132,14 +131,12 @@ export default function CallsDashboardPage() {
       );
 
       sipService.on("onRegistered", () => {
-        console.log("✅ SIP registered");
         setSipRegistered(true);
         setSipConnecting(false);
         setError("");
       });
 
       sipService.on("onUnregistered", () => {
-        console.log("❌ SIP unregistered");
         setSipRegistered(false);
         setSipConnecting(false);
       });
@@ -152,7 +149,6 @@ export default function CallsDashboardPage() {
       });
 
       sipService.on("onIncomingCall", async (invitation: Invitation) => {
-        console.log("📞 Incoming call from:", invitation.remoteIdentity.uri.user);
         playRingtone();
 
         const phoneNumber =
@@ -180,7 +176,6 @@ export default function CallsDashboardPage() {
       });
 
       sipService.on("onCallAccepted", async () => {
-        console.log("✅ Call answered");
         stopRingtone();
 
         if (activeCall) {
@@ -201,7 +196,6 @@ export default function CallsDashboardPage() {
       });
 
       sipService.on("onCallEnded", async () => {
-        console.log("📴 Call ended");
         stopRingtone();
 
         if (activeCall) {
@@ -240,7 +234,6 @@ export default function CallsDashboardPage() {
       await sipService.initialize(config);
 
       sipServiceRef.current = sipService;
-      console.log("✅ SIP service initialized");
     } catch (error: any) {
       console.error("Failed to initialize SIP service:", error);
       setSipConnecting(false);
@@ -265,7 +258,6 @@ export default function CallsDashboardPage() {
         defaultConfig.id
       );
       setActiveSipConfig(webrtcConfig);
-      console.log("✅ SIP config loaded");
     } catch (error: any) {
       console.error("Failed to load SIP configuration:", error);
       setError("Failed to load SIP configuration");
@@ -348,12 +340,10 @@ export default function CallsDashboardPage() {
 
   const handleToggleHold = () => {
     // TODO: Implement hold functionality
-    console.log("Hold toggle not yet implemented");
   };
 
   const handleToggleMute = () => {
     // TODO: Implement mute functionality
-    console.log("Mute toggle not yet implemented");
   };
 
   // Effects

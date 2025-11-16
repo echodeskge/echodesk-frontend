@@ -318,8 +318,6 @@ export function TicketCreateSheet() {
 
       // Upload attachments if any
       if (uploadedFiles.length > 0) {
-        console.log(`📎 Uploading ${uploadedFiles.length} attachment(s) for ticket ${createdTicket.id}`);
-
         for (const file of uploadedFiles) {
           try {
             const formData = new FormData();
@@ -331,9 +329,8 @@ export function TicketCreateSheet() {
                 'Content-Type': 'multipart/form-data',
               },
             });
-            console.log(`✅ Uploaded: ${file.file.name}`);
           } catch (error) {
-            console.error(`❌ Failed to upload ${file.file.name}:`, error);
+            console.error(`Failed to upload ${file.file.name}:`, error);
             // Continue uploading other files even if one fails
           }
         }

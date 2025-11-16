@@ -44,7 +44,6 @@ class NotificationQueue {
 
         request.onsuccess = () => {
           this.db = request.result;
-          console.log('[NotificationQueue] Database opened successfully');
           resolve();
         };
 
@@ -61,8 +60,6 @@ class NotificationQueue {
             // Create indexes
             objectStore.createIndex('timestamp', 'timestamp', { unique: false });
             objectStore.createIndex('synced', 'synced', { unique: false });
-
-            console.log('[NotificationQueue] Object store created');
           }
         };
       } catch (error) {
@@ -117,7 +114,6 @@ class NotificationQueue {
         const request = store.put(queuedNotification);
 
         request.onsuccess = () => {
-          console.log('[NotificationQueue] Notification queued:', queuedNotification.id);
           resolve(true);
         };
 
@@ -148,7 +144,6 @@ class NotificationQueue {
         const request = index.getAll(IDBKeyRange.only(false));
 
         request.onsuccess = () => {
-          console.log('[NotificationQueue] Retrieved unsynced notifications:', request.result.length);
           resolve(request.result);
         };
 
@@ -184,7 +179,6 @@ class NotificationQueue {
             const updateRequest = store.put(notification);
 
             updateRequest.onsuccess = () => {
-              console.log('[NotificationQueue] Notification marked as synced:', id);
               resolve(true);
             };
 
@@ -232,7 +226,6 @@ class NotificationQueue {
             results.push(cursor.value);
             cursor.continue();
           } else {
-            console.log('[NotificationQueue] Retrieved all notifications:', results.length);
             resolve(results);
           }
         };
@@ -280,7 +273,6 @@ class NotificationQueue {
 
             cursor.continue();
           } else {
-            console.log('[NotificationQueue] Cleared old notifications:', deletedCount);
             resolve(deletedCount);
           }
         };
@@ -311,7 +303,6 @@ class NotificationQueue {
         const request = store.clear();
 
         request.onsuccess = () => {
-          console.log('[NotificationQueue] All notifications cleared');
           resolve(true);
         };
 
@@ -340,7 +331,6 @@ class NotificationQueue {
     if (this.db) {
       this.db.close();
       this.db = null;
-      console.log('[NotificationQueue] Database closed');
     }
   }
 }

@@ -119,9 +119,8 @@ export default function MessagesChat() {
 
   // Track component mount/unmount
   useEffect(() => {
-    console.log('[MessagesChat] ===== COMPONENT MOUNTED =====');
     return () => {
-      console.log('[MessagesChat] ===== COMPONENT UNMOUNTED =====');
+      // Component unmounted
     };
   }, []);
 
@@ -183,14 +182,6 @@ export default function MessagesChat() {
               conversationMap.set(customerId, []);
             }
             conversationMap.get(customerId)!.push(msg);
-          });
-
-          // Debug: Log what we found
-          console.log(`Page ${page.page_id}: Found ${messages.length} total messages`);
-          conversationMap.forEach((msgs, key) => {
-            const fromPage = msgs.filter(m => m.is_from_page).length;
-            const fromCustomer = msgs.filter(m => !m.is_from_page).length;
-            console.log(`  Conversation ${key}: ${msgs.length} messages (${fromCustomer} from customer, ${fromPage} from page)`);
           });
 
           // Convert to unified format
@@ -312,13 +303,6 @@ export default function MessagesChat() {
                 conversationMap.set(customerId, []);
               }
               conversationMap.get(customerId)!.push(msg);
-            });
-
-            console.log(`Instagram @${account.username}: Found ${messages.length} total messages`);
-            conversationMap.forEach((msgs, key) => {
-              const fromBusiness = msgs.filter(m => m.is_from_business).length;
-              const fromCustomer = msgs.filter(m => !m.is_from_business).length;
-              console.log(`  Conversation ${key}: ${msgs.length} messages (${fromCustomer} from customer, ${fromBusiness} from business)`);
             });
 
             // Convert to unified format
@@ -463,13 +447,6 @@ export default function MessagesChat() {
               conversationMap.get(customerId)!.push(msg);
             });
 
-            console.log(`WhatsApp ${account.waba_id}: Found ${messages.length} total messages`);
-            conversationMap.forEach((msgs, key) => {
-              const fromBusiness = msgs.filter(m => m.is_from_business).length;
-              const fromCustomer = msgs.filter(m => !m.is_from_business).length;
-              console.log(`  Conversation ${key}: ${msgs.length} messages (${fromCustomer} from customer, ${fromBusiness} from business)`);
-            });
-
             // Convert to unified format
             conversationMap.forEach((msgs, customerId) => {
               if (msgs.length === 0) return;
@@ -561,14 +538,12 @@ export default function MessagesChat() {
 
   // Handle WebSocket new message
   const handleNewMessage = useCallback((data: any) => {
-    console.log('[MessagesChat] WebSocket new message received:', data);
     // Reload conversations to get the latest data
     loadAllConversations(true);
   }, [loadAllConversations]);
 
   // Handle WebSocket read receipt
   const handleReadReceipt = useCallback((data: any) => {
-    console.log('[MessagesChat] WebSocket read receipt received:', data);
     // For now, reload to get updated status
     // TODO: Optimize to update specific messages in state
     loadAllConversations(true);
@@ -576,7 +551,6 @@ export default function MessagesChat() {
 
   // Handle WebSocket delivery receipt
   const handleDeliveryReceipt = useCallback((data: any) => {
-    console.log('[MessagesChat] WebSocket delivery receipt received:', data);
     // For now, reload to get updated status
     // TODO: Optimize to update specific messages in state
     loadAllConversations(true);
@@ -584,7 +558,6 @@ export default function MessagesChat() {
 
   // Handle WebSocket conversation update
   const handleConversationUpdate = useCallback((data: any) => {
-    console.log('[MessagesChat] WebSocket conversation update received:', data);
 
     // Check if this is a read or delivery receipt
     if (data.type === 'read_receipt') {
@@ -599,11 +572,8 @@ export default function MessagesChat() {
 
   // Handle WebSocket connection status
   const handleConnectionChange = useCallback((connected: boolean) => {
-    console.log('[MessagesChat] WebSocket connection status changed:', connected);
     setWsConnected(connected);
   }, []);
-
-  console.log('[MessagesChat] About to initialize WebSocket hook');
 
   // Initialize WebSocket connection
   const { isConnected } = useMessagesWebSocket({
@@ -613,8 +583,6 @@ export default function MessagesChat() {
     autoReconnect: true,
     reconnectInterval: 3000,
   });
-
-  console.log('[MessagesChat] WebSocket hook initialized, isConnected:', isConnected);
 
   useEffect(() => {
     loadAllConversations();

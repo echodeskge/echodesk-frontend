@@ -38,15 +38,7 @@ export default function OrderManagement({}: OrderManagementProps) {
       // Backend now handles filtering based on user permissions and board attachments
       // No need for client-side filtering - trust the API response
       const availableBoards = boardsResponse.results || [];
-      
-      console.log('Available boards from API:', availableBoards.length);
-      console.log('Current user:', userResponse.email);
-      console.log('Boards:', availableBoards.map(b => ({
-        id: b.id,
-        name: b.name,
-        order_users_count: b.order_users?.length || 0
-      })));
-      
+
       setBoards(availableBoards);
       
       // Auto-select first board if available

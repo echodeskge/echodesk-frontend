@@ -16,7 +16,6 @@ export function useOnlineStatus({ onOnline, onOffline }: UseOnlineStatusOptions 
   const [wasOffline, setWasOffline] = useState(false);
 
   const handleOnline = useCallback(() => {
-    console.log('[useOnlineStatus] Connection restored');
     setIsOnline(true);
 
     // Only trigger callback if we were actually offline before
@@ -27,7 +26,6 @@ export function useOnlineStatus({ onOnline, onOffline }: UseOnlineStatusOptions 
   }, [wasOffline, onOnline]);
 
   const handleOffline = useCallback(() => {
-    console.log('[useOnlineStatus] Connection lost');
     setIsOnline(false);
     setWasOffline(true);
     onOffline?.();
@@ -41,8 +39,6 @@ export function useOnlineStatus({ onOnline, onOffline }: UseOnlineStatusOptions 
     // Add event listeners
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
-    console.log('[useOnlineStatus] Monitoring connection status. Currently:', isOnline ? 'online' : 'offline');
 
     // Cleanup
     return () => {

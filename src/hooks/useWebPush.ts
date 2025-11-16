@@ -117,14 +117,12 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
           scope: '/',
         })
 
-        console.log('[useWebPush] Service Worker registered:', registration)
         serviceWorkerRef.current = registration
 
         // Check if already subscribed
         const existingSubscription = await registration.pushManager.getSubscription()
         if (existingSubscription) {
           setIsSubscribed(true)
-          console.log('[useWebPush] Already subscribed to push notifications')
         }
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Failed to register service worker')
@@ -146,11 +144,9 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
     }
 
     try {
-      console.log('[useWebPush] Fetching VAPID public key from backend...')
       const response = await axios.get('/notifications/vapid-public-key/')
       const publicKey = response.data.public_key
       vapidPublicKeyRef.current = publicKey
-      console.log('[useWebPush] VAPID public key fetched successfully')
       return publicKey
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to get VAPID public key')
@@ -175,7 +171,6 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
     try {
       const result = await Notification.requestPermission()
       setPermission(result)
-      console.log('[useWebPush] Permission result:', result)
       return result
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to request permission')
@@ -198,7 +193,6 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
     }
 
     if (isSubscribed) {
-      console.log('[useWebPush] Already subscribed')
       return true
     }
 
@@ -230,15 +224,11 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
         applicationServerKey,
       })
 
-      console.log('[useWebPush] Push subscription created:', subscription)
-
       // Send subscription to backend
       const subscriptionJson = subscription.toJSON()
       await axios.post('/notifications/subscribe/', {
         subscription: subscriptionJson,
       })
-
-      console.log('[useWebPush] Subscription saved to backend')
 
       setIsSubscribed(true)
       onSubscriptionChange?.(true)
@@ -281,15 +271,12 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
 
       // Unsubscribe from browser
       await subscription.unsubscribe()
-      console.log('[useWebPush] Push subscription removed')
 
       // Notify backend
       const subscriptionJson = subscription.toJSON()
       await axios.post('/notifications/unsubscribe/', {
         endpoint: subscriptionJson.endpoint,
       })
-
-      console.log('[useWebPush] Subscription removed from backend')
 
       setIsSubscribed(false)
       onSubscriptionChange?.(false)
@@ -321,7 +308,6 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
 
     try {
       const response = await axios.post('/notifications/test/')
-      console.log('[useWebPush] Test notification sent:', response.data)
       return true
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to send test notification')

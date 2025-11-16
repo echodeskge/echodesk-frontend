@@ -79,7 +79,6 @@ class NotificationSoundManager {
       if (playPromise !== undefined) {
         playPromise.catch(error => {
           // Auto-play was prevented - this is common in browsers
-          console.log('[NotificationSound] Playback prevented:', error);
         });
       }
     } catch (error) {

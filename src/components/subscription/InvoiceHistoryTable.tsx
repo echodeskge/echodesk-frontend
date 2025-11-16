@@ -83,7 +83,6 @@ export function InvoiceHistoryTable({
       window.open(invoice.pdf_url, "_blank");
     } else {
       // Fallback: Generate PDF or show not available message
-      console.log("PDF not available for invoice:", invoice.invoice_number);
     }
   };
 

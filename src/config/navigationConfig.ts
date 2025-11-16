@@ -94,6 +94,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         isPremium: true,
       },
       {
+        id: "ecommerce/homepage-builder",
+        icon: "LayoutDashboard",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+      {
         id: "ecommerce/settings",
         icon: "Settings",
         requiredFeatureKey: "ecommerce_crm",

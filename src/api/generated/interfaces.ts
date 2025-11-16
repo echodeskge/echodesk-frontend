@@ -585,6 +585,10 @@ export interface DirectionEnum {
   [key: string]: any;
 }
 
+export interface DisplayModeEnum {
+  [key: string]: any;
+}
+
 export interface DomainsListResponse {
   success: boolean;
   domains: Record<string, any>[];
@@ -806,6 +810,64 @@ export interface GroupCreateRequest {
 export interface GroupRequest {
   name: string;
   permission_ids?: number[];
+}
+
+export interface HomepageSection {
+  id: number;
+  title: any;
+  subtitle?: any;
+  section_type: SectionTypeEnum;
+  section_type_display: string;
+  position?: number;
+  is_active?: boolean;
+  item_list?: number;
+  item_list_title: string;
+  attribute_key?: string;
+  attribute_value?: string;
+  display_mode?: DisplayModeEnum;
+  display_mode_display: string;
+  settings?: any;
+  background_color?: string;
+  background_image_url?: string;
+  text_color?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HomepageSectionPublic {
+  id: number;
+  title: any;
+  subtitle?: any;
+  section_type: SectionTypeEnum;
+  position?: number;
+  display_mode?: DisplayModeEnum;
+  settings?: any;
+  background_color?: string;
+  background_image_url?: string;
+  text_color?: string;
+  attribute_key?: string;
+  attribute_value?: string;
+  data: string;
+}
+
+export interface HomepageSectionReorderRequest {
+  section_ids: number[];
+}
+
+export interface HomepageSectionRequest {
+  title: any;
+  subtitle?: any;
+  section_type: SectionTypeEnum;
+  position?: number;
+  is_active?: boolean;
+  item_list?: number;
+  attribute_key?: string;
+  attribute_value?: string;
+  display_mode?: DisplayModeEnum;
+  settings?: any;
+  background_color?: string;
+  background_image_url?: string;
+  text_color?: string;
 }
 
 export interface InitializeUserRequestRequest {
@@ -1447,19 +1509,12 @@ export interface LeaveTypeListRequest {
 
 export interface ListItem {
   id: number;
-  item_list: number;
   label: string;
   custom_id?: string;
-  parent?: number;
-  parent_list_item?: number;
   position?: number;
   is_active?: boolean;
   custom_data?: any;
-  created_at: string;
-  updated_at: string;
-  created_by: UserMinimal;
   children: string;
-  full_path: string;
 }
 
 export interface ListItemMaterial {
@@ -1786,6 +1841,13 @@ export interface PaginatedGroupList {
   next?: string;
   previous?: string;
   results: Group[];
+}
+
+export interface PaginatedHomepageSectionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: HomepageSection[];
 }
 
 export interface PaginatedInstagramAccountConnectionList {
@@ -2273,6 +2335,22 @@ export interface PatchedFavoriteProductRequest {
 export interface PatchedGroupRequest {
   name?: string;
   permission_ids?: number[];
+}
+
+export interface PatchedHomepageSectionRequest {
+  title?: any;
+  subtitle?: any;
+  section_type?: SectionTypeEnum;
+  position?: number;
+  is_active?: boolean;
+  item_list?: number;
+  attribute_key?: string;
+  attribute_value?: string;
+  display_mode?: DisplayModeEnum;
+  settings?: any;
+  background_color?: string;
+  background_image_url?: string;
+  text_color?: string;
 }
 
 export interface PatchedInstagramAccountConnectionRequest {
@@ -3030,6 +3108,10 @@ export interface ResendVerificationCodeResponse {
 }
 
 export interface Role6b8enum {
+  [key: string]: any;
+}
+
+export interface SectionTypeEnum {
   [key: string]: any;
 }
 

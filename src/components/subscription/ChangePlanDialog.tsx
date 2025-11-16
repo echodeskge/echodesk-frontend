@@ -52,11 +52,9 @@ export function ChangePlanDialog({
 
   const packages = packagesData?.results || [];
 
-  // Debug logging for package loading issue
   useEffect(() => {
     if (open && packagesData) {
-      console.log('Packages data:', packagesData);
-      console.log('Extracted packages:', packages);
+      // Packages loaded
     }
   }, [open, packagesData, packages]);
 
