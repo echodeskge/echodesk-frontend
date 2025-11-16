@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import QueryProvider from '@/providers/QueryProvider';
 import { SessionProvider } from '@/providers/SessionProvider';
+import { ClarityProvider } from '@/providers/ClarityProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
@@ -43,9 +44,11 @@ export default async function RootLayout({
             <QueryProvider>
               <TenantProvider>
                 <AuthProvider>
-                  <SubscriptionProvider>
-                    {children}
-                  </SubscriptionProvider>
+                  <ClarityProvider>
+                    <SubscriptionProvider>
+                      {children}
+                    </SubscriptionProvider>
+                  </ClarityProvider>
                 </AuthProvider>
               </TenantProvider>
             </QueryProvider>
