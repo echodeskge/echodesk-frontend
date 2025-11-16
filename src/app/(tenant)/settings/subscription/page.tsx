@@ -18,7 +18,7 @@ import { UsageStatsCard } from '@/components/subscription/UsageStatsCard';
 import { PaymentMethodCard } from '@/components/subscription/PaymentMethodCard';
 import { InvoiceHistoryTable } from '@/components/subscription/InvoiceHistoryTable';
 import { ChangePlanDialog } from '@/components/subscription/ChangePlanDialog';
-import { FeatureList } from '@/components/subscription/SubscriptionCard';
+import { FeatureManagementCard } from '@/components/subscription/FeatureManagementCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package } from 'lucide-react';
@@ -161,32 +161,7 @@ export default function SubscriptionPage() {
 
         {/* Features Tab */}
         <TabsContent value="features" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                {t('featuresSection.title')}
-              </CardTitle>
-              <CardDescription>
-                {t('featuresSection.description')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FeatureList showAll={false} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('featuresSection.allTitle')}</CardTitle>
-              <CardDescription>
-                {t('featuresSection.allDescription')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FeatureList showAll={true} />
-            </CardContent>
-          </Card>
+          <FeatureManagementCard />
         </TabsContent>
 
         {/* Usage Tab */}

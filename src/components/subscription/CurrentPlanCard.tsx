@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Calendar, CreditCard, TrendingUp } from "lucide-react";
+import { AlertCircle, Calendar, CreditCard, TrendingUp, Users, Layers } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,8 +67,23 @@ export function CurrentPlanCard({
     );
   }
 
-  const { package: currentPackage, subscription: subDetails } = subscription;
-  const hasPendingUpgrade = subDetails?.pending_upgrade !== null;
+  const subDetails = subscription.subscription;
+  const selectedFeatures = subscription.selected_features || [];
+  const agentCount = subDetails?.agent_count || 1;
+  const hasPendingUpgrade = subDetails?.pending_upgrade != null;
+
+  // Calculate monthly cost from features
+  const calculateMonthlyCost = () => {
+    if (subDetails?.monthly_cost) return subDetails.monthly_cost;
+
+    let totalCost = 0;
+    selectedFeatures.forEach((feature: any) => {
+      totalCost += (feature.price_per_user_gel || 0) * agentCount;
+    });
+    return totalCost;
+  };
+
+  const monthlyCost = calculateMonthlyCost();
 
   return (
     <Card className="w-full">
@@ -81,7 +96,7 @@ export function CurrentPlanCard({
 
       <CardContent className="space-y-6">
         {/* Pending Upgrade Banner */}
-        {hasPendingUpgrade && (
+        {hasPendingUpgrade && subDetails?.pending_upgrade && (
           <Alert className="border-blue-200 bg-blue-50">
             <TrendingUp className="h-4 w-4 text-blue-600" />
             <AlertDescription>
@@ -92,15 +107,17 @@ export function CurrentPlanCard({
                   </p>
                   <p className="text-sm text-blue-700">
                     {t('pendingUpgrade.message', {
-                      packageName: subDetails.pending_upgrade.package_name,
+                      packageName: subDetails.pending_upgrade.feature_name || subDetails.pending_upgrade.package_name || 'New Feature',
                       date: new Date(subDetails.pending_upgrade.scheduled_for).toLocaleDateString()
                     })}
                   </p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    {t('pendingUpgrade.newCost', {
-                      cost: subDetails.pending_upgrade.new_monthly_cost
-                    })}
-                  </p>
+                  {subDetails.pending_upgrade.new_monthly_cost && (
+                    <p className="text-sm text-blue-600 mt-1">
+                      {t('pendingUpgrade.newCost', {
+                        cost: subDetails.pending_upgrade.new_monthly_cost
+                      })}
+                    </p>
+                  )}
                 </div>
                 {onCancelScheduledUpgrade && (
                   <Button
@@ -117,19 +134,28 @@ export function CurrentPlanCard({
           </Alert>
         )}
 
-        {/* Current Plan Badge */}
+        {/* Current Features */}
         <div className="space-y-2">
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            {currentPackage.name}
-          </Badge>
+          <div className="flex items-center gap-2 mb-3">
+            <Layers className="h-5 w-5 text-primary" />
+            <span className="font-medium">Active Features</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {selectedFeatures.length > 0 ? (
+              selectedFeatures.map((feature: any) => (
+                <Badge key={feature.id || feature.code} variant="secondary" className="px-3 py-1">
+                  {feature.name}
+                </Badge>
+              ))
+            ) : (
+              <Badge variant="outline" className="px-3 py-1">
+                No features selected
+              </Badge>
+            )}
+          </div>
           {subDetails?.is_trial && (
-            <Badge variant="outline" className="ml-2">
+            <Badge variant="outline" className="mt-2">
               {t('badges.trialPeriod')}
-            </Badge>
-          )}
-          {subDetails?.subscription_type === "upgrading" && (
-            <Badge variant="outline" className="ml-2 border-blue-500 text-blue-600">
-              {t('badges.upgrading')}
             </Badge>
           )}
         </div>
@@ -138,11 +164,21 @@ export function CurrentPlanCard({
         <div className="grid gap-4">
           <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
             <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium">Agent Count</span>
+            </div>
+            <span className="text-lg font-semibold">
+              {agentCount} {agentCount === 1 ? 'agent' : 'agents'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
+            <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium">{t('monthlyCost')}</span>
             </div>
             <span className="text-lg font-semibold">
-              {subDetails?.monthly_cost || currentPackage.price_gel} GEL
+              {monthlyCost.toFixed(2)} GEL
             </span>
           </div>
 
@@ -177,7 +213,7 @@ export function CurrentPlanCard({
       {onUpgrade && (
         <CardFooter>
           <Button onClick={onUpgrade} className="w-full sm:w-auto">
-            {t('changePlanButton')}
+            Manage Features
           </Button>
         </CardFooter>
       )}

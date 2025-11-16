@@ -261,6 +261,7 @@ import type {
   InvoiceListResponse,
   AddNewCardRequestRequest,
   AddNewCardResponse,
+  AddEcommerceCardResponse,
   SetDefaultCardRequestRequest,
   PaginatedPermissionList,
   Permission,
@@ -3278,6 +3279,29 @@ export async function ecommerceClientItemListsRetrieve(
   return response.data;
 }
 
+export async function ecommerceClientLanguagesList(
+  ordering?: string,
+  page?: number,
+): Promise<PaginatedLanguageList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/languages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceClientLanguagesRetrieve(
+  id: number,
+): Promise<Language> {
+  const response = await axios.get(`/api/ecommerce/client/languages/${id}/`);
+  return response.data;
+}
+
 export async function ecommerceClientOrdersList(
   ordering?: string,
   page?: number,
@@ -5160,6 +5184,11 @@ export async function addNewCard(
   return response.data;
 }
 
+export async function addEcommerceCard(): Promise<AddEcommerceCardResponse> {
+  const response = await axios.post(`/api/payments/saved-card/add-ecommerce/`);
+  return response.data;
+}
+
 export async function setDefaultCard(
   data: SetDefaultCardRequestRequest,
 ): Promise<any> {
@@ -5773,6 +5802,26 @@ export async function socialWhatsappTemplatesSendCreate(
     `/api/social/whatsapp/templates/send/`,
     data,
   );
+  return response.data;
+}
+
+export async function subscriptionAgentCountUpdate(): Promise<any> {
+  const response = await axios.put(`/api/subscription/agent-count/`);
+  return response.data;
+}
+
+export async function subscriptionFeaturesAddCreate(): Promise<any> {
+  const response = await axios.post(`/api/subscription/features/add/`);
+  return response.data;
+}
+
+export async function subscriptionFeaturesAvailableRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/subscription/features/available/`);
+  return response.data;
+}
+
+export async function subscriptionFeaturesRemoveCreate(): Promise<any> {
+  const response = await axios.post(`/api/subscription/features/remove/`);
   return response.data;
 }
 

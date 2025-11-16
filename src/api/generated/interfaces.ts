@@ -19,6 +19,13 @@ export interface AddDomainResponse {
   dns_instructions: Record<string, any>;
 }
 
+export interface AddEcommerceCardResponse {
+  payment_id: string;
+  payment_url: string;
+  amount: number;
+  currency: string;
+}
+
 export interface AddNewCardRequestRequest {
   make_default?: boolean;
 }
