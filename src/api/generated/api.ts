@@ -2549,28 +2549,9 @@ export async function ecommerceAdminHomepageSectionsChoicesRetrieve(): Promise<H
 
 export async function ecommerceAdminHomepageSectionsReorderCreate(
   data: HomepageSectionReorderRequest,
-  isActive?: boolean,
-  ordering?: string,
-  page?: number,
-  sectionType?:
-    | 'branches'
-    | 'category_grid'
-    | 'custom_content'
-    | 'featured_products'
-    | 'hero_banner'
-    | 'product_by_attribute'
-    | 'statistics',
-): Promise<PaginatedHomepageSectionList> {
+): Promise<HomepageSection[]> {
   const response = await axios.post(
-    `/api/ecommerce/admin/homepage-sections/reorder/${(() => {
-      const parts = [
-        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
-        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        sectionType ? 'section_type=' + encodeURIComponent(sectionType) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
+    `/api/ecommerce/admin/homepage-sections/reorder/`,
     data,
   );
   return response.data;

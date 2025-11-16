@@ -98,7 +98,7 @@ export default function ItemListsPage() {
       title: list.title,
       description: list.description || "",
       is_active: list.is_active ?? true,
-      is_public: (list as any).is_public ?? false,
+      is_public: list.is_public ?? false,
       parent_list: list.parent_list || null,
       custom_fields_schema: (list.custom_fields_schema as CustomField[]) || [],
     });
@@ -204,6 +204,9 @@ export default function ItemListsPage() {
                       <h3 className="font-semibold">{list.title}</h3>
                       {!list.is_active && (
                         <Badge variant="secondary">{t('inactive')}</Badge>
+                      )}
+                      {list.is_public && (
+                        <Badge variant="outline" className="text-green-600 border-green-600">Public</Badge>
                       )}
                     </div>
                     {list.description && (

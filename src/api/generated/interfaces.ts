@@ -1165,6 +1165,7 @@ export interface ItemList {
   title: string;
   description?: string;
   is_active?: boolean;
+  is_public?: boolean;
   parent_list?: number;
   custom_fields_schema?: any;
   created_at: string;
@@ -1203,6 +1204,7 @@ export interface ItemListRequest {
   title: string;
   description?: string;
   is_active?: boolean;
+  is_public?: boolean;
   parent_list?: number;
   custom_fields_schema?: any;
 }
@@ -2435,6 +2437,7 @@ export interface PatchedItemListRequest {
   title?: string;
   description?: string;
   is_active?: boolean;
+  is_public?: boolean;
   parent_list?: number;
   custom_fields_schema?: any;
 }
