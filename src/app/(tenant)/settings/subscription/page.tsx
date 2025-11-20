@@ -8,30 +8,21 @@ import {
   useAddNewCard,
   useRemoveSavedCard,
   useSetDefaultCard,
-  useImmediateUpgrade,
-  useScheduleUpgrade,
-  useCancelScheduledUpgrade,
   useSavedCard,
 } from '@/hooks/api/usePayments';
-import { CurrentPlanCard } from '@/components/subscription/CurrentPlanCard';
 import { UsageStatsCard } from '@/components/subscription/UsageStatsCard';
 import { PaymentMethodCard } from '@/components/subscription/PaymentMethodCard';
 import { InvoiceHistoryTable } from '@/components/subscription/InvoiceHistoryTable';
-import { ChangePlanDialog } from '@/components/subscription/ChangePlanDialog';
 import { FeatureManagementCard } from '@/components/subscription/FeatureManagementCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
 
 export default function SubscriptionPage() {
   const t = useTranslations('settings.subscription');
-  const router = useRouter();
-  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   // Queries
-  const { data: subscription, isLoading: subscriptionLoading, refetch: refetchSubscription } = useTenantSubscription();
+  const { data: subscription, isLoading: subscriptionLoading } = useTenantSubscription();
   const { data: invoicesData, isLoading: invoicesLoading } = useInvoices();
   const { data: savedCardsData, isLoading: cardsLoading } = useSavedCard();
 
@@ -39,9 +30,6 @@ export default function SubscriptionPage() {
   const addCardMutation = useAddNewCard();
   const removeCardMutation = useRemoveSavedCard();
   const setDefaultCardMutation = useSetDefaultCard();
-  const immediateUpgradeMutation = useImmediateUpgrade();
-  const scheduleUpgradeMutation = useScheduleUpgrade();
-  const cancelScheduledUpgradeMutation = useCancelScheduledUpgrade();
 
   // Handlers
   const handleAddCard = async () => {
@@ -77,51 +65,6 @@ export default function SubscriptionPage() {
     }
   };
 
-  const handleImmediateUpgrade = async (packageId: number) => {
-    try {
-      const result = await immediateUpgradeMutation.mutateAsync({ package_id: packageId });
-
-      if (result.payment_url) {
-        toast.success('Redirecting to payment...');
-        // Redirect to BOG payment page
-        setTimeout(() => {
-          window.location.href = result.payment_url;
-        }, 1000);
-      } else {
-        toast.success('Upgrade initiated successfully');
-        setShowUpgradeDialog(false);
-        refetchSubscription();
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to initiate upgrade');
-      console.error('Immediate upgrade error:', error);
-    }
-  };
-
-  const handleScheduledUpgrade = async (packageId: number) => {
-    try {
-      await scheduleUpgradeMutation.mutateAsync({ package_id: packageId });
-      toast.success('Upgrade scheduled successfully');
-      setShowUpgradeDialog(false);
-      refetchSubscription();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to schedule upgrade');
-      console.error('Scheduled upgrade error:', error);
-    }
-  };
-
-  const handleCancelScheduledUpgrade = async () => {
-    try {
-      await cancelScheduledUpgradeMutation.mutateAsync();
-      toast.success('Scheduled upgrade cancelled');
-      refetchSubscription();
-    } catch (error: any) {
-      toast.error('Failed to cancel scheduled upgrade');
-      console.error('Cancel upgrade error:', error);
-    }
-  };
-
-  const currentPackageId = subscription?.package?.id;
   const savedCards = Array.isArray(savedCardsData) ? savedCardsData : [];
   const invoices = invoicesData?.invoices || [];
 
@@ -134,30 +77,12 @@ export default function SubscriptionPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="features" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="overview">{t('tabs.overview')}</TabsTrigger>
           <TabsTrigger value="features">{t('tabs.features')}</TabsTrigger>
           <TabsTrigger value="usage">{t('tabs.usage')}</TabsTrigger>
           <TabsTrigger value="billing">{t('tabs.billing')}</TabsTrigger>
         </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CurrentPlanCard
-              subscription={subscription}
-              onUpgrade={() => setShowUpgradeDialog(true)}
-              onCancelScheduledUpgrade={handleCancelScheduledUpgrade}
-              isLoading={subscriptionLoading}
-            />
-
-            <UsageStatsCard
-              subscription={subscription}
-              isLoading={subscriptionLoading}
-            />
-          </div>
-        </TabsContent>
 
         {/* Features Tab */}
         <TabsContent value="features" className="space-y-6">
@@ -219,15 +144,6 @@ export default function SubscriptionPage() {
           />
         </TabsContent>
       </Tabs>
-
-      {/* Upgrade Dialog */}
-      <ChangePlanDialog
-        open={showUpgradeDialog}
-        onOpenChange={setShowUpgradeDialog}
-        currentPackageId={currentPackageId}
-        onConfirmImmediate={handleImmediateUpgrade}
-        onConfirmScheduled={handleScheduledUpgrade}
-      />
     </div>
   );
 }
