@@ -50,7 +50,9 @@ function HomeContent() {
     handleOAuthCallback();
   }, [handleOAuthCallback]);
 
-  // Redirect authenticated users to tickets (only on root path)
+  // Redirect authenticated users to first available route (only on root path)
+  // The tenant layout will check permissions and redirect to the correct first
+  // available route if user doesn't have access to the default route
   useEffect(() => {
     if (tenant && isAuthenticated && user && pathname === "/") {
       const savedPath = localStorage.getItem("echodesk_redirect_after_login");
@@ -58,6 +60,7 @@ function HomeContent() {
         localStorage.removeItem("echodesk_redirect_after_login");
         router.replace(savedPath);
       } else {
+        // Default to tickets - layout will redirect to first available if no access
         router.replace("/tickets");
       }
     }

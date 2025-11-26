@@ -1,4 +1,10 @@
 {
+  "notFound": {
+    "title": "404",
+    "subtitle": "Page Not Found",
+    "description": "We couldn't find the page you're looking for. It might have been moved or doesn't exist.",
+    "homeButton": "Home Page"
+  },
   "common": {
     "save": "Save",
     "saving": "Saving...",

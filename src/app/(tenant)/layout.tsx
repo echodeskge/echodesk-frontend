@@ -262,6 +262,55 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
 
+  // Get the first available route from visible menu items
+  const getFirstAvailableRoute = (): string | null => {
+    if (visibleMenuItems.length === 0) return null;
+
+    const firstItem = visibleMenuItems[0];
+    // If first item has children, use the first child's route
+    if (firstItem.children && firstItem.children.length > 0) {
+      return `/${firstItem.children[0].id}`;
+    }
+    return `/${firstItem.id}`;
+  };
+
+  // Check if the current route is accessible by the user
+  const isRouteAccessible = (currentPath: string): boolean => {
+    const pathParts = currentPath.split("/").filter(Boolean);
+    if (pathParts.length === 0) return true; // Root path is always accessible
+
+    // Build the route ID to check (e.g., "ecommerce/orders" or "tickets")
+    const routeId = pathParts.length > 1 &&
+      ["ecommerce", "calls", "bookings", "leave", "invoices", "social"].includes(pathParts[0])
+      ? `${pathParts[0]}/${pathParts[1]}`
+      : pathParts[0];
+
+    // Check if route is in visible menu items (including children)
+    for (const item of visibleMenuItems) {
+      if (item.id === routeId) return true;
+      if (item.children) {
+        for (const child of item.children) {
+          if (child.id === routeId) return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+  // Route protection: redirect to first available route if current route is not accessible
+  useEffect(() => {
+    if (profileLoading || tenantLoading || !userProfile) return;
+
+    const firstAvailableRoute = getFirstAvailableRoute();
+    if (!firstAvailableRoute) return; // No routes available
+
+    // Check if current path is accessible
+    if (!isRouteAccessible(pathname)) {
+      router.replace(firstAvailableRoute);
+    }
+  }, [pathname, visibleMenuItems, profileLoading, tenantLoading, userProfile]);
+
   const handleMenuClick = (viewId: string) => {
     // Pure subdomain routing - just navigate to /viewId
     router.push(`/${viewId}`);
