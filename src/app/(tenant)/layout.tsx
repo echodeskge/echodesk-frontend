@@ -346,10 +346,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Get current view from pathname
   const pathParts = pathname.split("/").filter(Boolean);
-  // For nested routes like /ecommerce/orders, use the full path
+  // For nested routes like /ecommerce/orders or /calls/logs, use the full path
   // For top-level routes like /tickets, use just the first segment
-  const currentView = pathParts.length > 1 && pathParts[0] === "ecommerce"
-    ? `${pathParts[0]}/${pathParts[1]}`  // ecommerce/orders
+  const nestedRouteParents = ["ecommerce", "calls", "bookings", "leave", "invoices", "social"];
+  const currentView = pathParts.length > 1 && nestedRouteParents.includes(pathParts[0])
+    ? `${pathParts[0]}/${pathParts[1]}`  // ecommerce/orders, calls/logs, etc.
     : pathParts[0] || "tickets";         // tickets
 
   // Get page title (check both parent and children)
