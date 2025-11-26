@@ -279,18 +279,26 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     const pathParts = currentPath.split("/").filter(Boolean);
     if (pathParts.length === 0) return true; // Root path is always accessible
 
-    // Build the route ID to check (e.g., "ecommerce/orders" or "tickets")
-    const routeId = pathParts.length > 1 &&
-      ["ecommerce", "calls", "bookings", "leave", "invoices", "social"].includes(pathParts[0])
+    // Build the base route ID to check (e.g., "ecommerce/orders" or "tickets")
+    // For nested parents, use first two segments; for others, use first segment
+    const nestedParents = ["ecommerce", "calls", "bookings", "leave", "invoices", "social"];
+    const baseRouteId = pathParts.length > 1 && nestedParents.includes(pathParts[0])
       ? `${pathParts[0]}/${pathParts[1]}`
       : pathParts[0];
 
-    // Check if route is in visible menu items (including children)
+    // Check if base route is in visible menu items (including children)
+    // This allows detail pages like /social/messages/123 to be accessible if /social/messages is accessible
     for (const item of visibleMenuItems) {
-      if (item.id === routeId) return true;
+      // Check top-level match
+      if (item.id === baseRouteId) return true;
+      // Check if current path starts with a valid menu item (for detail pages)
+      if (currentPath.startsWith(`/${item.id}`)) return true;
+
       if (item.children) {
         for (const child of item.children) {
-          if (child.id === routeId) return true;
+          if (child.id === baseRouteId) return true;
+          // Check if current path starts with a valid child route (for detail pages like /social/messages/123)
+          if (currentPath.startsWith(`/${child.id}`)) return true;
         }
       }
     }
