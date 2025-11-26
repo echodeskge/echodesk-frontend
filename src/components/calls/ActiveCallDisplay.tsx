@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,8 @@ export function ActiveCallDisplay({
   onAccept,
   onReject,
 }: ActiveCallDisplayProps) {
+  const t = useTranslations("calls");
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -51,10 +54,10 @@ export function ActiveCallDisplay({
 
   const getStatusBadge = () => {
     const variants = {
-      ringing: { label: "Ringing", variant: "default" as const },
-      connecting: { label: "Connecting", variant: "secondary" as const },
-      active: { label: "Active", variant: "default" as const },
-      ending: { label: "Ending", variant: "destructive" as const },
+      ringing: { label: t("dashboard.ringing"), variant: "default" as const },
+      connecting: { label: t("dashboard.connecting"), variant: "secondary" as const },
+      active: { label: t("dashboard.active"), variant: "default" as const },
+      ending: { label: t("dashboard.ending"), variant: "destructive" as const },
     };
     const config = variants[status];
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -71,7 +74,7 @@ export function ActiveCallDisplay({
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">
-            {direction === "incoming" ? "Incoming Call" : "Outgoing Call"}
+            {direction === "incoming" ? t("incomingCall") : t("outgoingCall")}
           </CardTitle>
           {getStatusBadge()}
         </div>
@@ -93,7 +96,7 @@ export function ActiveCallDisplay({
             )}
             {isOnHold && (
               <Badge variant="secondary" className="mt-2">
-                On Hold
+                {t("onHold")}
               </Badge>
             )}
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +35,9 @@ export function SipConfigForm({
   editingConfig,
   saving,
 }: SipConfigFormProps) {
+  const t = useTranslations("calls");
+  const tCommon = useTranslations("common");
+
   const handleSave = async () => {
     await onSave();
   };
@@ -46,17 +50,17 @@ export function SipConfigForm({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editingConfig ? "Edit SIP Configuration" : "Add SIP Configuration"}
+            {editingConfig ? t("settings.editConfiguration") : t("settings.addConfigurationTitle")}
           </DialogTitle>
           <DialogDescription>
-            Configure your SIP server connection settings
+            {t("settings.configureSettings")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Basic Configuration */}
           <div className="space-y-2">
-            <Label htmlFor="name">Configuration Name *</Label>
+            <Label htmlFor="name">{t("settings.configurationName")} *</Label>
             <Input
               id="name"
               value={configForm.name || ""}
@@ -67,7 +71,7 @@ export function SipConfigForm({
 
           <div className="grid grid-cols-3 gap-4">
             <div className="col-span-2 space-y-2">
-              <Label htmlFor="sip_server">SIP Server *</Label>
+              <Label htmlFor="sip_server">{t("settings.sipServer")} *</Label>
               <Input
                 id="sip_server"
                 value={configForm.sip_server || ""}
@@ -77,7 +81,7 @@ export function SipConfigForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sip_port">Port</Label>
+              <Label htmlFor="sip_port">{t("settings.port")}</Label>
               <Input
                 id="sip_port"
                 type="number"
@@ -91,7 +95,7 @@ export function SipConfigForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="username">Username *</Label>
+            <Label htmlFor="username">{t("settings.username")} *</Label>
             <Input
               id="username"
               value={configForm.username || ""}
@@ -102,7 +106,7 @@ export function SipConfigForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="realm">Realm</Label>
+              <Label htmlFor="realm">{t("settings.realm")}</Label>
               <Input
                 id="realm"
                 value={configForm.realm || ""}
@@ -112,7 +116,7 @@ export function SipConfigForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="proxy">Proxy</Label>
+              <Label htmlFor="proxy">{t("settings.proxy")}</Label>
               <Input
                 id="proxy"
                 value={configForm.proxy || ""}
@@ -125,11 +129,11 @@ export function SipConfigForm({
           {/* WebRTC Configuration */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">WebRTC Settings</CardTitle>
+              <CardTitle className="text-base">{t("settings.webrtcSettings")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="stun_server">STUN Server</Label>
+                <Label htmlFor="stun_server">{t("settings.stunServer")}</Label>
                 <Input
                   id="stun_server"
                   value={configForm.stun_server || ""}
@@ -140,7 +144,7 @@ export function SipConfigForm({
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="col-span-1 space-y-2">
-                  <Label htmlFor="turn_server">TURN Server</Label>
+                  <Label htmlFor="turn_server">{t("settings.turnServer")}</Label>
                   <Input
                     id="turn_server"
                     value={configForm.turn_server || ""}
@@ -152,7 +156,7 @@ export function SipConfigForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="turn_username">TURN Username</Label>
+                  <Label htmlFor="turn_username">{t("settings.turnUsername")}</Label>
                   <Input
                     id="turn_username"
                     value={configForm.turn_username || ""}
@@ -164,7 +168,7 @@ export function SipConfigForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="max_concurrent_calls">Max Calls</Label>
+                  <Label htmlFor="max_concurrent_calls">{t("settings.maxCalls")}</Label>
                   <Input
                     id="max_concurrent_calls"
                     type="number"
@@ -195,7 +199,7 @@ export function SipConfigForm({
                 }
               />
               <Label htmlFor="is_active" className="cursor-pointer">
-                Active Configuration
+                {t("settings.activeConfiguration")}
               </Label>
             </div>
 
@@ -208,7 +212,7 @@ export function SipConfigForm({
                 }
               />
               <Label htmlFor="is_default" className="cursor-pointer">
-                Set as Default
+                {t("settings.setAsDefault")}
               </Label>
             </div>
           </div>
@@ -216,14 +220,14 @@ export function SipConfigForm({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
           <Button onClick={handleSave} disabled={!isValid || saving}>
             {saving
-              ? "Saving..."
+              ? tCommon("saving")
               : editingConfig
-              ? "Update Configuration"
-              : "Create Configuration"}
+              ? t("settings.updateConfiguration")
+              : t("settings.createConfiguration")}
           </Button>
         </DialogFooter>
       </DialogContent>

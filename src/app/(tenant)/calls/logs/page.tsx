@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,8 @@ interface CallLog {
 }
 
 export default function CallLogsPage() {
+  const t = useTranslations("calls");
+  const tCommon = useTranslations("common");
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -54,12 +57,12 @@ export default function CallLogsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      answered: { variant: "default" as const, label: "Answered" },
-      missed: { variant: "destructive" as const, label: "Missed" },
-      ended: { variant: "secondary" as const, label: "Ended" },
-      failed: { variant: "destructive" as const, label: "Failed" },
-      busy: { variant: "outline" as const, label: "Busy" },
-      no_answer: { variant: "outline" as const, label: "No Answer" },
+      answered: { variant: "default" as const, label: t("logs.answered") },
+      missed: { variant: "destructive" as const, label: t("logs.missed") },
+      ended: { variant: "secondary" as const, label: t("logs.ended") },
+      failed: { variant: "destructive" as const, label: t("logs.failed") },
+      busy: { variant: "outline" as const, label: t("logs.busy") },
+      no_answer: { variant: "outline" as const, label: t("logs.noAnswer") },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || {
@@ -93,29 +96,29 @@ export default function CallLogsPage() {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Call Logs</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t("logs.title")}</h1>
             <p className="text-muted-foreground">
-              View and manage your call history
+              {t("logs.subtitle")}
             </p>
           </div>
           <Button onClick={fetchCallLogs} variant="outline">
-            Refresh
+            {t("refresh")}
           </Button>
         </div>
 
         {loading ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">Loading call logs...</p>
+              <p className="text-muted-foreground">{tCommon("loading")}</p>
             </CardContent>
           </Card>
         ) : callLogs.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
               <Phone className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No call logs yet</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("logs.noCallsFound")}</h3>
               <p className="text-muted-foreground">
-                Your call history will appear here once you make or receive calls
+                {t("logs.noCallsDescription")}
               </p>
             </CardContent>
           </Card>
@@ -153,13 +156,13 @@ export default function CallLogsPage() {
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">
-                          Duration: {formatDuration(log.duration)}
+                          {t("duration")}: {formatDuration(log.duration)}
                         </span>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">
-                        {log.call_type === "inbound" ? "Incoming" : "Outgoing"}
+                        {log.call_type === "inbound" ? t("incoming") : t("outgoing")}
                       </Badge>
                     </div>
                   </div>

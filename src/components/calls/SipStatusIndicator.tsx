@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -17,6 +18,8 @@ export function SipStatusIndicator({
   sipServer,
   extension,
 }: SipStatusIndicatorProps) {
+  const t = useTranslations("calls");
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -30,7 +33,7 @@ export function SipStatusIndicator({
               <XCircle className="h-5 w-5 text-destructive" />
             )}
             <div>
-              <p className="font-semibold text-sm">SIP Status</p>
+              <p className="font-semibold text-sm">{t("dashboard.sipStatus")}</p>
               {sipServer && (
                 <p className="text-xs text-muted-foreground">{sipServer}</p>
               )}
@@ -46,10 +49,10 @@ export function SipStatusIndicator({
             }
           >
             {isConnecting
-              ? "Connecting"
+              ? t("dashboard.connecting")
               : isRegistered
-              ? `Registered${extension ? ` (${extension})` : ""}`
-              : "Disconnected"}
+              ? `${t("dashboard.registered")}${extension ? ` (${extension})` : ""}`
+              : t("dashboard.disconnected")}
           </Badge>
         </div>
       </CardContent>

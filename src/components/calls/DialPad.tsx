@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,8 @@ const DIAL_PAD_KEYS = [
 ];
 
 export function DialPad({ value, onChange, onCall, disabled }: DialPadProps) {
+  const t = useTranslations("calls");
+
   const handleKeyPress = (key: string) => {
     onChange(value + key);
   };
@@ -41,7 +44,7 @@ export function DialPad({ value, onChange, onCall, disabled }: DialPadProps) {
         <div className="space-y-2">
           <Input
             type="tel"
-            placeholder="Enter phone number"
+            placeholder={t("enterPhoneNumber")}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -85,7 +88,7 @@ export function DialPad({ value, onChange, onCall, disabled }: DialPadProps) {
             disabled={disabled || !value}
           >
             <Phone className="h-5 w-5 mr-2" />
-            Call
+            {t("call")}
           </Button>
           <div /> {/* Empty spacer */}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { DialPad } from "@/components/calls/DialPad";
 import { ActiveCallDisplay } from "@/components/calls/ActiveCallDisplay";
@@ -38,6 +39,7 @@ interface ActiveCall {
 }
 
 export default function CallsDashboardPage() {
+  const t = useTranslations("calls");
   const router = useRouter();
   const [dialNumber, setDialNumber] = useState("");
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
@@ -400,9 +402,9 @@ export default function CallsDashboardPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Call Dashboard</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h1>
             <p className="text-muted-foreground">
-              Manage your SIP calls and view real-time call status
+              {t("dashboard.subtitle")}
             </p>
           </div>
           <Button
@@ -410,7 +412,7 @@ export default function CallsDashboardPage() {
             onClick={() => router.push("/calls/settings")}
           >
             <Settings className="h-4 w-4 mr-2" />
-            SIP Settings
+            {t("settings.title")}
           </Button>
         </div>
 
@@ -426,7 +428,7 @@ export default function CallsDashboardPage() {
         {loading ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">Loading SIP configuration...</p>
+              <p className="text-muted-foreground">{t("dashboard.loadingSipConfig")}</p>
             </CardContent>
           </Card>
         ) : (
@@ -478,7 +480,7 @@ export default function CallsDashboardPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
+                  <CardTitle>{t("dashboard.quickActions")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Button
@@ -486,14 +488,14 @@ export default function CallsDashboardPage() {
                     className="w-full justify-start"
                     onClick={() => router.push("/calls/logs")}
                   >
-                    View Call History
+                    {t("dashboard.viewCallHistory")}
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full justify-start"
                     onClick={() => router.push("/calls/settings")}
                   >
-                    Configure SIP Settings
+                    {t("dashboard.configureSipSettings")}
                   </Button>
                 </CardContent>
               </Card>

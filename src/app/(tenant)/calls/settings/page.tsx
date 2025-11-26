@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { SipConfigForm } from "@/components/calls/SipConfigForm";
 import { SipConfigList } from "@/components/calls/SipConfigList";
@@ -25,6 +26,8 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 
 export default function CallSettingsPage() {
+  const t = useTranslations("calls");
+  const tCommon = useTranslations("common");
   const { toast } = useToast();
   const [sipConfigs, setSipConfigs] = useState<SipConfigurationList[]>([]);
   const [loading, setLoading] = useState(true);
@@ -269,19 +272,19 @@ export default function CallSettingsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">SIP Settings</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
             <p className="text-muted-foreground">
-              Configure your SIP server connections and calling preferences
+              {t("settings.subtitle")}
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={setupAsteriskServer}>
               <Zap className="h-4 w-4 mr-2" />
-              Quick Setup
+              {t("settings.quickSetup")}
             </Button>
             <Button onClick={() => openModal()}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Configuration
+              {t("settings.addConfiguration")}
             </Button>
           </div>
         </div>
@@ -299,7 +302,7 @@ export default function CallSettingsPage() {
           <Card>
             <CardContent className="p-8 text-center">
               <p className="text-muted-foreground">
-                Loading SIP configurations...
+                {tCommon("loading")}
               </p>
             </CardContent>
           </Card>

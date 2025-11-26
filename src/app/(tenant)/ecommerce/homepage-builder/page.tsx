@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ecommerceAdminHomepageSectionsList,
@@ -74,6 +75,8 @@ interface SectionChoices {
 }
 
 export default function HomepageBuilderPage() {
+  const t = useTranslations("homepageBuilder");
+  const tCommon = useTranslations("common");
   const queryClient = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<HomepageSection | null>(null);
@@ -102,11 +105,11 @@ export default function HomepageBuilderPage() {
     mutationFn: (data: HomepageSectionRequest) => ecommerceAdminHomepageSectionsCreate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["homepage-sections"] });
-      toast.success("Section created successfully");
+      toast.success(t("success.created"));
       setIsAddOpen(false);
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to create section");
+      toast.error(error.message || t("error.create"));
     },
   });
 
@@ -116,12 +119,12 @@ export default function HomepageBuilderPage() {
       ecommerceAdminHomepageSectionsUpdate(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["homepage-sections"] });
-      toast.success("Section updated successfully");
+      toast.success(t("success.updated"));
       setEditingSection(null);
       setIsAddOpen(false);
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update section");
+      toast.error(error.message || t("error.update"));
     },
   });
 
@@ -130,11 +133,11 @@ export default function HomepageBuilderPage() {
     mutationFn: (id: number) => ecommerceAdminHomepageSectionsDestroy(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["homepage-sections"] });
-      toast.success("Section deleted successfully");
+      toast.success(t("success.deleted"));
       setDeletingSection(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to delete section");
+      toast.error(error.message || t("error.delete"));
     },
   });
 
@@ -144,10 +147,10 @@ export default function HomepageBuilderPage() {
       ecommerceAdminHomepageSectionsReorderCreate({ section_ids: sectionIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["homepage-sections"] });
-      toast.success("Order updated");
+      toast.success(t("success.reordered"));
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to reorder");
+      toast.error(error.message || t("error.reorder"));
     },
   });
 
@@ -209,14 +212,14 @@ export default function HomepageBuilderPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Homepage Builder</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Configure sections and layout for your storefront homepage
+            {t("subtitle")}
           </p>
         </div>
         <Button onClick={() => setIsAddOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Section
+          {t("addSection")}
         </Button>
       </div>
 
@@ -225,16 +228,16 @@ export default function HomepageBuilderPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <LayoutDashboard className="h-5 w-5" />
-            Homepage Sections
+            {t("sections")}
           </CardTitle>
           <CardDescription>
-            Drag sections to reorder them. Toggle visibility with the switch.
+            {t("sectionsDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {sections.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
-              No sections configured yet. Click &quot;Add Section&quot; to get started.
+              {t("noSections")}
             </div>
           ) : (
             <div className="space-y-4">
@@ -277,10 +280,10 @@ export default function HomepageBuilderPage() {
                       <Badge variant="secondary">{getDisplayModeLabel(section.display_mode)}</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Position: {section.position} |
+                      {t("position")}: {section.position} |
                       {section.item_list
-                        ? ` Linked to: ${section.item_list_title || `ItemList #${section.item_list}`}`
-                        : " No ItemList linked"}
+                        ? ` ${t("linkedTo")}: ${section.item_list_title || `ItemList #${section.item_list}`}`
+                        : ` ${t("noItemListLinked")}`}
                     </p>
                   </div>
 
@@ -331,18 +334,18 @@ export default function HomepageBuilderPage() {
       <AlertDialog open={!!deletingSection} onOpenChange={() => setDeletingSection(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Section</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteSection")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this section? This action cannot be undone.
+              {t("deleteSectionConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deletingSection && deleteSection.mutate(deletingSection.id)}
               className="bg-destructive text-destructive-foreground"
             >
-              Delete
+              {tCommon("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -369,6 +372,8 @@ function SectionFormSheet({
   onSubmit: (data: HomepageSectionRequest) => void;
   isLoading: boolean;
 }) {
+  const t = useTranslations("homepageBuilder");
+  const tCommon = useTranslations("common");
   const [formData, setFormData] = useState<{
     title: { en: string; ka: string };
     subtitle: { en: string; ka: string };
@@ -450,15 +455,15 @@ function SectionFormSheet({
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto px-6">
         <SheetHeader>
-          <SheetTitle>{section ? "Edit Section" : "Add New Section"}</SheetTitle>
+          <SheetTitle>{section ? t("editSection") : t("addNewSection")}</SheetTitle>
           <SheetDescription>
-            Configure the section properties and link it to an ItemList for dynamic content.
+            {t("sectionFormDescription")}
           </SheetDescription>
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <div className="space-y-2">
-            <Label>Title (English)</Label>
+            <Label>{t("titleEnglish")}</Label>
             <Input
               value={formData.title.en}
               onChange={(e) =>
@@ -473,7 +478,7 @@ function SectionFormSheet({
           </div>
 
           <div className="space-y-2">
-            <Label>Title (Georgian)</Label>
+            <Label>{t("titleGeorgian")}</Label>
             <Input
               value={formData.title.ka}
               onChange={(e) =>
@@ -487,7 +492,7 @@ function SectionFormSheet({
           </div>
 
           <div className="space-y-2">
-            <Label>Section Type</Label>
+            <Label>{t("sectionType")}</Label>
             <Select
               value={formData.section_type as unknown as string}
               onValueChange={(value) =>
@@ -508,7 +513,7 @@ function SectionFormSheet({
           </div>
 
           <div className="space-y-2">
-            <Label>Display Mode</Label>
+            <Label>{t("displayMode")}</Label>
             <Select
               value={formData.display_mode as unknown as string}
               onValueChange={(value) =>
@@ -529,7 +534,7 @@ function SectionFormSheet({
           </div>
 
           <div className="space-y-2">
-            <Label>Link to ItemList (Optional)</Label>
+            <Label>{t("linkToItemList")}</Label>
             <Select
               value={formData.item_list?.toString() || "none"}
               onValueChange={(value) =>
@@ -540,10 +545,10 @@ function SectionFormSheet({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select an ItemList" />
+                <SelectValue placeholder={t("selectItemList")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No ItemList</SelectItem>
+                <SelectItem value="none">{t("noItemList")}</SelectItem>
                 {itemLists.map((list) => (
                   <SelectItem key={list.id} value={list.id.toString()}>
                     {list.title}
@@ -554,7 +559,7 @@ function SectionFormSheet({
           </div>
 
           <div className="space-y-2">
-            <Label>Background Color (Optional)</Label>
+            <Label>{t("backgroundColor")}</Label>
             <Input
               value={formData.background_color}
               onChange={(e) => setFormData((prev) => ({ ...prev, background_color: e.target.value }))}
@@ -563,7 +568,7 @@ function SectionFormSheet({
           </div>
 
           <div className="space-y-2">
-            <Label>Background Image URL (Optional)</Label>
+            <Label>{t("backgroundImageUrl")}</Label>
             <Input
               value={formData.background_image_url}
               onChange={(e) =>
@@ -575,10 +580,10 @@ function SectionFormSheet({
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : section ? "Update" : "Create"}
+              {isLoading ? tCommon("saving") : section ? tCommon("update") : tCommon("create")}
             </Button>
           </div>
         </form>

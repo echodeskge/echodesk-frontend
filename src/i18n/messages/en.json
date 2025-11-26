@@ -661,6 +661,43 @@
     "noOrdersYet": "Orders will appear here once customers place them",
     "viewDetails": "View Details"
   },
+  "homepageBuilder": {
+    "title": "Homepage Builder",
+    "subtitle": "Configure sections and layout for your storefront homepage",
+    "addSection": "Add Section",
+    "sections": "Homepage Sections",
+    "sectionsDescription": "Drag sections to reorder them. Toggle visibility with the switch.",
+    "noSections": "No sections configured yet. Click \"Add Section\" to get started.",
+    "position": "Position",
+    "linkedTo": "Linked to",
+    "noItemListLinked": "No ItemList linked",
+    "editSection": "Edit Section",
+    "addNewSection": "Add New Section",
+    "sectionFormDescription": "Configure the section properties and link it to an ItemList for dynamic content.",
+    "titleEnglish": "Title (English)",
+    "titleGeorgian": "Title (Georgian)",
+    "sectionType": "Section Type",
+    "displayMode": "Display Mode",
+    "linkToItemList": "Link to ItemList (Optional)",
+    "selectItemList": "Select an ItemList",
+    "noItemList": "No ItemList",
+    "backgroundColor": "Background Color (Optional)",
+    "backgroundImageUrl": "Background Image URL (Optional)",
+    "deleteSection": "Delete Section",
+    "deleteSectionConfirm": "Are you sure you want to delete this section? This action cannot be undone.",
+    "success": {
+      "created": "Section created successfully",
+      "updated": "Section updated successfully",
+      "deleted": "Section deleted successfully",
+      "reordered": "Order updated"
+    },
+    "error": {
+      "create": "Failed to create section",
+      "update": "Failed to update section",
+      "delete": "Failed to delete section",
+      "reorder": "Failed to reorder"
+    }
+  },
   "groups": {
     "title": "Groups",
     "groupManagement": "Group Management",
@@ -861,6 +898,8 @@
       "configureSettings": "Configure your SIP server connection settings",
       "cannotDeleteDefault": "Cannot delete default configuration",
       "deleteConfiguration": "Delete configuration",
+      "updateConfiguration": "Update Configuration",
+      "createConfiguration": "Create Configuration",
       "success": {
         "created": "SIP configuration created successfully",
         "updated": "SIP configuration updated successfully",
