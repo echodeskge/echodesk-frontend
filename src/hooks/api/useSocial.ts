@@ -17,6 +17,7 @@ import axios from '@/api/axios';
 // Query keys
 export const socialKeys = {
   all: ['social'] as const,
+  unreadCount: () => [...socialKeys.all, 'unreadCount'] as const,
   facebook: () => [...socialKeys.all, 'facebook'] as const,
   facebookStatus: () => [...socialKeys.facebook(), 'status'] as const,
   facebookPages: () => [...socialKeys.facebook(), 'pages'] as const,
@@ -34,6 +35,35 @@ export const socialKeys = {
   whatsappTemplates: () => [...socialKeys.whatsapp(), 'templates'] as const,
   whatsappTemplatesList: (wabaId: string) => [...socialKeys.whatsappTemplates(), wabaId] as const,
 };
+
+// ============================================================================
+// UNREAD MESSAGES COUNT
+// ============================================================================
+
+export interface UnreadMessagesCount {
+  total: number;
+  facebook: number;
+  instagram: number;
+  whatsapp: number;
+}
+
+export function useUnreadMessagesCount(options?: { refetchInterval?: number | false; enabled?: boolean }) {
+  return useQuery<UnreadMessagesCount>({
+    queryKey: socialKeys.unreadCount(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/unread-count/');
+      return response.data;
+    },
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchInterval: options?.refetchInterval ?? 30000, // Poll every 30 seconds by default
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// ============================================================================
+// FACEBOOK HOOKS
+// ============================================================================
 
 // Queries
 export function useFacebookStatus() {

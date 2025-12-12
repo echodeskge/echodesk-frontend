@@ -21,6 +21,15 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
+interface Attachment {
+  type: string;
+  url: string;
+  sticker_id?: string;
+  media_id?: string;
+  mime_type?: string;
+  filename?: string;
+}
+
 interface FacebookMessage {
   id: number;
   message_id: string;
@@ -28,6 +37,9 @@ interface FacebookMessage {
   sender_name?: string;
   profile_pic_url?: string;
   message_text: string;
+  attachment_type?: string;
+  attachment_url?: string;
+  attachments?: Attachment[];
   timestamp: string;
   is_from_page?: boolean;
   is_delivered?: boolean;
@@ -45,6 +57,9 @@ interface InstagramMessage {
   sender_username?: string;
   sender_profile_pic?: string;
   message_text: string;
+  attachment_type?: string;
+  attachment_url?: string;
+  attachments?: Attachment[];
   timestamp: string;
   is_from_business?: boolean;
   is_delivered?: boolean;
@@ -79,7 +94,9 @@ interface UnifiedMessage {
   profile_pic_url?: string;
   message_text: string;
   message_type?: string;
+  attachment_type?: string;
   attachment_url?: string;
+  attachments?: Attachment[];
   timestamp: string;
   is_from_business: boolean;
   is_delivered?: boolean;
@@ -205,6 +222,9 @@ export default function MessagesChat() {
               sender_name: msg.sender_name || "Unknown",
               profile_pic_url: msg.profile_pic_url,
               message_text: msg.message_text,
+              attachment_type: msg.attachment_type,
+              attachment_url: msg.attachment_url,
+              attachments: msg.attachments,
               timestamp: msg.timestamp,
               is_from_business: msg.is_from_page || false,
               is_delivered: msg.is_delivered,
@@ -225,6 +245,9 @@ export default function MessagesChat() {
               sender_name: latestMsg.sender_name || "Unknown",
               profile_pic_url: latestMsg.profile_pic_url,
               message_text: latestMsg.message_text,
+              attachment_type: latestMsg.attachment_type,
+              attachment_url: latestMsg.attachment_url,
+              attachments: latestMsg.attachments,
               timestamp: latestMsg.timestamp,
               is_from_business: latestMsg.is_from_page || false,
               is_delivered: latestMsg.is_delivered,
@@ -325,6 +348,9 @@ export default function MessagesChat() {
                 sender_name: msg.sender_username || msg.sender_id,
                 profile_pic_url: msg.sender_profile_pic,
                 message_text: msg.message_text,
+                attachment_type: msg.attachment_type,
+                attachment_url: msg.attachment_url,
+                attachments: msg.attachments,
                 timestamp: msg.timestamp,
                 is_from_business: msg.is_from_business || false,
                 is_delivered: msg.is_delivered,
@@ -345,6 +371,9 @@ export default function MessagesChat() {
                 sender_name: latestMsg.sender_username || latestMsg.sender_id,
                 profile_pic_url: latestMsg.sender_profile_pic,
                 message_text: latestMsg.message_text,
+                attachment_type: latestMsg.attachment_type,
+                attachment_url: latestMsg.attachment_url,
+                attachments: latestMsg.attachments,
                 timestamp: latestMsg.timestamp,
                 is_from_business: latestMsg.is_from_business || false,
                 is_delivered: latestMsg.is_delivered,
@@ -468,7 +497,9 @@ export default function MessagesChat() {
                 profile_pic_url: msg.profile_pic_url,
                 message_text: msg.message_text || '',
                 message_type: msg.message_type as string | undefined,
+                attachment_type: msg.message_type as string | undefined,
                 attachment_url: msg.media_url,
+                attachments: msg.attachments as Attachment[] | undefined,
                 timestamp: msg.timestamp,
                 is_from_business: msg.is_from_business || false,
                 is_delivered: msg.is_delivered,
@@ -489,7 +520,9 @@ export default function MessagesChat() {
                 profile_pic_url: latestMsg.profile_pic_url,
                 message_text: latestMsg.message_text || '',
                 message_type: latestMsg.message_type as string | undefined,
+                attachment_type: latestMsg.message_type as string | undefined,
                 attachment_url: latestMsg.media_url,
+                attachments: latestMsg.attachments as Attachment[] | undefined,
                 timestamp: latestMsg.timestamp,
                 is_from_business: latestMsg.is_from_business || false,
                 is_delivered: latestMsg.is_delivered,

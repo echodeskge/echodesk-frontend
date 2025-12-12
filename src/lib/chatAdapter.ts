@@ -1,5 +1,15 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
 
+// Attachment interface
+interface Attachment {
+  type: string;
+  url: string;
+  sticker_id?: string;
+  media_id?: string;
+  mime_type?: string;
+  filename?: string;
+}
+
 // Unified message interfaces supporting Facebook, Instagram, and WhatsApp
 interface UnifiedMessage {
   id: string;
@@ -9,7 +19,9 @@ interface UnifiedMessage {
   profile_pic_url?: string;
   message_text: string;
   message_type?: string;
+  attachment_type?: string;
   attachment_url?: string;
+  attachments?: Attachment[];
   timestamp: string;
   is_from_business: boolean;
   is_delivered?: boolean;
@@ -76,16 +88,50 @@ export function convertFacebookMessagesToChatFormat(
         }
       }
 
+      // Determine attachment type - check both message_type and attachment_type
+      const attachmentType = msg.attachment_type || msg.message_type || '';
+
+      // Get attachment URL from either attachments array or direct attachment_url
+      let attachmentUrl = msg.attachment_url;
+      if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
+        attachmentUrl = msg.attachments[0].url;
+      }
+
+      // Determine if this is an image type (including stickers)
+      const isImageType = ['image', 'sticker'].includes(attachmentType);
+
+      // Determine if this is an audio type
+      const isAudioType = ['audio'].includes(attachmentType);
+
+      // Determine if this is a video type
+      const isVideoType = ['video'].includes(attachmentType);
+
+      // Build images array for image/sticker attachments
+      let images = undefined;
+      if (attachmentUrl && isImageType) {
+        images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
+      }
+
+      // Build voice message for audio attachments
+      let voiceMessage = undefined;
+      if (attachmentUrl && isAudioType) {
+        voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
+      }
+
+      // Build files array for other types (video, document, file)
+      let files = undefined;
+      if (attachmentUrl && !isImageType && !isAudioType) {
+        const filename = msg.attachments?.[0]?.filename || attachmentType;
+        files = [{ name: filename, url: attachmentUrl, size: 0 }];
+      }
+
       return {
         id: msg.id,
         senderId: msg.is_from_business ? businessUser.id : customerUser.id,
         text: msg.message_text,
-        images: msg.attachment_url && msg.message_type === 'image'
-          ? [{ name: 'attachment', url: msg.attachment_url, size: 0 }]
-          : undefined,
-        files: msg.attachment_url && msg.message_type !== 'image'
-          ? [{ name: 'attachment', url: msg.attachment_url, size: 0 }]
-          : undefined,
+        images,
+        files,
+        voiceMessage,
         status,
         createdAt: new Date(msg.timestamp),
       };

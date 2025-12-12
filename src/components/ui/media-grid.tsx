@@ -19,6 +19,17 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
   onMediaClick?: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
+// Check if URL is from an external social media CDN that requires unoptimized images
+function isExternalSocialMediaUrl(src: string): boolean {
+  const externalPatterns = [
+    'fbcdn.net',
+    'cdninstagram.com',
+    'whatsapp.net',
+    'fbsbx.com',
+  ];
+  return externalPatterns.some(pattern => src.includes(pattern));
+}
+
 export function MediaGrid({
   data,
   limit = 4,
@@ -33,6 +44,32 @@ export function MediaGrid({
   const remainingCount = data.length - displayedMedia.length - 1
   const hasMoreMedia = data.length >= limit
   const lastMedia = hasMoreMedia ? data[limit - 1] : null
+
+  const renderImage = (item: MediaType) => {
+    const isExternal = isExternalSocialMediaUrl(item.src);
+
+    if (isExternal) {
+      // Use regular img tag for external social media URLs to avoid domain issues
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.src}
+          alt={item.alt}
+          className="object-cover rounded-lg absolute inset-0 w-full h-full"
+        />
+      );
+    }
+
+    return (
+      <Image
+        src={item.src}
+        alt={item.alt}
+        className="object-cover rounded-lg"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        fill
+      />
+    );
+  };
 
   return (
     <ul
@@ -59,13 +96,7 @@ export function MediaGrid({
                 muted
               />
             ) : (
-              <Image
-                src={item.src}
-                alt={item.alt}
-                className="object-cover rounded-lg"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                fill
-              />
+              renderImage(item)
             )}
           </button>
         </li>
@@ -89,13 +120,7 @@ export function MediaGrid({
                 muted
               />
             ) : (
-              <Image
-                src={lastMedia.src}
-                alt={lastMedia.alt}
-                className="object-cover rounded-lg"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                fill
-              />
+              renderImage(lastMedia)
             )}
             {remainingCount > 0 && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-3xl text-white font-semibold rounded-lg">

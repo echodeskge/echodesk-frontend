@@ -74,10 +74,6 @@ export interface AttributeTypeEnum {
   [key: string]: any;
 }
 
-export interface BillingPeriodEnum {
-  [key: string]: any;
-}
-
 export interface BlankEnum {
   [key: string]: any;
 }
@@ -624,7 +620,6 @@ export interface EcommerceSettings {
   id: number;
   tenant: number;
   bog_client_id?: string;
-  bog_use_production?: boolean;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
   enable_cash_on_delivery?: boolean;
@@ -636,6 +631,19 @@ export interface EcommerceSettings {
   deployment_status: DeploymentStatusEnum;
   vercel_project_id: string;
   custom_domain: string;
+  theme_preset?: ThemePresetEnum;
+  theme_primary_color?: string;
+  theme_secondary_color?: string;
+  theme_accent_color?: string;
+  theme_background_color?: string;
+  theme_foreground_color?: string;
+  theme_muted_color?: string;
+  theme_muted_foreground_color?: string;
+  theme_destructive_color?: string;
+  theme_border_color?: string;
+  theme_border_radius?: string;
+  theme_card_color?: string;
+  theme_card_foreground_color?: string;
   created_at: string;
   updated_at: string;
 }
@@ -643,7 +651,6 @@ export interface EcommerceSettings {
 export interface EcommerceSettingsRequest {
   bog_client_id?: string;
   bog_client_secret?: string;
-  bog_use_production?: boolean;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
   enable_cash_on_delivery?: boolean;
@@ -651,6 +658,19 @@ export interface EcommerceSettingsRequest {
   store_name?: string;
   store_email?: string;
   store_phone?: string;
+  theme_preset?: ThemePresetEnum;
+  theme_primary_color?: string;
+  theme_secondary_color?: string;
+  theme_accent_color?: string;
+  theme_background_color?: string;
+  theme_foreground_color?: string;
+  theme_muted_color?: string;
+  theme_muted_foreground_color?: string;
+  theme_destructive_color?: string;
+  theme_border_color?: string;
+  theme_border_radius?: string;
+  theme_card_color?: string;
+  theme_card_foreground_color?: string;
 }
 
 export interface EmailVerificationRequestRequest {
@@ -675,7 +695,10 @@ export interface FacebookMessage {
   sender_id: string;
   sender_name?: string;
   profile_pic_url?: string;
-  message_text: string;
+  message_text?: string;
+  attachment_type?: FacebookMessageAttachmentTypeEnum | BlankEnum;
+  attachment_url?: string;
+  attachments?: any;
   timestamp: string;
   is_from_page?: boolean;
   is_delivered: boolean;
@@ -684,6 +707,10 @@ export interface FacebookMessage {
   read_at: string;
   page_name: string;
   created_at: string;
+}
+
+export interface FacebookMessageAttachmentTypeEnum {
+  [key: string]: any;
 }
 
 export interface FacebookPageConnection {
@@ -900,6 +927,9 @@ export interface InstagramMessage {
   sender_username?: string;
   sender_profile_pic?: string;
   message_text?: string;
+  attachment_type?: InstagramMessageAttachmentTypeEnum | BlankEnum;
+  attachment_url?: string;
+  attachments?: any;
   timestamp: string;
   is_from_business?: boolean;
   is_delivered: boolean;
@@ -908,6 +938,10 @@ export interface InstagramMessage {
   read_at: string;
   account_username: string;
   created_at: string;
+}
+
+export interface InstagramMessageAttachmentTypeEnum {
+  [key: string]: any;
 }
 
 export interface InstagramSendMessageRequest {
@@ -1663,55 +1697,6 @@ export interface OrderStatusEnum {
   [key: string]: any;
 }
 
-export interface Package {
-  id: number;
-  name: string;
-  display_name: string;
-  description: string;
-  pricing_model?: PricingModelEnum;
-  price_gel: string;
-  calculated_price: string;
-  billing_period?: BillingPeriodEnum;
-  max_users?: number;
-  max_whatsapp_messages?: number;
-  max_storage_gb?: number;
-  ticket_management?: boolean;
-  email_integration?: boolean;
-  sip_calling?: boolean;
-  facebook_integration?: boolean;
-  instagram_integration?: boolean;
-  whatsapp_integration?: boolean;
-  advanced_analytics?: boolean;
-  api_access?: boolean;
-  custom_integrations?: boolean;
-  priority_support?: boolean;
-  dedicated_account_manager?: boolean;
-  is_highlighted?: boolean;
-  is_active?: boolean;
-  is_custom?: boolean;
-  sort_order?: number;
-  features_list: string;
-  dynamic_features: string;
-}
-
-export interface PackageList {
-  id: number;
-  name: string;
-  display_name: string;
-  description: string;
-  pricing_model?: PricingModelEnum;
-  price_gel: string;
-  calculated_price: string;
-  max_users?: number;
-  max_whatsapp_messages?: number;
-  max_storage_gb?: number;
-  is_highlighted?: boolean;
-  is_custom?: boolean;
-  features_list: string;
-  dynamic_features: string;
-  pricing_suffix: string;
-}
-
 export interface PaginatedAttributeDefinitionList {
   count: number;
   next?: string;
@@ -1976,13 +1961,6 @@ export interface PaginatedOrderList {
   next?: string;
   previous?: string;
   results: Order[];
-}
-
-export interface PaginatedPackageListList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: PackageList[];
 }
 
 export interface PaginatedPermissionList {
@@ -2314,7 +2292,6 @@ export interface PatchedEcommerceClientRequest {
 export interface PatchedEcommerceSettingsRequest {
   bog_client_id?: string;
   bog_client_secret?: string;
-  bog_use_production?: boolean;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
   enable_cash_on_delivery?: boolean;
@@ -2322,6 +2299,19 @@ export interface PatchedEcommerceSettingsRequest {
   store_name?: string;
   store_email?: string;
   store_phone?: string;
+  theme_preset?: ThemePresetEnum;
+  theme_primary_color?: string;
+  theme_secondary_color?: string;
+  theme_accent_color?: string;
+  theme_background_color?: string;
+  theme_foreground_color?: string;
+  theme_muted_color?: string;
+  theme_muted_foreground_color?: string;
+  theme_destructive_color?: string;
+  theme_border_color?: string;
+  theme_border_radius?: string;
+  theme_card_color?: string;
+  theme_card_foreground_color?: string;
 }
 
 export interface PatchedFacebookPageConnectionRequest {
@@ -3465,9 +3455,7 @@ export interface TenantRegistrationRequest {
   company_name: string;
   domain: string;
   description?: string;
-  package_id?: number;
-  is_custom?: boolean;
-  feature_ids?: number[];
+  feature_ids: number[];
   pricing_model: PricingModelEnum;
   agent_count?: number;
   admin_email: string;
@@ -3492,6 +3480,10 @@ export interface TenantRequest {
   is_active?: boolean;
   min_users_per_ticket?: number;
   only_superadmin_can_delete_tickets?: boolean;
+}
+
+export interface ThemePresetEnum {
+  [key: string]: any;
 }
 
 export interface Ticket {
@@ -3945,6 +3937,7 @@ export interface WhatsAppMessage {
   message_type?: MessageTypeEnum;
   media_url?: string;
   media_mime_type?: string;
+  attachments?: any;
   timestamp: string;
   is_from_business?: boolean;
   status: WhatsAppMessageStatusEnum;

@@ -209,7 +209,7 @@ export default function MessagesManagement({ onBackToDashboard }: MessagesManage
 
   const filteredConversations = conversations.filter(conv =>
     conv.sender_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    conv.last_message.message_text.toLowerCase().includes(searchQuery.toLowerCase())
+    (conv.last_message.message_text || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (connectedPages.length === 0) {

@@ -14,22 +14,44 @@ export function MessageBubbleContent({
   message: MessageType
   isByCurrentUser: boolean
 }) {
-  let content: ReactNode
+  // Collect all content parts - messages can have text AND attachments
+  const contentParts: ReactNode[] = []
 
-  // Handle different types of message content
-  if (message.text) {
-    content = <MessageBubbleContentText text={message.text} />
-  } else if (message.images) {
-    content = <MessageBubbleContentImages images={message.images} />
-  } else if (message.files) {
-    content = (
+  // Add images if present
+  if (message.images && message.images.length > 0) {
+    contentParts.push(
+      <MessageBubbleContentImages key="images" images={message.images} />
+    )
+  }
+
+  // Add voice message if present
+  if (message.voiceMessage) {
+    contentParts.push(
+      <audio key="voice" controls src={message.voiceMessage.url} className="max-w-full" />
+    )
+  }
+
+  // Add files if present
+  if (message.files && message.files.length > 0) {
+    contentParts.push(
       <MessageBubbleContentFiles
+        key="files"
         files={message.files}
         isByCurrentUser={isByCurrentUser}
       />
     )
-  } else if (message.voiceMessage) {
-    content = <audio controls src={message.voiceMessage.url} />
+  }
+
+  // Add text if present (show text after media)
+  if (message.text) {
+    contentParts.push(
+      <MessageBubbleContentText key="text" text={message.text} />
+    )
+  }
+
+  // If no content at all, show nothing
+  if (contentParts.length === 0) {
+    return null
   }
 
   return (
@@ -41,7 +63,7 @@ export function MessageBubbleContent({
           : "rounded-ss-none"
       )}
     >
-      {content}
+      {contentParts}
     </div>
   )
 }

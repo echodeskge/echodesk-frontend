@@ -257,9 +257,6 @@ import type {
   NotificationRequest,
   Notification,
   PatchedNotificationRequest,
-  PaginatedPackageListList,
-  Package,
-  PackageList,
   PaginatedTicketPaymentList,
   TicketPaymentRequest,
   TicketPayment,
@@ -349,12 +346,14 @@ import type {
 
 export async function attachmentsList(
   page?: number,
+  pageSize?: number,
   ticket?: number,
 ): Promise<PaginatedTicketAttachmentList> {
   const response = await axios.get(
     `/api/attachments/${(() => {
       const parts = [
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         ticket ? 'ticket=' + encodeURIComponent(ticket) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -484,6 +483,7 @@ export async function updateTenantProfile(): Promise<{
 export async function boardsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedBoardList> {
   const response = await axios.get(
@@ -491,6 +491,7 @@ export async function boardsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -553,6 +554,7 @@ export async function bookingsAdminAvailabilityList(
   isAvailable?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
   staff?: number,
 ): Promise<PaginatedStaffAvailabilityList> {
@@ -563,6 +565,7 @@ export async function bookingsAdminAvailabilityList(
         isAvailable ? 'is_available=' + encodeURIComponent(isAvailable) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         staff ? 'staff=' + encodeURIComponent(staff) : null,
       ].filter(Boolean);
@@ -621,6 +624,7 @@ export async function bookingsAdminBookingsList(
   client?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   paymentStatus?:
     | 'deposit_paid'
     | 'failed'
@@ -638,6 +642,7 @@ export async function bookingsAdminBookingsList(
         client ? 'client=' + encodeURIComponent(client) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         paymentStatus
           ? 'payment_status=' + encodeURIComponent(paymentStatus)
           : null,
@@ -757,6 +762,7 @@ export async function bookingsAdminBookingsRescheduleCreate(
 export async function bookingsAdminCategoriesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedServiceCategoryList> {
   const response = await axios.get(
@@ -764,6 +770,7 @@ export async function bookingsAdminCategoriesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -816,6 +823,7 @@ export async function bookingsAdminCategoriesDestroy(id: number): Promise<any> {
 export async function bookingsAdminClientsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedBookingClientList> {
   const response = await axios.get(
@@ -823,6 +831,7 @@ export async function bookingsAdminClientsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -863,6 +872,7 @@ export async function bookingsAdminExceptionsList(
   isAvailable?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
   staff?: number,
 ): Promise<PaginatedStaffExceptionList> {
@@ -872,6 +882,7 @@ export async function bookingsAdminExceptionsList(
         isAvailable ? 'is_available=' + encodeURIComponent(isAvailable) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         staff ? 'staff=' + encodeURIComponent(staff) : null,
       ].filter(Boolean);
@@ -927,6 +938,7 @@ export async function bookingsAdminRecurringBookingsList(
   frequency?: 'biweekly' | 'monthly' | 'weekly',
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
   service?: number,
   status?: 'active' | 'cancelled' | 'completed' | 'paused',
@@ -938,6 +950,7 @@ export async function bookingsAdminRecurringBookingsList(
         frequency ? 'frequency=' + encodeURIComponent(frequency) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         service ? 'service=' + encodeURIComponent(service) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
@@ -1041,6 +1054,7 @@ export async function bookingsAdminServicesList(
   category?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
   status?: 'active' | 'coming_soon' | 'inactive',
 ): Promise<PaginatedServiceListList> {
@@ -1051,6 +1065,7 @@ export async function bookingsAdminServicesList(
         category ? 'category=' + encodeURIComponent(category) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
@@ -1139,6 +1154,7 @@ export async function bookingsAdminStaffList(
   isActiveForBookings?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedBookingStaffList> {
   const response = await axios.get(
@@ -1149,6 +1165,7 @@ export async function bookingsAdminStaffList(
           : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1231,6 +1248,7 @@ export async function bookingsAdminStaffToggleActiveCreate(
 export async function bookingsClientBookingsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedBookingListList> {
   const response = await axios.get(
@@ -1238,6 +1256,7 @@ export async function bookingsClientBookingsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1301,6 +1320,7 @@ export async function bookingsClientBookingsCancelCreate(
 export async function bookingsClientCategoriesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedServiceCategoryList> {
   const response = await axios.get(
@@ -1308,6 +1328,7 @@ export async function bookingsClientCategoriesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1326,6 +1347,7 @@ export async function bookingsClientCategoriesRetrieve(
 export async function bookingsClientRecurringBookingsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedRecurringBookingList> {
   const response = await axios.get(
@@ -1333,6 +1355,7 @@ export async function bookingsClientRecurringBookingsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1418,6 +1441,7 @@ export async function bookingsClientServicesList(
   category?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedServiceListList> {
   const response = await axios.get(
@@ -1427,6 +1451,7 @@ export async function bookingsClientServicesList(
         category ? 'category=' + encodeURIComponent(category) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1454,6 +1479,7 @@ export async function bookingsClientServicesSlotsRetrieve(
 export async function bookingsClientStaffList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedBookingStaffList> {
   const response = await axios.get(
@@ -1461,6 +1487,7 @@ export async function bookingsClientStaffList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1518,6 +1545,7 @@ export async function bookingsClientsVerifyEmailCreate(): Promise<any> {
 export async function callLogsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedCallLogList> {
   const response = await axios.get(
@@ -1525,6 +1553,7 @@ export async function callLogsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1660,12 +1689,14 @@ export async function callLogsStatisticsRetrieve(
 export async function checklistItemsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedChecklistItemList> {
   const response = await axios.get(
     `/api/checklist-items/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -1733,6 +1764,7 @@ export async function checklistItemsToggleCheckPartialUpdate(
 export async function clientsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedClientList> {
   const response = await axios.get(
@@ -1740,6 +1772,7 @@ export async function clientsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1783,6 +1816,7 @@ export async function clientsCallHistoryList(
   id: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedCallLogList> {
   const response = await axios.get(
@@ -1790,6 +1824,7 @@ export async function clientsCallHistoryList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1802,6 +1837,7 @@ export async function columnsList(
   board?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedTicketColumnList> {
   const response = await axios.get(
     `/api/columns/${(() => {
@@ -1809,6 +1845,7 @@ export async function columnsList(
         board ? 'board=' + encodeURIComponent(board) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -1865,12 +1902,14 @@ export async function kanbanBoard(): Promise<KanbanBoard> {
 export async function commentsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedTicketCommentList> {
   const response = await axios.get(
     `/api/comments/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -1911,8 +1950,28 @@ export async function commentsDestroy(id: string): Promise<any> {
   return response.data;
 }
 
+export async function cronCalculateMetricsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/calculate-metrics/`);
+  return response.data;
+}
+
+export async function cronCalculateMetricsCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/calculate-metrics/`);
+  return response.data;
+}
+
 export async function cronHealthRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/health/`);
+  return response.data;
+}
+
+export async function cronPaymentRetriesRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/payment-retries/`);
+  return response.data;
+}
+
+export async function cronPaymentRetriesCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/payment-retries/`);
   return response.data;
 }
 
@@ -1949,6 +2008,7 @@ export async function cronSubscriptionCheckCreate(): Promise<any> {
 export async function departmentsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedDepartmentList> {
   const response = await axios.get(
@@ -1956,6 +2016,7 @@ export async function departmentsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2034,6 +2095,7 @@ export async function ecommerceAdminAddressesList(
   isDefault?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedClientAddressList> {
   const response = await axios.get(
     `/api/ecommerce/admin/addresses/${(() => {
@@ -2042,6 +2104,7 @@ export async function ecommerceAdminAddressesList(
         isDefault ? 'is_default=' + encodeURIComponent(isDefault) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -2114,6 +2177,7 @@ export async function ecommerceAdminAttributesList(
   isVariantAttribute?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedAttributeDefinitionList> {
   const response = await axios.get(
@@ -2130,6 +2194,7 @@ export async function ecommerceAdminAttributesList(
           : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2185,6 +2250,7 @@ export async function ecommerceAdminCartList(
   client?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   status?: 'abandoned' | 'active' | 'converted',
 ): Promise<PaginatedCartList> {
   const response = await axios.get(
@@ -2193,6 +2259,7 @@ export async function ecommerceAdminCartList(
         client ? 'client=' + encodeURIComponent(client) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2211,6 +2278,7 @@ export async function ecommerceAdminCartCreate(
 export async function ecommerceAdminCartItemsList(
   cart?: number,
   page?: number,
+  pageSize?: number,
   product?: number,
 ): Promise<PaginatedCartItemList> {
   const response = await axios.get(
@@ -2218,6 +2286,7 @@ export async function ecommerceAdminCartItemsList(
       const parts = [
         cart ? 'cart=' + encodeURIComponent(cart) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         product ? 'product=' + encodeURIComponent(product) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2320,6 +2389,7 @@ export async function ecommerceAdminClientsList(
   isVerified?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedEcommerceClientList> {
   const response = await axios.get(
@@ -2329,6 +2399,7 @@ export async function ecommerceAdminClientsList(
         isVerified ? 'is_verified=' + encodeURIComponent(isVerified) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2379,6 +2450,7 @@ export async function ecommerceAdminFavoritesList(
   client?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   product?: number,
 ): Promise<PaginatedFavoriteProductList> {
   const response = await axios.get(
@@ -2387,6 +2459,7 @@ export async function ecommerceAdminFavoritesList(
         client ? 'client=' + encodeURIComponent(client) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         product ? 'product=' + encodeURIComponent(product) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2467,6 +2540,7 @@ export async function ecommerceAdminHomepageSectionsList(
   isActive?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   sectionType?:
     | 'branches'
     | 'category_grid'
@@ -2482,6 +2556,7 @@ export async function ecommerceAdminHomepageSectionsList(
         isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         sectionType ? 'section_type=' + encodeURIComponent(sectionType) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2560,6 +2635,7 @@ export async function ecommerceAdminHomepageSectionsReorderCreate(
 export async function ecommerceAdminImagesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   product?: number,
 ): Promise<PaginatedProductImageList> {
   const response = await axios.get(
@@ -2567,6 +2643,7 @@ export async function ecommerceAdminImagesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         product ? 'product=' + encodeURIComponent(product) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2616,12 +2693,14 @@ export async function ecommerceAdminImagesDestroy(id: number): Promise<any> {
 export async function ecommerceAdminLanguagesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedLanguageList> {
   const response = await axios.get(
     `/api/ecommerce/admin/languages/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -2674,6 +2753,7 @@ export async function ecommerceAdminOrdersList(
   client?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
   status?:
     | 'cancelled'
@@ -2690,6 +2770,7 @@ export async function ecommerceAdminOrdersList(
         client ? 'client=' + encodeURIComponent(client) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
@@ -2766,6 +2847,7 @@ export async function ecommerceAdminProductsList(
   minPrice?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
   status?: 'active' | 'draft' | 'inactive' | 'out_of_stock',
 ): Promise<PaginatedProductListList> {
@@ -2780,6 +2862,7 @@ export async function ecommerceAdminProductsList(
         minPrice ? 'min_price=' + encodeURIComponent(minPrice) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
@@ -2875,6 +2958,7 @@ export async function ecommerceAdminProductsLowStockRetrieve(): Promise<ProductD
 export async function ecommerceAdminSettingsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedEcommerceSettingsList> {
   const response = await axios.get(
@@ -2882,6 +2966,7 @@ export async function ecommerceAdminSettingsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -2987,6 +3072,7 @@ export async function ecommerceAdminVariantsList(
   isActive?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   product?: number,
   search?: string,
 ): Promise<PaginatedProductVariantList> {
@@ -2996,6 +3082,7 @@ export async function ecommerceAdminVariantsList(
         isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         product ? 'product=' + encodeURIComponent(product) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
@@ -3049,12 +3136,14 @@ export async function ecommerceAdminVariantsDestroy(id: number): Promise<any> {
 export async function ecommerceClientAddressesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedClientAddressList> {
   const response = await axios.get(
     `/api/ecommerce/client/addresses/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3128,6 +3217,7 @@ export async function ecommerceClientAttributesList(
   isVariantAttribute?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedAttributeDefinitionList> {
   const response = await axios.get(
     `/api/ecommerce/client/attributes/${(() => {
@@ -3140,6 +3230,7 @@ export async function ecommerceClientAttributesList(
           : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3190,12 +3281,14 @@ export async function ecommerceClientCardsAddCreate(): Promise<any> {
 export async function ecommerceClientCartList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedCartList> {
   const response = await axios.get(
     `/api/ecommerce/client/cart/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3212,9 +3305,16 @@ export async function ecommerceClientCartCreate(
 
 export async function ecommerceClientCartItemsList(
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedCartItemList> {
   const response = await axios.get(
-    `/api/ecommerce/client/cart-items/${page ? '?page=' + encodeURIComponent(page) : ''}`,
+    `/api/ecommerce/client/cart-items/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
@@ -3298,12 +3398,14 @@ export async function ecommerceClientCartGetOrCreateRetrieve(): Promise<Cart> {
 export async function ecommerceClientFavoritesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedFavoriteProductList> {
   const response = await axios.get(
     `/api/ecommerce/client/favorites/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3364,6 +3466,7 @@ export async function ecommerceClientHomepageList(): Promise<
 export async function ecommerceClientItemListsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedItemListMinimalList> {
   const response = await axios.get(
@@ -3371,6 +3474,7 @@ export async function ecommerceClientItemListsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -3399,12 +3503,14 @@ export async function ecommerceClientItemListsItemsRetrieve(
 export async function ecommerceClientLanguagesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedLanguageList> {
   const response = await axios.get(
     `/api/ecommerce/client/languages/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3422,12 +3528,14 @@ export async function ecommerceClientLanguagesRetrieve(
 export async function ecommerceClientOrdersList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedOrderList> {
   const response = await axios.get(
     `/api/ecommerce/client/orders/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3485,6 +3593,7 @@ export async function ecommerceClientProductsList(
   onSale?: boolean,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedProductListList> {
   const response = await axios.get(
@@ -3509,6 +3618,7 @@ export async function ecommerceClientProductsList(
         onSale ? 'on_sale=' + encodeURIComponent(onSale) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -3536,6 +3646,11 @@ export async function ecommerceClientProfileUpdateProfilePartialUpdate(
     `/api/ecommerce/client/profile/update_profile/`,
     data,
   );
+  return response.data;
+}
+
+export async function getStoreTheme(): Promise<any> {
+  const response = await axios.get(`/api/ecommerce/client/theme/`);
   return response.data;
 }
 
@@ -3621,6 +3736,7 @@ export async function ecommercePaymentWebhook(): Promise<any> {
 export async function featuresList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedFeatureList> {
   const response = await axios.get(
@@ -3628,6 +3744,7 @@ export async function featuresList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -3645,6 +3762,7 @@ export async function formSubmissionsList(
   form?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   submittedBy?: number,
   ticket?: number,
 ): Promise<PaginatedTicketFormSubmissionList> {
@@ -3654,6 +3772,7 @@ export async function formSubmissionsList(
         form ? 'form=' + encodeURIComponent(form) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         submittedBy ? 'submitted_by=' + encodeURIComponent(submittedBy) : null,
         ticket ? 'ticket=' + encodeURIComponent(ticket) : null,
       ].filter(Boolean);
@@ -3711,6 +3830,7 @@ export async function formSubmissionsByTicketRetrieve(): Promise<TicketFormSubmi
 export async function groupsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedGroupList> {
   const response = await axios.get(
@@ -3718,6 +3838,7 @@ export async function groupsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -3782,12 +3903,14 @@ export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
 
 export async function invoicesClientsList(
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedClientList> {
   const response = await axios.get(
     `/api/invoices/clients/${(() => {
       const parts = [
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -3806,6 +3929,7 @@ export async function invoicesInvoicesList(
   currency?: string,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
   status?:
     | 'cancelled'
@@ -3823,6 +3947,7 @@ export async function invoicesInvoicesList(
         currency ? 'currency=' + encodeURIComponent(currency) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
@@ -3933,6 +4058,7 @@ export async function invoicesInvoicesStatsRetrieve(): Promise<InvoiceDetail> {
 export async function invoicesLineItemsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedInvoiceLineItemList> {
   const response = await axios.get(
@@ -3940,6 +4066,7 @@ export async function invoicesLineItemsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -3992,12 +4119,14 @@ export async function invoicesLineItemsReorderCreate(
 
 export async function invoicesMaterialsList(
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedListItemMaterialList> {
   const response = await axios.get(
     `/api/invoices/materials/${(() => {
       const parts = [
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4016,6 +4145,7 @@ export async function invoicesMaterialsRetrieve(
 export async function invoicesPaymentsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedInvoicePaymentList> {
   const response = await axios.get(
@@ -4023,6 +4153,7 @@ export async function invoicesPaymentsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4069,6 +4200,7 @@ export async function invoicesPaymentsDestroy(id: number): Promise<any> {
 export async function invoicesSettingsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedInvoiceSettingsList> {
   const response = await axios.get(
@@ -4076,6 +4208,7 @@ export async function invoicesSettingsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4160,12 +4293,14 @@ export async function invoicesSettingsUploadSignatureCreate(
 
 export async function invoicesTemplatesList(
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedInvoiceTemplateList> {
   const response = await axios.get(
     `/api/invoices/templates/${(() => {
       const parts = [
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4219,6 +4354,7 @@ export async function invoicesTemplatesPreviewRetrieve(
 export async function itemListsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedItemListMinimalList> {
   const response = await axios.get(
@@ -4226,6 +4362,7 @@ export async function itemListsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4289,12 +4426,14 @@ export async function itemListsPublicRetrieve(): Promise<ItemList> {
 export async function leaveAdminApprovalChainsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedLeaveApprovalChainList> {
   const response = await axios.get(
     `/api/leave/admin/approval-chains/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -4350,6 +4489,7 @@ export async function leaveAdminApprovalChainsDestroy(
 export async function leaveAdminLeaveBalancesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedLeaveBalanceListList> {
   const response = await axios.get(
@@ -4357,6 +4497,7 @@ export async function leaveAdminLeaveBalancesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4418,6 +4559,7 @@ export async function leaveAdminLeaveBalancesInitializeUserCreate(
 export async function leaveAdminLeaveRequestsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedLeaveRequestListList> {
   const response = await axios.get(
@@ -4425,6 +4567,7 @@ export async function leaveAdminLeaveRequestsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4510,6 +4653,7 @@ export async function leaveAdminLeaveRequestsRejectCreate(
 export async function leaveAdminLeaveTypesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedLeaveTypeListList> {
   const response = await axios.get(
@@ -4517,6 +4661,7 @@ export async function leaveAdminLeaveTypesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4566,12 +4711,14 @@ export async function leaveAdminLeaveTypesDestroy(id: string): Promise<any> {
 export async function leaveAdminPublicHolidaysList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedPublicHolidayListList> {
   const response = await axios.get(
     `/api/leave/admin/public-holidays/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -4627,6 +4774,7 @@ export async function leaveAdminPublicHolidaysDestroy(
 export async function leaveAdminSettingsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedLeaveSettingsList> {
   const response = await axios.get(
@@ -4634,6 +4782,7 @@ export async function leaveAdminSettingsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4675,12 +4824,14 @@ export async function leaveAdminSettingsPartialUpdate(
 export async function leaveEmployeeHolidaysList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedPublicHolidayListList> {
   const response = await axios.get(
     `/api/leave/employee/holidays/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -4703,12 +4854,14 @@ export async function leaveEmployeeHolidaysUpcomingRetrieve(): Promise<PublicHol
 export async function leaveEmployeeLeaveTypesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedLeaveTypeListList> {
   const response = await axios.get(
     `/api/leave/employee/leave-types/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -4726,12 +4879,14 @@ export async function leaveEmployeeLeaveTypesRetrieve(
 export async function leaveEmployeeMyBalanceList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedLeaveBalanceListList> {
   const response = await axios.get(
     `/api/leave/employee/my-balance/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -4759,12 +4914,14 @@ export async function leaveEmployeeMyBalanceSummaryRetrieve(): Promise<LeaveBala
 export async function leaveEmployeeMyRequestsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedLeaveRequestListList> {
   const response = await axios.get(
     `/api/leave/employee/my-requests/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -4831,12 +4988,14 @@ export async function leaveEmployeeMyRequestsPendingRetrieve(): Promise<LeaveReq
 export async function leaveManagerTeamBalancesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedLeaveBalanceListList> {
   const response = await axios.get(
     `/api/leave/manager/team-balances/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -4859,6 +5018,7 @@ export async function leaveManagerTeamBalancesSummaryRetrieve(): Promise<LeaveBa
 export async function leaveManagerTeamRequestsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedLeaveRequestListList> {
   const response = await axios.get(
@@ -4866,6 +5026,7 @@ export async function leaveManagerTeamRequestsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -4913,6 +5074,7 @@ export async function listItemsList(
   itemList?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   parent?: number,
   search?: string,
 ): Promise<PaginatedListItemMinimalList> {
@@ -4923,6 +5085,7 @@ export async function listItemsList(
         itemList ? 'item_list=' + encodeURIComponent(itemList) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         parent ? 'parent=' + encodeURIComponent(parent) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
@@ -4988,6 +5151,7 @@ export async function listItemsReorderPartialUpdate(
 export async function notificationsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedNotificationList> {
   const response = await axios.get(
@@ -4995,6 +5159,7 @@ export async function notificationsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5064,115 +5229,11 @@ export async function notificationsUnreadCountRetrieve(): Promise<Notification> 
   return response.data;
 }
 
-export async function packagesList(
-  ordering?: string,
-  page?: number,
-  search?: string,
-): Promise<PaginatedPackageListList> {
-  const response = await axios.get(
-    `/api/packages/${(() => {
-      const parts = [
-        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
-  );
-  return response.data;
-}
-
-export async function getPackageFeatures(packageId: number): Promise<{
-  package_id?: number;
-  package_name?: string;
-  features?: string[];
-  limits?: {
-    max_users?: number;
-    max_whatsapp_messages?: number;
-    max_storage_gb?: number;
-  };
-  capabilities?: {
-    ticket_management?: boolean;
-    email_integration?: boolean;
-    sip_calling?: boolean;
-    facebook_integration?: boolean;
-    instagram_integration?: boolean;
-    whatsapp_integration?: boolean;
-    advanced_analytics?: boolean;
-    api_access?: boolean;
-    custom_integrations?: boolean;
-    priority_support?: boolean;
-    dedicated_account_manager?: boolean;
-  };
-}> {
-  const response = await axios.get(`/api/packages/${packageId}/features/`);
-  return response.data;
-}
-
-export async function packagesRetrieve(id: number): Promise<Package> {
-  const response = await axios.get(`/api/packages/${id}/`);
-  return response.data;
-}
-
-export async function listAvailableFeatures(): Promise<{
-  categories?: {
-    category?: string;
-    category_display?: string;
-    features?: {
-      id?: number;
-      key?: string;
-      name?: string;
-      description?: string;
-      icon?: string;
-      price_gel?: string;
-    }[];
-  }[];
-}> {
-  const response = await axios.get(`/api/packages/available-features/`);
-  return response.data;
-}
-
-export async function listPackagesByPricingModel(): Promise<PackageList[]> {
-  const response = await axios.get(`/api/packages/by-model/`);
-  return response.data;
-}
-
-export async function calculateCustomPackagePrice(data: {
-  feature_ids: number[];
-}): Promise<{
-  features?: {
-    id?: number;
-    name?: string;
-    price_gel?: string;
-  }[];
-  total_price?: string;
-  currency?: string;
-}> {
-  const response = await axios.post(
-    `/api/packages/calculate-custom-price/`,
-    data,
-  );
-  return response.data;
-}
-
-export async function calculatePricing(): Promise<{
-  package_id?: number;
-  package_name?: string;
-  pricing_model?: string;
-  base_price?: number;
-  agent_count?: number;
-  monthly_cost?: number;
-  yearly_cost?: number;
-  savings_yearly?: number;
-}> {
-  const response = await axios.get(`/api/packages/calculate-pricing/`);
-  return response.data;
-}
-
 export async function paymentsList(
   currency?: string,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   paymentMethod?:
     | 'bank_transfer'
     | 'card'
@@ -5189,6 +5250,7 @@ export async function paymentsList(
         currency ? 'currency=' + encodeURIComponent(currency) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         paymentMethod
           ? 'payment_method=' + encodeURIComponent(paymentMethod)
           : null,
@@ -5334,6 +5396,7 @@ export async function paymentsWebhookCreate(): Promise<any> {
 export async function permissionsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedPermissionList> {
   const response = await axios.get(
@@ -5341,6 +5404,7 @@ export async function permissionsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5380,6 +5444,7 @@ export async function registerTenantWithPayment(
 export async function sipConfigurationsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedSipConfigurationListList> {
   const response = await axios.get(
@@ -5387,6 +5452,7 @@ export async function sipConfigurationsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5464,6 +5530,7 @@ export async function sipConfigurationsWebrtcConfigRetrieve(
 export async function socialFacebookMessagesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedFacebookMessageList> {
   const response = await axios.get(
@@ -5471,6 +5538,7 @@ export async function socialFacebookMessagesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5489,6 +5557,7 @@ export async function socialFacebookMessagesRetrieve(
 export async function socialFacebookPagesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedFacebookPageConnectionList> {
   const response = await axios.get(
@@ -5496,6 +5565,7 @@ export async function socialFacebookPagesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5584,6 +5654,15 @@ export async function socialFacebookOauthStartRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function socialFacebookPagesDisconnectCreate(
+  pageId: string,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/social/facebook/pages/${pageId}/disconnect/`,
+  );
+  return response.data;
+}
+
 export async function socialFacebookPagesDebugRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/facebook/pages/debug/`);
   return response.data;
@@ -5618,6 +5697,7 @@ export async function socialFacebookWebhookTestCreate(): Promise<any> {
 export async function socialInstagramAccountsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedInstagramAccountConnectionList> {
   const response = await axios.get(
@@ -5625,6 +5705,7 @@ export async function socialInstagramAccountsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5677,6 +5758,7 @@ export async function socialInstagramAccountsDestroy(id: number): Promise<any> {
 export async function socialInstagramMessagesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedInstagramMessageList> {
   const response = await axios.get(
@@ -5684,6 +5766,7 @@ export async function socialInstagramMessagesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5738,6 +5821,11 @@ export async function socialSettingsPartialUpdate(): Promise<any> {
   return response.data;
 }
 
+export async function socialUnreadCountRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/unread-count/`);
+  return response.data;
+}
+
 export async function socialWebhookLogsRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/webhook-logs/`);
   return response.data;
@@ -5756,6 +5844,7 @@ export async function socialWebhookTestCreate(): Promise<any> {
 export async function socialWhatsappAccountsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedWhatsAppBusinessAccountList> {
   const response = await axios.get(
@@ -5763,6 +5852,7 @@ export async function socialWhatsappAccountsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5815,6 +5905,7 @@ export async function socialWhatsappAccountsDestroy(id: number): Promise<any> {
 export async function socialWhatsappMessagesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedWhatsAppMessageList> {
   const response = await axios.get(
@@ -5822,6 +5913,7 @@ export async function socialWhatsappMessagesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -5942,23 +6034,38 @@ export async function subscriptionFeaturesRemoveCreate(): Promise<any> {
   return response.data;
 }
 
-export async function getMySubscription(): Promise<{
+export async function getSubscriptionMe(): Promise<{
   has_subscription?: boolean;
-  package?: {
-    id?: number;
-    name?: string;
-    pricing_model?: string;
-  };
   subscription?: {
     is_active?: boolean;
     starts_at?: string;
     expires_at?: string;
     monthly_cost?: number;
     agent_count?: number;
+    subscription_type?: string;
+    is_trial?: boolean;
+    trial_ends_at?: string;
+    next_billing_date?: string;
   };
   features?: Record<string, any>;
-  limits?: Record<string, any>;
-  usage?: Record<string, any>;
+  selected_features?: {
+    id?: number;
+    key?: string;
+    name?: string;
+    price_per_user_gel?: number;
+    category?: string;
+    description?: string;
+  }[];
+  limits?: {
+    max_users?: number;
+    max_whatsapp_messages?: number;
+    max_storage_gb?: number;
+  };
+  usage?: {
+    current_users?: number;
+    whatsapp_messages_used?: number;
+    storage_used_gb?: number;
+  };
   usage_limits?: Record<string, any>;
 }> {
   const response = await axios.get(`/api/subscription/me/`);
@@ -5968,6 +6075,7 @@ export async function getMySubscription(): Promise<{
 export async function tagsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedTagList> {
   const response = await axios.get(
@@ -5975,6 +6083,7 @@ export async function tagsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6014,6 +6123,7 @@ export async function tagsDestroy(id: number): Promise<any> {
 export async function tenantFeaturesList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedTenantFeatureList> {
   const response = await axios.get(
@@ -6021,6 +6131,7 @@ export async function tenantFeaturesList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6046,6 +6157,7 @@ export async function tenantFeaturesCheckCreate(
 export async function tenantGroupsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedTenantGroupList> {
   const response = await axios.get(
@@ -6053,6 +6165,7 @@ export async function tenantGroupsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6131,6 +6244,7 @@ export async function tenantGroupsAvailableFeaturesRetrieve(): Promise<TenantGro
 export async function tenantPermissionsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedTenantPermissionList> {
   const response = await axios.get(
@@ -6138,6 +6252,7 @@ export async function tenantPermissionsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6203,6 +6318,7 @@ export async function tenantLanguageUpdatePartialUpdate(): Promise<any> {
 export async function tenantsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedTenantList> {
   const response = await axios.get(
@@ -6210,6 +6326,7 @@ export async function tenantsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6275,6 +6392,7 @@ export async function tenantsListRetrieve(): Promise<any> {
 export async function ticketFormsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedTicketFormMinimalList> {
   const response = await axios.get(
@@ -6282,6 +6400,7 @@ export async function ticketFormsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6353,6 +6472,7 @@ export async function ticketsList(
   createdBy?: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   priority?: 'critical' | 'high' | 'low' | 'medium',
   search?: string,
   tags?: number[],
@@ -6372,6 +6492,7 @@ export async function ticketsList(
         createdBy ? 'created_by=' + encodeURIComponent(createdBy) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         priority ? 'priority=' + encodeURIComponent(priority) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         tags
@@ -6461,6 +6582,7 @@ export async function ticketsAssignmentsList(
   ticketPk: number,
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedTicketAssignmentList> {
   const response = await axios.get(
@@ -6468,6 +6590,7 @@ export async function ticketsAssignmentsList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6564,12 +6687,14 @@ export async function ticketsMyTicketsRetrieve(): Promise<Ticket> {
 export async function timeLogsList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
 ): Promise<PaginatedTicketTimeLogList> {
   const response = await axios.get(
     `/api/time-logs/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -6591,26 +6716,6 @@ export async function timeLogsMyTimeSummaryRetrieve(
   return response.data;
 }
 
-export async function upgradeCancelScheduledCreate(): Promise<any> {
-  const response = await axios.post(`/api/upgrade/cancel-scheduled/`);
-  return response.data;
-}
-
-export async function upgradeImmediateCreate(): Promise<any> {
-  const response = await axios.post(`/api/upgrade/immediate/`);
-  return response.data;
-}
-
-export async function upgradePreviewRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/upgrade/preview/`);
-  return response.data;
-}
-
-export async function upgradeScheduledCreate(): Promise<any> {
-  const response = await axios.post(`/api/upgrade/scheduled/`);
-  return response.data;
-}
-
 export async function uploadImage(): Promise<{
   url?: string;
   message?: string;
@@ -6622,6 +6727,7 @@ export async function uploadImage(): Promise<{
 export async function usersList(
   ordering?: string,
   page?: number,
+  pageSize?: number,
   search?: string,
 ): Promise<PaginatedUserList> {
   const response = await axios.get(
@@ -6629,6 +6735,7 @@ export async function usersList(
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';

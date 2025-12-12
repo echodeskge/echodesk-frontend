@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
       'api.echodesk.ge',
       'localhost',
     ],
-    // Allow wildcard subdomains for DigitalOcean
+    // Allow wildcard subdomains for DigitalOcean and social media platforms
     remotePatterns: [
       {
         protocol: 'https',
@@ -73,6 +73,44 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.ondigitalocean.app',
+        port: '',
+        pathname: '/**',
+      },
+      // Facebook CDN domains for Messenger/Instagram attachments
+      {
+        protocol: 'https',
+        hostname: 'scontent.xx.fbcdn.net',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.fbcdn.net',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.fbsbx.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.cdninstagram.com',
+        port: '',
+        pathname: '/**',
+      },
+      // WhatsApp media domains
+      {
+        protocol: 'https',
+        hostname: '*.whatsapp.net',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lookaside.fbsbx.com',
         port: '',
         pathname: '/**',
       },
