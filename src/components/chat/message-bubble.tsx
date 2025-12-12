@@ -1,3 +1,4 @@
+import { forwardRef } from "react"
 import { EllipsisVertical } from "lucide-react"
 
 import type { MessageType, UserType } from "@/components/chat/types"
@@ -17,20 +18,32 @@ import { ChatAvatar } from "./chat-avatar"
 import { MessageBubbleContent } from "./message-bubble-content"
 import { MessageBubbleStatusIcon } from "./message-bubble-status-icon"
 
-export function MessageBubble({
-  sender,
-  message,
-  isByCurrentUser,
-}: {
+interface MessageBubbleProps {
   sender: UserType
   message: MessageType
   isByCurrentUser: boolean
-}) {
+  platform?: "facebook" | "instagram" | "whatsapp"
+  isHighlighted?: boolean
+  searchQuery?: string
+}
+
+export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
+  function MessageBubble(
+    { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery },
+    ref
+  ) {
   // Provide default values if sender is undefined
   const safeSender = sender || { id: 'unknown', name: 'Unknown User', status: 'offline' };
 
   return (
-    <li className={cn("flex gap-2", isByCurrentUser && "flex-row-reverse")}>
+    <li
+      ref={ref}
+      className={cn(
+        "flex gap-2 transition-all duration-300",
+        isByCurrentUser && "flex-row-reverse",
+        isHighlighted && "bg-yellow-100 dark:bg-yellow-900/30 -mx-2 px-2 py-1 rounded-lg"
+      )}
+    >
       <ChatAvatar
         src={safeSender.avatar}
         fallback={getInitials(safeSender.name)}
@@ -50,6 +63,7 @@ export function MessageBubble({
         <MessageBubbleContent
           message={message}
           isByCurrentUser={isByCurrentUser}
+          platform={platform}
         />
         <div className="flex items-center gap-1">
           <span className="text-sm font-normal text-muted-foreground">
@@ -89,4 +103,4 @@ export function MessageBubble({
       </DropdownMenu>
     </li>
   )
-}
+})

@@ -8,7 +8,7 @@ import type { ChatContextType, ChatType } from "@/components/chat/types"
 
 import { ChatReducer } from "@/components/chat/reducers/chat-reducer"
 
-// Create Kanban context
+// Create Chat context
 export const ChatContext = createContext<ChatContextType | undefined>(undefined)
 
 export function ChatProvider({
@@ -28,6 +28,10 @@ export function ChatProvider({
 
   // Sidebar state management
   const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false)
+
+  // Search state
+  const [chatListSearchQuery, setChatListSearchQuery] = useState("")
+  const [messageSearchQuery, setMessageSearchQuery] = useState("")
 
   // Sync external chats data changes to internal state
   useEffect(() => {
@@ -71,6 +75,10 @@ export function ChatProvider({
         handleAddFilesMessage,
         handleSetUnreadCount,
         onChatSelected,
+        chatListSearchQuery,
+        setChatListSearchQuery,
+        messageSearchQuery,
+        setMessageSearchQuery,
       }}
     >
       {children}

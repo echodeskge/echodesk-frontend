@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 
 import type { UserType } from "@/components/chat/types"
@@ -12,6 +12,7 @@ import { ChatBoxContent } from "./chat-box-content"
 import { ChatBoxFooterFacebook } from "./chat-box-footer-facebook"
 import { ChatBoxHeader } from "./chat-box-header"
 import { ChatBoxNotFound } from "./chat-box-not-found"
+import { ChatMessageSearch } from "./chat-message-search"
 import { TypingIndicator } from "./typing-indicator"
 
 interface ChatBoxFacebookProps {
@@ -21,8 +22,10 @@ interface ChatBoxFacebookProps {
 }
 
 export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: ChatBoxFacebookProps) {
-  const { chatState } = useChatContext()
+  const { chatState, messageSearchQuery, setMessageSearchQuery } = useChatContext()
   const params = useParams()
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
 
   const chatIdParam = params.id?.[0] // Get the chat ID from route params
 
@@ -36,18 +39,63 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
     return null
   }, [chatState.chats, chatIdParam])
 
+  // Calculate matching message indices
+  const matchingMessageIndices = useMemo(() => {
+    if (!chat || !messageSearchQuery.trim()) return []
+    const query = messageSearchQuery.toLowerCase().trim()
+    return chat.messages
+      .map((message, index) => ({ message, index }))
+      .filter(({ message }) => message.text?.toLowerCase().includes(query))
+      .map(({ index }) => index)
+  }, [chat, messageSearchQuery])
+
   // Listen for typing indicators
   const { typingUsers } = useTypingWebSocket({
     conversationId: chat?.id,
   })
+
+  const handleSearchClick = useCallback(() => {
+    setIsSearchOpen(true)
+  }, [])
+
+  const handleSearchClose = useCallback(() => {
+    setIsSearchOpen(false)
+    setMessageSearchQuery("")
+    setCurrentMatchIndex(0)
+  }, [setMessageSearchQuery])
+
+  const handlePrevMatch = useCallback(() => {
+    setCurrentMatchIndex((prev) =>
+      prev > 0 ? prev - 1 : matchingMessageIndices.length - 1
+    )
+  }, [matchingMessageIndices.length])
+
+  const handleNextMatch = useCallback(() => {
+    setCurrentMatchIndex((prev) =>
+      prev < matchingMessageIndices.length - 1 ? prev + 1 : 0
+    )
+  }, [matchingMessageIndices.length])
 
   // If chat ID exists but no matching chat is found, show a not found UI
   if (!chat) return <ChatBoxNotFound />
 
   return (
     <Card className="grow grid">
-      <ChatBoxHeader chat={chat} isConnected={isConnected} />
-      <ChatBoxContent user={user} chat={chat} />
+      <ChatBoxHeader chat={chat} isConnected={isConnected} onSearchClick={handleSearchClick} />
+      {isSearchOpen && (
+        <ChatMessageSearch
+          onClose={handleSearchClose}
+          matchCount={matchingMessageIndices.length}
+          currentMatchIndex={currentMatchIndex}
+          onPrevMatch={handlePrevMatch}
+          onNextMatch={handleNextMatch}
+        />
+      )}
+      <ChatBoxContent
+        user={user}
+        chat={chat}
+        highlightedMessageIndex={matchingMessageIndices[currentMatchIndex]}
+      />
 
       {/* Typing indicator */}
       {typingUsers.length > 0 && (

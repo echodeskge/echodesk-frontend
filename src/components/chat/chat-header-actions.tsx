@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVertical, Phone, Video, Wifi, WifiOff, Trash2 } from "lucide-react"
+import { EllipsisVertical, Phone, Video, Wifi, WifiOff, Trash2, Search } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -29,9 +29,10 @@ import {
 interface ChatHeaderActionsProps {
   isConnected?: boolean
   chat?: ChatType
+  onSearchClick?: () => void
 }
 
-export function ChatHeaderActions({ isConnected = false, chat }: ChatHeaderActionsProps) {
+export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: ChatHeaderActionsProps) {
   const router = useRouter()
   const { user } = useAuth()
   const deleteConversation = useDeleteConversation()
@@ -96,21 +97,17 @@ export function ChatHeaderActions({ isConnected = false, chat }: ChatHeaderActio
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Search</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              Report
+            <DropdownMenuItem onClick={onSearchClick}>
+              <Search className="size-4 mr-2" />
+              Search
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              Mute
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
-              Block
-            </DropdownMenuItem>
-            {/* Delete option - only for staff */}
+            {/* Staff-only actions */}
             {canDelete && chat && (
               <>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                  Block
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
                   onClick={() => setShowDeleteDialog(true)}

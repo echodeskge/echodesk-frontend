@@ -14,6 +14,11 @@ export interface ChatContextType {
   handleAddFilesMessage: (files: FileType[]) => void
   handleSetUnreadCount: () => void
   onChatSelected?: (chat: ChatType) => void
+  // Search functionality
+  chatListSearchQuery: string
+  setChatListSearchQuery: (query: string) => void
+  messageSearchQuery: string
+  setMessageSearchQuery: (query: string) => void
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null
