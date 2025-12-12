@@ -12,7 +12,7 @@ export function ChatBoxHeader({ chat, isConnected = false }: { chat: ChatType; i
     <CardHeader className="flex flex-row items-center space-y-0 gap-x-1.5 py-3 border-b border-border">
       <ChatMenuButton isIcon />
       <ChatHeaderInfo chat={chat} />
-      <ChatHeaderActions isConnected={isConnected} />
+      <ChatHeaderActions isConnected={isConnected} chat={chat} />
     </CardHeader>
   )
 }

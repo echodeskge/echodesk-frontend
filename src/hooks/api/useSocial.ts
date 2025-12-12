@@ -76,6 +76,24 @@ export function useMarkConversationRead() {
   });
 }
 
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp'; conversation_id: string }) => {
+      const response = await axios.delete('/api/social/delete-conversation/', { data });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate all message queries to refresh the conversation list
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
 // ============================================================================
 // FACEBOOK HOOKS
 // ============================================================================
