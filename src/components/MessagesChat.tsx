@@ -55,6 +55,7 @@ interface InstagramMessage {
   id: number;
   message_id: string;
   sender_id: string;
+  sender_name?: string;
   sender_username?: string;
   sender_profile_pic?: string;
   message_text: string;
@@ -339,14 +340,14 @@ export default function MessagesChat() {
               const latestMsg = sortedMsgs[0];
 
               const customerMsg = msgs.find(m => !m.is_from_business);
-              const customerName = customerMsg?.sender_username || customerMsg?.sender_id || customerId;
+              const customerName = customerMsg?.sender_name || customerMsg?.sender_username || customerMsg?.sender_id || customerId;
               const customerAvatar = customerMsg?.sender_profile_pic;
 
               const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
                 id: String(msg.id),
                 platform: "instagram" as const,
                 sender_id: msg.sender_id,
-                sender_name: msg.sender_username || msg.sender_id,
+                sender_name: msg.sender_name || msg.sender_username || msg.sender_id,
                 profile_pic_url: msg.sender_profile_pic,
                 message_text: msg.message_text,
                 attachment_type: msg.attachment_type,
@@ -369,7 +370,7 @@ export default function MessagesChat() {
                 id: String(latestMsg.id),
                 platform: "instagram" as const,
                 sender_id: latestMsg.sender_id,
-                sender_name: latestMsg.sender_username || latestMsg.sender_id,
+                sender_name: latestMsg.sender_name || latestMsg.sender_username || latestMsg.sender_id,
                 profile_pic_url: latestMsg.sender_profile_pic,
                 message_text: latestMsg.message_text,
                 attachment_type: latestMsg.attachment_type,

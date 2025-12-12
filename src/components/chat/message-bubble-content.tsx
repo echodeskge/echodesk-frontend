@@ -7,12 +7,27 @@ import { MessageBubbleContentFiles } from "./message-bubble-content-files"
 import { MessageBubbleContentImages } from "./message-bubble-content-images"
 import { MessageBubbleContentText } from "./message-bubble-content-text"
 
+function getPlatformBgClass(platform?: "facebook" | "instagram" | "whatsapp") {
+  switch (platform) {
+    case "facebook":
+      return "bg-[#1877F2]" // Facebook blue
+    case "instagram":
+      return "bg-[#8C2FF5]" // Instagram purple
+    case "whatsapp":
+      return "bg-[#25D366]" // WhatsApp green
+    default:
+      return "bg-primary"
+  }
+}
+
 export function MessageBubbleContent({
   message,
   isByCurrentUser,
+  platform,
 }: {
   message: MessageType
   isByCurrentUser: boolean
+  platform?: "facebook" | "instagram" | "whatsapp"
 }) {
   // Collect all content parts - messages can have text AND attachments
   const contentParts: ReactNode[] = []
@@ -57,10 +72,10 @@ export function MessageBubbleContent({
   return (
     <div
       className={cn(
-        "text-sm text-accent-foreground bg-accent p-2 space-y-2 rounded-lg break-all",
+        "text-sm p-2 space-y-2 rounded-lg break-all",
         isByCurrentUser
-          ? "bg-primary text-primary-foreground rounded-se-none"
-          : "rounded-ss-none"
+          ? cn(getPlatformBgClass(platform), "text-white rounded-se-none")
+          : "bg-[#EFEFEF] text-gray-900 rounded-ss-none"
       )}
     >
       {contentParts}

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVertical, Phone, Video, Wifi, WifiOff, Trash2, Search } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -80,13 +80,6 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
           className={isConnected ? "text-green-600 dark:text-green-500" : "text-muted-foreground"}
         >
           {isConnected ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}
-        </Button>
-
-        <Button variant="ghost" size="icon">
-          <Phone className="size-4" />
-        </Button>
-        <Button variant="ghost" size="icon">
-          <Video className="size-4" />
         </Button>
 
         {/* More Actions Dropdown */}

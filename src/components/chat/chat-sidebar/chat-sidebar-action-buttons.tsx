@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ListFilter, MoreVertical, SquarePen } from "lucide-react"
+import { MoreVertical } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -18,13 +18,6 @@ export function ChatSidebarActionButtons() {
 
   return (
     <div className="flex gap-1">
-      <Button variant="ghost" size="icon" aria-label="New chat or group">
-        <SquarePen className="h-4 w-4" />
-      </Button>
-      <Button variant="ghost" size="icon" aria-label="Filter chat list">
-        <ListFilter className="h-4 w-4" />
-      </Button>
-
       {/* More Actions Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
