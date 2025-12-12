@@ -32,8 +32,8 @@ export function KanbanTaskItem({ task, index }: KanbanTaskItemProps) {
       return
     }
 
-    // Pure subdomain routing - just navigate to /ticket/{id}
-    router.push(`/ticket/${task.id}`)
+    // Pure subdomain routing - just navigate to /tickets/{id}
+    router.push(`/tickets/${task.id}`)
   }
 
   return (

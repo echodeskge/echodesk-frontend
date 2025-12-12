@@ -5527,6 +5527,11 @@ export async function sipConfigurationsWebrtcConfigRetrieve(
   return response.data;
 }
 
+export async function socialDeleteConversationDestroy(): Promise<any> {
+  const response = await axios.delete(`/api/social/delete-conversation/`);
+  return response.data;
+}
+
 export async function socialFacebookMessagesList(
   ordering?: string,
   page?: number,

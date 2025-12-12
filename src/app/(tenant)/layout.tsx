@@ -21,6 +21,7 @@ import { TenantInfo } from "@/types/auth";
 import { useTenant } from "@/contexts/TenantContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
+import { MessengerBell } from "@/components/MessengerBell";
 import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
 import { BoardCollaborationProvider } from "@/contexts/BoardCollaborationContext";
 import { useTicketBoardWebSocket } from "@/hooks/useTicketBoardWebSocket";
@@ -526,6 +527,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                   activeUsers={boardActiveUsers}
                 />
               )}
+              <MessengerBell />
               <NotificationBell
                 onNotificationClick={(notification) => {
                   // Navigate to ticket if ticket_id exists
