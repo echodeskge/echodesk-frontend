@@ -61,6 +61,21 @@ export function useUnreadMessagesCount(options?: { refetchInterval?: number | fa
   });
 }
 
+export function useMarkConversationRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp'; conversation_id: string }) => {
+      const response = await axios.post('/api/social/mark-read/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate unread count so it updates
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
 // ============================================================================
 // FACEBOOK HOOKS
 // ============================================================================

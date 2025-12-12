@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useReducer, useState, useEffect } from "react"
+import { createContext, useReducer, useState, useEffect, useCallback } from "react"
 
 import type { FileType } from "@/types"
 import type { ReactNode } from "react"
@@ -14,9 +14,11 @@ export const ChatContext = createContext<ChatContextType | undefined>(undefined)
 export function ChatProvider({
   chatsData,
   children,
+  onChatSelected,
 }: {
   chatsData: ChatType[]
   children: ReactNode
+  onChatSelected?: (chat: ChatType) => void
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -51,9 +53,11 @@ export function ChatProvider({
   }
 
   // Selection handlers
-  const handleSelectChat = (chat: ChatType) => {
+  const handleSelectChat = useCallback((chat: ChatType) => {
     dispatch({ type: "selectChat", chat })
-  }
+    // Call the optional callback when a chat is selected
+    onChatSelected?.(chat)
+  }, [onChatSelected])
 
   return (
     <ChatContext.Provider
@@ -66,6 +70,7 @@ export function ChatProvider({
         handleAddImagesMessage,
         handleAddFilesMessage,
         handleSetUnreadCount,
+        onChatSelected,
       }}
     >
       {children}

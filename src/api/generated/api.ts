@@ -5806,6 +5806,11 @@ export async function socialInstagramStatusRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function socialMarkReadCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/mark-read/`);
+  return response.data;
+}
+
 export async function socialSettingsRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/settings/`);
   return response.data;

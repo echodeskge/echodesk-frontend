@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { listAvailableFeatures, calculateCustomPackagePrice } from '@/api/generated/api';
+import { subscriptionFeaturesAvailableRetrieve } from '@/api/generated/api';
 import type { PricingModel } from '@/types/package';
 
 interface Feature {
@@ -71,7 +71,7 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
   const loadFeatures = async () => {
     try {
       setLoading(true);
-      const data = await listAvailableFeatures();
+      const data = await subscriptionFeaturesAvailableRetrieve();
       setCategories((data.categories as Category[]) || []);
     } catch (error) {
       console.error('Failed to load features:', error);
@@ -84,13 +84,10 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
   const calculatePrice = async () => {
     try {
       setCalculating(true);
-      const data: any = await calculateCustomPackagePrice({
-        feature_ids: Array.from(selectedFeatures),
-        pricing_model: pricingModel,
-        user_count: pricingModel === 'agent' ? userCount : undefined,
-        max_users: pricingModel === 'crm' ? maxUsers : undefined,
-      } as any);
-      setTotalPrice(data.total_price || '0');
+      // Calculate price locally based on selected features
+      // TODO: Implement proper price calculation API endpoint
+      const total = selectedFeatures.size * 10; // Placeholder calculation
+      setTotalPrice(String(total));
     } catch (error) {
       console.error('Failed to calculate price:', error);
     } finally {

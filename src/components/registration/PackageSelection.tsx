@@ -6,10 +6,9 @@ import { Check, ArrowLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { PackageList } from '@/api/generated/interfaces';
 import { PricingModel } from '@/types/package';
 
-// Extend PackageList to fix dynamic_features type
+// Define package types locally since they're not in the generated API
 interface DynamicFeature {
   id: number;
   key: string;
@@ -24,8 +23,19 @@ interface DynamicFeature {
   is_highlighted: boolean;
 }
 
-interface PackageListExtended extends Omit<PackageList, 'dynamic_features'> {
+interface PackageListExtended {
+  id: number;
+  name: string;
+  display_name?: string;
+  description?: string;
+  pricing_model: PricingModel;
+  price_gel?: string;
+  price_per_user_gel?: string;
+  price_unlimited_gel?: string;
+  max_users?: number;
   dynamic_features: DynamicFeature[];
+  features_list?: string[];
+  is_highlighted?: boolean;
 }
 
 interface PackageSelectionProps {

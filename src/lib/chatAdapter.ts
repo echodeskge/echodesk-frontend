@@ -140,10 +140,24 @@ export function convertFacebookMessagesToChatFormat(
     // Sort messages by date
     chatMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
-    // Last message
+    // Last message - use text or fallback to attachment type description
     const lastMsg = conversation.last_message;
+    let lastMessageContent = lastMsg.message_text;
+    if (!lastMessageContent && lastMsg.attachment_type) {
+      // Provide a user-friendly description for attachment-only messages
+      const attachmentLabels: Record<string, string> = {
+        image: '📷 Image',
+        sticker: '🏷️ Sticker',
+        video: '🎬 Video',
+        audio: '🎵 Audio',
+        file: '📎 File',
+        document: '📄 Document',
+        location: '📍 Location',
+      };
+      lastMessageContent = attachmentLabels[lastMsg.attachment_type] || '📎 Attachment';
+    }
     const lastMessage: LastMessageType = {
-      content: lastMsg.message_text,
+      content: lastMessageContent || '',
       createdAt: new Date(lastMsg.timestamp),
     };
 

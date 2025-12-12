@@ -9,11 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { PackageList } from '@/api/generated/interfaces';
-import type { Feature } from '@/types/package';
+import type { Feature, PricingModel } from '@/types/package';
 import type { RegistrationFormData } from './RegistrationFlow';
 
-// Extend PackageList to fix dynamic_features type
+// Define package types locally since they're not in the generated API
 interface DynamicFeature {
   id: number;
   key: string;
@@ -28,8 +27,19 @@ interface DynamicFeature {
   is_highlighted: boolean;
 }
 
-interface PackageListExtended extends Omit<PackageList, 'dynamic_features'> {
+interface PackageListExtended {
+  id: number;
+  name: string;
+  display_name?: string;
+  description?: string;
+  pricing_model: PricingModel;
+  price_gel?: string;
+  price_per_user_gel?: string;
+  price_unlimited_gel?: string;
+  max_users?: number;
   dynamic_features: DynamicFeature[];
+  features_list?: string[];
+  is_highlighted?: boolean;
 }
 
 interface RegistrationFormStepProps {

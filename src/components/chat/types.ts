@@ -13,6 +13,7 @@ export interface ChatContextType {
   handleAddImagesMessage: (images: FileType[]) => void
   handleAddFilesMessage: (files: FileType[]) => void
   handleSetUnreadCount: () => void
+  onChatSelected?: (chat: ChatType) => void
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null

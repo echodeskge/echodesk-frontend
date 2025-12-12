@@ -13,6 +13,7 @@ import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType } from "@/components/chat/types";
 import { Card } from "@/components/ui/card";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
+import { useMarkConversationRead } from "@/hooks/api/useSocial";
 
 interface PaginatedResponse<T> {
   count: number;
@@ -627,6 +628,27 @@ export default function MessagesChat() {
     loadAllConversations(true); // Silent reload
   }, [loadAllConversations]);
 
+  // Mark conversation as read mutation
+  const markReadMutation = useMarkConversationRead();
+
+  // Handle chat selection - mark as read
+  const handleChatSelected = useCallback((chat: ChatType) => {
+    if (!chat.platform) return;
+
+    // Extract conversation_id (sender_id) from the chat id
+    // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}
+    const parts = chat.id.split('_');
+    if (parts.length < 3) return;
+
+    // The conversation_id is everything after the prefix and account_id
+    const conversationId = parts.slice(2).join('_');
+
+    markReadMutation.mutate({
+      platform: chat.platform,
+      conversation_id: conversationId,
+    });
+  }, [markReadMutation]);
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -649,7 +671,7 @@ export default function MessagesChat() {
   }
 
   return (
-    <ChatProvider chatsData={chatsData}>
+    <ChatProvider chatsData={chatsData} onChatSelected={handleChatSelected}>
       <div className="relative w-full flex gap-x-4 p-4 h-[calc(100vh-3.5rem)]">
         <ChatSidebar />
         {chatId ? (
