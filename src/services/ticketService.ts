@@ -94,6 +94,7 @@ export class TicketService {
         filters.createdBy,
         filters.ordering,
         filters.page,
+        undefined,
         filters.priority,
         filters.search,
         filters.tags
@@ -264,8 +265,9 @@ export class TicketService {
   async getUsers(search?: string): Promise<PaginatedUserList> {
     try {
       return await usersList(
-        undefined, // department
-        undefined, // isActive
+        undefined, // ordering
+        undefined, // page
+        undefined, // pageSize
         search // search
       );
     } catch (error) {
@@ -279,7 +281,7 @@ export class TicketService {
    */
   async getTags(search?: string): Promise<PaginatedTagList> {
     try {
-      return await tagsList(undefined, undefined, search);
+      return await tagsList(undefined, undefined, undefined, search);
     } catch (error) {
       console.error("Error fetching tags:", error);
       throw this.handleError(error);

@@ -37,6 +37,7 @@ class AttributeService {
       filters?.is_variant_attribute,
       filters?.ordering,
       filters?.page,
+      undefined,
       filters?.search
     );
   }

@@ -20,7 +20,7 @@ export function useUsers(options?: { page?: number; search?: string; enabled?: b
   return useQuery<PaginatedUserList>({
     queryKey: userKeys.list(page, search),
     queryFn: async () => {
-      return await usersList(undefined, page, search);
+      return await usersList(undefined, page, undefined, search);
     },
     // Only fetch when authenticated
     enabled: enabled !== false && authService.isAuthenticated(),

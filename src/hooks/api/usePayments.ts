@@ -3,10 +3,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '@/api/axios';
 import {
-  upgradePreviewRetrieve,
-  upgradeImmediateCreate,
-  upgradeScheduledCreate,
-  upgradeCancelScheduledCreate,
   listInvoices
 } from '@/api/generated';
 
