@@ -37,7 +37,7 @@ export function ChatHeaderActions({ isConnected = false, chat }: ChatHeaderActio
   const deleteConversation = useDeleteConversation()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  const isSuperAdmin = user?.is_superuser === true
+  const canDelete = user?.is_staff === true
 
   const handleDelete = () => {
     if (!chat?.platform || !chat?.id) return
@@ -107,8 +107,8 @@ export function ChatHeaderActions({ isConnected = false, chat }: ChatHeaderActio
             <DropdownMenuItem className="text-destructive focus:text-destructive">
               Block
             </DropdownMenuItem>
-            {/* Delete option - only for superadmins */}
-            {isSuperAdmin && chat && (
+            {/* Delete option - only for staff */}
+            {canDelete && chat && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
