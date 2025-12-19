@@ -72,10 +72,11 @@ export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: Chat
   const assignmentEnabled = assignmentStatusData?.settings?.chat_assignment_enabled ?? false
   const assignment = assignmentStatusData?.assignment
   const isAssignedToMe = assignment?.assigned_user === user?.id
+  const isInSession = assignment?.status === 'in_session'
 
-  // Show end session button if: assignment mode ON and assigned to me
-  // (assignment now auto-starts session, so if assigned it's always in_session)
-  const showEndSessionButton = assignmentEnabled && isAssignedToMe
+  // Show end session button if: assignment mode ON, assigned to me, and in active session
+  // Don't show if status is 'completed' (waiting for rating)
+  const showEndSessionButton = assignmentEnabled && isAssignedToMe && isInSession
 
   // Handle end session
   const handleEndSession = () => {

@@ -81,11 +81,13 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
   const assignment = assignmentStatusData?.assignment
   const isAssigned = !!assignment
   const isAssignedToMe = assignment?.assigned_user === user?.id
+  const isInSession = assignment?.status === 'in_session'
 
   // Determine if user can send messages
-  // Can send if: assignment mode is OFF, OR assigned to me (assignment now auto-starts session)
+  // Can send if: assignment mode is OFF, OR (assigned to me AND in active session)
+  // 'completed' status means waiting for rating - can't send messages
   // While loading, don't allow sending to prevent race conditions
-  const canSendMessages = !isLoadingStatus && (!assignmentEnabled || isAssignedToMe)
+  const canSendMessages = !isLoadingStatus && (!assignmentEnabled || (isAssignedToMe && isInSession))
 
   // Debug logging
   console.log("ChatBoxFooterFacebook:", {
@@ -96,6 +98,7 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
     assignmentEnabled,
     isAssigned,
     isAssignedToMe,
+    isInSession,
     canSendMessages,
     assignmentStatusData,
   })
@@ -136,6 +139,12 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
                 {assignChat.isPending ? "Assigning..." : "Assign to Me"}
               </Button>
             </>
+          )}
+
+          {isAssignedToMe && !isInSession && (
+            <p className="text-sm text-muted-foreground text-center">
+              Session ended - waiting for customer rating
+            </p>
           )}
 
           {isAssigned && !isAssignedToMe && (
