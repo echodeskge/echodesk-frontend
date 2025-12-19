@@ -1,12 +1,13 @@
 "use client"
 
-import { createContext, useReducer, useState, useEffect, useCallback } from "react"
+import { createContext, useReducer, useState, useEffect, useCallback, useMemo } from "react"
 
 import type { FileType } from "@/types"
 import type { ReactNode } from "react"
-import type { ChatContextType, ChatType } from "@/components/chat/types"
+import type { ChatContextType, ChatType, AssignmentTabType } from "@/components/chat/types"
 
 import { ChatReducer } from "@/components/chat/reducers/chat-reducer"
+import { useSocialSettings, useMyAssignments } from "@/hooks/api/useSocial"
 
 // Create Chat context
 export const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -32,6 +33,20 @@ export function ChatProvider({
   // Search state
   const [chatListSearchQuery, setChatListSearchQuery] = useState("")
   const [messageSearchQuery, setMessageSearchQuery] = useState("")
+
+  // Assignment tab state
+  const [assignmentTab, setAssignmentTab] = useState<AssignmentTabType>('all')
+
+  // Fetch social settings and assignments
+  const { data: socialSettings } = useSocialSettings()
+  const assignmentEnabled = socialSettings?.chat_assignment_enabled ?? false
+  const { data: myAssignments } = useMyAssignments({ enabled: assignmentEnabled })
+
+  // Create a set of assigned chat IDs for easy lookup
+  const assignedChatIds = useMemo(() => {
+    if (!myAssignments) return new Set<string>()
+    return new Set(myAssignments.map(a => a.full_conversation_id))
+  }, [myAssignments])
 
   // Sync external chats data changes to internal state
   useEffect(() => {
@@ -79,6 +94,10 @@ export function ChatProvider({
         setChatListSearchQuery,
         messageSearchQuery,
         setMessageSearchQuery,
+        assignmentTab,
+        setAssignmentTab,
+        assignedChatIds,
+        assignmentEnabled,
       }}
     >
       {children}

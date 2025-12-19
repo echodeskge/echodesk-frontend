@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { ChatSidebarHeader } from "./chat-sidebar-header"
+import { ChatSidebarTabs } from "./chat-sidebar-tabs"
 import { ChatSidebarList } from "./chat-sidebar-list"
 
 export function ChatSidebar() {
@@ -22,6 +23,7 @@ export function ChatSidebar() {
   const content = (
     <div className="md:w-96">
       <ChatSidebarHeader />
+      <ChatSidebarTabs />
       <ChatSidebarList />
     </div>
   )

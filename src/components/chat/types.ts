@@ -4,6 +4,8 @@ import type { FilesUploaderSchema } from "@/components/chat/schemas/files-upload
 import type { ImagesUploaderSchema } from "@/components/chat/schemas/images-uploader-schema"
 import type { TextMessageSchema } from "@/components/chat/schemas/text-message-schema"
 
+export type AssignmentTabType = 'all' | 'assigned'
+
 export interface ChatContextType {
   chatState: ChatStateType
   isChatSidebarOpen: boolean
@@ -19,6 +21,11 @@ export interface ChatContextType {
   setChatListSearchQuery: (query: string) => void
   messageSearchQuery: string
   setMessageSearchQuery: (query: string) => void
+  // Assignment tab functionality
+  assignmentTab: AssignmentTabType
+  setAssignmentTab: (tab: AssignmentTabType) => void
+  assignedChatIds: Set<string>
+  assignmentEnabled: boolean
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null

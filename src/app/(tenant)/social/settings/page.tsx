@@ -7,14 +7,19 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Bell, MessageSquare, Clock, User, Loader2 } from "lucide-react";
+import { Bell, MessageSquare, Clock, User, Loader2, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import axios from "@/api/axios";
 
 export default function SocialSettingsPage() {
   const t = useTranslations("social");
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Check if user is superadmin (staff)
+  const isSuperAdmin = user?.is_staff === true;
 
   // State for settings
   const [loading, setLoading] = useState(true);
@@ -24,6 +29,7 @@ export default function SocialSettingsPage() {
   const [notifications, setNotifications] = useState(true);
   const [notificationSound, setNotificationSound] = useState(true);
   const [autoAssign, setAutoAssign] = useState(false);
+  const [chatAssignmentEnabled, setChatAssignmentEnabled] = useState(false);
 
   // Load settings from backend on mount
   useEffect(() => {
@@ -32,22 +38,21 @@ export default function SocialSettingsPage() {
         const response = await axios.get("/api/social/settings/");
         const data = response.data;
 
+        console.log("Loaded settings from backend:", data);
+
         // Convert milliseconds to seconds for display
         setRefreshInterval(Math.round(data.refresh_interval / 1000));
+        setChatAssignmentEnabled(data.chat_assignment_enabled ?? false);
         setLoading(false);
       } catch (error) {
         console.error("Failed to load settings:", error);
-        toast({
-          title: "Error loading settings",
-          description: "Using default settings. Changes will be saved.",
-          variant: "destructive",
-        });
         setLoading(false);
       }
     };
 
     loadSettings();
-  }, [toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -55,9 +60,14 @@ export default function SocialSettingsPage() {
       // Convert seconds to milliseconds for backend
       const refreshIntervalMs = refreshInterval * 1000;
 
-      await axios.patch("/api/social/settings/", {
+      const payload = {
         refresh_interval: refreshIntervalMs,
-      });
+        chat_assignment_enabled: Boolean(chatAssignmentEnabled),
+      };
+
+      console.log("Saving settings:", payload, "chatAssignmentEnabled state:", chatAssignmentEnabled);
+
+      await axios.patch("/api/social/settings/", payload);
 
       toast({
         title: "Settings saved",
@@ -186,12 +196,62 @@ export default function SocialSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Assignment Settings */}
+        {/* Chat Assignment Mode - Superadmin Only */}
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Chat Assignment Mode
+              </CardTitle>
+              <CardDescription>
+                Enable manual chat assignment and session management
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="chat-assignment-mode">Enable chat assignment mode</Label>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, users can claim chats, start/end sessions, and collect customer ratings.
+                    Assigned chats are hidden from other users (except admins).
+                  </p>
+                </div>
+                <Switch
+                  id="chat-assignment-mode"
+                  checked={chatAssignmentEnabled}
+                  onCheckedChange={(checked) => {
+                    console.log("Switch toggled to:", checked);
+                    setChatAssignmentEnabled(checked);
+                  }}
+                />
+              </div>
+
+              {chatAssignmentEnabled && (
+                <>
+                  <Separator />
+                  <div className="space-y-2 rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm font-medium">How it works:</p>
+                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                      <li>Users see an &ldquo;Assigned to Me&rdquo; tab in the chat sidebar</li>
+                      <li>Click &ldquo;Assign to Me&rdquo; from the chat menu to claim a conversation</li>
+                      <li>&ldquo;Start Session&rdquo; to begin actively helping a customer</li>
+                      <li>&ldquo;End Session&rdquo; sends a rating request (1-5) to the customer</li>
+                      <li>Customer&apos;s numeric reply is captured as their rating</li>
+                    </ul>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Auto Assignment Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Conversation Assignment
+              Automatic Assignment
             </CardTitle>
             <CardDescription>
               Configure automatic assignment of conversations to agents

@@ -18,6 +18,12 @@ import axios from '@/api/axios';
 export const socialKeys = {
   all: ['social'] as const,
   unreadCount: () => [...socialKeys.all, 'unreadCount'] as const,
+  settings: () => [...socialKeys.all, 'settings'] as const,
+  assignments: () => [...socialKeys.all, 'assignments'] as const,
+  myAssignments: () => [...socialKeys.assignments(), 'my'] as const,
+  allAssignments: () => [...socialKeys.assignments(), 'all'] as const,
+  assignmentStatus: (platform: string, conversationId: string, accountId: string) =>
+    [...socialKeys.assignments(), 'status', platform, conversationId, accountId] as const,
   facebook: () => [...socialKeys.all, 'facebook'] as const,
   facebookStatus: () => [...socialKeys.facebook(), 'status'] as const,
   facebookPages: () => [...socialKeys.facebook(), 'pages'] as const,
@@ -595,6 +601,215 @@ export function useSyncWhatsAppHistory() {
     onSuccess: (_, { accountId }) => {
       queryClient.invalidateQueries({ queryKey: [...socialKeys.whatsapp(), 'coex-status', accountId] });
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+    },
+  });
+}
+
+// ============================================================================
+// SOCIAL SETTINGS HOOKS
+// ============================================================================
+
+export interface SocialSettings {
+  id: number;
+  refresh_interval: number;
+  chat_assignment_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useSocialSettings() {
+  return useQuery<SocialSettings>({
+    queryKey: socialKeys.settings(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/settings/');
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+}
+
+export function useUpdateSocialSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Partial<Pick<SocialSettings, 'refresh_interval' | 'chat_assignment_enabled'>>) => {
+      const response = await axios.patch('/api/social/settings/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.settings() });
+    },
+  });
+}
+
+// ============================================================================
+// CHAT ASSIGNMENT HOOKS
+// ============================================================================
+
+export type ChatAssignmentPlatform = 'facebook' | 'instagram' | 'whatsapp';
+export type ChatAssignmentStatus = 'active' | 'in_session' | 'completed';
+
+export interface ChatAssignment {
+  id: number;
+  platform: ChatAssignmentPlatform;
+  conversation_id: string;
+  account_id: string;
+  full_conversation_id: string;
+  assigned_user: number;
+  assigned_user_name: string;
+  assigned_user_email: string;
+  status: ChatAssignmentStatus;
+  session_started_at: string | null;
+  session_ended_at: string | null;
+  assigned_at: string;
+  updated_at: string;
+}
+
+export interface ChatAssignmentStatusResponse {
+  assignment: ChatAssignment | null;
+  settings: {
+    chat_assignment_enabled: boolean;
+  };
+}
+
+export interface ChatRating {
+  id: number;
+  assignment: number;
+  assignment_id: number;
+  platform: ChatAssignmentPlatform;
+  conversation_id: string;
+  rating: number;
+  rating_request_message_id: string;
+  rating_response_message_id: string;
+  created_at: string;
+}
+
+// Get current user's assignments
+export function useMyAssignments(options?: { enabled?: boolean }) {
+  return useQuery<ChatAssignment[]>({
+    queryKey: socialKeys.myAssignments(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/assignments/');
+      return response.data;
+    },
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchInterval: 30000, // Poll every 30 seconds
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// Get all assignments (admin only)
+export function useAllAssignments(options?: { enabled?: boolean }) {
+  return useQuery<ChatAssignment[]>({
+    queryKey: socialKeys.allAssignments(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/assignments/all/');
+      return response.data;
+    },
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchInterval: 30000,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// Get assignment status for a specific conversation
+export function useAssignmentStatus(
+  platform: ChatAssignmentPlatform,
+  conversationId: string,
+  accountId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery<ChatAssignmentStatusResponse>({
+    queryKey: socialKeys.assignmentStatus(platform, conversationId, accountId),
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        platform,
+        conversation_id: conversationId,
+        account_id: accountId,
+      });
+      const response = await axios.get(`/api/social/assignments/status/?${params.toString()}`);
+      return response.data;
+    },
+    staleTime: 10 * 1000, // Consider data fresh for 10 seconds
+    enabled: options?.enabled ?? (!!platform && !!conversationId && !!accountId),
+  });
+}
+
+// Assign chat to self
+export function useAssignChat() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: ChatAssignmentPlatform; conversation_id: string; account_id: string }) => {
+      const response = await axios.post('/api/social/assignments/assign/', data);
+      return response.data as ChatAssignment;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      queryClient.invalidateQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+    },
+  });
+}
+
+// Unassign chat
+export function useUnassignChat() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: ChatAssignmentPlatform; conversation_id: string; account_id: string }) => {
+      const response = await axios.post('/api/social/assignments/unassign/', data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      queryClient.invalidateQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+    },
+  });
+}
+
+// Start session
+export function useStartSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: ChatAssignmentPlatform; conversation_id: string; account_id: string }) => {
+      const response = await axios.post('/api/social/assignments/start-session/', data);
+      return response.data as ChatAssignment;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      queryClient.invalidateQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+    },
+  });
+}
+
+// End session (sends rating request to customer)
+export function useEndSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: ChatAssignmentPlatform; conversation_id: string; account_id: string }) => {
+      const response = await axios.post('/api/social/assignments/end-session/', data);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      queryClient.invalidateQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+      // Also invalidate messages since a rating request message was sent
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
     },
   });

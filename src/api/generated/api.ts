@@ -5553,6 +5553,41 @@ export async function sipConfigurationsWebrtcConfigRetrieve(
   return response.data;
 }
 
+export async function socialAssignmentsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/assignments/`);
+  return response.data;
+}
+
+export async function socialAssignmentsAllRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/assignments/all/`);
+  return response.data;
+}
+
+export async function socialAssignmentsAssignCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/assignments/assign/`);
+  return response.data;
+}
+
+export async function socialAssignmentsEndSessionCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/assignments/end-session/`);
+  return response.data;
+}
+
+export async function socialAssignmentsStartSessionCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/assignments/start-session/`);
+  return response.data;
+}
+
+export async function socialAssignmentsStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/assignments/status/`);
+  return response.data;
+}
+
+export async function socialAssignmentsUnassignCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/assignments/unassign/`);
+  return response.data;
+}
+
 export async function socialDeleteConversationDestroy(): Promise<any> {
   const response = await axios.delete(`/api/social/delete-conversation/`);
   return response.data;
@@ -5579,7 +5614,7 @@ export async function socialFacebookMessagesList(
 }
 
 export async function socialFacebookMessagesRetrieve(
-  id: number,
+  id: string,
 ): Promise<FacebookMessage> {
   const response = await axios.get(`/api/social/facebook-messages/${id}/`);
   return response.data;
@@ -5807,7 +5842,7 @@ export async function socialInstagramMessagesList(
 }
 
 export async function socialInstagramMessagesRetrieve(
-  id: number,
+  id: string,
 ): Promise<InstagramMessage> {
   const response = await axios.get(`/api/social/instagram-messages/${id}/`);
   return response.data;
@@ -6017,7 +6052,7 @@ export async function socialWhatsappMessagesList(
 }
 
 export async function socialWhatsappMessagesRetrieve(
-  id: number,
+  id: string,
 ): Promise<WhatsAppMessage> {
   const response = await axios.get(`/api/social/whatsapp-messages/${id}/`);
   return response.data;
