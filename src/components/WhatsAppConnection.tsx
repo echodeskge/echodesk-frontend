@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useTenant } from '@/contexts/TenantContext';
-import { useWhatsAppStatus, useConnectWhatsApp, useDisconnectWhatsApp } from '@/hooks/api/useSocial';
+import {
+  useWhatsAppStatus,
+  useConnectWhatsApp,
+  useDisconnectWhatsApp,
+  useWhatsAppCoexStatus,
+  useSyncWhatsAppContacts,
+  useSyncWhatsAppHistory,
+} from '@/hooks/api/useSocial';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,12 +17,31 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   MessageSquare,
   Check,
   X,
   RefreshCw,
   AlertCircle,
   Clock,
+  Smartphone,
+  Cloud,
+  Users,
+  History,
+  ChevronDown,
+  Timer,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -40,12 +66,186 @@ interface WhatsAppAccount {
   quality_rating: string;
   is_active: boolean;
   connected_at: string;
+  // Coexistence fields
+  coex_enabled?: boolean;
+  is_on_biz_app?: boolean;
+  platform_type?: string | null;
+  sync_status?: string;
+  onboarded_at?: string | null;
+  contacts_synced_at?: string | null;
+  history_synced_at?: string | null;
+  throughput_limit?: number;
 }
 
 interface WhatsAppStatus {
   connected: boolean;
   accounts_count: number;
   accounts: WhatsAppAccount[];
+}
+
+// Helper to format remaining time
+function formatRemainingTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+}
+
+// Coexistence Status Section Component
+function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
+  const [historyPhase, setHistoryPhase] = useState('0-1');
+  const [isOpen, setIsOpen] = useState(false);
+
+  const { data: coexStatus, isLoading: coexLoading, refetch: refetchCoex } = useWhatsAppCoexStatus(account.id);
+  const syncContacts = useSyncWhatsAppContacts();
+  const syncHistory = useSyncWhatsAppHistory();
+
+  const localStatus = coexStatus?.local_status;
+  const isCoexEnabled = localStatus?.coex_enabled || account.coex_enabled;
+  const syncWindowOpen = localStatus?.sync_window_open;
+  const syncWindowRemaining = localStatus?.sync_window_remaining_seconds;
+
+  if (!isCoexEnabled && !account.is_on_biz_app) {
+    return null; // Don't show section if coexistence is not enabled
+  }
+
+  const handleSyncContacts = async () => {
+    try {
+      await syncContacts.mutateAsync(account.id);
+      toast.success('Contacts sync initiated. Contacts will be delivered via webhook.');
+      refetchCoex();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to sync contacts');
+    }
+  };
+
+  const handleSyncHistory = async () => {
+    try {
+      await syncHistory.mutateAsync({ accountId: account.id, phase: historyPhase });
+      toast.success(`History sync initiated for phase ${historyPhase}. Messages will be delivered via webhook.`);
+      refetchCoex();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to sync history');
+    }
+  };
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-3">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-between p-2 h-auto">
+          <div className="flex items-center gap-2">
+            <Smartphone className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium">Business App Coexistence</span>
+            {isCoexEnabled && (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                Enabled
+              </Badge>
+            )}
+          </div>
+          <ChevronDown className={cn('h-4 w-4 transition-transform', isOpen && 'rotate-180')} />
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-3 pt-2">
+        {/* Status Info */}
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <Cloud className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Platform:</span>
+            <span className="font-medium">{localStatus?.platform_type || account.platform_type || 'Cloud API'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Zap className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Throughput:</span>
+            <span className="font-medium">{localStatus?.throughput_limit || account.throughput_limit || 80} mps</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Contacts Synced:</span>
+            <span className="font-medium">
+              {localStatus?.contacts_synced_at
+                ? new Date(localStatus.contacts_synced_at).toLocaleDateString()
+                : 'Never'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-muted-foreground" />
+            <span className="text-muted-foreground">History Synced:</span>
+            <span className="font-medium">
+              {localStatus?.history_synced_at
+                ? new Date(localStatus.history_synced_at).toLocaleDateString()
+                : 'Never'}
+            </span>
+          </div>
+        </div>
+
+        {/* Sync Window Alert */}
+        {syncWindowOpen && syncWindowRemaining && (
+          <Alert className="bg-amber-50 border-amber-200">
+            <Timer className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Sync Window Open!</strong> You have {formatRemainingTime(syncWindowRemaining)} remaining to sync contacts and history from your Business App.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!syncWindowOpen && localStatus?.onboarded_at && (
+          <Alert className="bg-gray-50 border-gray-200">
+            <AlertCircle className="h-4 w-4 text-gray-500" />
+            <AlertDescription className="text-gray-600">
+              Sync window has expired. Contacts and history can only be synced within 24 hours of onboarding.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Sync Controls */}
+        {syncWindowOpen && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSyncContacts}
+              disabled={syncContacts.isPending}
+            >
+              {syncContacts.isPending ? (
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Users className="mr-2 h-4 w-4" />
+              )}
+              Sync Contacts
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Select value={historyPhase} onValueChange={setHistoryPhase}>
+                <SelectTrigger className="w-[120px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0-1">Last 24h</SelectItem>
+                  <SelectItem value="1-90">1-90 days</SelectItem>
+                  <SelectItem value="90-180">90-180 days</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSyncHistory}
+                disabled={syncHistory.isPending}
+              >
+                {syncHistory.isPending ? (
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <History className="mr-2 h-4 w-4" />
+                )}
+                Sync History
+              </Button>
+            </div>
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
 }
 
 export function WhatsAppConnection() {
@@ -238,6 +438,11 @@ export function WhatsAppConnection() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {account.coex_enabled && (
+                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                        Coex
+                      </Badge>
+                    )}
                     <Badge
                       variant={account.is_active ? 'default' : 'secondary'}
                       className={account.is_active ? 'bg-green-600' : ''}
@@ -255,6 +460,8 @@ export function WhatsAppConnection() {
                     )}
                   </div>
                 </div>
+                {/* Coexistence Section */}
+                <CoexistenceSection account={account} />
               </div>
             ))}
           </div>

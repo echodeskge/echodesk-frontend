@@ -293,6 +293,8 @@ import type {
   WhatsAppBusinessAccountRequest,
   WhatsAppBusinessAccount,
   PatchedWhatsAppBusinessAccountRequest,
+  PaginatedWhatsAppContactList,
+  WhatsAppContact,
   PaginatedWhatsAppMessageList,
   WhatsAppMessage,
   WhatsAppMessageTemplate,
@@ -5418,6 +5420,30 @@ export async function permissionsRetrieve(id: number): Promise<Permission> {
   return response.data;
 }
 
+export async function resolveEcommerceDomain(domain: string): Promise<{
+  tenant_id?: number;
+  schema?: string;
+  api_url?: string;
+  store_name?: string;
+  store_logo?: string;
+  primary_color?: string;
+  currency?: string;
+  locale?: string;
+  features?: {
+    ecommerce?: boolean;
+    wishlist?: boolean;
+    reviews?: boolean;
+  };
+}> {
+  const response = await axios.get(
+    `/api/public/resolve-domain/${(() => {
+      const parts = ['domain=' + encodeURIComponent(domain)].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
 export async function registerTenant(data: TenantRegistrationRequest): Promise<{
   message?: string;
   tenant?: Record<string, any>;
@@ -5909,6 +5935,64 @@ export async function socialWhatsappAccountsPartialUpdate(
 
 export async function socialWhatsappAccountsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/social/whatsapp-accounts/${id}/`);
+  return response.data;
+}
+
+export async function socialWhatsappAccountsCoexStatusRetrieve(
+  id: number,
+): Promise<WhatsAppBusinessAccount> {
+  const response = await axios.get(
+    `/api/social/whatsapp-accounts/${id}/coex-status/`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappAccountsSyncContactsCreate(
+  id: number,
+  data: WhatsAppBusinessAccountRequest,
+): Promise<WhatsAppBusinessAccount> {
+  const response = await axios.post(
+    `/api/social/whatsapp-accounts/${id}/sync-contacts/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappAccountsSyncHistoryCreate(
+  id: number,
+  data: WhatsAppBusinessAccountRequest,
+): Promise<WhatsAppBusinessAccount> {
+  const response = await axios.post(
+    `/api/social/whatsapp-accounts/${id}/sync-history/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappContactsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedWhatsAppContactList> {
+  const response = await axios.get(
+    `/api/social/whatsapp-contacts/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialWhatsappContactsRetrieve(
+  id: number,
+): Promise<WhatsAppContact> {
+  const response = await axios.get(`/api/social/whatsapp-contacts/${id}/`);
   return response.data;
 }
 

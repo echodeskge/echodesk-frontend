@@ -527,3 +527,75 @@ export function useSendWhatsAppTemplateMessage() {
     },
   });
 }
+
+// ============================================================================
+// WHATSAPP COEXISTENCE HOOKS
+// ============================================================================
+
+export interface WhatsAppCoexStatus {
+  local_status: {
+    coex_enabled: boolean;
+    is_on_biz_app: boolean;
+    platform_type: string | null;
+    sync_status: string;
+    onboarded_at: string | null;
+    contacts_synced_at: string | null;
+    history_synced_at: string | null;
+    throughput_limit: number;
+    sync_window_open: boolean;
+    sync_window_remaining_seconds: number | null;
+  };
+  api_status: {
+    is_on_biz_app: boolean;
+    platform_type: string;
+    verified_name: string;
+    quality_rating: string;
+  } | null;
+}
+
+export function useWhatsAppCoexStatus(accountId: number, options?: { refresh?: boolean }) {
+  return useQuery<WhatsAppCoexStatus>({
+    queryKey: [...socialKeys.whatsapp(), 'coex-status', accountId, options?.refresh],
+    queryFn: async () => {
+      const params = options?.refresh ? '?refresh=true' : '';
+      const response = await axios.get(`/api/social/whatsapp-accounts/${accountId}/coex-status/${params}`);
+      return response.data;
+    },
+    enabled: !!accountId,
+    staleTime: 30 * 1000, // Consider fresh for 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute to update sync window countdown
+  });
+}
+
+export function useSyncWhatsAppContacts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId: number) => {
+      const response = await axios.post(`/api/social/whatsapp-accounts/${accountId}/sync-contacts/`);
+      return response.data;
+    },
+    onSuccess: (_, accountId) => {
+      queryClient.invalidateQueries({ queryKey: [...socialKeys.whatsapp(), 'coex-status', accountId] });
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
+    },
+  });
+}
+
+export function useSyncWhatsAppHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ accountId, phase }: { accountId: number; phase?: string }) => {
+      const response = await axios.post(`/api/social/whatsapp-accounts/${accountId}/sync-history/`, {
+        phase: phase || '0-1',
+      });
+      return response.data;
+    },
+    onSuccess: (_, { accountId }) => {
+      queryClient.invalidateQueries({ queryKey: [...socialKeys.whatsapp(), 'coex-status', accountId] });
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+    },
+  });
+}

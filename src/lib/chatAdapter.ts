@@ -32,6 +32,14 @@ interface UnifiedMessage {
   conversation_id: string;
   platform_message_id: string;
   account_id: string;
+  // WhatsApp Coexistence fields
+  source?: 'cloud_api' | 'business_app' | 'synced';
+  is_echo?: boolean;
+  is_edited?: boolean;
+  edited_at?: string;
+  original_text?: string;
+  is_revoked?: boolean;
+  revoked_at?: string;
 }
 
 interface UnifiedConversation {
@@ -134,6 +142,14 @@ export function convertFacebookMessagesToChatFormat(
         voiceMessage,
         status,
         createdAt: new Date(msg.timestamp),
+        // WhatsApp Coexistence fields
+        source: msg.source,
+        isEcho: msg.is_echo,
+        isEdited: msg.is_edited,
+        editedAt: msg.edited_at ? new Date(msg.edited_at) : undefined,
+        originalText: msg.original_text,
+        isRevoked: msg.is_revoked,
+        revokedAt: msg.revoked_at ? new Date(msg.revoked_at) : undefined,
       };
     });
 

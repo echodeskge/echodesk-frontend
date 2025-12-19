@@ -109,6 +109,14 @@ interface UnifiedMessage {
   conversation_id: string;
   platform_message_id: string;
   account_id: string;
+  // WhatsApp Coexistence fields
+  source?: 'cloud_api' | 'business_app' | 'synced';
+  is_echo?: boolean;
+  is_edited?: boolean;
+  edited_at?: string;
+  original_text?: string;
+  is_revoked?: boolean;
+  revoked_at?: string;
 }
 
 interface UnifiedConversation {
@@ -512,6 +520,14 @@ export default function MessagesChat() {
                 conversation_id: `wa_${account.waba_id}_${customerId}`,
                 platform_message_id: msg.message_id,
                 account_id: account.waba_id,
+                // WhatsApp Coexistence fields
+                source: msg.source as unknown as 'cloud_api' | 'business_app' | 'synced' | undefined,
+                is_echo: msg.is_echo,
+                is_edited: msg.is_edited,
+                edited_at: msg.edited_at,
+                original_text: msg.original_text,
+                is_revoked: msg.is_revoked,
+                revoked_at: msg.revoked_at,
               }));
 
               const lastUnifiedMessage: UnifiedMessage = {
@@ -535,6 +551,14 @@ export default function MessagesChat() {
                 conversation_id: `wa_${account.waba_id}_${customerId}`,
                 platform_message_id: latestMsg.message_id,
                 account_id: account.waba_id,
+                // WhatsApp Coexistence fields
+                source: latestMsg.source as unknown as 'cloud_api' | 'business_app' | 'synced' | undefined,
+                is_echo: latestMsg.is_echo,
+                is_edited: latestMsg.is_edited,
+                edited_at: latestMsg.edited_at,
+                original_text: latestMsg.original_text,
+                is_revoked: latestMsg.is_revoked,
+                revoked_at: latestMsg.revoked_at,
               };
 
               const conversation: UnifiedConversation = {

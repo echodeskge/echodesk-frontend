@@ -535,6 +535,10 @@ export interface ClientRequest {
   is_active?: boolean;
 }
 
+export interface ContactTypeEnum {
+  [key: string]: any;
+}
+
 export interface DayOfWeekEnum {
   [key: string]: any;
 }
@@ -924,6 +928,7 @@ export interface InstagramMessage {
   id: number;
   message_id: string;
   sender_id: string;
+  sender_name?: string;
   sender_username?: string;
   sender_profile_pic?: string;
   message_text?: string;
@@ -1616,6 +1621,10 @@ export interface NotificationTypeEnum {
   [key: string]: any;
 }
 
+export interface NullEnum {
+  [key: string]: any;
+}
+
 export interface Order {
   id: number;
   order_number: string;
@@ -2150,6 +2159,13 @@ export interface PaginatedWhatsAppBusinessAccountList {
   next?: string;
   previous?: string;
   results: WhatsAppBusinessAccount[];
+}
+
+export interface PaginatedWhatsAppContactList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WhatsAppContact[];
 }
 
 export interface PaginatedWhatsAppMessageList {
@@ -2781,6 +2797,10 @@ export interface PlanEnum {
   [key: string]: any;
 }
 
+export interface PlatformTypeEnum {
+  [key: string]: any;
+}
+
 export interface PreferredDayOfWeekEnum {
   [key: string]: any;
 }
@@ -3254,6 +3274,10 @@ export interface SipConfigurationRequest {
   max_concurrent_calls?: number;
 }
 
+export interface SourceEnum {
+  [key: string]: any;
+}
+
 export interface StaffAvailability {
   id: number;
   staff: number;
@@ -3320,6 +3344,10 @@ export interface StatusF43enum {
 }
 
 export interface StatusF46enum {
+  [key: string]: any;
+}
+
+export interface SyncStatusEnum {
   [key: string]: any;
 }
 
@@ -3912,6 +3940,14 @@ export interface WhatsAppBusinessAccount {
   display_phone_number?: string;
   quality_rating?: string;
   is_active?: boolean;
+  coex_enabled: boolean;
+  is_on_biz_app: boolean;
+  platform_type: PlatformTypeEnum | NullEnum;
+  sync_status: SyncStatusEnum;
+  onboarded_at: string;
+  contacts_synced_at: string;
+  history_synced_at: string;
+  throughput_limit: number;
   created_at: string;
   updated_at: string;
 }
@@ -3924,6 +3960,19 @@ export interface WhatsAppBusinessAccountRequest {
   display_phone_number?: string;
   quality_rating?: string;
   is_active?: boolean;
+}
+
+export interface WhatsAppContact {
+  id: number;
+  account: number;
+  wa_id: string;
+  profile_name?: string;
+  is_business?: boolean;
+  contact_type?: ContactTypeEnum;
+  synced_at: string;
+  last_message_at?: string;
+  account_phone: string;
+  account_name: string;
 }
 
 export interface WhatsAppMessage {
@@ -3952,6 +4001,13 @@ export interface WhatsAppMessage {
   template?: number;
   template_name: string;
   template_parameters?: any;
+  source: SourceEnum;
+  is_echo: boolean;
+  is_edited: boolean;
+  edited_at: string;
+  original_text: string;
+  is_revoked: boolean;
+  revoked_at: string;
   created_at: string;
 }
 

@@ -32,6 +32,14 @@ export interface MessageType {
   voiceMessage?: FileType
   status: string
   createdAt: Date
+  // WhatsApp Coexistence fields
+  source?: 'cloud_api' | 'business_app' | 'synced'
+  isEcho?: boolean
+  isEdited?: boolean
+  editedAt?: Date
+  originalText?: string
+  isRevoked?: boolean
+  revokedAt?: Date
 }
 
 export type NewMessageType = Omit<
