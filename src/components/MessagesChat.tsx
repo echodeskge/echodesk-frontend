@@ -647,9 +647,11 @@ export default function MessagesChat() {
             // Only create conversation preview from thread data
             // Messages will be loaded lazily when the chat is selected
 
-            // Use thread data directly for preview (thread already has last message info)
-            const customerEmail = thread.from_email;
-            const customerName = thread.from_name || customerEmail;
+            // Use customer_email/customer_name from thread (the external party, not business)
+            // Falls back to from_email if customer fields not available
+            const threadAny = thread as any;
+            const customerEmail = threadAny.customer_email || thread.from_email;
+            const customerName = threadAny.customer_name || thread.from_name || customerEmail;
 
             // Create last message preview from thread data
             const lastUnifiedMessage: UnifiedMessage = {
