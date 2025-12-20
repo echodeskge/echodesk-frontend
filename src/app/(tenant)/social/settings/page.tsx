@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialSettings, useUpdateSocialSettings } from "@/hooks/api/useSocial";
+import { EmailSignatureSettings } from "@/components/social/EmailSignatureSettings";
 
 export default function SocialSettingsPage() {
   const t = useTranslations("social");
@@ -310,6 +311,9 @@ export default function SocialSettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Email Signature Settings - Superadmin Only */}
+        {isSuperAdmin && <EmailSignatureSettings />}
 
         {/* Auto Assignment Settings */}
         <Card>

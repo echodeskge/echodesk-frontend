@@ -1411,3 +1411,217 @@ export function useSendTikTokMessage() {
     },
   });
 }
+
+// ============================================================================
+// EMAIL SIGNATURE HOOKS
+// ============================================================================
+
+export interface EmailSignature {
+  id: number;
+  signature_html: string;
+  signature_text: string;
+  is_enabled: boolean;
+  include_on_reply: boolean;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useEmailSignature() {
+  return useQuery<EmailSignature>({
+    queryKey: [...socialKeys.email(), 'signature'],
+    queryFn: async () => {
+      const response = await axios.get('/api/social/email/signature/');
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+  });
+}
+
+export function useUpdateEmailSignature() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Partial<Pick<EmailSignature, 'signature_html' | 'signature_text' | 'is_enabled' | 'include_on_reply'>>) => {
+      const response = await axios.patch('/api/social/email/signature/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...socialKeys.email(), 'signature'] });
+    },
+  });
+}
+
+// ============================================================================
+// QUICK REPLY HOOKS
+// ============================================================================
+
+export type QuickReplyPlatform = 'all' | 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'tiktok';
+
+export interface QuickReply {
+  id: number;
+  title: string;
+  message: string;
+  platforms: QuickReplyPlatform[];
+  shortcut: string;
+  category: string;
+  use_count: number;
+  position: number;
+  created_by: number | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuickReplyVariable {
+  name: string;
+  description: string;
+}
+
+export interface QuickReplyUseResponse {
+  original_message: string;
+  processed_message: string;
+  use_count: number;
+}
+
+export interface QuickReplyUseParams {
+  customer_name?: string;
+  order_number?: string;
+  agent_name?: string;
+  company_name?: string;
+}
+
+// Query keys for quick replies
+export const quickReplyKeys = {
+  all: ['quickReplies'] as const,
+  list: (filters?: { platform?: string; category?: string; search?: string }) =>
+    [...quickReplyKeys.all, 'list', filters] as const,
+  variables: () => [...quickReplyKeys.all, 'variables'] as const,
+  categories: () => [...quickReplyKeys.all, 'categories'] as const,
+};
+
+// List quick replies with optional filtering
+export function useQuickReplies(filters?: {
+  platform?: string;
+  category?: string;
+  search?: string;
+  shortcut?: string;
+}) {
+  return useQuery<QuickReply[]>({
+    queryKey: quickReplyKeys.list(filters),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.platform) params.append('platform', filters.platform);
+      if (filters?.category) params.append('category', filters.category);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.shortcut) params.append('shortcut', filters.shortcut);
+
+      const response = await axios.get(`/api/social/quick-replies/${params.toString() ? '?' + params.toString() : ''}`);
+      return response.data;
+    },
+    staleTime: 60 * 1000, // Consider fresh for 1 minute
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+}
+
+// Get available variables for quick replies
+export function useQuickReplyVariables() {
+  return useQuery<QuickReplyVariable[]>({
+    queryKey: quickReplyKeys.variables(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/quick-replies/variables/');
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000, // Variables rarely change, consider fresh for 10 minutes
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
+  });
+}
+
+// Get categories
+export function useQuickReplyCategories() {
+  return useQuery<string[]>({
+    queryKey: quickReplyKeys.categories(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/quick-replies/categories/');
+      return response.data;
+    },
+    staleTime: 60 * 1000, // Consider fresh for 1 minute
+  });
+}
+
+// Create quick reply
+export function useCreateQuickReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: Omit<QuickReply, 'id' | 'use_count' | 'created_by' | 'created_by_name' | 'created_at' | 'updated_at'>) => {
+      const response = await axios.post('/api/social/quick-replies/', data);
+      return response.data as QuickReply;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: quickReplyKeys.all });
+    },
+  });
+}
+
+// Update quick reply
+export function useUpdateQuickReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<Omit<QuickReply, 'id' | 'use_count' | 'created_by' | 'created_by_name' | 'created_at' | 'updated_at'>> }) => {
+      const response = await axios.patch(`/api/social/quick-replies/${id}/`, data);
+      return response.data as QuickReply;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: quickReplyKeys.all });
+    },
+  });
+}
+
+// Delete quick reply
+export function useDeleteQuickReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await axios.delete(`/api/social/quick-replies/${id}/`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: quickReplyKeys.all });
+    },
+  });
+}
+
+// Use quick reply (replaces variables and increments use count)
+export function useUseQuickReply() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, variables }: { id: number; variables: QuickReplyUseParams }) => {
+      const response = await axios.post(`/api/social/quick-replies/${id}/use/`, variables);
+      return response.data as QuickReplyUseResponse;
+    },
+    onSuccess: () => {
+      // Invalidate to update use_count
+      queryClient.invalidateQueries({ queryKey: quickReplyKeys.all });
+    },
+  });
+}
+
+// Reorder quick replies
+export function useReorderQuickReplies() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (items: Array<{ id: number; position: number }>) => {
+      const response = await axios.post('/api/social/quick-replies/reorder/', { items });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: quickReplyKeys.all });
+    },
+  });
+}

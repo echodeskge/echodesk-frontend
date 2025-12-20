@@ -295,6 +295,10 @@ import type {
   PaginatedInstagramMessageList,
   InstagramMessage,
   InstagramSendMessageRequest,
+  PaginatedQuickReplyList,
+  QuickReplyRequest,
+  QuickReply,
+  PatchedQuickReplyRequest,
   PaginatedTikTokMessageList,
   TikTokMessage,
   PaginatedWhatsAppBusinessAccountList,
@@ -5730,6 +5734,16 @@ export async function socialEmailSendCreate(): Promise<any> {
   return response.data;
 }
 
+export async function socialEmailSignatureRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/email/signature/`);
+  return response.data;
+}
+
+export async function socialEmailSignaturePartialUpdate(): Promise<any> {
+  const response = await axios.patch(`/api/social/email/signature/`);
+  return response.data;
+}
+
 export async function socialEmailStatusRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/email/status/`);
   return response.data;
@@ -6021,6 +6035,89 @@ export async function socialInstagramStatusRetrieve(): Promise<any> {
 
 export async function socialMarkReadCreate(): Promise<any> {
   const response = await axios.post(`/api/social/mark-read/`);
+  return response.data;
+}
+
+export async function socialQuickRepliesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedQuickReplyList> {
+  const response = await axios.get(
+    `/api/social/quick-replies/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialQuickRepliesCreate(
+  data: QuickReplyRequest,
+): Promise<QuickReply> {
+  const response = await axios.post(`/api/social/quick-replies/`, data);
+  return response.data;
+}
+
+export async function socialQuickRepliesRetrieve(
+  id: number,
+): Promise<QuickReply> {
+  const response = await axios.get(`/api/social/quick-replies/${id}/`);
+  return response.data;
+}
+
+export async function socialQuickRepliesUpdate(
+  id: number,
+  data: QuickReplyRequest,
+): Promise<QuickReply> {
+  const response = await axios.put(`/api/social/quick-replies/${id}/`, data);
+  return response.data;
+}
+
+export async function socialQuickRepliesPartialUpdate(
+  id: number,
+  data: PatchedQuickReplyRequest,
+): Promise<QuickReply> {
+  const response = await axios.patch(`/api/social/quick-replies/${id}/`, data);
+  return response.data;
+}
+
+export async function socialQuickRepliesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/social/quick-replies/${id}/`);
+  return response.data;
+}
+
+export async function socialQuickRepliesUseCreate(
+  id: number,
+  data: QuickReplyRequest,
+): Promise<QuickReply> {
+  const response = await axios.post(
+    `/api/social/quick-replies/${id}/use/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialQuickRepliesCategoriesRetrieve(): Promise<QuickReply> {
+  const response = await axios.get(`/api/social/quick-replies/categories/`);
+  return response.data;
+}
+
+export async function socialQuickRepliesReorderCreate(
+  data: QuickReplyRequest,
+): Promise<QuickReply> {
+  const response = await axios.post(`/api/social/quick-replies/reorder/`, data);
+  return response.data;
+}
+
+export async function socialQuickRepliesVariablesRetrieve(): Promise<QuickReply> {
+  const response = await axios.get(`/api/social/quick-replies/variables/`);
   return response.data;
 }
 

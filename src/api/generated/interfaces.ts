@@ -2086,6 +2086,13 @@ export interface PaginatedPublicHolidayListList {
   results: PublicHolidayList[];
 }
 
+export interface PaginatedQuickReplyList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: QuickReply[];
+}
+
 export interface PaginatedRecurringBookingList {
   count: number;
   next?: string;
@@ -2693,6 +2700,15 @@ export interface PatchedPublicHolidayCreateUpdateRequest {
   applies_to_all?: boolean;
 }
 
+export interface PatchedQuickReplyRequest {
+  title?: string;
+  message?: string;
+  platforms?: any;
+  shortcut?: string;
+  category?: string;
+  position?: number;
+}
+
 export interface PatchedRecurringBookingRequest {
   frequency?: FrequencyEnum;
   preferred_day_of_week?: PreferredDayOfWeekEnum;
@@ -3184,6 +3200,30 @@ export interface PublicHolidayList {
   name_display: string;
   date: string;
   is_recurring?: boolean;
+}
+
+export interface QuickReply {
+  id: number;
+  title: string;
+  message: string;
+  platforms?: any;
+  shortcut?: string;
+  category?: string;
+  use_count: number;
+  position?: number;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuickReplyRequest {
+  title: string;
+  message: string;
+  platforms?: any;
+  shortcut?: string;
+  category?: string;
+  position?: number;
 }
 
 export interface RecurringBooking {

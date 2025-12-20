@@ -5,7 +5,7 @@ import { ChatMenuButton } from "./chat-menu-button"
 
 export function ChatBoxNotFound() {
   return (
-    <Card className="grow h-[calc(100vh-8.78rem)] md:h-auto">
+    <Card className="grow h-[calc(100vh-14.78rem)] md:h-auto">
       <CardContent className="size-full flex flex-col justify-center items-center gap-2 p-0">
         <MessageCircleX className="size-24 text-primary/50" />
         <p className="text-muted-foreground">

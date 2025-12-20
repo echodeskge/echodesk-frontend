@@ -24,6 +24,9 @@ import { Input } from "@/components/ui/input"
 import { socialFacebookSendMessageCreate } from "@/api/generated/api"
 import axios from "@/api/axios"
 import { toast } from "sonner"
+import { QuickReplySelector } from "@/components/social/QuickReplySelector"
+import { QuickReplyPlatform } from "@/hooks/api/useSocial"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface TextMessageFormFacebookProps {
   onMessageSent?: () => void;
@@ -37,6 +40,7 @@ interface WhatsAppSendMessagePayload {
 
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
   const { chatState } = useChatContext()
+  const { user } = useAuth()
   const [isSending, setIsSending] = useState(false)
 
   // Typing indicator WebSocket
@@ -96,6 +100,28 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           waba_id: accountId
         }
         await axios.post('/api/social/whatsapp/send-message/', payload)
+      } else if (platform === 'email') {
+        // For email, the ID format is email_{threadId}
+        // We need to get the latest message in the thread to reply to
+        const threadId = selectedChat.id.replace('email_', '')
+        // Get the thread messages to find the latest message to reply to
+        const threadMessagesResponse = await axios.get("/api/social/email-messages/", {
+          params: { thread_id: threadId, page: 1 }
+        })
+        const messages = threadMessagesResponse.data?.results || []
+        const latestMessage = messages.length > 0 ? messages[0] : null
+
+        if (!latestMessage) {
+          throw new Error('No message found to reply to')
+        }
+
+        // Send email reply
+        await axios.post('/api/social/email/send/', {
+          to_emails: [latestMessage.from_email],
+          subject: latestMessage.subject?.startsWith('Re:') ? latestMessage.subject : `Re: ${latestMessage.subject || '(No subject)'}`,
+          body_text: data.text,
+          reply_to_message_id: latestMessage.id,
+        })
       } else {
         throw new Error('Unsupported platform: ' + platform)
       }
@@ -127,12 +153,31 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     }
   }
 
+  // Get platform for quick reply filtering
+  const getPlatform = (): QuickReplyPlatform => {
+    const selectedChat = chatState.selectedChat
+    if (!selectedChat) return 'all'
+    return (selectedChat.platform as QuickReplyPlatform) || 'all'
+  }
+
+  // Handle quick reply selection
+  const handleQuickReplySelect = (message: string) => {
+    form.setValue("text", message)
+    form.trigger()
+  }
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="w-full flex justify-center items-center gap-1.5"
       >
+        <QuickReplySelector
+          platform={getPlatform()}
+          onSelect={handleQuickReplySelect}
+          customerName={chatState.selectedChat?.name}
+          agentName={user?.first_name || user?.email}
+        />
         <EmojiPicker
           onEmojiClick={(e) => {
             form.setValue("text", text + e.emoji)

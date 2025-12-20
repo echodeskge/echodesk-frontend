@@ -68,8 +68,8 @@ export function ChatSidebarList() {
 
   // Adjust height based on whether tabs are shown
   const scrollHeight = assignmentEnabled
-    ? "h-[calc(100vh-8.5rem)] md:h-[calc(100vh-15.5rem)]"
-    : "h-[calc(100vh-5.5rem)] md:h-[calc(100vh-12.5rem)]"
+    ? "h-[calc(100vh-14.5rem)] md:h-[calc(100vh-21.5rem)]"
+    : "h-[calc(100vh-11.5rem)] md:h-[calc(100vh-18.5rem)]"
 
   // Show loading state only when we have no data yet
   if (showLoading) {
