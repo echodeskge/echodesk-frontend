@@ -60,7 +60,7 @@ export function ChatBoxContentList({
 
   return (
     <ScrollAreaPrimitive.Root
-      className="relative h-[calc(100vh-22.5rem)]"
+      className="relative h-full"
     >
       <ScrollAreaPrimitive.Viewport
         ref={scrollAreaRef}

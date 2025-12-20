@@ -103,43 +103,49 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
   const showLoading = loadingMessages || (!chat.messagesLoaded && chat.messages.length === 0)
 
   return (
-    <Card className="grow grid">
-      <ChatBoxHeader chat={chat} isConnected={isConnected} onSearchClick={handleSearchClick} />
-      {isSearchOpen && (
-        <ChatMessageSearch
-          onClose={handleSearchClose}
-          matchCount={matchingMessageIndices.length}
-          currentMatchIndex={currentMatchIndex}
-          onPrevMatch={handlePrevMatch}
-          onNextMatch={handleNextMatch}
-        />
-      )}
+    <Card className="grow flex flex-col h-[calc(100vh-11.5rem)] md:h-[calc(100vh-18.5rem)] overflow-hidden">
+      <div className="shrink-0">
+        <ChatBoxHeader chat={chat} isConnected={isConnected} onSearchClick={handleSearchClick} />
+        {isSearchOpen && (
+          <ChatMessageSearch
+            onClose={handleSearchClose}
+            matchCount={matchingMessageIndices.length}
+            currentMatchIndex={currentMatchIndex}
+            onPrevMatch={handlePrevMatch}
+            onNextMatch={handleNextMatch}
+          />
+        )}
+      </div>
 
       {showLoading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center min-h-0">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Loading messages...</p>
           </div>
         </div>
       ) : (
-        <ChatBoxContent
-          user={user}
-          chat={chat}
-          highlightedMessageIndex={matchingMessageIndices[currentMatchIndex]}
-        />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ChatBoxContent
+            user={user}
+            chat={chat}
+            highlightedMessageIndex={matchingMessageIndices[currentMatchIndex]}
+          />
+        </div>
       )}
 
       {/* Typing indicator */}
       {typingUsers.length > 0 && (
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-2 shrink-0">
           {typingUsers.map((typingUser) => (
             <TypingIndicator key={typingUser.user_id} userName={typingUser.user_name} />
           ))}
         </div>
       )}
 
-      <ChatBoxFooterFacebook onMessageSent={onMessageSent} />
+      <div className="shrink-0">
+        <ChatBoxFooterFacebook onMessageSent={onMessageSent} />
+      </div>
     </Card>
   )
 }

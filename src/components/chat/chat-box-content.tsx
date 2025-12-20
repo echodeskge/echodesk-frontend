@@ -17,7 +17,7 @@ export function ChatBoxContent({
   highlightedMessageIndex,
 }: ChatBoxContentProps) {
   return (
-    <CardContent className="p-0">
+    <CardContent className="p-0 flex-1 overflow-hidden">
       <ChatBoxContentList
         user={user}
         chat={chat}

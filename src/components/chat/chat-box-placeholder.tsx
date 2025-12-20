@@ -10,7 +10,7 @@ export function ChatBoxPlaceholder() {
   const { isInitialLoading } = useChatContext()
 
   return (
-    <Card className="grow h-[calc(100vh-14.78rem)] md:h-auto">
+    <Card className="grow h-[calc(100vh-11.5rem)] md:h-[calc(100vh-18.5rem)]">
       <CardContent className="size-full flex flex-col justify-center items-center gap-2 p-0">
         {isInitialLoading ? (
           <>
