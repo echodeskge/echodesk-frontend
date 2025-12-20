@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 import { EmailConnection } from "@/components/EmailConnection";
+import { TikTokConnection } from "@/components/TikTokConnection";
 
 interface SocialIntegrationsProps {
   onBackToDashboard?: () => void;
@@ -498,6 +499,9 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
 
         {/* Email Connection */}
         <EmailConnection />
+
+        {/* TikTok Connection */}
+        <TikTokConnection />
 
         {/* Setup Instructions */}
         {!isConnected && (

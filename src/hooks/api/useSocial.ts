@@ -61,6 +61,10 @@ export const socialKeys = {
   emailThreads: () => [...socialKeys.email(), 'threads'] as const,
   emailFolders: () => [...socialKeys.email(), 'folders'] as const,
   emailDrafts: () => [...socialKeys.email(), 'drafts'] as const,
+  tiktok: () => [...socialKeys.all, 'tiktok'] as const,
+  tiktokStatus: () => [...socialKeys.tiktok(), 'status'] as const,
+  tiktokMessages: () => [...socialKeys.tiktok(), 'messages'] as const,
+  tiktokMessagesList: (filters: Record<string, any>) => [...socialKeys.tiktokMessages(), filters] as const,
 };
 
 // ============================================================================
@@ -1294,6 +1298,116 @@ export function useDeleteEmailDraft() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });
+    },
+  });
+}
+
+// ============================================================================
+// TIKTOK HOOKS
+// ============================================================================
+
+export interface TikTokAccount {
+  id: number;
+  open_id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TikTokStatus {
+  connected: boolean;
+  accounts_count: number;
+  accounts: TikTokAccount[];
+  messaging_available: boolean;
+  messaging_note: string;
+}
+
+// TikTok Status Query
+export function useTikTokStatus() {
+  return useQuery<TikTokStatus>({
+    queryKey: socialKeys.tiktokStatus(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/tiktok/status/');
+      return response.data;
+    },
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+}
+
+// TikTok OAuth Start
+export function useConnectTikTok() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.get('/api/social/tiktok/oauth/start/');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.tiktokStatus() });
+    },
+  });
+}
+
+// TikTok Disconnect
+export function useDisconnectTikTok() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId?: number) => {
+      const response = await axios.post('/api/social/tiktok/disconnect/', {
+        account_id: accountId,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.tiktokStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.tiktokMessages() });
+    },
+  });
+}
+
+// TikTok Messages Query (for future use when messaging is enabled)
+export function useTikTokMessages(filters?: {
+  page?: number;
+  account_id?: string;
+  search?: string;
+  unread_only?: boolean;
+}) {
+  return useQuery({
+    queryKey: socialKeys.tiktokMessagesList(filters || {}),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters?.page) params.append('page', filters.page.toString());
+      if (filters?.account_id) params.append('account_id', filters.account_id);
+      if (filters?.search) params.append('search', filters.search);
+      if (filters?.unread_only) params.append('unread_only', 'true');
+
+      const response = await axios.get(
+        `/api/social/tiktok-messages/${params.toString() ? '?' + params.toString() : ''}`
+      );
+      return response.data;
+    },
+    enabled: false, // Disabled until messaging is available
+    refetchInterval: 5000,
+  });
+}
+
+// TikTok Send Message (for future use when messaging is enabled)
+export function useSendTikTokMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { conversation_id: string; message: string; account_id: number }) => {
+      const response = await axios.post('/api/social/tiktok/send-message/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.tiktokMessages() });
     },
   });
 }
