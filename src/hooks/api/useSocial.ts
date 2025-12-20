@@ -1519,7 +1519,13 @@ export function useQuickReplies(filters?: {
       if (filters?.shortcut) params.append('shortcut', filters.shortcut);
 
       const response = await axios.get(`/api/social/quick-replies/${params.toString() ? '?' + params.toString() : ''}`);
-      return response.data;
+      // Handle both paginated and non-paginated responses
+      const data = response.data;
+      if (Array.isArray(data)) {
+        return data;
+      }
+      // Paginated response
+      return data.results || [];
     },
     staleTime: 60 * 1000, // Consider fresh for 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes

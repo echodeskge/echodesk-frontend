@@ -52,11 +52,12 @@ export function QuickReplySelector({
 
   // Filter by search query
   const filteredReplies = useMemo(() => {
-    if (!quickReplies) return [];
-    if (!searchQuery.trim()) return quickReplies;
+    // Ensure we always work with an array
+    const replies = Array.isArray(quickReplies) ? quickReplies : [];
+    if (!searchQuery.trim()) return replies;
 
     const query = searchQuery.toLowerCase();
-    return quickReplies.filter(
+    return replies.filter(
       (reply) =>
         reply.title.toLowerCase().includes(query) ||
         reply.message.toLowerCase().includes(query) ||
@@ -244,13 +245,13 @@ export function QuickReplySelector({
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                  ) : !quickReplies || quickReplies.length === 0 ? (
+                  ) : filteredReplies.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       No quick replies yet. Create your first one!
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {quickReplies.map((reply) => (
+                      {filteredReplies.map((reply) => (
                         <div
                           key={reply.id}
                           className="flex items-center justify-between p-3 rounded-lg border"
