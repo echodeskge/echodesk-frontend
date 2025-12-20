@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { FacebookPageConnection, WhatsAppMessage, EmailMessage as GeneratedEmailMessage } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
@@ -155,12 +155,8 @@ export default function MessagesChat() {
   const [currentUser, setCurrentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [wsConnected, setWsConnected] = useState(false);
 
-  // Track component mount/unmount
-  useEffect(() => {
-    return () => {
-      // Component unmounted
-    };
-  }, []);
+  // Ref to ensure initial load only happens once
+  const hasInitiallyLoadedRef = useRef(false);
 
   const loadAllConversations = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -705,7 +701,12 @@ export default function MessagesChat() {
     reconnectInterval: 3000,
   });
 
+  // Initial load - only runs once
   useEffect(() => {
+    if (hasInitiallyLoadedRef.current) {
+      return;
+    }
+    hasInitiallyLoadedRef.current = true;
     loadAllConversations();
   }, [loadAllConversations]);
 
