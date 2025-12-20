@@ -1,12 +1,13 @@
 "use client"
 
 import { useMemo } from "react"
+import { Loader2 } from "lucide-react"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChatSidebarItem } from "./chat-sidebar-item"
 
 export function ChatSidebarList() {
-  const { chatState, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled } = useChatContext()
+  const { chatState, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled, isInitialLoading } = useChatContext()
 
   // Filter chats based on search query and assignment tab
   const filteredChats = useMemo(() => {
@@ -49,6 +50,18 @@ export function ChatSidebarList() {
   const scrollHeight = assignmentEnabled
     ? "h-[calc(100vh-8.5rem)] md:h-[calc(100vh-15.5rem)]"
     : "h-[calc(100vh-5.5rem)] md:h-[calc(100vh-12.5rem)]"
+
+  // Show loading state while initial data is being fetched
+  if (isInitialLoading) {
+    return (
+      <ScrollArea className={scrollHeight}>
+        <div className="flex flex-col items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Loading conversations...</p>
+        </div>
+      </ScrollArea>
+    )
+  }
 
   return (
     <ScrollArea className={scrollHeight}>
