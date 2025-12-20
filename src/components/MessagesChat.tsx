@@ -147,16 +147,55 @@ export default function MessagesChat() {
   const params = useParams();
   const chatId = params.id as string | undefined;
 
+  const CHATS_CACHE_KEY = 'echodesk_chats_cache';
+
+  // Initialize chatsData from sessionStorage cache if available
+  const getInitialChatsData = (): ChatType[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const cached = sessionStorage.getItem(CHATS_CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        // Restore Date objects
+        return parsed.map((chat: any) => ({
+          ...chat,
+          lastMessage: chat.lastMessage ? {
+            ...chat.lastMessage,
+            createdAt: new Date(chat.lastMessage.createdAt)
+          } : undefined,
+          messages: chat.messages?.map((msg: any) => ({
+            ...msg,
+            createdAt: new Date(msg.createdAt)
+          })) || []
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to parse cached chats:', e);
+    }
+    return [];
+  };
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [conversations, setConversations] = useState<UnifiedConversation[]>([]);
   const [conversationMessages, setConversationMessages] = useState<Map<string, UnifiedMessage[]>>(new Map());
-  const [chatsData, setChatsData] = useState<ChatType[]>([]);
+  const [chatsData, setChatsData] = useState<ChatType[]>(getInitialChatsData);
   const [currentUser, setCurrentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [wsConnected, setWsConnected] = useState(false);
 
   // Ref to ensure initial load only happens once
   const hasInitiallyLoadedRef = useRef(false);
+
+  // Cache chatsData to sessionStorage whenever it changes
+  useEffect(() => {
+    if (chatsData.length > 0 && typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem(CHATS_CACHE_KEY, JSON.stringify(chatsData));
+      } catch (e) {
+        console.error('Failed to cache chats:', e);
+      }
+    }
+  }, [chatsData]);
 
   const loadAllConversations = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
