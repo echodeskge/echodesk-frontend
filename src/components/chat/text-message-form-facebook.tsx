@@ -103,9 +103,8 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         await axios.post('/api/social/whatsapp/send-message/', payload)
       } else if (platform === 'email') {
         // For email, the ID format is email_{threadId}
-        // We need to get the latest message in the thread to reply to
+        // We need to get the thread messages to find recipient and latest message
         const threadId = selectedChat.id.replace('email_', '')
-        // Get the thread messages to find the latest message to reply to
         const threadMessagesResponse = await axios.get("/api/social/email-messages/", {
           params: { thread_id: threadId, page: 1 }
         })
@@ -116,9 +115,32 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           throw new Error('No message found to reply to')
         }
 
+        // Find customer email - look for a message NOT from business
+        // If latest is from customer, use their email; otherwise find first customer message
+        let customerEmail: string | null = null
+        if (!latestMessage.is_from_business) {
+          customerEmail = latestMessage.from_email
+        } else {
+          // Find a message from the customer in the thread
+          const customerMessage = messages.find((m: any) => !m.is_from_business)
+          if (customerMessage) {
+            customerEmail = customerMessage.from_email
+          } else {
+            // Fallback: if all messages are from business, check to_emails of our sent messages
+            const businessMessage = messages.find((m: any) => m.is_from_business && m.to_emails?.length > 0)
+            if (businessMessage?.to_emails?.[0]) {
+              customerEmail = businessMessage.to_emails[0].email || businessMessage.to_emails[0]
+            }
+          }
+        }
+
+        if (!customerEmail) {
+          throw new Error('Could not determine recipient email address')
+        }
+
         // Send email reply
         await axios.post('/api/social/email/send/', {
-          to_emails: [latestMessage.from_email],
+          to_emails: [customerEmail],
           subject: latestMessage.subject?.startsWith('Re:') ? latestMessage.subject : `Re: ${latestMessage.subject || '(No subject)'}`,
           body_text: data.text,
           reply_to_message_id: latestMessage.id,
