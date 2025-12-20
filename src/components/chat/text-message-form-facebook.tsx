@@ -66,15 +66,16 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     setIsSending(true)
     try {
       // Extract conversation details from chat ID
-      // Format: fb_{pageId}_{senderId} or ig_{accountId}_{senderId}
+      // Format: fb_{pageId}_{senderId}, ig_{accountId}_{senderId}, wa_{wabaId}_{number}, or email_{threadId}
       const chatIdParts = selectedChat.id.split('_')
-      if (chatIdParts.length !== 3) {
+      if (chatIdParts.length < 2) {
         throw new Error('Invalid chat ID format')
       }
 
       const platform = chatIdParts[0]
+      // For email, we only have 2 parts; for others we have 3+
       const accountId = chatIdParts[1]
-      const recipientId = chatIdParts[2]
+      const recipientId = chatIdParts.slice(2).join('_') // Handle IDs with underscores
 
       if (platform === 'fb') {
         // Send via Facebook API
