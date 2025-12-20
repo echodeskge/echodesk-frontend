@@ -683,33 +683,29 @@ export default function MessagesChat() {
     loadAllConversations(true);
   }, [loadAllConversations]);
 
-  // Handle WebSocket read receipt
+  // Handle WebSocket read receipt - no need to reload all conversations
+  // Read receipts only affect message status, not the conversation list
   const handleReadReceipt = useCallback((data: any) => {
-    // For now, reload to get updated status
-    // TODO: Optimize to update specific messages in state
-    loadAllConversations(true);
-  }, [loadAllConversations]);
+    // Read receipts don't require a full reload
+    // The status will be updated when the user views the conversation
+  }, []);
 
-  // Handle WebSocket delivery receipt
+  // Handle WebSocket delivery receipt - no need to reload all conversations
   const handleDeliveryReceipt = useCallback((data: any) => {
-    // For now, reload to get updated status
-    // TODO: Optimize to update specific messages in state
-    loadAllConversations(true);
-  }, [loadAllConversations]);
+    // Delivery receipts don't require a full reload
+    // The status will be updated when the user views the conversation
+  }, []);
 
   // Handle WebSocket conversation update
   const handleConversationUpdate = useCallback((data: any) => {
-
-    // Check if this is a read or delivery receipt
-    if (data.type === 'read_receipt') {
-      handleReadReceipt(data);
-    } else if (data.type === 'delivery_receipt') {
-      handleDeliveryReceipt(data);
-    } else {
-      // For other updates, reload conversations
-      loadAllConversations(true);
+    // Read and delivery receipts don't need full reload
+    if (data.type === 'read_receipt' || data.type === 'delivery_receipt') {
+      // No action needed - status will update when conversation is viewed
+      return;
     }
-  }, [loadAllConversations, handleReadReceipt, handleDeliveryReceipt]);
+    // For other updates (new messages, etc.), reload conversations
+    loadAllConversations(true);
+  }, [loadAllConversations]);
 
   // Handle WebSocket connection status
   const handleConnectionChange = useCallback((connected: boolean) => {
