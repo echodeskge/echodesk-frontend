@@ -683,29 +683,13 @@ export default function MessagesChat() {
     loadAllConversations(true);
   }, [loadAllConversations]);
 
-  // Handle WebSocket read receipt - no need to reload all conversations
-  // Read receipts only affect message status, not the conversation list
-  const handleReadReceipt = useCallback((data: any) => {
-    // Read receipts don't require a full reload
-    // The status will be updated when the user views the conversation
-  }, []);
-
-  // Handle WebSocket delivery receipt - no need to reload all conversations
-  const handleDeliveryReceipt = useCallback((data: any) => {
-    // Delivery receipts don't require a full reload
-    // The status will be updated when the user views the conversation
-  }, []);
-
-  // Handle WebSocket conversation update
+  // Handle WebSocket conversation update - don't reload on every update
+  // Only new_message events should trigger a reload (handled separately)
   const handleConversationUpdate = useCallback((data: any) => {
-    // Read and delivery receipts don't need full reload
-    if (data.type === 'read_receipt' || data.type === 'delivery_receipt') {
-      // No action needed - status will update when conversation is viewed
-      return;
-    }
-    // For other updates (new messages, etc.), reload conversations
-    loadAllConversations(true);
-  }, [loadAllConversations]);
+    // Conversation updates (read receipts, delivery receipts, status changes)
+    // don't require a full reload - they're just status updates
+    // New messages are handled by handleNewMessage which does reload
+  }, []);
 
   // Handle WebSocket connection status
   const handleConnectionChange = useCallback((connected: boolean) => {
