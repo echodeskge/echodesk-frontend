@@ -27,6 +27,8 @@ export function useMessagesWebSocket({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const shouldConnectRef = useRef(true);
+  const isConnectingRef = useRef(false);
+  const reconnectAttemptsRef = useRef(0);
 
   // Store callbacks in refs to avoid reconnection on callback changes
   const onNewMessageRef = useRef(onNewMessage);
@@ -60,6 +62,18 @@ export function useMessagesWebSocket({
       return;
     }
 
+    // Prevent multiple concurrent connections
+    if (isConnectingRef.current) {
+      return;
+    }
+
+    // Already connected
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+
+    isConnectingRef.current = true;
+
     // Close existing connection if any
     if (wsRef.current) {
       wsRef.current.close();
@@ -82,9 +96,11 @@ export function useMessagesWebSocket({
       wsRef.current = ws;
 
       ws.onopen = () => {
+        isConnectingRef.current = false;
         connectedSchemaRef.current = currentTenant.schema_name;
         setIsConnected(true);
         onConnectionChangeRef.current?.(true);
+        reconnectAttemptsRef.current = 0;
 
         // Start ping interval to keep connection alive
         if (pingIntervalRef.current) {
@@ -140,11 +156,13 @@ export function useMessagesWebSocket({
       };
 
       ws.onerror = () => {
+        isConnectingRef.current = false;
         setIsConnected(false);
         onConnectionChangeRef.current?.(false);
       };
 
       ws.onclose = () => {
+        isConnectingRef.current = false;
         setIsConnected(false);
         onConnectionChangeRef.current?.(false);
 
@@ -156,12 +174,16 @@ export function useMessagesWebSocket({
 
         // Attempt to reconnect if enabled and component is still mounted
         if (autoReconnect && shouldConnectRef.current) {
+          reconnectAttemptsRef.current += 1;
+          // Exponential backoff: 3s, 6s, 12s, 24s, max 30s
+          const delay = Math.min(reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
-          }, reconnectInterval);
+          }, delay);
         }
       };
     } catch (error) {
+      isConnectingRef.current = false;
       console.error('[WebSocket] Connection error:', error);
       setIsConnected(false);
       onConnectionChangeRef.current?.(false);
@@ -171,6 +193,8 @@ export function useMessagesWebSocket({
   const disconnect = useCallback(() => {
     shouldConnectRef.current = false;
     connectedSchemaRef.current = null;
+    isConnectingRef.current = false;
+    reconnectAttemptsRef.current = 0;
 
     // Clear reconnect timeout
     if (reconnectTimeoutRef.current) {

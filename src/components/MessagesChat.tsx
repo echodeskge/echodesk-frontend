@@ -809,17 +809,7 @@ export default function MessagesChat() {
     });
   }, [markReadMutation]);
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p>Loading conversations...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Show error if there's one
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -830,8 +820,9 @@ export default function MessagesChat() {
     );
   }
 
+  // Always show the layout - loading state is handled within the chat area
   return (
-    <ChatProvider chatsData={chatsData} onChatSelected={handleChatSelected} loadChatMessages={loadChatMessages}>
+    <ChatProvider chatsData={chatsData} onChatSelected={handleChatSelected} loadChatMessages={loadChatMessages} isInitialLoading={loading}>
       <div className="relative w-full flex gap-x-4 p-4 h-[calc(100vh-3.5rem)]">
         <ChatSidebar />
         {chatId ? (

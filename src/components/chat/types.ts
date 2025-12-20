@@ -29,6 +29,7 @@ export interface ChatContextType {
   // Lazy loading
   loadingMessages: boolean
   loadChatMessages?: (chatId: string) => Promise<void>
+  isInitialLoading: boolean
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null

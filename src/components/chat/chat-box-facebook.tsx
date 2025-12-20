@@ -23,7 +23,7 @@ interface ChatBoxFacebookProps {
 }
 
 export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: ChatBoxFacebookProps) {
-  const { chatState, messageSearchQuery, setMessageSearchQuery, loadingMessages, loadChatMessages } = useChatContext()
+  const { chatState, messageSearchQuery, setMessageSearchQuery, loadingMessages, loadChatMessages, isInitialLoading } = useChatContext()
   const params = useParams()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
@@ -84,10 +84,22 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
     )
   }, [matchingMessageIndices.length])
 
+  // If initial loading, show loading state
+  if (isInitialLoading) {
+    return (
+      <Card className="grow grid place-items-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Loading conversations...</p>
+        </div>
+      </Card>
+    )
+  }
+
   // If chat ID exists but no matching chat is found, show a not found UI
   if (!chat) return <ChatBoxNotFound />
 
-  // Show loading state while messages are being fetched
+  // Show loading state while messages are being fetched for this specific chat
   const showLoading = loadingMessages || (!chat.messagesLoaded && chat.messages.length === 0)
 
   return (

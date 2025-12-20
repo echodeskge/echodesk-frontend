@@ -17,11 +17,13 @@ export function ChatProvider({
   children,
   onChatSelected,
   loadChatMessages,
+  isInitialLoading = false,
 }: {
   chatsData: ChatType[]
   children: ReactNode
   onChatSelected?: (chat: ChatType) => void
   loadChatMessages?: (chatId: string) => Promise<MessageType[]>
+  isInitialLoading?: boolean
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -128,6 +130,7 @@ export function ChatProvider({
         assignmentEnabled,
         loadingMessages,
         loadChatMessages: handleLoadChatMessages,
+        isInitialLoading,
       }}
     >
       {children}
