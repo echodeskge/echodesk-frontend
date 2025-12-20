@@ -30,6 +30,7 @@ import type { Locale } from "@/lib/i18n";
 import BoardStatusEditor from "@/components/BoardStatusEditor";
 import BoardUserManager from "@/components/BoardUserManager";
 import { BoardCreateSheet } from "@/components/BoardCreateSheet";
+import { TeamChatWidget } from "@/components/TeamChat";
 import {
   SubscriptionProvider,
   useSubscription,
@@ -580,6 +581,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         open={managingBoardUsersId !== null}
         onClose={handleCloseUserManager}
       />
+
+      {/* Team Chat Widget */}
+      {userProfile?.id && (
+        <TeamChatWidget currentUserId={userProfile.id} />
+      )}
     </SidebarProvider>
   );
 }

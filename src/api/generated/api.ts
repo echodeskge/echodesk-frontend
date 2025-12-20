@@ -295,6 +295,8 @@ import type {
   PaginatedInstagramMessageList,
   InstagramMessage,
   InstagramSendMessageRequest,
+  PaginatedTikTokMessageList,
+  TikTokMessage,
   PaginatedWhatsAppBusinessAccountList,
   WhatsAppBusinessAccountRequest,
   WhatsAppBusinessAccount,
@@ -311,6 +313,11 @@ import type {
   TagRequest,
   Tag,
   PatchedTagRequest,
+  PaginatedTeamChatConversationList,
+  TeamChatConversation,
+  TeamChatConversationDetail,
+  PaginatedTeamChatMessageList,
+  TeamChatMessage,
   PaginatedTenantFeatureList,
   TenantFeature,
   TenantFeatureRequest,
@@ -1965,6 +1972,16 @@ export async function cronCalculateMetricsRetrieve(): Promise<any> {
 
 export async function cronCalculateMetricsCreate(): Promise<any> {
   const response = await axios.post(`/api/cron/calculate-metrics/`);
+  return response.data;
+}
+
+export async function cronEmailSyncRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/email-sync/`);
+  return response.data;
+}
+
+export async function cronEmailSyncCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/email-sync/`);
   return response.data;
 }
 
@@ -6036,6 +6053,60 @@ export async function socialSettingsPartialUpdate(): Promise<any> {
   return response.data;
 }
 
+export async function socialTiktokMessagesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedTikTokMessageList> {
+  const response = await axios.get(
+    `/api/social/tiktok-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialTiktokMessagesRetrieve(
+  id: number,
+): Promise<TikTokMessage> {
+  const response = await axios.get(`/api/social/tiktok-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialTiktokMessagesConversationsRetrieve(): Promise<TikTokMessage> {
+  const response = await axios.get(
+    `/api/social/tiktok-messages/conversations/`,
+  );
+  return response.data;
+}
+
+export async function socialTiktokDisconnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/tiktok/disconnect/`);
+  return response.data;
+}
+
+export async function socialTiktokOauthStartRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/tiktok/oauth/start/`);
+  return response.data;
+}
+
+export async function socialTiktokSendMessageCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/tiktok/send-message/`);
+  return response.data;
+}
+
+export async function socialTiktokStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/tiktok/status/`);
+  return response.data;
+}
+
 export async function socialUnreadCountRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/unread-count/`);
   return response.data;
@@ -6390,6 +6461,157 @@ export async function tagsPartialUpdate(
 
 export async function tagsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/tags/${id}/`);
+  return response.data;
+}
+
+export async function teamChatConversationsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedTeamChatConversationList> {
+  const response = await axios.get(
+    `/api/team-chat/conversations/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function teamChatConversationsCreate(): Promise<TeamChatConversation> {
+  const response = await axios.post(`/api/team-chat/conversations/`);
+  return response.data;
+}
+
+export async function teamChatConversationsRetrieve(
+  id: string,
+): Promise<TeamChatConversationDetail> {
+  const response = await axios.get(`/api/team-chat/conversations/${id}/`);
+  return response.data;
+}
+
+export async function teamChatConversationsUpdate(
+  id: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.put(`/api/team-chat/conversations/${id}/`);
+  return response.data;
+}
+
+export async function teamChatConversationsPartialUpdate(
+  id: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.patch(`/api/team-chat/conversations/${id}/`);
+  return response.data;
+}
+
+export async function teamChatConversationsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/team-chat/conversations/${id}/`);
+  return response.data;
+}
+
+export async function teamChatConversationsMarkReadCreate(
+  id: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.post(
+    `/api/team-chat/conversations/${id}/mark_read/`,
+  );
+  return response.data;
+}
+
+export async function teamChatConversationsWithRetrieve(
+  userId: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.get(
+    `/api/team-chat/conversations/with/${userId}/`,
+  );
+  return response.data;
+}
+
+export async function teamChatConversationsWithCreate(
+  userId: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.post(
+    `/api/team-chat/conversations/with/${userId}/`,
+  );
+  return response.data;
+}
+
+export async function teamChatMessagesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedTeamChatMessageList> {
+  const response = await axios.get(
+    `/api/team-chat/messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function teamChatMessagesCreate(): Promise<TeamChatMessage> {
+  const response = await axios.post(`/api/team-chat/messages/`);
+  return response.data;
+}
+
+export async function teamChatMessagesRetrieve(
+  id: string,
+): Promise<TeamChatMessage> {
+  const response = await axios.get(`/api/team-chat/messages/${id}/`);
+  return response.data;
+}
+
+export async function teamChatMessagesUpdate(
+  id: string,
+): Promise<TeamChatMessage> {
+  const response = await axios.put(`/api/team-chat/messages/${id}/`);
+  return response.data;
+}
+
+export async function teamChatMessagesPartialUpdate(
+  id: string,
+): Promise<TeamChatMessage> {
+  const response = await axios.patch(`/api/team-chat/messages/${id}/`);
+  return response.data;
+}
+
+export async function teamChatMessagesDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/team-chat/messages/${id}/`);
+  return response.data;
+}
+
+export async function teamChatMessagesMarkReadCreate(
+  id: string,
+): Promise<TeamChatMessage> {
+  const response = await axios.post(`/api/team-chat/messages/${id}/mark_read/`);
+  return response.data;
+}
+
+export async function teamChatUnreadCountRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/team-chat/unread-count/`);
+  return response.data;
+}
+
+export async function teamChatUploadCreate(): Promise<any> {
+  const response = await axios.post(`/api/team-chat/upload/`);
+  return response.data;
+}
+
+export async function teamChatUsersRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/team-chat/users/`);
   return response.data;
 }
 

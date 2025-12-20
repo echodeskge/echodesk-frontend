@@ -1658,10 +1658,6 @@ export interface ListItemRequest {
   custom_data?: any;
 }
 
-export interface MessageTypeEnum {
-  [key: string]: any;
-}
-
 export interface Notification {
   id: number;
   user: number;
@@ -2139,6 +2135,20 @@ export interface PaginatedTagList {
   results: Tag[];
 }
 
+export interface PaginatedTeamChatConversationList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TeamChatConversation[];
+}
+
+export interface PaginatedTeamChatMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TeamChatMessage[];
+}
+
 export interface PaginatedTenantFeatureList {
   count: number;
   next?: string;
@@ -2228,6 +2238,13 @@ export interface PaginatedTicketTimeLogList {
   next?: string;
   previous?: string;
   results: TicketTimeLog[];
+}
+
+export interface PaginatedTikTokMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TikTokMessage[];
 }
 
 export interface PaginatedUserList {
@@ -2745,6 +2762,20 @@ export interface PatchedTagRequest {
   name?: string;
   color?: string;
   description?: string;
+}
+
+export interface PatchedTeamChatMessageRequest {
+  conversation?: number;
+  sender_id?: number;
+  message_type?: TeamChatMessageMessageTypeEnum;
+  text?: string;
+  file?: string;
+  file_name?: string;
+  file_size?: number;
+  file_mime_type?: string;
+  voice_duration?: number;
+  is_read?: boolean;
+  read_at?: string;
 }
 
 export interface PatchedTenantGroupCreateRequest {
@@ -3463,6 +3494,78 @@ export interface TagRequest {
   description?: string;
 }
 
+export interface TeamChatConversation {
+  id: number;
+  participants: TeamChatUser[];
+  other_participant: string;
+  last_message: string;
+  unread_count: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamChatConversationDetail {
+  id: number;
+  participants: TeamChatUser[];
+  other_participant: string;
+  last_message: string;
+  unread_count: string;
+  created_at: string;
+  updated_at: string;
+  messages: string;
+}
+
+export interface TeamChatMessage {
+  id: number;
+  conversation: number;
+  sender: TeamChatUser;
+  message_type?: TeamChatMessageMessageTypeEnum;
+  text?: string;
+  file?: string;
+  file_url: string;
+  file_name?: string;
+  file_size?: number;
+  file_mime_type?: string;
+  voice_duration?: number;
+  is_read?: boolean;
+  read_at?: string;
+  created_at: string;
+}
+
+export interface TeamChatMessageMessageTypeEnum {
+  [key: string]: any;
+}
+
+export interface TeamChatMessageRequest {
+  conversation: number;
+  sender_id?: number;
+  message_type?: TeamChatMessageMessageTypeEnum;
+  text?: string;
+  file?: string;
+  file_name?: string;
+  file_size?: number;
+  file_mime_type?: string;
+  voice_duration?: number;
+  is_read?: boolean;
+  read_at?: string;
+}
+
+export interface TeamChatUser {
+  id: number;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  full_name: string;
+  is_online: string;
+  last_seen: string;
+}
+
+export interface TeamChatUserRequest {
+  email: string;
+  first_name?: string;
+  last_name?: string;
+}
+
 export interface Tenant {
   id: number;
   schema_name: string;
@@ -3908,6 +4011,38 @@ export interface TicketTimeLog {
   duration_display: string;
 }
 
+export interface TikTokMessage {
+  id: number;
+  message_id: string;
+  conversation_id: string;
+  sender_id: string;
+  sender_username: string;
+  sender_display_name: string;
+  sender_avatar_url: string;
+  message_type: TikTokMessageMessageTypeEnum;
+  message_text?: string;
+  media_url: string;
+  media_mime_type: string;
+  attachments: any;
+  timestamp: string;
+  is_from_creator: boolean;
+  is_delivered: boolean;
+  delivered_at: string;
+  is_read: boolean;
+  read_at: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
+  error_message: string;
+  account_username: string;
+  account_display_name: string;
+  account_id: string;
+  created_at: string;
+}
+
+export interface TikTokMessageMessageTypeEnum {
+  [key: string]: any;
+}
+
 export interface TimeTrackingSummary {
   period_days: number;
   start_date: string;
@@ -4080,7 +4215,7 @@ export interface WhatsAppMessage {
   contact_name?: string;
   profile_pic_url?: string;
   message_text?: string;
-  message_type?: MessageTypeEnum;
+  message_type?: WhatsAppMessageMessageTypeEnum;
   media_url?: string;
   media_mime_type?: string;
   attachments?: any;
@@ -4106,6 +4241,10 @@ export interface WhatsAppMessage {
   is_revoked: boolean;
   revoked_at: string;
   created_at: string;
+}
+
+export interface WhatsAppMessageMessageTypeEnum {
+  [key: string]: any;
 }
 
 export interface WhatsAppMessageStatusEnum {
