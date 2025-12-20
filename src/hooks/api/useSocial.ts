@@ -814,3 +814,86 @@ export function useEndSession() {
     },
   });
 }
+
+// ============================================================================
+// RATING STATISTICS
+// ============================================================================
+
+export interface RatingUserStats {
+  user_id: number;
+  email: string;
+  name: string;
+  total_ratings: number;
+  average_rating: number;
+  rating_breakdown: {
+    '1': number;
+    '2': number;
+    '3': number;
+    '4': number;
+    '5': number;
+  };
+}
+
+export interface RatingStatisticsResponse {
+  start_date: string;
+  end_date: string;
+  overall: {
+    total_ratings: number;
+    average_rating: number;
+  };
+  users: RatingUserStats[];
+}
+
+export function useRatingStatistics(startDate?: string, endDate?: string) {
+  return useQuery<RatingStatisticsResponse>({
+    queryKey: [...socialKeys.all, 'ratingStatistics', startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      const response = await axios.get(`/api/social/rating-statistics/?${params.toString()}`);
+      return response.data;
+    },
+    staleTime: 60 * 1000, // Consider data fresh for 1 minute
+  });
+}
+
+// User chat sessions for investigation
+export interface ChatSession {
+  id: number;
+  platform: 'facebook' | 'instagram' | 'whatsapp';
+  conversation_id: string;
+  account_id: string;
+  customer_name: string;
+  rating: number | null;
+  session_started_at: string | null;
+  session_ended_at: string | null;
+  created_at: string;
+}
+
+export interface UserChatSessionsResponse {
+  user: {
+    id: number;
+    email: string;
+    name: string;
+  };
+  start_date: string;
+  end_date: string;
+  sessions: ChatSession[];
+  total_sessions: number;
+}
+
+export function useUserChatSessions(userId: number | null, startDate?: string, endDate?: string) {
+  return useQuery<UserChatSessionsResponse>({
+    queryKey: [...socialKeys.all, 'userSessions', userId, startDate, endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (startDate) params.append('start_date', startDate);
+      if (endDate) params.append('end_date', endDate);
+      const response = await axios.get(`/api/social/rating-statistics/user/${userId}/?${params.toString()}`);
+      return response.data;
+    },
+    staleTime: 60 * 1000,
+    enabled: userId !== null,
+  });
+}

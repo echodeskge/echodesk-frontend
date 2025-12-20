@@ -201,6 +201,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "social/messages": "socialMessages",
     "social/templates": "socialTemplates",
     "social/settings": "socialSettings",
+    "social/rating-statistics": "socialRatingStatistics",
     settings: "settings",
   };
 

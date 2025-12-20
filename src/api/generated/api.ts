@@ -5877,6 +5877,20 @@ export async function socialMarkReadCreate(): Promise<any> {
   return response.data;
 }
 
+export async function socialRatingStatisticsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/rating-statistics/`);
+  return response.data;
+}
+
+export async function socialRatingStatisticsUserRetrieve(
+  userId: number,
+): Promise<any> {
+  const response = await axios.get(
+    `/api/social/rating-statistics/user/${userId}/`,
+  );
+  return response.data;
+}
+
 export async function socialSettingsRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/settings/`);
   return response.data;

@@ -11,6 +11,7 @@ export interface NavigationItem {
   requiredFeatureKey?: string; // Feature key from user's feature_keys array (optional - items without this are always visible)
   description: string;
   isPremium?: boolean; // Visual indicator for premium features
+  staffOnly?: boolean; // Only visible to staff/superadmin users
   children?: Omit<NavigationItem, 'children' | 'label' | 'description'>[]; // Nested navigation items
 }
 
@@ -272,6 +273,13 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         icon: "Settings",
         requiredFeatureKey: "social_integrations",
         isPremium: true,
+      },
+      {
+        id: "social/rating-statistics",
+        icon: "BarChart3",
+        requiredFeatureKey: "social_integrations",
+        isPremium: true,
+        staffOnly: true,
       },
     ],
   },
