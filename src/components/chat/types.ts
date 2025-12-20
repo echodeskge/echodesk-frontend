@@ -80,7 +80,7 @@ export interface ChatType {
   users: UserType[]
   typingUsers: UserType[]
   unreadCount?: number
-  platform?: "facebook" | "instagram" | "whatsapp"
+  platform?: "facebook" | "instagram" | "whatsapp" | "email"
 }
 
 export interface ChatStateType {

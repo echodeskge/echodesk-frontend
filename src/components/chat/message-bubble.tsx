@@ -19,7 +19,7 @@ interface MessageBubbleProps {
   sender: UserType
   message: MessageType
   isByCurrentUser: boolean
-  platform?: "facebook" | "instagram" | "whatsapp"
+  platform?: "facebook" | "instagram" | "whatsapp" | "email"
   isHighlighted?: boolean
   searchQuery?: string
 }

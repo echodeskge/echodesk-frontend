@@ -677,6 +677,75 @@ export interface EcommerceSettingsRequest {
   theme_card_foreground_color?: string;
 }
 
+export interface EmailDraft {
+  id: number;
+  connection: number;
+  to_emails?: any;
+  cc_emails?: any;
+  bcc_emails?: any;
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  attachments?: any;
+  is_reply_all?: boolean;
+  is_forward?: boolean;
+  reply_to_message?: number;
+  reply_to_subject: string;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailDraftRequest {
+  connection: number;
+  to_emails?: any;
+  cc_emails?: any;
+  bcc_emails?: any;
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  attachments?: any;
+  is_reply_all?: boolean;
+  is_forward?: boolean;
+  reply_to_message?: number;
+}
+
+export interface EmailMessage {
+  id: number;
+  message_id: string;
+  thread_id: string;
+  in_reply_to: string;
+  references: string;
+  from_email: string;
+  from_name?: string;
+  to_emails?: any;
+  cc_emails?: any;
+  bcc_emails?: any;
+  reply_to?: string;
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  attachments?: any;
+  timestamp: string;
+  folder: string;
+  uid: string;
+  is_from_business: boolean;
+  is_read?: boolean;
+  is_starred?: boolean;
+  is_answered: boolean;
+  is_draft?: boolean;
+  labels?: any;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
+  is_deleted?: boolean;
+  deleted_at?: string;
+  connection_email: string;
+  connection_display_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EmailVerificationRequestRequest {
   verification_token: string;
   code: string;
@@ -1804,6 +1873,20 @@ export interface PaginatedEcommerceSettingsList {
   results: EcommerceSettings[];
 }
 
+export interface PaginatedEmailDraftList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EmailDraft[];
+}
+
+export interface PaginatedEmailMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EmailMessage[];
+}
+
 export interface PaginatedFacebookMessageList {
   count: number;
   next?: string;
@@ -2328,6 +2411,20 @@ export interface PatchedEcommerceSettingsRequest {
   theme_border_radius?: string;
   theme_card_color?: string;
   theme_card_foreground_color?: string;
+}
+
+export interface PatchedEmailDraftRequest {
+  connection?: number;
+  to_emails?: any;
+  cc_emails?: any;
+  bcc_emails?: any;
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  attachments?: any;
+  is_reply_all?: boolean;
+  is_forward?: boolean;
+  reply_to_message?: number;
 }
 
 export interface PatchedFacebookPageConnectionRequest {

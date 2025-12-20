@@ -10,10 +10,10 @@ interface Attachment {
   filename?: string;
 }
 
-// Unified message interfaces supporting Facebook, Instagram, and WhatsApp
+// Unified message interfaces supporting Facebook, Instagram, WhatsApp, and Email
 interface UnifiedMessage {
   id: string;
-  platform: 'facebook' | 'instagram' | 'whatsapp';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -40,10 +40,13 @@ interface UnifiedMessage {
   original_text?: string;
   is_revoked?: boolean;
   revoked_at?: string;
+  // Email fields
+  subject?: string;
+  body_html?: string;
 }
 
 interface UnifiedConversation {
-  platform: 'facebook' | 'instagram' | 'whatsapp';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
   conversation_id: string;
   sender_id: string;
   sender_name: string;
@@ -52,6 +55,8 @@ interface UnifiedConversation {
   message_count: number;
   account_name: string;
   account_id: string;
+  // Email-specific fields
+  subject?: string;
 }
 
 /**

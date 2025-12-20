@@ -11,6 +11,20 @@ import {
   socialWhatsappTemplatesSendCreate,
   WhatsAppTemplateCreateRequest,
   WhatsAppTemplateSendRequest,
+  socialEmailStatusRetrieve,
+  socialEmailMessagesThreadsRetrieve,
+  socialEmailFoldersRetrieve,
+  socialEmailDraftsList,
+  socialEmailDraftsCreate,
+  socialEmailDraftsPartialUpdate,
+  socialEmailDraftsDestroy,
+} from '@/api/generated';
+import type {
+  EmailMessage as GeneratedEmailMessage,
+  EmailDraft as GeneratedEmailDraft,
+  PaginatedEmailMessageList,
+  EmailDraftRequest,
+  PatchedEmailDraftRequest,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -40,6 +54,13 @@ export const socialKeys = {
   whatsappMessagesList: (filters: Record<string, any>) => [...socialKeys.whatsappMessages(), filters] as const,
   whatsappTemplates: () => [...socialKeys.whatsapp(), 'templates'] as const,
   whatsappTemplatesList: (wabaId: string) => [...socialKeys.whatsappTemplates(), wabaId] as const,
+  email: () => [...socialKeys.all, 'email'] as const,
+  emailStatus: () => [...socialKeys.email(), 'status'] as const,
+  emailMessages: () => [...socialKeys.email(), 'messages'] as const,
+  emailMessagesList: (filters: Record<string, any>) => [...socialKeys.emailMessages(), filters] as const,
+  emailThreads: () => [...socialKeys.email(), 'threads'] as const,
+  emailFolders: () => [...socialKeys.email(), 'folders'] as const,
+  emailDrafts: () => [...socialKeys.email(), 'drafts'] as const,
 };
 
 // ============================================================================
@@ -51,6 +72,7 @@ export interface UnreadMessagesCount {
   facebook: number;
   instagram: number;
   whatsapp: number;
+  email: number;
 }
 
 export function useUnreadMessagesCount(options?: { refetchInterval?: number | false; enabled?: boolean }) {
@@ -71,7 +93,7 @@ export function useMarkConversationRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email'; conversation_id: string }) => {
       const response = await axios.post('/api/social/mark-read/', data);
       return response.data;
     },
@@ -86,7 +108,7 @@ export function useDeleteConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email'; conversation_id: string }) => {
       const response = await axios.delete('/api/social/delete-conversation/', { data });
       return response.data;
     },
@@ -95,6 +117,7 @@ export function useDeleteConversation() {
       queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
   });
@@ -660,7 +683,7 @@ export function useUpdateSocialSettings() {
 // CHAT ASSIGNMENT HOOKS
 // ============================================================================
 
-export type ChatAssignmentPlatform = 'facebook' | 'instagram' | 'whatsapp';
+export type ChatAssignmentPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'email';
 export type ChatAssignmentStatus = 'active' | 'in_session' | 'completed';
 
 export interface ChatAssignment {
@@ -826,6 +849,7 @@ export function useEndSession() {
       queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
     },
   });
 }
@@ -876,7 +900,7 @@ export function useRatingStatistics(startDate?: string, endDate?: string) {
 // User chat sessions for investigation
 export interface ChatSession {
   id: number;
-  platform: 'facebook' | 'instagram' | 'whatsapp';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
   conversation_id: string;
   account_id: string;
   customer_name: string;
@@ -910,5 +934,366 @@ export function useUserChatSessions(userId: number | null, startDate?: string, e
     },
     staleTime: 60 * 1000,
     enabled: userId !== null,
+  });
+}
+
+// ============================================================================
+// EMAIL HOOKS
+// ============================================================================
+
+export interface EmailConnection {
+  id: number;
+  email_address: string;
+  display_name: string;
+  imap_server: string;
+  imap_port: number;
+  imap_use_ssl: boolean;
+  smtp_server: string;
+  smtp_port: number;
+  smtp_use_tls: boolean;
+  smtp_use_ssl: boolean;
+  username: string;
+  is_active: boolean;
+  last_sync_at: string | null;
+  last_sync_error: string;
+  sync_folder: string;
+  sync_days_back: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailConnectionStatus {
+  connected: boolean;
+  connection: {
+    id: number;
+    email_address: string;
+    display_name: string;
+    imap_server: string;
+    smtp_server: string;
+    is_active: boolean;
+    last_sync_at: string | null;
+    last_sync_error: string;
+    sync_folder: string;
+    connected_at: string;
+  } | null;
+}
+
+export interface EmailMessage {
+  id: number;
+  message_id: string;
+  thread_id: string;
+  in_reply_to: string;
+  references: string;
+  from_email: string;
+  from_name: string;
+  to_emails: Array<{ email: string; name?: string }>;
+  cc_emails: Array<{ email: string; name?: string }>;
+  bcc_emails: Array<{ email: string; name?: string }>;
+  reply_to: string;
+  subject: string;
+  body_text: string;
+  body_html: string;
+  attachments: Array<{
+    filename: string;
+    content_type: string;
+    url: string;
+    size: number;
+  }>;
+  timestamp: string;
+  folder: string;
+  uid: string;
+  is_from_business: boolean;
+  is_read: boolean;
+  is_starred: boolean;
+  is_answered: boolean;
+  is_draft: boolean;
+  labels: string[];
+  is_read_by_staff: boolean;
+  read_by_staff_at: string | null;
+  is_deleted: boolean;
+  deleted_at: string | null;
+  connection_email: string;
+  connection_display_name: string;
+  created_at: string;
+  updated_at: string;
+  // Additional fields for thread view
+  message_count?: number;
+  unread_count?: number;
+}
+
+export interface EmailFolder {
+  name: string;
+  delimiter: string;
+  flags: string[];
+}
+
+export interface EmailConnectRequest {
+  email_address: string;
+  display_name?: string;
+  imap_server: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+  username: string;
+  password: string;
+  sync_folder?: string;
+  sync_days_back?: number;
+}
+
+export interface EmailSendRequest {
+  to_emails: string[];
+  cc_emails?: string[];
+  bcc_emails?: string[];
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  reply_to_message_id?: number;
+}
+
+export interface EmailActionRequest {
+  message_ids: number[];
+  action: 'mark_read' | 'mark_unread' | 'star' | 'unstar' | 'label' | 'unlabel' | 'move' | 'delete' | 'restore';
+  label?: string;
+  folder?: string;
+}
+
+// Email Status Query
+export function useEmailStatus() {
+  return useQuery<EmailConnectionStatus>({
+    queryKey: socialKeys.emailStatus(),
+    queryFn: async () => {
+      return await socialEmailStatusRetrieve();
+    },
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+}
+
+// Email Connection Mutations
+export function useConnectEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EmailConnectRequest) => {
+      const response = await axios.post('/api/social/email/connect/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+    },
+  });
+}
+
+export function useDisconnectEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/social/email/disconnect/');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });
+    },
+  });
+}
+
+// Email Messages Query
+// Note: Using axios directly because generated function doesn't support all filter params (thread_id, folder, starred, is_read, label)
+export function useEmailMessages(filters?: {
+  page?: number;
+  thread_id?: string;
+  folder?: string;
+  starred?: boolean;
+  is_read?: boolean;
+  label?: string;
+  search?: string;
+}) {
+  return useQuery<PaginatedEmailMessageList>({
+    queryKey: socialKeys.emailMessagesList(filters || {}),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/email-messages/', { params: filters });
+      return response.data;
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds (emails are less time-sensitive)
+  });
+}
+
+export function useInfiniteEmailMessages(filters?: {
+  thread_id?: string;
+  folder?: string;
+  starred?: boolean;
+  is_read?: boolean;
+  label?: string;
+  search?: string;
+}) {
+  return useInfiniteQuery({
+    queryKey: socialKeys.emailMessagesList(filters || {}),
+    queryFn: async ({ pageParam = 1 }) => {
+      const response = await axios.get('/api/social/email-messages/', {
+        params: { ...filters, page: pageParam }
+      });
+      return response.data;
+    },
+    getNextPageParam: (lastPage: PaginatedEmailMessageList, pages) => {
+      if (lastPage.next) {
+        return pages.length + 1;
+      }
+      return undefined;
+    },
+    initialPageParam: 1,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
+}
+
+// Email Threads Query
+export function useEmailThreads() {
+  return useQuery<GeneratedEmailMessage[]>({
+    queryKey: socialKeys.emailThreads(),
+    queryFn: async () => {
+      return await socialEmailMessagesThreadsRetrieve() as unknown as GeneratedEmailMessage[];
+    },
+    refetchInterval: 30000,
+  });
+}
+
+// Email Folders Query
+export function useEmailFolders() {
+  return useQuery<{ folders: EmailFolder[] }>({
+    queryKey: socialKeys.emailFolders(),
+    queryFn: async () => {
+      return await socialEmailFoldersRetrieve();
+    },
+    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+  });
+}
+
+// Send Email Mutation
+export function useSendEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EmailSendRequest) => {
+      const response = await axios.post('/api/social/email/send/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
+    },
+  });
+}
+
+// Email Action Mutation (star, read, label, move, delete)
+export function useEmailAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EmailActionRequest) => {
+      const response = await axios.post('/api/social/email/action/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
+// Email Sync Mutation
+export function useSyncEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/social/email/sync/');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
+// Email Drafts
+export interface EmailDraft {
+  id: number;
+  connection: number;
+  to_emails: Array<{ email: string; name?: string }>;
+  cc_emails: Array<{ email: string; name?: string }>;
+  bcc_emails: Array<{ email: string; name?: string }>;
+  subject: string;
+  body_text: string;
+  body_html: string;
+  attachments: Array<{
+    filename: string;
+    content_type: string;
+    url: string;
+    size: number;
+  }>;
+  is_reply_all: boolean;
+  is_forward: boolean;
+  reply_to_message: number | null;
+  reply_to_subject: string | null;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useEmailDrafts() {
+  return useQuery({
+    queryKey: socialKeys.emailDrafts(),
+    queryFn: async () => {
+      return await socialEmailDraftsList();
+    },
+  });
+}
+
+export function useCreateEmailDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EmailDraftRequest) => {
+      return await socialEmailDraftsCreate(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });
+    },
+  });
+}
+
+export function useUpdateEmailDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: PatchedEmailDraftRequest }) => {
+      return await socialEmailDraftsPartialUpdate(String(id), data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });
+    },
+  });
+}
+
+export function useDeleteEmailDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: number) => {
+      return await socialEmailDraftsDestroy(String(id));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });
+    },
   });
 }

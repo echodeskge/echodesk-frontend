@@ -275,6 +275,12 @@ import type {
   SipConfiguration,
   SipConfigurationDetail,
   PatchedSipConfigurationRequest,
+  PaginatedEmailDraftList,
+  EmailDraftRequest,
+  EmailDraft,
+  PatchedEmailDraftRequest,
+  PaginatedEmailMessageList,
+  EmailMessage,
   PaginatedFacebookMessageList,
   FacebookMessage,
   PaginatedFacebookPageConnectionList,
@@ -3585,6 +3591,7 @@ export async function ecommerceClientOrdersDestroy(id: string): Promise<any> {
 
 export async function ecommerceClientProductsList(
   attrCategory?: string,
+  attrColor?: string,
   attrMaterial?: string,
   attrNumberOfLamps?: string,
   attrSubcategory?: string,
@@ -3604,6 +3611,7 @@ export async function ecommerceClientProductsList(
         attrCategory
           ? 'attr_category=' + encodeURIComponent(attrCategory)
           : null,
+        attrColor ? 'attr_color=' + encodeURIComponent(attrColor) : null,
         attrMaterial
           ? 'attr_material=' + encodeURIComponent(attrMaterial)
           : null,
@@ -5590,6 +5598,128 @@ export async function socialAssignmentsUnassignCreate(): Promise<any> {
 
 export async function socialDeleteConversationDestroy(): Promise<any> {
   const response = await axios.delete(`/api/social/delete-conversation/`);
+  return response.data;
+}
+
+export async function socialEmailDraftsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedEmailDraftList> {
+  const response = await axios.get(
+    `/api/social/email-drafts/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialEmailDraftsCreate(
+  data: EmailDraftRequest,
+): Promise<EmailDraft> {
+  const response = await axios.post(`/api/social/email-drafts/`, data);
+  return response.data;
+}
+
+export async function socialEmailDraftsRetrieve(
+  id: string,
+): Promise<EmailDraft> {
+  const response = await axios.get(`/api/social/email-drafts/${id}/`);
+  return response.data;
+}
+
+export async function socialEmailDraftsUpdate(
+  id: string,
+  data: EmailDraftRequest,
+): Promise<EmailDraft> {
+  const response = await axios.put(`/api/social/email-drafts/${id}/`, data);
+  return response.data;
+}
+
+export async function socialEmailDraftsPartialUpdate(
+  id: string,
+  data: PatchedEmailDraftRequest,
+): Promise<EmailDraft> {
+  const response = await axios.patch(`/api/social/email-drafts/${id}/`, data);
+  return response.data;
+}
+
+export async function socialEmailDraftsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/social/email-drafts/${id}/`);
+  return response.data;
+}
+
+export async function socialEmailMessagesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedEmailMessageList> {
+  const response = await axios.get(
+    `/api/social/email-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialEmailMessagesRetrieve(
+  id: number,
+): Promise<EmailMessage> {
+  const response = await axios.get(`/api/social/email-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialEmailMessagesThreadsRetrieve(): Promise<EmailMessage> {
+  const response = await axios.get(`/api/social/email-messages/threads/`);
+  return response.data;
+}
+
+export async function socialEmailActionCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/action/`);
+  return response.data;
+}
+
+export async function socialEmailConnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/connect/`);
+  return response.data;
+}
+
+export async function socialEmailDisconnectCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/disconnect/`);
+  return response.data;
+}
+
+export async function socialEmailFoldersRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/email/folders/`);
+  return response.data;
+}
+
+export async function socialEmailSendCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/send/`);
+  return response.data;
+}
+
+export async function socialEmailStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/email/status/`);
+  return response.data;
+}
+
+export async function socialEmailSyncCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/sync/`);
   return response.data;
 }
 

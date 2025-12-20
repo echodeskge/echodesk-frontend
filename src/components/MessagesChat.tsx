@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { FacebookPageConnection, WhatsAppMessage } from "@/api/generated/interfaces";
+import { FacebookPageConnection, WhatsAppMessage, EmailMessage as GeneratedEmailMessage } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
-import { socialWhatsappMessagesList, socialWhatsappStatusRetrieve } from "@/api/generated";
+import {
+  socialWhatsappMessagesList,
+  socialWhatsappStatusRetrieve,
+  socialEmailStatusRetrieve,
+  socialEmailMessagesThreadsRetrieve,
+} from "@/api/generated";
 import { convertFacebookMessagesToChatFormat } from "@/lib/chatAdapter";
 import { ChatProvider } from "@/components/chat/contexts/chat-context";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
@@ -90,7 +95,7 @@ interface WhatsAppAccount {
 
 interface UnifiedMessage {
   id: string;
-  platform: "facebook" | "instagram" | "whatsapp";
+  platform: "facebook" | "instagram" | "whatsapp" | "email";
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -117,10 +122,13 @@ interface UnifiedMessage {
   original_text?: string;
   is_revoked?: boolean;
   revoked_at?: string;
+  // Email fields
+  subject?: string;
+  body_html?: string;
 }
 
 interface UnifiedConversation {
-  platform: "facebook" | "instagram" | "whatsapp";
+  platform: "facebook" | "instagram" | "whatsapp" | "email";
   conversation_id: string;
   sender_id: string;
   sender_name: string;
@@ -129,6 +137,8 @@ interface UnifiedConversation {
   message_count: number;
   account_name: string;
   account_id: string;
+  // Email-specific fields
+  subject?: string;
 }
 
 export default function MessagesChat() {
@@ -579,6 +589,110 @@ export default function MessagesChat() {
         }
       } catch (err) {
         console.error("Failed to load WhatsApp accounts:", err);
+      }
+
+      // Load Email conversations
+      try {
+        const emailStatus = await socialEmailStatusRetrieve();
+
+        if (emailStatus.connected && emailStatus.connection) {
+          const emailConnection = emailStatus.connection;
+
+          // Get email threads (grouped conversations)
+          // The threads endpoint returns EmailMessage with additional aggregate fields
+          interface EmailThreadMessage extends GeneratedEmailMessage {
+            message_count?: number;
+            unread_count?: number;
+          }
+          const threads = await socialEmailMessagesThreadsRetrieve() as unknown as EmailThreadMessage[];
+
+          for (const thread of (Array.isArray(threads) ? threads : [])) {
+            // Fetch all messages in this thread (using axios since generated function doesn't support thread_id filter)
+            const threadMessagesResponse = await axios.get("/api/social/email-messages/", {
+              params: { thread_id: thread.thread_id },
+            });
+            const threadMessages = threadMessagesResponse.data?.results || [];
+
+            if (threadMessages.length === 0) continue;
+
+            // Sort messages by timestamp
+            const sortedMsgs = [...threadMessages].sort((a: any, b: any) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+            );
+            const latestMsg = sortedMsgs[0];
+
+            // Find the customer (non-business sender)
+            const customerMsg = threadMessages.find((m: any) => !m.is_from_business);
+            const customerEmail = customerMsg?.from_email || latestMsg.from_email;
+            const customerName = customerMsg?.from_name || customerEmail;
+
+            // Create unified messages
+            const unifiedMessages: UnifiedMessage[] = threadMessages.map((msg: any) => ({
+              id: String(msg.id),
+              platform: "email" as const,
+              sender_id: msg.from_email,
+              sender_name: msg.from_name || msg.from_email,
+              profile_pic_url: undefined,
+              message_text: msg.body_text || '',
+              message_type: 'email',
+              attachment_type: msg.attachments?.length > 0 ? 'file' : undefined,
+              attachment_url: msg.attachments?.[0]?.url,
+              attachments: msg.attachments,
+              timestamp: msg.timestamp,
+              is_from_business: msg.is_from_business || false,
+              is_delivered: true,
+              is_read: msg.is_read,
+              page_name: emailConnection.email_address,
+              conversation_id: `email_${thread.thread_id}`,
+              platform_message_id: msg.message_id,
+              account_id: String(emailConnection.id),
+              subject: msg.subject,
+              body_html: msg.body_html,
+            }));
+
+            // Create latest message in unified format
+            const lastUnifiedMessage: UnifiedMessage = {
+              id: String(latestMsg.id),
+              platform: "email" as const,
+              sender_id: latestMsg.from_email,
+              sender_name: latestMsg.from_name || latestMsg.from_email,
+              profile_pic_url: undefined,
+              message_text: latestMsg.body_text || '',
+              message_type: 'email',
+              attachment_type: latestMsg.attachments?.length > 0 ? 'file' : undefined,
+              attachment_url: latestMsg.attachments?.[0]?.url,
+              attachments: latestMsg.attachments,
+              timestamp: latestMsg.timestamp,
+              is_from_business: latestMsg.is_from_business || false,
+              is_delivered: true,
+              is_read: latestMsg.is_read,
+              page_name: emailConnection.email_address,
+              conversation_id: `email_${thread.thread_id}`,
+              platform_message_id: latestMsg.message_id,
+              account_id: String(emailConnection.id),
+              subject: latestMsg.subject,
+              body_html: latestMsg.body_html,
+            };
+
+            const conversation: UnifiedConversation = {
+              platform: "email",
+              conversation_id: `email_${thread.thread_id}`,
+              sender_id: customerEmail,
+              sender_name: customerName,
+              profile_pic_url: undefined,
+              last_message: lastUnifiedMessage,
+              message_count: thread.message_count || threadMessages.length,
+              account_name: emailConnection.email_address,
+              account_id: String(emailConnection.id),
+              subject: latestMsg.subject,
+            };
+
+            allConversations.push(conversation);
+            allMessages.set(conversation.conversation_id, unifiedMessages);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load email conversations:", err);
       }
 
       setConversations(allConversations);
