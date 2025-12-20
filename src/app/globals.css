@@ -212,6 +212,15 @@
   --sidebar-ring: var(--ring);
 }
 
+/* Email HTML content - constrain inline images that have inline styles */
+.email-html-content img {
+  max-width: 300px !important;
+  max-height: 200px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
 .dark {
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;

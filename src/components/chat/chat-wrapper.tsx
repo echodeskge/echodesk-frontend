@@ -13,7 +13,7 @@ export function ChatWrapper({
 }) {
   return (
     <ChatProvider chatsData={chatsData}>
-      <div className="container relative w-full flex gap-x-4 p-4">
+      <div className="container relative w-full flex gap-x-4 p-4 h-[80vh] max-h-[80vh] overflow-hidden">
         <ChatSidebar />
         {children}
       </div>

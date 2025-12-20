@@ -19,13 +19,14 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
   onMediaClick?: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
-// Check if URL is from an external social media CDN that requires unoptimized images
-function isExternalSocialMediaUrl(src: string): boolean {
+// Check if URL is from an external CDN or storage that requires unoptimized images
+function isExternalUrl(src: string): boolean {
   const externalPatterns = [
     'fbcdn.net',
     'cdninstagram.com',
     'whatsapp.net',
     'fbsbx.com',
+    'digitaloceanspaces.com', // Email attachments storage
   ];
   return externalPatterns.some(pattern => src.includes(pattern));
 }
@@ -46,7 +47,7 @@ export function MediaGrid({
   const lastMedia = hasMoreMedia ? data[limit - 1] : null
 
   const renderImage = (item: MediaType) => {
-    const isExternal = isExternalSocialMediaUrl(item.src);
+    const isExternal = isExternalUrl(item.src);
 
     if (isExternal) {
       // Use regular img tag for external social media URLs to avoid domain issues

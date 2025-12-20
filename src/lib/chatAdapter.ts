@@ -1,5 +1,23 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
 
+/**
+ * Strips HTML tags from a string and decodes HTML entities
+ */
+function stripHtmlTags(html: string): string {
+  if (!html) return '';
+  // Remove HTML tags
+  let text = html.replace(/<[^>]*>/g, ' ');
+  // Decode common HTML entities
+  text = text.replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  // Collapse multiple spaces into one and trim
+  return text.replace(/\s+/g, ' ').trim();
+}
+
 // Attachment interface
 interface Attachment {
   type: string;
@@ -101,41 +119,45 @@ export function convertFacebookMessagesToChatFormat(
         }
       }
 
-      // Determine attachment type - check both message_type and attachment_type
-      const attachmentType = msg.attachment_type || msg.message_type || '';
+      let images: { name: string; url: string; size: number }[] | undefined;
+      let files: { name: string; url: string; size: number }[] | undefined;
+      let voiceMessage: { name: string; url: string; size: number } | undefined;
 
-      // Get attachment URL from either attachments array or direct attachment_url
-      let attachmentUrl = msg.attachment_url;
-      if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
-        attachmentUrl = msg.attachments[0].url;
-      }
+      // For emails, treat ALL attachments as files (clickable to open)
+      // Inline images are already rendered in the HTML body
+      if (msg.platform === 'email' && msg.attachments && msg.attachments.length > 0) {
+        const fileAttachments: { name: string; url: string; size: number }[] = [];
 
-      // Determine if this is an image type (including stickers)
-      const isImageType = ['image', 'sticker'].includes(attachmentType);
+        msg.attachments.forEach((att: any) => {
+          fileAttachments.push({
+            name: att.filename || 'attachment',
+            url: att.url,
+            size: att.size || 0,
+          });
+        });
 
-      // Determine if this is an audio type
-      const isAudioType = ['audio'].includes(attachmentType);
+        if (fileAttachments.length > 0) files = fileAttachments;
+      } else {
+        // For other platforms, use existing logic
+        const attachmentType = msg.attachment_type || msg.message_type || '';
+        let attachmentUrl = msg.attachment_url;
+        if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
+          attachmentUrl = msg.attachments[0].url;
+        }
 
-      // Determine if this is a video type
-      const isVideoType = ['video'].includes(attachmentType);
+        const isImageType = ['image', 'sticker'].includes(attachmentType);
+        const isAudioType = ['audio'].includes(attachmentType);
 
-      // Build images array for image/sticker attachments
-      let images = undefined;
-      if (attachmentUrl && isImageType) {
-        images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
-      }
-
-      // Build voice message for audio attachments
-      let voiceMessage = undefined;
-      if (attachmentUrl && isAudioType) {
-        voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
-      }
-
-      // Build files array for other types (video, document, file)
-      let files = undefined;
-      if (attachmentUrl && !isImageType && !isAudioType) {
-        const filename = msg.attachments?.[0]?.filename || attachmentType;
-        files = [{ name: filename, url: attachmentUrl, size: 0 }];
+        if (attachmentUrl && isImageType) {
+          images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
+        }
+        if (attachmentUrl && isAudioType) {
+          voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
+        }
+        if (attachmentUrl && !isImageType && !isAudioType) {
+          const filename = msg.attachments?.[0]?.filename || attachmentType;
+          files = [{ name: filename, url: attachmentUrl, size: 0 }];
+        }
       }
 
       return {
@@ -155,6 +177,10 @@ export function convertFacebookMessagesToChatFormat(
         originalText: msg.original_text,
         isRevoked: msg.is_revoked,
         revokedAt: msg.revoked_at ? new Date(msg.revoked_at) : undefined,
+        // Email fields
+        bodyHtml: msg.body_html,
+        subject: msg.subject,
+        platform: msg.platform,
       };
     });
 
@@ -164,6 +190,10 @@ export function convertFacebookMessagesToChatFormat(
     // Last message - use text or fallback to attachment type description
     const lastMsg = conversation.last_message;
     let lastMessageContent = lastMsg.message_text;
+    // For emails, strip HTML tags from the preview
+    if (conversation.platform === 'email' && lastMessageContent) {
+      lastMessageContent = stripHtmlTags(lastMessageContent);
+    }
     if (!lastMessageContent && lastMsg.attachment_type) {
       // Provide a user-friendly description for attachment-only messages
       const attachmentLabels: Record<string, string> = {
@@ -239,38 +269,45 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       }
     }
 
-    // Determine attachment type - check both message_type and attachment_type
-    const attachmentType = msg.attachment_type || msg.message_type || '';
+    let images: { name: string; url: string; size: number }[] | undefined;
+    let files: { name: string; url: string; size: number }[] | undefined;
+    let voiceMessage: { name: string; url: string; size: number } | undefined;
 
-    // Get attachment URL from either attachments array or direct attachment_url
-    let attachmentUrl = msg.attachment_url;
-    if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
-      attachmentUrl = msg.attachments[0].url;
-    }
+    // For emails, treat ALL attachments as files (clickable to open)
+    // Inline images are already rendered in the HTML body
+    if (msg.platform === 'email' && msg.attachments && msg.attachments.length > 0) {
+      const fileAttachments: { name: string; url: string; size: number }[] = [];
 
-    // Determine if this is an image type (including stickers)
-    const isImageType = ['image', 'sticker'].includes(attachmentType);
+      msg.attachments.forEach((att: any) => {
+        fileAttachments.push({
+          name: att.filename || 'attachment',
+          url: att.url,
+          size: att.size || 0,
+        });
+      });
 
-    // Determine if this is an audio type
-    const isAudioType = ['audio'].includes(attachmentType);
+      if (fileAttachments.length > 0) files = fileAttachments;
+    } else {
+      // For other platforms, use existing logic
+      const attachmentType = msg.attachment_type || msg.message_type || '';
+      let attachmentUrl = msg.attachment_url;
+      if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
+        attachmentUrl = msg.attachments[0].url;
+      }
 
-    // Build images array for image/sticker attachments
-    let images = undefined;
-    if (attachmentUrl && isImageType) {
-      images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
-    }
+      const isImageType = ['image', 'sticker'].includes(attachmentType);
+      const isAudioType = ['audio'].includes(attachmentType);
 
-    // Build voice message for audio attachments
-    let voiceMessage = undefined;
-    if (attachmentUrl && isAudioType) {
-      voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
-    }
-
-    // Build files array for other types (video, document, file)
-    let files = undefined;
-    if (attachmentUrl && !isImageType && !isAudioType) {
-      const filename = msg.attachments?.[0]?.filename || attachmentType;
-      files = [{ name: filename, url: attachmentUrl, size: 0 }];
+      if (attachmentUrl && isImageType) {
+        images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
+      }
+      if (attachmentUrl && isAudioType) {
+        voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
+      }
+      if (attachmentUrl && !isImageType && !isAudioType) {
+        const filename = msg.attachments?.[0]?.filename || attachmentType;
+        files = [{ name: filename, url: attachmentUrl, size: 0 }];
+      }
     }
 
     return {
@@ -290,6 +327,10 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       originalText: msg.original_text,
       isRevoked: msg.is_revoked,
       revokedAt: msg.revoked_at ? new Date(msg.revoked_at) : undefined,
+      // Email fields
+      bodyHtml: msg.body_html,
+      subject: msg.subject,
+      platform: msg.platform,
     };
   });
 

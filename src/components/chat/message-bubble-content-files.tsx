@@ -1,10 +1,9 @@
-import { Download } from "lucide-react"
+import { ExternalLink } from "lucide-react"
 
 import type { MessageType } from "@/components/chat/types"
 
-import { cn, formatFileSize } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
-import { Button } from "@/components/ui/button"
 import { FileThumbnail } from "@/components/ui/file-thumbnail"
 
 export function MessageBubbleContentFiles({
@@ -17,24 +16,22 @@ export function MessageBubbleContentFiles({
   if (!files || !files.length) return null // Return null if the files are empty
 
   return files.map((file) => (
-    <div
-      key={file.id}
+    <a
+      key={file.id || file.url}
+      href={file.url}
+      target="_blank"
+      rel="noopener noreferrer"
       className={cn(
-        "flex justify-between items-center bg-muted-foreground/20 p-4 rounded-lg break-all",
-        isByCurrentUser && "bg-muted-foreground/40"
+        "flex justify-between items-center bg-muted-foreground/20 p-4 rounded-lg break-all hover:bg-muted-foreground/30 transition-colors cursor-pointer",
+        isByCurrentUser && "bg-muted-foreground/40 hover:bg-muted-foreground/50"
       )}
-      aria-label="File"
+      aria-label={`Open ${file.name}`}
     >
       <FileThumbnail fileName={file.name} />
-      <div className="flex-1 grid mx-2 truncate">
+      <div className="flex-1 mx-2 truncate">
         <span className="truncate">{file.name}</span>
-        <span className="text-xs text-muted-foreground font-semibold truncate">
-          {formatFileSize(file.size)}
-        </span>
       </div>
-      <Button variant="ghost" size="icon" aria-label="Dowmload">
-        <Download className="size-4" />
-      </Button>
-    </div>
+      <ExternalLink className="size-4 shrink-0 opacity-60" />
+    </a>
   ))
 }

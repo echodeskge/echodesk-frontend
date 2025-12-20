@@ -60,11 +60,11 @@ export function ChatBoxContentList({
 
   return (
     <ScrollAreaPrimitive.Root
-      className="relative h-full"
+      className="relative h-full overflow-hidden"
     >
       <ScrollAreaPrimitive.Viewport
         ref={scrollAreaRef}
-        className="h-full w-full"
+        className="h-full w-full overflow-y-auto overflow-x-hidden"
       >
         <ul className="flex flex-col gap-y-1.5 px-6 py-3">
           {chat.messages.map((message, index) => {

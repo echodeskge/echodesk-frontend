@@ -57,6 +57,9 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
     { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery },
     ref
   ) {
+  // Check if this is an email message
+  const isEmail = message.platform === 'email' || platform === 'email'
+
   // Handle revoked messages
   if (message.isRevoked) {
     return (
@@ -99,7 +102,10 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
         isHighlighted && "bg-yellow-100 dark:bg-yellow-900/30 -mx-2 px-2 py-1 rounded-lg"
       )}
     >
-      <div className="flex flex-col gap-1 max-w-[320px]">
+      <div className={cn(
+        "flex flex-col gap-1 overflow-hidden",
+        isEmail ? "max-w-full w-full" : "max-w-[320px]"
+      )}>
         <MessageBubbleContent
           message={message}
           isByCurrentUser={isByCurrentUser}

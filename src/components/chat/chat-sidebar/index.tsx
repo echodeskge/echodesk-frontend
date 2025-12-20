@@ -21,18 +21,22 @@ export function ChatSidebar() {
 
   // Content to display in the chat sidebar
   const content = (
-    <div className="md:w-96">
-      <ChatSidebarHeader />
-      <ChatSidebarTabs />
-      <ChatSidebarList />
+    <div className="md:w-96 h-full flex flex-col">
+      <div className="shrink-0">
+        <ChatSidebarHeader />
+        <ChatSidebarTabs />
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ChatSidebarList />
+      </div>
     </div>
   )
 
   // Render a persistent sidebar for larger screens
   if (!isMediumOrSmaller) {
     return (
-      <aside>
-        <Card>{content}</Card>
+      <aside className="h-full">
+        <Card className="h-full">{content}</Card>
       </aside>
     )
   }

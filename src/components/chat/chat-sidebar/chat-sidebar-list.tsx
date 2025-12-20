@@ -66,10 +66,8 @@ export function ChatSidebarList() {
     return "No conversations yet"
   }
 
-  // Adjust height based on whether tabs are shown
-  const scrollHeight = assignmentEnabled
-    ? "h-[calc(100vh-14.5rem)] md:h-[calc(100vh-21.5rem)]"
-    : "h-[calc(100vh-11.5rem)] md:h-[calc(100vh-18.5rem)]"
+  // Use full height - parent container controls the height
+  const scrollHeight = "h-full"
 
   // Show loading state only when we have no data yet
   if (showLoading) {

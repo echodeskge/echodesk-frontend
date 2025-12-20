@@ -16,7 +16,7 @@ function getPlatformBgClass(platform?: "facebook" | "instagram" | "whatsapp" | "
     case "whatsapp":
       return "bg-[#25D366]" // WhatsApp green
     case "email":
-      return "bg-[#4A90D9]" // Email blue
+      return "bg-white border border-gray-200" // Email - white with border for better HTML rendering
     default:
       return "bg-primary"
   }
@@ -59,8 +59,19 @@ export function MessageBubbleContent({
     )
   }
 
-  // Add text if present (show text after media)
-  if (message.text) {
+  // Add text/HTML content (show text after media)
+  // For emails with HTML body, render as HTML to preserve signatures and formatting
+  const isEmail = message.platform === 'email' || platform === 'email'
+  if (isEmail && message.bodyHtml) {
+    contentParts.push(
+      <div
+        key="html"
+        className="p-2 prose prose-sm max-w-none break-words overflow-x-auto [&_a]:text-blue-600 [&_a]:underline [&_table]:max-w-full [&_table]:overflow-x-auto email-html-content"
+        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+        dangerouslySetInnerHTML={{ __html: message.bodyHtml }}
+      />
+    )
+  } else if (message.text) {
     contentParts.push(
       <MessageBubbleContentText key="text" text={message.text} />
     )
@@ -71,13 +82,21 @@ export function MessageBubbleContent({
     return null
   }
 
+  // Email messages get different styling for better HTML rendering
+  const isEmailMessage = isEmail
+
   return (
     <div
       className={cn(
-        "text-sm p-2 space-y-2 rounded-lg break-all",
+        "text-sm p-2 space-y-2 rounded-lg overflow-hidden",
+        isEmailMessage ? "break-words" : "break-all",
         isByCurrentUser
-          ? cn(getPlatformBgClass(platform), "text-white rounded-se-none")
-          : "bg-[#EFEFEF] text-gray-900 rounded-ss-none"
+          ? isEmailMessage
+            ? "bg-blue-50 border border-blue-200 text-gray-900 rounded-se-none"
+            : cn(getPlatformBgClass(platform), "text-white rounded-se-none")
+          : isEmailMessage
+            ? "bg-white border border-gray-200 text-gray-900 rounded-ss-none"
+            : "bg-[#EFEFEF] text-gray-900 rounded-ss-none"
       )}
     >
       {contentParts}

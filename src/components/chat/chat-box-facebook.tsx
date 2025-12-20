@@ -103,7 +103,7 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
   const showLoading = loadingMessages || (!chat.messagesLoaded && chat.messages.length === 0)
 
   return (
-    <Card className="grow flex flex-col h-[calc(100vh-11.5rem)] md:h-[calc(100vh-18.5rem)] overflow-hidden">
+    <Card className="grow flex flex-col h-full overflow-hidden">
       <div className="shrink-0">
         <ChatBoxHeader chat={chat} isConnected={isConnected} onSearchClick={handleSearchClick} />
         {isSearchOpen && (
@@ -125,7 +125,7 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
           </div>
         </div>
       ) : (
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-auto">
           <ChatBoxContent
             user={user}
             chat={chat}

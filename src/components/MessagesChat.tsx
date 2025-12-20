@@ -815,13 +815,18 @@ export default function MessagesChat() {
   const handleChatSelected = useCallback((chat: ChatType) => {
     if (!chat.platform) return;
 
-    // Extract conversation_id (sender_id) from the chat id
-    // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}
     const parts = chat.id.split('_');
-    if (parts.length < 3) return;
+    let conversationId: string;
 
-    // The conversation_id is everything after the prefix and account_id
-    const conversationId = parts.slice(2).join('_');
+    // Handle email format: email_{thread_id}
+    if (chat.platform === 'email') {
+      if (parts.length < 2) return;
+      conversationId = parts.slice(1).join('_'); // thread_id
+    } else {
+      // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}
+      if (parts.length < 3) return;
+      conversationId = parts.slice(2).join('_');
+    }
 
     markReadMutation.mutate({
       platform: chat.platform,
@@ -843,7 +848,7 @@ export default function MessagesChat() {
   // Always show the layout - loading state is handled within the chat area
   return (
     <ChatProvider chatsData={chatsData} onChatSelected={handleChatSelected} loadChatMessages={loadChatMessages} isInitialLoading={loading}>
-      <div className="relative w-full flex gap-x-4 p-4 h-[calc(100vh-3.5rem)]">
+      <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
         <ChatSidebar />
         {chatId ? (
           <ChatBoxFacebook user={currentUser} onMessageSent={handleMessageSent} isConnected={isConnected} />

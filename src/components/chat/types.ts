@@ -51,6 +51,10 @@ export interface MessageType {
   originalText?: string
   isRevoked?: boolean
   revokedAt?: Date
+  // Email fields
+  bodyHtml?: string
+  subject?: string
+  platform?: 'facebook' | 'instagram' | 'whatsapp' | 'email'
 }
 
 export type NewMessageType = Omit<
