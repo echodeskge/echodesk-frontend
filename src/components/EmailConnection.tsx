@@ -201,13 +201,13 @@ export function EmailConnection() {
       <Card
         className={cn(
           'border-2',
-          isConnected ? 'border-blue-200 bg-blue-50/50' : 'border-border'
+          isConnected ? 'border-red-200 bg-red-50/50' : 'border-border'
         )}
       >
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600 text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-600 text-white">
                 <Mail className="h-6 w-6" />
               </div>
               <div>
@@ -231,7 +231,7 @@ export function EmailConnection() {
               variant={isConnected ? 'default' : 'secondary'}
               className={cn(
                 'h-8',
-                isConnected && 'bg-blue-600 hover:bg-blue-700'
+                isConnected && 'bg-red-600 hover:bg-red-700'
               )}
             >
               {isConnected ? 'Connected' : 'Not Connected'}
@@ -245,7 +245,7 @@ export function EmailConnection() {
               <Button
                 onClick={() => setShowConnectDialog(true)}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-red-600 hover:bg-red-700"
               >
                 <Mail className="mr-2 h-4 w-4" />
                 Connect Email
@@ -539,7 +539,7 @@ export function EmailConnection() {
             <Button
               onClick={handleConnect}
               disabled={connectEmail.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-red-600 hover:bg-red-700"
             >
               {connectEmail.isPending ? (
                 <>
