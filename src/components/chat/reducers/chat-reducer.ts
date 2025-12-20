@@ -138,6 +138,31 @@ export const ChatReducer = (
       }
     }
 
+    case "updateChatMessages": {
+      // Update messages for a specific chat (lazy loading)
+      const updatedChats = state.chats.map(chat => {
+        if (chat.id === action.chatId) {
+          return {
+            ...chat,
+            messages: action.messages,
+            messagesLoaded: true
+          }
+        }
+        return chat
+      })
+
+      // Also update selectedChat if it's the same chat
+      const updatedSelectedChat = state.selectedChat?.id === action.chatId
+        ? { ...state.selectedChat, messages: action.messages, messagesLoaded: true }
+        : state.selectedChat
+
+      return {
+        ...state,
+        chats: updatedChats,
+        selectedChat: updatedSelectedChat
+      }
+    }
+
     default:
       return state // Return the current state for unknown actions
   }

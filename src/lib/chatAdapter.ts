@@ -182,6 +182,9 @@ export function convertFacebookMessagesToChatFormat(
       createdAt: new Date(lastMsg.timestamp),
     };
 
+    // Determine if messages are loaded (empty messages array means lazy loading needed)
+    const messagesLoaded = chatMessages.length > 0 || conversation.platform !== 'email';
+
     return {
       id: conversation.conversation_id,
       lastMessage,
@@ -193,6 +196,7 @@ export function convertFacebookMessagesToChatFormat(
       typingUsers: [],
       unreadCount: 0, // We don't track unread count in our system
       platform: conversation.platform,
+      messagesLoaded,
     };
   });
 
@@ -216,4 +220,81 @@ export function convertSingleConversation(
   const map = new Map<string, UnifiedMessage[]>();
   map.set(conversation.conversation_id, messages);
   return convertFacebookMessagesToChatFormat([conversation], map)[0];
+}
+
+/**
+ * Converts unified messages to MessageType array (for lazy loading)
+ */
+export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]): MessageType[] {
+  const chatMessages: MessageType[] = messages.map((msg) => {
+    // Calculate status for messages sent by business only
+    let status = "SENT"; // Default status
+    if (msg.is_from_business) {
+      if (msg.is_read) {
+        status = "READ";
+      } else if (msg.is_delivered) {
+        status = "DELIVERED";
+      } else {
+        status = "SENT";
+      }
+    }
+
+    // Determine attachment type - check both message_type and attachment_type
+    const attachmentType = msg.attachment_type || msg.message_type || '';
+
+    // Get attachment URL from either attachments array or direct attachment_url
+    let attachmentUrl = msg.attachment_url;
+    if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
+      attachmentUrl = msg.attachments[0].url;
+    }
+
+    // Determine if this is an image type (including stickers)
+    const isImageType = ['image', 'sticker'].includes(attachmentType);
+
+    // Determine if this is an audio type
+    const isAudioType = ['audio'].includes(attachmentType);
+
+    // Build images array for image/sticker attachments
+    let images = undefined;
+    if (attachmentUrl && isImageType) {
+      images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
+    }
+
+    // Build voice message for audio attachments
+    let voiceMessage = undefined;
+    if (attachmentUrl && isAudioType) {
+      voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
+    }
+
+    // Build files array for other types (video, document, file)
+    let files = undefined;
+    if (attachmentUrl && !isImageType && !isAudioType) {
+      const filename = msg.attachments?.[0]?.filename || attachmentType;
+      files = [{ name: filename, url: attachmentUrl, size: 0 }];
+    }
+
+    return {
+      id: msg.id,
+      senderId: msg.is_from_business ? "business" : msg.sender_id,
+      text: msg.message_text,
+      images,
+      files,
+      voiceMessage,
+      status,
+      createdAt: new Date(msg.timestamp),
+      // WhatsApp Coexistence fields
+      source: msg.source,
+      isEcho: msg.is_echo,
+      isEdited: msg.is_edited,
+      editedAt: msg.edited_at ? new Date(msg.edited_at) : undefined,
+      originalText: msg.original_text,
+      isRevoked: msg.is_revoked,
+      revokedAt: msg.revoked_at ? new Date(msg.revoked_at) : undefined,
+    };
+  });
+
+  // Sort messages by date (oldest first for chat display)
+  chatMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  return chatMessages;
 }

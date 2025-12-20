@@ -4,7 +4,7 @@ import { createContext, useReducer, useState, useEffect, useCallback, useMemo } 
 
 import type { FileType } from "@/types"
 import type { ReactNode } from "react"
-import type { ChatContextType, ChatType, AssignmentTabType } from "@/components/chat/types"
+import type { ChatContextType, ChatType, AssignmentTabType, MessageType } from "@/components/chat/types"
 
 import { ChatReducer } from "@/components/chat/reducers/chat-reducer"
 import { useSocialSettings, useMyAssignments } from "@/hooks/api/useSocial"
@@ -16,10 +16,12 @@ export function ChatProvider({
   chatsData,
   children,
   onChatSelected,
+  loadChatMessages,
 }: {
   chatsData: ChatType[]
   children: ReactNode
   onChatSelected?: (chat: ChatType) => void
+  loadChatMessages?: (chatId: string) => Promise<MessageType[]>
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -36,6 +38,9 @@ export function ChatProvider({
 
   // Assignment tab state
   const [assignmentTab, setAssignmentTab] = useState<AssignmentTabType>('all')
+
+  // Lazy loading state
+  const [loadingMessages, setLoadingMessages] = useState(false)
 
   // Fetch social settings and assignments
   const { data: socialSettings } = useSocialSettings()
@@ -71,12 +76,35 @@ export function ChatProvider({
     dispatch({ type: "setUnreadCount" })
   }
 
+  // Handle loading messages for a chat (lazy loading)
+  const handleLoadChatMessages = useCallback(async (chatId: string) => {
+    if (!loadChatMessages) return
+
+    // Find the chat
+    const chat = chatState.chats.find(c => c.id === chatId)
+    if (!chat || chat.messagesLoaded) return // Already loaded
+
+    setLoadingMessages(true)
+    try {
+      const messages = await loadChatMessages(chatId)
+      dispatch({ type: "updateChatMessages", chatId, messages })
+    } catch (error) {
+      console.error("Failed to load chat messages:", error)
+    } finally {
+      setLoadingMessages(false)
+    }
+  }, [loadChatMessages, chatState.chats])
+
   // Selection handlers
   const handleSelectChat = useCallback((chat: ChatType) => {
     dispatch({ type: "selectChat", chat })
     // Call the optional callback when a chat is selected
     onChatSelected?.(chat)
-  }, [onChatSelected])
+    // Trigger lazy loading if messages not loaded
+    if (!chat.messagesLoaded && loadChatMessages) {
+      handleLoadChatMessages(chat.id)
+    }
+  }, [onChatSelected, loadChatMessages, handleLoadChatMessages])
 
   return (
     <ChatContext.Provider
@@ -98,6 +126,8 @@ export function ChatProvider({
         setAssignmentTab,
         assignedChatIds,
         assignmentEnabled,
+        loadingMessages,
+        loadChatMessages: handleLoadChatMessages,
       }}
     >
       {children}

@@ -26,6 +26,9 @@ export interface ChatContextType {
   setAssignmentTab: (tab: AssignmentTabType) => void
   assignedChatIds: Set<string>
   assignmentEnabled: boolean
+  // Lazy loading
+  loadingMessages: boolean
+  loadChatMessages?: (chatId: string) => Promise<void>
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null
@@ -81,6 +84,8 @@ export interface ChatType {
   typingUsers: UserType[]
   unreadCount?: number
   platform?: "facebook" | "instagram" | "whatsapp" | "email"
+  // Lazy loading - if true, messages need to be fetched when chat is selected
+  messagesLoaded?: boolean
 }
 
 export interface ChatStateType {
@@ -111,6 +116,11 @@ export type ChatActionType =
   | {
       type: "updateChats"
       chats: ChatType[]
+    }
+  | {
+      type: "updateChatMessages"
+      chatId: string
+      messages: MessageType[]
     }
 
 export type TextMessageFormType = z.infer<typeof TextMessageSchema>
