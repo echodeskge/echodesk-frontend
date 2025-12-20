@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -11,6 +11,7 @@ import {
   useAssignmentStatus,
   useAssignChat,
   useUnassignChat,
+  useStartSession,
   useEndSession,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
@@ -88,15 +89,22 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   // Assignment mutations
   const assignChat = useAssignChat()
   const unassignChat = useUnassignChat()
+  const startSession = useStartSession()
   const endSession = useEndSession()
 
   const canDelete = user?.is_staff === true
 
+  // Settings from assignment status response
+  const settings = assignmentStatusData?.settings
+  const assignmentEnabled = settings?.chat_assignment_enabled ?? false
+  const sessionManagementEnabled = settings?.session_management_enabled ?? false
+
   // Assignment state
-  const assignmentEnabled = assignmentStatusData?.settings?.chat_assignment_enabled ?? false
   const assignment = assignmentStatusData?.assignment
   const isAssigned = !!assignment
   const isAssignedToMe = assignment?.assigned_user === user?.id
+  const isInSession = assignment?.status === 'in_session'
+  const isActiveAssignment = assignment?.status === 'active'
 
   const handleDelete = () => {
     if (!chat?.platform || !chat?.id) return
@@ -146,6 +154,15 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     })
   }
 
+  const handleStartSession = () => {
+    if (!chatInfo) return
+    startSession.mutate({
+      platform: chatInfo.platform,
+      conversation_id: chatInfo.conversationId,
+      account_id: chatInfo.accountId,
+    })
+  }
+
   const handleEndSession = () => {
     if (!chatInfo) return
     endSession.mutate({
@@ -155,7 +172,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     })
   }
 
-  const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || endSession.isPending
+  const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending
 
   return (
     <>
@@ -195,21 +212,33 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                   </DropdownMenuItem>
                 )}
 
-                {/* Session controls - only show if assigned to me */}
-                {isAssignedToMe && (
+                {/* Session controls - only show if assigned to me AND session management is enabled */}
+                {isAssignedToMe && sessionManagementEnabled && (
                   <>
-                    {/* End Session - ends session (sends rating request) and unassigns */}
-                    <DropdownMenuItem onClick={handleEndSession} disabled={isAssignmentLoading}>
-                      <Square className="size-4 mr-2" />
-                      {endSession.isPending ? "Ending..." : "End Session"}
-                    </DropdownMenuItem>
+                    {/* Start Session - only show if assignment is active (not in session) */}
+                    {isActiveAssignment && (
+                      <DropdownMenuItem onClick={handleStartSession} disabled={isAssignmentLoading}>
+                        <Play className="size-4 mr-2" />
+                        {startSession.isPending ? "Starting..." : "Start Session"}
+                      </DropdownMenuItem>
+                    )}
 
-                    {/* Unassign - release chat without ending session (no rating request) */}
-                    <DropdownMenuItem onClick={handleUnassign} disabled={isAssignmentLoading}>
-                      <UserMinus className="size-4 mr-2" />
-                      {unassignChat.isPending ? "Unassigning..." : "Unassign"}
-                    </DropdownMenuItem>
+                    {/* End Session - only show if in session */}
+                    {isInSession && (
+                      <DropdownMenuItem onClick={handleEndSession} disabled={isAssignmentLoading}>
+                        <Square className="size-4 mr-2" />
+                        {endSession.isPending ? "Ending..." : "End Session"}
+                      </DropdownMenuItem>
+                    )}
                   </>
+                )}
+
+                {/* Unassign - always show if assigned to me (release chat) */}
+                {isAssignedToMe && (
+                  <DropdownMenuItem onClick={handleUnassign} disabled={isAssignmentLoading}>
+                    <UserMinus className="size-4 mr-2" />
+                    {unassignChat.isPending ? "Unassigning..." : "Unassign"}
+                  </DropdownMenuItem>
                 )}
 
                 {/* Show who it's assigned to if assigned to someone else */}

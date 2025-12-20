@@ -614,6 +614,9 @@ export interface SocialSettings {
   id: number;
   refresh_interval: number;
   chat_assignment_enabled: boolean;
+  session_management_enabled: boolean;
+  hide_assigned_chats: boolean;
+  collect_customer_rating: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -625,8 +628,10 @@ export function useSocialSettings() {
       const response = await axios.get('/api/social/settings/');
       return response.data;
     },
-    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    staleTime: 10 * 1000, // Consider data fresh for 10 seconds (short to reflect settings changes quickly)
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnMount: true, // Always check for fresh data when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 }
 
@@ -634,12 +639,19 @@ export function useUpdateSocialSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<Pick<SocialSettings, 'refresh_interval' | 'chat_assignment_enabled'>>) => {
+    mutationFn: async (data: Partial<Pick<SocialSettings, 'refresh_interval' | 'chat_assignment_enabled' | 'session_management_enabled' | 'hide_assigned_chats' | 'collect_customer_rating'>>) => {
       const response = await axios.patch('/api/social/settings/', data);
       return response.data;
     },
     onSuccess: () => {
+      // Invalidate settings query
       queryClient.invalidateQueries({ queryKey: socialKeys.settings() });
+      // Invalidate all assignment queries since they include settings in their response
+      queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      // Invalidate message queries in case hide_assigned_chats changed
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
     },
   });
 }
@@ -671,6 +683,9 @@ export interface ChatAssignmentStatusResponse {
   assignment: ChatAssignment | null;
   settings: {
     chat_assignment_enabled: boolean;
+    session_management_enabled: boolean;
+    hide_assigned_chats: boolean;
+    collect_customer_rating: boolean;
   };
 }
 
