@@ -147,13 +147,12 @@ export function TikTokConnection() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Messaging Not Available Alert */}
-        {isConnected && (
+        {/* Messaging Info Alert */}
+        {isConnected && status && !status.messaging_available && (
           <Alert className="bg-amber-50 border-amber-200">
             <Info className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
-              <strong>Messaging not available yet.</strong> TikTok Business Messaging API requires partner program access.
-              Your account is connected for future messaging capabilities.
+              <strong>Note:</strong> {status.messaging_note || 'Make sure your TikTok account is upgraded to a Business Account for messaging features.'}
             </AlertDescription>
           </Alert>
         )}
@@ -261,8 +260,12 @@ export function TikTokConnection() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Note:</strong> Connect your TikTok account to prepare for future messaging integration.
-              TikTok Business Messaging requires additional partner program approval which is pending.
+              <strong>Requirements:</strong> You need a TikTok Business Account (not personal or creator) to use messaging.
+              Go to TikTok settings and switch to Business Account before connecting.
+              <br />
+              <span className="text-xs text-muted-foreground mt-1 block">
+                Note: Not available in US, UK, Switzerland, or European Economic Area.
+              </span>
             </AlertDescription>
           </Alert>
         )}
