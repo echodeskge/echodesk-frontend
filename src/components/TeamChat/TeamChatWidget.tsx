@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { X, Users } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
 import { TeamChatIcon } from './TeamChatIcon';
-import { UserList } from './UserList';
-import { ChatWindow } from './ChatWindow';
+import { ConversationListPopup } from './ConversationListPopup';
+import { FloatingChatWindow } from './FloatingChatWindow';
+import { MinimizedChatBubble } from './MinimizedChatBubble';
+import { FloatingChatProvider, useFloatingChat, LAYOUT } from './FloatingChatContext';
 import { useTeamChatWebSocket } from './useTeamChatWebSocket';
 import {
   useTeamChatUsers,
@@ -23,12 +21,20 @@ interface TeamChatWidgetProps {
   currentUserId: number;
 }
 
-export function TeamChatWidget({ currentUserId }: TeamChatWidgetProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<TeamChatUser | null>(null);
-  const [selectedConversation, setSelectedConversation] = useState<TeamChatConversation | null>(null);
-  const [messages, setMessages] = useState<TeamChatMessage[]>([]);
-  const [typingUser, setTypingUser] = useState<string | null>(null);
+function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
+  const {
+    state,
+    toggleList,
+    addMessage,
+    updateMessages,
+    updateConversation,
+    updateUnread,
+    markRead,
+    getChatIdFromUser,
+  } = useFloatingChat();
+
+  const [typingUsers, setTypingUsers] = useState<Map<number, string>>(new Map());
+  const [activeUserId, setActiveUserId] = useState<number | null>(null);
 
   // API hooks
   const { data: users = [] } = useTeamChatUsers();
@@ -37,9 +43,9 @@ export function TeamChatWidget({ currentUserId }: TeamChatWidgetProps) {
   const sendMessageMutation = useSendTeamChatMessage();
   const markReadMutation = useMarkConversationRead();
 
-  // Get conversation with selected user
+  // Get conversation with currently active user (for loading messages)
   const { data: conversationWithUser, refetch: refetchConversationWithUser } =
-    useTeamChatConversationWithUser(selectedUser?.id || null);
+    useTeamChatConversationWithUser(activeUserId);
 
   // WebSocket
   const {
@@ -50,184 +56,182 @@ export function TeamChatWidget({ currentUserId }: TeamChatWidgetProps) {
     sendReadReceipt,
   } = useTeamChatWebSocket({
     onNewMessage: (message, conversationId) => {
-      // Add message to current conversation if it matches
-      if (
-        selectedConversation?.id === conversationId ||
-        (conversationWithUser && conversationWithUser.id === conversationId)
-      ) {
-        setMessages((prev) => {
-          // Avoid duplicates
-          if (prev.some((m) => m.id === message.id)) return prev;
-          return [...prev, message];
-        });
+      // Find which chat this message belongs to
+      const senderId = message.sender.id;
+      const otherUserId = senderId === currentUserId ? null : senderId;
 
-        // Mark as read if from other user
-        if (message.sender.id !== currentUserId) {
-          sendReadReceipt([message.id], conversationId);
+      // Add to any open chat that involves this user
+      state.openChats.forEach((chat) => {
+        if (
+          chat.user.id === otherUserId ||
+          (chat.conversation && chat.conversation.id === conversationId)
+        ) {
+          const chatId = getChatIdFromUser(chat.user);
+          addMessage(chatId, message);
+
+          // Mark as read if from other user
+          if (message.sender.id !== currentUserId) {
+            sendReadReceipt([message.id], conversationId);
+          }
         }
-      }
+      });
+
+      // Update unread for minimized chats
+      state.minimizedChats.forEach((chat) => {
+        if (
+          chat.user.id === otherUserId ||
+          (chat.conversation && chat.conversation.id === conversationId)
+        ) {
+          const chatId = getChatIdFromUser(chat.user);
+          if (message.sender.id !== currentUserId) {
+            updateUnread(chatId, (chat.unreadCount || 0) + 1);
+          }
+          addMessage(chatId, message);
+        }
+      });
 
       // Refetch conversations to update last message
       refetchConversations();
       refetchUnreadCount();
     },
     onTypingIndicator: (userId, userName, isTyping) => {
-      if (selectedUser?.id === userId || selectedConversation?.other_participant?.id === userId) {
-        setTypingUser(isTyping ? userName : null);
-      }
+      setTypingUsers((prev) => {
+        const next = new Map(prev);
+        if (isTyping) {
+          next.set(userId, userName);
+        } else {
+          next.delete(userId);
+        }
+        return next;
+      });
     },
     onReadReceipt: (messageIds, readBy, conversationId) => {
-      if (readBy !== currentUserId) {
-        setMessages((prev) =>
-          prev.map((m) =>
-            messageIds.includes(m.id) ? { ...m, is_read: true } : m
-          )
-        );
-      }
+      // Could update read status on messages if needed
     },
     onUserOnline: () => {
       // Online status is handled by the hook's state
     },
   });
 
-  // Load messages when conversation changes
+  // Load messages when opening a chat
   useEffect(() => {
-    if (conversationWithUser) {
-      setSelectedConversation(conversationWithUser);
-      setMessages(conversationWithUser.messages || []);
+    if (conversationWithUser && activeUserId) {
+      const user = state.openChats.find((c) => c.user.id === activeUserId)?.user;
+      if (user) {
+        const chatId = getChatIdFromUser(user);
+        updateMessages(chatId, conversationWithUser.messages || []);
+        updateConversation(chatId, conversationWithUser);
 
-      // Mark as read
-      if (conversationWithUser.unread_count > 0) {
-        markReadMutation.mutate(conversationWithUser.id);
+        // Mark as read
+        if (conversationWithUser.unread_count > 0) {
+          markReadMutation.mutate(conversationWithUser.id);
+          markRead(chatId);
+        }
       }
     }
-  }, [conversationWithUser]);
+  }, [conversationWithUser, activeUserId]);
 
-  const handleSelectUser = (user: TeamChatUser) => {
-    setSelectedUser(user);
-    setMessages([]);
-    refetchConversationWithUser();
-  };
-
-  const handleSelectConversation = (conversation: TeamChatConversation) => {
-    setSelectedConversation(conversation);
-    setSelectedUser(conversation.other_participant);
-    setMessages(conversation.messages || []);
-
-    if (conversation.unread_count > 0) {
-      markReadMutation.mutate(conversation.id);
-    }
-  };
-
-  const handleBack = () => {
-    setSelectedUser(null);
-    setSelectedConversation(null);
-    setMessages([]);
-    setTypingUser(null);
-    refetchConversations();
-  };
+  // Load messages when a new chat is opened
+  useEffect(() => {
+    state.openChats.forEach((chat) => {
+      if (chat.messages.length === 0 && !chat.conversation?.messages) {
+        setActiveUserId(chat.user.id);
+        refetchConversationWithUser();
+      }
+    });
+  }, [state.openChats.length]);
 
   const handleSendMessage = async (
+    userId: number,
     text: string,
     file?: File,
     messageType?: string,
     voiceDuration?: number
   ) => {
-    if (!selectedUser) return;
-
     // Try WebSocket first for text messages
-    if (!file && wsSendMessage(selectedUser.id, text)) {
+    if (!file && wsSendMessage(userId, text)) {
       // Message will be added via WebSocket callback
       return;
     }
 
     // Fall back to REST API for file uploads
     try {
+      const chat = state.openChats.find((c) => c.user.id === userId);
       await sendMessageMutation.mutateAsync({
-        recipient_id: selectedUser.id,
-        conversation_id: selectedConversation?.id,
+        recipient_id: userId,
+        conversation_id: chat?.conversation?.id,
         text,
         message_type: messageType,
         file,
         voice_duration: voiceDuration,
       });
+
+      // Reload conversation to get the new message
+      setActiveUserId(userId);
       refetchConversationWithUser();
     } catch (error) {
       console.error('Failed to send message:', error);
     }
   };
 
-  const handleTyping = (isTyping: boolean) => {
-    if (selectedUser) {
-      sendTyping(selectedUser.id, isTyping);
-    }
+  const handleTyping = (userId: number, isTyping: boolean) => {
+    sendTyping(userId, isTyping);
+  };
+
+  const getTypingUser = (userId: number): string | null => {
+    return typingUsers.get(userId) || null;
   };
 
   return (
     <>
-      {/* Floating Icon */}
+      {/* Main Icon */}
       <TeamChatIcon
         unreadCount={unreadCount}
-        onClick={() => setIsOpen(!isOpen)}
-        isOpen={isOpen}
+        onClick={toggleList}
+        isOpen={state.isListOpen}
       />
 
-      {/* Chat Popup */}
-      {isOpen && (
-        <Card
-          className={cn(
-            'fixed z-50 w-[360px] h-[500px] shadow-2xl flex flex-col overflow-hidden',
-            'bottom-24 right-6',
-            'animate-in slide-in-from-bottom-4 fade-in duration-200'
-          )}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between p-3 border-b bg-primary text-primary-foreground">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              <span className="font-semibold">Team Chat</span>
-              {!isConnected && (
-                <span className="text-xs bg-yellow-500/20 text-yellow-200 px-2 py-0.5 rounded">
-                  Connecting...
-                </span>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
-              onClick={() => setIsOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
+      {/* Conversation List Popup */}
+      <ConversationListPopup
+        users={users}
+        conversations={conversations}
+        onlineUsers={onlineUsers}
+        isConnected={isConnected}
+      />
 
-          {/* Content */}
-          <div className="flex-1 overflow-hidden">
-            {selectedUser ? (
-              <ChatWindow
-                conversation={selectedConversation}
-                recipient={selectedUser}
-                messages={messages}
-                currentUserId={currentUserId}
-                isOnline={onlineUsers.has(selectedUser.id)}
-                typingUser={typingUser}
-                onBack={handleBack}
-                onSendMessage={handleSendMessage}
-                onTyping={handleTyping}
-              />
-            ) : (
-              <UserList
-                users={users}
-                conversations={conversations}
-                onlineUsers={onlineUsers}
-                onSelectUser={handleSelectUser}
-                onSelectConversation={handleSelectConversation}
-              />
-            )}
-          </div>
-        </Card>
-      )}
+      {/* Floating Chat Windows - only show last 4 (visible ones) */}
+      {state.openChats
+        .slice(-LAYOUT.MAX_OPEN_CHATS) // Take last 4 chats
+        .map((chat, idx, arr) => (
+          <FloatingChatWindow
+            key={chat.id}
+            chat={chat}
+            index={arr.length - 1 - idx} // Reverse index: last item = 0 (rightmost)
+            currentUserId={currentUserId}
+            isOnline={onlineUsers.has(chat.user.id)}
+            typingUser={getTypingUser(chat.user.id)}
+            onSendMessage={handleSendMessage}
+            onTyping={handleTyping}
+          />
+        ))}
+
+      {/* Minimized Chat Bubbles */}
+      {state.minimizedChats.map((chat, index) => (
+        <MinimizedChatBubble
+          key={chat.id}
+          chat={chat}
+          index={index}
+          isOnline={onlineUsers.has(chat.user.id)}
+        />
+      ))}
     </>
+  );
+}
+
+export function TeamChatWidget({ currentUserId }: TeamChatWidgetProps) {
+  return (
+    <FloatingChatProvider>
+      <TeamChatWidgetInner currentUserId={currentUserId} />
+    </FloatingChatProvider>
   );
 }
