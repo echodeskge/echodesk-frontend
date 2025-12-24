@@ -195,11 +195,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "product-attributes": "productAttributes",
     languages: "languages",
     messages: "messages",
+    "social/messages": "messages",
+    "email/messages": "emailMessages",
     users: "users",
     groups: "groups",
     social: "social",
     "social/connections": "socialConnections",
-    "social/messages": "socialMessages",
     "social/templates": "socialTemplates",
     "social/settings": "socialSettings",
     "social/rating-statistics": "socialRatingStatistics",
@@ -413,7 +414,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const pathParts = pathname.split("/").filter(Boolean);
   // For nested routes like /ecommerce/orders or /calls/logs, use the full path
   // For top-level routes like /tickets, use just the first segment
-  const nestedRouteParents = ["ecommerce", "calls", "bookings", "leave", "invoices", "social"];
+  const nestedRouteParents = ["ecommerce", "calls", "bookings", "leave", "invoices", "social", "email"];
   const currentView = pathParts.length > 1 && nestedRouteParents.includes(pathParts[0])
     ? `${pathParts[0]}/${pathParts[1]}`  // ecommerce/orders, calls/logs, etc.
     : pathParts[0] || "tickets";         // tickets

@@ -3,5 +3,5 @@
 import MessagesChat from "@/components/MessagesChat";
 
 export default function SocialMessagesPage() {
-  return <MessagesChat />;
+  return <MessagesChat platforms={["facebook", "instagram", "whatsapp"]} />;
 }

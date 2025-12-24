@@ -32,6 +32,7 @@ import {
   Link,
   LayoutDashboard,
   History,
+  Mail,
 } from "lucide-react"
 
 import {
@@ -92,6 +93,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Link": Link,
   "LayoutDashboard": LayoutDashboard,
   "History": History,
+  "Mail": Mail,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,
@@ -209,7 +211,7 @@ export function AppSidebar({
                                       }
                                     }}
                                     isActive={isChildItemActive}
-                                    className="cursor-pointer"
+                                    className="cursor-pointer hover:bg-gray-100 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground"
                                   >
                                     {ChildIconComponent ? (
                                       <ChildIconComponent className={`h-4 w-4 ${isChildLocked ? 'text-gray-400' : ''}`} />
@@ -245,7 +247,7 @@ export function AppSidebar({
                       className={`cursor-pointer transition-all duration-200 ${
                         isLocked
                           ? 'opacity-60 hover:opacity-80'
-                          : 'hover:bg-white hover:shadow-sm data-[active=true]:bg-white data-[active=true]:shadow-md'
+                          : 'hover:bg-gray-100 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground'
                       }`}
                       disabled={isLocked}
                     >

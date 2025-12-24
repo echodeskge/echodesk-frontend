@@ -229,9 +229,15 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     ],
   },
   {
-    id: "messages",
+    id: "social/messages",
     icon: "MessageSquare",
-    requiredFeatureKey: "facebook_integration",
+    requiredFeatureKey: "social_integrations",
+    isPremium: true,
+  },
+  {
+    id: "email/messages",
+    icon: "Mail",
+    requiredFeatureKey: "social_integrations",
     isPremium: true,
   },
   {
@@ -253,12 +259,6 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
       {
         id: "social/connections",
         icon: "Link",
-        requiredFeatureKey: "social_integrations",
-        isPremium: true,
-      },
-      {
-        id: "social/messages",
-        icon: "MessageSquare",
         requiredFeatureKey: "social_integrations",
         isPremium: true,
       },

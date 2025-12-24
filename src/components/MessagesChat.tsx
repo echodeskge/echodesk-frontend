@@ -142,7 +142,15 @@ interface UnifiedConversation {
   subject?: string;
 }
 
-export default function MessagesChat() {
+type Platform = "facebook" | "instagram" | "whatsapp" | "email";
+
+interface MessagesChatProps {
+  platforms?: Platform[];
+}
+
+export default function MessagesChat({ platforms }: MessagesChatProps) {
+  // If no platforms specified, show all
+  const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email"];
   const router = useRouter();
   const params = useParams();
   const chatId = params.id as string | undefined;
@@ -204,6 +212,7 @@ export default function MessagesChat() {
       const allMessages = new Map<string, UnifiedMessage[]>();
 
       // Load Facebook conversations
+      if (enabledPlatforms.includes("facebook")) {
       const facebookPagesResponse = await axios.get("/api/social/facebook-pages/");
       const facebookPages = (facebookPagesResponse.data as PaginatedResponse<FacebookPageConnection>).results || [];
 
@@ -335,8 +344,10 @@ export default function MessagesChat() {
           console.error(`Failed to load messages for page ${page.page_id}:`, err);
         }
       }
+      }
 
       // Load Instagram conversations
+      if (enabledPlatforms.includes("instagram")) {
       try {
         const instagramAccountsResponse = await axios.get("/api/social/instagram-accounts/");
         const instagramAccounts = (instagramAccountsResponse.data as PaginatedResponse<InstagramAccount>).results || [];
@@ -464,8 +475,10 @@ export default function MessagesChat() {
       } catch (err) {
         console.error("Failed to load Instagram accounts:", err);
       }
+      }
 
       // Load WhatsApp conversations
+      if (enabledPlatforms.includes("whatsapp")) {
       try {
         const whatsappStatusResponse = await socialWhatsappStatusRetrieve();
         const whatsappAccounts = (whatsappStatusResponse?.accounts as WhatsAppAccount[]) || [];
@@ -626,8 +639,10 @@ export default function MessagesChat() {
       } catch (err) {
         console.error("Failed to load WhatsApp accounts:", err);
       }
+      }
 
       // Load Email conversations (only previews, not all messages)
+      if (enabledPlatforms.includes("email")) {
       try {
         const emailStatus = await socialEmailStatusRetrieve();
 
@@ -698,6 +713,7 @@ export default function MessagesChat() {
         }
       } catch (err) {
         console.error("Failed to load email conversations:", err);
+      }
       }
 
       setConversations(allConversations);
