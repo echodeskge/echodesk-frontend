@@ -9,7 +9,7 @@ export const LAYOUT = {
   POPUP: { width: 320, height: 450 },
   WINDOW: { width: 280, height: 400, gap: 12 },
   BUBBLE: { size: 48, gap: 8 },
-  Z_INDEX: { icon: 50, popup: 51, window: 52, bubble: 49 },
+  Z_INDEX: { icon: 50, popup: 53, window: 51, bubble: 49 },
   MAX_OPEN_CHATS: 4,
   MAX_TOTAL_CHATS: 6,
 };
@@ -43,6 +43,7 @@ type FloatingChatAction =
   | { type: 'MINIMIZE_CHAT'; payload: { chatId: string } }
   | { type: 'MAXIMIZE_CHAT'; payload: { chatId: string } }
   | { type: 'CLOSE_CHAT'; payload: { chatId: string } }
+  | { type: 'CLOSE_ALL_CHATS' }
   | { type: 'TOGGLE_LIST' }
   | { type: 'CLOSE_LIST' }
   | { type: 'UPDATE_MESSAGES'; payload: { chatId: string; messages: TeamChatMessage[] } }
@@ -201,6 +202,14 @@ function floatingChatReducer(state: FloatingChatState, action: FloatingChatActio
       };
     }
 
+    case 'CLOSE_ALL_CHATS': {
+      return {
+        ...state,
+        openChats: [],
+        minimizedChats: [],
+      };
+    }
+
     case 'TOGGLE_LIST': {
       return { ...state, isListOpen: !state.isListOpen };
     }
@@ -298,6 +307,7 @@ interface FloatingChatContextValue {
   minimizeChat: (chatId: string) => void;
   maximizeChat: (chatId: string) => void;
   closeChat: (chatId: string) => void;
+  closeAllChats: () => void;
   toggleList: () => void;
   closeList: () => void;
   updateMessages: (chatId: string, messages: TeamChatMessage[]) => void;
@@ -323,6 +333,7 @@ export function FloatingChatProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'MAXIMIZE_CHAT', payload: { chatId } }),
     closeChat: (chatId) =>
       dispatch({ type: 'CLOSE_CHAT', payload: { chatId } }),
+    closeAllChats: () => dispatch({ type: 'CLOSE_ALL_CHATS' }),
     toggleList: () => dispatch({ type: 'TOGGLE_LIST' }),
     closeList: () => dispatch({ type: 'CLOSE_LIST' }),
     updateMessages: (chatId, messages) =>

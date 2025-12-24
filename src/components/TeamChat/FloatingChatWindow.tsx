@@ -47,10 +47,17 @@ export function FloatingChatWindow({
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoadRef = useRef(true);
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chat.messages.length > 0) {
+      // Instant scroll on initial load, smooth scroll for new messages
+      messagesEndRef.current?.scrollIntoView({
+        behavior: isInitialLoadRef.current ? 'instant' : 'smooth'
+      });
+      isInitialLoadRef.current = false;
+    }
   }, [chat.messages]);
 
   const getInitials = (name: string) => {

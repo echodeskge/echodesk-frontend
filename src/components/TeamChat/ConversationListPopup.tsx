@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, User, X, Users } from 'lucide-react';
+import { Search, User, X, Users, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -24,7 +24,7 @@ export function ConversationListPopup({
   onlineUsers,
   isConnected,
 }: ConversationListPopupProps) {
-  const { state, openChat, closeList } = useFloatingChat();
+  const { state, openChat, closeList, closeAllChats } = useFloatingChat();
   const [searchQuery, setSearchQuery] = useState('');
 
   // Filter users and conversations based on search
@@ -103,14 +103,27 @@ export function ConversationListPopup({
             </span>
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
-          onClick={closeList}
-        >
-          <X className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {(state.openChats.length > 0 || state.minimizedChats.length > 0) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-primary-foreground hover:bg-primary-foreground/10"
+              onClick={closeAllChats}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              Close All
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
+            onClick={closeList}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
