@@ -155,24 +155,46 @@ export function EmailSignatureSettings() {
           </div>
           <Textarea
             id="signature-html"
-            placeholder="<p>Best regards,<br/>John Doe<br/><strong>Company Name</strong></p>"
+            placeholder={`Best regards,
+<br/><br/>
+<strong>John Doe</strong><br/>
+Marketing Manager<br/>
+<span style="color: #666;">Company Name</span><br/>
+<a href="https://example.com" style="color: #0066cc;">www.example.com</a> | +1 234 567 890`}
             value={signatureHtml}
             onChange={(e) => setSignatureHtml(e.target.value)}
-            className="min-h-[120px] font-mono text-sm"
+            className="min-h-[150px] font-mono text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            You can use HTML tags like &lt;p&gt;, &lt;br&gt;, &lt;strong&gt;, &lt;a href=&quot;...&quot;&gt; etc.
+            Use HTML tags like &lt;br/&gt;, &lt;strong&gt;, &lt;span style=&quot;...&quot;&gt;, &lt;a href=&quot;...&quot;&gt;.
+            <strong className="block mt-1">Tip:</strong> Use inline styles (e.g., style=&quot;color: #0066cc;&quot;) for consistent appearance across email clients.
           </p>
         </div>
 
-        {/* HTML Preview */}
+        {/* HTML Preview - matches actual email rendering */}
         {showPreview && signatureHtml && (
           <div className="space-y-2">
-            <Label>Preview</Label>
-            <div
-              className="rounded-md border bg-muted/30 p-4 prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: signatureHtml }}
-            />
+            <Label>Preview (as it will appear in emails)</Label>
+            <div className="rounded-md border bg-white p-4">
+              {/* Simulated email with signature */}
+              <div className="text-sm text-muted-foreground mb-3 pb-3 border-b border-dashed">
+                <span className="italic">Your message will appear here...</span>
+              </div>
+              {/* Signature with separator - matches backend email_utils.py wrapper */}
+              <div
+                className="pt-3 border-t border-gray-200 [&_a]:text-[#0066cc] [&_a]:underline"
+                style={{
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  color: "#666666",
+                }}
+                dangerouslySetInnerHTML={{ __html: signatureHtml }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              This preview shows how your signature will appear in email clients like Outlook and Gmail.
+            </p>
           </div>
         )}
 
