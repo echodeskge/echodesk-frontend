@@ -35,6 +35,8 @@ import {
   SubscriptionProvider,
   useSubscription,
 } from "@/contexts/SubscriptionContext";
+import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
+import { getNotificationSound } from "@/utils/notificationSound";
 import { navigationConfig } from "@/config/navigationConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
@@ -102,6 +104,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         return next;
       });
     },
+  });
+
+  // Global WebSocket for message notifications (plays sound when new messages arrive)
+  useMessagesWebSocket({
+    onNewMessage: () => {
+      // Play notification sound for new messages globally
+      getNotificationSound().play('message');
+    },
+    autoReconnect: true,
   });
 
   const [facebookConnected, setFacebookConnected] = useState(false);
