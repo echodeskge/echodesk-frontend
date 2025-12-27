@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Send } from "lucide-react"
+import { Send, ChevronDown, ChevronUp } from "lucide-react"
 import { useState, useEffect } from "react"
 
 import type { TextMessageFormType } from "@/components/chat/types"
@@ -11,7 +11,7 @@ import { TextMessageSchema } from "@/components/chat/schemas/text-message-schema
 
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useTypingWebSocket } from "@/hooks/useTypingWebSocket"
-import { ButtonLoading } from "@/components/ui/button"
+import { ButtonLoading, Button } from "@/components/ui/button"
 import { EmojiPicker } from "@/components/ui/emoji-picker"
 import {
   Form,
@@ -42,6 +42,13 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   const { chatState } = useChatContext()
   const { user } = useAuth()
   const [isSending, setIsSending] = useState(false)
+  const [showCcBcc, setShowCcBcc] = useState(false)
+  const [ccEmails, setCcEmails] = useState("")
+  const [bccEmails, setBccEmails] = useState("")
+
+  // Check if current chat is email
+  const isEmailPlatform = chatState.selectedChat?.platform === 'email' ||
+    chatState.selectedChat?.id?.startsWith('email_')
 
   // Typing indicator WebSocket
   const { notifyTyping, sendTypingStop } = useTypingWebSocket({
@@ -140,13 +147,30 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
         // Send email reply - convert plain text to HTML for proper signature rendering
         const bodyHtml = `<p>${data.text.replace(/\n/g, '<br>')}</p>`;
+
+        // Parse CC and BCC emails (comma or semicolon separated)
+        const parseCcBccEmails = (input: string): string[] => {
+          if (!input.trim()) return [];
+          return input
+            .split(/[,;]/)
+            .map(email => email.trim())
+            .filter(email => email.length > 0 && email.includes('@'));
+        };
+
         await axios.post('/api/social/email/send/', {
           to_emails: [customerEmail],
+          cc_emails: parseCcBccEmails(ccEmails),
+          bcc_emails: parseCcBccEmails(bccEmails),
           subject: latestMessage.subject?.startsWith('Re:') ? latestMessage.subject : `Re: ${latestMessage.subject || '(No subject)'}`,
           body_text: data.text,
           body_html: bodyHtml,
           reply_to_message_id: latestMessage.id,
         })
+
+        // Clear CC/BCC after sending
+        setCcEmails("");
+        setBccEmails("");
+        setShowCcBcc(false);
       } else {
         throw new Error('Unsupported platform: ' + platform)
       }
@@ -193,56 +217,102 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="w-full flex justify-center items-center gap-1.5"
-      >
-        <QuickReplySelector
-          platform={getPlatform()}
-          onSelect={handleQuickReplySelect}
-          customerName={chatState.selectedChat?.name}
-          agentName={user?.first_name || user?.email}
-        />
-        <EmojiPicker
-          onEmojiClick={(e) => {
-            form.setValue("text", text + e.emoji)
-            form.trigger()
-          }}
-        />
+      <div className="w-full space-y-2">
+        {/* CC/BCC fields for email */}
+        {isEmailPlatform && (
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setShowCcBcc(!showCcBcc)}
+            >
+              {showCcBcc ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+              {showCcBcc ? "Hide CC/BCC" : "Add CC/BCC"}
+            </Button>
 
-        <FormField
-          control={form.control}
-          name="text"
-          render={({ field }) => (
-            <FormItem className="grow space-y-0">
-              <FormLabel className="sr-only">Type a message</FormLabel>
-              <FormControl>
-                <Input
-                  type="text"
-                  placeholder="Type a message..."
-                  autoComplete="off"
-                  className="bg-accent"
-                  disabled={isSending}
-                  {...field}
-                  onChange={(e) => {
-                    field.onChange(e)
-                    handleInputChange(e.target.value)
-                  }}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            {showCcBcc && (
+              <div className="space-y-2 px-1">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground w-8">CC:</label>
+                  <Input
+                    type="text"
+                    placeholder="email@example.com, another@example.com"
+                    value={ccEmails}
+                    onChange={(e) => setCcEmails(e.target.value)}
+                    className="h-7 text-sm bg-accent"
+                    disabled={isSending}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground w-8">BCC:</label>
+                  <Input
+                    type="text"
+                    placeholder="email@example.com, another@example.com"
+                    value={bccEmails}
+                    onChange={(e) => setBccEmails(e.target.value)}
+                    className="h-7 text-sm bg-accent"
+                    disabled={isSending}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-        <ButtonLoading
-          isLoading={isSending}
-          disabled={isDisabled}
-          size="icon"
-          icon={Send}
-          iconClassName="me-0"
-          loadingIconClassName="me-0"
-        />
-      </form>
+        {/* Message input */}
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="w-full flex justify-center items-center gap-1.5"
+        >
+          <QuickReplySelector
+            platform={getPlatform()}
+            onSelect={handleQuickReplySelect}
+            customerName={chatState.selectedChat?.name}
+            agentName={user?.first_name || user?.email}
+          />
+          <EmojiPicker
+            onEmojiClick={(e) => {
+              form.setValue("text", text + e.emoji)
+              form.trigger()
+            }}
+          />
+
+          <FormField
+            control={form.control}
+            name="text"
+            render={({ field }) => (
+              <FormItem className="grow space-y-0">
+                <FormLabel className="sr-only">Type a message</FormLabel>
+                <FormControl>
+                  <Input
+                    type="text"
+                    placeholder="Type a message..."
+                    autoComplete="off"
+                    className="bg-accent"
+                    disabled={isSending}
+                    {...field}
+                    onChange={(e) => {
+                      field.onChange(e)
+                      handleInputChange(e.target.value)
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <ButtonLoading
+            isLoading={isSending}
+            disabled={isDisabled}
+            size="icon"
+            icon={Send}
+            iconClassName="me-0"
+            loadingIconClassName="me-0"
+          />
+        </form>
+      </div>
     </Form>
   )
 }
