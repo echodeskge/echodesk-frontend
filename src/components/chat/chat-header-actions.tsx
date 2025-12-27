@@ -97,7 +97,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   // Settings from assignment status response
   const settings = assignmentStatusData?.settings
   const assignmentEnabled = settings?.chat_assignment_enabled ?? false
-  const sessionManagementEnabled = settings?.session_management_enabled ?? false
+  // Session management is now part of chat assignment (no separate toggle)
 
   // Assignment state
   const assignment = assignmentStatusData?.assignment
@@ -212,8 +212,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                   </DropdownMenuItem>
                 )}
 
-                {/* Session controls - only show if assigned to me AND session management is enabled */}
-                {isAssignedToMe && sessionManagementEnabled && (
+                {/* Session controls - only show if assigned to me (session management is part of assignment) */}
+                {isAssignedToMe && (
                   <>
                     {/* Start Session - only show if assignment is active (not in session) */}
                     {isActiveAssignment && (

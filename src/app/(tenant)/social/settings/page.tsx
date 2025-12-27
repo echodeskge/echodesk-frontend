@@ -5,9 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Bell, MessageSquare, Clock, User, Loader2, Users, Play, EyeOff, Star } from "lucide-react";
+import { Bell, User, Loader2, Users, EyeOff, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,38 +26,29 @@ export default function SocialSettingsPage() {
   const updateSettings = useUpdateSocialSettings();
 
   // Local state for settings (initialized from query data)
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(5); // in seconds
   const [notifications, setNotifications] = useState(true);
   const [notificationSound, setNotificationSound] = useState(true);
   const [autoAssign, setAutoAssign] = useState(false);
 
-  // Chat management settings (separate toggles)
+  // Chat management settings
   const [chatAssignmentEnabled, setChatAssignmentEnabled] = useState(false);
-  const [sessionManagementEnabled, setSessionManagementEnabled] = useState(false);
   const [hideAssignedChats, setHideAssignedChats] = useState(false);
   const [collectCustomerRating, setCollectCustomerRating] = useState(false);
 
   // Sync local state with query data when it loads
   useEffect(() => {
     if (settings) {
-      // Convert milliseconds to seconds for display
-      setRefreshInterval(Math.round(settings.refresh_interval / 1000));
       setChatAssignmentEnabled(settings.chat_assignment_enabled ?? false);
-      setSessionManagementEnabled(settings.session_management_enabled ?? false);
       setHideAssignedChats(settings.hide_assigned_chats ?? false);
       setCollectCustomerRating(settings.collect_customer_rating ?? false);
     }
   }, [settings]);
 
   const handleSaveSettings = () => {
-    // Convert seconds to milliseconds for backend
-    const refreshIntervalMs = refreshInterval * 1000;
-
     const payload = {
-      refresh_interval: refreshIntervalMs,
       chat_assignment_enabled: Boolean(chatAssignmentEnabled),
-      session_management_enabled: Boolean(sessionManagementEnabled),
+      // session_management_enabled is deprecated - session management is now part of chat assignment
+      session_management_enabled: Boolean(chatAssignmentEnabled),
       hide_assigned_chats: Boolean(hideAssignedChats),
       collect_customer_rating: Boolean(collectCustomerRating),
     };
@@ -95,58 +85,6 @@ export default function SocialSettingsPage() {
       </div>
 
       <div className="space-y-6">
-        {/* Message Refresh Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" />
-              Message Refresh
-            </CardTitle>
-            <CardDescription>
-              Configure how often messages are refreshed
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="auto-refresh">Auto-refresh messages</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically check for new messages
-                </p>
-              </div>
-              <Switch
-                id="auto-refresh"
-                checked={autoRefresh}
-                onCheckedChange={setAutoRefresh}
-              />
-            </div>
-
-            {autoRefresh && (
-              <>
-                <Separator />
-                <div className="space-y-2">
-                  <Label htmlFor="refresh-interval" className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    Refresh interval (seconds)
-                  </Label>
-                  <Input
-                    id="refresh-interval"
-                    type="number"
-                    min="3"
-                    max="60"
-                    value={refreshInterval}
-                    onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                    className="max-w-xs"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Recommended: 5-10 seconds for best performance
-                  </p>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Notification Settings */}
         <Card>
           <CardHeader>
@@ -215,33 +153,13 @@ export default function SocialSettingsPage() {
                     Enable chat assignment
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Allow users to claim and assign chats to themselves
+                    Allow users to claim chats and manage sessions. Only the assigned user will receive notifications for that chat.
                   </p>
                 </div>
                 <Switch
                   id="chat-assignment"
                   checked={chatAssignmentEnabled}
                   onCheckedChange={setChatAssignmentEnabled}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Session Management Toggle */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="session-management" className="flex items-center gap-2">
-                    <Play className="h-4 w-4 text-green-500" />
-                    Enable session management
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Allow users to start and end chat sessions
-                  </p>
-                </div>
-                <Switch
-                  id="session-management"
-                  checked={sessionManagementEnabled}
-                  onCheckedChange={setSessionManagementEnabled}
                 />
               </div>
 
@@ -286,17 +204,19 @@ export default function SocialSettingsPage() {
               </div>
 
               {/* Info box showing enabled features */}
-              {(chatAssignmentEnabled || sessionManagementEnabled || hideAssignedChats || collectCustomerRating) && (
+              {(chatAssignmentEnabled || hideAssignedChats || collectCustomerRating) && (
                 <>
                   <Separator />
                   <div className="space-y-2 rounded-lg bg-muted/50 p-4">
                     <p className="text-sm font-medium">Enabled features:</p>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                       {chatAssignmentEnabled && (
-                        <li>Users can click &ldquo;Assign to Me&rdquo; from the chat menu to claim conversations</li>
-                      )}
-                      {sessionManagementEnabled && (
-                        <li>Users can &ldquo;Start Session&rdquo; and &ldquo;End Session&rdquo; for active support</li>
+                        <>
+                          <li>Users can click &ldquo;Assign to Me&rdquo; from the chat menu to claim conversations</li>
+                          <li>Users can &ldquo;Start Session&rdquo; and &ldquo;End Session&rdquo; for active support</li>
+                          <li>Only assigned user receives notifications for that chat (others see 0 unread)</li>
+                          <li>When session ends, notifications return to all users</li>
+                        </>
                       )}
                       {hideAssignedChats && (
                         <li>Assigned chats are hidden from other users (admins see all)</li>
