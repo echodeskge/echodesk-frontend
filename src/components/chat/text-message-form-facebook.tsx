@@ -138,11 +138,13 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           throw new Error('Could not determine recipient email address')
         }
 
-        // Send email reply
+        // Send email reply - convert plain text to HTML for proper signature rendering
+        const bodyHtml = `<p>${data.text.replace(/\n/g, '<br>')}</p>`;
         await axios.post('/api/social/email/send/', {
           to_emails: [customerEmail],
           subject: latestMessage.subject?.startsWith('Re:') ? latestMessage.subject : `Re: ${latestMessage.subject || '(No subject)'}`,
           body_text: data.text,
+          body_html: bodyHtml,
           reply_to_message_id: latestMessage.id,
         })
       } else {
