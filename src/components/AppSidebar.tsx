@@ -57,11 +57,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { AuthUser, TenantInfo } from "@/types/auth"
 import { User } from "@/api/generated/interfaces"
 import { MenuItem } from "@/services/permissionService"
 import { LockedFeatureBadge } from "@/components/subscription/LockedFeatureBadge"
 import { Lock } from "lucide-react"
+import { useUnreadMessagesCount } from "@/hooks/api/useSocial"
 
 // Icon mapping for menu items (lucide-react icon names)
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -128,6 +130,10 @@ export function AppSidebar({
   onMenuClick,
   onLogout
 }: AppSidebarProps) {
+  // Get email unread count for sidebar badge
+  const { data: unreadCount } = useUnreadMessagesCount()
+  const emailUnread = unreadCount?.email ?? 0
+
   return (
     <Sidebar variant="inset" className="bg-white border-r border-gray-200">
       <SidebarHeader className="bg-white border-b border-gray-100">
@@ -257,6 +263,15 @@ export function AppSidebar({
                         <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
                       )}
                       <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
+                      {/* Email unread badge for Messages menu item */}
+                      {item.id === 'messages' && emailUnread > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"
+                        >
+                          {emailUnread > 99 ? '99+' : emailUnread}
+                        </Badge>
+                      )}
                       {isLocked && <LockedFeatureBadge className="ml-auto" size="sm" />}
                     </SidebarMenuButton>
                   </SidebarMenuItem>

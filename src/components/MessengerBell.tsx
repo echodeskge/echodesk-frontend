@@ -22,7 +22,8 @@ export function MessengerBell({ className }: MessengerBellProps) {
   const router = useRouter()
   const { data: unreadCount, isLoading } = useUnreadMessagesCount()
 
-  const totalUnread = unreadCount?.total ?? 0
+  // Social messages only (exclude email - email has separate badge on sidebar)
+  const totalUnread = (unreadCount?.facebook ?? 0) + (unreadCount?.instagram ?? 0) + (unreadCount?.whatsapp ?? 0)
 
   const handleClick = () => {
     // Navigate to social messages page
