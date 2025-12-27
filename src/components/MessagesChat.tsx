@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { useMarkConversationRead } from "@/hooks/api/useSocial";
 import { convertUnifiedMessagesToMessageType } from "@/lib/chatAdapter";
+import { getNotificationSound } from "@/utils/notificationSound";
 
 interface PaginatedResponse<T> {
   count: number;
@@ -732,6 +733,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
   // Handle WebSocket new message
   const handleNewMessage = useCallback((data: any) => {
+    // Play notification sound for new messages (emails/social)
+    getNotificationSound().play('message');
+
     // Reload conversations to get the latest data
     loadAllConversations(true);
   }, [loadAllConversations]);

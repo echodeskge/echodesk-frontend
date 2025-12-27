@@ -1,10 +1,12 @@
 /**
  * Notification sound utility
- * Plays notification sounds with volume control
+ * Plays different notification sounds using Web Audio API
  */
 
+export type SoundType = 'message' | 'teamChat' | 'notification';
+
 class NotificationSoundManager {
-  private audio: HTMLAudioElement | null = null;
+  private audioContext: AudioContext | null = null;
   private enabled: boolean = true;
   private volume: number = 0.5; // Default volume 50%
 
@@ -14,24 +16,21 @@ class NotificationSoundManager {
       const settings = this.loadSettings();
       this.enabled = settings.enabled;
       this.volume = settings.volume;
-
-      // Pre-create audio element for faster playback
-      this.createAudioElement();
     }
   }
 
-  private createAudioElement() {
-    try {
-      // Use a simple notification sound data URL (short beep)
-      // This is a base64 encoded short notification sound
-      const soundDataUrl = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVqzn77BdGAg+ltvy0YMzBSN7x/DdlUELEFu06+yoVxILR6Df8rxrIgU2jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELElqy6+yoVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELE1uy6+2pVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELE1uy6+2pVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELE1uy6+2pVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELE1uy6+2pVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELE1uy6+2pVxILSKDe8r1sIgU3jdXy04MzBSF5x/DdlUELE1uy6+2pVxILSKDe8r1sIgU=';
+  private getAudioContext(): AudioContext | null {
+    if (typeof window === 'undefined') return null;
 
-      this.audio = new Audio(soundDataUrl);
-      this.audio.volume = this.volume;
-      this.audio.preload = 'auto';
-    } catch (error) {
-      console.error('[NotificationSound] Failed to create audio element:', error);
+    if (!this.audioContext) {
+      try {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch (error) {
+        console.error('[NotificationSound] Failed to create AudioContext:', error);
+        return null;
+      }
     }
+    return this.audioContext;
   }
 
   private loadSettings() {
@@ -62,24 +61,143 @@ class NotificationSoundManager {
   }
 
   /**
-   * Play notification sound
+   * Play notification sound for external messages (emails, social)
+   * Two-tone chime (high pitched, professional)
    */
-  public play(): void {
-    if (!this.enabled || !this.audio) {
+  private playMessageSound(context: AudioContext): void {
+    const now = context.currentTime;
+
+    // First tone - higher pitch
+    const osc1 = context.createOscillator();
+    const gain1 = context.createGain();
+    osc1.connect(gain1);
+    gain1.connect(context.destination);
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(880, now); // A5
+    osc1.frequency.setValueAtTime(1108, now + 0.08); // C#6
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(this.volume * 0.25, now + 0.015);
+    gain1.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.08);
+    gain1.gain.linearRampToValueAtTime(this.volume * 0.2, now + 0.1);
+    gain1.gain.linearRampToValueAtTime(0, now + 0.25);
+    osc1.start(now);
+    osc1.stop(now + 0.25);
+
+    // Harmonic overtone
+    const osc2 = context.createOscillator();
+    const gain2 = context.createGain();
+    osc2.connect(gain2);
+    gain2.connect(context.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1320, now); // E6
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(this.volume * 0.1, now + 0.015);
+    gain2.gain.linearRampToValueAtTime(0, now + 0.2);
+    osc2.start(now);
+    osc2.stop(now + 0.2);
+  }
+
+  /**
+   * Play notification sound for team chat (internal messages)
+   * Softer, warmer bubble/pop sound
+   */
+  private playTeamChatSound(context: AudioContext): void {
+    const now = context.currentTime;
+
+    // Bubble pop sound - lower, warmer tone
+    const osc1 = context.createOscillator();
+    const gain1 = context.createGain();
+    osc1.connect(gain1);
+    gain1.connect(context.destination);
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587, now); // D5
+    osc1.frequency.exponentialRampToValueAtTime(440, now + 0.15); // Slide down to A4
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(this.volume * 0.3, now + 0.02);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+    osc1.start(now);
+    osc1.stop(now + 0.2);
+
+    // Soft sub-bass for warmth
+    const osc2 = context.createOscillator();
+    const gain2 = context.createGain();
+    osc2.connect(gain2);
+    gain2.connect(context.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(294, now); // D4
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.02);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc2.start(now);
+    osc2.stop(now + 0.15);
+  }
+
+  /**
+   * Play notification sound for system notifications (tickets, etc.)
+   * Classic notification chime
+   */
+  private playNotificationSound(context: AudioContext): void {
+    const now = context.currentTime;
+
+    // Two-tone notification chime
+    const osc1 = context.createOscillator();
+    const gain1 = context.createGain();
+    osc1.connect(gain1);
+    gain1.connect(context.destination);
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(830, now); // E5
+    osc1.frequency.setValueAtTime(1046, now + 0.1); // C6
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(this.volume * 0.3, now + 0.02);
+    gain1.gain.linearRampToValueAtTime(this.volume * 0.2, now + 0.1);
+    gain1.gain.linearRampToValueAtTime(this.volume * 0.3, now + 0.12);
+    gain1.gain.linearRampToValueAtTime(0, now + 0.3);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+
+    // Higher harmonic
+    const osc2 = context.createOscillator();
+    const gain2 = context.createGain();
+    osc2.connect(gain2);
+    gain2.connect(context.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1318, now); // E6
+    gain2.gain.setValueAtTime(0, now);
+    gain2.gain.linearRampToValueAtTime(this.volume * 0.15, now + 0.02);
+    gain2.gain.linearRampToValueAtTime(0, now + 0.25);
+    osc2.start(now);
+    osc2.stop(now + 0.25);
+  }
+
+  /**
+   * Play notification sound
+   * @param type - Type of sound to play: 'message' (emails/social), 'teamChat' (internal), 'notification' (system)
+   */
+  public play(type: SoundType = 'notification'): void {
+    if (!this.enabled) {
       return;
     }
 
+    const context = this.getAudioContext();
+    if (!context) return;
+
     try {
-      // Reset audio to beginning
-      this.audio.currentTime = 0;
+      // Resume context if suspended (browser autoplay policy)
+      if (context.state === 'suspended') {
+        context.resume();
+      }
 
-      // Play sound (returns a promise)
-      const playPromise = this.audio.play();
-
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          // Auto-play was prevented - this is common in browsers
-        });
+      switch (type) {
+        case 'message':
+          this.playMessageSound(context);
+          break;
+        case 'teamChat':
+          this.playTeamChatSound(context);
+          break;
+        case 'notification':
+        default:
+          this.playNotificationSound(context);
+          break;
       }
     } catch (error) {
       console.error('[NotificationSound] Failed to play sound:', error);
@@ -123,9 +241,6 @@ class NotificationSoundManager {
    */
   public setVolume(volume: number): void {
     this.volume = Math.max(0, Math.min(1, volume));
-    if (this.audio) {
-      this.audio.volume = this.volume;
-    }
     this.saveSettings();
   }
 

@@ -16,6 +16,7 @@ import {
   useMarkConversationRead,
 } from './useTeamChatApi';
 import type { TeamChatUser, TeamChatMessage, TeamChatConversation } from './types';
+import { getNotificationSound } from '@/utils/notificationSound';
 
 interface TeamChatWidgetProps {
   currentUserId: number;
@@ -59,6 +60,11 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
       // Find which chat this message belongs to
       const senderId = message.sender.id;
       const otherUserId = senderId === currentUserId ? null : senderId;
+
+      // Play team chat sound for messages from other users
+      if (message.sender.id !== currentUserId) {
+        getNotificationSound().play('teamChat');
+      }
 
       // Add to any open chat that involves this user
       state.openChats.forEach((chat) => {
