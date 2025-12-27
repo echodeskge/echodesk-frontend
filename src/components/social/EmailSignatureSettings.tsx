@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +10,33 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Loader2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmailSignature, useUpdateEmailSignature } from "@/hooks/api/useSocial";
+
+// Helper function to process signature HTML for preview
+// Ensures images respect width/height attributes by adding inline styles
+function processSignatureForPreview(html: string): string {
+  if (!html) return html;
+
+  // Find img tags with width and height attributes and add inline styles
+  return html.replace(
+    /<img\s+([^>]*?)(?:width=["'](\d+)["'])([^>]*?)(?:height=["'](\d+)["'])([^>]*?)>/gi,
+    (match, before, width, middle, height, after) => {
+      // Remove any existing max-width from style
+      const cleanMatch = match.replace(/max-width:\s*[^;]+;?/gi, '');
+      // Add inline width/height styles
+      if (cleanMatch.includes('style="') || cleanMatch.includes("style='")) {
+        return cleanMatch.replace(
+          /style=["']([^"']*)["']/i,
+          `style="$1; width: ${width}px !important; height: ${height}px !important; max-width: none !important;"`
+        );
+      } else {
+        return cleanMatch.replace(
+          '<img ',
+          `<img style="width: ${width}px !important; height: ${height}px !important; max-width: none !important;" `
+        );
+      }
+    }
+  );
+}
 
 export function EmailSignatureSettings() {
   const { toast } = useToast();
@@ -23,6 +50,12 @@ export function EmailSignatureSettings() {
   const [includeOnReply, setIncludeOnReply] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Process signature HTML for accurate preview
+  const processedSignatureHtml = useMemo(
+    () => processSignatureForPreview(signatureHtml),
+    [signatureHtml]
+  );
 
   // Sync with server data
   useEffect(() => {
@@ -189,7 +222,7 @@ Marketing Manager<br/>
                   lineHeight: "1.5",
                   color: "#666666",
                 }}
-                dangerouslySetInnerHTML={{ __html: signatureHtml }}
+                dangerouslySetInnerHTML={{ __html: processedSignatureHtml }}
               />
             </div>
             <p className="text-xs text-muted-foreground">
