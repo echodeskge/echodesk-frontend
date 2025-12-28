@@ -101,19 +101,6 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
   // While loading, don't allow sending to prevent race conditions
   const canSendMessages = !isLoadingStatus && (!assignmentEnabled || (isAssignedToMe && isInSession))
 
-  // Debug logging
-  console.log("ChatBoxFooterFacebook:", {
-    chatIdParam,
-    currentChat: currentChat?.id,
-    chatInfo,
-    isLoadingStatus,
-    assignmentEnabled,
-    isAssigned,
-    isAssignedToMe,
-    isInSession,
-    canSendMessages,
-    assignmentStatusData,
-  })
 
   // Handle assign to me (this now automatically starts the session)
   const handleAssign = () => {
@@ -154,9 +141,21 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
           )}
 
           {isAssignedToMe && !isInSession && (
-            <p className="text-sm text-muted-foreground text-center">
-              Session ended - waiting for customer rating
-            </p>
+            chatInfo?.platform === 'email' ? (
+              // For email, allow starting new session immediately (no rating flow)
+              <>
+                <p className="text-sm text-muted-foreground text-center">
+                  Session ended
+                </p>
+                <Button onClick={handleAssign} disabled={assignChat.isPending}>
+                  {assignChat.isPending ? "Starting..." : "Start New Session"}
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center">
+                Session ended - waiting for customer rating
+              </p>
+            )
           )}
 
           {isAssigned && !isAssignedToMe && (

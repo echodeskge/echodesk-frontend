@@ -316,6 +316,29 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                 {t("refreshStatus")}
               </Button>
             </div>
+
+            {/* Setup Instructions inside Facebook card */}
+            {!isConnected && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <h4 className="font-medium flex items-center gap-2 mb-3">
+                  <Info className="h-4 w-4" />
+                  {t("howToConnect")}
+                </h4>
+                <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                  <li>{t("step1")}</li>
+                  <li>{t("step2")}</li>
+                  <li>{t("step3")}</li>
+                  <li>{t("step4")}</li>
+                  <li>{t("step5")}</li>
+                </ol>
+                <Alert className="mt-3">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>{tCommon("note")}:</strong> {t("noteAdmin")}
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -502,33 +525,6 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
 
         {/* TikTok Connection */}
         <TikTokConnection />
-
-        {/* Setup Instructions */}
-        {!isConnected && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Info className="h-5 w-5" />
-                {t("howToConnect")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                <li>{t("step1")}</li>
-                <li>{t("step2")}</li>
-                <li>{t("step3")}</li>
-                <li>{t("step4")}</li>
-                <li>{t("step5")}</li>
-              </ol>
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>{tCommon("note")}:</strong> {t("noteAdmin")}
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

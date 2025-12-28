@@ -186,11 +186,24 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
   const handleEndSession = () => {
     if (!chatInfo) return
-    endSession.mutate({
-      platform: chatInfo.platform,
-      conversation_id: chatInfo.conversationId,
-      account_id: chatInfo.accountId,
-    })
+    // End session and then unassign user
+    endSession.mutate(
+      {
+        platform: chatInfo.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+      },
+      {
+        onSuccess: () => {
+          // After ending session, also unassign the chat
+          unassignChat.mutate({
+            platform: chatInfo.platform,
+            conversation_id: chatInfo.conversationId,
+            account_id: chatInfo.accountId,
+          })
+        },
+      }
+    )
   }
 
   const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending
