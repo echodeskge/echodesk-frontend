@@ -75,6 +75,8 @@ interface UnifiedConversation {
   account_id: string;
   // Email-specific fields
   subject?: string;
+  // Unread count (messages from customers not read by staff)
+  unread_count?: number;
 }
 
 /**
@@ -215,6 +217,16 @@ export function convertFacebookMessagesToChatFormat(
     // Determine if messages are loaded (empty messages array means lazy loading needed)
     const messagesLoaded = chatMessages.length > 0 || conversation.platform !== 'email';
 
+    // Calculate unread count - use conversation.unread_count if available,
+    // otherwise check if last message is from customer and not read
+    let unreadCount = conversation.unread_count || 0;
+    if (unreadCount === 0 && conversation.last_message) {
+      // If last message is from customer (not from business) and not read, mark as 1 unread
+      if (!conversation.last_message.is_from_business && !conversation.last_message.is_read) {
+        unreadCount = 1;
+      }
+    }
+
     return {
       id: conversation.conversation_id,
       lastMessage,
@@ -224,7 +236,7 @@ export function convertFacebookMessagesToChatFormat(
       messages: chatMessages,
       users: [customerUser, businessUser],
       typingUsers: [],
-      unreadCount: 0, // We don't track unread count in our system
+      unreadCount,
       platform: conversation.platform,
       messagesLoaded,
     };

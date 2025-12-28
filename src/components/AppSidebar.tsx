@@ -263,8 +263,8 @@ export function AppSidebar({
                         <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
                       )}
                       <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
-                      {/* Email unread badge for Messages menu item */}
-                      {item.id === 'messages' && emailUnread > 0 && (
+                      {/* Email unread badge for Email Messages menu item */}
+                      {item.id === 'email/messages' && emailUnread > 0 && (
                         <Badge
                           variant="destructive"
                           className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"

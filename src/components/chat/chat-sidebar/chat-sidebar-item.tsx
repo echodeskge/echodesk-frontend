@@ -30,6 +30,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
       className={cn(
         buttonVariants({ variant: "ghost" }),
         chatIdParam === chat.id && "bg-accent", // Highlight the current chat box
+        chat.unreadCount && chat.unreadCount > 0 && "bg-muted/80", // Darker background for unread
         "h-fit w-full"
       )}
       aria-current={chatIdParam === chat.id ? "true" : undefined}
@@ -70,8 +71,13 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
         </div>
         <div className="h-11 w-full grid grid-cols-3 gap-x-4">
           <div className="col-span-2 grid">
-            <span className="truncate">{chat.name}</span>
-            <span className="text-xs text-muted-foreground font-semibold truncate">
+            <span className={cn("truncate", chat.unreadCount && chat.unreadCount > 0 && "font-semibold")}>{chat.name}</span>
+            <span className={cn(
+              "text-xs truncate",
+              chat.unreadCount && chat.unreadCount > 0
+                ? "text-foreground font-medium"
+                : "text-muted-foreground font-semibold"
+            )}>
               {chat.lastMessage?.content || "No messages yet..."}
             </span>
           </div>

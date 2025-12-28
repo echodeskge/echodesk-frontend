@@ -140,6 +140,8 @@ interface UnifiedConversation {
   account_id: string;
   // Email-specific fields
   subject?: string;
+  // Unread count
+  unread_count?: number;
 }
 
 type Platform = "facebook" | "instagram" | "whatsapp" | "email";
@@ -703,6 +705,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               account_name: emailConnection.email_address,
               account_id: String(emailConnection.id),
               subject: thread.subject,
+              unread_count: thread.unread_count || 0,
             };
 
             allConversations.push(conversation);
