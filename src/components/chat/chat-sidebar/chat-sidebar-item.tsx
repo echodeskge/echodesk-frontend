@@ -29,8 +29,10 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
       prefetch={false}
       className={cn(
         buttonVariants({ variant: "ghost" }),
-        chatIdParam === chat.id && "bg-accent", // Highlight the current chat box
-        chat.unreadCount && chat.unreadCount > 0 && "bg-muted/80", // Darker background for unread
+        // Unread chats get muted background (lighter)
+        chat.unreadCount && chat.unreadCount > 0 && "bg-muted/60",
+        // Active chat gets darker background (overrides unread)
+        chatIdParam === chat.id && "bg-primary/20 hover:bg-primary/25",
         "h-fit w-full"
       )}
       aria-current={chatIdParam === chat.id ? "true" : undefined}
