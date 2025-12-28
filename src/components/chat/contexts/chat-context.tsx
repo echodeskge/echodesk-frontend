@@ -18,12 +18,18 @@ export function ChatProvider({
   onChatSelected,
   loadChatMessages,
   isInitialLoading = false,
+  platforms = ['facebook', 'instagram', 'whatsapp', 'email'],
+  selectedEmailFolder: externalSelectedEmailFolder,
+  setSelectedEmailFolder: externalSetSelectedEmailFolder,
 }: {
   chatsData: ChatType[]
   children: ReactNode
   onChatSelected?: (chat: ChatType) => void
   loadChatMessages?: (chatId: string) => Promise<MessageType[]>
   isInitialLoading?: boolean
+  platforms?: string[]
+  selectedEmailFolder?: string
+  setSelectedEmailFolder?: (folder: string) => void
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -40,6 +46,11 @@ export function ChatProvider({
 
   // Assignment tab state
   const [assignmentTab, setAssignmentTab] = useState<AssignmentTabType>('all')
+
+  // Email folder filter state - use external if provided, otherwise internal
+  const [internalSelectedEmailFolder, setInternalSelectedEmailFolder] = useState<string>('INBOX')
+  const selectedEmailFolder = externalSelectedEmailFolder ?? internalSelectedEmailFolder
+  const setSelectedEmailFolder = externalSetSelectedEmailFolder ?? setInternalSelectedEmailFolder
 
   // Lazy loading state
   const [loadingMessages, setLoadingMessages] = useState(false)
@@ -131,6 +142,9 @@ export function ChatProvider({
         loadingMessages,
         loadChatMessages: handleLoadChatMessages,
         isInitialLoading,
+        platforms,
+        selectedEmailFolder,
+        setSelectedEmailFolder,
       }}
     >
       {children}

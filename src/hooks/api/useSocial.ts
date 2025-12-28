@@ -1027,8 +1027,13 @@ export interface EmailMessage {
 
 export interface EmailFolder {
   name: string;
-  delimiter: string;
-  flags: string[];
+  display_name: string;
+}
+
+export interface EmailMoveRequest {
+  message_id: string;
+  source_folder: string;
+  target_folder: string;
 }
 
 export interface EmailConnectRequest {
@@ -1156,11 +1161,13 @@ export function useInfiniteEmailMessages(filters?: {
 }
 
 // Email Threads Query
-export function useEmailThreads() {
+export function useEmailThreads(folder?: string) {
   return useQuery<GeneratedEmailMessage[]>({
-    queryKey: socialKeys.emailThreads(),
+    queryKey: [...socialKeys.emailThreads(), folder || 'All'],
     queryFn: async () => {
-      return await socialEmailMessagesThreadsRetrieve() as unknown as GeneratedEmailMessage[];
+      const params = folder && folder !== 'All' ? `?folder=${encodeURIComponent(folder)}` : '';
+      const response = await axios.get(`/api/social/email-messages/threads/${params}`);
+      return response.data as GeneratedEmailMessage[];
     },
     refetchInterval: 30000,
   });
@@ -1168,12 +1175,29 @@ export function useEmailThreads() {
 
 // Email Folders Query
 export function useEmailFolders() {
-  return useQuery<{ folders: EmailFolder[] }>({
+  return useQuery<EmailFolder[]>({
     queryKey: socialKeys.emailFolders(),
     queryFn: async () => {
-      return await socialEmailFoldersRetrieve();
+      const response = await axios.get('/api/social/email-messages/folders/');
+      return response.data as EmailFolder[];
     },
     staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+  });
+}
+
+// Move Email Mutation
+export function useMoveEmail() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EmailMoveRequest) => {
+      const response = await axios.post('/api/social/email-messages/move/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
+    },
   });
 }
 

@@ -192,9 +192,13 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const [chatsData, setChatsData] = useState<ChatType[]>(getInitialChatsData);
   const [currentUser, setCurrentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [wsConnected, setWsConnected] = useState(false);
+  const [selectedEmailFolder, setSelectedEmailFolder] = useState<string>('INBOX');
 
   // Ref to ensure initial load only happens once
   const hasInitiallyLoadedRef = useRef(false);
+
+  // Ref to track previous folder for change detection
+  const previousFolderRef = useRef<string>(selectedEmailFolder);
 
   // Cache chatsData to sessionStorage whenever it changes
   useEffect(() => {
@@ -657,7 +661,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
             message_count?: number;
             unread_count?: number;
           }
-          const threads = await socialEmailMessagesThreadsRetrieve() as unknown as EmailThreadMessage[];
+          // Fetch threads with folder filter
+          const folderParam = selectedEmailFolder && selectedEmailFolder !== 'All'
+            ? `?folder=${encodeURIComponent(selectedEmailFolder)}`
+            : '';
+          const threadsResponse = await axios.get(`/api/social/email-messages/threads/${folderParam}`);
+          const threads = threadsResponse.data as EmailThreadMessage[];
 
           for (const thread of (Array.isArray(threads) ? threads : [])) {
             // DON'T fetch all messages for each thread upfront
@@ -731,7 +740,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, []);
+  }, [enabledPlatforms, selectedEmailFolder]);
 
   // Handle WebSocket new message
   const handleNewMessage = useCallback((data: any) => {
@@ -770,6 +779,20 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     hasInitiallyLoadedRef.current = true;
     loadAllConversations();
   }, [loadAllConversations]);
+
+  // Reload when folder changes (only for email platform)
+  useEffect(() => {
+    // Skip if not on email page or if initial load hasn't happened
+    if (!enabledPlatforms.includes('email') || !hasInitiallyLoadedRef.current) {
+      return;
+    }
+
+    // Check if folder actually changed
+    if (previousFolderRef.current !== selectedEmailFolder) {
+      previousFolderRef.current = selectedEmailFolder;
+      loadAllConversations();
+    }
+  }, [selectedEmailFolder, enabledPlatforms, loadAllConversations]);
 
   // Define handleMessageSent before any early returns (hooks rule)
   const handleMessageSent = useCallback(() => {
@@ -869,7 +892,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
   // Always show the layout - loading state is handled within the chat area
   return (
-    <ChatProvider chatsData={chatsData} onChatSelected={handleChatSelected} loadChatMessages={loadChatMessages} isInitialLoading={loading}>
+    <ChatProvider chatsData={chatsData} onChatSelected={handleChatSelected} loadChatMessages={loadChatMessages} isInitialLoading={loading} platforms={enabledPlatforms} selectedEmailFolder={selectedEmailFolder} setSelectedEmailFolder={setSelectedEmailFolder}>
       <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
         <ChatSidebar />
         {chatId ? (

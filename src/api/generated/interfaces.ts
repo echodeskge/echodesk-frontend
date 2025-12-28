@@ -746,6 +746,27 @@ export interface EmailMessage {
   updated_at: string;
 }
 
+export interface EmailMessageRequest {
+  from_email: string;
+  from_name?: string;
+  to_emails?: any;
+  cc_emails?: any;
+  bcc_emails?: any;
+  reply_to?: string;
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  attachments?: any;
+  is_read?: boolean;
+  is_starred?: boolean;
+  is_draft?: boolean;
+  labels?: any;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
+  is_deleted?: boolean;
+  deleted_at?: string;
+}
+
 export interface EmailVerificationRequestRequest {
   verification_token: string;
   code: string;

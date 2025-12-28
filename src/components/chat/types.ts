@@ -30,6 +30,11 @@ export interface ChatContextType {
   loadingMessages: boolean
   loadChatMessages?: (chatId: string) => Promise<void>
   isInitialLoading: boolean
+  // Platform filter
+  platforms: string[]
+  // Email folder filter
+  selectedEmailFolder: string
+  setSelectedEmailFolder: (folder: string) => void
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null

@@ -281,6 +281,7 @@ import type {
   PatchedEmailDraftRequest,
   PaginatedEmailMessageList,
   EmailMessage,
+  EmailMessageRequest,
   PaginatedFacebookMessageList,
   FacebookMessage,
   PaginatedFacebookPageConnectionList,
@@ -5701,6 +5702,18 @@ export async function socialEmailMessagesRetrieve(
   id: number,
 ): Promise<EmailMessage> {
   const response = await axios.get(`/api/social/email-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialEmailMessagesFoldersRetrieve(): Promise<EmailMessage> {
+  const response = await axios.get(`/api/social/email-messages/folders/`);
+  return response.data;
+}
+
+export async function socialEmailMessagesMoveCreate(
+  data: EmailMessageRequest,
+): Promise<EmailMessage> {
+  const response = await axios.post(`/api/social/email-messages/move/`, data);
   return response.data;
 }
 
