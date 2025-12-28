@@ -110,11 +110,19 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     if (!chat?.platform || !chat?.id) return
 
     // Extract conversation_id from chat id
-    // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}
+    // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{thread_id}
     const parts = chat.id.split('_')
-    if (parts.length < 3) return
 
-    const conversationId = parts.slice(2).join('_')
+    let conversationId: string
+    if (chat.platform === 'email') {
+      // Email format: email_{thread_id}
+      if (parts.length < 2) return
+      conversationId = parts.slice(1).join('_') // thread_id
+    } else {
+      // Other platforms: prefix_{account_id}_{sender_id}
+      if (parts.length < 3) return
+      conversationId = parts.slice(2).join('_')
+    }
 
     deleteConversation.mutate(
       {
@@ -251,24 +259,30 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               </>
             )}
 
-            {/* Staff-only actions */}
+            {/* Staff-only actions - Block only in dropdown */}
             {canDelete && chat && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-destructive focus:text-destructive">
                   Block
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => setShowDeleteDialog(true)}
-                >
-                  <Trash2 className="size-4 mr-2" />
-                  Delete Conversation
-                </DropdownMenuItem>
               </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Delete button - outside dropdown for easy access */}
+        {canDelete && chat && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Delete conversation"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        )}
       </div>
 
       {/* Delete Confirmation Dialog */}

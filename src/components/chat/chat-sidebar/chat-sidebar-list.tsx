@@ -27,7 +27,8 @@ export function ChatSidebarList() {
 
   // If we've loaded before but currently have no data (component remounted), show a minimal loading state
   // This prevents showing "No conversations yet" while data is being refetched after navigation
-  const isRefetching = chatState.chats.length === 0 && hasEverLoaded
+  // BUT only show this if we're actually still loading - if loading is done, show empty state
+  const isRefetching = isInitialLoading && chatState.chats.length === 0 && hasEverLoaded
 
   // Filter chats based on search query and assignment tab
   const filteredChats = useMemo(() => {
