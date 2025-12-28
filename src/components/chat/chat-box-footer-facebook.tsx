@@ -23,9 +23,21 @@ interface ChatBoxFooterFacebookProps {
 // Helper to parse chat ID into platform, account_id, and conversation_id
 function parseChatId(chatId: string, platform?: string) {
   const parts = chatId.split('_')
+  const prefix = parts[0]
+
+  // Handle email platform separately (no account_id, just thread_id)
+  if (prefix === 'email' || platform === 'email') {
+    if (parts.length < 2) return null
+    return {
+      platform: 'email' as ChatAssignmentPlatform,
+      accountId: 'email', // Use 'email' as placeholder since emails don't have account_id
+      conversationId: parts.slice(1).join('_'), // thread_id
+    }
+  }
+
+  // Other platforms require at least 3 parts
   if (parts.length < 3) return null
 
-  const prefix = parts[0]
   const accountId = parts[1]
   const conversationId = parts.slice(2).join('_')
 
