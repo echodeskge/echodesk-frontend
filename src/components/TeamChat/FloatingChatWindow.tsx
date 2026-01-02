@@ -254,7 +254,7 @@ export function FloatingChatWindow({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="z-[100]">
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
                 onClick={() => setShowClearHistoryDialog(true)}
@@ -286,7 +286,7 @@ export function FloatingChatWindow({
 
       {/* Clear History Confirmation Dialog */}
       <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[100]">
           <AlertDialogHeader>
             <AlertDialogTitle>Clear Chat History</AlertDialogTitle>
             <AlertDialogDescription>
