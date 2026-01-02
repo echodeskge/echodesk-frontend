@@ -756,7 +756,72 @@
     "settingsDescription": "Configure how social media integrations work",
     "instagramAccounts": "Instagram Accounts",
     "connectedInstagramAccounts": "Connected Instagram Accounts",
-    "instagramConnectsViaFacebook": "Instagram accounts are connected through Facebook Pages. Connect a Facebook Page with an associated Instagram Business account to get started."
+    "instagramConnectsViaFacebook": "Instagram accounts are connected through Facebook Pages. Connect a Facebook Page with an associated Instagram Business account to get started.",
+    "viewMessages": "View Messages",
+    "note": "Note",
+    "pagesConnectedCount": "page(s) connected",
+    "accountsConnectedCount": "account(s) connected",
+    "error": "Error",
+    "settingsPage": {
+      "title": "Social Media Settings",
+      "description": "Configure how social media integrations work",
+      "notifications": {
+        "title": "Notifications",
+        "description": "Manage notification preferences for new messages",
+        "enable": "Enable notifications",
+        "enableDescription": "Show notifications for new messages",
+        "sound": "Notification sound",
+        "soundDescription": "Play sound when new message arrives"
+      },
+      "chatManagement": {
+        "title": "Chat Management",
+        "description": "Configure chat assignment, sessions, and customer ratings",
+        "enableAssignment": "Enable chat assignment",
+        "enableAssignmentDescription": "Allow users to claim chats and manage sessions. Only the assigned user will receive notifications for that chat.",
+        "hideAssigned": "Hide assigned chats from others",
+        "hideAssignedDescription": "When enabled, assigned chats are hidden from other users (admins can still see all)",
+        "collectRating": "Collect customer rating",
+        "collectRatingDescription": "Send rating request (1-5) to customer when session ends"
+      },
+      "enabledFeatures": {
+        "title": "Enabled features:",
+        "assignToMe": "Users can click \"Assign to Me\" from the chat menu to claim conversations",
+        "startEndSession": "Users can \"Start Session\" and \"End Session\" for active support",
+        "assignedNotifications": "Only assigned user receives notifications for that chat (others see 0 unread)",
+        "sessionEndNotifications": "When session ends, notifications return to all users",
+        "hiddenChats": "Assigned chats are hidden from other users (admins see all)",
+        "ratingRequest": "When session ends, customer receives rating request (1-5)"
+      },
+      "autoAssignment": {
+        "title": "Automatic Assignment",
+        "description": "Configure automatic assignment of conversations to agents",
+        "enable": "Auto-assign conversations",
+        "enableDescription": "Automatically assign new conversations to available agents",
+        "method": "Assignment method",
+        "methodDescription": "Coming soon: Round-robin, load-based, and manual assignment"
+      },
+      "emailSignature": {
+        "title": "Email Signature",
+        "description": "Configure your email signature for outgoing emails",
+        "enable": "Enable email signature",
+        "enableDescription": "Automatically append signature to outgoing emails",
+        "includeOnReply": "Include on replies",
+        "includeOnReplyDescription": "Include signature when replying to emails",
+        "htmlSignature": "Signature (HTML)",
+        "preview": "Preview",
+        "hidePreview": "Hide",
+        "plainTextFallback": "Plain Text Fallback",
+        "plainTextDescription": "Used for email clients that don't support HTML",
+        "saveSignature": "Save Signature"
+      },
+      "cancel": "Cancel",
+      "saveSettings": "Save Settings",
+      "saving": "Saving...",
+      "settingsSaved": "Settings saved",
+      "settingsSavedDescription": "Your social media settings have been updated successfully.",
+      "errorSaving": "Error saving settings",
+      "errorSavingDescription": "Failed to update settings. Please try again."
+    }
   },
   "timeTracking": {
     "title": "Time Tracking",

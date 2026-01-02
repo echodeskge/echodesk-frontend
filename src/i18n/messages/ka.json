@@ -757,6 +757,11 @@
     "instagramAccounts": "Instagram ანგარიშები",
     "connectedInstagramAccounts": "დაკავშირებული Instagram ანგარიშები",
     "instagramConnectsViaFacebook": "Instagram ანგარიშები დაკავშირებულია Facebook გვერდების მეშვეობით. დააკავშირეთ Facebook გვერდი ასოცირებული Instagram ბიზნეს ანგარიშით დასაწყებად.",
+    "viewMessages": "შეტყობინებების ნახვა",
+    "note": "შენიშვნა",
+    "pagesConnectedCount": "გვერდი დაკავშირებულია",
+    "accountsConnectedCount": "ანგარიში დაკავშირებულია",
+    "error": "შეცდომა",
     "settingsPage": {
       "title": "სოციალური მედიის პარამეტრები",
       "description": "კონფიგურაცია გაუკეთეთ სოციალური მედიის ინტეგრაციების მუშაობას",

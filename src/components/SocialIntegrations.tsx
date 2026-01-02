@@ -75,7 +75,6 @@ interface PaginatedResponse<T> {
 
 export default function SocialIntegrations({ onBackToDashboard, onConnectionChange }: SocialIntegrationsProps) {
   const t = useTranslations("social");
-  const tCommon = useTranslations("common");
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -242,7 +241,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                   isConnected && "bg-green-600 hover:bg-green-700"
                 )}
               >
-                {isConnected ? "Connected" : "Not Connected"}
+                {isConnected ? t("connected") : t("notConnected")}
               </Badge>
             </div>
           </CardHeader>
@@ -260,7 +259,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                   className="text-blue-700 hover:text-blue-800 hover:bg-blue-100"
                   onClick={() => router.push('/social/messages')}
                 >
-                  View Messages
+                  {t("viewMessages")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -334,7 +333,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                 <Alert className="mt-3">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>{tCommon("note")}:</strong> {t("noteAdmin")}
+                    <strong>{t("note")}:</strong> {t("noteAdmin")}
                   </AlertDescription>
                 </Alert>
               </div>
@@ -348,7 +347,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
             <CardHeader>
               <CardTitle className="text-lg">{t("connectedFacebookPages")}</CardTitle>
               <CardDescription>
-                {facebookPages.length} page{facebookPages.length !== 1 ? 's' : ''} connected
+                {facebookPages.length} {t("pagesConnectedCount")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -419,7 +418,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                   isInstagramConnected && "bg-pink-600 hover:bg-pink-700"
                 )}
               >
-                {isInstagramConnected ? "Connected" : "Not Connected"}
+                {isInstagramConnected ? t("connected") : t("notConnected")}
               </Badge>
             </div>
           </CardHeader>
@@ -437,7 +436,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                   className="text-pink-700 hover:text-pink-800 hover:bg-pink-100"
                   onClick={() => router.push('/social/messages')}
                 >
-                  View Messages
+                  {t("viewMessages")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -480,7 +479,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
             <CardHeader>
               <CardTitle className="text-lg">{t("connectedInstagramAccounts")}</CardTitle>
               <CardDescription>
-                {instagramAccounts.length} account{instagramAccounts.length !== 1 ? 's' : ''} connected
+                {instagramAccounts.length} {t("accountsConnectedCount")}
               </CardDescription>
             </CardHeader>
             <CardContent>
