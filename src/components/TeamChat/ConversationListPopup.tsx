@@ -40,15 +40,25 @@ export function ConversationListPopup({
   }, [users, searchQuery]);
 
   const filteredConversations = useMemo(() => {
-    if (!searchQuery) return conversations;
-    const query = searchQuery.toLowerCase();
-    return conversations.filter((conv) => {
-      const otherParticipant = conv.other_participant;
-      if (!otherParticipant) return false;
-      return (
-        otherParticipant.full_name.toLowerCase().includes(query) ||
-        otherParticipant.email.toLowerCase().includes(query)
-      );
+    let filtered = conversations;
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = conversations.filter((conv) => {
+        const otherParticipant = conv.other_participant;
+        if (!otherParticipant) return false;
+        return (
+          otherParticipant.full_name.toLowerCase().includes(query) ||
+          otherParticipant.email.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    // Sort by most recent message first (newest on top)
+    return [...filtered].sort((a, b) => {
+      const aTime = a.last_message?.created_at || a.updated_at;
+      const bTime = b.last_message?.created_at || b.updated_at;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
   }, [conversations, searchQuery]);
 
