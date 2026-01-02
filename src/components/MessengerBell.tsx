@@ -30,7 +30,7 @@ export function MessengerBell({ className }: MessengerBellProps) {
   const handleConversationClick = (conversation: RecentConversation) => {
     setIsOpen(false)
     // Navigate to the specific conversation
-    router.push(`/social/messages/${conversation.id}`)
+    router.push(`/messages/${conversation.id}`)
   }
 
   const handleSeeAllClick = () => {

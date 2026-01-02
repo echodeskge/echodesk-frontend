@@ -1871,7 +1871,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
           senderId: customerId,
           senderName: msg.sender_name || 'Unknown',
           senderAvatar: msg.profile_pic_url,
-          accountId: msg.page_name || '',
+          accountId: msg.page_id || msg.page_name || '',
           accountName: msg.page_name || '',
           latestMessage: {
             text: msg.message_text || msg.attachment_type || '',
