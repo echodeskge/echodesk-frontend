@@ -1502,6 +1502,7 @@ export function useSendTikTokMessage() {
 
 export interface EmailSignature {
   id: number;
+  sender_name: string;
   signature_html: string;
   signature_text: string;
   is_enabled: boolean;
@@ -1528,7 +1529,7 @@ export function useUpdateEmailSignature() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<Pick<EmailSignature, 'signature_html' | 'signature_text' | 'is_enabled' | 'include_on_reply'>>) => {
+    mutationFn: async (data: Partial<Pick<EmailSignature, 'sender_name' | 'signature_html' | 'signature_text' | 'is_enabled' | 'include_on_reply'>>) => {
       const response = await axios.patch('/api/social/email/signature/', data);
       return response.data;
     },
@@ -1812,66 +1813,232 @@ export interface RecentConversation {
   unreadCount: number;
 }
 
+interface ConversationGroup {
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  accountId: string;
+  accountName: string;
+  latestMessage: { text: string; timestamp: Date };
+  unreadCount: number;
+}
+
 export function useRecentConversations(options?: { enabled?: boolean; limit?: number }) {
   const limit = options?.limit ?? 15;
 
-  // Fetch from all platforms
+  // Fetch from all platforms - these return individual messages
   const { data: fbData, isLoading: fbLoading } = useFacebookMessages();
   const { data: igData, isLoading: igLoading } = useInstagramMessages();
   const { data: waData, isLoading: waLoading } = useWhatsAppMessages();
 
   const isLoading = fbLoading || igLoading || waLoading;
 
-  // Combine and sort conversations
+  // Group messages into conversations
   const conversations: RecentConversation[] = [];
 
-  // Process Facebook conversations
-  if (fbData?.results) {
-    for (const conv of fbData.results) {
+  // Process Facebook messages - group by sender_id
+  if (fbData?.results && fbData.results.length > 0) {
+    const fbConversations = new Map<string, ConversationGroup>();
+
+    // Find all customer IDs (non-page senders)
+    const customerIds = new Set<string>();
+    for (const msg of fbData.results) {
+      if (!msg.is_from_page && msg.sender_id) {
+        customerIds.add(msg.sender_id);
+      }
+    }
+
+    // Group messages by customer
+    for (const msg of fbData.results) {
+      // Determine customer ID for this message
+      let customerId: string;
+      if (msg.is_from_page) {
+        // For page messages, we need to find the customer from context
+        // Skip for now - we only want customer-initiated conversations
+        continue;
+      } else {
+        customerId = msg.sender_id;
+      }
+
+      if (!customerId) continue;
+
+      const existing = fbConversations.get(customerId);
+      const msgTimestamp = new Date(msg.timestamp);
+      const isUnread = !msg.is_read && !msg.is_from_page;
+
+      if (!existing) {
+        fbConversations.set(customerId, {
+          senderId: customerId,
+          senderName: msg.sender_name || 'Unknown',
+          senderAvatar: msg.profile_pic_url,
+          accountId: msg.page_name || '',
+          accountName: msg.page_name || '',
+          latestMessage: {
+            text: msg.message_text || msg.attachment_type || '',
+            timestamp: msgTimestamp
+          },
+          unreadCount: isUnread ? 1 : 0,
+        });
+      } else {
+        // Update if this message is newer
+        if (msgTimestamp > existing.latestMessage.timestamp) {
+          existing.latestMessage = {
+            text: msg.message_text || msg.attachment_type || '',
+            timestamp: msgTimestamp
+          };
+        }
+        // Update sender info if we have it
+        if (msg.sender_name && existing.senderName === 'Unknown') {
+          existing.senderName = msg.sender_name;
+        }
+        if (msg.profile_pic_url && !existing.senderAvatar) {
+          existing.senderAvatar = msg.profile_pic_url;
+        }
+        if (isUnread) {
+          existing.unreadCount++;
+        }
+      }
+    }
+
+    // Convert to RecentConversation format
+    for (const [senderId, conv] of fbConversations) {
       conversations.push({
-        id: `fb_${conv.page_id}_${conv.sender_id}`,
+        id: `fb_${conv.accountId}_${senderId}`,
         platform: 'facebook',
-        conversationId: conv.sender_id,
-        accountId: conv.page_id,
-        senderName: conv.sender_name || 'Unknown',
-        senderAvatar: conv.profile_pic_url,
-        lastMessage: conv.last_message?.text || conv.last_message?.attachment_type || '',
-        lastMessageAt: new Date(conv.last_message?.created_at || conv.updated_at),
-        unreadCount: conv.unread_count || 0,
+        conversationId: senderId,
+        accountId: conv.accountId,
+        senderName: conv.senderName,
+        senderAvatar: conv.senderAvatar,
+        lastMessage: conv.latestMessage.text,
+        lastMessageAt: conv.latestMessage.timestamp,
+        unreadCount: conv.unreadCount,
       });
     }
   }
 
-  // Process Instagram conversations
-  if (igData?.results) {
-    for (const conv of igData.results) {
+  // Process Instagram messages - group by sender_id
+  if (igData?.results && igData.results.length > 0) {
+    const igConversations = new Map<string, ConversationGroup>();
+
+    for (const msg of igData.results) {
+      // Skip business messages
+      if (msg.is_from_business) continue;
+
+      const customerId = msg.sender_id;
+      if (!customerId) continue;
+
+      const existing = igConversations.get(customerId);
+      const msgTimestamp = new Date(msg.timestamp);
+      const isUnread = !msg.is_read && !msg.is_from_business;
+
+      if (!existing) {
+        igConversations.set(customerId, {
+          senderId: customerId,
+          senderName: msg.sender_name || msg.sender_username || 'Unknown',
+          senderAvatar: msg.sender_profile_pic,
+          accountId: msg.account_username || '',
+          accountName: msg.account_username || '',
+          latestMessage: {
+            text: msg.message_text || msg.attachment_type || '',
+            timestamp: msgTimestamp
+          },
+          unreadCount: isUnread ? 1 : 0,
+        });
+      } else {
+        if (msgTimestamp > existing.latestMessage.timestamp) {
+          existing.latestMessage = {
+            text: msg.message_text || msg.attachment_type || '',
+            timestamp: msgTimestamp
+          };
+        }
+        if (msg.sender_name && existing.senderName === 'Unknown') {
+          existing.senderName = msg.sender_name || msg.sender_username || 'Unknown';
+        }
+        if (msg.sender_profile_pic && !existing.senderAvatar) {
+          existing.senderAvatar = msg.sender_profile_pic;
+        }
+        if (isUnread) {
+          existing.unreadCount++;
+        }
+      }
+    }
+
+    for (const [senderId, conv] of igConversations) {
       conversations.push({
-        id: `ig_${conv.account_id}_${conv.sender_id}`,
+        id: `ig_${conv.accountId}_${senderId}`,
         platform: 'instagram',
-        conversationId: conv.sender_id,
-        accountId: conv.account_id,
-        senderName: conv.sender_name || conv.sender_username || 'Unknown',
-        senderAvatar: conv.profile_pic_url,
-        lastMessage: conv.last_message?.text || conv.last_message?.attachment_type || '',
-        lastMessageAt: new Date(conv.last_message?.created_at || conv.updated_at),
-        unreadCount: conv.unread_count || 0,
+        conversationId: senderId,
+        accountId: conv.accountId,
+        senderName: conv.senderName,
+        senderAvatar: conv.senderAvatar,
+        lastMessage: conv.latestMessage.text,
+        lastMessageAt: conv.latestMessage.timestamp,
+        unreadCount: conv.unreadCount,
       });
     }
   }
 
-  // Process WhatsApp conversations
-  if (waData?.results) {
-    for (const conv of waData.results) {
+  // Process WhatsApp messages - group by from_number
+  if (waData?.results && waData.results.length > 0) {
+    const waConversations = new Map<string, ConversationGroup>();
+
+    // Helper to normalize phone numbers
+    const normalizePhone = (phone: string) => phone?.startsWith('+') ? phone.substring(1) : phone;
+
+    for (const msg of waData.results) {
+      // Skip business messages
+      if (msg.is_from_business) continue;
+
+      const customerId = normalizePhone(msg.from_number);
+      if (!customerId) continue;
+
+      const existing = waConversations.get(customerId);
+      const msgTimestamp = new Date(msg.timestamp);
+      const isUnread = !msg.is_read && !msg.is_from_business;
+
+      if (!existing) {
+        waConversations.set(customerId, {
+          senderId: customerId,
+          senderName: msg.contact_name || msg.from_number,
+          senderAvatar: msg.profile_pic_url,
+          accountId: msg.waba_id || '',
+          accountName: msg.waba_id || '',
+          latestMessage: {
+            text: msg.message_text || msg.message_type || '',
+            timestamp: msgTimestamp
+          },
+          unreadCount: isUnread ? 1 : 0,
+        });
+      } else {
+        if (msgTimestamp > existing.latestMessage.timestamp) {
+          existing.latestMessage = {
+            text: msg.message_text || msg.message_type || '',
+            timestamp: msgTimestamp
+          };
+        }
+        if (msg.contact_name && (existing.senderName === customerId || existing.senderName === msg.from_number)) {
+          existing.senderName = msg.contact_name;
+        }
+        if (msg.profile_pic_url && !existing.senderAvatar) {
+          existing.senderAvatar = msg.profile_pic_url;
+        }
+        if (isUnread) {
+          existing.unreadCount++;
+        }
+      }
+    }
+
+    for (const [senderId, conv] of waConversations) {
       conversations.push({
-        id: `wa_${conv.waba_id}_${conv.from_number}`,
+        id: `wa_${conv.accountId}_${senderId}`,
         platform: 'whatsapp',
-        conversationId: conv.from_number,
-        accountId: conv.waba_id,
-        senderName: conv.contact_name || conv.from_number,
-        senderAvatar: conv.profile_pic_url,
-        lastMessage: conv.last_message?.text || conv.last_message?.message_type || '',
-        lastMessageAt: new Date(conv.last_message?.created_at || conv.updated_at),
-        unreadCount: conv.unread_count || 0,
+        conversationId: senderId,
+        accountId: conv.accountId,
+        senderName: conv.senderName,
+        senderAvatar: conv.senderAvatar,
+        lastMessage: conv.latestMessage.text,
+        lastMessageAt: conv.latestMessage.timestamp,
+        unreadCount: conv.unreadCount,
       });
     }
   }

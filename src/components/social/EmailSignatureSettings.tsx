@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Loader2, Eye, EyeOff } from "lucide-react";
@@ -44,6 +45,7 @@ export function EmailSignatureSettings() {
   const updateSignature = useUpdateEmailSignature();
 
   // Local state
+  const [senderName, setSenderName] = useState("");
   const [signatureHtml, setSignatureHtml] = useState("");
   const [signatureText, setSignatureText] = useState("");
   const [isEnabled, setIsEnabled] = useState(true);
@@ -60,6 +62,7 @@ export function EmailSignatureSettings() {
   // Sync with server data
   useEffect(() => {
     if (signature) {
+      setSenderName(signature.sender_name || "");
       setSignatureHtml(signature.signature_html || "");
       setSignatureText(signature.signature_text || "");
       setIsEnabled(signature.is_enabled);
@@ -72,17 +75,19 @@ export function EmailSignatureSettings() {
   useEffect(() => {
     if (signature) {
       const changed =
+        senderName !== (signature.sender_name || "") ||
         signatureHtml !== (signature.signature_html || "") ||
         signatureText !== (signature.signature_text || "") ||
         isEnabled !== signature.is_enabled ||
         includeOnReply !== signature.include_on_reply;
       setHasChanges(changed);
     }
-  }, [signatureHtml, signatureText, isEnabled, includeOnReply, signature]);
+  }, [senderName, signatureHtml, signatureText, isEnabled, includeOnReply, signature]);
 
   const handleSave = () => {
     updateSignature.mutate(
       {
+        sender_name: senderName,
         signature_html: signatureHtml,
         signature_text: signatureText,
         is_enabled: isEnabled,
@@ -159,6 +164,22 @@ export function EmailSignatureSettings() {
             checked={includeOnReply}
             onCheckedChange={setIncludeOnReply}
           />
+        </div>
+
+        <Separator />
+
+        {/* Sender Name */}
+        <div className="space-y-2">
+          <Label htmlFor="sender-name">Sender Name</Label>
+          <Input
+            id="sender-name"
+            placeholder="John Doe or Support Team"
+            value={senderName}
+            onChange={(e) => setSenderName(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Name to display in the signature (e.g., &quot;John Doe&quot; or &quot;Support Team&quot;)
+          </p>
         </div>
 
         <Separator />

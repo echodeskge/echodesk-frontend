@@ -1,6 +1,7 @@
 "use client"
 
-import { FolderOpen, ChevronDown } from "lucide-react"
+import { useState } from "react"
+import { FolderOpen, ChevronDown, PenSquare } from "lucide-react"
 import { CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,10 +14,12 @@ import { ChatSidebarActionButtons } from "./chat-sidebar-action-buttons"
 import { ChatSidebarSearchInput } from "./chat-sidebar-search-input"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useEmailFolders } from "@/hooks/api/useSocial"
+import { ComposeEmailDialog } from "@/components/email/ComposeEmailDialog"
 
 export function ChatSidebarHeader() {
   const { platforms, selectedEmailFolder, setSelectedEmailFolder } = useChatContext()
   const isEmailOnly = platforms.length === 1 && platforms[0] === 'email'
+  const [composeOpen, setComposeOpen] = useState(false)
 
   // Only fetch folders when on email page
   const { data: folders, isLoading: foldersLoading } = useEmailFolders()
@@ -34,6 +37,22 @@ export function ChatSidebarHeader() {
         <ChatSidebarSearchInput />
         <ChatSidebarActionButtons />
       </div>
+
+      {/* Compose button and folder dropdown for email view */}
+      {isEmailOnly && (
+        <>
+          <Button
+            variant="default"
+            size="sm"
+            className="w-full"
+            onClick={() => setComposeOpen(true)}
+          >
+            <PenSquare className="h-4 w-4 mr-2" />
+            Compose
+          </Button>
+          <ComposeEmailDialog open={composeOpen} onOpenChange={setComposeOpen} />
+        </>
+      )}
 
       {/* Folder dropdown for email view */}
       {isEmailOnly && (
