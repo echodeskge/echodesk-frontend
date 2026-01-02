@@ -100,7 +100,7 @@ import type {
   AttributeDefinitionRequest,
   AttributeDefinition,
   PatchedAttributeDefinitionRequest,
-  PaginatedCartList,
+  PaginatedCartListList,
   CartRequest,
   Cart,
   PaginatedCartItemList,
@@ -109,7 +109,7 @@ import type {
   CartItem,
   PatchedCartItemCreateRequest,
   PatchedCartRequest,
-  PaginatedEcommerceClientList,
+  PaginatedEcommerceClientListList,
   EcommerceClientRequest,
   EcommerceClient,
   PatchedEcommerceClientRequest,
@@ -132,7 +132,7 @@ import type {
   LanguageRequest,
   Language,
   PatchedLanguageRequest,
-  PaginatedOrderList,
+  PaginatedOrderListList,
   OrderCreateRequest,
   OrderCreate,
   Order,
@@ -159,10 +159,12 @@ import type {
   ProductVariantRequest,
   ProductVariant,
   PatchedProductVariantRequest,
+  PaginatedCartList,
   HomepageSectionPublic,
   PaginatedItemListMinimalList,
   ItemListDetail,
   ListItem,
+  PaginatedOrderList,
   ClientLoginRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequestRequest,
@@ -2282,7 +2284,7 @@ export async function ecommerceAdminCartList(
   page?: number,
   pageSize?: number,
   status?: 'abandoned' | 'active' | 'converted',
-): Promise<PaginatedCartList> {
+): Promise<PaginatedCartListList> {
   const response = await axios.get(
     `/api/ecommerce/admin/cart/${(() => {
       const parts = [
@@ -2421,7 +2423,7 @@ export async function ecommerceAdminClientsList(
   page?: number,
   pageSize?: number,
   search?: string,
-): Promise<PaginatedEcommerceClientList> {
+): Promise<PaginatedEcommerceClientListList> {
   const response = await axios.get(
     `/api/ecommerce/admin/clients/${(() => {
       const parts = [
@@ -2793,7 +2795,7 @@ export async function ecommerceAdminOrdersList(
     | 'processing'
     | 'refunded'
     | 'shipped',
-): Promise<PaginatedOrderList> {
+): Promise<PaginatedOrderListList> {
   const response = await axios.get(
     `/api/ecommerce/admin/orders/${(() => {
       const parts = [
@@ -5764,6 +5766,16 @@ export async function socialEmailStatusRetrieve(): Promise<any> {
 
 export async function socialEmailSyncCreate(): Promise<any> {
   const response = await axios.post(`/api/social/email/sync/`);
+  return response.data;
+}
+
+export async function socialEmailSyncDebugRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/email/sync/debug/`);
+  return response.data;
+}
+
+export async function socialEmailSyncSettingsCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/sync/settings/`);
   return response.data;
 }
 

@@ -396,7 +396,7 @@ export interface Cart {
   id: number;
   client: number;
   delivery_address: ClientAddress;
-  status?: CartStatusEnum;
+  status?: Status2c9enum;
   notes?: string;
   items: CartItem[];
   total_amount: string;
@@ -438,14 +438,19 @@ export interface CartItemRequest {
   quantity?: number;
 }
 
-export interface CartRequest {
+export interface CartList {
+  id: number;
   client: number;
-  status?: CartStatusEnum;
-  notes?: string;
+  client_name: string;
+  status?: Status2c9enum;
+  items_count: string;
+  updated_at: string;
 }
 
-export interface CartStatusEnum {
-  [key: string]: any;
+export interface CartRequest {
+  client: number;
+  status?: Status2c9enum;
+  notes?: string;
 }
 
 export interface CategoryAf8enum {
@@ -609,6 +614,20 @@ export interface EcommerceClient {
   updated_at: string;
   addresses: ClientAddress[];
   favorites: string;
+}
+
+export interface EcommerceClientList {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  phone_number: string;
+  date_of_birth?: string;
+  is_active?: boolean;
+  is_verified: boolean;
+  last_login?: string;
+  created_at: string;
 }
 
 export interface EcommerceClientRequest {
@@ -1717,13 +1736,13 @@ export interface Order {
   client: number;
   client_details: string;
   delivery_address: ClientAddress;
-  status?: OrderStatusEnum;
+  status?: Status0faEnum;
   total_amount: string;
   notes?: string;
   admin_notes?: string;
   items: OrderItem[];
   total_items: number;
-  payment_status?: OrderPaymentStatusEnum;
+  payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   bog_order_id: string;
   payment_url: string;
@@ -1771,25 +1790,28 @@ export interface OrderItemRequest {
   price: string;
 }
 
-export interface OrderPaymentStatusEnum {
-  [key: string]: any;
+export interface OrderList {
+  id: number;
+  order_number: string;
+  client: number;
+  client_name: string;
+  status?: Status0faEnum;
+  payment_status?: PaymentStatus2d4enum;
+  total_amount: string;
+  created_at: string;
 }
 
 export interface OrderRequest {
   client: number;
-  status?: OrderStatusEnum;
+  status?: Status0faEnum;
   total_amount: string;
   notes?: string;
   admin_notes?: string;
-  payment_status?: OrderPaymentStatusEnum;
+  payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   confirmed_at?: string;
   shipped_at?: string;
   delivered_at?: string;
-}
-
-export interface OrderStatusEnum {
-  [key: string]: any;
 }
 
 export interface PaginatedAttributeDefinitionList {
@@ -1848,6 +1870,13 @@ export interface PaginatedCartList {
   results: Cart[];
 }
 
+export interface PaginatedCartListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: CartList[];
+}
+
 export interface PaginatedChecklistItemList {
   count: number;
   next?: string;
@@ -1876,11 +1905,11 @@ export interface PaginatedDepartmentList {
   results: Department[];
 }
 
-export interface PaginatedEcommerceClientList {
+export interface PaginatedEcommerceClientListList {
   count: number;
   next?: string;
   previous?: string;
-  results: EcommerceClient[];
+  results: EcommerceClientList[];
 }
 
 export interface PaginatedEcommerceSettingsList {
@@ -2070,6 +2099,13 @@ export interface PaginatedOrderList {
   next?: string;
   previous?: string;
   results: Order[];
+}
+
+export interface PaginatedOrderListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: OrderList[];
 }
 
 export interface PaginatedPermissionList {
@@ -2388,7 +2424,7 @@ export interface PatchedCartItemCreateRequest {
 
 export interface PatchedCartRequest {
   client?: number;
-  status?: CartStatusEnum;
+  status?: Status2c9enum;
   notes?: string;
 }
 
@@ -2664,11 +2700,11 @@ export interface PatchedNotificationRequest {
 
 export interface PatchedOrderRequest {
   client?: number;
-  status?: OrderStatusEnum;
+  status?: Status0faEnum;
   total_amount?: string;
   notes?: string;
   admin_notes?: string;
-  payment_status?: OrderPaymentStatusEnum;
+  payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   confirmed_at?: string;
   shipped_at?: string;
@@ -2934,6 +2970,10 @@ export interface PatchedWhatsAppBusinessAccountRequest {
   display_phone_number?: string;
   quality_rating?: string;
   is_active?: boolean;
+}
+
+export interface PaymentStatus2d4enum {
+  [key: string]: any;
 }
 
 export interface PaymentStatusD7dEnum {
@@ -3506,6 +3546,14 @@ export interface StaffExceptionRequest {
   end_time?: string;
   is_available?: boolean;
   reason?: string;
+}
+
+export interface Status0faEnum {
+  [key: string]: any;
+}
+
+export interface Status2c9enum {
+  [key: string]: any;
 }
 
 export interface Status6efEnum {

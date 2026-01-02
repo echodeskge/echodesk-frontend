@@ -3,7 +3,7 @@ import {
   ecommerceAdminClientsList,
   ecommerceAdminClientsRetrieve
 } from "@/api/generated";
-import type { PaginatedEcommerceClientList } from "@/api/generated/interfaces";
+import type { PaginatedEcommerceClientListList } from "@/api/generated/interfaces";
 
 interface UseClientsParams {
   search?: string;

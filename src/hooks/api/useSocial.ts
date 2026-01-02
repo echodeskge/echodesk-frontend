@@ -1479,6 +1479,86 @@ export function useUpdateEmailSignature() {
 }
 
 // ============================================================================
+// EMAIL SYNC DEBUG HOOKS
+// ============================================================================
+
+export interface EmailSyncFolderDebug {
+  name: string;
+  is_synced: boolean;
+  skip_reason: string | null;
+  total_messages_on_server?: number;
+  messages_matching_filter?: number;
+  messages_already_synced?: number;
+  search_filter?: string;
+  select_error?: string;
+  search_error?: string;
+  error?: string;
+}
+
+export interface EmailSyncDebugInfo {
+  connection: {
+    email: string;
+    imap_server: string;
+    sync_days_back: number;
+    sync_days_back_meaning: string;
+    last_sync_at: string | null;
+    last_sync_error: string | null;
+  };
+  folders: EmailSyncFolderDebug[];
+  skipped_folders: EmailSyncFolderDebug[];
+  summary: {
+    total_folders_on_server: number;
+    folders_being_synced: number;
+    folders_skipped: number;
+    total_messages_in_db: number;
+  };
+  errors: string[];
+}
+
+export function useEmailSyncDebug() {
+  return useQuery<EmailSyncDebugInfo>({
+    queryKey: [...socialKeys.email(), 'syncDebug'],
+    queryFn: async () => {
+      const response = await axios.get('/api/social/email/sync/debug/');
+      return response.data;
+    },
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache
+  });
+}
+
+export function useEmailSync() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/social/email/sync/');
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate email-related queries after sync
+      queryClient.invalidateQueries({ queryKey: socialKeys.email() });
+    },
+  });
+}
+
+export function useUpdateEmailSyncSettings() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (syncDaysBack: number) => {
+      const response = await axios.post('/api/social/email/sync/settings/', {
+        sync_days_back: syncDaysBack,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...socialKeys.email(), 'syncDebug'] });
+    },
+  });
+}
+
+// ============================================================================
 // QUICK REPLY HOOKS
 // ============================================================================
 
