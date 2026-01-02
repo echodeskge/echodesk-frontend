@@ -78,10 +78,10 @@ export default function SocialSettingsPage() {
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">
-          {t("settings") || "Social Media Settings"}
+          {t("settingsPage.title") || t("settings") || "Social Media Settings"}
         </h1>
         <p className="text-muted-foreground mt-2">
-          {t("settingsDescription") || "Configure how social media integrations work"}
+          {t("settingsPage.description") || t("settingsDescription") || "Configure how social media integrations work"}
         </p>
       </div>
 
@@ -91,18 +91,18 @@ export default function SocialSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              Notifications
+              {t("settingsPage.notifications.title") || "Notifications"}
             </CardTitle>
             <CardDescription>
-              Manage notification preferences for new messages
+              {t("settingsPage.notifications.description") || "Manage notification preferences for new messages"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="notifications">Enable notifications</Label>
+                <Label htmlFor="notifications">{t("settingsPage.notifications.enable") || "Enable notifications"}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Show notifications for new messages
+                  {t("settingsPage.notifications.enableDescription") || "Show notifications for new messages"}
                 </p>
               </div>
               <Switch
@@ -117,9 +117,9 @@ export default function SocialSettingsPage() {
                 <Separator />
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label htmlFor="notification-sound">Notification sound</Label>
+                    <Label htmlFor="notification-sound">{t("settingsPage.notifications.sound") || "Notification sound"}</Label>
                     <p className="text-sm text-muted-foreground">
-                      Play sound when new message arrives
+                      {t("settingsPage.notifications.soundDescription") || "Play sound when new message arrives"}
                     </p>
                   </div>
                   <Switch
@@ -139,10 +139,10 @@ export default function SocialSettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Chat Management
+                {t("settingsPage.chatManagement.title") || "Chat Management"}
               </CardTitle>
               <CardDescription>
-                Configure chat assignment, sessions, and customer ratings
+                {t("settingsPage.chatManagement.description") || "Configure chat assignment, sessions, and customer ratings"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -151,10 +151,10 @@ export default function SocialSettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="chat-assignment" className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-blue-500" />
-                    Enable chat assignment
+                    {t("settingsPage.chatManagement.enableAssignment") || "Enable chat assignment"}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Allow users to claim chats and manage sessions. Only the assigned user will receive notifications for that chat.
+                    {t("settingsPage.chatManagement.enableAssignmentDescription") || "Allow users to claim chats and manage sessions. Only the assigned user will receive notifications for that chat."}
                   </p>
                 </div>
                 <Switch
@@ -171,10 +171,10 @@ export default function SocialSettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="hide-assigned" className="flex items-center gap-2">
                     <EyeOff className="h-4 w-4 text-orange-500" />
-                    Hide assigned chats from others
+                    {t("settingsPage.chatManagement.hideAssigned") || "Hide assigned chats from others"}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    When enabled, assigned chats are hidden from other users (admins can still see all)
+                    {t("settingsPage.chatManagement.hideAssignedDescription") || "When enabled, assigned chats are hidden from other users (admins can still see all)"}
                   </p>
                 </div>
                 <Switch
@@ -191,10 +191,10 @@ export default function SocialSettingsPage() {
                 <div className="space-y-0.5">
                   <Label htmlFor="collect-rating" className="flex items-center gap-2">
                     <Star className="h-4 w-4 text-yellow-500" />
-                    Collect customer rating
+                    {t("settingsPage.chatManagement.collectRating") || "Collect customer rating"}
                   </Label>
                   <p className="text-sm text-muted-foreground">
-                    Send rating request (1-5) to customer when session ends
+                    {t("settingsPage.chatManagement.collectRatingDescription") || "Send rating request (1-5) to customer when session ends"}
                   </p>
                 </div>
                 <Switch
@@ -209,21 +209,21 @@ export default function SocialSettingsPage() {
                 <>
                   <Separator />
                   <div className="space-y-2 rounded-lg bg-muted/50 p-4">
-                    <p className="text-sm font-medium">Enabled features:</p>
+                    <p className="text-sm font-medium">{t("settingsPage.enabledFeatures.title") || "Enabled features:"}</p>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                       {chatAssignmentEnabled && (
                         <>
-                          <li>Users can click &ldquo;Assign to Me&rdquo; from the chat menu to claim conversations</li>
-                          <li>Users can &ldquo;Start Session&rdquo; and &ldquo;End Session&rdquo; for active support</li>
-                          <li>Only assigned user receives notifications for that chat (others see 0 unread)</li>
-                          <li>When session ends, notifications return to all users</li>
+                          <li>{t("settingsPage.enabledFeatures.assignToMe") || 'Users can click "Assign to Me" from the chat menu to claim conversations'}</li>
+                          <li>{t("settingsPage.enabledFeatures.startEndSession") || 'Users can "Start Session" and "End Session" for active support'}</li>
+                          <li>{t("settingsPage.enabledFeatures.assignedNotifications") || "Only assigned user receives notifications for that chat (others see 0 unread)"}</li>
+                          <li>{t("settingsPage.enabledFeatures.sessionEndNotifications") || "When session ends, notifications return to all users"}</li>
                         </>
                       )}
                       {hideAssignedChats && (
-                        <li>Assigned chats are hidden from other users (admins see all)</li>
+                        <li>{t("settingsPage.enabledFeatures.hiddenChats") || "Assigned chats are hidden from other users (admins see all)"}</li>
                       )}
                       {collectCustomerRating && (
-                        <li>When session ends, customer receives rating request (1-5)</li>
+                        <li>{t("settingsPage.enabledFeatures.ratingRequest") || "When session ends, customer receives rating request (1-5)"}</li>
                       )}
                     </ul>
                   </div>
@@ -244,18 +244,18 @@ export default function SocialSettingsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Automatic Assignment
+              {t("settingsPage.autoAssignment.title") || "Automatic Assignment"}
             </CardTitle>
             <CardDescription>
-              Configure automatic assignment of conversations to agents
+              {t("settingsPage.autoAssignment.description") || "Configure automatic assignment of conversations to agents"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="auto-assign">Auto-assign conversations</Label>
+                <Label htmlFor="auto-assign">{t("settingsPage.autoAssignment.enable") || "Auto-assign conversations"}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Automatically assign new conversations to available agents
+                  {t("settingsPage.autoAssignment.enableDescription") || "Automatically assign new conversations to available agents"}
                 </p>
               </div>
               <Switch
@@ -269,9 +269,9 @@ export default function SocialSettingsPage() {
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <Label>Assignment method</Label>
+                  <Label>{t("settingsPage.autoAssignment.method") || "Assignment method"}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Coming soon: Round-robin, load-based, and manual assignment
+                    {t("settingsPage.autoAssignment.methodDescription") || "Coming soon: Round-robin, load-based, and manual assignment"}
                   </p>
                 </div>
               </>
@@ -282,11 +282,11 @@ export default function SocialSettingsPage() {
         {/* Save Button */}
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={() => window.history.back()} disabled={saving}>
-            Cancel
+            {t("settingsPage.cancel") || "Cancel"}
           </Button>
           <Button onClick={handleSaveSettings} disabled={saving || loading}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {saving ? "Saving..." : "Save Settings"}
+            {saving ? (t("settingsPage.saving") || "Saving...") : (t("settingsPage.saveSettings") || "Save Settings")}
           </Button>
         </div>
       </div>

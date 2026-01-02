@@ -6,6 +6,7 @@ import {
   useConnectEmail,
   useDisconnectEmail,
   useSyncEmail,
+  useUpdateEmailConnection,
   EmailConnectRequest,
   EmailConnectionDetail,
 } from '@/hooks/api/useSocial';
@@ -16,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -42,6 +44,8 @@ import {
   EyeOff,
   Plus,
   Trash2,
+  FileSignature,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -51,12 +55,14 @@ function EmailAccountCard({
   connection,
   onSync,
   onDisconnect,
+  onEditSignature,
   isSyncing,
   isDisconnecting,
 }: {
   connection: EmailConnectionDetail;
   onSync: () => void;
   onDisconnect: () => void;
+  onEditSignature: () => void;
   isSyncing: boolean;
   isDisconnecting: boolean;
 }) {
@@ -119,7 +125,7 @@ function EmailAccountCard({
         </Alert>
       )}
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2 pt-2 flex-wrap">
         <Button
           onClick={onSync}
           disabled={isSyncing}
@@ -136,6 +142,17 @@ function EmailAccountCard({
               <RefreshCw className="mr-2 h-3 w-3" />
               Sync
             </>
+          )}
+        </Button>
+        <Button
+          onClick={onEditSignature}
+          variant="outline"
+          size="sm"
+        >
+          <FileSignature className="mr-2 h-3 w-3" />
+          Signature
+          {connection.signature_enabled && (
+            <Check className="ml-1 h-3 w-3 text-green-500" />
           )}
         </Button>
         <Button
@@ -163,10 +180,19 @@ function EmailAccountCard({
 
 export function EmailConnection() {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
+  const [showSignatureDialog, setShowSignatureDialog] = useState(false);
+  const [editingConnection, setEditingConnection] = useState<EmailConnectionDetail | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSignaturePreview, setShowSignaturePreview] = useState(false);
   const [syncingConnectionId, setSyncingConnectionId] = useState<number | null>(null);
   const [disconnectingConnectionId, setDisconnectingConnectionId] = useState<number | null>(null);
+
+  // Signature form state
+  const [signatureEnabled, setSignatureEnabled] = useState(false);
+  const [signatureHtml, setSignatureHtml] = useState('');
+  const [signatureText, setSignatureText] = useState('');
+
   const [formData, setFormData] = useState<EmailConnectRequest>({
     email_address: '',
     display_name: '',
@@ -188,6 +214,7 @@ export function EmailConnection() {
   const connectEmail = useConnectEmail();
   const disconnectEmail = useDisconnectEmail();
   const syncEmail = useSyncEmail();
+  const updateEmailConnection = useUpdateEmailConnection();
 
   const connections = status?.connections || [];
   const hasConnections = connections.length > 0;
@@ -323,6 +350,34 @@ export function EmailConnection() {
     }
   };
 
+  const handleEditSignature = (connection: EmailConnectionDetail) => {
+    setEditingConnection(connection);
+    setSignatureEnabled(connection.signature_enabled || false);
+    setSignatureHtml(connection.signature_html || '');
+    setSignatureText(connection.signature_text || '');
+    setShowSignaturePreview(false);
+    setShowSignatureDialog(true);
+  };
+
+  const handleSaveSignature = async () => {
+    if (!editingConnection) return;
+
+    try {
+      await updateEmailConnection.mutateAsync({
+        connection_id: editingConnection.id,
+        signature_enabled: signatureEnabled,
+        signature_html: signatureHtml,
+        signature_text: signatureText,
+      });
+      toast.success('Signature saved successfully');
+      setShowSignatureDialog(false);
+      setEditingConnection(null);
+    } catch (error: any) {
+      console.error('Failed to save signature:', error);
+      toast.error(error.response?.data?.error || 'Failed to save signature');
+    }
+  };
+
   return (
     <>
       <Card className={cn('border-2', hasConnections ? 'border-red-200 bg-red-50/50' : 'border-border')}>
@@ -404,6 +459,7 @@ export function EmailConnection() {
                   connection={connection}
                   onSync={() => handleSync(connection.id)}
                   onDisconnect={() => handleDisconnect(connection.id, connection.email_address)}
+                  onEditSignature={() => handleEditSignature(connection)}
                   isSyncing={syncingConnectionId === connection.id}
                   isDisconnecting={disconnectingConnectionId === connection.id}
                 />
@@ -630,6 +686,134 @@ export function EmailConnection() {
                   <Mail className="mr-2 h-4 w-4" />
                   Connect
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signature Dialog */}
+      <Dialog open={showSignatureDialog} onOpenChange={(open) => {
+        setShowSignatureDialog(open);
+        if (!open) setEditingConnection(null);
+      }}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSignature className="h-5 w-5" />
+              Email Signature
+            </DialogTitle>
+            <DialogDescription>
+              Configure signature for {editingConnection?.email_address}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Enable/Disable Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="signature-enabled">Enable signature</Label>
+                <p className="text-sm text-muted-foreground">
+                  Append signature to outgoing emails from this account
+                </p>
+              </div>
+              <Switch
+                id="signature-enabled"
+                checked={signatureEnabled}
+                onCheckedChange={setSignatureEnabled}
+              />
+            </div>
+
+            {/* HTML Signature Editor */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="signature-html">Signature (HTML)</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSignaturePreview(!showSignaturePreview)}
+                  className="h-8 px-2"
+                >
+                  {showSignaturePreview ? (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-1" />
+                      Hide
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-1" />
+                      Preview
+                    </>
+                  )}
+                </Button>
+              </div>
+              <Textarea
+                id="signature-html"
+                placeholder={`Best regards,
+<br/><br/>
+<strong>John Doe</strong><br/>
+Marketing Manager<br/>
+<a href="https://example.com">www.example.com</a>`}
+                value={signatureHtml}
+                onChange={(e) => setSignatureHtml(e.target.value)}
+                className="min-h-[120px] font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Use HTML tags like &lt;br/&gt;, &lt;strong&gt;, &lt;a href=&quot;...&quot;&gt;
+              </p>
+            </div>
+
+            {/* HTML Preview */}
+            {showSignaturePreview && signatureHtml && (
+              <div className="space-y-2">
+                <Label>Preview</Label>
+                <div className="rounded-md border bg-white p-4">
+                  <div
+                    className="[&_a]:text-blue-600 [&_a]:underline"
+                    style={{
+                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+                      fontSize: "14px",
+                      lineHeight: "1.5",
+                      color: "#666666",
+                    }}
+                    dangerouslySetInnerHTML={{ __html: signatureHtml }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Plain Text Fallback */}
+            <div className="space-y-2">
+              <Label htmlFor="signature-text">Plain Text Fallback</Label>
+              <Textarea
+                id="signature-text"
+                placeholder="Best regards,&#10;John Doe&#10;Company Name"
+                value={signatureText}
+                onChange={(e) => setSignatureText(e.target.value)}
+                className="min-h-[80px]"
+              />
+              <p className="text-xs text-muted-foreground">
+                Used for email clients that don&apos;t support HTML
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSignatureDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveSignature}
+              disabled={updateEmailConnection.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {updateEmailConnection.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Signature'
               )}
             </Button>
           </DialogFooter>

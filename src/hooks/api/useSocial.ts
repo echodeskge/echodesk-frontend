@@ -977,6 +977,9 @@ export interface EmailConnectionDetail {
   last_sync_error: string;
   sync_folder: string;
   connected_at: string;
+  signature_enabled?: boolean;
+  signature_html?: string;
+  signature_text?: string;
 }
 
 export interface EmailConnectionStatus {
@@ -1264,6 +1267,28 @@ export function useSyncEmail() {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
+// Update Email Connection (for signature settings)
+export interface EmailConnectionUpdateRequest {
+  connection_id: number;
+  signature_enabled?: boolean;
+  signature_html?: string;
+  signature_text?: string;
+}
+
+export function useUpdateEmailConnection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EmailConnectionUpdateRequest) => {
+      const response = await axios.post('/api/social/email/update/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
     },
   });
 }
