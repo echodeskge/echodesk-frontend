@@ -1936,7 +1936,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
           senderId: customerId,
           senderName: msg.sender_name || msg.sender_username || 'Unknown',
           senderAvatar: msg.sender_profile_pic,
-          accountId: msg.account_username || '',
+          accountId: msg.account_id || msg.account_username || '',
           accountName: msg.account_username || '',
           latestMessage: {
             text: msg.message_text || msg.attachment_type || '',
