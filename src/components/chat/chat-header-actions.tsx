@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, ChevronRight } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -13,8 +13,11 @@ import {
   useUnassignChat,
   useStartSession,
   useEndSession,
+  useEmailFolders,
+  useEmailAction,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -22,6 +25,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
@@ -82,8 +89,14 @@ function parseChatId(chatId: string, platform?: string) {
 export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: ChatHeaderActionsProps) {
   const router = useRouter()
   const { user } = useAuth()
+  const { toast } = useToast()
   const deleteConversation = useDeleteConversation()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  // Email folder functionality
+  const isEmail = chat?.platform === 'email'
+  const { data: folders } = useEmailFolders()
+  const emailAction = useEmailAction()
 
   // Parse chat ID for assignment operations
   const chatInfo = useMemo(() => {
@@ -208,6 +221,34 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
   const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending
 
+  // Handle move to folder for email threads
+  const handleMoveToFolder = (targetFolder: string) => {
+    if (!chatInfo || chatInfo.platform !== 'email') return
+
+    emailAction.mutate(
+      {
+        thread_id: chatInfo.conversationId,
+        action: 'move',
+        folder: targetFolder,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Email moved",
+            description: `Email thread moved to ${targetFolder}`,
+          })
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Failed to move email",
+            description: error.response?.data?.error || "Failed to move email thread",
+            variant: "destructive",
+          })
+        },
+      }
+    )
+  }
+
   return (
     <>
       <div className="flex gap-1 ms-auto">
@@ -233,6 +274,32 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               <Search className="size-4 mr-2" />
               Search
             </DropdownMenuItem>
+
+            {/* Move to Folder - only show for email conversations */}
+            {isEmail && folders && folders.length > 0 && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <FolderInput className="size-4 mr-2" />
+                    Move to Folder
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      {folders.map((folder) => (
+                        <DropdownMenuItem
+                          key={folder.name}
+                          onClick={() => handleMoveToFolder(folder.name)}
+                          disabled={emailAction.isPending}
+                        >
+                          {folder.display_name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+              </>
+            )}
 
             {/* Assignment actions - only show when assignment mode is enabled */}
             {assignmentEnabled && chatInfo && (

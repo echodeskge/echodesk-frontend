@@ -1089,7 +1089,8 @@ export interface EmailSendRequest {
 }
 
 export interface EmailActionRequest {
-  message_ids: number[];
+  message_ids?: number[];
+  thread_id?: string;
   action: 'mark_read' | 'mark_unread' | 'star' | 'unstar' | 'label' | 'unlabel' | 'move' | 'delete' | 'restore';
   label?: string;
   folder?: string;
