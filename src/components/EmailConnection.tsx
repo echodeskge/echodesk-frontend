@@ -151,7 +151,7 @@ function EmailAccountCard({
         >
           <FileSignature className="mr-2 h-3 w-3" />
           Signature
-          {connection.signature_enabled && (
+          {(connection.signature_html || connection.signature_text) && (
             <Check className="ml-1 h-3 w-3 text-green-500" />
           )}
         </Button>
@@ -189,7 +189,6 @@ export function EmailConnection() {
   const [disconnectingConnectionId, setDisconnectingConnectionId] = useState<number | null>(null);
 
   // Signature form state
-  const [signatureEnabled, setSignatureEnabled] = useState(false);
   const [signatureHtml, setSignatureHtml] = useState('');
   const [signatureText, setSignatureText] = useState('');
 
@@ -352,7 +351,6 @@ export function EmailConnection() {
 
   const handleEditSignature = (connection: EmailConnectionDetail) => {
     setEditingConnection(connection);
-    setSignatureEnabled(connection.signature_enabled || false);
     setSignatureHtml(connection.signature_html || '');
     setSignatureText(connection.signature_text || '');
     setShowSignaturePreview(false);
@@ -365,7 +363,6 @@ export function EmailConnection() {
     try {
       await updateEmailConnection.mutateAsync({
         connection_id: editingConnection.id,
-        signature_enabled: signatureEnabled,
         signature_html: signatureHtml,
         signature_text: signatureText,
       });
@@ -709,20 +706,9 @@ export function EmailConnection() {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            {/* Enable/Disable Toggle */}
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="signature-enabled">Enable signature</Label>
-                <p className="text-sm text-muted-foreground">
-                  Append signature to outgoing emails from this account
-                </p>
-              </div>
-              <Switch
-                id="signature-enabled"
-                checked={signatureEnabled}
-                onCheckedChange={setSignatureEnabled}
-              />
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Signature will be automatically added to outgoing emails if content is provided below.
+            </p>
 
             {/* HTML Signature Editor */}
             <div className="space-y-2">
