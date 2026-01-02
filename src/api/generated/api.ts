@@ -6642,6 +6642,24 @@ export async function teamChatConversationsDestroy(id: string): Promise<any> {
   return response.data;
 }
 
+export async function teamChatConversationsClearHistoryCreate(
+  id: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.post(
+    `/api/team-chat/conversations/${id}/clear_history/`,
+  );
+  return response.data;
+}
+
+export async function teamChatConversationsClearHistoryDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/team-chat/conversations/${id}/clear_history/`,
+  );
+  return response.data;
+}
+
 export async function teamChatConversationsMarkReadCreate(
   id: string,
 ): Promise<TeamChatConversation> {

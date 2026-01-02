@@ -150,3 +150,19 @@ export function useUploadTeamChatFile() {
     },
   });
 }
+
+// Clear chat history
+export function useClearChatHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversationId: number) => {
+      const response = await axios.delete(`/api/team-chat/conversations/${conversationId}/clear_history/`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.unreadCount() });
+    },
+  });
+}

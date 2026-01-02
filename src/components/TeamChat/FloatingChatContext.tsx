@@ -50,7 +50,8 @@ type FloatingChatAction =
   | { type: 'ADD_MESSAGE'; payload: { chatId: string; message: TeamChatMessage } }
   | { type: 'UPDATE_CONVERSATION'; payload: { chatId: string; conversation: TeamChatConversation } }
   | { type: 'UPDATE_UNREAD'; payload: { chatId: string; unreadCount: number } }
-  | { type: 'MARK_READ'; payload: { chatId: string } };
+  | { type: 'MARK_READ'; payload: { chatId: string } }
+  | { type: 'CLEAR_MESSAGES'; payload: { chatId: string } };
 
 // Generate unique chat ID from user
 const getChatId = (user: TeamChatUser): string => `chat_${user.id}`;
@@ -290,6 +291,19 @@ function floatingChatReducer(state: FloatingChatState, action: FloatingChatActio
       };
     }
 
+    case 'CLEAR_MESSAGES': {
+      const { chatId } = action.payload;
+      return {
+        ...state,
+        openChats: state.openChats.map((c) =>
+          c.id === chatId ? { ...c, messages: [], lastMessage: undefined } : c
+        ),
+        minimizedChats: state.minimizedChats.map((c) =>
+          c.id === chatId ? { ...c, lastMessage: undefined } : c
+        ),
+      };
+    }
+
     default:
       return state;
   }
@@ -315,6 +329,7 @@ interface FloatingChatContextValue {
   updateConversation: (chatId: string, conversation: TeamChatConversation) => void;
   updateUnread: (chatId: string, unreadCount: number) => void;
   markRead: (chatId: string) => void;
+  clearMessages: (chatId: string) => void;
   getChatIdFromUser: (user: TeamChatUser) => string;
 }
 
@@ -346,6 +361,8 @@ export function FloatingChatProvider({ children }: { children: ReactNode }) {
       dispatch({ type: 'UPDATE_UNREAD', payload: { chatId, unreadCount } }),
     markRead: (chatId) =>
       dispatch({ type: 'MARK_READ', payload: { chatId } }),
+    clearMessages: (chatId) =>
+      dispatch({ type: 'CLEAR_MESSAGES', payload: { chatId } }),
     getChatIdFromUser: getChatId,
   };
 

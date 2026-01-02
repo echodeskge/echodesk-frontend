@@ -1,12 +1,28 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Minus, Send, Paperclip, Mic, FileIcon, Image as ImageIcon, StopCircle } from 'lucide-react';
+import { X, Minus, Send, Paperclip, Mic, FileIcon, Image as ImageIcon, StopCircle, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { LAYOUT, useFloatingChat, type OpenChat } from './FloatingChatContext';
 import type { TeamChatMessage } from './types';
@@ -25,6 +41,8 @@ interface FloatingChatWindowProps {
     voiceDuration?: number
   ) => void;
   onTyping: (userId: number, isTyping: boolean) => void;
+  onClearHistory?: (conversationId: number) => void;
+  isClearingHistory?: boolean;
 }
 
 export function FloatingChatWindow({
@@ -35,12 +53,15 @@ export function FloatingChatWindow({
   typingUser,
   onSendMessage,
   onTyping,
+  onClearHistory,
+  isClearingHistory,
 }: FloatingChatWindowProps) {
   const { minimizeChat, closeChat } = useFloatingChat();
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -174,6 +195,15 @@ export function FloatingChatWindow({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const conversationId = chat.conversation?.id;
+
+  const handleClearHistory = () => {
+    if (conversationId && onClearHistory) {
+      onClearHistory(conversationId);
+      setShowClearHistoryDialog(false);
+    }
+  };
+
   // Calculate position from right (index 0 = rightmost)
   const rightPosition =
     LAYOUT.MAIN_ICON.right +
@@ -213,6 +243,29 @@ export function FloatingChatWindow({
             {typingUser ? 'typing...' : isOnline ? 'Online' : 'Offline'}
           </div>
         </div>
+        {conversationId && onClearHistory && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setShowClearHistoryDialog(true)}
+                disabled={isClearingHistory}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {isClearingHistory ? 'Clearing...' : 'Clear History'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -230,6 +283,28 @@ export function FloatingChatWindow({
           <X className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Clear History Confirmation Dialog */}
+      <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear Chat History</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all messages in this conversation with {chat.user.full_name}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isClearingHistory}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleClearHistory}
+              disabled={isClearingHistory}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isClearingHistory ? 'Clearing...' : 'Clear History'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-2">

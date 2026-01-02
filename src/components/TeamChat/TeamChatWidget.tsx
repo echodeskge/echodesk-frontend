@@ -14,6 +14,7 @@ import {
   useTeamChatUnreadCount,
   useSendTeamChatMessage,
   useMarkConversationRead,
+  useClearChatHistory,
 } from './useTeamChatApi';
 import type { TeamChatUser, TeamChatMessage, TeamChatConversation } from './types';
 import { getNotificationSound } from '@/utils/notificationSound';
@@ -31,6 +32,7 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
     updateConversation,
     updateUnread,
     markRead,
+    clearMessages,
     getChatIdFromUser,
   } = useFloatingChat();
 
@@ -43,6 +45,7 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
   const { data: unreadCount = 0, refetch: refetchUnreadCount } = useTeamChatUnreadCount();
   const sendMessageMutation = useSendTeamChatMessage();
   const markReadMutation = useMarkConversationRead();
+  const clearHistoryMutation = useClearChatHistory();
 
   // Get conversation with currently active user (for loading messages)
   const { data: conversationWithUser, refetch: refetchConversationWithUser } =
@@ -188,6 +191,25 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
     return typingUsers.get(userId) || null;
   };
 
+  const handleClearHistory = async (conversationId: number) => {
+    try {
+      await clearHistoryMutation.mutateAsync(conversationId);
+      // Find the chat with this conversation and clear its messages locally
+      const chat = state.openChats.find((c) => c.conversation?.id === conversationId);
+      if (chat) {
+        clearMessages(chat.id);
+      }
+      // Also check minimized chats
+      const minimizedChat = state.minimizedChats.find((c) => c.conversation?.id === conversationId);
+      if (minimizedChat) {
+        clearMessages(minimizedChat.id);
+      }
+      refetchConversations();
+    } catch (error) {
+      console.error('Failed to clear chat history:', error);
+    }
+  };
+
   return (
     <>
       {/* Main Icon */}
@@ -218,6 +240,8 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
             typingUser={getTypingUser(chat.user.id)}
             onSendMessage={handleSendMessage}
             onTyping={handleTyping}
+            onClearHistory={handleClearHistory}
+            isClearingHistory={clearHistoryMutation.isPending}
           />
         ))}
 
