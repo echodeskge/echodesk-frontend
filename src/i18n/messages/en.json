@@ -814,6 +814,16 @@
         "plainTextDescription": "Used for email clients that don't support HTML",
         "saveSignature": "Save Signature"
       },
+      "notificationSounds": {
+        "title": "Notification Sounds",
+        "description": "Customize notification sounds for each platform",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "whatsapp": "WhatsApp",
+        "email": "Email",
+        "teamChat": "Team Chat",
+        "system": "System"
+      },
       "cancel": "Cancel",
       "saveSettings": "Save Settings",
       "saving": "Saving...",

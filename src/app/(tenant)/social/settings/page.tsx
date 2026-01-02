@@ -6,12 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Bell, User, Loader2, Users, EyeOff, Star } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialSettings, useUpdateSocialSettings } from "@/hooks/api/useSocial";
 import { EmailSyncDebug } from "@/components/social/EmailSyncDebug";
+import { NOTIFICATION_SOUNDS, getNotificationSound } from "@/utils/notificationSound";
 
 export default function SocialSettingsPage() {
   const t = useTranslations("social");
@@ -35,14 +37,35 @@ export default function SocialSettingsPage() {
   const [hideAssignedChats, setHideAssignedChats] = useState(false);
   const [collectCustomerRating, setCollectCustomerRating] = useState(false);
 
+  // Notification sound settings
+  const [soundFacebook, setSoundFacebook] = useState('mixkit-bubble-pop-up-alert-notification-2357.wav');
+  const [soundInstagram, setSoundInstagram] = useState('mixkit-magic-notification-ring-2344.wav');
+  const [soundWhatsapp, setSoundWhatsapp] = useState('mixkit-positive-notification-951.wav');
+  const [soundEmail, setSoundEmail] = useState('mixkit-bell-notification-933.wav');
+  const [soundTeamChat, setSoundTeamChat] = useState('mixkit-happy-bells-notification-937.wav');
+  const [soundSystem, setSoundSystem] = useState('mixkit-confirmation-tone-2867.wav');
+
   // Sync local state with query data when it loads
   useEffect(() => {
     if (settings) {
       setChatAssignmentEnabled(settings.chat_assignment_enabled ?? false);
       setHideAssignedChats(settings.hide_assigned_chats ?? false);
       setCollectCustomerRating(settings.collect_customer_rating ?? false);
+      // Notification sounds
+      setSoundFacebook(settings.notification_sound_facebook || 'mixkit-bubble-pop-up-alert-notification-2357.wav');
+      setSoundInstagram(settings.notification_sound_instagram || 'mixkit-magic-notification-ring-2344.wav');
+      setSoundWhatsapp(settings.notification_sound_whatsapp || 'mixkit-positive-notification-951.wav');
+      setSoundEmail(settings.notification_sound_email || 'mixkit-bell-notification-933.wav');
+      setSoundTeamChat(settings.notification_sound_team_chat || 'mixkit-happy-bells-notification-937.wav');
+      setSoundSystem(settings.notification_sound_system || 'mixkit-confirmation-tone-2867.wav');
+      // Update the sound manager with backend settings
+      getNotificationSound().updateSettings(settings);
     }
   }, [settings]);
+
+  const previewSound = (soundFile: string) => {
+    getNotificationSound().preview(soundFile);
+  };
 
   const handleSaveSettings = () => {
     const payload = {
@@ -51,6 +74,13 @@ export default function SocialSettingsPage() {
       session_management_enabled: Boolean(chatAssignmentEnabled),
       hide_assigned_chats: Boolean(hideAssignedChats),
       collect_customer_rating: Boolean(collectCustomerRating),
+      // Notification sound settings
+      notification_sound_facebook: soundFacebook,
+      notification_sound_instagram: soundInstagram,
+      notification_sound_whatsapp: soundWhatsapp,
+      notification_sound_email: soundEmail,
+      notification_sound_team_chat: soundTeamChat,
+      notification_sound_system: soundSystem,
     };
 
     updateSettings.mutate(payload, {
@@ -129,6 +159,180 @@ export default function SocialSettingsPage() {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Notification Sounds Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Volume2 className="h-5 w-5" />
+              {t("settingsPage.notificationSounds.title") || "Notification Sounds"}
+            </CardTitle>
+            <CardDescription>
+              {t("settingsPage.notificationSounds.description") || "Customize notification sounds for each platform"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Facebook Sound */}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <span className="text-blue-600">●</span>
+                {t("settingsPage.notificationSounds.facebook") || "Facebook"}
+              </Label>
+              <div className="flex gap-2">
+                <Select value={soundFacebook} onValueChange={setSoundFacebook}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTIFICATION_SOUNDS.map((sound) => (
+                      <SelectItem key={sound.value} value={sound.value}>
+                        {sound.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => previewSound(soundFacebook)}>
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Instagram Sound */}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <span className="text-pink-600">●</span>
+                {t("settingsPage.notificationSounds.instagram") || "Instagram"}
+              </Label>
+              <div className="flex gap-2">
+                <Select value={soundInstagram} onValueChange={setSoundInstagram}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTIFICATION_SOUNDS.map((sound) => (
+                      <SelectItem key={sound.value} value={sound.value}>
+                        {sound.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => previewSound(soundInstagram)}>
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* WhatsApp Sound */}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <span className="text-green-600">●</span>
+                {t("settingsPage.notificationSounds.whatsapp") || "WhatsApp"}
+              </Label>
+              <div className="flex gap-2">
+                <Select value={soundWhatsapp} onValueChange={setSoundWhatsapp}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTIFICATION_SOUNDS.map((sound) => (
+                      <SelectItem key={sound.value} value={sound.value}>
+                        {sound.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => previewSound(soundWhatsapp)}>
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Email Sound */}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <span className="text-red-600">●</span>
+                {t("settingsPage.notificationSounds.email") || "Email"}
+              </Label>
+              <div className="flex gap-2">
+                <Select value={soundEmail} onValueChange={setSoundEmail}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTIFICATION_SOUNDS.map((sound) => (
+                      <SelectItem key={sound.value} value={sound.value}>
+                        {sound.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => previewSound(soundEmail)}>
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Team Chat Sound */}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <span className="text-purple-600">●</span>
+                {t("settingsPage.notificationSounds.teamChat") || "Team Chat"}
+              </Label>
+              <div className="flex gap-2">
+                <Select value={soundTeamChat} onValueChange={setSoundTeamChat}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTIFICATION_SOUNDS.map((sound) => (
+                      <SelectItem key={sound.value} value={sound.value}>
+                        {sound.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => previewSound(soundTeamChat)}>
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* System Sound */}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                <span className="text-gray-600">●</span>
+                {t("settingsPage.notificationSounds.system") || "System"}
+              </Label>
+              <div className="flex gap-2">
+                <Select value={soundSystem} onValueChange={setSoundSystem}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NOTIFICATION_SOUNDS.map((sound) => (
+                      <SelectItem key={sound.value} value={sound.value}>
+                        {sound.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => previewSound(soundSystem)}>
+                  <Play className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

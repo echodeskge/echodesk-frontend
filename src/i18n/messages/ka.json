@@ -814,6 +814,16 @@
         "plainTextDescription": "გამოიყენება ელ-ფოსტის კლიენტებისთვის, რომლებიც არ უჭერენ მხარს HTML-ს",
         "saveSignature": "ხელმოწერის შენახვა"
       },
+      "notificationSounds": {
+        "title": "შეტყობინებების ხმები",
+        "description": "მოირგეთ შეტყობინებების ხმები თითოეული პლატფორმისთვის",
+        "facebook": "Facebook",
+        "instagram": "Instagram",
+        "whatsapp": "WhatsApp",
+        "email": "ელ-ფოსტა",
+        "teamChat": "გუნდური ჩატი",
+        "system": "სისტემური"
+      },
       "cancel": "გაუქმება",
       "saveSettings": "პარამეტრების შენახვა",
       "saving": "ინახება...",

@@ -644,6 +644,12 @@ export interface SocialSettings {
   session_management_enabled: boolean;
   hide_assigned_chats: boolean;
   collect_customer_rating: boolean;
+  notification_sound_facebook: string;
+  notification_sound_instagram: string;
+  notification_sound_whatsapp: string;
+  notification_sound_email: string;
+  notification_sound_team_chat: string;
+  notification_sound_system: string;
   created_at: string;
   updated_at: string;
 }
@@ -666,7 +672,19 @@ export function useUpdateSocialSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<Pick<SocialSettings, 'refresh_interval' | 'chat_assignment_enabled' | 'session_management_enabled' | 'hide_assigned_chats' | 'collect_customer_rating'>>) => {
+    mutationFn: async (data: Partial<Pick<SocialSettings,
+      | 'refresh_interval'
+      | 'chat_assignment_enabled'
+      | 'session_management_enabled'
+      | 'hide_assigned_chats'
+      | 'collect_customer_rating'
+      | 'notification_sound_facebook'
+      | 'notification_sound_instagram'
+      | 'notification_sound_whatsapp'
+      | 'notification_sound_email'
+      | 'notification_sound_team_chat'
+      | 'notification_sound_system'
+    >>) => {
       const response = await axios.patch('/api/social/settings/', data);
       return response.data;
     },

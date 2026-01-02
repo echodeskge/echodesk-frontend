@@ -37,6 +37,7 @@ import {
 } from "@/contexts/SubscriptionContext";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { getNotificationSound } from "@/utils/notificationSound";
+import { useSocialSettings } from "@/hooks/api/useSocial";
 import { navigationConfig } from "@/config/navigationConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
@@ -55,6 +56,14 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
   const { data: boards } = useBoards();
   const { selectedBoardId, setSelectedBoardId } = useBoard();
+  const { data: socialSettings } = useSocialSettings();
+
+  // Update notification sound manager with backend settings
+  useEffect(() => {
+    if (socialSettings) {
+      getNotificationSound().updateSettings(socialSettings);
+    }
+  }, [socialSettings]);
 
   // Initialize WebSocket for board collaboration only on tickets page
   const isTicketsPage = pathname.includes('/tickets');
@@ -108,9 +117,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Global WebSocket for message notifications (plays sound when new messages arrive)
   useMessagesWebSocket({
-    onNewMessage: () => {
-      // Play notification sound for new messages globally
-      getNotificationSound().play('message');
+    onNewMessage: (data) => {
+      // Play platform-specific notification sound
+      const platform = data?.platform || data?.message?.platform;
+      if (platform && ['facebook', 'instagram', 'whatsapp', 'email'].includes(platform)) {
+        getNotificationSound().playForPlatform(platform);
+      } else {
+        // Fallback to system sound
+        getNotificationSound().playForPlatform('system');
+      }
     },
     autoReconnect: true,
   });
