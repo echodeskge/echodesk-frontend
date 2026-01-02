@@ -1827,11 +1827,14 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
   const limit = options?.limit ?? 15;
 
   // Fetch from all platforms - these return individual messages
-  const { data: fbData, isLoading: fbLoading } = useFacebookMessages();
-  const { data: igData, isLoading: igLoading } = useInstagramMessages();
-  const { data: waData, isLoading: waLoading } = useWhatsAppMessages();
+  const { data: fbData, isLoading: fbLoading, isFetching: fbFetching } = useFacebookMessages();
+  const { data: igData, isLoading: igLoading, isFetching: igFetching } = useInstagramMessages();
+  const { data: waData, isLoading: waLoading, isFetching: waFetching } = useWhatsAppMessages();
 
+  // isLoading = true only on initial load (no cached data)
   const isLoading = fbLoading || igLoading || waLoading;
+  // isFetching = true on any fetch (including background refetch with cached data)
+  const isFetching = fbFetching || igFetching || waFetching;
 
   // Group messages into conversations
   const conversations: RecentConversation[] = [];
@@ -2052,6 +2055,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
   return {
     data: recentConversations,
     isLoading,
+    isFetching,
     isEmpty: !isLoading && recentConversations.length === 0,
   };
 }

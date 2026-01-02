@@ -22,7 +22,7 @@ export function MessengerBell({ className }: MessengerBellProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const { data: unreadCount } = useUnreadMessagesCount()
-  const { data: conversations, isLoading, isEmpty } = useRecentConversations({ limit: 10 })
+  const { data: conversations, isLoading, isFetching, isEmpty } = useRecentConversations({ limit: 10 })
 
   // Social messages only (exclude email - email has separate badge on sidebar)
   const totalUnread = (unreadCount?.facebook ?? 0) + (unreadCount?.instagram ?? 0) + (unreadCount?.whatsapp ?? 0)
@@ -65,6 +65,7 @@ export function MessengerBell({ className }: MessengerBellProps) {
         <MessagesDropdownList
           conversations={conversations}
           isLoading={isLoading}
+          isFetching={isFetching}
           isEmpty={isEmpty}
           onConversationClick={handleConversationClick}
           onSeeAllClick={handleSeeAllClick}

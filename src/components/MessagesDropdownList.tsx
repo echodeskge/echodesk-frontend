@@ -2,16 +2,16 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { MessageCircle, ChevronRight } from 'lucide-react'
+import { MessageCircle, ChevronRight, Loader2 } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Separator } from '@/components/ui/separator'
 import { MessagesDropdownItem } from '@/components/MessagesDropdownItem'
 import type { RecentConversation } from '@/hooks/api/useSocial'
 
 interface MessagesDropdownListProps {
   conversations: RecentConversation[]
   isLoading: boolean
+  isFetching?: boolean
   isEmpty: boolean
   onConversationClick: (conversation: RecentConversation) => void
   onSeeAllClick: () => void
@@ -55,17 +55,28 @@ function EmptyState() {
 export function MessagesDropdownList({
   conversations,
   isLoading,
+  isFetching,
   isEmpty,
   onConversationClick,
   onSeeAllClick,
 }: MessagesDropdownListProps) {
+  // Show skeleton only on initial load (no data yet)
+  const showSkeleton = isLoading && conversations.length === 0;
+  // Show subtle refresh indicator when we have data but are fetching updates
+  const showRefreshIndicator = isFetching && conversations.length > 0;
+
   return (
     <div className="flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
-        <h3 className="font-semibold">Messages</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold">Messages</h3>
+          {showRefreshIndicator && (
+            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+          )}
+        </div>
         <Link
-          href="/social/messages"
+          href="/messages"
           onClick={onSeeAllClick}
           className="text-sm text-primary hover:underline flex items-center gap-0.5"
         >
@@ -75,7 +86,7 @@ export function MessagesDropdownList({
       </div>
 
       {/* Content */}
-      {isLoading ? (
+      {showSkeleton ? (
         <LoadingSkeleton />
       ) : isEmpty ? (
         <EmptyState />
