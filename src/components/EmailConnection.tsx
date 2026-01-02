@@ -7,6 +7,7 @@ import {
   useDisconnectEmail,
   useSyncEmail,
   EmailConnectRequest,
+  EmailConnectionDetail,
 } from '@/hooks/api/useSocial';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,14 +40,133 @@ import {
   Settings2,
   Eye,
   EyeOff,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+// Individual email account card
+function EmailAccountCard({
+  connection,
+  onSync,
+  onDisconnect,
+  isSyncing,
+  isDisconnecting,
+}: {
+  connection: EmailConnectionDetail;
+  onSync: () => void;
+  onDisconnect: () => void;
+  isSyncing: boolean;
+  isDisconnecting: boolean;
+}) {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600">
+            <Mail className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-medium">{connection.display_name || connection.email_address}</p>
+            <p className="text-sm text-muted-foreground">{connection.email_address}</p>
+          </div>
+        </div>
+        <Badge
+          variant={connection.is_active ? 'default' : 'secondary'}
+          className={cn(connection.is_active && 'bg-green-600 hover:bg-green-700')}
+        >
+          {connection.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <span className="text-muted-foreground">IMAP:</span>
+          <span className="ml-2">{connection.imap_server}</span>
+        </div>
+        <div>
+          <span className="text-muted-foreground">SMTP:</span>
+          <span className="ml-2">{connection.smtp_server}</span>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Folder:</span>
+          <span className="ml-2">{connection.sync_folder}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Clock className="h-3 w-3 text-muted-foreground" />
+          <span className="text-muted-foreground">Synced:</span>
+          <span className="ml-1">
+            {connection.last_sync_at ? formatDate(connection.last_sync_at) : 'Never'}
+          </span>
+        </div>
+      </div>
+
+      {connection.last_sync_error && (
+        <Alert variant="destructive" className="py-2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="text-xs">{connection.last_sync_error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex gap-2 pt-2">
+        <Button
+          onClick={onSync}
+          disabled={isSyncing}
+          variant="outline"
+          size="sm"
+        >
+          {isSyncing ? (
+            <>
+              <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-3 w-3" />
+              Sync
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={onDisconnect}
+          disabled={isDisconnecting}
+          variant="destructive"
+          size="sm"
+        >
+          {isDisconnecting ? (
+            <>
+              <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+              Removing...
+            </>
+          ) : (
+            <>
+              <Trash2 className="mr-2 h-3 w-3" />
+              Remove
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function EmailConnection() {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [syncingConnectionId, setSyncingConnectionId] = useState<number | null>(null);
+  const [disconnectingConnectionId, setDisconnectingConnectionId] = useState<number | null>(null);
   const [formData, setFormData] = useState<EmailConnectRequest>({
     email_address: '',
     display_name: '',
@@ -69,7 +189,8 @@ export function EmailConnection() {
   const disconnectEmail = useDisconnectEmail();
   const syncEmail = useSyncEmail();
 
-  const isConnected = status?.connected || false;
+  const connections = status?.connections || [];
+  const hasConnections = connections.length > 0;
 
   // Auto-fill server settings based on email domain
   const handleEmailChange = (email: string) => {
@@ -162,48 +283,49 @@ export function EmailConnection() {
     }
   };
 
-  const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect this email account? All synced messages will be deleted.')) {
+  const handleDisconnect = async (connectionId: number, emailAddress: string) => {
+    if (!confirm(`Are you sure you want to remove ${emailAddress}? All synced messages from this account will be deleted.`)) {
       return;
     }
 
+    setDisconnectingConnectionId(connectionId);
     try {
-      await disconnectEmail.mutateAsync();
-      toast.success('Email disconnected successfully');
+      await disconnectEmail.mutateAsync(connectionId);
+      toast.success(`Removed ${emailAddress}`);
     } catch (error: any) {
       console.error('Failed to disconnect email:', error);
       toast.error(error.response?.data?.error || 'Failed to disconnect email');
+    } finally {
+      setDisconnectingConnectionId(null);
     }
   };
 
-  const handleSync = async () => {
+  const handleSync = async (connectionId: number) => {
+    setSyncingConnectionId(connectionId);
     try {
-      const result = await syncEmail.mutateAsync();
+      const result = await syncEmail.mutateAsync(connectionId);
       toast.success(`Synced ${result.new_messages || 0} new messages`);
     } catch (error: any) {
       console.error('Failed to sync email:', error);
       toast.error(error.response?.data?.error || 'Failed to sync email');
+    } finally {
+      setSyncingConnectionId(null);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleSyncAll = async () => {
+    try {
+      const result = await syncEmail.mutateAsync(undefined);
+      toast.success(`Synced ${result.new_messages || 0} new messages from all accounts`);
+    } catch (error: any) {
+      console.error('Failed to sync emails:', error);
+      toast.error(error.response?.data?.error || 'Failed to sync emails');
+    }
   };
 
   return (
     <>
-      <Card
-        className={cn(
-          'border-2',
-          isConnected ? 'border-red-200 bg-red-50/50' : 'border-border'
-        )}
-      >
+      <Card className={cn('border-2', hasConnections ? 'border-red-200 bg-red-50/50' : 'border-border')}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -213,127 +335,84 @@ export function EmailConnection() {
               <div>
                 <CardTitle className="text-xl">Email (IMAP/SMTP)</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-1">
-                  {isConnected && status?.connection ? (
+                  {hasConnections ? (
                     <>
                       <Check className="h-4 w-4 text-green-600" />
-                      <span>{status.connection.email_address}</span>
+                      <span>{connections.length} account{connections.length > 1 ? 's' : ''} connected</span>
                     </>
                   ) : (
                     <>
                       <X className="h-4 w-4 text-muted-foreground" />
-                      <span>Not connected</span>
+                      <span>No accounts connected</span>
                     </>
                   )}
                 </CardDescription>
               </div>
             </div>
             <Badge
-              variant={isConnected ? 'default' : 'secondary'}
-              className={cn(
-                'h-8',
-                isConnected && 'bg-red-600 hover:bg-red-700'
-              )}
+              variant={hasConnections ? 'default' : 'secondary'}
+              className={cn('h-8', hasConnections && 'bg-red-600 hover:bg-red-700')}
             >
-              {isConnected ? 'Connected' : 'Not Connected'}
+              {hasConnections ? `${connections.length} Connected` : 'Not Connected'}
             </Badge>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Action buttons */}
           <div className="flex gap-3">
-            {!isConnected ? (
+            <Button
+              onClick={() => setShowConnectDialog(true)}
+              disabled={loading}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Email Account
+            </Button>
+            {hasConnections && (
               <Button
-                onClick={() => setShowConnectDialog(true)}
-                disabled={loading}
-                className="bg-red-600 hover:bg-red-700"
+                onClick={handleSyncAll}
+                disabled={loading || syncEmail.isPending}
+                variant="outline"
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Connect Email
+                {syncEmail.isPending && syncingConnectionId === null ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Syncing All...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Sync All
+                  </>
+                )}
               </Button>
-            ) : (
-              <>
-                <Button
-                  onClick={handleSync}
-                  disabled={loading || syncEmail.isPending}
-                  variant="outline"
-                >
-                  {syncEmail.isPending ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Syncing...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Sync Now
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleDisconnect}
-                  disabled={loading || disconnectEmail.isPending}
-                  variant="destructive"
-                >
-                  {disconnectEmail.isPending ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Disconnecting...
-                    </>
-                  ) : (
-                    <>
-                      <X className="mr-2 h-4 w-4" />
-                      Disconnect
-                    </>
-                  )}
-                </Button>
-              </>
             )}
             <Button onClick={() => refetch()} disabled={loading} variant="outline">
-              <RefreshCw
-                className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
-              />
-              Refresh Status
+              <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
+              Refresh
             </Button>
           </div>
 
-          {/* Connection Details */}
-          {isConnected && status?.connection && (
+          {/* Connected accounts list */}
+          {hasConnections && (
             <div className="space-y-3 pt-4 border-t">
-              <h4 className="font-semibold text-sm">Connection Details</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">IMAP Server:</span>
-                  <span className="ml-2 font-medium">{status.connection.imap_server}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">SMTP Server:</span>
-                  <span className="ml-2 font-medium">{status.connection.smtp_server}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Sync Folder:</span>
-                  <span className="ml-2 font-medium">{status.connection.sync_folder}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-muted-foreground">Last Sync:</span>
-                  <span className="ml-1 font-medium">
-                    {status.connection.last_sync_at
-                      ? formatDate(status.connection.last_sync_at)
-                      : 'Never'}
-                  </span>
-                </div>
-              </div>
-              {status.connection.last_sync_error && (
-                <Alert variant="destructive" className="mt-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{status.connection.last_sync_error}</AlertDescription>
-                </Alert>
-              )}
+              <h4 className="font-semibold text-sm">Connected Accounts</h4>
+              {connections.map((connection) => (
+                <EmailAccountCard
+                  key={connection.id}
+                  connection={connection}
+                  onSync={() => handleSync(connection.id)}
+                  onDisconnect={() => handleDisconnect(connection.id, connection.email_address)}
+                  isSyncing={syncingConnectionId === connection.id}
+                  isDisconnecting={disconnectingConnectionId === connection.id}
+                />
+              ))}
             </div>
           )}
 
           {/* Setup Instructions */}
-          {!isConnected && (
+          {!hasConnections && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
@@ -359,7 +438,7 @@ export function EmailConnection() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Connect Email Account
+              Add Email Account
             </DialogTitle>
             <DialogDescription>
               Enter your email credentials to connect via IMAP/SMTP.

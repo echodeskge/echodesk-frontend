@@ -966,20 +966,23 @@ export interface EmailConnection {
   updated_at: string;
 }
 
+export interface EmailConnectionDetail {
+  id: number;
+  email_address: string;
+  display_name: string;
+  imap_server: string;
+  smtp_server: string;
+  is_active: boolean;
+  last_sync_at: string | null;
+  last_sync_error: string;
+  sync_folder: string;
+  connected_at: string;
+}
+
 export interface EmailConnectionStatus {
   connected: boolean;
-  connection: {
-    id: number;
-    email_address: string;
-    display_name: string;
-    imap_server: string;
-    smtp_server: string;
-    is_active: boolean;
-    last_sync_at: string | null;
-    last_sync_error: string;
-    sync_folder: string;
-    connected_at: string;
-  } | null;
+  connections: EmailConnectionDetail[];  // All connections
+  connection: EmailConnectionDetail | null;  // First connection (backwards compatibility)
 }
 
 export interface EmailMessage {
@@ -1016,6 +1019,7 @@ export interface EmailMessage {
   read_by_staff_at: string | null;
   is_deleted: boolean;
   deleted_at: string | null;
+  connection_id: number;
   connection_email: string;
   connection_display_name: string;
   created_at: string;
@@ -1060,6 +1064,7 @@ export interface EmailSendRequest {
   body_text?: string;
   body_html?: string;
   reply_to_message_id?: number;
+  connection_id?: number;  // Optional: send from specific email account
 }
 
 export interface EmailActionRequest {
@@ -1100,8 +1105,8 @@ export function useDisconnectEmail() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      const response = await axios.post('/api/social/email/disconnect/');
+    mutationFn: async (connectionId: number) => {
+      const response = await axios.post('/api/social/email/disconnect/', { connection_id: connectionId });
       return response.data;
     },
     onSuccess: () => {
@@ -1122,6 +1127,7 @@ export function useEmailMessages(filters?: {
   is_read?: boolean;
   label?: string;
   search?: string;
+  connection_id?: number;  // Filter by specific email account
 }) {
   return useQuery<PaginatedEmailMessageList>({
     queryKey: socialKeys.emailMessagesList(filters || {}),
@@ -1140,6 +1146,7 @@ export function useInfiniteEmailMessages(filters?: {
   is_read?: boolean;
   label?: string;
   search?: string;
+  connection_id?: number;  // Filter by specific email account
 }) {
   return useInfiniteQuery({
     queryKey: socialKeys.emailMessagesList(filters || {}),
@@ -1161,12 +1168,19 @@ export function useInfiniteEmailMessages(filters?: {
 }
 
 // Email Threads Query
-export function useEmailThreads(folder?: string) {
+export function useEmailThreads(filters?: { folder?: string; connection_id?: number }) {
   return useQuery<GeneratedEmailMessage[]>({
-    queryKey: [...socialKeys.emailThreads(), folder || 'All'],
+    queryKey: [...socialKeys.emailThreads(), filters?.folder || 'All', filters?.connection_id || 'all'],
     queryFn: async () => {
-      const params = folder && folder !== 'All' ? `?folder=${encodeURIComponent(folder)}` : '';
-      const response = await axios.get(`/api/social/email-messages/threads/${params}`);
+      const params = new URLSearchParams();
+      if (filters?.folder && filters.folder !== 'All') {
+        params.set('folder', filters.folder);
+      }
+      if (filters?.connection_id) {
+        params.set('connection_id', String(filters.connection_id));
+      }
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const response = await axios.get(`/api/social/email-messages/threads/${queryString}`);
       return response.data as GeneratedEmailMessage[];
     },
     refetchInterval: 30000,
@@ -1239,8 +1253,10 @@ export function useSyncEmail() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      const response = await axios.post('/api/social/email/sync/');
+    mutationFn: async (connectionId?: number) => {
+      const response = await axios.post('/api/social/email/sync/',
+        connectionId ? { connection_id: connectionId } : {}
+      );
       return response.data;
     },
     onSuccess: () => {

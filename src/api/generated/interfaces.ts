@@ -759,6 +759,7 @@ export interface EmailMessage {
   read_by_staff_at?: string;
   is_deleted?: boolean;
   deleted_at?: string;
+  connection_id: number;
   connection_email: string;
   connection_display_name: string;
   created_at: string;

@@ -122,6 +122,9 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           throw new Error('No message found to reply to')
         }
 
+        // Get connection_id from the thread messages to send from the correct account
+        const connectionId = latestMessage.connection_id
+
         // Find customer email - look for a message NOT from business
         // If latest is from customer, use their email; otherwise find first customer message
         let customerEmail: string | null = null
@@ -165,6 +168,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           body_text: data.text,
           body_html: bodyHtml,
           reply_to_message_id: latestMessage.id,
+          connection_id: connectionId,  // Send from the same account that received the email
         })
 
         // Clear CC/BCC after sending

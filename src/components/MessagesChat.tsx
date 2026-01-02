@@ -648,20 +648,22 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       }
 
       // Load Email conversations (only previews, not all messages)
+      // Now supports multiple email connections - threads from all accounts are loaded together
       if (enabledPlatforms.includes("email")) {
       try {
         const emailStatus = await socialEmailStatusRetrieve();
 
-        if (emailStatus.connected && emailStatus.connection) {
-          const emailConnection = emailStatus.connection;
-
-          // Get email threads (grouped conversations)
+        if (emailStatus.connected) {
+          // Get email threads from all connections (unified view)
           // The threads endpoint returns EmailMessage with additional aggregate fields
+          // connection_id, connection_email, connection_display_name are already in GeneratedEmailMessage
           interface EmailThreadMessage extends GeneratedEmailMessage {
             message_count?: number;
             unread_count?: number;
+            customer_email?: string;
+            customer_name?: string;
           }
-          // Fetch threads with folder filter
+          // Fetch threads with folder filter - returns threads from all connected accounts
           const folderParam = selectedEmailFolder && selectedEmailFolder !== 'All'
             ? `?folder=${encodeURIComponent(selectedEmailFolder)}`
             : '';
@@ -675,9 +677,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
             // Use customer_email/customer_name from thread (the external party, not business)
             // Falls back to from_email if customer fields not available
-            const threadAny = thread as any;
-            const customerEmail = threadAny.customer_email || thread.from_email;
-            const customerName = threadAny.customer_name || thread.from_name || customerEmail;
+            const customerEmail = thread.customer_email || thread.from_email;
+            const customerName = thread.customer_name || thread.from_name || customerEmail;
+
+            // Get account info from thread (supports multiple connections)
+            const accountEmail = thread.connection_email;
+            const accountId = thread.connection_id;
 
             // Create last message preview from thread data
             const lastUnifiedMessage: UnifiedMessage = {
@@ -695,10 +700,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               is_from_business: thread.is_from_business || false,
               is_delivered: true,
               is_read: thread.is_read,
-              page_name: emailConnection.email_address,
+              page_name: accountEmail,
               conversation_id: `email_${thread.thread_id}`,
               platform_message_id: thread.message_id,
-              account_id: String(emailConnection.id),
+              account_id: String(accountId),
               subject: thread.subject,
               body_html: thread.body_html,
             };
@@ -711,8 +716,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               profile_pic_url: undefined,
               last_message: lastUnifiedMessage,
               message_count: thread.message_count || 1,
-              account_name: emailConnection.email_address,
-              account_id: String(emailConnection.id),
+              account_name: accountEmail,
+              account_id: String(accountId),
               subject: thread.subject,
               unread_count: thread.unread_count || 0,
             };

@@ -5779,6 +5779,11 @@ export async function socialEmailSyncSettingsCreate(): Promise<any> {
   return response.data;
 }
 
+export async function socialEmailUpdateCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/update/`);
+  return response.data;
+}
+
 export async function socialFacebookMessagesList(
   ordering?: string,
   page?: number,
