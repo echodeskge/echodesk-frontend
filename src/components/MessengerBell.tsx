@@ -1,18 +1,18 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
 import { MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useUnreadMessagesCount } from '@/hooks/api/useSocial'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { useUnreadMessagesCount, useRecentConversations, type RecentConversation } from '@/hooks/api/useSocial'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { MessagesDropdownList } from '@/components/MessagesDropdownList'
 
 interface MessengerBellProps {
   className?: string
@@ -20,62 +20,56 @@ interface MessengerBellProps {
 
 export function MessengerBell({ className }: MessengerBellProps) {
   const router = useRouter()
-  const { data: unreadCount, isLoading } = useUnreadMessagesCount()
+  const [isOpen, setIsOpen] = useState(false)
+  const { data: unreadCount } = useUnreadMessagesCount()
+  const { data: conversations, isLoading, isEmpty } = useRecentConversations({ limit: 10 })
 
   // Social messages only (exclude email - email has separate badge on sidebar)
   const totalUnread = (unreadCount?.facebook ?? 0) + (unreadCount?.instagram ?? 0) + (unreadCount?.whatsapp ?? 0)
 
-  const handleClick = () => {
-    // Navigate to social messages page
-    router.push('/social/messages')
+  const handleConversationClick = (conversation: RecentConversation) => {
+    setIsOpen(false)
+    // Navigate to the specific conversation
+    router.push(`/social/messages/${conversation.id}`)
   }
 
-  // Build tooltip content showing breakdown
-  const getTooltipContent = () => {
-    if (!unreadCount || totalUnread === 0) {
-      return 'No unread messages'
-    }
-
-    const parts: string[] = []
-    if (unreadCount.facebook > 0) {
-      parts.push(`Facebook: ${unreadCount.facebook}`)
-    }
-    if (unreadCount.instagram > 0) {
-      parts.push(`Instagram: ${unreadCount.instagram}`)
-    }
-    if (unreadCount.whatsapp > 0) {
-      parts.push(`WhatsApp: ${unreadCount.whatsapp}`)
-    }
-
-    return parts.length > 0 ? parts.join('\n') : 'No unread messages'
+  const handleSeeAllClick = () => {
+    setIsOpen(false)
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn("relative", className)}
-            aria-label="Messages"
-            onClick={handleClick}
-          >
-            <MessageCircle className="h-5 w-5" />
-            {totalUnread > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
-              >
-                {totalUnread > 99 ? '99+' : totalUnread}
-              </Badge>
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="whitespace-pre-line">
-          {getTooltipContent()}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn("relative", className)}
+          aria-label="Messages"
+        >
+          <MessageCircle className="h-5 w-5" />
+          {totalUnread > 0 && (
+            <Badge
+              variant="destructive"
+              className="absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+            >
+              {totalUnread > 99 ? '99+' : totalUnread}
+            </Badge>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-[380px] p-0"
+        sideOffset={8}
+      >
+        <MessagesDropdownList
+          conversations={conversations}
+          isLoading={isLoading}
+          isEmpty={isEmpty}
+          onConversationClick={handleConversationClick}
+          onSeeAllClick={handleSeeAllClick}
+        />
+      </PopoverContent>
+    </Popover>
   )
 }

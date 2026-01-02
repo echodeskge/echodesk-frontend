@@ -1795,3 +1795,96 @@ export function useReorderQuickReplies() {
     },
   });
 }
+
+// ============================================================================
+// RECENT CONVERSATIONS HOOK (for Messages Dropdown)
+// ============================================================================
+
+export interface RecentConversation {
+  id: string; // Full conversation ID (e.g., fb_pageId_senderId)
+  platform: 'facebook' | 'instagram' | 'whatsapp';
+  conversationId: string;
+  accountId: string;
+  senderName: string;
+  senderAvatar?: string;
+  lastMessage: string;
+  lastMessageAt: Date;
+  unreadCount: number;
+}
+
+export function useRecentConversations(options?: { enabled?: boolean; limit?: number }) {
+  const limit = options?.limit ?? 15;
+
+  // Fetch from all platforms
+  const { data: fbData, isLoading: fbLoading } = useFacebookMessages();
+  const { data: igData, isLoading: igLoading } = useInstagramMessages();
+  const { data: waData, isLoading: waLoading } = useWhatsAppMessages();
+
+  const isLoading = fbLoading || igLoading || waLoading;
+
+  // Combine and sort conversations
+  const conversations: RecentConversation[] = [];
+
+  // Process Facebook conversations
+  if (fbData?.results) {
+    for (const conv of fbData.results) {
+      conversations.push({
+        id: `fb_${conv.page_id}_${conv.sender_id}`,
+        platform: 'facebook',
+        conversationId: conv.sender_id,
+        accountId: conv.page_id,
+        senderName: conv.sender_name || 'Unknown',
+        senderAvatar: conv.profile_pic_url,
+        lastMessage: conv.last_message?.text || conv.last_message?.attachment_type || '',
+        lastMessageAt: new Date(conv.last_message?.created_at || conv.updated_at),
+        unreadCount: conv.unread_count || 0,
+      });
+    }
+  }
+
+  // Process Instagram conversations
+  if (igData?.results) {
+    for (const conv of igData.results) {
+      conversations.push({
+        id: `ig_${conv.account_id}_${conv.sender_id}`,
+        platform: 'instagram',
+        conversationId: conv.sender_id,
+        accountId: conv.account_id,
+        senderName: conv.sender_name || conv.sender_username || 'Unknown',
+        senderAvatar: conv.profile_pic_url,
+        lastMessage: conv.last_message?.text || conv.last_message?.attachment_type || '',
+        lastMessageAt: new Date(conv.last_message?.created_at || conv.updated_at),
+        unreadCount: conv.unread_count || 0,
+      });
+    }
+  }
+
+  // Process WhatsApp conversations
+  if (waData?.results) {
+    for (const conv of waData.results) {
+      conversations.push({
+        id: `wa_${conv.waba_id}_${conv.from_number}`,
+        platform: 'whatsapp',
+        conversationId: conv.from_number,
+        accountId: conv.waba_id,
+        senderName: conv.contact_name || conv.from_number,
+        senderAvatar: conv.profile_pic_url,
+        lastMessage: conv.last_message?.text || conv.last_message?.message_type || '',
+        lastMessageAt: new Date(conv.last_message?.created_at || conv.updated_at),
+        unreadCount: conv.unread_count || 0,
+      });
+    }
+  }
+
+  // Sort by last message time (most recent first)
+  conversations.sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime());
+
+  // Limit to requested number
+  const recentConversations = conversations.slice(0, limit);
+
+  return {
+    data: recentConversations,
+    isLoading,
+    isEmpty: !isLoading && recentConversations.length === 0,
+  };
+}
