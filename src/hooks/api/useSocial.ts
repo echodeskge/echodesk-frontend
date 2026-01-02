@@ -1867,7 +1867,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
 
       const existing = fbConversations.get(customerId);
       const msgTimestamp = new Date(msg.timestamp);
-      const isUnread = !msg.is_read && !msg.is_from_page;
+      const isUnread = !msg.is_read_by_staff && !msg.is_from_page;
 
       if (!existing) {
         fbConversations.set(customerId, {
@@ -1932,7 +1932,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
 
       const existing = igConversations.get(customerId);
       const msgTimestamp = new Date(msg.timestamp);
-      const isUnread = !msg.is_read && !msg.is_from_business;
+      const isUnread = !msg.is_read_by_staff && !msg.is_from_business;
 
       if (!existing) {
         igConversations.set(customerId, {
@@ -1997,7 +1997,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
 
       const existing = waConversations.get(customerId);
       const msgTimestamp = new Date(msg.timestamp);
-      const isUnread = !msg.is_read && !msg.is_from_business;
+      const isUnread = !msg.is_read_by_staff && !msg.is_from_business;
 
       if (!existing) {
         waConversations.set(customerId, {
