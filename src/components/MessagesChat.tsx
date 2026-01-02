@@ -157,7 +157,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const params = useParams();
   const chatId = params.id as string | undefined;
 
-  const CHATS_CACHE_KEY = 'echodesk_chats_cache';
+  // Platform-specific cache key to prevent showing wrong data when navigating
+  const platformsKey = enabledPlatforms.sort().join('_');
+  const CHATS_CACHE_KEY = `echodesk_chats_cache_${platformsKey}`;
 
   // Initialize chatsData from sessionStorage cache if available
   const getInitialChatsData = (): ChatType[] => {
@@ -185,7 +187,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     return [];
   };
 
-  const [loading, setLoading] = useState(false);
+  // Start with loading=true if no cached data for this platform
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    const cached = sessionStorage.getItem(CHATS_CACHE_KEY);
+    return !cached;
+  });
   const [error, setError] = useState("");
   const [conversations, setConversations] = useState<UnifiedConversation[]>([]);
   const [conversationMessages, setConversationMessages] = useState<Map<string, UnifiedMessage[]>>(new Map());
