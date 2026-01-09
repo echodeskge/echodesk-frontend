@@ -15,6 +15,7 @@ export const tenantKeys = {
   subscription: () => [...tenantKeys.all, 'subscription'] as const,
   groups: () => [...tenantKeys.all, 'groups'] as const,
   availableFeatures: () => [...tenantKeys.groups(), 'available-features'] as const,
+  appearance: () => [...tenantKeys.all, 'appearance'] as const,
 };
 
 // Queries
@@ -150,6 +151,48 @@ export function useDeleteTenantGroup() {
     mutationFn: (id: string) => tenantGroupsDestroy(Number(id)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantKeys.groups() });
+    },
+  });
+}
+
+// Dashboard Appearance Hooks
+export function useDashboardAppearance(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: tenantKeys.appearance(),
+    queryFn: async () => {
+      const response = await axios.get('/api/dashboard-appearance/');
+      return response.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes - appearance rarely changes
+    gcTime: 30 * 60 * 1000, // 30 minutes cache
+    enabled: options?.enabled !== false && authService.isAuthenticated(),
+  });
+}
+
+export function useUpdateDashboardAppearance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await axios.patch('/api/dashboard-appearance/update/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tenantKeys.appearance() });
+    },
+  });
+}
+
+export function useResetDashboardAppearance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.post('/api/dashboard-appearance/reset/');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: tenantKeys.appearance() });
     },
   });
 }

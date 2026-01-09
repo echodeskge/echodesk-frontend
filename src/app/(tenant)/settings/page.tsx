@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { List, FileText, Settings, ChevronRight, CreditCard } from "lucide-react";
+import { List, FileText, Settings, ChevronRight, CreditCard, Palette } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
@@ -44,6 +44,13 @@ export default function SettingsPage() {
       icon: Settings,
       href: "/settings/general",
       color: "text-gray-500",
+    },
+    {
+      title: t('sections.appearance.title'),
+      description: t('sections.appearance.description'),
+      icon: Palette,
+      href: "/settings/appearance",
+      color: "text-pink-500",
     },
   ];
 

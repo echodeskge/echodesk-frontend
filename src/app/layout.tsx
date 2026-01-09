@@ -4,6 +4,7 @@ import "./globals.css";
 import { TenantProvider } from '@/contexts/TenantContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import QueryProvider from '@/providers/QueryProvider';
 import { SessionProvider } from '@/providers/SessionProvider';
 import { ClarityProvider } from '@/providers/ClarityProvider';
@@ -37,18 +38,20 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} bg-white`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
           <SessionProvider>
             <QueryProvider>
               <TenantProvider>
                 <AuthProvider>
-                  <ClarityProvider>
-                    <SubscriptionProvider>
-                      {children}
-                    </SubscriptionProvider>
-                  </ClarityProvider>
+                  <ThemeProvider>
+                    <ClarityProvider>
+                      <SubscriptionProvider>
+                        {children}
+                      </SubscriptionProvider>
+                    </ClarityProvider>
+                  </ThemeProvider>
                 </AuthProvider>
               </TenantProvider>
             </QueryProvider>

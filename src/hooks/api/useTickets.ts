@@ -43,7 +43,7 @@ export function useTickets(filters?: Record<string, any>) {
 export function useTicket(id: string, enabled = true) {
   return useQuery({
     queryKey: ticketKeys.detail(id),
-    queryFn: () => ticketsRetrieve(Number(id)),
+    queryFn: () => ticketsRetrieve(id),
     enabled: enabled && !!id,
     staleTime: 1 * 60 * 1000, // Consider data fresh for 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
@@ -114,7 +114,7 @@ export function useUpdateTicket() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
-      ticketsPartialUpdate(Number(id), data),
+      ticketsPartialUpdate(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
@@ -141,7 +141,7 @@ export function useDeleteTicket() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => ticketsDestroy(Number(id)),
+    mutationFn: (id: string) => ticketsDestroy(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ticketKeys.lists() });
       queryClient.invalidateQueries({ queryKey: ticketKeys.boards });

@@ -88,6 +88,9 @@ import type {
   TicketCommentRequest,
   TicketComment,
   PatchedTicketCommentRequest,
+  DashboardAppearanceSettings,
+  DashboardAppearanceSettingsRequest,
+  PatchedDashboardAppearanceSettingsRequest,
   PaginatedDepartmentList,
   DepartmentRequest,
   Department,
@@ -2034,6 +2037,30 @@ export async function cronSubscriptionCheckRetrieve(): Promise<any> {
 
 export async function cronSubscriptionCheckCreate(): Promise<any> {
   const response = await axios.post(`/api/cron/subscription-check/`);
+  return response.data;
+}
+
+export async function getDashboardAppearance(): Promise<DashboardAppearanceSettings> {
+  const response = await axios.get(`/api/dashboard-appearance/`);
+  return response.data;
+}
+
+export async function resetDashboardAppearance(): Promise<DashboardAppearanceSettings> {
+  const response = await axios.post(`/api/dashboard-appearance/reset/`);
+  return response.data;
+}
+
+export async function updateDashboardAppearance2(
+  data: DashboardAppearanceSettingsRequest,
+): Promise<DashboardAppearanceSettings> {
+  const response = await axios.put(`/api/dashboard-appearance/update/`, data);
+  return response.data;
+}
+
+export async function updateDashboardAppearance(
+  data: PatchedDashboardAppearanceSettingsRequest,
+): Promise<DashboardAppearanceSettings> {
+  const response = await axios.patch(`/api/dashboard-appearance/update/`, data);
   return response.data;
 }
 
@@ -7106,38 +7133,18 @@ export async function ticketFormsDefaultRetrieve(): Promise<TicketForm> {
 }
 
 export async function ticketsList(
-  assignedGroups?: number[],
-  assignedTo?: number,
-  column?: number,
-  createdBy?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
-  priority?: 'critical' | 'high' | 'low' | 'medium',
   search?: string,
-  tags?: number[],
 ): Promise<PaginatedTicketListList> {
   const response = await axios.get(
     `/api/tickets/${(() => {
       const parts = [
-        assignedGroups
-          ? 'assigned_groups=' +
-            assignedGroups
-              .map(String)
-              .map(encodeURIComponent)
-              .join('&assigned_groups=')
-          : null,
-        assignedTo ? 'assigned_to=' + encodeURIComponent(assignedTo) : null,
-        column ? 'column=' + encodeURIComponent(column) : null,
-        createdBy ? 'created_by=' + encodeURIComponent(createdBy) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
-        priority ? 'priority=' + encodeURIComponent(priority) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
-        tags
-          ? 'tags=' + tags.map(String).map(encodeURIComponent).join('&tags=')
-          : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -7150,13 +7157,13 @@ export async function ticketsCreate(data: TicketRequest): Promise<Ticket> {
   return response.data;
 }
 
-export async function ticketsRetrieve(id: number): Promise<Ticket> {
+export async function ticketsRetrieve(id: string): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/${id}/`);
   return response.data;
 }
 
 export async function ticketsUpdate(
-  id: number,
+  id: string,
   data: TicketRequest,
 ): Promise<Ticket> {
   const response = await axios.put(`/api/tickets/${id}/`, data);
@@ -7164,20 +7171,20 @@ export async function ticketsUpdate(
 }
 
 export async function ticketsPartialUpdate(
-  id: number,
+  id: string,
   data: PatchedTicketRequest,
 ): Promise<Ticket> {
   const response = await axios.patch(`/api/tickets/${id}/`, data);
   return response.data;
 }
 
-export async function ticketsDestroy(id: number): Promise<any> {
+export async function ticketsDestroy(id: string): Promise<any> {
   const response = await axios.delete(`/api/tickets/${id}/`);
   return response.data;
 }
 
 export async function ticketsAddCommentCreate(
-  id: number,
+  id: string,
   data: TicketRequest,
 ): Promise<Ticket> {
   const response = await axios.post(`/api/tickets/${id}/add_comment/`, data);
@@ -7185,30 +7192,30 @@ export async function ticketsAddCommentCreate(
 }
 
 export async function ticketsAssignPartialUpdate(
-  id: number,
+  id: string,
   data: PatchedTicketRequest,
 ): Promise<Ticket> {
   const response = await axios.patch(`/api/tickets/${id}/assign/`, data);
   return response.data;
 }
 
-export async function ticketsCommentsRetrieve(id: number): Promise<Ticket> {
+export async function ticketsCommentsRetrieve(id: string): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/${id}/comments/`);
   return response.data;
 }
 
-export async function ticketsHistoryRetrieve(id: number): Promise<Ticket> {
+export async function ticketsHistoryRetrieve(id: string): Promise<Ticket> {
   const response = await axios.get(`/api/tickets/${id}/history/`);
   return response.data;
 }
 
-export async function moveTicketToColumn(id: number): Promise<Ticket> {
+export async function moveTicketToColumn(id: string): Promise<Ticket> {
   const response = await axios.patch(`/api/tickets/${id}/move_to_column/`);
   return response.data;
 }
 
 export async function ticketsReorderInColumnPartialUpdate(
-  id: number,
+  id: string,
   data: PatchedTicketRequest,
 ): Promise<Ticket> {
   const response = await axios.patch(

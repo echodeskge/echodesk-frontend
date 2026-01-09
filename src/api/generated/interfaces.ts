@@ -86,7 +86,7 @@ export interface Board {
   created_at: string;
   updated_at: string;
   created_by: string;
-  columns_count: string;
+  columns_count: number;
   order_users: UserMinimal[];
   board_groups: TenantGroupMinimal[];
   board_users: UserMinimal[];
@@ -544,6 +544,29 @@ export interface ContactTypeEnum {
   [key: string]: any;
 }
 
+export interface DashboardAppearanceSettings {
+  primary_color?: string;
+  primary_color_dark?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  sidebar_background?: string;
+  sidebar_primary?: string;
+  border_radius?: string;
+  sidebar_order?: any;
+  updated_at: string;
+}
+
+export interface DashboardAppearanceSettingsRequest {
+  primary_color?: string;
+  primary_color_dark?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  sidebar_background?: string;
+  sidebar_primary?: string;
+  border_radius?: string;
+  sidebar_order?: any;
+}
+
 export interface DayOfWeekEnum {
   [key: string]: any;
 }
@@ -819,6 +842,9 @@ export interface FacebookMessage {
   delivered_at: string;
   is_read: boolean;
   read_at: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
+  page_id: string;
   page_name: string;
   created_at: string;
 }
@@ -1051,6 +1077,9 @@ export interface InstagramMessage {
   delivered_at: string;
   is_read: boolean;
   read_at: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
+  account_id: string;
   account_username: string;
   created_at: string;
 }
@@ -2453,6 +2482,17 @@ export interface PatchedClientRequest {
   phone?: string;
   company?: string;
   is_active?: boolean;
+}
+
+export interface PatchedDashboardAppearanceSettingsRequest {
+  primary_color?: string;
+  primary_color_dark?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  sidebar_background?: string;
+  sidebar_primary?: string;
+  border_radius?: string;
+  sidebar_order?: any;
 }
 
 export interface PatchedDepartmentRequest {
@@ -3909,7 +3949,7 @@ export interface TicketColumn {
   created_at: string;
   updated_at: string;
   created_by: string;
-  tickets_count: string;
+  tickets_count: number;
 }
 
 export interface TicketColumnCreate {
@@ -4060,7 +4100,7 @@ export interface TicketList {
   assigned_groups: TenantGroupMinimal[];
   assignments: TicketAssignment[];
   tags: Tag[];
-  comments_count: string;
+  comments_count: number;
 }
 
 export interface TicketPayment {
@@ -4336,6 +4376,8 @@ export interface WhatsAppMessage {
   delivered_at: string;
   is_read: boolean;
   read_at: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
   error_message?: string;
   business_name: string;
   business_phone: string;

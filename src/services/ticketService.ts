@@ -88,16 +88,10 @@ export class TicketService {
   ): Promise<PaginatedTicketListList> {
     try {
       return await ticketsList(
-        filters.assignedGroup ? [filters.assignedGroup] : undefined,
-        filters.assignedTo,
-        filters.column,
-        filters.createdBy,
         filters.ordering,
         filters.page,
         undefined,
-        filters.priority,
-        filters.search,
-        filters.tags
+        filters.search
       );
     } catch (error) {
       console.error("Error fetching tickets:", error);
@@ -108,9 +102,9 @@ export class TicketService {
   /**
    * Get a specific ticket by ID
    */
-  async getTicket(id: number): Promise<Ticket> {
+  async getTicket(id: number | string): Promise<Ticket> {
     try {
-      return await ticketsRetrieve(id);
+      return await ticketsRetrieve(String(id));
     } catch (error) {
       console.error("Error fetching ticket:", error);
       throw this.handleError(error);
@@ -148,7 +142,7 @@ export class TicketService {
   /**
    * Update a ticket
    */
-  async updateTicket(id: number, data: UpdateTicketData): Promise<Ticket> {
+  async updateTicket(id: number | string, data: UpdateTicketData): Promise<Ticket> {
     try {
       // Cast the data to match the expected types
       const updateData: PatchedTicketRequest = {
@@ -165,7 +159,7 @@ export class TicketService {
         tag_ids: data.tag_ids,
       };
 
-      return await ticketsPartialUpdate(id, updateData);
+      return await ticketsPartialUpdate(String(id), updateData);
     } catch (error) {
       console.error("Error updating ticket:", error);
       throw this.handleError(error);
@@ -175,9 +169,9 @@ export class TicketService {
   /**
    * Delete a ticket
    */
-  async deleteTicket(id: number): Promise<void> {
+  async deleteTicket(id: number | string): Promise<void> {
     try {
-      await ticketsDestroy(id);
+      await ticketsDestroy(String(id));
     } catch (error) {
       console.error("Error deleting ticket:", error);
       throw this.handleError(error);
@@ -187,9 +181,9 @@ export class TicketService {
   /**
    * Assign ticket to a user
    */
-  async assignTicket(ticketId: number, userId: number): Promise<Ticket> {
+  async assignTicket(ticketId: number | string, userId: number): Promise<Ticket> {
     try {
-      return await ticketsAssignPartialUpdate(ticketId, {
+      return await ticketsAssignPartialUpdate(String(ticketId), {
         assigned_to_id: userId,
       });
     } catch (error) {
@@ -250,9 +244,9 @@ export class TicketService {
   /**
    * Get comments for a ticket
    */
-  async getTicketComments(ticketId: number): Promise<Ticket> {
+  async getTicketComments(ticketId: number | string): Promise<Ticket> {
     try {
-      return await ticketsCommentsRetrieve(ticketId);
+      return await ticketsCommentsRetrieve(String(ticketId));
     } catch (error) {
       console.error("Error fetching ticket comments:", error);
       throw this.handleError(error);

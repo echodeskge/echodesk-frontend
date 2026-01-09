@@ -118,7 +118,7 @@ export default function BoardSwitcher({
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-96 bg-white border border-gray-200 shadow-lg" style={{ backgroundColor: 'white' }}>
+      <DropdownMenuContent className="w-96 bg-popover border border-border shadow-lg">
         <DropdownMenuLabel>Boards</DropdownMenuLabel>
 
         {boards.length === 0 && (
@@ -131,7 +131,7 @@ export default function BoardSwitcher({
         {boards.map((board) => (
           <DropdownMenuItem
             key={board.id}
-            className="cursor-pointer p-4 focus:bg-accent hover:bg-gray-100"
+            className="cursor-pointer p-4 focus:bg-sidebar-accent hover:bg-sidebar-accent"
             onClick={() => onBoardChange(board.id)}
           >
             <div className="flex items-start gap-3 w-full">
@@ -167,7 +167,7 @@ export default function BoardSwitcher({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
+                        className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                         onClick={(e) => {
                           e.stopPropagation();
                           setOpen(false);
@@ -183,7 +183,7 @@ export default function BoardSwitcher({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground"
+                        className="text-xs h-6 px-2 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
                         onClick={(e) => {
                           e.stopPropagation();
                           setOpen(false);
@@ -220,7 +220,7 @@ export default function BoardSwitcher({
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="cursor-pointer text-primary p-4"
+              className="cursor-pointer text-primary p-4 focus:bg-sidebar-accent hover:bg-sidebar-accent"
               onClick={onCreateBoard}
             >
               <Plus className="h-4 w-4 mr-2" />

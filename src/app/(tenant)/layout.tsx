@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -42,7 +42,8 @@ import { navigationConfig } from "@/config/navigationConfig";
 import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
-import { useReactivateSubscription } from "@/hooks/api/usePayments";
+import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
+import { useTheme } from "@/contexts/ThemeContext";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -55,6 +56,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
   const { data: boards } = useBoards();
+  const { data: appearance } = useDashboardAppearance();
+  const { setAppearance } = useTheme();
   const { selectedBoardId, setSelectedBoardId } = useBoard();
   const { data: socialSettings } = useSocialSettings();
 
@@ -64,6 +67,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       getNotificationSound().updateSettings(socialSettings);
     }
   }, [socialSettings]);
+
+  // Update theme context with appearance settings
+  useEffect(() => {
+    if (appearance) {
+      setAppearance(appearance);
+    }
+  }, [appearance, setAppearance]);
 
   // Initialize WebSocket for board collaboration only on tickets page
   const isTicketsPage = pathname.includes('/tickets');
@@ -290,7 +300,20 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   const menuItems = buildMenuItems();
 
-  const visibleMenuItems = getSidebarMenuItems(userProfile, menuItems);
+  const filteredMenuItems = getSidebarMenuItems(userProfile, menuItems);
+
+  // Reorder menu items based on sidebar_order from appearance settings
+  const visibleMenuItems = useMemo(() => {
+    if (!appearance?.sidebar_order?.length) return filteredMenuItems;
+
+    const sidebarOrder = appearance.sidebar_order as string[];
+    const orderMap = new Map<string, number>(sidebarOrder.map((id, idx) => [id, idx]));
+    return [...filteredMenuItems].sort((a, b) => {
+      const orderA = orderMap.get(a.id) ?? 999;
+      const orderB = orderMap.get(b.id) ?? 999;
+      return orderA - orderB;
+    });
+  }, [filteredMenuItems, appearance?.sidebar_order]);
 
   // Get the first available route from visible menu items
   const getFirstAvailableRoute = (): string | null => {
@@ -522,7 +545,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-white overflow-hidden">
+      <div className="flex h-screen w-full bg-background overflow-hidden">
         <AppSidebar
           tenant={tenantInfo as any}
           userProfile={userProfile || null}
@@ -533,7 +556,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         />
 
         <SidebarInset className="flex flex-col h-screen overflow-hidden">
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white sticky top-0 z-10 left-0 right-0">
+          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4 bg-background sticky top-0 z-10 left-0 right-0">
             <SidebarTrigger className="-ml-1" />
             <h1 className="text-lg font-semibold">{pageTitle}</h1>
             {showBoardSwitcher && (
@@ -569,7 +592,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex-1 bg-white overflow-auto">
+          <div className="flex-1 bg-background overflow-auto">
             <BoardCollaborationProvider
               isConnected={boardIsConnected}
               activeUsers={boardActiveUsers}

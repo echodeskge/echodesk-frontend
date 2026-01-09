@@ -8,8 +8,8 @@ export function useUpdateTicket(boardId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: PatchedTicketRequest }) =>
-      ticketsPartialUpdate(id, data),
+    mutationFn: ({ id, data }: { id: number | string; data: PatchedTicketRequest }) =>
+      ticketsPartialUpdate(String(id), data),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {
@@ -31,7 +31,7 @@ export function useDeleteTicket(boardId?: number | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (ticketId: number) => ticketsDestroy(ticketId),
+    mutationFn: (ticketId: number | string) => ticketsDestroy(String(ticketId)),
     onSuccess: () => {
       // Invalidate the specific board's query
       if (boardId) {

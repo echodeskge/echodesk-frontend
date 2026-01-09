@@ -201,7 +201,7 @@ function DraggableTicket({
         {/* Progress indicators */}
         <div className="flex items-center gap-2 mb-2">
           {/* Comments count */}
-          {ticket.comments_count && parseInt(ticket.comments_count) > 0 && (
+          {ticket.comments_count && Number(ticket.comments_count) > 0 && (
             <Badge variant="secondary" className="text-xs px-1 py-0">
               💬 {ticket.comments_count}
             </Badge>

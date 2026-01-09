@@ -415,7 +415,36 @@
       "generalSettings": {
         "title": "General Settings",
         "description": "Configure general application settings"
+      },
+      "appearance": {
+        "title": "Appearance",
+        "description": "Customize dashboard colors, theme, and sidebar layout"
       }
+    },
+    "appearance": {
+      "modeTitle": "Display Mode",
+      "modeDescription": "Choose how the dashboard should appear. Your preference is saved locally.",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "themeTitle": "Theme Colors",
+      "themeDescription": "Customize the primary colors used throughout the dashboard. Changes apply to all users.",
+      "presetColors": "Preset Colors",
+      "primaryColor": "Primary Color",
+      "secondaryColor": "Secondary Color",
+      "accentColor": "Accent Color",
+      "sidebarColor": "Sidebar Background",
+      "borderRadius": "Border Radius",
+      "borderRadiusDescription": "Control the roundness of buttons, cards, and other elements.",
+      "preview": "Preview",
+      "previewDescription": "See how your changes will look before saving.",
+      "sidebarOrder": "Sidebar Order",
+      "sidebarOrderDescription": "Drag and drop to reorder sidebar menu items for all users.",
+      "reset": "Reset to Defaults",
+      "saveSuccess": "Appearance settings saved successfully",
+      "saveError": "Failed to save appearance settings",
+      "resetSuccess": "Appearance settings reset to defaults",
+      "resetError": "Failed to reset appearance settings"
     },
     "general": {
       "title": "General Settings",

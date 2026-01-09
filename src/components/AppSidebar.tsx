@@ -135,8 +135,8 @@ export function AppSidebar({
   const emailUnread = unreadCount?.email ?? 0
 
   return (
-    <Sidebar variant="inset" className="bg-white border-r border-gray-200">
-      <SidebarHeader className="bg-white border-b border-gray-100">
+    <Sidebar variant="inset" className="bg-sidebar border-r border-sidebar-border">
+      <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-4 py-2">
           {tenant?.theme?.logo_url && (
             <img
@@ -161,7 +161,7 @@ export function AppSidebar({
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-white">
+      <SidebarContent className="bg-sidebar">
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -217,7 +217,7 @@ export function AppSidebar({
                                       }
                                     }}
                                     isActive={isChildItemActive}
-                                    className="cursor-pointer hover:bg-gray-100 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground"
+                                    className="cursor-pointer hover:bg-sidebar-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground"
                                   >
                                     {ChildIconComponent ? (
                                       <ChildIconComponent className={`h-4 w-4 ${isChildLocked ? 'text-gray-400' : ''}`} />
@@ -253,7 +253,7 @@ export function AppSidebar({
                       className={`cursor-pointer transition-all duration-200 ${
                         isLocked
                           ? 'opacity-60 hover:opacity-80'
-                          : 'hover:bg-gray-100 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground'
+                          : 'hover:bg-sidebar-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground'
                       }`}
                       disabled={isLocked}
                     >
@@ -282,8 +282,8 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="bg-white">
-        <div className="p-4 border-t border-gray-100">
+      <SidebarFooter className="bg-sidebar">
+        <div className="p-4 border-t border-sidebar-border">
           {userProfile && (
             <div className="mb-3">
               <p className="text-sm font-medium">
@@ -298,7 +298,7 @@ export function AppSidebar({
             variant="outline"
             size="sm"
             onClick={onLogout}
-            className="w-full bg-white hover:bg-gray-50 hover:shadow-sm transition-all duration-200"
+            className="w-full bg-sidebar hover:bg-sidebar-accent hover:shadow-sm transition-all duration-200"
           >
             <Power className="h-4 w-4 mr-2" />
             Logout

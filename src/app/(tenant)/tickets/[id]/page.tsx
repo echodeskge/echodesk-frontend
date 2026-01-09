@@ -22,7 +22,7 @@ export default function TicketDetailPage() {
     const fetchTicket = async () => {
       try {
         setLoading(true);
-        const data = await ticketsRetrieve(parseInt(ticketId));
+        const data = await ticketsRetrieve(ticketId);
         setTicket(data);
       } catch (err) {
         console.error("Error fetching ticket:", err);
