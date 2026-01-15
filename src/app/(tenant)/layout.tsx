@@ -17,6 +17,7 @@ import { TicketCreateProvider } from "@/contexts/TicketCreateContext";
 import { TicketCreateSheet } from "@/components/TicketCreateSheet";
 import { BoardProvider, useBoard } from "@/contexts/BoardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { LayoutSkeleton } from "@/components/LayoutSkeleton";
 import { TenantInfo } from "@/types/auth";
 import { useTenant } from "@/contexts/TenantContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -493,11 +494,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const showBoardSwitcher = currentView === "tickets";
 
   if (profileLoading || tenantLoading || !tenantInfo) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
+    return <LayoutSkeleton />;
   }
 
   // Check if subscription is inactive (after loading completes)

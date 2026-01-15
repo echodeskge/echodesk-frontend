@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { UserStatisticsSkeleton } from '@/components/UserStatisticsSkeleton';
 import { ChevronUp, ChevronDown, ChevronsUpDown, BarChart3, Clock, Users, TrendingUp } from 'lucide-react';
 
 interface UserTimeStats {
@@ -200,12 +200,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
   if (loading) {
     return (
       <div className={className}>
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-2">
-            <Spinner className="h-6 w-6" />
-            <span className="text-muted-foreground">{t("loadingStatistics")}</span>
-          </div>
-        </div>
+        <UserStatisticsSkeleton />
       </div>
     );
   }

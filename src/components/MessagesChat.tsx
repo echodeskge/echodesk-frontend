@@ -6,11 +6,8 @@ import { FacebookPageConnection, WhatsAppMessage, EmailMessage as GeneratedEmail
 import axios from "@/api/axios";
 import {
   socialWhatsappMessagesList,
-  socialWhatsappStatusRetrieve,
   socialEmailStatusRetrieve,
   socialEmailMessagesThreadsRetrieve,
-  socialFacebookStatusRetrieve,
-  socialInstagramStatusRetrieve,
 } from "@/api/generated";
 import { convertFacebookMessagesToChatFormat } from "@/lib/chatAdapter";
 import { ChatProvider } from "@/components/chat/contexts/chat-context";
@@ -20,7 +17,7 @@ import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType, MessageType } from "@/components/chat/types";
 import { Card } from "@/components/ui/card";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
-import { useMarkConversationRead } from "@/hooks/api/useSocial";
+import { useMarkConversationRead, useFacebookStatus, useInstagramStatus, useWhatsAppStatus } from "@/hooks/api/useSocial";
 import { convertUnifiedMessagesToMessageType } from "@/lib/chatAdapter";
 
 interface PaginatedResponse<T> {
@@ -159,6 +156,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const params = useParams();
   const chatId = params.id as string | undefined;
 
+  // Use React Query hooks for platform status (cached and shared across components)
+  const { data: facebookStatusData } = useFacebookStatus();
+  const { data: instagramStatusData } = useInstagramStatus();
+  const { data: whatsAppStatusData } = useWhatsAppStatus();
+
   // Platform-specific cache key to prevent showing wrong data when navigating
   const platformsKey = enabledPlatforms.sort().join('_');
   const CHATS_CACHE_KEY = `echodesk_chats_cache_${platformsKey}`;
@@ -229,9 +231,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       // Load Facebook conversations
       if (enabledPlatforms.includes("facebook")) {
       try {
-        // Check Facebook status first to see if any pages are connected
-        const facebookStatus = await socialFacebookStatusRetrieve();
-        const facebookPages = (facebookStatus?.pages as FacebookPageConnection[]) || [];
+        // Use cached status from React Query hook
+        const facebookPages = (facebookStatusData?.pages as FacebookPageConnection[]) || [];
 
         // Only fetch messages if there are connected pages
         if (facebookPages.length > 0) {
@@ -372,9 +373,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       // Load Instagram conversations
       if (enabledPlatforms.includes("instagram")) {
       try {
-        // Check Instagram status first to see if any accounts are connected
-        const instagramStatus = await socialInstagramStatusRetrieve();
-        const instagramAccounts = (instagramStatus?.accounts as InstagramAccount[]) || [];
+        // Use cached status from React Query hook
+        const instagramAccounts = (instagramStatusData?.accounts as InstagramAccount[]) || [];
 
         // Only fetch messages if there are connected accounts
         if (instagramAccounts.length > 0) {
@@ -507,8 +507,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       // Load WhatsApp conversations
       if (enabledPlatforms.includes("whatsapp")) {
       try {
-        const whatsappStatusResponse = await socialWhatsappStatusRetrieve();
-        const whatsappAccounts = (whatsappStatusResponse?.accounts as WhatsAppAccount[]) || [];
+        // Use cached status from React Query hook
+        const whatsappAccounts = (whatsAppStatusData?.accounts as WhatsAppAccount[]) || [];
 
         // Only fetch messages if there are connected accounts
         if (whatsappAccounts.length === 0) {
@@ -771,7 +771,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [enabledPlatforms, selectedEmailFolder]);
+  }, [enabledPlatforms, selectedEmailFolder, facebookStatusData, instagramStatusData, whatsAppStatusData]);
 
   // Handle WebSocket new message
   const handleNewMessage = useCallback((data: any) => {

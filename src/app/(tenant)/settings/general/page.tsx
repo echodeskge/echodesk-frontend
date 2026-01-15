@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { GeneralSettingsSkeleton } from "@/components/GeneralSettingsSkeleton";
 import { Upload, Image as ImageIcon, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTenantSettings, useUpdateTenantSettings, useUploadTenantLogo, useRemoveTenantLogo } from "@/hooks/api";
@@ -113,13 +114,7 @@ export default function GeneralSettingsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Spinner className="h-8 w-8" />
-        </div>
-      </div>
-    );
+    return <GeneralSettingsSkeleton />;
   }
 
   return (

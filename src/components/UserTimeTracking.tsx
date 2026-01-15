@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { formatDuration } from './TimeTracking';
 import { timeLogsMyTimeSummaryRetrieve, TimeTrackingSummary as ApiTimeTrackingSummary } from '@/api/generated';
+import { TimeTrackingSkeleton } from './TimeTrackingSkeleton';
 
 interface TimeByColumn {
   column__name: string;
@@ -62,25 +63,7 @@ export default function UserTimeTracking({ className }: UserTimeTrackingProps) {
   }, [periodDays]);
 
   if (loading) {
-    return (
-      <div className={className}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '200px'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #e3e3e3',
-            borderTop: '4px solid #007bff',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-        </div>
-      </div>
-    );
+    return <TimeTrackingSkeleton />;
   }
 
   if (error) {

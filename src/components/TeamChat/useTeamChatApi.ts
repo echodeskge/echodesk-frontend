@@ -14,24 +14,28 @@ export const teamChatKeys = {
 };
 
 // Fetch team users
-export function useTeamChatUsers() {
+export function useTeamChatUsers(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: teamChatKeys.users(),
     queryFn: async (): Promise<TeamChatUser[]> => {
       const response = await axios.get('/api/team-chat/users/');
       return response.data;
     },
+    enabled: options?.enabled ?? true,
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
   });
 }
 
 // Fetch conversations
-export function useTeamChatConversations() {
+export function useTeamChatConversations(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: teamChatKeys.conversations(),
     queryFn: async (): Promise<TeamChatConversation[]> => {
       const response = await axios.get('/api/team-chat/conversations/');
       return response.data.results || response.data;
     },
+    enabled: options?.enabled ?? true,
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
   });
 }
 

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ticketsRetrieve } from "@/api/generated/api";
 import type { Ticket } from "@/api/generated/interfaces";
 import { TicketDetailView } from "@/components/TicketDetailView";
-import { Spinner } from "@/components/ui/spinner";
+import { TicketDetailSkeleton } from "@/components/TicketDetailSkeleton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
@@ -38,14 +38,7 @@ export default function TicketDetailPage() {
   }, [ticketId]);
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner className="h-8 w-8" />
-          <p className="text-sm text-muted-foreground">Loading ticket...</p>
-        </div>
-      </div>
-    );
+    return <TicketDetailSkeleton />;
   }
 
   if (error || !ticket) {

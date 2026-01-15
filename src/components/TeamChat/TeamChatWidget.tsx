@@ -40,9 +40,13 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
   const [typingUsers, setTypingUsers] = useState<Map<number, string>>(new Map());
   const [activeUserId, setActiveUserId] = useState<number | null>(null);
 
-  // API hooks
-  const { data: users = [] } = useTeamChatUsers();
-  const { data: conversations = [], refetch: refetchConversations } = useTeamChatConversations();
+  // Determine if we need to fetch full data (when list is open or has active chats)
+  const hasActiveChats = state.openChats.length > 0 || state.minimizedChats.length > 0;
+  const shouldFetchFullData = state.isListOpen || hasActiveChats;
+
+  // API hooks - defer users and conversations until widget is opened
+  const { data: users = [] } = useTeamChatUsers({ enabled: shouldFetchFullData });
+  const { data: conversations = [], refetch: refetchConversations } = useTeamChatConversations({ enabled: shouldFetchFullData });
   const { data: unreadCount = 0, refetch: refetchUnreadCount } = useTeamChatUnreadCount();
   const sendMessageMutation = useSendTeamChatMessage();
   const markReadMutation = useMarkConversationRead();

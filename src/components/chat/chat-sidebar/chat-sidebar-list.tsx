@@ -1,10 +1,10 @@
 "use client"
 
 import { useMemo, useEffect } from "react"
-import { Loader2 } from "lucide-react"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChatSidebarItem } from "./chat-sidebar-item"
+import { ChatListSkeleton } from "./ChatListSkeleton"
 
 const MESSAGES_LOADED_KEY = 'echodesk_messages_loaded'
 
@@ -74,21 +74,16 @@ export function ChatSidebarList() {
   if (showLoading) {
     return (
       <ScrollArea className={scrollHeight}>
-        <div className="flex flex-col items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">Loading conversations...</p>
-        </div>
+        <ChatListSkeleton />
       </ScrollArea>
     )
   }
 
-  // When refetching after navigation, show a subtle spinner instead of empty state
+  // When refetching after navigation, show skeleton instead of empty state
   if (isRefetching) {
     return (
       <ScrollArea className={scrollHeight}>
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <ChatListSkeleton />
       </ScrollArea>
     )
   }

@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { KanbanProvider } from "./kanban-new/kanban-context";
 import { Kanban } from "./kanban-new/components/kanban";
 import { Spinner } from "@/components/ui/spinner";
+import { KanbanSkeleton } from "@/components/KanbanSkeleton";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { BoardCreateSheet } from "./BoardCreateSheet";
@@ -123,14 +124,7 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
   }, [kanbanBoardData]);
 
   if (boardsLoading || (selectedBoardId && kanbanLoading)) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner className="h-8 w-8" />
-          <p className="text-sm text-muted-foreground">Loading kanban board...</p>
-        </div>
-      </div>
-    );
+    return <KanbanSkeleton />;
   }
 
   // Handle boards loading error

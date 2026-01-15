@@ -38,6 +38,12 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        {/* Preconnect to third-party origins for faster loading */}
+        <link rel="preconnect" href="https://www.clarity.ms" />
+        <link rel="preconnect" href="https://scripts.clarity.ms" />
+        <link rel="preconnect" href="https://echodesk-spaces.fra1.digitaloceanspaces.com" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>

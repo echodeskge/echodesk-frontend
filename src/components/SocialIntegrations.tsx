@@ -81,14 +81,18 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   // React Query hooks - Facebook
   const { data: facebookStatusData, isLoading: statusLoading, refetch: refetchStatus } = useFacebookStatus();
   const { data: facebookPagesData, isLoading: pagesLoading, refetch: refetchPages } = useFacebookPages();
-  const { data: messagesData } = useFacebookMessages({ page: 1 });
+  const facebookStatus = facebookStatusData as FacebookStatus | null;
+  const isConnected = facebookStatus?.connected || false;
+  const { data: messagesData } = useFacebookMessages({ page: 1 }, { enabled: isConnected });
   const connectFacebook = useConnectFacebook();
   const disconnectFacebook = useDisconnectFacebook();
 
   // React Query hooks - Instagram
   const { data: instagramStatusData, isLoading: instagramStatusLoading, refetch: refetchInstagramStatus } = useInstagramStatus();
   const { data: instagramAccountsData, isLoading: instagramAccountsLoading, refetch: refetchInstagramAccounts } = useInstagramAccounts();
-  const { data: instagramMessagesData } = useInstagramMessages({ page: 1 });
+  const instagramStatus = instagramStatusData as InstagramStatus | null;
+  const isInstagramConnected = instagramStatus?.connected || false;
+  const { data: instagramMessagesData } = useInstagramMessages({ page: 1 }, { enabled: isInstagramConnected });
   const disconnectInstagram = useDisconnectInstagram();
 
   const handleRefresh = async () => {
@@ -101,18 +105,14 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   };
 
   // Facebook data
-  const facebookStatus = facebookStatusData as FacebookStatus | null;
   const facebookPages = (facebookPagesData as PaginatedResponse<FacebookPageConnection>)?.results || [];
   const totalMessages = (messagesData as PaginatedResponse<FacebookMessage>)?.count || 0;
   const loading = statusLoading || pagesLoading;
-  const isConnected = facebookStatus?.connected || false;
 
   // Instagram data
-  const instagramStatus = instagramStatusData as InstagramStatus | null;
   const instagramAccounts = instagramAccountsData?.results || [];
   const totalInstagramMessages = instagramMessagesData?.count || 0;
   const instagramLoading = instagramStatusLoading || instagramAccountsLoading;
-  const isInstagramConnected = instagramStatus?.connected || false;
 
   // Notify parent when connection status changes
   useEffect(() => {

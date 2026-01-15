@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { AppearanceSettingsSkeleton } from "@/components/AppearanceSettingsSkeleton";
 import { toast } from "sonner";
 import { Sun, Moon, Monitor, GripVertical, RotateCcw, Check } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -264,13 +265,7 @@ export default function AppearanceSettingsPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="container mx-auto py-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Spinner className="h-8 w-8" />
-        </div>
-      </div>
-    );
+    return <AppearanceSettingsSkeleton />;
   }
 
   return (

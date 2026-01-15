@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { Loader2 } from "lucide-react"
 
 import type { UserType } from "@/components/chat/types"
 
@@ -15,6 +14,7 @@ import { ChatBoxHeader } from "./chat-box-header"
 import { ChatBoxNotFound } from "./chat-box-not-found"
 import { ChatMessageSearch } from "./chat-message-search"
 import { TypingIndicator } from "./typing-indicator"
+import { ChatBoxSkeleton, ChatBoxInitialSkeleton } from "./ChatBoxSkeleton"
 
 interface ChatBoxFacebookProps {
   user: UserType;
@@ -86,14 +86,7 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
 
   // If initial loading, show loading state
   if (isInitialLoading) {
-    return (
-      <Card className="grow grid place-items-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">Loading conversations...</p>
-        </div>
-      </Card>
-    )
+    return <ChatBoxInitialSkeleton />;
   }
 
   // If chat ID exists but no matching chat is found, show a not found UI
@@ -118,10 +111,27 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
       </div>
 
       {showLoading ? (
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Loading messages...</p>
+        <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
+          {/* Message skeletons */}
+          <div className="flex items-start gap-2">
+            <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+            <div className="space-y-1">
+              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+              <div className="h-16 w-64 bg-muted animate-pulse rounded-lg" />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <div className="h-12 w-48 bg-muted animate-pulse rounded-lg" />
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+            <div className="space-y-1">
+              <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+              <div className="h-10 w-40 bg-muted animate-pulse rounded-lg" />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <div className="h-20 w-56 bg-muted animate-pulse rounded-lg" />
           </div>
         </div>
       ) : (

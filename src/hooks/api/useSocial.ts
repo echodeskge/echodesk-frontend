@@ -159,7 +159,7 @@ export function useFacebookMessages(filters?: {
   page_id?: string;
   search?: string;
   unread_only?: boolean;
-}) {
+}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: socialKeys.facebookMessagesList(filters || {}),
     queryFn: async () => {
@@ -175,6 +175,7 @@ export function useFacebookMessages(filters?: {
       return response.data;
     },
     refetchInterval: 5000, // Auto-refresh every 5 seconds
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -297,7 +298,7 @@ export function useInstagramMessages(filters?: {
   account_id?: string;
   search?: string;
   unread_only?: boolean;
-}) {
+}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: socialKeys.instagramMessagesList(filters || {}),
     queryFn: async () => {
@@ -313,6 +314,7 @@ export function useInstagramMessages(filters?: {
       return response.data;
     },
     refetchInterval: 5000, // Auto-refresh every 5 seconds
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -396,7 +398,7 @@ export function useWhatsAppMessages(filters?: {
   waba_id?: string;
   search?: string;
   unread_only?: boolean;
-}) {
+}, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: socialKeys.whatsappMessagesList(filters || {}),
     queryFn: async () => {
@@ -412,6 +414,7 @@ export function useWhatsAppMessages(filters?: {
       return response.data;
     },
     refetchInterval: 5000, // Auto-refresh every 5 seconds
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -1097,7 +1100,7 @@ export interface EmailActionRequest {
 }
 
 // Email Status Query
-export function useEmailStatus() {
+export function useEmailStatus(options?: { enabled?: boolean }) {
   return useQuery<EmailConnectionStatus>({
     queryKey: socialKeys.emailStatus(),
     queryFn: async () => {
@@ -1105,6 +1108,7 @@ export function useEmailStatus() {
     },
     staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    enabled: options?.enabled ?? true,
   });
 }
 
@@ -1828,10 +1832,20 @@ interface ConversationGroup {
 export function useRecentConversations(options?: { enabled?: boolean; limit?: number }) {
   const limit = options?.limit ?? 15;
 
-  // Fetch from all platforms - these return individual messages
-  const { data: fbData, isLoading: fbLoading, isFetching: fbFetching } = useFacebookMessages();
-  const { data: igData, isLoading: igLoading, isFetching: igFetching } = useInstagramMessages();
-  const { data: waData, isLoading: waLoading, isFetching: waFetching } = useWhatsAppMessages();
+  // First check platform connection status
+  const { data: fbStatus } = useFacebookStatus();
+  const { data: igStatus } = useInstagramStatus();
+  const { data: waStatus } = useWhatsAppStatus();
+
+  // Determine if each platform is connected
+  const isFacebookConnected = fbStatus?.connected ?? false;
+  const isInstagramConnected = igStatus?.connected ?? false;
+  const isWhatsAppConnected = waStatus?.connected ?? false;
+
+  // Fetch from platforms only if connected - these return individual messages
+  const { data: fbData, isLoading: fbLoading, isFetching: fbFetching } = useFacebookMessages(undefined, { enabled: isFacebookConnected });
+  const { data: igData, isLoading: igLoading, isFetching: igFetching } = useInstagramMessages(undefined, { enabled: isInstagramConnected });
+  const { data: waData, isLoading: waLoading, isFetching: waFetching } = useWhatsAppMessages(undefined, { enabled: isWhatsAppConnected });
 
   // isLoading = true only on initial load (no cached data)
   const isLoading = fbLoading || igLoading || waLoading;

@@ -52,7 +52,8 @@ interface ComposeEmailDialogProps {
 
 export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEmailDialogProps) {
   const { toast } = useToast();
-  const { data: emailStatus } = useEmailStatus();
+  // Only fetch email status when dialog is open
+  const { data: emailStatus } = useEmailStatus({ enabled: open });
   const { data: signature } = useEmailSignature();
   const sendEmail = useSendEmail();
 
