@@ -9,6 +9,8 @@ import {
   socialWhatsappStatusRetrieve,
   socialEmailStatusRetrieve,
   socialEmailMessagesThreadsRetrieve,
+  socialFacebookStatusRetrieve,
+  socialInstagramStatusRetrieve,
 } from "@/api/generated";
 import { convertFacebookMessagesToChatFormat } from "@/lib/chatAdapter";
 import { ChatProvider } from "@/components/chat/contexts/chat-context";
@@ -227,8 +229,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       // Load Facebook conversations
       if (enabledPlatforms.includes("facebook")) {
       try {
-        const facebookPagesResponse = await axios.get("/api/social/facebook-pages/");
-        const facebookPages = (facebookPagesResponse.data as PaginatedResponse<FacebookPageConnection>).results || [];
+        // Check Facebook status first to see if any pages are connected
+        const facebookStatus = await socialFacebookStatusRetrieve();
+        const facebookPages = (facebookStatus?.pages as FacebookPageConnection[]) || [];
 
         // Only fetch messages if there are connected pages
         if (facebookPages.length > 0) {
@@ -369,8 +372,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       // Load Instagram conversations
       if (enabledPlatforms.includes("instagram")) {
       try {
-        const instagramAccountsResponse = await axios.get("/api/social/instagram-accounts/");
-        const instagramAccounts = (instagramAccountsResponse.data as PaginatedResponse<InstagramAccount>).results || [];
+        // Check Instagram status first to see if any accounts are connected
+        const instagramStatus = await socialInstagramStatusRetrieve();
+        const instagramAccounts = (instagramStatus?.accounts as InstagramAccount[]) || [];
 
         // Only fetch messages if there are connected accounts
         if (instagramAccounts.length > 0) {
