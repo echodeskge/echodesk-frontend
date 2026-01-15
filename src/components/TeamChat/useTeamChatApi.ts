@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '@/api/axios';
+import { teamChatConversationsHideForMeCreate } from '@/api/generated';
 import type { TeamChatUser, TeamChatConversation, TeamChatMessage } from './types';
 
 // Query keys
@@ -151,7 +152,7 @@ export function useUploadTeamChatFile() {
   });
 }
 
-// Clear chat history
+// Clear chat history (deletes messages for everyone)
 export function useClearChatHistory() {
   const queryClient = useQueryClient();
 
@@ -159,6 +160,21 @@ export function useClearChatHistory() {
     mutationFn: async (conversationId: number) => {
       const response = await axios.delete(`/api/team-chat/conversations/${conversationId}/clear_history/`);
       return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.unreadCount() });
+    },
+  });
+}
+
+// Hide chat for current user only (doesn't affect the other participant)
+export function useHideChatForMe() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversationId: number) => {
+      return teamChatConversationsHideForMeCreate(String(conversationId));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations() });

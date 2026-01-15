@@ -15,6 +15,7 @@ import {
   useSendTeamChatMessage,
   useMarkConversationRead,
   useClearChatHistory,
+  useHideChatForMe,
 } from './useTeamChatApi';
 import type { TeamChatUser, TeamChatMessage, TeamChatConversation } from './types';
 import { getNotificationSound } from '@/utils/notificationSound';
@@ -46,6 +47,7 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
   const sendMessageMutation = useSendTeamChatMessage();
   const markReadMutation = useMarkConversationRead();
   const clearHistoryMutation = useClearChatHistory();
+  const hideChatMutation = useHideChatForMe();
 
   // Get conversation with currently active user (for loading messages)
   const { data: conversationWithUser, refetch: refetchConversationWithUser } =
@@ -210,6 +212,16 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
     }
   };
 
+  const handleDeleteChat = async (conversationId: number) => {
+    try {
+      await hideChatMutation.mutateAsync(conversationId);
+      refetchConversations();
+      refetchUnreadCount();
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+    }
+  };
+
   return (
     <>
       {/* Main Icon */}
@@ -242,6 +254,8 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
             onTyping={handleTyping}
             onClearHistory={handleClearHistory}
             isClearingHistory={clearHistoryMutation.isPending}
+            onDeleteChat={handleDeleteChat}
+            isDeletingChat={hideChatMutation.isPending}
           />
         ))}
 

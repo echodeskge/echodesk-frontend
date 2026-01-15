@@ -43,6 +43,8 @@ interface FloatingChatWindowProps {
   onTyping: (userId: number, isTyping: boolean) => void;
   onClearHistory?: (conversationId: number) => void;
   isClearingHistory?: boolean;
+  onDeleteChat?: (conversationId: number) => void;
+  isDeletingChat?: boolean;
 }
 
 export function FloatingChatWindow({
@@ -55,6 +57,8 @@ export function FloatingChatWindow({
   onTyping,
   onClearHistory,
   isClearingHistory,
+  onDeleteChat,
+  isDeletingChat,
 }: FloatingChatWindowProps) {
   const { minimizeChat, closeChat } = useFloatingChat();
   const [inputValue, setInputValue] = useState('');
@@ -62,6 +66,7 @@ export function FloatingChatWindow({
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
+  const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -204,6 +209,14 @@ export function FloatingChatWindow({
     }
   };
 
+  const handleDeleteChat = () => {
+    if (conversationId && onDeleteChat) {
+      onDeleteChat(conversationId);
+      setShowDeleteChatDialog(false);
+      closeChat(chat.id);
+    }
+  };
+
   // Calculate position from right (index 0 = rightmost)
   const rightPosition =
     LAYOUT.MAIN_ICON.right +
@@ -243,7 +256,7 @@ export function FloatingChatWindow({
             {typingUser ? 'typing...' : isOnline ? 'Online' : 'Offline'}
           </div>
         </div>
-        {conversationId && onClearHistory && (
+        {conversationId && (onClearHistory || onDeleteChat) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -255,14 +268,16 @@ export function FloatingChatWindow({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="z-[100]">
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => setShowClearHistoryDialog(true)}
-                disabled={isClearingHistory}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {isClearingHistory ? 'Clearing...' : 'Clear History'}
-              </DropdownMenuItem>
+              {onDeleteChat && (
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setShowDeleteChatDialog(true)}
+                  disabled={isDeletingChat}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeletingChat ? 'Deleting...' : 'Delete Chat'}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -301,6 +316,28 @@ export function FloatingChatWindow({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isClearingHistory ? 'Clearing...' : 'Clear History'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Chat Confirmation Dialog */}
+      <AlertDialog open={showDeleteChatDialog} onOpenChange={setShowDeleteChatDialog}>
+        <AlertDialogContent className="z-[100]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the conversation with {chat.user.full_name} from your view. The other person will still be able to see the conversation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingChat}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteChat}
+              disabled={isDeletingChat}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingChat ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

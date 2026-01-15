@@ -6852,11 +6852,29 @@ export async function teamChatConversationsClearHistoryDestroy(
   return response.data;
 }
 
+export async function teamChatConversationsHideForMeCreate(
+  id: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.post(
+    `/api/team-chat/conversations/${id}/hide_for_me/`,
+  );
+  return response.data;
+}
+
 export async function teamChatConversationsMarkReadCreate(
   id: string,
 ): Promise<TeamChatConversation> {
   const response = await axios.post(
     `/api/team-chat/conversations/${id}/mark_read/`,
+  );
+  return response.data;
+}
+
+export async function teamChatConversationsUnhideCreate(
+  id: string,
+): Promise<TeamChatConversation> {
+  const response = await axios.post(
+    `/api/team-chat/conversations/${id}/unhide/`,
   );
   return response.data;
 }
