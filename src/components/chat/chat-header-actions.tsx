@@ -127,7 +127,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
   // Assignment state
   const assignment = assignmentStatusData?.assignment
-  const isAssigned = !!assignment
+  // Only consider assigned if there's actually an assigned user (not just an assignment record)
+  const isAssigned = !!assignment?.assigned_user
   const isAssignedToMe = assignment?.assigned_user === user?.id
   const isInSession = assignment?.status === 'in_session'
   const isActiveAssignment = assignment?.status === 'active'
@@ -199,24 +200,12 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
   const handleEndSession = () => {
     if (!chatInfo) return
-    // End session and then unassign user
-    endSession.mutate(
-      {
-        platform: chatInfo.platform,
-        conversation_id: chatInfo.conversationId,
-        account_id: chatInfo.accountId,
-      },
-      {
-        onSuccess: () => {
-          // After ending session, also unassign the chat
-          unassignChat.mutate({
-            platform: chatInfo.platform,
-            conversation_id: chatInfo.conversationId,
-            account_id: chatInfo.accountId,
-          })
-        },
-      }
-    )
+    // End session - backend already unassigns the user
+    endSession.mutate({
+      platform: chatInfo.platform,
+      conversation_id: chatInfo.conversationId,
+      account_id: chatInfo.accountId,
+    })
   }
 
   const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending
@@ -376,10 +365,10 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                 )}
 
                 {/* Show who it's assigned to if assigned to someone else */}
-                {isAssigned && !isAssignedToMe && (
+                {isAssigned && !isAssignedToMe && assignment?.assigned_user_name && (
                   <DropdownMenuItem disabled className="text-muted-foreground">
                     <UserPlus className="size-4 mr-2" />
-                    Assigned to {assignment?.assigned_user_name}
+                    Assigned to {assignment.assigned_user_name}
                   </DropdownMenuItem>
                 )}
               </>

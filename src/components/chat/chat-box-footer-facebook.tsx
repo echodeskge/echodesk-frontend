@@ -91,7 +91,8 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
   // Assignment state
   const assignmentEnabled = assignmentStatusData?.settings?.chat_assignment_enabled ?? false
   const assignment = assignmentStatusData?.assignment
-  const isAssigned = !!assignment
+  // Only consider assigned if there's actually an assigned user (not just an assignment record)
+  const isAssigned = !!assignment?.assigned_user
   const isAssignedToMe = assignment?.assigned_user === user?.id
   const isInSession = assignment?.status === 'in_session'
 
