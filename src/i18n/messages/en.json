@@ -63,6 +63,7 @@
     "languages": "Languages",
     "homepageBuilder": "Homepage Builder",
     "social": "Social Media",
+    "socialClients": "Clients",
     "socialConnections": "Connections",
     "socialMessages": "Messages",
     "socialTemplates": "Templates",
@@ -109,6 +110,7 @@
       "languages": "Manage available languages for ecommerce content",
       "homepageBuilder": "Configure homepage sections and layout",
       "social": "Connect and manage social media accounts",
+      "socialClients": "Manage clients linked to social media conversations",
       "socialConnections": "Manage connected social media pages",
       "socialMessages": "View and respond to social media messages",
       "socialTemplates": "Manage WhatsApp message templates",
@@ -1145,6 +1147,63 @@
     "status": {
       "active": "Active",
       "inactive": "Inactive"
+    }
+  },
+  "socialClients": {
+    "title": "Clients",
+    "subtitle": "Manage your clients and their linked social accounts",
+    "createClient": "Create Client",
+    "editClient": "Edit Client",
+    "createClientDescription": "Add a new client to your system",
+    "editClientDescription": "Update client information",
+    "clientDetails": "Client Details",
+    "clientDetailsDescription": "View and manage client information",
+    "createClientFromChat": "Create a new client from this conversation",
+    "createdAt": "Created",
+    "linkedAccounts": "Linked Accounts",
+    "noLinkedAccounts": "No linked accounts",
+    "noClientLinked": "No Client Linked",
+    "noClientLinkedDescription": "This conversation is not linked to any client yet",
+    "createClientForChat": "Create Client for This Chat",
+    "linkExistingClient": "Link Existing Client",
+    "searchAndLinkDescription": "Search for a client to link to this conversation",
+    "createNew": "Create New",
+    "searchPlaceholder": "Search clients by name, email or phone...",
+    "noClients": "No clients found",
+    "stats": {
+      "total": "Total Clients",
+      "linked": "With Linked Accounts",
+      "whatsapp": "WhatsApp",
+      "facebook": "Facebook"
+    },
+    "filters": {
+      "allPlatforms": "All Platforms"
+    },
+    "table": {
+      "client": "Client",
+      "email": "Email",
+      "phone": "Phone",
+      "platforms": "Platforms",
+      "linkedAccounts": "Linked Accounts",
+      "created": "Created"
+    },
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Enter client name",
+      "email": "Email",
+      "emailPlaceholder": "client@example.com",
+      "phone": "Phone",
+      "phonePlaceholder": "+1234567890",
+      "notes": "Notes",
+      "notesPlaceholder": "Internal notes about this client...",
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "create": "Create Client",
+      "saving": "Saving..."
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
     }
   },
   "productAttributes": {

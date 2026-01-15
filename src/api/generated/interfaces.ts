@@ -953,6 +953,10 @@ export interface FeatureRequest {
   is_active?: boolean;
 }
 
+export interface FieldTypeEnum {
+  [key: string]: any;
+}
+
 export interface FrequencyEnum {
   [key: string]: any;
 }
@@ -2208,6 +2212,20 @@ export interface PaginatedSipConfigurationListList {
   results: SipConfigurationList[];
 }
 
+export interface PaginatedSocialClientCustomFieldList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: SocialClientCustomField[];
+}
+
+export interface PaginatedSocialClientListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: SocialClientList[];
+}
+
 export interface PaginatedStaffAvailabilityList {
   count: number;
   next?: string;
@@ -2853,6 +2871,26 @@ export interface PatchedSipConfigurationRequest {
   max_concurrent_calls?: number;
 }
 
+export interface PatchedSocialClientCreateRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  profile_picture?: string;
+  custom_fields?: Record<string, any>;
+}
+
+export interface PatchedSocialClientCustomFieldRequest {
+  name?: string;
+  label?: string;
+  field_type?: FieldTypeEnum;
+  is_required?: boolean;
+  position?: number;
+  options?: any;
+  default_value?: string;
+  is_active?: boolean;
+}
+
 export interface PatchedStaffAvailabilityRequest {
   staff?: number;
   day_of_week?: DayOfWeekEnum;
@@ -3040,6 +3078,10 @@ export interface PermissionRequest {
 }
 
 export interface PlanEnum {
+  [key: string]: any;
+}
+
+export interface PlatformEnum {
   [key: string]: any;
 }
 
@@ -3542,6 +3584,111 @@ export interface SipConfigurationRequest {
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
+}
+
+export interface SocialAccount {
+  id: number;
+  platform: PlatformEnum;
+  platform_id: string;
+  account_connection_id: string;
+  display_name?: string;
+  username?: string;
+  profile_pic_url?: string;
+  first_seen_at: string;
+  last_seen_at: string;
+  last_message_at?: string;
+  is_auto_created?: boolean;
+}
+
+export interface SocialAccountRequest {
+  platform: PlatformEnum;
+  platform_id: string;
+  account_connection_id: string;
+  display_name?: string;
+  username?: string;
+  profile_pic_url?: string;
+  last_message_at?: string;
+  is_auto_created?: boolean;
+}
+
+export interface SocialClient {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  profile_picture?: string;
+  social_accounts: SocialAccount[];
+  custom_fields: string;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SocialClientCreate {
+  name: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  profile_picture?: string;
+  custom_fields?: Record<string, any>;
+}
+
+export interface SocialClientCreateRequest {
+  name: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  profile_picture?: string;
+  custom_fields?: Record<string, any>;
+}
+
+export interface SocialClientCustomField {
+  id: number;
+  name: string;
+  label: string;
+  field_type?: FieldTypeEnum;
+  is_required?: boolean;
+  position?: number;
+  options?: any;
+  default_value?: string;
+  is_active?: boolean;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SocialClientCustomFieldRequest {
+  name: string;
+  label: string;
+  field_type?: FieldTypeEnum;
+  is_required?: boolean;
+  position?: number;
+  options?: any;
+  default_value?: string;
+  is_active?: boolean;
+}
+
+export interface SocialClientList {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  profile_picture: string;
+  social_accounts_count: number;
+  platforms: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SocialClientRequest {
+  name: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+  profile_picture?: string;
 }
 
 export interface SourceEnum {

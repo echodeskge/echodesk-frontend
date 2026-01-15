@@ -280,6 +280,16 @@ import type {
   SipConfiguration,
   SipConfigurationDetail,
   PatchedSipConfigurationRequest,
+  PaginatedSocialClientListList,
+  SocialClientCreateRequest,
+  SocialClientCreate,
+  SocialClient,
+  PatchedSocialClientCreateRequest,
+  SocialClientRequest,
+  PaginatedSocialClientCustomFieldList,
+  SocialClientCustomFieldRequest,
+  SocialClientCustomField,
+  PatchedSocialClientCustomFieldRequest,
   PaginatedEmailDraftList,
   EmailDraftRequest,
   EmailDraft,
@@ -5644,6 +5654,161 @@ export async function socialAssignmentsStatusRetrieve(): Promise<any> {
 
 export async function socialAssignmentsUnassignCreate(): Promise<any> {
   const response = await axios.post(`/api/social/assignments/unassign/`);
+  return response.data;
+}
+
+export async function socialClientsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedSocialClientListList> {
+  const response = await axios.get(
+    `/api/social/clients/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialClientsCreate(
+  data: SocialClientCreateRequest,
+): Promise<SocialClientCreate> {
+  const response = await axios.post(`/api/social/clients/`, data);
+  return response.data;
+}
+
+export async function socialClientsRetrieve(id: number): Promise<SocialClient> {
+  const response = await axios.get(`/api/social/clients/${id}/`);
+  return response.data;
+}
+
+export async function socialClientsUpdate(
+  id: number,
+  data: SocialClientCreateRequest,
+): Promise<SocialClientCreate> {
+  const response = await axios.put(`/api/social/clients/${id}/`, data);
+  return response.data;
+}
+
+export async function socialClientsPartialUpdate(
+  id: number,
+  data: PatchedSocialClientCreateRequest,
+): Promise<SocialClientCreate> {
+  const response = await axios.patch(`/api/social/clients/${id}/`, data);
+  return response.data;
+}
+
+export async function socialClientsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/social/clients/${id}/`);
+  return response.data;
+}
+
+export async function socialClientsLinkAccountCreate(
+  id: number,
+  data: SocialClientRequest,
+): Promise<SocialClient> {
+  const response = await axios.post(
+    `/api/social/clients/${id}/link_account/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialClientsUnlinkAccountCreate(
+  id: number,
+  data: SocialClientRequest,
+): Promise<SocialClient> {
+  const response = await axios.post(
+    `/api/social/clients/${id}/unlink_account/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialClientsByAccountRetrieve(): Promise<SocialClient> {
+  const response = await axios.get(`/api/social/clients/by_account/`);
+  return response.data;
+}
+
+export async function socialClientsCustomFieldsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedSocialClientCustomFieldList> {
+  const response = await axios.get(
+    `/api/social/clients/custom-fields/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialClientsCustomFieldsCreate(
+  data: SocialClientCustomFieldRequest,
+): Promise<SocialClientCustomField> {
+  const response = await axios.post(`/api/social/clients/custom-fields/`, data);
+  return response.data;
+}
+
+export async function socialClientsCustomFieldsRetrieve(
+  id: number,
+): Promise<SocialClientCustomField> {
+  const response = await axios.get(`/api/social/clients/custom-fields/${id}/`);
+  return response.data;
+}
+
+export async function socialClientsCustomFieldsUpdate(
+  id: number,
+  data: SocialClientCustomFieldRequest,
+): Promise<SocialClientCustomField> {
+  const response = await axios.put(
+    `/api/social/clients/custom-fields/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialClientsCustomFieldsPartialUpdate(
+  id: number,
+  data: PatchedSocialClientCustomFieldRequest,
+): Promise<SocialClientCustomField> {
+  const response = await axios.patch(
+    `/api/social/clients/custom-fields/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function socialClientsCustomFieldsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/social/clients/custom-fields/${id}/`,
+  );
+  return response.data;
+}
+
+export async function socialClientsCustomFieldsReorderCreate(
+  data: SocialClientCustomFieldRequest,
+): Promise<SocialClientCustomField> {
+  const response = await axios.post(
+    `/api/social/clients/custom-fields/reorder/`,
+    data,
+  );
   return response.data;
 }
 

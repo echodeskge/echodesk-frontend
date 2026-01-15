@@ -63,6 +63,7 @@
     "languages": "ენები",
     "ecommerceSettings": "პარამეტრები",
     "social": "სოციალური მედია",
+    "socialClients": "კლიენტები",
     "socialConnections": "კავშირები",
     "socialMessages": "შეტყობინებები",
     "socialTemplates": "შაბლონები",
@@ -110,6 +111,7 @@
       "languages": "ელ-კომერციის კონტენტის ხელმისაწვდომი ენების მართვა",
       "ecommerceSettings": "ელ-კომერციის პარამეტრები და გადახდის გამტარობის კონფიგურაცია",
       "social": "სოციალური მედიის ანგარიშების დაკავშირება და მართვა",
+      "socialClients": "სოციალური მედიის საუბრებთან დაკავშირებული კლიენტების მართვა",
       "socialConnections": "დაკავშირებული სოციალური მედიის გვერდების მართვა",
       "socialMessages": "სოციალური მედიის შეტყობინებების ნახვა და პასუხის გაცემა",
       "socialTemplates": "WhatsApp შეტყობინებების შაბლონების მართვა",
@@ -1145,6 +1147,63 @@
     "status": {
       "active": "აქტიური",
       "inactive": "არააქტიური"
+    }
+  },
+  "socialClients": {
+    "title": "კლიენტები",
+    "subtitle": "მართეთ თქვენი კლიენტები და მათი დაკავშირებული სოციალური ანგარიშები",
+    "createClient": "კლიენტის შექმნა",
+    "editClient": "კლიენტის რედაქტირება",
+    "createClientDescription": "დაამატეთ ახალი კლიენტი თქვენს სისტემაში",
+    "editClientDescription": "განაახლეთ კლიენტის ინფორმაცია",
+    "clientDetails": "კლიენტის დეტალები",
+    "clientDetailsDescription": "კლიენტის ინფორმაციის ნახვა და მართვა",
+    "createClientFromChat": "შექმენით ახალი კლიენტი ამ საუბრიდან",
+    "createdAt": "შექმნილი",
+    "linkedAccounts": "დაკავშირებული ანგარიშები",
+    "noLinkedAccounts": "დაკავშირებული ანგარიშები არ არის",
+    "noClientLinked": "კლიენტი არ არის დაკავშირებული",
+    "noClientLinkedDescription": "ეს საუბარი ჯერ არ არის დაკავშირებული არცერთ კლიენტთან",
+    "createClientForChat": "კლიენტის შექმნა ამ ჩატისთვის",
+    "linkExistingClient": "არსებული კლიენტის დაკავშირება",
+    "searchAndLinkDescription": "მოძებნეთ კლიენტი ამ საუბართან დასაკავშირებლად",
+    "createNew": "ახლის შექმნა",
+    "searchPlaceholder": "მოძებნეთ კლიენტები სახელით, ელ-ფოსტით ან ტელეფონით...",
+    "noClients": "კლიენტები ვერ მოიძებნა",
+    "stats": {
+      "total": "სულ კლიენტები",
+      "linked": "დაკავშირებული ანგარიშებით",
+      "whatsapp": "WhatsApp",
+      "facebook": "Facebook"
+    },
+    "filters": {
+      "allPlatforms": "ყველა პლატფორმა"
+    },
+    "table": {
+      "client": "კლიენტი",
+      "email": "ელ-ფოსტა",
+      "phone": "ტელეფონი",
+      "platforms": "პლატფორმები",
+      "linkedAccounts": "დაკავშირებული ანგარიშები",
+      "created": "შექმნილი"
+    },
+    "form": {
+      "name": "სახელი",
+      "namePlaceholder": "შეიყვანეთ კლიენტის სახელი",
+      "email": "ელ-ფოსტა",
+      "emailPlaceholder": "client@example.com",
+      "phone": "ტელეფონი",
+      "phonePlaceholder": "+1234567890",
+      "notes": "შენიშვნები",
+      "notesPlaceholder": "შიდა შენიშვნები ამ კლიენტის შესახებ...",
+      "cancel": "გაუქმება",
+      "save": "ცვლილებების შენახვა",
+      "create": "კლიენტის შექმნა",
+      "saving": "ინახება..."
+    },
+    "actions": {
+      "edit": "რედაქტირება",
+      "delete": "წაშლა"
     }
   },
   "productAttributes": {

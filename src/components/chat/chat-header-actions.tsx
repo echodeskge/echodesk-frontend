@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, ChevronRight, MailOpen } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, ChevronRight, MailOpen, UserRound } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -17,8 +17,10 @@ import {
   useEmailAction,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
+import { useSocialClientByAccount } from "@/hooks/api/useSocialClients"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
+import { ClientDetailPanel } from "@/components/chat/client-detail-panel"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,6 +94,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const { toast } = useToast()
   const deleteConversation = useDeleteConversation()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showClientPanel, setShowClientPanel] = useState(false)
 
   // Email folder functionality
   const isEmail = chat?.platform === 'email'
@@ -103,6 +106,35 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     if (!chat?.id) return null
     return parseChatId(chat.id, chat.platform)
   }, [chat?.id, chat?.platform])
+
+  // For email platform, extract the customer's email address
+  // The customer email is stored as the user ID in the users array (not "business")
+  // This is used as platform_id so all emails from same sender are linked together
+  const customerEmail = useMemo(() => {
+    if (chat?.platform !== 'email') return null
+
+    // For email conversations, the customer user ID is their email address
+    // Find user that is not "business"
+    const customerUser = chat.users?.find((u) => u.id !== 'business')
+    if (customerUser?.id && customerUser.id.includes('@')) {
+      return customerUser.id
+    }
+
+    return null
+  }, [chat?.platform, chat?.users])
+
+  // For client lookup, use customer email as platformId for email platform
+  // This ensures all emails from the same person are linked to the same client
+  const clientLookupPlatformId = isEmail && customerEmail ? customerEmail : chatInfo?.conversationId || ''
+
+  // Social client lookup - find if this chat has a linked client
+  const { data: clientByAccount } = useSocialClientByAccount(
+    chatInfo?.platform || '',
+    clientLookupPlatformId,
+    chatInfo?.accountId || '',
+    { enabled: !!chatInfo && !!chatInfo.platform && !!clientLookupPlatformId && !!chatInfo.accountId }
+  )
+  const hasLinkedClient = clientByAccount?.found && !!clientByAccount?.client
 
   // Get assignment status for this chat
   const { data: assignmentStatusData } = useAssignmentStatus(
@@ -278,6 +310,19 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
           {isConnected ? <Wifi className="size-4" /> : <WifiOff className="size-4" />}
         </Button>
 
+        {/* View/Create Client Button */}
+        {chatInfo && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={hasLinkedClient ? "View Client" : "Create Client"}
+            className={hasLinkedClient ? "text-primary" : "text-muted-foreground"}
+            onClick={() => setShowClientPanel(true)}
+          >
+            <UserRound className="size-4" />
+          </Button>
+        )}
+
         {/* More Actions Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger className="self-center" asChild>
@@ -421,6 +466,20 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Client Detail Panel */}
+      {chatInfo && (
+        <ClientDetailPanel
+          isOpen={showClientPanel}
+          onClose={() => setShowClientPanel(false)}
+          platform={chatInfo.platform}
+          platformId={clientLookupPlatformId}
+          accountConnectionId={chatInfo.accountId}
+          chatDisplayName={chat?.name}
+          chatProfilePic={chat?.avatar}
+          chatEmail={customerEmail || undefined}
+        />
+      )}
     </>
   )
 }

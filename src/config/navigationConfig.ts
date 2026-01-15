@@ -257,6 +257,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     isPremium: true,
     children: [
       {
+        id: "social/clients",
+        icon: "UserRound",
+        requiredFeatureKey: "social_integrations",
+        isPremium: true,
+      },
+      {
         id: "social/connections",
         icon: "Link",
         requiredFeatureKey: "social_integrations",
