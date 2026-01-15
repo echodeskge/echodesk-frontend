@@ -1276,8 +1276,10 @@ export function useSyncEmail() {
 
   return useMutation({
     mutationFn: async (connectionId?: number) => {
+      // Use longer timeout for sync (3 minutes) as it can take a while
       const response = await axios.post('/api/social/email/sync/',
-        connectionId ? { connection_id: connectionId } : {}
+        connectionId ? { connection_id: connectionId } : {},
+        { timeout: 180000 }
       );
       return response.data;
     },

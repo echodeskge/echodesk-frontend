@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, ChevronRight } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, ChevronRight, MailOpen } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -249,6 +249,33 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     )
   }
 
+  // Handle mark as unread for email threads
+  const handleMarkAsUnread = () => {
+    if (!chatInfo || chatInfo.platform !== 'email') return
+
+    emailAction.mutate(
+      {
+        thread_id: chatInfo.conversationId,
+        action: 'mark_unread',
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Marked as unread",
+            description: "Email thread marked as unread",
+          })
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Failed to mark as unread",
+            description: error.response?.data?.error || "Failed to mark email as unread",
+            variant: "destructive",
+          })
+        },
+      }
+    )
+  }
+
   return (
     <>
       <div className="flex gap-1 ms-auto">
@@ -275,29 +302,35 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               Search
             </DropdownMenuItem>
 
-            {/* Move to Folder - only show for email conversations */}
-            {isEmail && folders && folders.length > 0 && (
+            {/* Email-specific actions - only show for email conversations */}
+            {isEmail && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <FolderInput className="size-4 mr-2" />
-                    Move to Folder
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      {folders.map((folder) => (
-                        <DropdownMenuItem
-                          key={folder.name}
-                          onClick={() => handleMoveToFolder(folder.name)}
-                          disabled={emailAction.isPending}
-                        >
-                          {folder.display_name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
+                <DropdownMenuItem onClick={handleMarkAsUnread} disabled={emailAction.isPending}>
+                  <MailOpen className="size-4 mr-2" />
+                  Mark as Unread
+                </DropdownMenuItem>
+                {folders && folders.length > 0 && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <FolderInput className="size-4 mr-2" />
+                      Move to Folder
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent>
+                        {folders.map((folder) => (
+                          <DropdownMenuItem
+                            key={folder.name}
+                            onClick={() => handleMoveToFolder(folder.name)}
+                            disabled={emailAction.isPending}
+                          >
+                            {folder.display_name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
+                )}
               </>
             )}
 
