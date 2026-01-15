@@ -226,136 +226,143 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
       // Load Facebook conversations
       if (enabledPlatforms.includes("facebook")) {
-      const facebookPagesResponse = await axios.get("/api/social/facebook-pages/");
-      const facebookPages = (facebookPagesResponse.data as PaginatedResponse<FacebookPageConnection>).results || [];
+      try {
+        const facebookPagesResponse = await axios.get("/api/social/facebook-pages/");
+        const facebookPages = (facebookPagesResponse.data as PaginatedResponse<FacebookPageConnection>).results || [];
 
-      for (const page of facebookPages) {
-        try {
-          const messagesResponse = await axios.get("/api/social/facebook-messages/", {
-            params: { page_id: page.page_id },
-          });
+        // Only fetch messages if there are connected pages
+        if (facebookPages.length > 0) {
+          for (const page of facebookPages) {
+            try {
+              const messagesResponse = await axios.get("/api/social/facebook-messages/", {
+                params: { page_id: page.page_id },
+              });
 
-          const messages = (messagesResponse.data as PaginatedResponse<FacebookMessage>).results || [];
+              const messages = (messagesResponse.data as PaginatedResponse<FacebookMessage>).results || [];
 
-          // First pass: identify all unique customer IDs (non-page senders)
-          const customerIds = new Set<string>();
-          messages.forEach((msg) => {
-            if (!msg.is_from_page) {
-              customerIds.add(msg.sender_id);
+              // First pass: identify all unique customer IDs (non-page senders)
+              const customerIds = new Set<string>();
+              messages.forEach((msg) => {
+                if (!msg.is_from_page) {
+                  customerIds.add(msg.sender_id);
+                }
+              });
+
+              // Second pass: group messages by customer
+              const conversationMap = new Map<string, FacebookMessage[]>();
+
+              // Sort messages by timestamp to help with grouping
+              const sortedMessages = [...messages].sort((a, b) =>
+                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
+
+              // Track the last customer we saw for page messages
+              let lastCustomerId: string | null = null;
+
+              sortedMessages.forEach((msg) => {
+                let customerId: string;
+
+                if (msg.is_from_page) {
+                  // Message from page - use the last customer we saw
+                  // or if only one customer exists, use that
+                  if (lastCustomerId) {
+                    customerId = lastCustomerId;
+                  } else {
+                    customerId = customerIds.size === 1 ? Array.from(customerIds)[0] : msg.sender_id;
+                  }
+                } else {
+                  // Message from customer - sender_id IS the customer ID
+                  customerId = msg.sender_id;
+                  lastCustomerId = customerId; // Remember for next page message
+                }
+
+                if (!conversationMap.has(customerId)) {
+                  conversationMap.set(customerId, []);
+                }
+                conversationMap.get(customerId)!.push(msg);
+              });
+
+              // Convert to unified format
+              conversationMap.forEach((msgs, customerId) => {
+                if (msgs.length === 0) return;
+
+                const sortedMsgs = msgs.sort((a, b) =>
+                  new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                );
+                const latestMsg = sortedMsgs[0];
+
+                // Find customer name and info from non-page messages
+                const customerMsg = msgs.find(m => !m.is_from_page);
+                const customerName = customerMsg?.sender_name || "Unknown";
+                const customerAvatar = customerMsg?.profile_pic_url;
+
+                const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
+                  id: String(msg.id),
+                  platform: "facebook" as const,
+                  sender_id: msg.sender_id,
+                  sender_name: msg.sender_name || "Unknown",
+                  profile_pic_url: msg.profile_pic_url,
+                  message_text: msg.message_text,
+                  attachment_type: msg.attachment_type,
+                  attachment_url: msg.attachment_url,
+                  attachments: msg.attachments,
+                  timestamp: msg.timestamp,
+                  is_from_business: msg.is_from_page || false,
+                  is_delivered: msg.is_delivered,
+                  delivered_at: msg.delivered_at,
+                  is_read: msg.is_read,
+                  read_at: msg.read_at,
+                  page_name: msg.page_name,
+                  conversation_id: `fb_${page.page_id}_${customerId}`,
+                  platform_message_id: msg.message_id,
+                  account_id: page.page_id,
+                }));
+
+                // Convert latest message to unified format
+                const lastUnifiedMessage: UnifiedMessage = {
+                  id: String(latestMsg.id),
+                  platform: "facebook" as const,
+                  sender_id: latestMsg.sender_id,
+                  sender_name: latestMsg.sender_name || "Unknown",
+                  profile_pic_url: latestMsg.profile_pic_url,
+                  message_text: latestMsg.message_text,
+                  attachment_type: latestMsg.attachment_type,
+                  attachment_url: latestMsg.attachment_url,
+                  attachments: latestMsg.attachments,
+                  timestamp: latestMsg.timestamp,
+                  is_from_business: latestMsg.is_from_page || false,
+                  is_delivered: latestMsg.is_delivered,
+                  delivered_at: latestMsg.delivered_at,
+                  is_read: latestMsg.is_read,
+                  read_at: latestMsg.read_at,
+                  page_name: latestMsg.page_name,
+                  conversation_id: `fb_${page.page_id}_${customerId}`,
+                  platform_message_id: latestMsg.message_id,
+                  account_id: page.page_id,
+                };
+
+                const conversation: UnifiedConversation = {
+                  platform: "facebook",
+                  conversation_id: `fb_${page.page_id}_${customerId}`,
+                  sender_id: customerId,
+                  sender_name: customerName,
+                  profile_pic_url: customerAvatar,
+                  last_message: lastUnifiedMessage,
+                  message_count: msgs.length,
+                  account_name: page.page_name,
+                  account_id: page.page_id,
+                };
+
+                allConversations.push(conversation);
+                allMessages.set(conversation.conversation_id, unifiedMessages);
+              });
+            } catch (err) {
+              console.error(`Failed to load messages for page ${page.page_id}:`, err);
             }
-          });
-
-          // Second pass: group messages by customer
-          const conversationMap = new Map<string, FacebookMessage[]>();
-
-          // Sort messages by timestamp to help with grouping
-          const sortedMessages = [...messages].sort((a, b) =>
-            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          );
-
-          // Track the last customer we saw for page messages
-          let lastCustomerId: string | null = null;
-
-          sortedMessages.forEach((msg) => {
-            let customerId: string;
-
-            if (msg.is_from_page) {
-              // Message from page - use the last customer we saw
-              // or if only one customer exists, use that
-              if (lastCustomerId) {
-                customerId = lastCustomerId;
-              } else {
-                customerId = customerIds.size === 1 ? Array.from(customerIds)[0] : msg.sender_id;
-              }
-            } else {
-              // Message from customer - sender_id IS the customer ID
-              customerId = msg.sender_id;
-              lastCustomerId = customerId; // Remember for next page message
-            }
-
-            if (!conversationMap.has(customerId)) {
-              conversationMap.set(customerId, []);
-            }
-            conversationMap.get(customerId)!.push(msg);
-          });
-
-          // Convert to unified format
-          conversationMap.forEach((msgs, customerId) => {
-            if (msgs.length === 0) return;
-
-            const sortedMsgs = msgs.sort((a, b) =>
-              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-            );
-            const latestMsg = sortedMsgs[0];
-
-            // Find customer name and info from non-page messages
-            const customerMsg = msgs.find(m => !m.is_from_page);
-            const customerName = customerMsg?.sender_name || "Unknown";
-            const customerAvatar = customerMsg?.profile_pic_url;
-
-            const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
-              id: String(msg.id),
-              platform: "facebook" as const,
-              sender_id: msg.sender_id,
-              sender_name: msg.sender_name || "Unknown",
-              profile_pic_url: msg.profile_pic_url,
-              message_text: msg.message_text,
-              attachment_type: msg.attachment_type,
-              attachment_url: msg.attachment_url,
-              attachments: msg.attachments,
-              timestamp: msg.timestamp,
-              is_from_business: msg.is_from_page || false,
-              is_delivered: msg.is_delivered,
-              delivered_at: msg.delivered_at,
-              is_read: msg.is_read,
-              read_at: msg.read_at,
-              page_name: msg.page_name,
-              conversation_id: `fb_${page.page_id}_${customerId}`,
-              platform_message_id: msg.message_id,
-              account_id: page.page_id,
-            }));
-
-            // Convert latest message to unified format
-            const lastUnifiedMessage: UnifiedMessage = {
-              id: String(latestMsg.id),
-              platform: "facebook" as const,
-              sender_id: latestMsg.sender_id,
-              sender_name: latestMsg.sender_name || "Unknown",
-              profile_pic_url: latestMsg.profile_pic_url,
-              message_text: latestMsg.message_text,
-              attachment_type: latestMsg.attachment_type,
-              attachment_url: latestMsg.attachment_url,
-              attachments: latestMsg.attachments,
-              timestamp: latestMsg.timestamp,
-              is_from_business: latestMsg.is_from_page || false,
-              is_delivered: latestMsg.is_delivered,
-              delivered_at: latestMsg.delivered_at,
-              is_read: latestMsg.is_read,
-              read_at: latestMsg.read_at,
-              page_name: latestMsg.page_name,
-              conversation_id: `fb_${page.page_id}_${customerId}`,
-              platform_message_id: latestMsg.message_id,
-              account_id: page.page_id,
-            };
-
-            const conversation: UnifiedConversation = {
-              platform: "facebook",
-              conversation_id: `fb_${page.page_id}_${customerId}`,
-              sender_id: customerId,
-              sender_name: customerName,
-              profile_pic_url: customerAvatar,
-              last_message: lastUnifiedMessage,
-              message_count: msgs.length,
-              account_name: page.page_name,
-              account_id: page.page_id,
-            };
-
-            allConversations.push(conversation);
-            allMessages.set(conversation.conversation_id, unifiedMessages);
-          });
-        } catch (err) {
-          console.error(`Failed to load messages for page ${page.page_id}:`, err);
+          }
         }
+      } catch (err) {
+        console.error("Failed to load Facebook pages:", err);
       }
       }
 
@@ -365,7 +372,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const instagramAccountsResponse = await axios.get("/api/social/instagram-accounts/");
         const instagramAccounts = (instagramAccountsResponse.data as PaginatedResponse<InstagramAccount>).results || [];
 
-        for (const account of instagramAccounts) {
+        // Only fetch messages if there are connected accounts
+        if (instagramAccounts.length > 0) {
+          for (const account of instagramAccounts) {
           try {
             const messagesResponse = await axios.get("/api/social/instagram-messages/", {
               params: { account_id: account.instagram_account_id },
@@ -484,6 +493,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           } catch (err) {
             console.error(`Failed to load messages for Instagram account ${account.instagram_account_id}:`, err);
           }
+          }
         }
       } catch (err) {
         console.error("Failed to load Instagram accounts:", err);
@@ -496,6 +506,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const whatsappStatusResponse = await socialWhatsappStatusRetrieve();
         const whatsappAccounts = (whatsappStatusResponse?.accounts as WhatsAppAccount[]) || [];
 
+        // Only fetch messages if there are connected accounts
+        if (whatsappAccounts.length === 0) {
+          // No WhatsApp accounts connected, skip fetching messages
+        } else {
         // Load all WhatsApp messages at once (ViewSet returns all messages for all accounts in tenant)
         const messagesResponse = await socialWhatsappMessagesList();
         const allWhatsAppMessages = messagesResponse.results || [];
@@ -649,6 +663,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               allMessages.set(conversation.conversation_id, unifiedMessages);
             });
         }
+        } // end else (whatsappAccounts.length > 0)
       } catch (err) {
         console.error("Failed to load WhatsApp accounts:", err);
       }
