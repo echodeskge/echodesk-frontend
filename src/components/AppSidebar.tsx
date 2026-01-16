@@ -34,6 +34,7 @@ import {
   LayoutDashboard,
   History,
   Mail,
+  HelpCircle,
 } from "lucide-react"
 
 import {
@@ -98,6 +99,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "LayoutDashboard": LayoutDashboard,
   "History": History,
   "Mail": Mail,
+  "HelpCircle": HelpCircle,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,

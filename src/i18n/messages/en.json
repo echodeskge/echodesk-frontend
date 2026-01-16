@@ -75,6 +75,7 @@
     "timeTracking": "My Time",
     "userStatistics": "Time Statistics",
     "dashboard": "Dashboard",
+    "help": "Help Center",
     "description": {
       "tickets": "View and manage boards",
       "calls": "VoIP calling system with SIP configuration",
@@ -120,7 +121,8 @@
       "users": "Manage user accounts",
       "settings": "Configure system settings",
       "timeTracking": "View your time tracking data",
-      "userStatistics": "View time tracking statistics for all users"
+      "userStatistics": "View time tracking statistics for all users",
+      "help": "Access tutorials, guides and documentation"
     }
   },
   "auth": {
@@ -1319,6 +1321,7 @@
       "pricing": "Pricing",
       "privacy": "Privacy",
       "terms": "Terms",
+      "docs": "Documentation",
       "language": "Language",
       "getStarted": "Get Started"
     },

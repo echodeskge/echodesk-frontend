@@ -294,6 +294,11 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     icon: "Settings",
     requiredFeatureKey: "settings",
   },
+  {
+    id: "help",
+    icon: "HelpCircle",
+    // No requiredFeatureKey - help is available to all users
+  },
 ];
 
 /**

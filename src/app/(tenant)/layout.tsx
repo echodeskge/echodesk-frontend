@@ -243,6 +243,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "social/settings": "socialSettings",
     "social/rating-statistics": "socialRatingStatistics",
     settings: "settings",
+    help: "help",
   };
 
   // Parse user's feature keys

@@ -84,6 +84,12 @@ export function Header() {
           >
             {t('terms')}
           </Link>
+          <Link
+            href="/docs"
+            className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
+          >
+            {t('docs')}
+          </Link>
         </nav>
 
         {/* Actions */}
@@ -156,6 +162,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('terms')}
+            </Link>
+            <Link
+              href="/docs"
+              className="text-sm font-medium text-muted-foreground hover:text-secondary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {t('docs')}
             </Link>
             <Button asChild className="w-full">
               <Link href="/registration">{t('getStarted')}</Link>
