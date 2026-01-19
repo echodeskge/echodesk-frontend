@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { TenantConfig } from "@/types/tenant"
 import { AuthUser } from "@/types/auth"
+import { authService } from "@/services/authService"
 
 import {
   Auth,
@@ -44,12 +45,51 @@ export function SignIn({ tenant, onLogin }: SignInProps) {
     setShowForgotPassword(false)
   }
 
-  const handlePasswordChanged = (token: string) => {
+  const handlePasswordChanged = async (token: string) => {
     // After password change, we get a new token and need to fetch user data
-    // For now, we'll just store the token and redirect
     if (typeof window !== 'undefined') {
+      // Store the token first
       localStorage.setItem('echodesk_auth_token', token)
-      window.location.href = '/tickets'
+
+      try {
+        // Fetch user profile with the new token
+        const user = await authService.getProfile()
+
+        const authUser: AuthUser = {
+          id: user.id,
+          email: user.email,
+          first_name: user.first_name,
+          last_name: user.last_name,
+          is_active: user.is_active,
+          is_staff: user.is_staff,
+          date_joined: user.date_joined
+        }
+
+        console.log('[SignIn] Password changed, syncing session...')
+
+        // Sync to NextAuth session
+        await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            userId: authUser.id,
+            email: authUser.email,
+            firstName: authUser.first_name,
+            lastName: authUser.last_name,
+            isStaff: authUser.is_staff,
+            isActive: authUser.is_active,
+            dateJoined: authUser.date_joined,
+          }),
+        })
+
+        // Call onLogin to complete the flow
+        onLogin(token, authUser)
+      } catch (error) {
+        console.error('[SignIn] Failed to fetch user after password change:', error)
+        // Fallback: redirect to tickets page
+        window.location.href = '/tickets'
+      }
     }
   }
 
