@@ -70,6 +70,11 @@ export class AuthService {
   // Clear local authentication data
   clearLocalAuth(): void {
     if (typeof window !== "undefined") {
+      // Clear both old and new key formats for consistency
+      localStorage.removeItem("echodesk_auth_token");
+      localStorage.removeItem("echodesk_user_data");
+      localStorage.removeItem("echodesk_tenant_data");
+      // Also clear legacy keys
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");
       localStorage.removeItem("tenant");
@@ -79,10 +84,11 @@ export class AuthService {
   // Save authentication data locally
   saveAuthData(token: string, user: AuthUser, tenant?: TenantInfo): void {
     if (typeof window !== "undefined") {
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      // Use consistent key names that axios interceptor expects
+      localStorage.setItem("echodesk_auth_token", token);
+      localStorage.setItem("echodesk_user_data", JSON.stringify(user));
       if (tenant) {
-        localStorage.setItem("tenant", JSON.stringify(tenant));
+        localStorage.setItem("echodesk_tenant_data", JSON.stringify(tenant));
       }
     }
   }
@@ -97,9 +103,10 @@ export class AuthService {
       return { token: null, user: null, tenant: null };
     }
 
-    const token = localStorage.getItem("authToken");
-    const userStr = localStorage.getItem("user");
-    const tenantStr = localStorage.getItem("tenant");
+    // Use consistent key names that axios interceptor uses
+    const token = localStorage.getItem("echodesk_auth_token");
+    const userStr = localStorage.getItem("echodesk_user_data");
+    const tenantStr = localStorage.getItem("echodesk_tenant_data");
 
     return {
       token,
