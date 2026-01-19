@@ -7615,6 +7615,17 @@ export async function usersChangePasswordCreate(
   return response.data;
 }
 
+export async function usersSendNewPasswordCreate(
+  id: number,
+  data: UserRequest,
+): Promise<User> {
+  const response = await axios.post(
+    `/api/users/${id}/send_new_password/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function usersBulkActionCreate(data: UserRequest): Promise<User> {
   const response = await axios.post(`/api/users/bulk_action/`, data);
   return response.data;

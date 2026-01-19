@@ -643,7 +643,16 @@
     "addUser": "Add User",
     "areYouSureDelete": "Are you sure you want to delete this user?",
     "areYouSureResetPassword": "Are you sure you want to reset this user's password? They will receive an email with instructions.",
-    "passwordResetSent": "Password reset email sent successfully"
+    "passwordResetSent": "Password reset email sent successfully",
+    "sendNewPassword": "Send New Password",
+    "sendNewPasswordConfirm": "Are you sure you want to send a new password to this user?",
+    "sendNewPasswordWarning": "This will generate a new password and email it to the user. Their current password will be invalidated and they will be required to change it on next login.",
+    "sendNewPasswordSuccess": "New password has been sent successfully",
+    "sendPassword": "Send Password",
+    "sending": "Sending...",
+    "cancel": "Cancel",
+    "name": "Name",
+    "email": "Email"
   },
   "orders": {
     "title": "Orders",

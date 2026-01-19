@@ -8,7 +8,7 @@ interface UserDetailsModalProps {
   onEdit: (user: User) => void;
   onDelete: (userId: number) => void;
   onChangeStatus: (userId: number, status: string) => void;
-  onResetPassword: (userId: number) => void;
+  onSendNewPassword: (user: User) => void;
 }
 
 export default function UserDetailsModal({
@@ -17,7 +17,7 @@ export default function UserDetailsModal({
   onEdit,
   onDelete,
   onChangeStatus,
-  onResetPassword,
+  onSendNewPassword,
 }: UserDetailsModalProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("en-US", {
@@ -183,9 +183,9 @@ export default function UserDetailsModal({
 
             <button
               className="btn btn-secondary"
-              onClick={() => handleAction(() => onResetPassword(user.id))}
+              onClick={() => handleAction(() => onSendNewPassword(user))}
             >
-              🔄 Reset Password
+              🔄 Send New Password
             </button>
 
             <button

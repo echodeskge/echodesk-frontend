@@ -25,7 +25,7 @@ interface UserTableProps {
   onDelete: (userId: number) => void;
   onView: (user: User) => void;
   onChangeStatus: (userId: number, status: string) => void;
-  onResetPassword: (userId: number) => void;
+  onSendNewPassword: (user: User) => void;
   onToggleStaff: (userId: number, isStaff: boolean) => void;
   showStaffColumn?: boolean;
   pagination: PaginationInfo;
@@ -41,7 +41,7 @@ export default function UserTable({
   onDelete,
   onView,
   onChangeStatus,
-  onResetPassword,
+  onSendNewPassword,
   onToggleStaff,
   showStaffColumn = false,
   pagination,
@@ -253,8 +253,8 @@ export default function UserTable({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onResetPassword(user.id)}
-                          title="Reset Password"
+                          onClick={() => onSendNewPassword(user)}
+                          title="Send New Password"
                           className="h-8 w-8 p-0"
                         >
                           <RotateCw className="h-4 w-4" />

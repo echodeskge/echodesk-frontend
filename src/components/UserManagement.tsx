@@ -17,6 +17,7 @@ import UserBulkActions from "./user-management/UserBulkActions";
 import UserForm from "./user-management/UserForm";
 import UserDetailsModal from "./user-management/UserDetailsModal";
 import UserFilters from "./user-management/UserFilters";
+import SendPasswordModal from "./user-management/SendPasswordModal";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
@@ -41,6 +42,9 @@ export default function UserManagement() {
   const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showSendPasswordModal, setShowSendPasswordModal] = useState(false);
+  const [selectedUserForPassword, setSelectedUserForPassword] = useState<User | null>(null);
+  const [sendPasswordLoading, setSendPasswordLoading] = useState(false);
   const [filters, setFilters] = useState<UserFilters>({
     search: "",
     role: "",
@@ -123,22 +127,26 @@ export default function UserManagement() {
     }
   };
 
-  const handleResetPassword = async (userId: number) => {
-    if (
-      !confirm(
-        t("areYouSureResetPassword")
-      )
-    ) {
-      return;
-    }
+  const handleOpenSendPasswordModal = (user: User) => {
+    setSelectedUserForPassword(user);
+    setShowSendPasswordModal(true);
+  };
 
+  const handleSendNewPassword = async () => {
+    if (!selectedUserForPassword) return;
+
+    setSendPasswordLoading(true);
     try {
-      await api.usersChangePasswordCreate(userId, {} as User);
-      alert(t("passwordResetSent"));
+      await api.usersSendNewPasswordCreate(selectedUserForPassword.id, {} as any);
+      alert(t("sendNewPasswordSuccess"));
+      setShowSendPasswordModal(false);
+      setSelectedUserForPassword(null);
     } catch (err: any) {
       alert(
-        err.response?.data?.detail || err.message || tCommon("error")
+        err.response?.data?.detail || err.response?.data?.error || err.message || tCommon("error")
       );
+    } finally {
+      setSendPasswordLoading(false);
     }
   };
 
@@ -266,7 +274,7 @@ export default function UserManagement() {
         onDelete={handleDeleteUser}
         onView={setViewingUser}
         onChangeStatus={handleChangeUserStatus}
-        onResetPassword={handleResetPassword}
+        onSendNewPassword={handleOpenSendPasswordModal}
         onToggleStaff={handleToggleStaff}
         showStaffColumn={hasBookingManagement}
         pagination={pagination}
@@ -300,9 +308,22 @@ export default function UserManagement() {
           onEdit={setEditingUser}
           onDelete={handleDeleteUser}
           onChangeStatus={handleChangeUserStatus}
-          onResetPassword={handleResetPassword}
+          onSendNewPassword={handleOpenSendPasswordModal}
         />
       )}
+
+      {/* Send Password Modal */}
+      <SendPasswordModal
+        isOpen={showSendPasswordModal}
+        onClose={() => {
+          setShowSendPasswordModal(false);
+          setSelectedUserForPassword(null);
+        }}
+        onConfirm={handleSendNewPassword}
+        userName={selectedUserForPassword?.full_name || `${selectedUserForPassword?.first_name || ''} ${selectedUserForPassword?.last_name || ''}`.trim() || ''}
+        userEmail={selectedUserForPassword?.email || ''}
+        isLoading={sendPasswordLoading}
+      />
     </div>
   );
 }
