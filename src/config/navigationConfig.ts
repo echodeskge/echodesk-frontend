@@ -306,10 +306,26 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         requiredFeatureKey: "settings",
       },
       {
+        id: "settings/item-lists",
+        icon: "List",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/ticket-forms",
+        icon: "FileText",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/subscription",
+        icon: "CreditCard",
+        requiredFeatureKey: "settings",
+        staffOnly: true,
+      },
+      {
         id: "settings/security",
         icon: "Shield",
         requiredFeatureKey: "settings",
-        staffOnly: true, // Only superadmins can see security settings
+        staffOnly: true,
       },
     ],
   },

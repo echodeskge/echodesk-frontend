@@ -246,6 +246,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "social/settings": "socialSettings",
     "social/rating-statistics": "socialRatingStatistics",
     settings: "settings",
+    "settings/general": "settingsGeneral",
+    "settings/appearance": "settingsAppearance",
+    "settings/item-lists": "settingsItemLists",
+    "settings/ticket-forms": "settingsTicketForms",
+    "settings/subscription": "settingsSubscription",
+    "settings/security": "settingsSecurity",
     help: "help",
   };
 
