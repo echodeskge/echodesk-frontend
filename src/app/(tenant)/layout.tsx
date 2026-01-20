@@ -13,7 +13,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import BoardSwitcher from "@/components/BoardSwitcher";
-import { TicketCreateProvider } from "@/contexts/TicketCreateContext";
+import { TicketCreateProvider, useTicketCreate } from "@/contexts/TicketCreateContext";
 import { TicketCreateSheet } from "@/components/TicketCreateSheet";
 import { BoardProvider, useBoard } from "@/contexts/BoardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -44,6 +44,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
 import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
@@ -53,6 +55,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const t = useTranslations("nav");
   const { hasFeature, subscription, loading: subscriptionLoading } = useSubscription();
   const { user, logout } = useAuth();
+  const { openTicketCreate } = useTicketCreate();
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
@@ -578,6 +581,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                   activeUsers={boardActiveUsers}
                 />
               )}
+              {/* Quick Create Task Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => openTicketCreate()}
+                title={t("createTask")}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
               <MessengerBell />
               <NotificationBell
                 onNotificationClick={(notification) => {

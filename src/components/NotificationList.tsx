@@ -19,6 +19,7 @@ interface NotificationListProps {
   loading?: boolean
   onNotificationClick?: (notification: Notification) => void
   onUpdate?: () => void
+  onMarkAllRead?: () => void
   wsMarkAsRead?: (notificationId: number) => boolean
   wsMarkAllAsRead?: () => boolean
 }
@@ -64,6 +65,7 @@ export function NotificationList({
   loading = false,
   onNotificationClick,
   onUpdate,
+  onMarkAllRead,
   wsMarkAsRead,
   wsMarkAllAsRead
 }: NotificationListProps) {
@@ -99,9 +101,11 @@ export function NotificationList({
       // If WebSocket not available or failed, use API
       if (!wsSent) {
         await notificationsMarkAllReadCreate({} as any)
-        onUpdate?.()
       }
-      // If WebSocket succeeded, the callbacks will handle the update
+
+      // Always call the callback to update local state
+      onMarkAllRead?.()
+      onUpdate?.()
     } catch (error) {
       console.error('Failed to mark all as read:', error)
     }

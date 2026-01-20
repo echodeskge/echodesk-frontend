@@ -76,6 +76,7 @@
     "userStatistics": "Time Statistics",
     "dashboard": "Dashboard",
     "help": "Help Center",
+    "createTask": "Create Task",
     "description": {
       "tickets": "View and manage boards",
       "calls": "VoIP calling system with SIP configuration",

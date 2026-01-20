@@ -229,6 +229,10 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
             onNotificationClick?.(notification)
           }}
           onUpdate={handleNotificationUpdate}
+          onMarkAllRead={() => {
+            // Update local notifications state to mark all as read
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+          }}
           wsMarkAsRead={wsMarkAsRead}
           wsMarkAllAsRead={wsMarkAllAsRead}
         />
