@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useState } from "react"
 import type { ComponentProps, MouseEvent } from "react"
-import { X, Play } from "lucide-react"
+import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import {
@@ -66,6 +66,17 @@ export function MediaGrid({
   const renderImage = (item: MediaType, inLightbox = false) => {
     const isExternal = isExternalUrl(item.src);
 
+    if (inLightbox) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={item.src}
+          alt={item.alt}
+          className="max-h-[80vh] max-w-full w-auto h-auto object-contain rounded-lg"
+        />
+      );
+    }
+
     if (isExternal) {
       // Use regular img tag for external social media URLs to avoid domain issues
       return (
@@ -73,10 +84,7 @@ export function MediaGrid({
         <img
           src={item.src}
           alt={item.alt}
-          className={cn(
-            "object-cover rounded-lg",
-            inLightbox ? "max-h-[80vh] max-w-full w-auto h-auto" : "absolute inset-0 w-full h-full"
-          )}
+          className="w-full h-full object-cover rounded-lg"
         />
       );
     }
@@ -123,13 +131,10 @@ export function MediaGrid({
         {...props}
       >
         {(isSingleMedia ? data : displayedMedia).map((item) => (
-          <li key={`${item.alt}-${item.src}`}>
+          <li key={`${item.alt}-${item.src}`} className={isSingleMedia ? "max-w-[280px]" : ""}>
             {item.type === "VIDEO" ? (
               // Videos are playable inline - no need for click handler
-              <div className={cn(
-                "relative rounded-lg overflow-hidden",
-                isSingleMedia ? "w-full max-w-[280px]" : "aspect-square"
-              )}>
+              <div className="rounded-lg overflow-hidden">
                 {renderVideo(item)}
               </div>
             ) : (
@@ -137,10 +142,8 @@ export function MediaGrid({
                 type="button"
                 onClick={(e) => handleMediaClick(item, e)}
                 className={cn(
-                  "cursor-pointer relative rounded-lg overflow-hidden hover:opacity-90 transition-opacity",
-                  isSingleMedia
-                    ? "w-full max-w-[280px] aspect-[4/3]"
-                    : "size-full aspect-square"
+                  "cursor-pointer block rounded-lg overflow-hidden hover:opacity-90 transition-opacity",
+                  isSingleMedia ? "w-full" : "w-full aspect-square"
                 )}
                 aria-label="View image"
               >
@@ -167,7 +170,7 @@ export function MediaGrid({
                 onClick={(e) =>
                   remainingCount > 0 ? onMoreButtonClick?.(e) : handleMediaClick(lastMedia, e)
                 }
-                className="cursor-pointer relative size-full aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                className="cursor-pointer relative block w-full aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
                 aria-label={remainingCount > 0 ? "More media" : "View image"}
               >
                 {renderImage(lastMedia)}
@@ -184,15 +187,15 @@ export function MediaGrid({
 
       {/* Lightbox Dialog for full-size image view */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none">
+        <DialogContent className="flex items-center justify-center w-auto max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none translate-x-0 translate-y-0 top-0 left-0 right-0 bottom-0 m-auto [&>button[aria-label='Close']]:hidden">
           <DialogTitle className="sr-only">
             {lightboxMedia?.type === "VIDEO" ? "Video" : "Image"} viewer
           </DialogTitle>
-          <div className="relative flex items-center justify-center">
+          <div className="relative">
             <button
               onClick={() => setLightboxOpen(false)}
-              className="absolute top-2 right-2 z-50 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors"
-              aria-label="Close"
+              className="absolute -top-3 -right-3 z-50 p-1.5 rounded-full bg-black/70 hover:bg-black/90 text-white transition-colors"
+              aria-label="Close lightbox"
             >
               <X className="h-5 w-5" />
             </button>

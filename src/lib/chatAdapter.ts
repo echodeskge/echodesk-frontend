@@ -131,7 +131,7 @@ export function convertFacebookMessagesToChatFormat(
         }
       }
 
-      let images: { name: string; url: string; size: number }[] | undefined;
+      let images: { name: string; url: string; size: number; type?: string }[] | undefined;
       let files: { name: string; url: string; size: number }[] | undefined;
       let voiceMessage: { name: string; url: string; size: number } | undefined;
 
@@ -322,7 +322,7 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       }
     }
 
-    let images: { name: string; url: string; size: number }[] | undefined;
+    let images: { name: string; url: string; size: number; type?: string }[] | undefined;
     let files: { name: string; url: string; size: number }[] | undefined;
     let voiceMessage: { name: string; url: string; size: number } | undefined;
 
