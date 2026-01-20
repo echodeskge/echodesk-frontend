@@ -18,9 +18,18 @@ export function Kanban() {
     // Ignore if there's no destination
     if (!destination) return
 
+    // Ignore if dropped in the same position
+    if (
+      source.droppableId === destination.droppableId &&
+      source.index === destination.index
+    ) {
+      return
+    }
+
     if (type === "Column") {
       handleReorderColumns(source.index, destination.index)
-    } else if (type === "Task") {
+    } else {
+      // Handle task reordering (type === "Task" or any other type)
       handleReorderTasks(
         source.droppableId,
         source.index,
