@@ -239,8 +239,10 @@ export function TicketCreateSheet() {
       );
       setColumns(filteredColumns);
 
-      // If current column is not in the filtered list, reset it
+      // Only reset column_id if columns have been loaded AND current column is not in the filtered list
+      // This prevents resetting during initial load when allColumns is still empty
       if (
+        allColumns.length > 0 &&
         formData.column_id &&
         !filteredColumns.find((col) => col.id === formData.column_id)
       ) {
