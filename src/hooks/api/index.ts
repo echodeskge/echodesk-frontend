@@ -18,3 +18,6 @@ export * from './useUsers';
 
 // Ecommerce hooks
 export * from './useEcommerce';
+
+// Security hooks
+export * from './useSecurity';

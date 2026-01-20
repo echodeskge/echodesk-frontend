@@ -294,6 +294,24 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     id: "settings",
     icon: "Settings",
     requiredFeatureKey: "settings",
+    children: [
+      {
+        id: "settings/general",
+        icon: "Settings",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/appearance",
+        icon: "Palette",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/security",
+        icon: "Shield",
+        requiredFeatureKey: "settings",
+        staffOnly: true, // Only superadmins can see security settings
+      },
+    ],
   },
   {
     id: "help",

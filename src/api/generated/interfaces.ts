@@ -847,6 +847,12 @@ export interface FacebookMessage {
   page_id: string;
   page_name: string;
   created_at: string;
+  reaction: string;
+  reaction_emoji: string;
+  reacted_by: string;
+  reacted_at: string;
+  reply_to_message_id: string;
+  reply_to_id: number;
 }
 
 export interface FacebookMessageAttachmentTypeEnum {
@@ -2937,6 +2943,13 @@ export interface PatchedTenantGroupCreateRequest {
   feature_ids?: number[];
 }
 
+export interface PatchedTenantIpwhitelistRequest {
+  ip_address?: string;
+  cidr_notation?: string;
+  description?: string;
+  is_active?: boolean;
+}
+
 export interface PatchedTenantRequest {
   domain_url?: string;
   name?: string;
@@ -3959,6 +3972,25 @@ export interface TenantGroupMinimal {
 
 export interface TenantGroupRequest {
   name: string;
+  description?: string;
+  is_active?: boolean;
+}
+
+export interface TenantIpwhitelist {
+  id: number;
+  ip_address: string;
+  cidr_notation?: string;
+  description?: string;
+  is_active?: boolean;
+  created_by: number;
+  created_by_email: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenantIpwhitelistRequest {
+  ip_address: string;
+  cidr_notation?: string;
   description?: string;
   is_active?: boolean;
 }

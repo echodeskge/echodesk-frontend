@@ -275,6 +275,9 @@ import type {
   Permission,
   TenantRegistrationRequest,
   Tenant,
+  TenantIpwhitelistRequest,
+  TenantIpwhitelist,
+  PatchedTenantIpwhitelistRequest,
   PaginatedSipConfigurationListList,
   SipConfigurationRequest,
   SipConfiguration,
@@ -3651,7 +3654,6 @@ export async function ecommerceClientOrdersDestroy(id: string): Promise<any> {
 }
 
 export async function ecommerceClientProductsList(
-  attrCategory?: string,
   attrColor?: string,
   attrMaterial?: string,
   attrNumberOfLamps?: string,
@@ -3669,9 +3671,6 @@ export async function ecommerceClientProductsList(
   const response = await axios.get(
     `/api/ecommerce/client/products/${(() => {
       const parts = [
-        attrCategory
-          ? 'attr_category=' + encodeURIComponent(attrCategory)
-          : null,
         attrColor ? 'attr_color=' + encodeURIComponent(attrColor) : null,
         attrMaterial
           ? 'attr_material=' + encodeURIComponent(attrMaterial)
@@ -5533,6 +5532,125 @@ export async function registerTenantWithPayment(
   currency?: string;
 }> {
   const response = await axios.post(`/api/register-with-payment/`, data);
+  return response.data;
+}
+
+export async function getCurrentIp(): Promise<{
+  ip_address?: string;
+  city?: string;
+  country?: string;
+  country_code?: string;
+}> {
+  const response = await axios.get(`/api/security/current-ip/`);
+  return response.data;
+}
+
+export async function listIpWhitelist(): Promise<{
+  ip_whitelist_enabled?: boolean;
+  superadmin_bypass_whitelist?: boolean;
+  entries?: unknown[];
+}> {
+  const response = await axios.get(`/api/security/ip-whitelist/`);
+  return response.data;
+}
+
+export async function manageIpWhitelist3(
+  id: number,
+  data: TenantIpwhitelistRequest,
+): Promise<TenantIpwhitelist> {
+  const response = await axios.put(`/api/security/ip-whitelist/${id}/`, data);
+  return response.data;
+}
+
+export async function manageIpWhitelist2(
+  id: number,
+  data: PatchedTenantIpwhitelistRequest,
+): Promise<TenantIpwhitelist> {
+  const response = await axios.patch(`/api/security/ip-whitelist/${id}/`, data);
+  return response.data;
+}
+
+export async function manageIpWhitelist(
+  id: number,
+): Promise<TenantIpwhitelist> {
+  const response = await axios.delete(`/api/security/ip-whitelist/${id}/`);
+  return response.data;
+}
+
+export async function createIpWhitelist(
+  data: TenantIpwhitelistRequest,
+): Promise<TenantIpwhitelist> {
+  const response = await axios.post(`/api/security/ip-whitelist/create/`, data);
+  return response.data;
+}
+
+export async function toggleIpWhitelist(): Promise<{
+  ip_whitelist_enabled?: boolean;
+  superadmin_bypass_whitelist?: boolean;
+  message?: string;
+}> {
+  const response = await axios.post(`/api/security/ip-whitelist/toggle/`);
+  return response.data;
+}
+
+export async function listSecurityLogs(
+  dateFrom?: string,
+  dateTo?: string,
+  eventType?: string,
+  ipAddress?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+  userId?: number,
+): Promise<any> {
+  const response = await axios.get(
+    `/api/security/logs/${(() => {
+      const parts = [
+        dateFrom ? 'date_from=' + encodeURIComponent(dateFrom) : null,
+        dateTo ? 'date_to=' + encodeURIComponent(dateTo) : null,
+        eventType ? 'event_type=' + encodeURIComponent(eventType) : null,
+        ipAddress ? 'ip_address=' + encodeURIComponent(ipAddress) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        userId ? 'user_id=' + encodeURIComponent(userId) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function mySecurityLogs(
+  page?: number,
+  pageSize?: number,
+): Promise<any> {
+  const response = await axios.get(
+    `/api/security/logs/me/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function securityLogsStats(days?: number): Promise<{
+  total_logins?: number;
+  failed_logins?: number;
+  unique_ips?: number;
+  unique_users?: number;
+  by_event_type?: Record<string, any>;
+  by_device_type?: Record<string, any>;
+  by_date?: unknown[];
+  recent_failed_logins?: unknown[];
+  top_ips?: unknown[];
+}> {
+  const response = await axios.get(
+    `/api/security/logs/stats/${days ? '?days=' + encodeURIComponent(days) : ''}`,
+  );
   return response.data;
 }
 
