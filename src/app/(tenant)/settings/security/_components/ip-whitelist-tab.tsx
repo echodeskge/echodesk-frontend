@@ -53,6 +53,7 @@ import type { IPWhitelistEntry, IPWhitelistCreateRequest } from "@/types/securit
 
 export function IPWhitelistTab() {
   const t = useTranslations('settings.security');
+  const tCommon = useTranslations('common');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -403,7 +404,7 @@ export function IPWhitelistTab() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddDialogOpen(false); resetForm(); }}>
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </Button>
             <Button onClick={handleCreate} disabled={createMutation.isPending || !formData.ip_address}>
               {createMutation.isPending ? (
@@ -462,7 +463,7 @@ export function IPWhitelistTab() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditDialogOpen(false); resetForm(); }}>
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </Button>
             <Button onClick={handleUpdate} disabled={updateMutation.isPending || !formData.ip_address}>
               {updateMutation.isPending ? (
@@ -490,7 +491,7 @@ export function IPWhitelistTab() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
