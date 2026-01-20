@@ -263,6 +263,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     return userFeatureKeys.includes(featureKey);
   };
 
+  // Check if user is staff/admin
+  const isStaffOrAdmin = Boolean(user?.is_staff || user?.is_superuser);
+
   // Build menu items with feature-based requirements
   const buildMenuItems = (): MenuItem[] => {
     const items: MenuItem[] = navigationConfig.map((config) => ({
@@ -291,6 +294,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     return items.filter((item) => {
       // Special handling for messages - only show if Facebook is connected
       if (item.id === "messages" && !facebookConnected) {
+        return false;
+      }
+
+      // Filter out staffOnly items for non-staff users
+      const configItem = navigationConfig.find(c => c.id === item.id);
+      if (configItem?.staffOnly && !isStaffOrAdmin) {
         return false;
       }
 

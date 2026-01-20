@@ -251,17 +251,18 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     requiredFeatureKey: "user_management",
   },
   {
+    id: "social/clients",
+    icon: "UserRound",
+    requiredFeatureKey: "social_integrations",
+    isPremium: true,
+  },
+  {
     id: "social",
     icon: "Share2",
     requiredFeatureKey: "social_integrations",
     isPremium: true,
+    staffOnly: true, // Only admin/staff can see social media settings
     children: [
-      {
-        id: "social/clients",
-        icon: "UserRound",
-        requiredFeatureKey: "social_integrations",
-        isPremium: true,
-      },
       {
         id: "social/connections",
         icon: "Link",
