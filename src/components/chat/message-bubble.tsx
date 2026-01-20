@@ -69,44 +69,34 @@ interface MessageBubbleProps {
 function MessageActions({
   message,
   platform,
-  isByCurrentUser,
   onReply,
 }: {
   message: MessageType
   platform?: string
-  isByCurrentUser: boolean
   onReply: () => void
 }) {
   // Only show for Facebook/Instagram messages (not email or WhatsApp for now)
-  // Only show reply for customer messages (can't reply to our own messages)
   if (platform !== 'facebook' && platform !== 'instagram') return null
-  if (isByCurrentUser) return null // Can't reply to our own messages
   if (!message.platformMessageId) return null
 
   return (
-    <div className={cn(
-      "absolute top-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity",
-      "right-0 translate-x-full pl-1"
-    )}>
-      {/* Reply button */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={onReply}
-            >
-              <Reply className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="text-xs">
-            Reply
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={onReply}
+          >
+            <Reply className="h-3.5 w-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs">
+          Reply
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
 
@@ -212,26 +202,38 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
             isByCurrentUser={isByCurrentUser}
           />
         )}
-        <div className="relative group">
-          <MessageBubbleContent
-            message={message}
-            isByCurrentUser={isByCurrentUser}
-            platform={platform}
-          />
-          {/* Reaction badge */}
-          {(message.reaction || message.reactionEmoji) && (
-            <MessageReactionBadge
-              reaction={message.reaction}
-              reactionEmoji={message.reactionEmoji}
+        {/* Message content with action button */}
+        <div className="flex items-start gap-1 group">
+          {/* Reply button - left side of business messages */}
+          {isByCurrentUser && (
+            <MessageActions
+              message={message}
+              platform={platform}
+              onReply={handleReply}
             />
           )}
-          {/* Action buttons (reply, react) - show on hover */}
-          <MessageActions
-            message={message}
-            platform={platform}
-            isByCurrentUser={isByCurrentUser}
-            onReply={handleReply}
-          />
+          <div className="relative">
+            <MessageBubbleContent
+              message={message}
+              isByCurrentUser={isByCurrentUser}
+              platform={platform}
+            />
+            {/* Reaction badge */}
+            {(message.reaction || message.reactionEmoji) && (
+              <MessageReactionBadge
+                reaction={message.reaction}
+                reactionEmoji={message.reactionEmoji}
+              />
+            )}
+          </div>
+          {/* Reply button - right side of customer messages */}
+          {!isByCurrentUser && (
+            <MessageActions
+              message={message}
+              platform={platform}
+              onReply={handleReply}
+            />
+          )}
         </div>
         <div className={cn(
           "flex items-center gap-1",
