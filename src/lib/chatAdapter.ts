@@ -181,6 +181,9 @@ export function convertFacebookMessagesToChatFormat(
         voiceMessage,
         status,
         createdAt: new Date(msg.timestamp),
+        // Platform-specific message ID for reply functionality
+        platformMessageId: msg.platform_message_id,
+        senderName: msg.sender_name,
         // WhatsApp Coexistence fields
         source: msg.source,
         isEcho: msg.is_echo,
@@ -364,6 +367,9 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       voiceMessage,
       status,
       createdAt: new Date(msg.timestamp),
+      // Platform-specific message ID for reply functionality
+      platformMessageId: msg.platform_message_id,
+      senderName: msg.sender_name,
       // WhatsApp Coexistence fields
       source: msg.source,
       isEcho: msg.is_echo,

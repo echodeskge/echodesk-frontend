@@ -872,6 +872,7 @@ export interface FacebookSendMessageRequest {
   recipient_id: string;
   message: string;
   page_id: string;
+  reply_to_message_id?: string;
 }
 
 export interface FavoriteProduct {

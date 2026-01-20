@@ -2,7 +2,7 @@ import { forwardRef } from "react"
 
 import type { MessageType, UserType } from "@/components/chat/types"
 import { formatDistanceToNow } from "date-fns"
-import { Pencil, Trash2, Smartphone, Cloud, History, Reply } from "lucide-react"
+import { Pencil, Trash2, Smartphone, History, Reply } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils"
 
 import { MessageBubbleContent } from "./message-bubble-content"
 import { MessageBubbleStatusIcon } from "./message-bubble-status-icon"
+import { useChatContext } from "./hooks/use-chat-context"
+import { Button } from "@/components/ui/button"
 
 // Reply preview component
 function MessageReplyPreview({ replyToText, replyToSenderName, isByCurrentUser }: {
@@ -63,6 +65,51 @@ interface MessageBubbleProps {
   searchQuery?: string
 }
 
+// Message action buttons (reply only - reactions are not supported by Facebook for pages)
+function MessageActions({
+  message,
+  platform,
+  isByCurrentUser,
+  onReply,
+}: {
+  message: MessageType
+  platform?: string
+  isByCurrentUser: boolean
+  onReply: () => void
+}) {
+  // Only show for Facebook/Instagram messages (not email or WhatsApp for now)
+  // Only show reply for customer messages (can't reply to our own messages)
+  if (platform !== 'facebook' && platform !== 'instagram') return null
+  if (isByCurrentUser) return null // Can't reply to our own messages
+  if (!message.platformMessageId) return null
+
+  return (
+    <div className={cn(
+      "absolute top-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity",
+      "right-0 translate-x-full pl-1"
+    )}>
+      {/* Reply button */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={onReply}
+            >
+              <Reply className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            Reply
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  )
+}
+
 // Source icon component for WhatsApp coexistence
 function MessageSourceIcon({ source }: { source?: string }) {
   if (!source || source === 'cloud_api') return null
@@ -96,8 +143,20 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
     { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery },
     ref
   ) {
+  const { setReplyingTo } = useChatContext()
+
   // Check if this is an email message
   const isEmail = message.platform === 'email' || platform === 'email'
+
+  // Handle reply action
+  const handleReply = () => {
+    if (!message.platformMessageId) return
+    setReplyingTo({
+      messageId: message.platformMessageId,
+      text: message.text?.substring(0, 100),
+      senderName: message.senderName || sender?.name,
+    })
+  }
 
   // Handle revoked messages
   if (message.isRevoked) {
@@ -153,7 +212,7 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
             isByCurrentUser={isByCurrentUser}
           />
         )}
-        <div className="relative">
+        <div className="relative group">
           <MessageBubbleContent
             message={message}
             isByCurrentUser={isByCurrentUser}
@@ -166,6 +225,13 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
               reactionEmoji={message.reactionEmoji}
             />
           )}
+          {/* Action buttons (reply, react) - show on hover */}
+          <MessageActions
+            message={message}
+            platform={platform}
+            isByCurrentUser={isByCurrentUser}
+            onReply={handleReply}
+          />
         </div>
         <div className={cn(
           "flex items-center gap-1",

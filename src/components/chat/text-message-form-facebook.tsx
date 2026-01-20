@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Send, ChevronDown, ChevronUp } from "lucide-react"
+import { Send, ChevronDown, ChevronUp, X, Reply } from "lucide-react"
 import { useState, useEffect } from "react"
 
 import type { TextMessageFormType } from "@/components/chat/types"
@@ -39,7 +39,7 @@ interface WhatsAppSendMessagePayload {
 }
 
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
-  const { chatState } = useChatContext()
+  const { chatState, replyingTo, setReplyingTo } = useChatContext()
   const { user } = useAuth()
   const [isSending, setIsSending] = useState(false)
   const [showCcBcc, setShowCcBcc] = useState(false)
@@ -49,6 +49,11 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   // Check if current chat is email
   const isEmailPlatform = chatState.selectedChat?.platform === 'email' ||
     chatState.selectedChat?.id?.startsWith('email_')
+
+  // Clear reply state when chat changes
+  useEffect(() => {
+    setReplyingTo(null)
+  }, [chatState.selectedChat?.id, setReplyingTo])
 
   // Typing indicator WebSocket
   const { notifyTyping, sendTypingStop } = useTypingWebSocket({
@@ -89,7 +94,8 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         await socialFacebookSendMessageCreate({
           recipient_id: recipientId,
           message: data.text,
-          page_id: accountId
+          page_id: accountId,
+          reply_to_message_id: replyingTo?.messageId || '',
         })
       } else if (platform === 'ig') {
         // Send via Instagram API
@@ -179,8 +185,9 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         throw new Error('Unsupported platform: ' + platform)
       }
 
-      // Reset form
+      // Reset form and clear reply state
       form.reset()
+      setReplyingTo(null)
 
       // Stop typing indicator after sending
       sendTypingStop()
@@ -222,6 +229,32 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   return (
     <Form {...form}>
       <div className="w-full space-y-2">
+        {/* Reply preview */}
+        {replyingTo && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border-l-2 border-primary">
+            <Reply className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-muted-foreground">
+                Replying to {replyingTo.senderName}
+              </p>
+              {replyingTo.text && (
+                <p className="text-sm text-muted-foreground truncate">
+                  {replyingTo.text}
+                </p>
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 flex-shrink-0"
+              onClick={() => setReplyingTo(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         {/* CC/BCC fields for email */}
         {isEmailPlatform && (
           <div className="space-y-2">

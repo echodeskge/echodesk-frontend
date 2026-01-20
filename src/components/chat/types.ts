@@ -6,6 +6,13 @@ import type { TextMessageSchema } from "@/components/chat/schemas/text-message-s
 
 export type AssignmentTabType = 'all' | 'assigned'
 
+// Reply state for replying to a specific message
+export interface ReplyingToType {
+  messageId: string // The message_id (Facebook mid)
+  text?: string // Preview text of the message being replied to
+  senderName?: string // Name of the sender
+}
+
 export interface ChatContextType {
   chatState: ChatStateType
   isChatSidebarOpen: boolean
@@ -35,6 +42,9 @@ export interface ChatContextType {
   // Email folder filter
   selectedEmailFolder: string
   setSelectedEmailFolder: (folder: string) => void
+  // Reply functionality
+  replyingTo: ReplyingToType | null
+  setReplyingTo: (reply: ReplyingToType | null) => void
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null
@@ -48,6 +58,10 @@ export interface MessageType {
   voiceMessage?: FileType
   status: string
   createdAt: Date
+  // Platform-specific message ID (e.g., Facebook mid, WhatsApp message_id)
+  platformMessageId?: string
+  // Sender name (for display in reply preview)
+  senderName?: string
   // WhatsApp Coexistence fields
   source?: 'cloud_api' | 'business_app' | 'synced'
   isEcho?: boolean

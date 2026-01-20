@@ -4,7 +4,7 @@ import { createContext, useReducer, useState, useEffect, useCallback, useMemo } 
 
 import type { FileType } from "@/types"
 import type { ReactNode } from "react"
-import type { ChatContextType, ChatType, AssignmentTabType, MessageType } from "@/components/chat/types"
+import type { ChatContextType, ChatType, AssignmentTabType, MessageType, ReplyingToType } from "@/components/chat/types"
 
 import { ChatReducer } from "@/components/chat/reducers/chat-reducer"
 import { useSocialSettings, useMyAssignments } from "@/hooks/api/useSocial"
@@ -54,6 +54,9 @@ export function ChatProvider({
 
   // Lazy loading state
   const [loadingMessages, setLoadingMessages] = useState(false)
+
+  // Reply state
+  const [replyingTo, setReplyingTo] = useState<ReplyingToType | null>(null)
 
   // Fetch social settings and assignments
   const { data: socialSettings } = useSocialSettings()
@@ -145,6 +148,8 @@ export function ChatProvider({
         platforms,
         selectedEmailFolder,
         setSelectedEmailFolder,
+        replyingTo,
+        setReplyingTo,
       }}
     >
       {children}
