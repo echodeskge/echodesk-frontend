@@ -54,6 +54,14 @@ interface FacebookMessage {
   read_at?: string;
   page_name: string;
   recipient_id?: string; // The person receiving the message
+  // Reply fields
+  reply_to_message_id?: string;
+  reply_to_id?: number;
+  // Reaction fields
+  reaction?: string;
+  reaction_emoji?: string;
+  reacted_by?: string;
+  reacted_at?: string;
 }
 
 interface InstagramMessage {
@@ -125,6 +133,16 @@ interface UnifiedMessage {
   // Email fields
   subject?: string;
   body_html?: string;
+  // Reply fields (Facebook Messenger)
+  reply_to_message_id?: string;
+  reply_to_id?: number;
+  reply_to_text?: string;
+  reply_to_sender_name?: string;
+  // Reaction fields (Facebook Messenger)
+  reaction?: string;
+  reaction_emoji?: string;
+  reacted_by?: string;
+  reacted_at?: string;
 }
 
 interface UnifiedConversation {
@@ -320,6 +338,14 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                   conversation_id: `fb_${page.page_id}_${customerId}`,
                   platform_message_id: msg.message_id,
                   account_id: page.page_id,
+                  // Reply fields
+                  reply_to_message_id: msg.reply_to_message_id,
+                  reply_to_id: msg.reply_to_id,
+                  // Reaction fields
+                  reaction: msg.reaction,
+                  reaction_emoji: msg.reaction_emoji,
+                  reacted_by: msg.reacted_by,
+                  reacted_at: msg.reacted_at,
                 }));
 
                 // Convert latest message to unified format

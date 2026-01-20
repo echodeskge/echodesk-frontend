@@ -2,7 +2,7 @@ import { forwardRef } from "react"
 
 import type { MessageType, UserType } from "@/components/chat/types"
 import { formatDistanceToNow } from "date-fns"
-import { Pencil, Trash2, Smartphone, Cloud, History } from "lucide-react"
+import { Pencil, Trash2, Smartphone, Cloud, History, Reply } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -14,6 +14,45 @@ import { cn } from "@/lib/utils"
 
 import { MessageBubbleContent } from "./message-bubble-content"
 import { MessageBubbleStatusIcon } from "./message-bubble-status-icon"
+
+// Reply preview component
+function MessageReplyPreview({ replyToText, replyToSenderName, isByCurrentUser }: {
+  replyToText?: string;
+  replyToSenderName?: string;
+  isByCurrentUser: boolean;
+}) {
+  if (!replyToText && !replyToSenderName) return null
+
+  return (
+    <div className={cn(
+      "flex items-start gap-1.5 px-3 py-1.5 rounded-t-lg border-l-2 text-xs mb-0.5",
+      isByCurrentUser
+        ? "bg-primary/10 border-primary/50"
+        : "bg-muted/50 border-muted-foreground/30"
+    )}>
+      <Reply className="h-3 w-3 mt-0.5 text-muted-foreground flex-shrink-0" />
+      <div className="min-w-0">
+        {replyToSenderName && (
+          <span className="font-medium text-muted-foreground">{replyToSenderName}</span>
+        )}
+        {replyToText && (
+          <p className="text-muted-foreground truncate">{replyToText}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Reaction badge component
+function MessageReactionBadge({ reaction, reactionEmoji }: { reaction?: string; reactionEmoji?: string }) {
+  if (!reaction && !reactionEmoji) return null
+
+  return (
+    <div className="absolute -bottom-2 -right-1 bg-background border rounded-full px-1.5 py-0.5 shadow-sm">
+      <span className="text-sm">{reactionEmoji || reaction}</span>
+    </div>
+  )
+}
 
 interface MessageBubbleProps {
   sender: UserType
@@ -106,11 +145,28 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
         "flex flex-col gap-1 overflow-hidden",
         isEmail ? "max-w-full w-full" : "max-w-[320px]"
       )}>
-        <MessageBubbleContent
-          message={message}
-          isByCurrentUser={isByCurrentUser}
-          platform={platform}
-        />
+        {/* Reply preview */}
+        {(message.replyToText || message.replyToSenderName) && (
+          <MessageReplyPreview
+            replyToText={message.replyToText}
+            replyToSenderName={message.replyToSenderName}
+            isByCurrentUser={isByCurrentUser}
+          />
+        )}
+        <div className="relative">
+          <MessageBubbleContent
+            message={message}
+            isByCurrentUser={isByCurrentUser}
+            platform={platform}
+          />
+          {/* Reaction badge */}
+          {(message.reaction || message.reactionEmoji) && (
+            <MessageReactionBadge
+              reaction={message.reaction}
+              reactionEmoji={message.reactionEmoji}
+            />
+          )}
+        </div>
         <div className={cn(
           "flex items-center gap-1",
           isByCurrentUser && "justify-end"

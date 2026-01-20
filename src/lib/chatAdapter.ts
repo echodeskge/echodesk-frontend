@@ -61,6 +61,16 @@ interface UnifiedMessage {
   // Email fields
   subject?: string;
   body_html?: string;
+  // Reply fields (Facebook Messenger)
+  reply_to_message_id?: string;
+  reply_to_id?: number;
+  reply_to_text?: string;
+  reply_to_sender_name?: string;
+  // Reaction fields (Facebook Messenger)
+  reaction?: string;
+  reaction_emoji?: string;
+  reacted_by?: string;
+  reacted_at?: string;
 }
 
 interface UnifiedConversation {
@@ -183,11 +193,34 @@ export function convertFacebookMessagesToChatFormat(
         bodyHtml: msg.body_html,
         subject: msg.subject,
         platform: msg.platform,
+        // Reply fields (Facebook Messenger)
+        replyToMessageId: msg.reply_to_message_id,
+        replyToId: msg.reply_to_id,
+        replyToText: msg.reply_to_text,
+        replyToSenderName: msg.reply_to_sender_name,
+        // Reaction fields (Facebook Messenger)
+        reaction: msg.reaction,
+        reactionEmoji: msg.reaction_emoji,
+        reactedBy: msg.reacted_by,
+        reactedAt: msg.reacted_at ? new Date(msg.reacted_at) : undefined,
       };
     });
 
     // Sort messages by date
     chatMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+    // Resolve reply_to references - find the original message text for replies
+    chatMessages.forEach((msg) => {
+      if (msg.replyToId) {
+        const originalMsg = chatMessages.find((m) => m.id === String(msg.replyToId));
+        if (originalMsg) {
+          msg.replyToText = originalMsg.text;
+          // Find the sender name from users
+          const sender = originalMsg.senderId === businessUser.id ? businessUser : customerUser;
+          msg.replyToSenderName = sender.name;
+        }
+      }
+    });
 
     // Last message - use text or fallback to attachment type description
     const lastMsg = conversation.last_message;
@@ -343,6 +376,16 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       bodyHtml: msg.body_html,
       subject: msg.subject,
       platform: msg.platform,
+      // Reply fields (Facebook Messenger)
+      replyToMessageId: msg.reply_to_message_id,
+      replyToId: msg.reply_to_id,
+      replyToText: msg.reply_to_text,
+      replyToSenderName: msg.reply_to_sender_name,
+      // Reaction fields (Facebook Messenger)
+      reaction: msg.reaction,
+      reactionEmoji: msg.reaction_emoji,
+      reactedBy: msg.reacted_by,
+      reactedAt: msg.reacted_at ? new Date(msg.reacted_at) : undefined,
     };
   });
 

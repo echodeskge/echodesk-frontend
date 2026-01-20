@@ -60,6 +60,16 @@ export interface MessageType {
   bodyHtml?: string
   subject?: string
   platform?: 'facebook' | 'instagram' | 'whatsapp' | 'email'
+  // Reply fields (Facebook Messenger)
+  replyToMessageId?: string
+  replyToId?: number
+  replyToText?: string
+  replyToSenderName?: string
+  // Reaction fields (Facebook Messenger)
+  reaction?: string
+  reactionEmoji?: string
+  reactedBy?: string
+  reactedAt?: Date
 }
 
 export type NewMessageType = Omit<
