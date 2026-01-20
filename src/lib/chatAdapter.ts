@@ -158,15 +158,20 @@ export function convertFacebookMessagesToChatFormat(
         }
 
         const isImageType = ['image', 'sticker'].includes(attachmentType);
+        const isVideoType = ['video'].includes(attachmentType);
         const isAudioType = ['audio'].includes(attachmentType);
 
         if (attachmentUrl && isImageType) {
-          images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
+          images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'image' }];
+        }
+        if (attachmentUrl && isVideoType) {
+          // Videos go to images array with type 'video' for inline rendering
+          images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'video' }];
         }
         if (attachmentUrl && isAudioType) {
           voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
         }
-        if (attachmentUrl && !isImageType && !isAudioType) {
+        if (attachmentUrl && !isImageType && !isVideoType && !isAudioType) {
           const filename = msg.attachments?.[0]?.filename || attachmentType;
           files = [{ name: filename, url: attachmentUrl, size: 0 }];
         }
@@ -344,15 +349,20 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       }
 
       const isImageType = ['image', 'sticker'].includes(attachmentType);
+      const isVideoType = ['video'].includes(attachmentType);
       const isAudioType = ['audio'].includes(attachmentType);
 
       if (attachmentUrl && isImageType) {
-        images = [{ name: attachmentType, url: attachmentUrl, size: 0 }];
+        images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'image' }];
+      }
+      if (attachmentUrl && isVideoType) {
+        // Videos go to images array with type 'video' for inline rendering
+        images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'video' }];
       }
       if (attachmentUrl && isAudioType) {
         voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
       }
-      if (attachmentUrl && !isImageType && !isAudioType) {
+      if (attachmentUrl && !isImageType && !isVideoType && !isAudioType) {
         const filename = msg.attachments?.[0]?.filename || attachmentType;
         files = [{ name: filename, url: attachmentUrl, size: 0 }];
       }

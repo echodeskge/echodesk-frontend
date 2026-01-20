@@ -12,7 +12,7 @@ export function MessageBubbleContentImages({
   const imagesData = images.map((image) => ({
     src: image.url,
     alt: image.name,
-    type: "IMAGE" as const,
+    type: (image.type === 'video' ? "VIDEO" : "IMAGE") as "IMAGE" | "VIDEO",
   }))
 
   return <MediaGrid data={imagesData} />
