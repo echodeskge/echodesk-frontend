@@ -15,7 +15,7 @@ interface KanbanTaskListProps {
 
 export function KanbanTaskList({ column }: KanbanTaskListProps) {
   return (
-    <Droppable droppableId={column.id}>
+    <Droppable droppableId={column.id} type="Task">
       {(provided: DroppableProvided, snapshot) => (
         <CardContent
           ref={provided.innerRef}

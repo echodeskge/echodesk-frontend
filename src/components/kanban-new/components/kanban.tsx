@@ -20,7 +20,7 @@ export function Kanban() {
 
     if (type === "Column") {
       handleReorderColumns(source.index, destination.index)
-    } else {
+    } else if (type === "Task") {
       handleReorderTasks(
         source.droppableId,
         source.index,
