@@ -220,7 +220,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
                 {/* Language Selector */}
                 <div className="flex items-center gap-2">
-                  <FormLabel className="text-sm font-medium">Language:</FormLabel>
+                  <FormLabel className="text-sm font-medium">{t("language")}:</FormLabel>
                   <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                     <SelectTrigger className="w-[200px]">
                       <SelectValue />
@@ -234,7 +234,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     </SelectContent>
                   </Select>
                   <FormDescription className="text-xs ml-auto">
-                    Fill at least one language
+                    {t("fillAtLeastOneLanguage")}
                   </FormDescription>
                 </div>
 
@@ -245,7 +245,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   name={`name.${selectedLanguage}` as any}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Product Name *</FormLabel>
+                      <FormLabel>{t("productName")} *</FormLabel>
                       <FormControl>
                         <Input placeholder={t("namePlaceholder")} {...field} />
                       </FormControl>
@@ -260,10 +260,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   name="sku"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>SKU</FormLabel>
+                      <FormLabel>{t("sku")}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="PROD-001"
+                          placeholder={t("skuPlaceholder")}
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
@@ -272,7 +272,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                         />
                       </FormControl>
                       <FormDescription className="text-xs">
-                        Auto-generated from name. Slug is auto-generated from SKU.
+                        {t("skuDescription")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -286,7 +286,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   name={`short_description.${selectedLanguage}` as any}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Short Description</FormLabel>
+                      <FormLabel>{t("shortDescription")}</FormLabel>
                       <FormControl>
                         <Textarea
                           placeholder={t("shortDescPlaceholder")}
@@ -350,7 +350,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="quantity"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Quantity</FormLabel>
+                        <FormLabel>{t("quantity")}</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="0" {...field} />
                         </FormControl>
@@ -363,7 +363,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="low_stock_threshold"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Low Stock Threshold</FormLabel>
+                        <FormLabel>{t("lowStockThreshold")}</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="10" {...field} />
                         </FormControl>
@@ -405,18 +405,18 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
+                      <FormLabel>{t("status")}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
+                            <SelectValue placeholder={t("selectStatus")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="inactive">Inactive</SelectItem>
-                          <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                          <SelectItem value="draft">{t("statusDraft")}</SelectItem>
+                          <SelectItem value="active">{t("statusActive")}</SelectItem>
+                          <SelectItem value="inactive">{t("statusInactive")}</SelectItem>
+                          <SelectItem value="out_of_stock">{t("statusOutOfStock")}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -431,9 +431,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                       <div className="space-y-0.5">
-                        <FormLabel className="text-base">Featured Product</FormLabel>
+                        <FormLabel className="text-base">{t("featuredProduct")}</FormLabel>
                         <FormDescription>
-                          Display this product in the featured products section on the homepage
+                          {t("featuredProductDescription")}
                         </FormDescription>
                       </div>
                       <FormControl>
