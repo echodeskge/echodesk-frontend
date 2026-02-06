@@ -2,17 +2,11 @@
 
 import React, { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import type { Language } from "@/api/generated";
 
@@ -34,6 +28,7 @@ export function OptionsManager({
   languages,
   disabled = false,
 }: OptionsManagerProps) {
+  const t = useTranslations("productAttributes.addAttributeSheet");
   const [newOptionValue, setNewOptionValue] = useState("");
   const [newOptionLabels, setNewOptionLabels] = useState<Record<string, string>>({});
 
@@ -103,9 +98,9 @@ export function OptionsManager({
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-base font-semibold">Attribute Options</Label>
+        <Label className="text-base font-semibold">{t("attributeOptions")}</Label>
         <p className="text-xs text-muted-foreground mt-1">
-          Add option values with labels in all languages
+          {t("attributeOptionsDescription")}
         </p>
       </div>
 
@@ -113,9 +108,9 @@ export function OptionsManager({
       <Card className="bg-muted/30">
         <CardContent className="p-4 space-y-3">
           <div className="space-y-2">
-            <Label className="text-xs font-semibold">Value (identifier)</Label>
+            <Label className="text-xs font-semibold">{t("valueIdentifier")}</Label>
             <Input
-              placeholder="e.g., red, blue, large"
+              placeholder={t("valueIdentifierPlaceholder")}
               value={newOptionValue}
               onChange={(e) => setNewOptionValue(e.target.value)}
               disabled={disabled}
@@ -124,14 +119,14 @@ export function OptionsManager({
           </div>
 
           <div className="border-t pt-3 space-y-2">
-            <Label className="text-xs font-semibold">Labels (all languages)</Label>
+            <Label className="text-xs font-semibold">{t("labelsAllLanguages")}</Label>
             {languages.map((lang) => (
               <div key={lang.code} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">
                   {getLanguageName(lang)} ({lang.code.toUpperCase()})
                 </Label>
                 <Input
-                  placeholder={`Label in ${lang.code}`}
+                  placeholder={t("labelPlaceholder", { lang: lang.code })}
                   value={newOptionLabels[lang.code] || ""}
                   onChange={(e) =>
                     setNewOptionLabels({
@@ -144,7 +139,7 @@ export function OptionsManager({
               </div>
             ))}
             <p className="text-xs text-muted-foreground">
-              Fill at least one language. Empty fields auto-fill.
+              {t("fillAtLeastOneAutoFill")}
             </p>
           </div>
 
@@ -156,7 +151,7 @@ export function OptionsManager({
             size="sm"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add Option
+            {t("addOption")}
           </Button>
         </CardContent>
       </Card>
@@ -164,7 +159,7 @@ export function OptionsManager({
       {/* Existing Options List */}
       {options.length > 0 && (
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">Added Options ({options.length})</Label>
+          <Label className="text-sm font-semibold">{t("addedOptions", { count: options.length })}</Label>
           <div className="space-y-2">
             {options.map((option, index) => (
               <Card key={index}>
@@ -216,7 +211,7 @@ export function OptionsManager({
 
       {options.length === 0 && (
         <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-          No options added yet
+          {t("noOptionsYet")}
         </div>
       )}
     </div>

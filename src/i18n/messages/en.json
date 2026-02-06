@@ -1372,7 +1372,21 @@
       "addValueHint": "or Ctrl+Enter",
       "valuesCount": "Values ({count})",
       "noValuesYet": "No values added yet",
-      "fillAtLeastOneLabel": "Fill at least one language. Empty fields auto-fill with the first filled label."
+      "fillAtLeastOneLabel": "Fill at least one language. Empty fields auto-fill with the first filled label.",
+      "fillInAtLeastOneLanguage": "Fill in at least one language. Others will be auto-filled.",
+      "nameInLanguage": "Name in {lang}",
+      "editTitle": "Edit Attribute",
+      "editDescription": "Update attribute definition and options",
+      "keyCannotChange": "Key cannot be changed after creation",
+      "typeCannotChange": "Type cannot be changed after creation",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes",
+      "attributeOptions": "Attribute Options",
+      "attributeOptionsDescription": "Add option values with labels in all languages",
+      "addedOptions": "Added Options ({count})",
+      "addOption": "Add Option",
+      "noOptionsYet": "No options added yet",
+      "fillAtLeastOneAutoFill": "Fill at least one language. Empty fields auto-fill."
     },
     "sidebar": {
       "details": "Details",

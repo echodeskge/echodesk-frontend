@@ -277,7 +277,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="p-0 w-full sm:max-w-4xl" side="right">
           <div className="flex items-center justify-center h-full">
-            <div className="text-sm text-muted-foreground">Loading languages...</div>
+            <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
           </div>
         </SheetContent>
       </Sheet>
@@ -310,7 +310,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                         {t("nameEn")}
                       </FormLabel>
                       <FormDescription>
-                        Fill in at least one language. Others will be auto-filled.
+                        {t("fillInAtLeastOneLanguage")}
                       </FormDescription>
 
                       {activeLanguages.map((lang) => (
@@ -325,7 +325,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                               </FormLabel>
                               <FormControl>
                                 <Input
-                                  placeholder={`Name in ${lang.code}`}
+                                  placeholder={t("nameInLanguage", { lang: lang.code })}
                                   {...field}
                                 />
                               </FormControl>
@@ -402,26 +402,6 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                         )}
                       />
                     )}
-
-                    {/* Sort Order */}
-                    <FormField
-                      control={form.control}
-                      name="sort_order"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("sortOrder")}</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder={t("sortOrderPlaceholder")}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>{t("sortOrderDescription")}</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
 
                     {/* Checkboxes */}
                     <div className="space-y-4">
@@ -509,9 +489,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
               <ScrollArea className="h-full">
                 <div className="p-6 space-y-4">
                   <div>
-                    <h3 className="font-semibold text-lg mb-2">Attribute Values</h3>
+                    <h3 className="font-semibold text-lg mb-2">{t("attributeValues")}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Add values for this {String(attributeType)} attribute
+                      {t("attributeValuesDescription")}
                     </p>
                   </div>
 
@@ -520,9 +500,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                   {/* Add New Option Form */}
                   <div className="space-y-3">
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold">Value (identifier)</Label>
+                      <Label className="text-xs font-semibold">{t("valueIdentifier")}</Label>
                       <Input
-                        placeholder="e.g., red, large, cotton"
+                        placeholder={t("valueIdentifierPlaceholder")}
                         value={newOptionValue}
                         onChange={(e) => setNewOptionValue(e.target.value)}
                         onKeyDown={(e) => {
@@ -539,14 +519,14 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
 
                     {/* All language labels */}
                     <div className="space-y-2">
-                      <Label className="text-xs font-semibold">Labels (all languages)</Label>
+                      <Label className="text-xs font-semibold">{t("labelsAllLanguages")}</Label>
                       {activeLanguages.map((lang) => (
                         <div key={lang.code} className="space-y-1">
                           <Label className="text-xs text-muted-foreground">
                             {getLanguageName(lang)} ({lang.code.toUpperCase()})
                           </Label>
                           <Input
-                            placeholder={`Label in ${lang.code}`}
+                            placeholder={t("labelPlaceholder", { lang: lang.code })}
                             value={newOptionLabels[lang.code] || ""}
                             onChange={(e) =>
                               setNewOptionLabels({
@@ -564,7 +544,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                         </div>
                       ))}
                       <p className="text-xs text-muted-foreground mt-2">
-                        Fill at least one language. Empty fields auto-fill with the first filled label.
+                        {t("fillAtLeastOneLabel")}
                       </p>
                     </div>
 
@@ -575,7 +555,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                       size="sm"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Value (or Ctrl+Enter)
+                      {t("addValue")} ({t("addValueHint")})
                     </Button>
                   </div>
 
@@ -585,13 +565,13 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-semibold">
-                        Values ({options.length})
+                        {t("valuesCount", { count: options.length })}
                       </h4>
                     </div>
 
                     {options.length === 0 ? (
                       <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-                        No values added yet
+                        {t("noValuesYet")}
                       </div>
                     ) : (
                       <div className="space-y-2">

@@ -185,7 +185,7 @@ export function EditAttributeSheet({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent className="p-0 w-full sm:max-w-lg" side="right">
           <div className="flex items-center justify-center h-full">
-            <div className="text-sm text-muted-foreground">Loading languages...</div>
+            <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
           </div>
         </SheetContent>
       </Sheet>
@@ -202,9 +202,9 @@ export function EditAttributeSheet({
         <ScrollArea className="h-full">
           <div className="p-6">
             <SheetHeader>
-              <SheetTitle>Edit Attribute</SheetTitle>
+              <SheetTitle>{t("editTitle")}</SheetTitle>
               <SheetDescription>
-                Update attribute definition and options
+                {t("editDescription")}
               </SheetDescription>
             </SheetHeader>
 
@@ -212,9 +212,9 @@ export function EditAttributeSheet({
               <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
                 {/* Attribute Name - All Languages */}
                 <div className="space-y-3">
-                  <FormLabel className="text-base font-semibold">Attribute Name</FormLabel>
+                  <FormLabel className="text-base font-semibold">{t("nameEn")}</FormLabel>
                   <FormDescription>
-                    Fill in at least one language. Others will be auto-filled.
+                    {t("fillInAtLeastOneLanguage")}
                   </FormDescription>
 
                   {activeLanguages.map((lang) => (
@@ -229,7 +229,7 @@ export function EditAttributeSheet({
                           </FormLabel>
                           <FormControl>
                             <Input
-                              placeholder={`Name in ${lang.code}`}
+                              placeholder={t("nameInLanguage", { lang: lang.code })}
                               {...field}
                             />
                           </FormControl>
@@ -251,7 +251,7 @@ export function EditAttributeSheet({
                         <Input {...field} disabled className="bg-muted" />
                       </FormControl>
                       <FormDescription>
-                        Key cannot be changed after creation
+                        {t("keyCannotChange")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -279,7 +279,7 @@ export function EditAttributeSheet({
                         </SelectContent>
                       </Select>
                       <FormDescription>
-                        Type cannot be changed after creation
+                        {t("typeCannotChange")}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -306,32 +306,14 @@ export function EditAttributeSheet({
                       <FormItem>
                         <FormLabel>{t("unitLabel")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., cm, kg, ml" {...field} />
+                          <Input placeholder={t("unitPlaceholder")} {...field} />
                         </FormControl>
-                        <FormDescription>Unit of measurement</FormDescription>
+                        <FormDescription>{t("unitDescription")}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 )}
-
-                {/* Sort Order */}
-                <FormField
-                  control={form.control}
-                  name="sort_order"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("sortOrder")}</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="0" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Controls display order (lower = first)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Checkboxes */}
                 <div className="space-y-4">
@@ -349,7 +331,7 @@ export function EditAttributeSheet({
                         <div className="space-y-1 leading-none">
                           <FormLabel>{t("requiredLabel")}</FormLabel>
                           <FormDescription>
-                            Products must have this attribute
+                            {t("requiredDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -370,7 +352,7 @@ export function EditAttributeSheet({
                         <div className="space-y-1 leading-none">
                           <FormLabel>{t("filterableLabel")}</FormLabel>
                           <FormDescription>
-                            Show in product filters on storefront
+                            {t("filterableDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -391,7 +373,7 @@ export function EditAttributeSheet({
                         <div className="space-y-1 leading-none">
                           <FormLabel>{t("activeLabel")}</FormLabel>
                           <FormDescription>
-                            Inactive attributes are hidden
+                            {t("activeDescription")}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -408,7 +390,7 @@ export function EditAttributeSheet({
                     {tCommon("cancel")}
                   </Button>
                   <Button type="submit" disabled={updateAttribute.isPending}>
-                    {updateAttribute.isPending ? "Saving..." : "Save Changes"}
+                    {updateAttribute.isPending ? t("saving") : t("saveChanges")}
                   </Button>
                 </SheetFooter>
               </form>
