@@ -1201,7 +1201,7 @@
     "inactive": "არააქტიური",
     "sku": "SKU",
     "price": "ფასი",
-    "comparePrice": "შედარებითი ფასი",
+    "oldPrice": "ძველი ფასი",
     "costPrice": "თვითღირებულება",
     "quantity": "რაოდენობა",
     "lowStockThreshold": "დაბალი მარაგის ზღვარი",
@@ -1223,11 +1223,16 @@
       "shortDescKaPlaceholder": "მოკლე აღწერა",
       "priceLari": "ფასი (₾)",
       "pricePlaceholder": "0.00",
-      "comparePrice": "შედარებითი ფასი",
+      "oldPrice": "ძველი ფასი",
       "costPrice": "თვითღირებულება",
       "productImages": "პროდუქტის სურათები",
       "creating": "იქმნება...",
-      "createProduct": "პროდუქტის შექმნა"
+      "createProduct": "პროდუქტის შექმნა",
+      "deleteProduct": "პროდუქტის წაშლა",
+      "deleteConfirm": "დარწმუნებული ხართ, რომ გსურთ ამ პროდუქტის წაშლა? ეს მოქმედება შეუქცევადია.",
+      "deleting": "იშლება...",
+      "saving": "ინახება...",
+      "saveChanges": "ცვლილებების შენახვა"
     }
   },
   "clients": {

@@ -1201,7 +1201,7 @@
     "inactive": "Inactive",
     "sku": "SKU",
     "price": "Price",
-    "comparePrice": "Compare at Price",
+    "oldPrice": "Old Price",
     "costPrice": "Cost Price",
     "quantity": "Quantity",
     "lowStockThreshold": "Low Stock Threshold",
@@ -1223,11 +1223,16 @@
       "shortDescKaPlaceholder": "მოკლე აღწერა",
       "priceLari": "Price (₾)",
       "pricePlaceholder": "0.00",
-      "comparePrice": "Compare at Price",
+      "oldPrice": "Old Price",
       "costPrice": "Cost Price",
       "productImages": "Product Images",
       "creating": "Creating...",
-      "createProduct": "Create Product"
+      "createProduct": "Create Product",
+      "deleteProduct": "Delete Product",
+      "deleteConfirm": "Are you sure you want to delete this product? This action cannot be undone.",
+      "deleting": "Deleting...",
+      "saving": "Saving...",
+      "saveChanges": "Save Changes"
     }
   },
   "clients": {

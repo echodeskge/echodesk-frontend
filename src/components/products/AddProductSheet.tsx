@@ -58,9 +58,8 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
   const activeLanguages = languagesData?.results || [];
 
-  // Track if user has manually edited SKU or slug
+  // Track if user has manually edited SKU
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   // Selected language for form fields (default to 'ka')
   const [selectedLanguage, setSelectedLanguage] = useState<string>("ka");
@@ -107,7 +106,6 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
     if (open && activeLanguages.length > 0) {
       form.reset(buildDefaultValues());
       setSkuManuallyEdited(false);
-      setSlugManuallyEdited(false);
       setAttributes([]);
       // Reset to 'ka' or first available language
       const kaLang = activeLanguages.find(l => l.code === 'ka');
@@ -118,28 +116,21 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   // Watch the selected language's name field to auto-generate SKU and slug
   const selectedLangName = form.watch(`name.${selectedLanguage}` as any);
 
-  // Auto-generate SKU and slug from selected language name
+  // Auto-generate SKU from selected language name
   useEffect(() => {
     if (selectedLangName && open && selectedLanguage) {
-      // Auto-generate SKU (uppercase with underscores)
+      // Auto-generate SKU (uppercase with underscores, Latin chars only)
       if (!skuManuallyEdited) {
         const generatedSku = selectedLangName
           .toUpperCase()
           .replace(/[^A-Z0-9]+/g, "_")
           .replace(/(^_|_$)/g, "");
-        form.setValue("sku", generatedSku);
-      }
-
-      // Auto-generate slug (lowercase with dashes)
-      if (!slugManuallyEdited) {
-        const generatedSlug = selectedLangName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "");
-        form.setValue("slug", generatedSlug);
+        if (generatedSku) {
+          form.setValue("sku", generatedSku);
+        }
       }
     }
-  }, [selectedLangName, open, skuManuallyEdited, slugManuallyEdited, form, selectedLanguage]);
+  }, [selectedLangName, open, skuManuallyEdited, form, selectedLanguage]);
 
   // Helper to get language name
   const getLanguageName = (lang: Language) => {
@@ -263,49 +254,30 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   )}
                 />
 
-                {/* SKU and Slug */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="sku"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SKU</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="PROD-001"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              setSkuManuallyEdited(true);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("slug")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t("slugPlaceholder")}
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              setSlugManuallyEdited(true);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {/* SKU */}
+                <FormField
+                  control={form.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="PROD-001"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            setSkuManuallyEdited(true);
+                          }}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        Auto-generated from name. Slug is auto-generated from SKU.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Short Description - Selected Language */}
                 <FormField
@@ -348,7 +320,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     name="compare_at_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("comparePrice")}</FormLabel>
+                        <FormLabel>{t("oldPrice")}</FormLabel>
                         <FormControl>
                           <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
                         </FormControl>

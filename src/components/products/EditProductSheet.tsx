@@ -32,13 +32,14 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import { useUpdateProduct } from "@/hooks/useProducts";
+import { useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useLanguages } from "@/hooks/useLanguages";
 import type { ProductDetail, ProductCreateUpdateRequest, Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
+import { Trash2 } from "lucide-react";
 
 interface EditProductSheetProps {
   open: boolean;
@@ -55,6 +56,7 @@ export function EditProductSheet({
   const t = useTranslations("products.addProductSheet");
   const tCommon = useTranslations("common");
   const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
 
   // Fetch active languages
   const { data: languagesData, isLoading: languagesLoading } = useLanguages({
@@ -63,9 +65,8 @@ export function EditProductSheet({
 
   const activeLanguages = languagesData?.results || [];
 
-  // Track if user has manually edited SKU or slug
+  // Track if user has manually edited SKU
   const [skuManuallyEdited, setSkuManuallyEdited] = useState(false);
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   // Selected language for form fields (default to 'ka')
   const [selectedLanguage, setSelectedLanguage] = useState<string>("ka");
@@ -97,7 +98,6 @@ export function EditProductSheet({
     if (open && product && activeLanguages.length > 0) {
       // Reset manual edit flags
       setSkuManuallyEdited(true); // Already has values, don't auto-generate
-      setSlugManuallyEdited(true);
 
       // Set form values
       form.reset({
@@ -214,6 +214,22 @@ export function EditProductSheet({
     }
   };
 
+  const handleDelete = async () => {
+    if (!product?.id) return;
+
+    if (!confirm(t("deleteConfirm"))) {
+      return;
+    }
+
+    try {
+      await deleteProduct.mutateAsync(product.id);
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Failed to delete product:", error);
+      alert(error.message || "Failed to delete product");
+    }
+  };
+
   // Show loading state while fetching languages
   if (languagesLoading || activeLanguages.length === 0) {
     return (
@@ -276,49 +292,27 @@ export function EditProductSheet({
                   )}
                 />
 
-                {/* SKU and Slug */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="sku"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SKU</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="PROD-001"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              setSkuManuallyEdited(true);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("slug")}</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t("slugPlaceholder")}
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(e);
-                              setSlugManuallyEdited(true);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {/* SKU */}
+                <FormField
+                  control={form.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="PROD-001"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            setSkuManuallyEdited(true);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Short Description - Selected Language */}
                 <FormField
@@ -366,7 +360,7 @@ export function EditProductSheet({
                     name="compare_at_price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("comparePrice")}</FormLabel>
+                        <FormLabel>{t("oldPrice")}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -499,17 +493,28 @@ export function EditProductSheet({
                   )}
                 />
 
-                <SheetFooter className="mt-6">
+                <SheetFooter className="mt-6 flex justify-between">
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
+                    variant="destructive"
+                    onClick={handleDelete}
+                    disabled={deleteProduct.isPending}
                   >
-                    {tCommon("cancel")}
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {deleteProduct.isPending ? t("deleting") : t("deleteProduct")}
                   </Button>
-                  <Button type="submit" disabled={updateProduct.isPending}>
-                    {updateProduct.isPending ? "Saving..." : "Save Changes"}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      {tCommon("cancel")}
+                    </Button>
+                    <Button type="submit" disabled={updateProduct.isPending}>
+                      {updateProduct.isPending ? t("saving") : t("saveChanges")}
+                    </Button>
+                  </div>
                 </SheetFooter>
               </form>
             </Form>
