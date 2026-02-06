@@ -18,9 +18,8 @@ import type {
 } from "@/api/generated";
 
 export interface AttributeFilters {
-  attribute_type?: 'boolean' | 'color' | 'date' | 'multiselect' | 'number' | 'select' | 'text';
+  attribute_type?: 'multiselect' | 'number' | 'select';
   is_filterable?: boolean;
-  is_variant_attribute?: boolean;
   search?: string;
   ordering?: string;
   page?: number;
@@ -34,7 +33,6 @@ class AttributeService {
     return ecommerceAdminAttributesList(
       filters?.attribute_type,
       filters?.is_filterable,
-      filters?.is_variant_attribute,
       filters?.ordering,
       filters?.page,
       undefined,

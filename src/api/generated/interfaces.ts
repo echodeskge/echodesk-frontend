@@ -49,7 +49,6 @@ export interface AttributeDefinition {
   options?: any;
   unit?: string;
   is_required?: boolean;
-  is_variant_attribute?: boolean;
   is_filterable?: boolean;
   sort_order?: number;
   is_active?: boolean;
@@ -64,7 +63,6 @@ export interface AttributeDefinitionRequest {
   options?: any;
   unit?: string;
   is_required?: boolean;
-  is_variant_attribute?: boolean;
   is_filterable?: boolean;
   sort_order?: number;
   is_active?: boolean;
@@ -2412,7 +2410,6 @@ export interface PatchedAttributeDefinitionRequest {
   options?: any;
   unit?: string;
   is_required?: boolean;
-  is_variant_attribute?: boolean;
   is_filterable?: boolean;
   sort_order?: number;
   is_active?: boolean;

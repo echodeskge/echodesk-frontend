@@ -4,13 +4,9 @@
  */
 
 export type AttributeType =
-  | "text"
-  | "number"
-  | "boolean"
   | "select"
   | "multiselect"
-  | "color"
-  | "date";
+  | "number";
 
 export type ProductStatus = "draft" | "active" | "inactive" | "out_of_stock";
 
@@ -44,7 +40,6 @@ export interface AttributeDefinition {
   options: any[];
   unit: string;
   is_required: boolean;
-  is_variant_attribute: boolean;
   is_filterable: boolean;
   sort_order: number;
   is_active: boolean;

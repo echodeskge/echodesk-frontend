@@ -58,13 +58,9 @@ export default function ProductAttributesPage() {
   // Get attribute type badge color
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      text: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-      number: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-      boolean: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
       select: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
       multiselect: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
-      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
-      date: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+      number: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
     };
     return colors[type] || "bg-gray-100 text-gray-800";
   };
@@ -170,9 +166,6 @@ export default function ProductAttributesPage() {
                         {attribute.is_required && (
                           <Badge variant="destructive">{t("required")}</Badge>
                         )}
-                        {attribute.is_variant_attribute && (
-                          <Badge variant="secondary">{t("variant")}</Badge>
-                        )}
                         {attribute.is_filterable && (
                           <Badge variant="outline">{t("filterable")}</Badge>
                         )}
@@ -248,7 +241,7 @@ export default function ProductAttributesPage() {
         {/* Stats Footer */}
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold">{totalCount}</div>
                 <div className="text-sm text-muted-foreground">
@@ -260,14 +253,6 @@ export default function ProductAttributesPage() {
                   {attributes.filter((a) => a.is_required).length}
                 </div>
                 <div className="text-sm text-muted-foreground">{t("required")}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold">
-                  {attributes.filter((a) => a.is_variant_attribute).length}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {t("variantAttributes")}
-                </div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold">
@@ -323,11 +308,6 @@ export default function ProductAttributesPage() {
                 {selectedAttribute.is_required && (
                   <Badge variant="destructive" className="mr-2">
                     Required
-                  </Badge>
-                )}
-                {selectedAttribute.is_variant_attribute && (
-                  <Badge variant="secondary" className="mr-2">
-                    Variant Attribute
                   </Badge>
                 )}
                 {selectedAttribute.is_filterable && (

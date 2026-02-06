@@ -2237,16 +2237,8 @@ export async function ecommerceAdminAddressesSetDefaultCreate(
 }
 
 export async function ecommerceAdminAttributesList(
-  attributeType?:
-    | 'boolean'
-    | 'color'
-    | 'date'
-    | 'multiselect'
-    | 'number'
-    | 'select'
-    | 'text',
+  attributeType?: 'multiselect' | 'number' | 'select',
   isFilterable?: boolean,
-  isVariantAttribute?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -2260,9 +2252,6 @@ export async function ecommerceAdminAttributesList(
           : null,
         isFilterable
           ? 'is_filterable=' + encodeURIComponent(isFilterable)
-          : null,
-        isVariantAttribute
-          ? 'is_variant_attribute=' + encodeURIComponent(isVariantAttribute)
           : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
@@ -3278,15 +3267,7 @@ export async function ecommerceClientAddressesSetDefaultCreate(
 }
 
 export async function ecommerceClientAttributesList(
-  attributeType?:
-    | 'boolean'
-    | 'color'
-    | 'date'
-    | 'multiselect'
-    | 'number'
-    | 'select'
-    | 'text',
-  isVariantAttribute?: boolean,
+  attributeType?: 'multiselect' | 'number' | 'select',
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -3296,9 +3277,6 @@ export async function ecommerceClientAttributesList(
       const parts = [
         attributeType
           ? 'attribute_type=' + encodeURIComponent(attributeType)
-          : null,
-        isVariantAttribute
-          ? 'is_variant_attribute=' + encodeURIComponent(isVariantAttribute)
           : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,

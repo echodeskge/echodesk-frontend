@@ -75,10 +75,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
     defaultValues: {
       name: {},
       key: "",
-      attribute_type: "text" as any,
+      attribute_type: "select" as any,
       unit: "",
       is_required: false,
-      is_variant_attribute: false,
       is_filterable: true,
       is_active: true,
       sort_order: 0,
@@ -99,10 +98,9 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
     return {
       name: nameObj as any,
       key: "",
-      attribute_type: "text" as any,
+      attribute_type: "select" as any,
       unit: "",
       is_required: false,
-      is_variant_attribute: false,
       is_filterable: true,
       is_active: true,
       sort_order: 0,
@@ -380,15 +378,11 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="text">{tTypes("text")}</SelectItem>
-                              <SelectItem value="number">{tTypes("number")}</SelectItem>
-                              <SelectItem value="boolean">{tTypes("boolean")}</SelectItem>
                               <SelectItem value="select">{tTypes("select")}</SelectItem>
                               <SelectItem value="multiselect">
                                 {tTypes("multiselect")}
                               </SelectItem>
-                              <SelectItem value="color">{tTypes("color")}</SelectItem>
-                              <SelectItem value="date">{tTypes("date")}</SelectItem>
+                              <SelectItem value="number">{tTypes("number")}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -450,27 +444,6 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                             <div className="space-y-1 leading-none">
                               <FormLabel>{t("requiredLabel")}</FormLabel>
                               <FormDescription>{t("requiredDescription")}</FormDescription>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="is_variant_attribute"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>{t("variantAttributeLabel")}</FormLabel>
-                              <FormDescription>
-                                {t("variantAttributeDescription")}
-                              </FormDescription>
                             </div>
                           </FormItem>
                         )}
