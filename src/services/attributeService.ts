@@ -18,7 +18,7 @@ import type {
 } from "@/api/generated";
 
 export interface AttributeFilters {
-  attribute_type?: 'multiselect' | 'number' | 'select';
+  attribute_type?: 'multiselect' | 'number';
   is_filterable?: boolean;
   search?: string;
   ordering?: string;

@@ -363,9 +363,9 @@ export default function EcommerceSettingsPage() {
     <div className="p-6 space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Ecommerce Settings</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Configure your online store and payment gateway settings
+          {t("subtitle")}
         </p>
       </div>
 
@@ -374,41 +374,41 @@ export default function EcommerceSettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Store className="h-5 w-5" />
-            <CardTitle>Store Information</CardTitle>
+            <CardTitle>{t("storeInfo.title")}</CardTitle>
           </div>
           <CardDescription>
-            Basic information about your online store
+            {t("storeInfo.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="store_name">Store Name</Label>
+              <Label htmlFor="store_name">{t("storeInfo.storeName")}</Label>
               <Input
                 id="store_name"
                 value={settings.store_name}
                 onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                placeholder="My Online Store"
+                placeholder={t("storeInfo.storeNamePlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="store_email">Store Email</Label>
+              <Label htmlFor="store_email">{t("storeInfo.storeEmail")}</Label>
               <Input
                 id="store_email"
                 type="email"
                 value={settings.store_email}
                 onChange={(e) => setSettings({ ...settings, store_email: e.target.value })}
-                placeholder="store@example.com"
+                placeholder={t("storeInfo.storeEmailPlaceholder")}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="store_phone">Store Phone</Label>
+            <Label htmlFor="store_phone">{t("storeInfo.storePhone")}</Label>
             <Input
               id="store_phone"
               value={settings.store_phone}
               onChange={(e) => setSettings({ ...settings, store_phone: e.target.value })}
-              placeholder="+995 555 123 456"
+              placeholder={t("storeInfo.storePhonePlaceholder")}
             />
           </div>
         </CardContent>
@@ -419,10 +419,10 @@ export default function EcommerceSettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
-            <CardTitle>Bank of Georgia Payment Gateway</CardTitle>
+            <CardTitle>{t("bog.title")}</CardTitle>
           </div>
           <CardDescription>
-            Configure BOG payment gateway for card payments
+            {t("bog.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -431,7 +431,7 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <p className="text-sm text-green-800">
-                BOG credentials are configured. Update fields below to change them.
+                {t("bog.credentialsConfigured")}
               </p>
             </div>
           )}
@@ -440,7 +440,7 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <p className="text-sm text-yellow-800">
-                No BOG credentials configured. The system will use test environment with default credentials.
+                {t("bog.noCredentials")}
               </p>
             </div>
           )}
@@ -448,8 +448,8 @@ export default function EcommerceSettingsPage() {
           {/* Client ID */}
           <div className="space-y-2">
             <Label htmlFor="bog_client_id">
-              BOG Client ID
-              <span className="text-muted-foreground text-sm ml-2">(Required for production)</span>
+              {t("bog.clientId")}
+              <span className="text-muted-foreground text-sm ml-2">{t("bog.clientIdRequired")}</span>
             </Label>
             <Input
               id="bog_client_id"
@@ -458,15 +458,15 @@ export default function EcommerceSettingsPage() {
               placeholder="your-bog-client-id"
             />
             <p className="text-xs text-muted-foreground">
-              You can get this from your Bank of Georgia merchant account
+              {t("bog.clientIdHelp")}
             </p>
           </div>
 
           {/* Client Secret */}
           <div className="space-y-2">
             <Label htmlFor="bog_client_secret">
-              BOG Client Secret
-              <span className="text-muted-foreground text-sm ml-2">(Encrypted)</span>
+              {t("bog.clientSecret")}
+              <span className="text-muted-foreground text-sm ml-2">{t("bog.clientSecretEncrypted")}</span>
             </Label>
             <div className="relative">
               <Input
@@ -488,8 +488,8 @@ export default function EcommerceSettingsPage() {
             </div>
             <p className="text-xs text-muted-foreground">
               {hasExistingCredentials
-                ? "Leave empty to keep existing secret. Enter new value to update."
-                : "Your secret will be encrypted before storing"}
+                ? t("bog.clientSecretKeep")
+                : t("bog.clientSecretNew")}
             </p>
           </div>
         </CardContent>
@@ -500,50 +500,50 @@ export default function EcommerceSettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Link2 className="h-5 w-5" />
-            <CardTitle>Payment Return URLs</CardTitle>
+            <CardTitle>{t("returnUrls.title")}</CardTitle>
           </div>
           <CardDescription>
-            Configure where customers are redirected after payment completion
+            {t("returnUrls.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="bog_return_url_success">
-              Success Return URL
+              {t("returnUrls.successUrl")}
               {settings.enable_card_payment && <span className="text-red-500 ml-1">*</span>}
-              <span className="text-muted-foreground text-sm ml-2">(After successful payment)</span>
+              <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.successUrlAfter")}</span>
             </Label>
             <Input
               id="bog_return_url_success"
               type="url"
               value={settings.bog_return_url_success}
               onChange={(e) => setSettings({ ...settings, bog_return_url_success: e.target.value })}
-              placeholder="https://yourstore.com/payment/success"
+              placeholder={t("returnUrls.successUrlPlaceholder")}
               required={settings.enable_card_payment}
             />
             <p className="text-xs text-muted-foreground">
-              Customers will be redirected here after a successful payment
-              {settings.enable_card_payment && " (Required when card payment is enabled)"}
+              {t("returnUrls.successUrlHelp")}
+              {settings.enable_card_payment && ` ${t("returnUrls.requiredWhenCard")}`}
             </p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="bog_return_url_fail">
-              Failure Return URL
+              {t("returnUrls.failUrl")}
               {settings.enable_card_payment && <span className="text-red-500 ml-1">*</span>}
-              <span className="text-muted-foreground text-sm ml-2">(After failed payment)</span>
+              <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.failUrlAfter")}</span>
             </Label>
             <Input
               id="bog_return_url_fail"
               type="url"
               value={settings.bog_return_url_fail}
               onChange={(e) => setSettings({ ...settings, bog_return_url_fail: e.target.value })}
-              placeholder="https://yourstore.com/payment/failed"
+              placeholder={t("returnUrls.failUrlPlaceholder")}
               required={settings.enable_card_payment}
             />
             <p className="text-xs text-muted-foreground">
-              Customers will be redirected here if the payment fails
-              {settings.enable_card_payment && " (Required when card payment is enabled)"}
+              {t("returnUrls.failUrlHelp")}
+              {settings.enable_card_payment && ` ${t("returnUrls.requiredWhenCard")}`}
             </p>
           </div>
 
@@ -551,7 +551,7 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-red-600" />
               <p className="text-sm text-red-800">
-                Return URLs are required when card payment is enabled. Customers will be redirected to these URLs after payment.
+                {t("returnUrls.urlsRequired")}
               </p>
             </div>
           )}
@@ -564,18 +564,18 @@ export default function EcommerceSettingsPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              <CardTitle>Environment Configuration</CardTitle>
+              <CardTitle>{t("environment.title")}</CardTitle>
             </div>
             <CardDescription>
-              Configure BOG API environment for your custom credentials
+              {t("environment.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="bog_use_production">Production Mode</Label>
+                <Label htmlFor="bog_use_production">{t("environment.productionMode")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Use production BOG API (uncheck for test environment)
+                  {t("environment.productionModeDesc")}
                 </p>
               </div>
               <Switch
@@ -591,7 +591,7 @@ export default function EcommerceSettingsPage() {
               <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-blue-600" />
                 <p className="text-sm text-blue-800">
-                  Production mode enabled. Ensure your BOG credentials are valid for production use.
+                  {t("environment.productionEnabled")}
                 </p>
               </div>
             )}
@@ -600,7 +600,7 @@ export default function EcommerceSettingsPage() {
               <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
                 <p className="text-sm text-yellow-800">
-                  Test mode enabled. Payments will use BOG test environment.
+                  {t("environment.testEnabled")}
                 </p>
               </div>
             )}
@@ -613,18 +613,18 @@ export default function EcommerceSettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
-            <CardTitle>Payment Methods</CardTitle>
+            <CardTitle>{t("paymentMethods.title")}</CardTitle>
           </div>
           <CardDescription>
-            Enable or disable payment methods for your store
+            {t("paymentMethods.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="card_payment">Card Payments (BOG)</Label>
+              <Label htmlFor="card_payment">{t("paymentMethods.cardPayments")}</Label>
               <p className="text-sm text-muted-foreground">
-                Accept card payments through Bank of Georgia
+                {t("paymentMethods.cardPaymentsDesc")}
               </p>
             </div>
             <Switch
@@ -640,9 +640,9 @@ export default function EcommerceSettingsPage() {
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="cash_on_delivery">Cash on Delivery</Label>
+              <Label htmlFor="cash_on_delivery">{t("paymentMethods.cashOnDelivery")}</Label>
               <p className="text-sm text-muted-foreground">
-                Allow customers to pay upon delivery
+                {t("paymentMethods.cashOnDeliveryDesc")}
               </p>
             </div>
             <Switch
@@ -658,7 +658,7 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <p className="text-sm text-yellow-800">
-                At least one payment method should be enabled
+                {t("paymentMethods.atLeastOneRequired")}
               </p>
             </div>
           )}
@@ -670,17 +670,17 @@ export default function EcommerceSettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Globe className="h-5 w-5" />
-            <CardTitle>Frontend Deployment</CardTitle>
+            <CardTitle>{t("deployment.title")}</CardTitle>
           </div>
           <CardDescription>
-            Deploy your e-commerce storefront to the web with one click
+            {t("deployment.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Deployment Status */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Deployment Status</Label>
+              <Label>{t("deployment.status")}</Label>
               <div className="flex items-center gap-2 mt-1">
                 <Badge
                   variant={
@@ -703,7 +703,7 @@ export default function EcommerceSettingsPage() {
                   {deploymentInfo.deployment_status === "deploying" && (
                     <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                   )}
-                  {deploymentInfo.deployment_status.toUpperCase()}
+                  {t(`deployment.${deploymentInfo.deployment_status}`)}
                 </Badge>
               </div>
             </div>
@@ -712,7 +712,7 @@ export default function EcommerceSettingsPage() {
           {/* Frontend URL */}
           {deploymentInfo.frontend_url && (
             <div className="space-y-2">
-              <Label>Frontend URL</Label>
+              <Label>{t("deployment.frontendUrl")}</Label>
               <div className="flex items-center gap-2">
                 <Input
                   value={deploymentInfo.frontend_url}
@@ -728,7 +728,7 @@ export default function EcommerceSettingsPage() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Your storefront is live at this URL
+                {t("deployment.frontendUrlLive")}
               </p>
             </div>
           )}
@@ -736,7 +736,7 @@ export default function EcommerceSettingsPage() {
           {/* Vercel Project ID */}
           {deploymentInfo.vercel_project_id && (
             <div className="space-y-2">
-              <Label>Vercel Project ID</Label>
+              <Label>{t("deployment.vercelProjectId")}</Label>
               <Input
                 value={deploymentInfo.vercel_project_id}
                 readOnly
@@ -757,12 +757,12 @@ export default function EcommerceSettingsPage() {
                 {deploying ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Deploying Frontend...
+                    {t("deployment.deployingFrontend")}
                   </>
                 ) : (
                   <>
                     <Rocket className="h-4 w-4 mr-2" />
-                    Deploy Frontend
+                    {t("deployment.deployFrontend")}
                   </>
                 )}
               </Button>
@@ -778,12 +778,12 @@ export default function EcommerceSettingsPage() {
                   {deploying ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Redeploying...
+                      {t("deployment.redeploying")}
                     </>
                   ) : (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      Redeploy Frontend
+                      {t("deployment.redeployFrontend")}
                     </>
                   )}
                 </Button>
@@ -808,7 +808,7 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <p className="text-sm text-blue-800">
-                Click "Deploy Frontend" to create your online store. This will deploy a fully functional e-commerce website configured with your store settings.
+                {t("deployment.deployInfo")}
               </p>
             </div>
           )}
@@ -817,7 +817,7 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-red-600" />
               <p className="text-sm text-red-800">
-                Last deployment failed. Please try again or contact support if the issue persists.
+                {t("deployment.deployFailed")}
               </p>
             </div>
           )}
@@ -826,7 +826,7 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <p className="text-sm text-green-800">
-                Your storefront is live and accessible to customers. Any changes to store settings will require a redeploy.
+                {t("deployment.deploySuccess")}
               </p>
             </div>
           )}
@@ -839,21 +839,21 @@ export default function EcommerceSettingsPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
-              <CardTitle>Custom Domain</CardTitle>
+              <CardTitle>{t("customDomain.title")}</CardTitle>
             </div>
             <CardDescription>
-              Connect your own domain to your storefront (e.g., shop.yourdomain.com)
+              {t("customDomain.description")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Add New Domain */}
             <div className="space-y-2">
-              <Label>Add Custom Domain</Label>
+              <Label>{t("customDomain.addDomain")}</Label>
               <div className="flex gap-2">
                 <Input
                   value={newDomain}
                   onChange={(e) => setNewDomain(e.target.value)}
-                  placeholder="shop.example.com"
+                  placeholder={t("customDomain.domainPlaceholder")}
                   disabled={addingDomain}
                 />
                 <Button
@@ -868,34 +868,34 @@ export default function EcommerceSettingsPage() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Enter your domain name without http:// or https://
+                {t("customDomain.domainHelp")}
               </p>
             </div>
 
             {/* DNS Instructions */}
             {dnsInstructions.length > 0 && (
               <div className="space-y-3">
-                <Label>DNS Configuration Required</Label>
+                <Label>{t("customDomain.dnsRequired")}</Label>
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg space-y-3">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-5 w-5 text-yellow-600" />
                     <p className="text-sm font-medium text-yellow-800">
-                      Add the following DNS record to your domain provider:
+                      {t("customDomain.dnsInstruction")}
                     </p>
                   </div>
                   {dnsInstructions.map((instruction, index) => (
                     <div key={index} className="bg-white p-3 rounded border space-y-2">
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div>
-                          <span className="text-muted-foreground">Type:</span>
+                          <span className="text-muted-foreground">{t("customDomain.dnsType")}</span>
                           <p className="font-mono font-medium">{instruction.type}</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Name:</span>
+                          <span className="text-muted-foreground">{t("customDomain.dnsName")}</span>
                           <p className="font-mono font-medium">{instruction.name}</p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">Value:</span>
+                          <span className="text-muted-foreground">{t("customDomain.dnsValue")}</span>
                           <div className="flex items-center gap-1">
                             <p className="font-mono font-medium text-xs break-all">{instruction.value}</p>
                             <Button
@@ -917,7 +917,7 @@ export default function EcommerceSettingsPage() {
                     </div>
                   ))}
                   <p className="text-xs text-yellow-700">
-                    DNS changes can take up to 48 hours to propagate, but usually complete within a few minutes.
+                    {t("customDomain.dnsPropagation")}
                   </p>
                 </div>
               </div>
@@ -926,7 +926,7 @@ export default function EcommerceSettingsPage() {
             {/* Existing Domains List */}
             {domains.length > 0 && (
               <div className="space-y-3">
-                <Label>Your Domains</Label>
+                <Label>{t("customDomain.yourDomains")}</Label>
                 <div className="space-y-2">
                   {domains.map((domain) => (
                     <div
@@ -940,7 +940,7 @@ export default function EcommerceSettingsPage() {
                           variant={domain.verified ? "default" : "secondary"}
                           className={domain.verified ? "bg-green-500" : "bg-yellow-500"}
                         >
-                          {domain.verified ? "Verified" : "Pending"}
+                          {domain.verified ? t("customDomain.verified") : t("customDomain.pendingVerification")}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2">
@@ -956,7 +956,7 @@ export default function EcommerceSettingsPage() {
                             ) : (
                               <RefreshCcw className="h-4 w-4" />
                             )}
-                            <span className="ml-1">Verify</span>
+                            <span className="ml-1">{t("customDomain.verify")}</span>
                           </Button>
                         )}
                         {domain.verified && (
@@ -992,12 +992,12 @@ export default function EcommerceSettingsPage() {
             <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-blue-600" />
               <div className="text-sm text-blue-800">
-                <p className="font-medium">How to set up your custom domain:</p>
+                <p className="font-medium">{t("customDomain.howToSetup")}</p>
                 <ol className="list-decimal list-inside mt-1 space-y-1">
-                  <li>Add your domain above</li>
-                  <li>Configure DNS records with your domain provider</li>
-                  <li>Click "Verify" to check the configuration</li>
-                  <li>Once verified, your store will be accessible via your custom domain</li>
+                  <li>{t("customDomain.step1")}</li>
+                  <li>{t("customDomain.step2")}</li>
+                  <li>{t("customDomain.step3")}</li>
+                  <li>{t("customDomain.step4")}</li>
                 </ol>
               </div>
             </div>
@@ -1012,7 +1012,7 @@ export default function EcommerceSettingsPage() {
           disabled={saving || (!settings.enable_card_payment && !settings.enable_cash_on_delivery)}
           size="lg"
         >
-          {saving ? "Saving..." : "Save Settings"}
+          {saving ? t("saving") : t("save")}
         </Button>
       </div>
     </div>

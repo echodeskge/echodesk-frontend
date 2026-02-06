@@ -75,7 +75,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
     defaultValues: {
       name: {},
       key: "",
-      attribute_type: "select" as any,
+      attribute_type: "multiselect" as any,
       unit: "",
       is_required: false,
       is_filterable: true,
@@ -98,7 +98,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
     return {
       name: nameObj as any,
       key: "",
-      attribute_type: "select" as any,
+      attribute_type: "multiselect" as any,
       unit: "",
       is_required: false,
       is_filterable: true,
@@ -250,13 +250,10 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
         return;
       }
 
-      // Handle options for select types
-      if (
-        String(attributeType) === "select" ||
-        String(attributeType) === "multiselect"
-      ) {
+      // Handle options for multiselect type
+      if (String(attributeType) === "multiselect") {
         if (options.length === 0) {
-          alert("Please add at least one option for select/multiselect types");
+          alert("Please add at least one option for multiselect type");
           return;
         }
         data.options = options as any;
@@ -287,8 +284,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
     );
   }
 
-  const showOptionsSection =
-    String(attributeType) === "select" || String(attributeType) === "multiselect";
+  const showOptionsSection = String(attributeType) === "multiselect";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -366,7 +362,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                           <Select
                             onValueChange={(value) => {
                               field.onChange(value);
-                              if (value !== "select" && value !== "multiselect") {
+                              if (value !== "multiselect") {
                                 setOptions([]);
                               }
                             }}
@@ -378,7 +374,6 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="select">{tTypes("select")}</SelectItem>
                               <SelectItem value="multiselect">
                                 {tTypes("multiselect")}
                               </SelectItem>

@@ -61,14 +61,14 @@ export function EditAttributeSheet({
 
   const activeLanguages = languagesData?.results || [];
 
-  // Options state (for select/multiselect types)
+  // Options state (for multiselect type)
   const [options, setOptions] = useState<AttributeOption[]>([]);
 
   const form = useForm<Partial<AttributeDefinition>>({
     defaultValues: {
       name: {},
       key: "",
-      attribute_type: "select" as any,
+      attribute_type: "multiselect" as any,
       unit: "",
       is_required: false,
       is_filterable: true,
@@ -142,12 +142,8 @@ export function EditAttributeSheet({
         });
       }
 
-      // Add options if attribute type is select or multiselect
-      if (
-        (String(attributeType) === "select" ||
-          String(attributeType) === "multiselect") &&
-        options.length > 0
-      ) {
+      // Add options if attribute type is multiselect
+      if (String(attributeType) === "multiselect" && options.length > 0) {
         // Validate options: each must have value and at least one language
         const invalidOptions = options.filter((opt) => {
           if (!opt.value?.trim()) return true;
@@ -162,15 +158,12 @@ export function EditAttributeSheet({
         }
 
         data.options = options as any;
-      } else if (
-        String(attributeType) === "select" ||
-        String(attributeType) === "multiselect"
-      ) {
-        // Require at least one option for select types
-        alert("Please add at least one option for select/multiselect types");
+      } else if (String(attributeType) === "multiselect") {
+        // Require at least one option for multiselect type
+        alert("Please add at least one option for multiselect type");
         return;
       } else {
-        // For non-select types, ensure options is empty array
+        // For non-multiselect types, ensure options is empty array
         data.options = [];
       }
 
@@ -279,7 +272,6 @@ export function EditAttributeSheet({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="select">{tTypes("select")}</SelectItem>
                           <SelectItem value="multiselect">
                             {tTypes("multiselect")}
                           </SelectItem>
@@ -294,9 +286,8 @@ export function EditAttributeSheet({
                   )}
                 />
 
-                {/* Options Manager (for select/multiselect types) */}
-                {(String(attributeType) === "select" ||
-                  String(attributeType) === "multiselect") && (
+                {/* Options Manager (for multiselect type) */}
+                {String(attributeType) === "multiselect" && (
                   <div className="border rounded-lg p-4 bg-muted/30">
                     <OptionsManager
                       options={options}

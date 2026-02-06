@@ -58,7 +58,6 @@ export default function ProductAttributesPage() {
   // Get attribute type badge color
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
-      select: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
       multiselect: "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300",
       number: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
     };
@@ -161,7 +160,7 @@ export default function ProductAttributesPage() {
                           {getAttributeName(attribute)}
                         </CardTitle>
                         <Badge className={getTypeColor(String(attribute.attribute_type))}>
-                          {String(attribute.attribute_type)}
+                          {t(`types.${attribute.attribute_type}`)}
                         </Badge>
                         {attribute.is_required && (
                           <Badge variant="destructive">{t("required")}</Badge>
@@ -171,7 +170,7 @@ export default function ProductAttributesPage() {
                         )}
                         {!attribute.is_active && (
                           <Badge variant="outline" className="opacity-50">
-                            Inactive
+                            {t("sidebar.inactive")}
                           </Badge>
                         )}
                       </div>
@@ -271,7 +270,7 @@ export default function ProductAttributesPage() {
           <div className="space-y-2">
             <h2 className="text-xl font-bold">{getAttributeName(selectedAttribute)}</h2>
             <Badge className={getTypeColor(String(selectedAttribute.attribute_type))}>
-              {String(selectedAttribute.attribute_type)}
+              {t(`types.${selectedAttribute.attribute_type}`)}
             </Badge>
           </div>
 
@@ -279,49 +278,45 @@ export default function ProductAttributesPage() {
 
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold mb-2">Details</h3>
+              <h3 className="text-sm font-semibold mb-2">{t("sidebar.details")}</h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">Key:</span>
+                  <span className="text-muted-foreground">{t("sidebar.key")}</span>
                   <code className="ml-2 bg-muted px-1 rounded">
                     {selectedAttribute.key}
                   </code>
                 </div>
                 {selectedAttribute.unit && (
                   <div>
-                    <span className="text-muted-foreground">Unit:</span>
+                    <span className="text-muted-foreground">{t("sidebar.unit")}</span>
                     <span className="ml-2">{selectedAttribute.unit}</span>
                   </div>
                 )}
-                <div>
-                  <span className="text-muted-foreground">Sort Order:</span>
-                  <span className="ml-2">{selectedAttribute.sort_order}</span>
-                </div>
               </div>
             </div>
 
             <Separator />
 
             <div>
-              <h3 className="text-sm font-semibold mb-2">Properties</h3>
+              <h3 className="text-sm font-semibold mb-2">{t("sidebar.properties")}</h3>
               <div className="space-y-2">
                 {selectedAttribute.is_required && (
                   <Badge variant="destructive" className="mr-2">
-                    Required
+                    {t("sidebar.required")}
                   </Badge>
                 )}
                 {selectedAttribute.is_filterable && (
                   <Badge variant="outline" className="mr-2">
-                    Filterable
+                    {t("sidebar.filterable")}
                   </Badge>
                 )}
                 {selectedAttribute.is_active ? (
                   <Badge variant="default" className="mr-2">
-                    Active
+                    {t("sidebar.active")}
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="mr-2 opacity-50">
-                    Inactive
+                    {t("sidebar.inactive")}
                   </Badge>
                 )}
               </div>
@@ -334,7 +329,7 @@ export default function ProductAttributesPage() {
                   <Separator />
                   <div>
                     <h3 className="text-sm font-semibold mb-3">
-                      Attribute Values ({selectedAttribute.options.length})
+                      {t("sidebar.attributeValues")} ({selectedAttribute.options.length})
                     </h3>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {selectedAttribute.options.map((option: any, idx: number) => (
@@ -345,7 +340,7 @@ export default function ProductAttributesPage() {
                             </div>
                             {option.value && (
                               <div className="text-xs text-muted-foreground">
-                                Value: <code className="bg-muted px-1 rounded">{option.value}</code>
+                                {t("sidebar.value")} <code className="bg-muted px-1 rounded">{option.value}</code>
                               </div>
                             )}
                           </div>
@@ -365,7 +360,7 @@ export default function ProductAttributesPage() {
               }}
             >
               <Edit className="h-4 w-4 mr-2" />
-              Edit Attribute
+              {t("sidebar.editAttribute")}
             </Button>
           </div>
         </div>

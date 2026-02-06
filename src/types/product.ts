@@ -4,7 +4,6 @@
  */
 
 export type AttributeType =
-  | "select"
   | "multiselect"
   | "number";
 
