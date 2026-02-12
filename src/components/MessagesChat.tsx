@@ -412,34 +412,13 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
             const messages = (messagesResponse.data as PaginatedResponse<InstagramMessage>).results || [];
 
-            // Group messages by customer (sender)
-            const customerIds = new Set<string>();
-            messages.forEach((msg) => {
-              if (!msg.is_from_business) {
-                customerIds.add(msg.sender_id);
-              }
-            });
-
             const conversationMap = new Map<string, InstagramMessage[]>();
-            const sortedMessages = [...messages].sort((a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-            );
 
-            let lastCustomerId: string | null = null;
-
-            sortedMessages.forEach((msg) => {
-              let customerId: string;
-
-              if (msg.is_from_business) {
-                if (lastCustomerId) {
-                  customerId = lastCustomerId;
-                } else {
-                  customerId = customerIds.size === 1 ? Array.from(customerIds)[0] : msg.sender_id;
-                }
-              } else {
-                customerId = msg.sender_id;
-                lastCustomerId = customerId;
-              }
+            // Group messages by customer ID
+            // For both customer and business messages, sender_id contains the customer ID
+            // (Backend stores recipient_id in sender_id for business messages)
+            messages.forEach((msg) => {
+              const customerId = msg.sender_id;
 
               if (!conversationMap.has(customerId)) {
                 conversationMap.set(customerId, []);
