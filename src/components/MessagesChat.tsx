@@ -175,9 +175,16 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const chatId = params.id as string | undefined;
 
   // Use React Query hooks for platform status (cached and shared across components)
-  const { data: facebookStatusData } = useFacebookStatus();
-  const { data: instagramStatusData } = useInstagramStatus();
-  const { data: whatsAppStatusData } = useWhatsAppStatus();
+  const { data: facebookStatusData, isSuccess: facebookStatusLoaded } = useFacebookStatus();
+  const { data: instagramStatusData, isSuccess: instagramStatusLoaded } = useInstagramStatus();
+  const { data: whatsAppStatusData, isSuccess: whatsAppStatusLoaded } = useWhatsAppStatus();
+
+  // Check if all enabled platform statuses are loaded
+  const statusDataReady = (
+    (!enabledPlatforms.includes('facebook') || facebookStatusLoaded) &&
+    (!enabledPlatforms.includes('instagram') || instagramStatusLoaded) &&
+    (!enabledPlatforms.includes('whatsapp') || whatsAppStatusLoaded)
+  );
 
   // Platform-specific cache key to prevent showing wrong data when navigating
   const platformsKey = enabledPlatforms.sort().join('_');
@@ -807,14 +814,18 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     reconnectInterval: 3000,
   });
 
-  // Initial load - only runs once
+  // Initial load - only runs once when status data is ready
   useEffect(() => {
     if (hasInitiallyLoadedRef.current) {
       return;
     }
+    // Wait for platform status data to be loaded before fetching conversations
+    if (!statusDataReady) {
+      return;
+    }
     hasInitiallyLoadedRef.current = true;
     loadAllConversations();
-  }, [loadAllConversations]);
+  }, [loadAllConversations, statusDataReady]);
 
   // Reload when folder changes (only for email platform)
   useEffect(() => {
