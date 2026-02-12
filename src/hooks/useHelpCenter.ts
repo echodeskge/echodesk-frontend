@@ -72,8 +72,8 @@ export const helpCenterKeys = {
     [...helpCenterKeys.all, 'search', query, params] as const,
 };
 
-// Base URL - use public API (no tenant required)
-const HELP_API_BASE = '/api/help/public';
+// Base URL - use main API (help center is shared across all tenants)
+const HELP_API_BASE = 'https://api.echodesk.ge/api/help/public';
 
 // Hooks
 export function useHelpCategories(params?: {

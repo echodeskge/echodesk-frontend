@@ -197,12 +197,12 @@ export default function ServicesPage() {
                         <TableCell className="font-medium">{formatCurrency(service.base_price)}</TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {service.booking_type === "duration_based" ? t("durationBased") : t("fixedSlots")}
+                            {(service.booking_type as unknown as string) === "duration_based" ? t("durationBased") : t("fixedSlots")}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={service.status as unknown as string === "active" ? "default" : "secondary"}>
-                            {service.status === "active" ? t("active") : t("inactive")}
+                          <Badge variant={(service.status as unknown as string) === "active" ? "default" : "secondary"}>
+                            {(service.status as unknown as string) === "active" ? t("active") : t("inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
