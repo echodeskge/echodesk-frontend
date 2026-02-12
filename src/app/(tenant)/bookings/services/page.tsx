@@ -26,8 +26,8 @@ export default function ServicesPage() {
     name: "",
     description: "",
     duration_minutes: "60",
-    price: "",
-    booking_type: "single" as "single" | "recurring",
+    base_price: "",
+    booking_type: "duration_based" as "duration_based" | "fixed_slots",
     status: "active" as "active" | "inactive",
   })
 
@@ -55,8 +55,8 @@ export default function ServicesPage() {
         name: typeof service.name === 'string' ? service.name : service.name.en || "",
         description: typeof service.description === 'string' ? service.description : service.description?.en || "",
         duration_minutes: service.duration_minutes?.toString() || "60",
-        price: service.base_price || "",
-        booking_type: (service.booking_type || "single") as "single" | "recurring",
+        base_price: service.base_price || "",
+        booking_type: (service.booking_type || "duration_based") as "duration_based" | "fixed_slots",
         status: (service.status || "active") as "active" | "inactive",
       })
     } else {
@@ -65,8 +65,8 @@ export default function ServicesPage() {
         name: "",
         description: "",
         duration_minutes: "60",
-        price: "",
-        booking_type: "single",
+        base_price: "",
+        booking_type: "duration_based",
         status: "active",
       })
     }
@@ -259,13 +259,13 @@ export default function ServicesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="price">Price (₾)</Label>
+                <Label htmlFor="base_price">Price (₾)</Label>
                 <Input
-                  id="price"
+                  id="base_price"
                   type="number"
                   step="0.01"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  value={formData.base_price}
+                  onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
                 />
               </div>
             </div>
@@ -280,8 +280,8 @@ export default function ServicesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single">Single</SelectItem>
-                    <SelectItem value="recurring">Recurring</SelectItem>
+                    <SelectItem value="duration_based">Duration Based</SelectItem>
+                    <SelectItem value="fixed_slots">Fixed Time Slots</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
