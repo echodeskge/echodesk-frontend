@@ -2429,5 +2429,63 @@
     "invoicesFound": "{count} invoice(s) found",
     "invoiceNotFound": "Invoice not found",
     "createInvoiceDesc": "Create a new invoice for your client"
+  },
+  "bookingSettings": {
+    "title": "Booking Settings",
+    "subtitle": "Configure your booking system preferences",
+    "success": "Success",
+    "error": "Error",
+    "settingsSaved": "Settings saved successfully",
+    "settingsSaveFailed": "Failed to save settings",
+    "saveSettings": "Save Settings",
+    "paymentSettings": {
+      "title": "Payment Settings",
+      "description": "Configure payment options for bookings",
+      "requireDeposit": "Require Deposit",
+      "requireDepositDesc": "Require deposit payment for all bookings",
+      "allowCash": "Allow Cash Payment",
+      "allowCashDesc": "Allow customers to pay in cash on arrival",
+      "allowCard": "Allow Card Payment",
+      "allowCardDesc": "Allow customers to pay by card via BOG"
+    },
+    "bogSettings": {
+      "title": "Bank of Georgia Payment Gateway",
+      "description": "Configure BOG credentials for card payments",
+      "clientId": "BOG Client ID",
+      "clientIdPlaceholder": "Enter your BOG client ID",
+      "clientSecret": "BOG Client Secret",
+      "clientSecretPlaceholder": "Enter new secret to update",
+      "clientSecretHelp": "Leave empty to keep existing secret",
+      "productionMode": "Production Mode",
+      "productionModeDesc": "Use production BOG API (uncheck for test environment)"
+    },
+    "bookingRules": {
+      "title": "Booking Rules",
+      "description": "Set time constraints for bookings",
+      "minHours": "Minimum Hours Before Booking",
+      "minHoursDesc": "Minimum hours in advance customers must book",
+      "maxDays": "Maximum Days in Advance",
+      "maxDaysDesc": "Maximum days in advance customers can book"
+    },
+    "cancellation": {
+      "title": "Cancellation Policy",
+      "description": "Configure cancellation rules and refunds",
+      "hours": "Cancellation Hours",
+      "hoursDesc": "Minimum hours before booking that customers can cancel",
+      "refundPolicy": "Refund Policy",
+      "refundPolicyDesc": "Amount refunded when booking is cancelled",
+      "refundFull": "Full Refund",
+      "refund50": "50% Refund",
+      "refund25": "25% Refund",
+      "noRefund": "No Refund"
+    },
+    "autoConfirm": {
+      "title": "Auto Confirmation",
+      "description": "Automatically confirm bookings based on payment",
+      "onDeposit": "Auto Confirm on Deposit",
+      "onDepositDesc": "Automatically confirm booking when deposit is paid",
+      "onFullPayment": "Auto Confirm on Full Payment",
+      "onFullPaymentDesc": "Automatically confirm booking when fully paid"
+    }
   }
 }
