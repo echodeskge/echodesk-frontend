@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
+import { useLocale } from "next-intl"
 import { bookingsAdminClientsList } from "@/api/generated"
 import { BookingClient } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +13,8 @@ import { Search, Users, Mail, Phone } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function ClientsPage() {
+  const t = useTranslations("bookingsClients")
+  const locale = useLocale()
   const { toast } = useToast()
   const [clients, setClients] = useState<BookingClient[]>([])
   const [loading, setLoading] = useState(true)
@@ -27,7 +31,7 @@ export default function ClientsPage() {
       setClients((response.results || response) as BookingClient[])
     } catch (error) {
       console.error("Failed to fetch clients:", error)
-      toast({ title: "Error", description: "Failed to fetch clients", variant: "destructive" })
+      toast({ title: t("error"), description: t("fetchFailed"), variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -41,7 +45,7 @@ export default function ClientsPage() {
   })
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString(locale === "ka" ? "ka-GE" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -62,21 +66,21 @@ export default function ClientsPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Booking Clients</h1>
-        <p className="text-muted-foreground mt-1">Manage clients who make bookings</p>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div>
-              <CardTitle>All Clients</CardTitle>
-              <CardDescription>{filteredClients.length} client(s) found</CardDescription>
+              <CardTitle>{t("allClients")}</CardTitle>
+              <CardDescription>{t("clientsFound", { count: filteredClients.length })}</CardDescription>
             </div>
             <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search clients..."
+                placeholder={t("searchClients")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8"
@@ -88,19 +92,19 @@ export default function ClientsPage() {
           {filteredClients.length === 0 ? (
             <div className="text-center py-12">
               <Users className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No clients found</h3>
-              <p className="text-muted-foreground mt-2">No clients match your search</p>
+              <h3 className="mt-4 text-lg font-semibold">{t("noClientsFound")}</h3>
+              <p className="text-muted-foreground mt-2">{t("noClientsMatch")}</p>
             </div>
           ) : (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead>{t("name")}</TableHead>
+                    <TableHead>{t("email")}</TableHead>
+                    <TableHead>{t("phone")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead>{t("joined")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -118,12 +122,12 @@ export default function ClientsPage() {
                       <TableCell>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Phone className="h-4 w-4" />
-                          {client.phone_number || "N/A"}
+                          {client.phone_number || t("na")}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={client.is_verified ? "default" : "secondary"}>
-                          {client.is_verified ? "Verified" : "Unverified"}
+                          {client.is_verified ? t("verified") : t("unverified")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">

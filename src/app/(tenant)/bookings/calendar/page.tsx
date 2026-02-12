@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { bookingsAdminBookingsList } from "@/api/generated"
 import { BookingList } from "@/api/generated/interfaces"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, ChevronLeft, ChevronRight, Filter } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import FullCalendar from "@fullcalendar/react"
 import dayGridPlugin from "@fullcalendar/daygrid"
@@ -26,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 export default function BookingCalendarPage() {
+  const t = useTranslations("bookingsCalendar")
   const { toast } = useToast()
   const [bookings, setBookings] = useState<BookingList[]>([])
   const [loading, setLoading] = useState(true)
@@ -44,7 +45,7 @@ export default function BookingCalendarPage() {
       setBookings((response.results || response) as BookingList[])
     } catch (error) {
       console.error("Failed to fetch bookings:", error)
-      toast({ title: "Error", description: "Failed to fetch bookings", variant: "destructive" })
+      toast({ title: t("error"), description: t("fetchFailed"), variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -74,7 +75,7 @@ export default function BookingCalendarPage() {
   const handleEventClick = ({ event }: { event: EventImpl }) => {
     const booking = event.extendedProps.booking as BookingList
     toast({
-      title: `Booking #${booking.booking_number}`,
+      title: `${t("pending")} #${booking.booking_number}`,
       description: `${booking.client.full_name} - ${typeof booking.service.name === 'string' ? booking.service.name : booking.service.name.en}`,
     })
   }
@@ -133,8 +134,8 @@ export default function BookingCalendarPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Booking Calendar</h1>
-        <p className="text-muted-foreground mt-1">View and manage your bookings in calendar format</p>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       <Card>
@@ -145,7 +146,7 @@ export default function BookingCalendarPage() {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={handleTodayClick}>
-                Today
+                {t("today")}
               </Button>
               <Button variant="outline" size="sm" onClick={handleNextClick}>
                 <ChevronRight className="h-4 w-4" />
@@ -160,28 +161,28 @@ export default function BookingCalendarPage() {
                 size="sm"
                 onClick={() => handleViewChange("dayGridMonth")}
               >
-                Month
+                {t("month")}
               </Button>
               <Button
                 variant={selectedView === "timeGridWeek" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleViewChange("timeGridWeek")}
               >
-                Week
+                {t("week")}
               </Button>
               <Button
                 variant={selectedView === "timeGridDay" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleViewChange("timeGridDay")}
               >
-                Day
+                {t("day")}
               </Button>
               <Button
                 variant={selectedView === "listWeek" ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleViewChange("listWeek")}
               >
-                List
+                {t("list")}
               </Button>
             </div>
           </div>
@@ -189,23 +190,23 @@ export default function BookingCalendarPage() {
           <div className="flex flex-wrap gap-2 mt-4">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.pending }}></div>
-              <span className="text-xs">Pending</span>
+              <span className="text-xs">{t("pending")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.confirmed }}></div>
-              <span className="text-xs">Confirmed</span>
+              <span className="text-xs">{t("confirmed")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.in_progress }}></div>
-              <span className="text-xs">In Progress</span>
+              <span className="text-xs">{t("inProgress")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.completed }}></div>
-              <span className="text-xs">Completed</span>
+              <span className="text-xs">{t("completed")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: STATUS_COLORS.cancelled }}></div>
-              <span className="text-xs">Cancelled</span>
+              <span className="text-xs">{t("cancelled")}</span>
             </div>
           </div>
         </CardHeader>

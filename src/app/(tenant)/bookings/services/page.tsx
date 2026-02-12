@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { bookingsAdminServicesList, bookingsAdminServicesCreate, bookingsAdminServicesPartialUpdate, bookingsAdminServicesDestroy } from "@/api/generated"
 import { ServiceList } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +17,7 @@ import { Search, Briefcase, Plus, Edit, Trash2, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function ServicesPage() {
+  const t = useTranslations("bookingsServices")
   const { toast } = useToast()
   const [services, setServices] = useState<ServiceList[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +44,7 @@ export default function ServicesPage() {
       setServices((response.results || response) as ServiceList[])
     } catch (error) {
       console.error("Failed to fetch services:", error)
-      toast({ title: "Error", description: "Failed to fetch services", variant: "destructive" })
+      toast({ title: t("error"), description: t("fetchFailed"), variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -77,29 +79,29 @@ export default function ServicesPage() {
     try {
       if (editingService) {
         await bookingsAdminServicesPartialUpdate(editingService.id, formData as any)
-        toast({ title: "Success", description: "Service updated successfully" })
+        toast({ title: t("success"), description: t("serviceUpdated") })
       } else {
         await bookingsAdminServicesCreate(formData as any)
-        toast({ title: "Success", description: "Service created successfully" })
+        toast({ title: t("success"), description: t("serviceCreated") })
       }
       setIsDialogOpen(false)
       fetchServices()
     } catch (error) {
       console.error("Failed to save service:", error)
-      toast({ title: "Error", description: "Failed to save service", variant: "destructive" })
+      toast({ title: t("error"), description: t("saveFailed"), variant: "destructive" })
     }
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this service?")) return
+    if (!confirm(t("confirmDelete"))) return
 
     try {
       await bookingsAdminServicesDestroy(id)
-      toast({ title: "Success", description: "Service deleted successfully" })
+      toast({ title: t("success"), description: t("serviceDeleted") })
       fetchServices()
     } catch (error) {
       console.error("Failed to delete service:", error)
-      toast({ title: "Error", description: "Failed to delete service", variant: "destructive" })
+      toast({ title: t("error"), description: t("deleteFailed"), variant: "destructive" })
     }
   }
 
@@ -126,22 +128,22 @@ export default function ServicesPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Services</h1>
-        <p className="text-muted-foreground mt-1">Manage your bookable services</p>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div>
-              <CardTitle>All Services</CardTitle>
-              <CardDescription>{filteredServices.length} service(s) found</CardDescription>
+              <CardTitle>{t("allServices")}</CardTitle>
+              <CardDescription>{t("servicesFound", { count: filteredServices.length })}</CardDescription>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search services..."
+                  placeholder={t("searchServices")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8"
@@ -149,7 +151,7 @@ export default function ServicesPage() {
               </div>
               <Button onClick={() => handleOpenDialog()}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add Service
+                {t("addService")}
               </Button>
             </div>
           </div>
@@ -158,11 +160,11 @@ export default function ServicesPage() {
           {filteredServices.length === 0 ? (
             <div className="text-center py-12">
               <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No services found</h3>
-              <p className="text-muted-foreground mt-2">Get started by creating your first service</p>
+              <h3 className="mt-4 text-lg font-semibold">{t("noServicesFound")}</h3>
+              <p className="text-muted-foreground mt-2">{t("getStartedServices")}</p>
               <Button className="mt-4" onClick={() => handleOpenDialog()}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Service
+                {t("createService")}
               </Button>
             </div>
           ) : (
@@ -170,12 +172,12 @@ export default function ServicesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Service Name</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("serviceName")}</TableHead>
+                    <TableHead>{t("duration")}</TableHead>
+                    <TableHead>{t("price")}</TableHead>
+                    <TableHead>{t("type")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="text-right">{t("actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -189,16 +191,18 @@ export default function ServicesPage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span>{service.duration_minutes} min</span>
+                            <span>{service.duration_minutes} {t("min")}</span>
                           </div>
                         </TableCell>
                         <TableCell className="font-medium">{formatCurrency(service.base_price)}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{service.booking_type as any}</Badge>
+                          <Badge variant="outline">
+                            {service.booking_type === "duration_based" ? t("durationBased") : t("fixedSlots")}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={service.status as unknown as string === "active" ? "default" : "secondary"}>
-                            {service.status as any}
+                            {service.status === "active" ? t("active") : t("inactive")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -224,33 +228,33 @@ export default function ServicesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{editingService ? "Edit Service" : "Create Service"}</DialogTitle>
+            <DialogTitle>{editingService ? t("editService") : t("createService")}</DialogTitle>
             <DialogDescription>
-              {editingService ? "Update service details" : "Add a new bookable service"}
+              {editingService ? t("updateServiceDetails") : t("addNewService")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Service Name</Label>
+              <Label htmlFor="name">{t("serviceNameLabel")}</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Haircut, Massage, Consultation"
+                placeholder={t("serviceNamePlaceholder")}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("description")}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Service description"
+                placeholder={t("descriptionPlaceholder")}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Label htmlFor="duration">{t("durationMinutes")}</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -259,7 +263,7 @@ export default function ServicesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="base_price">Price (₾)</Label>
+                <Label htmlFor="base_price">{t("priceLabel")}</Label>
                 <Input
                   id="base_price"
                   type="number"
@@ -271,7 +275,7 @@ export default function ServicesPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="type">Booking Type</Label>
+                <Label htmlFor="type">{t("bookingType")}</Label>
                 <Select
                   value={formData.booking_type}
                   onValueChange={(value) => setFormData({ ...formData, booking_type: value as any })}
@@ -280,13 +284,13 @@ export default function ServicesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="duration_based">Duration Based</SelectItem>
-                    <SelectItem value="fixed_slots">Fixed Time Slots</SelectItem>
+                    <SelectItem value="duration_based">{t("durationBased")}</SelectItem>
+                    <SelectItem value="fixed_slots">{t("fixedSlots")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t("statusLabel")}</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value as any })}
@@ -295,16 +299,16 @@ export default function ServicesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="active">{t("active")}</SelectItem>
+                    <SelectItem value="inactive">{t("inactive")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>{editingService ? "Update" : "Create"}</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t("cancel")}</Button>
+            <Button onClick={handleSave}>{editingService ? t("update") : t("create")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

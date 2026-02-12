@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { useLocale } from "next-intl"
 import { bookingsAdminBookingsList } from "@/api/generated"
 import { BookingList } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,6 +41,8 @@ const PAYMENT_STATUS_COLORS = {
 }
 
 export default function BookingsListPage() {
+  const t = useTranslations("bookingsBookings")
+  const locale = useLocale()
   const [bookings, setBookings] = useState<BookingList[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -99,7 +103,7 @@ export default function BookingsListPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString(locale === "ka" ? "ka-GE" : "en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -112,6 +116,29 @@ export default function BookingsListPage() {
 
   const formatCurrency = (amount: string) => {
     return `₾${parseFloat(amount).toFixed(2)}`
+  }
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      pending: t("pending"),
+      confirmed: t("confirmed"),
+      in_progress: t("inProgress"),
+      completed: t("completed"),
+      cancelled: t("cancelled"),
+      no_show: t("noShow"),
+    }
+    return statusMap[status] || status
+  }
+
+  const getPaymentStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      unpaid: t("unpaid"),
+      deposit_paid: t("depositPaid"),
+      fully_paid: t("fullyPaid"),
+      refunded: t("refunded"),
+      partially_refunded: t("partiallyRefunded"),
+    }
+    return statusMap[status] || status
   }
 
   if (loading) {
@@ -133,14 +160,14 @@ export default function BookingsListPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Bookings</h1>
-        <p className="text-muted-foreground mt-1">Manage and track all your service bookings</p>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
+        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("totalBookings")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -148,7 +175,7 @@ export default function BookingsListPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("pending")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
@@ -156,7 +183,7 @@ export default function BookingsListPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Confirmed</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("confirmed")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{stats.confirmed}</div>
@@ -164,7 +191,7 @@ export default function BookingsListPage() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t("completed")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
@@ -176,14 +203,14 @@ export default function BookingsListPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div>
-              <CardTitle>All Bookings</CardTitle>
-              <CardDescription>{filteredBookings.length} booking(s) found</CardDescription>
+              <CardTitle>{t("allBookings")}</CardTitle>
+              <CardDescription>{t("bookingsFound", { count: filteredBookings.length })}</CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search bookings..."
+                  placeholder={t("searchBookings")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-8"
@@ -191,27 +218,27 @@ export default function BookingsListPage() {
               </div>
               <Select value={dateFilter} onValueChange={setDateFilter}>
                 <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Date" />
+                  <SelectValue placeholder={t("allDates")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Dates</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="upcoming">Upcoming</SelectItem>
-                  <SelectItem value="past">Past</SelectItem>
+                  <SelectItem value="all">{t("allDates")}</SelectItem>
+                  <SelectItem value="today">{t("today")}</SelectItem>
+                  <SelectItem value="upcoming">{t("upcoming")}</SelectItem>
+                  <SelectItem value="past">{t("past")}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
+                  <SelectValue placeholder={t("allStatus")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="no_show">No Show</SelectItem>
+                  <SelectItem value="all">{t("allStatus")}</SelectItem>
+                  <SelectItem value="pending">{t("pending")}</SelectItem>
+                  <SelectItem value="confirmed">{t("confirmed")}</SelectItem>
+                  <SelectItem value="in_progress">{t("inProgress")}</SelectItem>
+                  <SelectItem value="completed">{t("completed")}</SelectItem>
+                  <SelectItem value="cancelled">{t("cancelled")}</SelectItem>
+                  <SelectItem value="no_show">{t("noShow")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -221,11 +248,11 @@ export default function BookingsListPage() {
           {filteredBookings.length === 0 ? (
             <div className="text-center py-12">
               <CalendarCheck className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">No bookings found</h3>
+              <h3 className="mt-4 text-lg font-semibold">{t("noBookingsFound")}</h3>
               <p className="text-muted-foreground mt-2">
                 {searchQuery || statusFilter !== "all" || dateFilter !== "all"
-                  ? "No bookings match your filters"
-                  : "No bookings have been created yet"}
+                  ? t("noBookingsMatch")
+                  : t("noBookingsYet")}
               </p>
             </div>
           ) : (
@@ -233,15 +260,15 @@ export default function BookingsListPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Booking #</TableHead>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Staff</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("bookingNumber")}</TableHead>
+                    <TableHead>{t("client")}</TableHead>
+                    <TableHead>{t("service")}</TableHead>
+                    <TableHead>{t("dateTime")}</TableHead>
+                    <TableHead>{t("staff")}</TableHead>
+                    <TableHead>{t("amount")}</TableHead>
+                    <TableHead>{t("payment")}</TableHead>
+                    <TableHead>{t("status")}</TableHead>
+                    <TableHead className="text-right">{t("actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -262,14 +289,14 @@ export default function BookingsListPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{booking.staff ? `${booking.staff.user.first_name} ${booking.staff.user.last_name}` : "Unassigned"}</TableCell>
+                        <TableCell>{booking.staff ? `${booking.staff.user.first_name} ${booking.staff.user.last_name}` : t("unassigned")}</TableCell>
                         <TableCell className="font-medium">{formatCurrency(booking.total_amount)}</TableCell>
                         <TableCell>
                           <Badge
                             variant="outline"
                             className={PAYMENT_STATUS_COLORS[booking.payment_status as unknown as keyof typeof PAYMENT_STATUS_COLORS] || ""}
                           >
-                            {booking.payment_status?.replace(/_/g, " ")}
+                            {getPaymentStatusLabel(booking.payment_status as unknown as string)}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -278,12 +305,12 @@ export default function BookingsListPage() {
                             className={STATUS_COLORS[booking.status as unknown as keyof typeof STATUS_COLORS] || ""}
                           >
                             <StatusIcon className="mr-1 h-3 w-3" />
-                            {booking.status?.replace(/_/g, " ")}
+                            {getStatusLabel(booking.status as unknown as string)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Link href={`/bookings/bookings/${booking.id}`}>
-                            <Button variant="ghost" size="sm">View</Button>
+                            <Button variant="ghost" size="sm">{t("view")}</Button>
                           </Link>
                         </TableCell>
                       </TableRow>
