@@ -1285,6 +1285,13 @@ export async function bookingsAdminStaffToggleActiveCreate(
   return response.data;
 }
 
+export async function bookingsAdminStaffAvailableUsersRetrieve(): Promise<BookingStaff> {
+  const response = await axios.get(
+    `/api/bookings/admin/staff/available_users/`,
+  );
+  return response.data;
+}
+
 export async function bookingsClientBookingsList(
   ordering?: string,
   page?: number,

@@ -199,6 +199,8 @@ export interface BookingStaff {
   average_rating: string;
   total_ratings: number;
   is_active_for_bookings?: boolean;
+  services: ServiceMinimal[];
+  services_count: string;
 }
 
 export interface BookingStaffCreate {
@@ -208,10 +210,11 @@ export interface BookingStaffCreate {
 }
 
 export interface BookingStaffCreateRequest {
-  user_id: number;
+  user_id?: number;
   bio?: string;
   profile_image?: string;
   is_active_for_bookings?: boolean;
+  service_ids?: number[];
 }
 
 export interface BookingStaffRequest {
@@ -2441,6 +2444,7 @@ export interface PatchedBookingStaffCreateRequest {
   bio?: string;
   profile_image?: string;
   is_active_for_bookings?: boolean;
+  service_ids?: number[];
 }
 
 export interface PatchedCallLogRequest {
@@ -3536,6 +3540,12 @@ export interface ServiceListRequest {
   available_time_slots?: any;
   status?: Status711enum;
   image?: string;
+}
+
+export interface ServiceMinimal {
+  id: number;
+  name: any;
+  name_display: string;
 }
 
 export interface SetDefaultCardRequestRequest {
