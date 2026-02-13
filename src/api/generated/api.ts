@@ -859,6 +859,7 @@ export async function bookingsAdminCategoriesDestroy(id: number): Promise<any> {
 }
 
 export async function bookingsAdminClientsList(
+  isVerified?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -867,6 +868,7 @@ export async function bookingsAdminClientsList(
   const response = await axios.get(
     `/api/bookings/admin/clients/${(() => {
       const parts = [
+        isVerified ? 'is_verified=' + encodeURIComponent(isVerified) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -2237,7 +2239,7 @@ export async function ecommerceAdminAddressesSetDefaultCreate(
 }
 
 export async function ecommerceAdminAttributesList(
-  attributeType?: 'multiselect' | 'number' | 'select',
+  attributeType?: 'multiselect' | 'number',
   isFilterable?: boolean,
   ordering?: string,
   page?: number,
@@ -3267,7 +3269,7 @@ export async function ecommerceClientAddressesSetDefaultCreate(
 }
 
 export async function ecommerceClientAttributesList(
-  attributeType?: 'multiselect' | 'number' | 'select',
+  attributeType?: 'multiselect' | 'number',
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -5803,6 +5805,22 @@ export async function socialClientsPartialUpdate(
 
 export async function socialClientsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/social/clients/${id}/`);
+  return response.data;
+}
+
+export async function socialClientsBookingHistoryRetrieve(
+  id: number,
+): Promise<SocialClient> {
+  const response = await axios.get(
+    `/api/social/clients/${id}/booking_history/`,
+  );
+  return response.data;
+}
+
+export async function socialClientsBookingStatsRetrieve(
+  id: number,
+): Promise<SocialClient> {
+  const response = await axios.get(`/api/social/clients/${id}/booking_stats/`);
   return response.data;
 }
 

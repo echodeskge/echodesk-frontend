@@ -48,7 +48,13 @@ export const socialClientKeys = {
     [...socialClientKeys.all, 'byAccount', platform, platformId, accountConnectionId] as const,
   customFields: () => [...socialClientKeys.all, 'customFields'] as const,
   customFieldList: (filters?: { is_active?: boolean }) => [...socialClientKeys.customFields(), filters] as const,
+  bookingHistory: (id: number, filters?: BookingHistoryFilters) =>
+    [...socialClientKeys.all, 'bookingHistory', id, filters] as const,
+  bookingStats: (id: number) => [...socialClientKeys.all, 'bookingStats', id] as const,
 };
+
+// Aliases for unified client naming
+export const clientKeys = socialClientKeys;
 
 // Types
 export interface SocialClientFilters {
@@ -56,6 +62,51 @@ export interface SocialClientFilters {
   platform?: string;
   page?: number;
   page_size?: number;
+  is_booking_enabled?: boolean;
+  client_type?: 'all' | 'booking' | 'social';
+}
+
+export interface BookingHistoryFilters {
+  page?: number;
+  page_size?: number;
+}
+
+export interface BookingStats {
+  total: number;
+  completed: number;
+  upcoming: number;
+  cancelled?: number;
+  total_spent?: number;
+}
+
+export interface BookingHistoryItem {
+  id: number;
+  booking_number: string;
+  service: {
+    id: number;
+    name: string | Record<string, string>;
+  };
+  staff?: {
+    id: number;
+    user: {
+      first_name: string;
+      last_name: string;
+    };
+  };
+  date: string;
+  start_time: string;
+  end_time: string;
+  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  payment_status: 'pending' | 'deposit_paid' | 'fully_paid' | 'failed' | 'refunded';
+  total_amount: string;
+  paid_amount: string;
+}
+
+export interface BookingHistoryResponse {
+  results: BookingHistoryItem[];
+  count: number;
+  page: number;
+  page_size: number;
 }
 
 export interface SocialClientByAccountResponse {
@@ -306,3 +357,58 @@ export function useReorderSocialClientCustomFields() {
     },
   });
 }
+
+// ============================================================================
+// BOOKING HISTORY HOOKS (for unified clients)
+// ============================================================================
+
+/**
+ * Fetch booking history for a client
+ */
+export function useClientBookingHistory(
+  clientId: number,
+  filters: BookingHistoryFilters = {},
+  options?: { enabled?: boolean }
+) {
+  return useQuery<BookingHistoryResponse>({
+    queryKey: socialClientKeys.bookingHistory(clientId, filters),
+    queryFn: async () => {
+      const response = await axios.get(`/api/social/clients/${clientId}/booking_history/`, {
+        params: filters,
+      });
+      return response.data;
+    },
+    enabled: options?.enabled ?? !!clientId,
+  });
+}
+
+/**
+ * Fetch booking statistics for a client
+ */
+export function useClientBookingStats(
+  clientId: number,
+  options?: { enabled?: boolean }
+) {
+  return useQuery<BookingStats>({
+    queryKey: socialClientKeys.bookingStats(clientId),
+    queryFn: async () => {
+      const response = await axios.get(`/api/social/clients/${clientId}/booking_stats/`);
+      return response.data;
+    },
+    enabled: options?.enabled ?? !!clientId,
+  });
+}
+
+// ============================================================================
+// UNIFIED CLIENT ALIASES (for cleaner naming in new code)
+// ============================================================================
+
+// Export aliases for unified client naming
+export {
+  useSocialClients as useClients,
+  useSocialClient as useClient,
+  useCreateSocialClient as useCreateClient,
+  useUpdateSocialClient as useUpdateClient,
+  usePatchSocialClient as usePatchClient,
+  useDeleteSocialClient as useDeleteClient,
+};
