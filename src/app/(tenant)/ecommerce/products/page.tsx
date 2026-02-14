@@ -17,13 +17,17 @@ import { useProducts, useProduct } from "@/hooks/useProducts";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AddProductSheet } from "@/components/products/AddProductSheet";
 import { EditProductSheet } from "@/components/products/EditProductSheet";
+import { PaginationControls } from "@/components/ui/pagination";
 import type { Locale } from "@/lib/i18n";
+
+const PAGE_SIZE = 20;
 
 export default function ProductsPage() {
   const locale = useLocale() as Locale;
   const t = useTranslations("products");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("active");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
@@ -32,14 +36,26 @@ export default function ProductsPage() {
   const { data: productsData, isLoading, error } = useProducts({
     search: searchQuery || undefined,
     status: statusFilter as any || undefined,
-    page: 1,
+    page: currentPage,
   });
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
 
   // Fetch selected product details
   const { data: selectedProduct } = useProduct(selectedProductId!);
 
   const products = productsData?.results || [];
   const totalCount = productsData?.count || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   // Calculate stats
   const activeCount = products.filter((p) => String(p.status) === "active").length;
@@ -93,13 +109,13 @@ export default function ProductsPage() {
               <Input
                 placeholder={t("searchPlaceholder")}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-9"
               />
             </div>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => handleStatusChange(e.target.value)}
               className="px-4 py-2 border rounded-md"
             >
               <option value="">{t("allStatus")}</option>
@@ -227,6 +243,15 @@ export default function ProductsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {products.length > 0 && totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
 
       {/* Stats Footer */}
