@@ -1,5 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from '@/api/axios';
+import axios from 'axios';
+
+// Use plain axios without tenant auth interceptors for public help center API
+const helpCenterAxios = axios.create({
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+});
 
 // Types
 export interface HelpCategory {
@@ -90,7 +99,7 @@ export function useHelpCategories(params?: {
       if (params?.lang) searchParams.append('lang', params.lang);
 
       const url = `${HELP_API_BASE}/categories/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-      const response = await axios.get(url);
+      const response = await helpCenterAxios.get(url);
       return response.data;
     },
   });
@@ -105,7 +114,7 @@ export function useHelpCategory(slug: string | null, params?: { lang?: string; f
       if (params?.forDashboard) searchParams.append('for_dashboard', 'true');
 
       const url = `${HELP_API_BASE}/categories/${slug}/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-      const response = await axios.get(url);
+      const response = await helpCenterAxios.get(url);
       return response.data;
     },
     enabled: !!slug,
@@ -132,7 +141,7 @@ export function useHelpArticles(params?: {
       if (params?.lang) searchParams.append('lang', params.lang);
 
       const url = `${HELP_API_BASE}/articles/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-      const response = await axios.get(url);
+      const response = await helpCenterAxios.get(url);
       return response.data;
     },
   });
@@ -147,7 +156,7 @@ export function useHelpArticle(slug: string | null, params?: { lang?: string; fo
       if (params?.forDashboard) searchParams.append('for_dashboard', 'true');
 
       const url = `${HELP_API_BASE}/articles/${slug}/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-      const response = await axios.get(url);
+      const response = await helpCenterAxios.get(url);
       return response.data;
     },
     enabled: !!slug,
@@ -163,7 +172,7 @@ export function useFeaturedArticles(params?: { lang?: string; forDashboard?: boo
       if (params?.forDashboard) searchParams.append('for_dashboard', 'true');
 
       const url = `${HELP_API_BASE}/articles/featured/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
-      const response = await axios.get(url);
+      const response = await helpCenterAxios.get(url);
       return response.data;
     },
   });
@@ -180,7 +189,7 @@ export function useHelpSearch(query: string, params?: { lang?: string; forPublic
       if (params?.forDashboard) searchParams.append('for_dashboard', 'true');
 
       const url = `${HELP_API_BASE}/search/?${searchParams.toString()}`;
-      const response = await axios.get(url);
+      const response = await helpCenterAxios.get(url);
       return response.data;
     },
     enabled: query.length >= 2,
