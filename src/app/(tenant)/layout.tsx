@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -358,6 +358,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       return true;
     }
 
+    // /help is always accessible as it has no feature requirements
+    if (pathParts[0] === 'help') {
+      console.log('[RouteAccess] ✅ /help is always accessible');
+      return true;
+    }
+
     // Build the base route ID to check (e.g., "ecommerce/orders" or "tickets")
     // For nested parents, use first two segments; for others, use first segment
     const nestedParents = ["ecommerce", "calls", "bookings", "leave", "invoices", "social"];
@@ -414,18 +420,58 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     return false;
   };
 
+  // Track redirects using a ref to prevent loops (persists across renders)
+  const redirectedToRef = useRef<string | null>(null);
+  const lastPathnameRef = useRef<string>(pathname);
+
   // Route protection: redirect to first available route if current route is not accessible
   useEffect(() => {
+    // /help is ALWAYS accessible - never redirect away from or to /help based on permissions
+    if (pathname.startsWith('/help')) {
+      console.log('[RouteProtection] On /help - always accessible, skipping checks');
+      return;
+    }
+
+    // Reset redirect tracking if user manually navigated to a new path
+    if (lastPathnameRef.current !== pathname) {
+      console.log('[RouteProtection] Path changed from', lastPathnameRef.current, 'to', pathname);
+      lastPathnameRef.current = pathname;
+      // Only reset if this isn't the path we redirected to
+      if (redirectedToRef.current !== pathname) {
+        redirectedToRef.current = null;
+      }
+    }
+
     console.log('[RouteProtection] useEffect triggered', {
       profileLoading,
       tenantLoading,
       hasUserProfile: !!userProfile,
       pathname,
-      visibleMenuItemsCount: visibleMenuItems.length
+      visibleMenuItemsCount: visibleMenuItems.length,
+      redirectedTo: redirectedToRef.current
     });
 
-    if (profileLoading || tenantLoading || !userProfile) {
-      console.log('[RouteProtection] Skipping - still loading or no user profile');
+    // Skip if we already redirected to this path (prevents loops)
+    if (redirectedToRef.current === pathname) {
+      console.log('[RouteProtection] Already redirected here - stopping');
+      return;
+    }
+
+    // Skip if still loading
+    if (profileLoading || tenantLoading) {
+      console.log('[RouteProtection] Skipping - still loading');
+      return;
+    }
+
+    // Skip if no user profile yet
+    if (!userProfile) {
+      console.log('[RouteProtection] Skipping - no user profile');
+      return;
+    }
+
+    // Wait until we have menu items
+    if (visibleMenuItems.length === 0) {
+      console.log('[RouteProtection] Skipping - no visible menu items yet');
       return;
     }
 
@@ -433,7 +479,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     console.log('[RouteProtection] firstAvailableRoute:', firstAvailableRoute);
 
     if (!firstAvailableRoute) {
-      console.log('[RouteProtection] No routes available - skipping');
+      console.log('[RouteProtection] No routes available - user may not have permissions');
       return;
     }
 
@@ -441,8 +487,16 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     const accessible = isRouteAccessible(pathname);
     console.log('[RouteProtection] pathname:', pathname, 'accessible:', accessible);
 
+    // Only redirect if not accessible AND not already on first available route
     if (!accessible) {
+      // Prevent redirecting to the same path we're on
+      if (pathname === firstAvailableRoute) {
+        console.log('[RouteProtection] Already on first available route - stopping');
+        return;
+      }
+
       console.log('[RouteProtection] 🔄 REDIRECTING to:', firstAvailableRoute);
+      redirectedToRef.current = firstAvailableRoute;
       router.replace(firstAvailableRoute);
     }
   }, [pathname, visibleMenuItems, profileLoading, tenantLoading, userProfile]);
