@@ -102,20 +102,20 @@ export interface BoardRequest {
 
 export interface BookingClient {
   id: number;
-  email: string;
+  email?: string;
   phone_number: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   full_name: string;
   is_verified: boolean;
+  is_booking_enabled: boolean;
   created_at: string;
 }
 
 export interface BookingClientRequest {
-  email: string;
-  phone_number: string;
-  first_name: string;
-  last_name: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 export interface BookingCreate {
@@ -199,6 +199,8 @@ export interface BookingStaff {
   average_rating: string;
   total_ratings: number;
   is_active_for_bookings?: boolean;
+  services: ServiceMinimal[];
+  services_count: string;
 }
 
 export interface BookingStaffCreate {
@@ -208,10 +210,11 @@ export interface BookingStaffCreate {
 }
 
 export interface BookingStaffCreateRequest {
-  user_id: number;
+  user_id?: number;
   bio?: string;
   profile_image?: string;
   is_active_for_bookings?: boolean;
+  service_ids?: number[];
 }
 
 export interface BookingStaffRequest {
@@ -2441,6 +2444,7 @@ export interface PatchedBookingStaffCreateRequest {
   bio?: string;
   profile_image?: string;
   is_active_for_bookings?: boolean;
+  service_ids?: number[];
 }
 
 export interface PatchedCallLogRequest {
@@ -2882,6 +2886,10 @@ export interface PatchedSocialClientCreateRequest {
   notes?: string;
   profile_picture?: string;
   custom_fields?: Record<string, any>;
+  first_name?: string;
+  last_name?: string;
+  is_booking_enabled?: boolean;
+  password?: string;
 }
 
 export interface PatchedSocialClientCustomFieldRequest {
@@ -3141,7 +3149,7 @@ export interface ProductAttributeValueRequest {
 export interface ProductCreateUpdate {
   id: number;
   sku: string;
-  slug: string;
+  slug?: string;
   name: any;
   description?: any;
   short_description?: any;
@@ -3162,7 +3170,7 @@ export interface ProductCreateUpdate {
 
 export interface ProductCreateUpdateRequest {
   sku: string;
-  slug: string;
+  slug?: string;
   name: any;
   description?: any;
   short_description?: any;
@@ -3534,6 +3542,12 @@ export interface ServiceListRequest {
   image?: string;
 }
 
+export interface ServiceMinimal {
+  id: number;
+  name: any;
+  name_display: string;
+}
+
 export interface SetDefaultCardRequestRequest {
   card_id: number;
 }
@@ -3635,6 +3649,13 @@ export interface SocialClient {
   created_by_name: string;
   created_at: string;
   updated_at: string;
+  first_name?: string;
+  last_name?: string;
+  full_name: string;
+  is_booking_enabled?: boolean;
+  is_verified?: boolean;
+  last_login?: string;
+  booking_stats: string;
 }
 
 export interface SocialClientCreate {
@@ -3644,6 +3665,9 @@ export interface SocialClientCreate {
   notes?: string;
   profile_picture?: string;
   custom_fields?: Record<string, any>;
+  first_name?: string;
+  last_name?: string;
+  is_booking_enabled?: boolean;
 }
 
 export interface SocialClientCreateRequest {
@@ -3653,6 +3677,10 @@ export interface SocialClientCreateRequest {
   notes?: string;
   profile_picture?: string;
   custom_fields?: Record<string, any>;
+  first_name?: string;
+  last_name?: string;
+  is_booking_enabled?: boolean;
+  password?: string;
 }
 
 export interface SocialClientCustomField {
@@ -3692,6 +3720,12 @@ export interface SocialClientList {
   platforms: string;
   created_at: string;
   updated_at: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  is_booking_enabled: boolean;
+  is_verified: boolean;
+  booking_count: string;
 }
 
 export interface SocialClientRequest {
@@ -3700,6 +3734,11 @@ export interface SocialClientRequest {
   phone?: string;
   notes?: string;
   profile_picture?: string;
+  first_name?: string;
+  last_name?: string;
+  is_booking_enabled?: boolean;
+  is_verified?: boolean;
+  last_login?: string;
 }
 
 export interface SourceEnum {

@@ -859,6 +859,7 @@ export async function bookingsAdminCategoriesDestroy(id: number): Promise<any> {
 }
 
 export async function bookingsAdminClientsList(
+  isVerified?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -867,6 +868,7 @@ export async function bookingsAdminClientsList(
   const response = await axios.get(
     `/api/bookings/admin/clients/${(() => {
       const parts = [
+        isVerified ? 'is_verified=' + encodeURIComponent(isVerified) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -1279,6 +1281,13 @@ export async function bookingsAdminStaffToggleActiveCreate(
   const response = await axios.post(
     `/api/bookings/admin/staff/${id}/toggle_active/`,
     data,
+  );
+  return response.data;
+}
+
+export async function bookingsAdminStaffAvailableUsersRetrieve(): Promise<BookingStaff> {
+  const response = await axios.get(
+    `/api/bookings/admin/staff/available_users/`,
   );
   return response.data;
 }
@@ -2237,7 +2246,7 @@ export async function ecommerceAdminAddressesSetDefaultCreate(
 }
 
 export async function ecommerceAdminAttributesList(
-  attributeType?: 'multiselect' | 'number' | 'select',
+  attributeType?: 'multiselect' | 'number',
   isFilterable?: boolean,
   ordering?: string,
   page?: number,
@@ -3267,7 +3276,7 @@ export async function ecommerceClientAddressesSetDefaultCreate(
 }
 
 export async function ecommerceClientAttributesList(
-  attributeType?: 'multiselect' | 'number' | 'select',
+  attributeType?: 'multiselect' | 'number',
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -5806,6 +5815,22 @@ export async function socialClientsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
+export async function socialClientsBookingHistoryRetrieve(
+  id: number,
+): Promise<SocialClient> {
+  const response = await axios.get(
+    `/api/social/clients/${id}/booking_history/`,
+  );
+  return response.data;
+}
+
+export async function socialClientsBookingStatsRetrieve(
+  id: number,
+): Promise<SocialClient> {
+  const response = await axios.get(`/api/social/clients/${id}/booking_stats/`);
+  return response.data;
+}
+
 export async function socialClientsLinkAccountCreate(
   id: number,
   data: SocialClientRequest,
@@ -6465,6 +6490,28 @@ export async function socialSettingsUpdate(): Promise<any> {
 
 export async function socialSettingsPartialUpdate(): Promise<any> {
   const response = await axios.patch(`/api/social/settings/`);
+  return response.data;
+}
+
+export async function socialSyncSettingsCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/sync/settings/`);
+  return response.data;
+}
+
+export async function socialSyncStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/sync/status/`);
+  return response.data;
+}
+
+export async function socialSyncStatusRetrieve2(
+  platform: string,
+): Promise<any> {
+  const response = await axios.get(`/api/social/sync/status/${platform}/`);
+  return response.data;
+}
+
+export async function socialSyncTriggerCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/sync/trigger/`);
   return response.data;
 }
 
