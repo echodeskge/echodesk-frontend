@@ -37,7 +37,6 @@ import { useRouter } from "next/navigation";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 import { EmailConnection } from "@/components/EmailConnection";
 import { TikTokConnection } from "@/components/TikTokConnection";
-import SocialSyncStatus from "@/components/SocialSyncStatus";
 
 interface SocialIntegrationsProps {
   onBackToDashboard?: () => void;
@@ -515,11 +514,6 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
               </div>
             </CardContent>
           </Card>
-        )}
-
-        {/* Message History Sync - Facebook & Instagram */}
-        {(isConnected || isInstagramConnected) && (
-          <SocialSyncStatus />
         )}
 
         {/* WhatsApp Connection */}
