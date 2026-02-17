@@ -64,6 +64,10 @@ interface FacebookMessage {
   reaction_emoji?: string;
   reacted_by?: string;
   reacted_at?: string;
+  // Message source tracking
+  source?: string;
+  is_echo?: boolean;
+  sent_by_name?: string;
 }
 
 interface InstagramMessage {
@@ -86,6 +90,10 @@ interface InstagramMessage {
   is_read_by_staff?: boolean;
   read_by_staff_at?: string;
   account_username: string;
+  // Message source tracking
+  source?: string;
+  is_echo?: boolean;
+  sent_by_name?: string;
 }
 
 interface InstagramAccount {
@@ -126,9 +134,10 @@ interface UnifiedMessage {
   conversation_id: string;
   platform_message_id: string;
   account_id: string;
-  // WhatsApp Coexistence fields
-  source?: 'cloud_api' | 'business_app' | 'synced';
+  // Message source tracking (all platforms)
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
   is_echo?: boolean;
+  sent_by_name?: string;
   is_edited?: boolean;
   edited_at?: string;
   original_text?: string;
@@ -335,6 +344,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                   reaction_emoji: msg.reaction_emoji,
                   reacted_by: msg.reacted_by,
                   reacted_at: msg.reacted_at,
+                  // Message source tracking
+                  source: msg.source,
+                  is_echo: msg.is_echo,
+                  sent_by_name: msg.sent_by_name,
                 }));
 
                 // Convert latest message to unified format
@@ -452,6 +465,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
                 platform_message_id: msg.message_id,
                 account_id: account.instagram_account_id,
+                // Message source tracking
+                source: msg.source,
+                is_echo: msg.is_echo,
+                sent_by_name: msg.sent_by_name,
               }));
 
               // Convert latest message to unified format
