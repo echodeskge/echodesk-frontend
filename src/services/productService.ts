@@ -29,6 +29,7 @@ export interface ProductFilters {
   attributes?: string; // Format: "color:red,size:large"
   ordering?: string;
   page?: number;
+  page_size?: number; // Items per page (default: 20, max: 100)
 }
 
 /**
@@ -59,6 +60,7 @@ class ProductService {
     if (filters?.min_price !== undefined) params.append('min_price', String(filters.min_price));
     if (filters?.ordering) params.append('ordering', filters.ordering);
     if (filters?.page) params.append('page', String(filters.page));
+    if (filters?.page_size) params.append('page_size', String(filters.page_size));
     if (filters?.search) params.append('search', filters.search);
     if (filters?.status) params.append('status', filters.status);
     if (filters?.attributes) params.append('attributes', filters.attributes);

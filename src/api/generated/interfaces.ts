@@ -854,9 +854,17 @@ export interface FacebookMessage {
   reacted_at: string;
   reply_to_message_id: string;
   reply_to_id: number;
+  source: FacebookMessageSourceEnum;
+  is_echo: boolean;
+  sent_by: number;
+  sent_by_name: string;
 }
 
 export interface FacebookMessageAttachmentTypeEnum {
+  [key: string]: any;
+}
+
+export interface FacebookMessageSourceEnum {
   [key: string]: any;
 }
 
@@ -1094,9 +1102,17 @@ export interface InstagramMessage {
   account_id: string;
   account_username: string;
   created_at: string;
+  source: InstagramMessageSourceEnum;
+  is_echo: boolean;
+  sent_by: number;
+  sent_by_name: string;
 }
 
 export interface InstagramMessageAttachmentTypeEnum {
+  [key: string]: any;
+}
+
+export interface InstagramMessageSourceEnum {
   [key: string]: any;
 }
 
@@ -4601,17 +4617,23 @@ export interface WhatsAppMessage {
   template?: number;
   template_name: string;
   template_parameters?: any;
-  source: SourceEnum;
+  source: WhatsAppMessageSourceEnum;
   is_echo: boolean;
   is_edited: boolean;
   edited_at: string;
   original_text: string;
   is_revoked: boolean;
   revoked_at: string;
+  sent_by: number;
+  sent_by_name: string;
   created_at: string;
 }
 
 export interface WhatsAppMessageMessageTypeEnum {
+  [key: string]: any;
+}
+
+export interface WhatsAppMessageSourceEnum {
   [key: string]: any;
 }
 

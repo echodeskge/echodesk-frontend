@@ -81,12 +81,34 @@ const createAxiosInstance = (baseURL?: string): AxiosInstance => {
       if (error.response?.status === 401) {
         // Handle unauthorized access
         if (typeof window !== 'undefined') {
-          localStorage.removeItem('echodesk_auth_token');
-          localStorage.removeItem('echodesk_user_data');
-          localStorage.removeItem('echodesk_tenant_data');
+          // Check if we should redirect on 401
+          // Skip redirect if:
+          // 1. Already on homepage
+          // 2. Already redirecting (prevent loops)
+          // 3. This is a specific endpoint that might legitimately return 401 for permissions
+          const pathname = window.location.pathname;
+          const isAlreadyRedirecting = sessionStorage.getItem('auth_redirect_in_progress');
 
-          // Only redirect if not already on the homepage to avoid infinite loops
-          if (window.location.pathname !== '/') {
+          // Only clear auth and redirect if this looks like a real auth failure
+          // (e.g., token expired), not a permission issue on a specific endpoint
+          const isAuthEndpoint = error.config?.url?.includes('/auth/') ||
+                                 error.config?.url?.includes('/users/me') ||
+                                 error.config?.url?.includes('/profile');
+
+          if (pathname !== '/' && !isAlreadyRedirecting) {
+            // Mark that we're redirecting to prevent loops
+            sessionStorage.setItem('auth_redirect_in_progress', 'true');
+
+            // Clear auth data
+            localStorage.removeItem('echodesk_auth_token');
+            localStorage.removeItem('echodesk_user_data');
+            localStorage.removeItem('echodesk_tenant_data');
+
+            // Clear the redirect flag after a short delay (in case redirect fails)
+            setTimeout(() => {
+              sessionStorage.removeItem('auth_redirect_in_progress');
+            }, 5000);
+
             window.location.href = '/';
           }
         }

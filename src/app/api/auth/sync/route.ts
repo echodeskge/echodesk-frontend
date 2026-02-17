@@ -19,10 +19,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const secret = process.env.NEXTAUTH_SECRET;
+    // Support both AUTH_SECRET (Auth.js v5) and NEXTAUTH_SECRET (legacy)
+    const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
     if (!secret) {
       return NextResponse.json(
-        { error: 'NEXTAUTH_SECRET not configured' },
+        { error: 'AUTH_SECRET not configured' },
         { status: 500 }
       );
     }
