@@ -65,7 +65,7 @@ interface FacebookMessage {
   reacted_by?: string;
   reacted_at?: string;
   // Message source tracking
-  source?: string;
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
   is_echo?: boolean;
   sent_by_name?: string;
 }
@@ -91,7 +91,7 @@ interface InstagramMessage {
   read_by_staff_at?: string;
   account_username: string;
   // Message source tracking
-  source?: string;
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
   is_echo?: boolean;
   sent_by_name?: string;
 }
