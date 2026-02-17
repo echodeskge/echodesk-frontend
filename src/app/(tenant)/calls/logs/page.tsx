@@ -36,7 +36,7 @@ export default function CallLogsPage() {
       const tenantSubdomain = window.location.hostname.split(".")[0];
 
       const response = await fetch(
-        `https://${tenantSubdomain}.api.echodesk.ge/api/call-logs/`,
+        `https://${tenantSubdomain}.${process.env.NEXT_PUBLIC_API_DOMAIN || 'api.echodesk.ge'}/api/call-logs/`,
         {
           headers: {
             Authorization: `Token ${token}`,

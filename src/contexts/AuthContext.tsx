@@ -78,7 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: tenant.schema_name,
         name: tenant.tenant_name,
         schema_name: tenant.schema_name,
-        domain: `${tenant.schema_name}.echodesk.ge`,
+        domain: `${tenant.schema_name}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`,
         api_url: tenant.api_url,
         theme: tenant.theme,
       };
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         id: tenant.schema_name,
         name: tenant.tenant_name,
         schema_name: tenant.schema_name,
-        domain: `${tenant.schema_name}.echodesk.ge`,
+        domain: `${tenant.schema_name}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`,
         api_url: tenant.api_url,
         theme: tenant.theme,
       };

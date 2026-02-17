@@ -52,6 +52,8 @@ const nextConfig: NextConfig = {
     domains: [
       'echodesk.ge',
       'api.echodesk.ge',
+      'echodesk.cloud',
+      'api.echodesk.cloud',
       'localhost',
     ],
     // Allow wildcard subdomains for DigitalOcean and social media platforms
@@ -65,6 +67,18 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.api.echodesk.ge',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.echodesk.cloud',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.api.echodesk.cloud',
         port: '',
         pathname: '/**',
       },

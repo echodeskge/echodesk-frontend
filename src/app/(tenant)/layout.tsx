@@ -159,7 +159,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     id: tenantConfig.schema_name,
     name: tenantConfig.tenant_name,
     schema_name: tenantConfig.schema_name,
-    domain: `${tenantConfig.schema_name}.echodesk.ge`,
+    domain: `${tenantConfig.schema_name}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`,
     api_url: tenantConfig.api_url,
     theme: tenantConfig.theme,
   } : null;
