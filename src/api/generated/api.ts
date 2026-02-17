@@ -318,6 +318,9 @@ import type {
   QuickReplyRequest,
   QuickReply,
   PatchedQuickReplyRequest,
+  SocialIntegrationSettings,
+  SocialIntegrationSettingsRequest,
+  PatchedSocialIntegrationSettingsRequest,
   PaginatedTikTokMessageList,
   TikTokMessage,
   PaginatedWhatsAppBusinessAccountList,
@@ -6478,18 +6481,22 @@ export async function socialRatingStatisticsUserRetrieve(
   return response.data;
 }
 
-export async function socialSettingsRetrieve(): Promise<any> {
+export async function socialSettingsRetrieve(): Promise<SocialIntegrationSettings> {
   const response = await axios.get(`/api/social/settings/`);
   return response.data;
 }
 
-export async function socialSettingsUpdate(): Promise<any> {
-  const response = await axios.put(`/api/social/settings/`);
+export async function socialSettingsUpdate(
+  data: SocialIntegrationSettingsRequest,
+): Promise<SocialIntegrationSettings> {
+  const response = await axios.put(`/api/social/settings/`, data);
   return response.data;
 }
 
-export async function socialSettingsPartialUpdate(): Promise<any> {
-  const response = await axios.patch(`/api/social/settings/`);
+export async function socialSettingsPartialUpdate(
+  data: PatchedSocialIntegrationSettingsRequest,
+): Promise<SocialIntegrationSettings> {
+  const response = await axios.patch(`/api/social/settings/`, data);
   return response.data;
 }
 

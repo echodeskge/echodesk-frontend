@@ -7,13 +7,231 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSocialSettings, useUpdateSocialSettings } from "@/hooks/api/useSocial";
+import { useSocialSettings, useUpdateSocialSettings, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings } from "@/hooks/api/useSocial";
 import { EmailSyncDebug } from "@/components/social/EmailSyncDebug";
 import { NOTIFICATION_SOUNDS, getNotificationSound } from "@/utils/notificationSound";
+
+// Common timezones
+const TIMEZONES = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
+  { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
+  { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
+  { value: 'Asia/Tbilisi', label: 'Tbilisi (Georgia)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Asia/Kolkata', label: 'Mumbai/New Delhi (IST)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai/Beijing (CST)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+];
+
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+// Default platform settings
+const defaultPlatformSettings: PlatformAutoReplySettings = {
+  welcome_enabled: false,
+  welcome_message: '',
+  away_enabled: false,
+  away_message: '',
+};
+
+interface AwayHoursGridProps {
+  schedule: AwayHoursSchedule;
+  onChange: (schedule: AwayHoursSchedule) => void;
+  disabled?: boolean;
+}
+
+function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'select' | 'deselect'>('select');
+
+  const isSelected = (day: string, hour: number) => {
+    const daySchedule = schedule[day as keyof AwayHoursSchedule] || [];
+    return daySchedule.includes(hour);
+  };
+
+  const toggleCell = (day: string, hour: number) => {
+    if (disabled) return;
+    const daySchedule = schedule[day as keyof AwayHoursSchedule] || [];
+    const newDaySchedule = isSelected(day, hour)
+      ? daySchedule.filter(h => h !== hour)
+      : [...daySchedule, hour].sort((a, b) => a - b);
+    onChange({ ...schedule, [day]: newDaySchedule });
+  };
+
+  const handleMouseDown = (day: string, hour: number) => {
+    if (disabled) return;
+    setIsSelecting(true);
+    setSelectionMode(isSelected(day, hour) ? 'deselect' : 'select');
+    toggleCell(day, hour);
+  };
+
+  const handleMouseEnter = (day: string, hour: number) => {
+    if (!isSelecting || disabled) return;
+    const shouldSelect = selectionMode === 'select';
+    const currentlySelected = isSelected(day, hour);
+    if (shouldSelect !== currentlySelected) {
+      toggleCell(day, hour);
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsSelecting(false);
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[800px]">
+        {/* Hour headers */}
+        <div className="flex mb-1">
+          <div className="w-20 shrink-0" />
+          <div className="flex flex-1 gap-px">
+            {HOURS.map(hour => (
+              <div key={hour} className="flex-1 text-center text-xs text-muted-foreground">
+                {hour.toString().padStart(2, '0')}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Day rows */}
+        {DAYS.map(day => (
+          <div key={day} className="flex mb-px">
+            <div className="w-20 shrink-0 text-sm font-medium capitalize py-1">
+              {day.substring(0, 3)}
+            </div>
+            <div className="flex flex-1 gap-px">
+              {HOURS.map(hour => (
+                <div
+                  key={`${day}-${hour}`}
+                  className={`
+                    flex-1 h-6 rounded-sm cursor-pointer transition-colors select-none
+                    ${isSelected(day, hour)
+                      ? 'bg-orange-500 hover:bg-orange-600'
+                      : 'bg-muted hover:bg-muted-foreground/20'
+                    }
+                    ${disabled ? 'cursor-not-allowed opacity-50' : ''}
+                  `}
+                  onMouseDown={() => handleMouseDown(day, hour)}
+                  onMouseEnter={() => handleMouseEnter(day, hour)}
+                  title={`${day.charAt(0).toUpperCase() + day.slice(1)} ${hour}:00 - ${hour + 1}:00`}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 rounded-sm bg-muted" />
+            <span>Available</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 rounded-sm bg-orange-500" />
+            <span>Away (auto-reply active)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface PlatformAutoReplyFormProps {
+  platform: 'facebook' | 'instagram' | 'whatsapp';
+  settings: PlatformAutoReplySettings;
+  onChange: (settings: PlatformAutoReplySettings) => void;
+}
+
+function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoReplyFormProps) {
+  const platformLabels = {
+    facebook: 'Facebook Messenger',
+    instagram: 'Instagram DMs',
+    whatsapp: 'WhatsApp',
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Welcome Message */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-green-500" />
+              Welcome Message
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Sent to new conversations (if 12+ hours since last welcome)
+            </p>
+          </div>
+          <Switch
+            checked={settings.welcome_enabled}
+            onCheckedChange={(checked) => onChange({ ...settings, welcome_enabled: checked })}
+          />
+        </div>
+        {settings.welcome_enabled && (
+          <Textarea
+            placeholder={`Hello {{customer_name}}! Welcome to our ${platformLabels[platform]} support. How can we help you today?`}
+            value={settings.welcome_message}
+            onChange={(e) => onChange({ ...settings, welcome_message: e.target.value })}
+            rows={3}
+          />
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Away Message */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <Label className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-orange-500" />
+              Away Message
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Sent during away hours (based on schedule above)
+            </p>
+          </div>
+          <Switch
+            checked={settings.away_enabled}
+            onCheckedChange={(checked) => onChange({ ...settings, away_enabled: checked })}
+          />
+        </div>
+        {settings.away_enabled && (
+          <Textarea
+            placeholder={`Hi {{customer_name}}! Thanks for reaching out. We're currently away but will respond as soon as we're back. Our business hours are Monday-Friday, 9 AM - 6 PM.`}
+            value={settings.away_message}
+            onChange={(e) => onChange({ ...settings, away_message: e.target.value })}
+            rows={3}
+          />
+        )}
+      </div>
+
+      {/* Variable hint */}
+      <div className="rounded-lg bg-muted/50 p-3">
+        <p className="text-xs text-muted-foreground">
+          <strong>Available variables:</strong> Use <code className="bg-muted px-1 rounded">{"{{customer_name}}"}</code> to include the customer&apos;s name in your message.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function SocialSettingsPage() {
   const t = useTranslations("social");
@@ -45,6 +263,16 @@ export default function SocialSettingsPage() {
   const [soundTeamChat, setSoundTeamChat] = useState('mixkit-happy-bells-notification-937.wav');
   const [soundSystem, setSoundSystem] = useState('mixkit-confirmation-tone-2867.wav');
 
+  // Auto-reply settings
+  const [timezone, setTimezone] = useState('UTC');
+  const [awayHoursEnabled, setAwayHoursEnabled] = useState(false);
+  const [awayHoursSchedule, setAwayHoursSchedule] = useState<AwayHoursSchedule>({});
+  const [autoReplySettings, setAutoReplySettings] = useState<AutoReplySettings>({
+    facebook: { ...defaultPlatformSettings },
+    instagram: { ...defaultPlatformSettings },
+    whatsapp: { ...defaultPlatformSettings },
+  });
+
   // Sync local state with query data when it loads
   useEffect(() => {
     if (settings) {
@@ -58,6 +286,15 @@ export default function SocialSettingsPage() {
       setSoundEmail(settings.notification_sound_email || 'mixkit-bell-notification-933.wav');
       setSoundTeamChat(settings.notification_sound_team_chat || 'mixkit-happy-bells-notification-937.wav');
       setSoundSystem(settings.notification_sound_system || 'mixkit-confirmation-tone-2867.wav');
+      // Auto-reply settings
+      setTimezone(settings.timezone || 'UTC');
+      setAwayHoursEnabled(settings.away_hours_enabled ?? false);
+      setAwayHoursSchedule(settings.away_hours_schedule || {});
+      setAutoReplySettings({
+        facebook: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.facebook },
+        instagram: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.instagram },
+        whatsapp: { ...defaultPlatformSettings, ...settings.auto_reply_settings?.whatsapp },
+      });
       // Update the sound manager with backend settings
       getNotificationSound().updateSettings(settings);
     }
@@ -65,6 +302,13 @@ export default function SocialSettingsPage() {
 
   const previewSound = (soundFile: string) => {
     getNotificationSound().preview(soundFile);
+  };
+
+  const updatePlatformSettings = (platform: 'facebook' | 'instagram' | 'whatsapp', newSettings: PlatformAutoReplySettings) => {
+    setAutoReplySettings(prev => ({
+      ...prev,
+      [platform]: newSettings,
+    }));
   };
 
   const handleSaveSettings = () => {
@@ -81,6 +325,11 @@ export default function SocialSettingsPage() {
       notification_sound_email: soundEmail,
       notification_sound_team_chat: soundTeamChat,
       notification_sound_system: soundSystem,
+      // Auto-reply settings
+      timezone,
+      away_hours_enabled: awayHoursEnabled,
+      away_hours_schedule: awayHoursSchedule,
+      auto_reply_settings: autoReplySettings,
     };
 
     updateSettings.mutate(payload, {
@@ -115,6 +364,124 @@ export default function SocialSettingsPage() {
       </div>
 
       <div className="space-y-6">
+        {/* Auto-Reply Settings - Superadmin Only */}
+        {isSuperAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Auto-Reply Settings
+              </CardTitle>
+              <CardDescription>
+                Configure automatic welcome and away messages for each platform
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Timezone Selection */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Business Timezone
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Used to calculate away hours
+                  </p>
+                </div>
+                <Select value={timezone} onValueChange={setTimezone}>
+                  <SelectTrigger className="w-[280px]">
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TIMEZONES.map((tz) => (
+                      <SelectItem key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator />
+
+              {/* Away Hours Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-orange-500" />
+                    Away Hours Schedule
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Define when your business is away (auto-reply will be sent during these hours)
+                  </p>
+                </div>
+                <Switch
+                  checked={awayHoursEnabled}
+                  onCheckedChange={setAwayHoursEnabled}
+                />
+              </div>
+
+              {/* Away Hours Grid */}
+              {awayHoursEnabled && (
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Click or drag to select hours when your business is <strong>away</strong>. Away messages will be sent during selected (orange) hours.
+                  </p>
+                  <AwayHoursGrid
+                    schedule={awayHoursSchedule}
+                    onChange={setAwayHoursSchedule}
+                    disabled={!awayHoursEnabled}
+                  />
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Per-Platform Settings */}
+              <div>
+                <Label className="mb-3 block">Platform-Specific Messages</Label>
+                <Tabs defaultValue="facebook" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="facebook" className="flex items-center gap-2">
+                      <span className="text-blue-600">&#9679;</span>
+                      Facebook
+                    </TabsTrigger>
+                    <TabsTrigger value="instagram" className="flex items-center gap-2">
+                      <span className="text-pink-600">&#9679;</span>
+                      Instagram
+                    </TabsTrigger>
+                    <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+                      <span className="text-green-600">&#9679;</span>
+                      WhatsApp
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="facebook" className="mt-4">
+                    <PlatformAutoReplyForm
+                      platform="facebook"
+                      settings={autoReplySettings.facebook || defaultPlatformSettings}
+                      onChange={(s) => updatePlatformSettings('facebook', s)}
+                    />
+                  </TabsContent>
+                  <TabsContent value="instagram" className="mt-4">
+                    <PlatformAutoReplyForm
+                      platform="instagram"
+                      settings={autoReplySettings.instagram || defaultPlatformSettings}
+                      onChange={(s) => updatePlatformSettings('instagram', s)}
+                    />
+                  </TabsContent>
+                  <TabsContent value="whatsapp" className="mt-4">
+                    <PlatformAutoReplyForm
+                      platform="whatsapp"
+                      settings={autoReplySettings.whatsapp || defaultPlatformSettings}
+                      onChange={(s) => updatePlatformSettings('whatsapp', s)}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Notification Settings */}
         <Card>
           <CardHeader>
@@ -177,7 +544,7 @@ export default function SocialSettingsPage() {
             {/* Facebook Sound */}
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <span className="text-blue-600">●</span>
+                <span className="text-blue-600">&#9679;</span>
                 {t("settingsPage.notificationSounds.facebook") || "Facebook"}
               </Label>
               <div className="flex gap-2">
@@ -204,7 +571,7 @@ export default function SocialSettingsPage() {
             {/* Instagram Sound */}
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <span className="text-pink-600">●</span>
+                <span className="text-pink-600">&#9679;</span>
                 {t("settingsPage.notificationSounds.instagram") || "Instagram"}
               </Label>
               <div className="flex gap-2">
@@ -231,7 +598,7 @@ export default function SocialSettingsPage() {
             {/* WhatsApp Sound */}
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <span className="text-green-600">●</span>
+                <span className="text-green-600">&#9679;</span>
                 {t("settingsPage.notificationSounds.whatsapp") || "WhatsApp"}
               </Label>
               <div className="flex gap-2">
@@ -258,7 +625,7 @@ export default function SocialSettingsPage() {
             {/* Email Sound */}
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <span className="text-red-600">●</span>
+                <span className="text-red-600">&#9679;</span>
                 {t("settingsPage.notificationSounds.email") || "Email"}
               </Label>
               <div className="flex gap-2">
@@ -285,7 +652,7 @@ export default function SocialSettingsPage() {
             {/* Team Chat Sound */}
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <span className="text-purple-600">●</span>
+                <span className="text-purple-600">&#9679;</span>
                 {t("settingsPage.notificationSounds.teamChat") || "Team Chat"}
               </Label>
               <div className="flex gap-2">
@@ -312,7 +679,7 @@ export default function SocialSettingsPage() {
             {/* System Sound */}
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
-                <span className="text-gray-600">●</span>
+                <span className="text-gray-600">&#9679;</span>
                 {t("settingsPage.notificationSounds.system") || "System"}
               </Label>
               <div className="flex gap-2">
