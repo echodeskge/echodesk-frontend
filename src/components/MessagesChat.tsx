@@ -273,41 +273,16 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
               const messages = (messagesResponse.data as PaginatedResponse<FacebookMessage>).results || [];
 
-              // First pass: identify all unique customer IDs (non-page senders)
-              const customerIds = new Set<string>();
-              messages.forEach((msg) => {
-                if (!msg.is_from_page) {
-                  customerIds.add(msg.sender_id);
-                }
-              });
-
-              // Second pass: group messages by customer
+              // Group messages by customer
+              // Note: Backend stores sender_id=recipient_id for outgoing (page) messages,
+              // so we can use sender_id directly for all messages to group by conversation
               const conversationMap = new Map<string, FacebookMessage[]>();
 
-              // Sort messages by timestamp to help with grouping
-              const sortedMessages = [...messages].sort((a, b) =>
-                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-              );
-
-              // Track the last customer we saw for page messages
-              let lastCustomerId: string | null = null;
-
-              sortedMessages.forEach((msg) => {
-                let customerId: string;
-
-                if (msg.is_from_page) {
-                  // Message from page - use the last customer we saw
-                  // or if only one customer exists, use that
-                  if (lastCustomerId) {
-                    customerId = lastCustomerId;
-                  } else {
-                    customerId = customerIds.size === 1 ? Array.from(customerIds)[0] : msg.sender_id;
-                  }
-                } else {
-                  // Message from customer - sender_id IS the customer ID
-                  customerId = msg.sender_id;
-                  lastCustomerId = customerId; // Remember for next page message
-                }
+              messages.forEach((msg) => {
+                // sender_id is the customer ID for ALL messages:
+                // - Incoming messages: sender_id is the customer who sent it
+                // - Outgoing messages: backend stores recipient_id as sender_id
+                const customerId = msg.sender_id;
 
                 if (!conversationMap.has(customerId)) {
                   conversationMap.set(customerId, []);
