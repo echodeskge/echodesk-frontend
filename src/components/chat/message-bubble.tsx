@@ -2,7 +2,7 @@ import { forwardRef } from "react"
 
 import type { MessageType, UserType } from "@/components/chat/types"
 import { formatDistanceToNow } from "date-fns"
-import { Pencil, Trash2, Smartphone, History, Reply } from "lucide-react"
+import { Pencil, Trash2, Smartphone, History, Reply, Monitor, MessageCircle, Instagram, Facebook } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -100,16 +100,23 @@ function MessageActions({
   )
 }
 
-// Source icon component for WhatsApp coexistence
-function MessageSourceIcon({ source }: { source?: string }) {
-  if (!source || source === 'cloud_api') return null
+// Source icon component for message source tracking (all platforms)
+function MessageSourceIcon({ source, platform }: { source?: string; platform?: string }) {
+  // Don't show for echodesk/cloud_api (default sources) or if no source
+  if (!source || source === 'echodesk' || source === 'cloud_api') return null
 
-  const icons = {
-    business_app: { icon: Smartphone, label: 'Sent from Business App', color: 'text-green-600' },
+  const icons: Record<string, { icon: typeof Smartphone; label: string; color: string }> = {
+    // WhatsApp sources
+    business_app: { icon: Smartphone, label: 'Sent from WhatsApp Business App', color: 'text-green-600' },
     synced: { icon: History, label: 'Synced from history', color: 'text-blue-500' },
+    // Facebook sources
+    facebook_app: { icon: Facebook, label: 'Sent from Facebook', color: 'text-blue-600' },
+    messenger_app: { icon: MessageCircle, label: 'Sent from Messenger App', color: 'text-blue-500' },
+    // Instagram sources
+    instagram_app: { icon: Instagram, label: 'Sent from Instagram App', color: 'text-pink-600' },
   }
 
-  const config = icons[source as keyof typeof icons]
+  const config = icons[source]
   if (!config) return null
 
   const Icon = config.icon
@@ -122,6 +129,28 @@ function MessageSourceIcon({ source }: { source?: string }) {
         </TooltipTrigger>
         <TooltipContent side="top" className="text-xs">
           {config.label}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+// Staff member name badge for messages sent via EchoDesk
+function MessageAuthorBadge({ sentByName, source }: { sentByName?: string; source?: string }) {
+  // Only show author name for messages sent via EchoDesk
+  if (!sentByName || (source && source !== 'echodesk' && source !== 'cloud_api')) return null
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Monitor className="h-3 w-3 text-primary" />
+            <span className="font-medium">{sentByName}</span>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs">
+          Sent via EchoDesk by {sentByName}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -236,12 +265,17 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
           )}
         </div>
         <div className={cn(
-          "flex items-center gap-1",
+          "flex items-center gap-1.5",
           isByCurrentUser && "justify-end"
         )}>
-          {/* Source indicator for WhatsApp coexistence */}
-          {platform === 'whatsapp' && (
-            <MessageSourceIcon source={message.source} />
+          {/* Author badge for messages sent via EchoDesk */}
+          {isByCurrentUser && (
+            <MessageAuthorBadge sentByName={message.sentByName} source={message.source} />
+          )}
+
+          {/* Source indicator for external app messages (all platforms) */}
+          {isByCurrentUser && (
+            <MessageSourceIcon source={message.source} platform={platform} />
           )}
 
           {/* Edited indicator */}

@@ -6493,28 +6493,6 @@ export async function socialSettingsPartialUpdate(): Promise<any> {
   return response.data;
 }
 
-export async function socialSyncSettingsCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/sync/settings/`);
-  return response.data;
-}
-
-export async function socialSyncStatusRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/sync/status/`);
-  return response.data;
-}
-
-export async function socialSyncStatusRetrieve2(
-  platform: string,
-): Promise<any> {
-  const response = await axios.get(`/api/social/sync/status/${platform}/`);
-  return response.data;
-}
-
-export async function socialSyncTriggerCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/sync/trigger/`);
-  return response.data;
-}
-
 export async function socialTiktokMessagesList(
   ordering?: string,
   page?: number,
