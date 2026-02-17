@@ -3,5 +3,6 @@
 import MessagesChat from "@/components/MessagesChat";
 
 export default function MessagesPage() {
-  return <MessagesChat />;
+  // Only show social messages (facebook, instagram, whatsapp) - email has its own page
+  return <MessagesChat key="messages" platforms={["facebook", "instagram", "whatsapp"]} />;
 }

@@ -52,6 +52,8 @@ interface FacebookMessage {
   delivered_at?: string;
   is_read?: boolean;
   read_at?: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
   page_name: string;
   recipient_id?: string; // The person receiving the message
   // Reply fields
@@ -81,6 +83,8 @@ interface InstagramMessage {
   delivered_at?: string;
   is_read?: boolean;
   read_at?: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
   account_username: string;
 }
 
@@ -325,6 +329,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 const customerName = customerMsg?.sender_name || "Unknown";
                 const customerAvatar = customerMsg?.profile_pic_url;
 
+                // Calculate unread count: incoming messages not yet read by staff
+                const unreadCount = msgs.filter(m => !m.is_from_page && m.is_read_by_staff === false).length;
+
                 const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
                   id: String(msg.id),
                   platform: "facebook" as const,
@@ -388,6 +395,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                   message_count: msgs.length,
                   account_name: page.page_name,
                   account_id: page.page_id,
+                  unread_count: unreadCount,
                 };
 
                 allConversations.push(conversation);
@@ -446,6 +454,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               const customerName = customerMsg?.sender_name || customerMsg?.sender_username || customerMsg?.sender_id || customerId;
               const customerAvatar = customerMsg?.sender_profile_pic;
 
+              // Calculate unread count: incoming messages not yet read by staff
+              const unreadCount = msgs.filter(m => !m.is_from_business && m.is_read_by_staff === false).length;
+
               const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
                 id: String(msg.id),
                 platform: "instagram" as const,
@@ -501,6 +512,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 message_count: msgs.length,
                 account_name: `@${account.username}`,
                 account_id: account.instagram_account_id,
+                unread_count: unreadCount,
               };
 
               allConversations.push(conversation);
@@ -601,6 +613,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               const customerName = customerMsg?.contact_name || customerId;
               const customerAvatar = customerMsg?.profile_pic_url;
 
+              // Calculate unread count: incoming messages not yet read by staff
+              const unreadCount = msgs.filter(m => !m.is_from_business && (m as any).is_read_by_staff === false).length;
+
               const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
                 id: String(msg.id),
                 platform: "whatsapp" as const,
@@ -673,6 +688,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 message_count: msgs.length,
                 account_name: account.business_name,
                 account_id: account.waba_id,
+                unread_count: unreadCount,
               };
 
               allConversations.push(conversation);
