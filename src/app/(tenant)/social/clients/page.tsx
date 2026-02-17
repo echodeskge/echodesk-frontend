@@ -48,6 +48,9 @@ import {
   Users,
   Link2,
   MessageSquare,
+  Calendar,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import {
   useSocialClients,
@@ -101,6 +104,7 @@ export default function SocialClientsPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [platformFilter, setPlatformFilter] = useState<string>("all");
+  const [clientTypeFilter, setClientTypeFilter] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<SocialClientList | null>(null);
   const [formData, setFormData] = useState<ClientFormData>({
@@ -110,10 +114,11 @@ export default function SocialClientsPage() {
     notes: "",
   });
 
-  // Fetch clients
+  // Fetch clients with filters
   const { data: clientsData, isLoading } = useSocialClients({
     search: searchQuery || undefined,
     platform: platformFilter !== "all" ? platformFilter : undefined,
+    client_type: clientTypeFilter !== "all" ? clientTypeFilter as 'booking' | 'social' : undefined,
   });
 
   // Fetch custom fields for future use
@@ -137,6 +142,8 @@ export default function SocialClientsPage() {
       tiktok: 0,
     };
     let linkedCount = 0;
+    let bookingEnabledCount = 0;
+    let verifiedBookingCount = 0;
 
     clients.forEach((client: any) => {
       const platforms = Array.isArray(client.platforms) ? client.platforms : [];
@@ -148,9 +155,15 @@ export default function SocialClientsPage() {
           }
         });
       }
+      if (client.is_booking_enabled) {
+        bookingEnabledCount++;
+        if (client.is_verified) {
+          verifiedBookingCount++;
+        }
+      }
     });
 
-    return { platformCounts, linkedCount };
+    return { platformCounts, linkedCount, bookingEnabledCount, verifiedBookingCount };
   }, [clients]);
 
   const resetForm = () => {
@@ -326,7 +339,7 @@ export default function SocialClientsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{t("stats.total")}</CardTitle>
@@ -334,6 +347,18 @@ export default function SocialClientsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{t("stats.bookingClients") || "Booking Clients"}</CardTitle>
+            <Calendar className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.bookingEnabledCount}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.verifiedBookingCount} {t("stats.verified") || "verified"}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -379,6 +404,15 @@ export default function SocialClientsPage() {
               />
             </div>
             <select
+              value={clientTypeFilter}
+              onChange={(e) => setClientTypeFilter(e.target.value)}
+              className="px-4 py-2 border rounded-md bg-background"
+            >
+              <option value="all">{t("filters.allClients") || "All Clients"}</option>
+              <option value="booking">{t("filters.bookingEnabled") || "Booking Enabled"}</option>
+              <option value="social">{t("filters.socialOnly") || "Social Only"}</option>
+            </select>
+            <select
               value={platformFilter}
               onChange={(e) => setPlatformFilter(e.target.value)}
               className="px-4 py-2 border rounded-md bg-background"
@@ -405,6 +439,7 @@ export default function SocialClientsPage() {
                 <TableHead>{t("table.phone")}</TableHead>
                 <TableHead>{t("table.platforms")}</TableHead>
                 <TableHead>{t("table.linkedAccounts")}</TableHead>
+                <TableHead>{t("table.bookingStatus") || "Booking"}</TableHead>
                 <TableHead>{t("table.created")}</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -412,7 +447,7 @@ export default function SocialClientsPage() {
             <TableBody>
               {clients.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     {t("noClients")}
                   </TableCell>
                 </TableRow>
@@ -473,6 +508,29 @@ export default function SocialClientsPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">{client.social_accounts_count || 0}</span>
+                      </TableCell>
+                      <TableCell>
+                        {client.is_booking_enabled ? (
+                          <div className="flex flex-col gap-1">
+                            <Badge
+                              variant={client.is_verified ? "default" : "secondary"}
+                              className={client.is_verified ? "bg-green-600" : "bg-orange-500"}
+                            >
+                              {client.is_verified ? (
+                                <><CheckCircle className="h-3 w-3 mr-1" />{t("booking.verified") || "Verified"}</>
+                              ) : (
+                                <><XCircle className="h-3 w-3 mr-1" />{t("booking.unverified") || "Unverified"}</>
+                              )}
+                            </Badge>
+                            {client.booking_count !== null && client.booking_count > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                {client.booking_count} {t("booking.bookings") || "bookings"}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">

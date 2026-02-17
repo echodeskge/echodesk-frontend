@@ -3757,6 +3757,10 @@ export interface SocialClientRequest {
   last_login?: string;
 }
 
+export interface SourceEnum {
+  [key: string]: any;
+}
+
 export interface StaffAvailability {
   id: number;
   staff: number;

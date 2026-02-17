@@ -176,7 +176,7 @@ export function RegistrationFormStep({
                     placeholder="acme"
                   />
                   <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    .echodesk.ge
+                    .{process.env.NEXT_PUBLIC_MAIN_DOMAIN || "echodesk.ge"}
                   </span>
                 </div>
               </div>

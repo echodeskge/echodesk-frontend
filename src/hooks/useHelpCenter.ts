@@ -82,7 +82,7 @@ export const helpCenterKeys = {
 };
 
 // Base URL - use main API (help center is shared across all tenants)
-const HELP_API_BASE = 'https://api.echodesk.ge/api/help/public';
+const HELP_API_BASE = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.echodesk.ge'}/api/help/public`;
 
 // Hooks
 export function useHelpCategories(params?: {
