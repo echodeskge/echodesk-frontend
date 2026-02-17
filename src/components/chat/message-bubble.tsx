@@ -232,15 +232,16 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
           />
         )}
         {/* Message content with action button */}
-        <div className="flex items-start gap-1 group">
-          {/* Reply button - left side of business messages */}
-          {isByCurrentUser && (
-            <MessageActions
-              message={message}
-              platform={platform}
-              onReply={handleReply}
-            />
-          )}
+        <div className={cn(
+          "flex items-start gap-1 group",
+          isByCurrentUser && "flex-row-reverse"
+        )}>
+          {/* Reply button - appears on hover */}
+          <MessageActions
+            message={message}
+            platform={platform}
+            onReply={handleReply}
+          />
           <div className="relative">
             <MessageBubbleContent
               message={message}
@@ -255,14 +256,6 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
               />
             )}
           </div>
-          {/* Reply button - right side of customer messages */}
-          {!isByCurrentUser && (
-            <MessageActions
-              message={message}
-              platform={platform}
-              onReply={handleReply}
-            />
-          )}
         </div>
         <div className={cn(
           "flex items-center gap-1.5",
