@@ -2919,6 +2919,24 @@ export interface PatchedSocialClientCustomFieldRequest {
   is_active?: boolean;
 }
 
+export interface PatchedSocialIntegrationSettingsRequest {
+  refresh_interval?: number;
+  chat_assignment_enabled?: boolean;
+  session_management_enabled?: boolean;
+  hide_assigned_chats?: boolean;
+  collect_customer_rating?: boolean;
+  notification_sound_facebook?: string;
+  notification_sound_instagram?: string;
+  notification_sound_whatsapp?: string;
+  notification_sound_email?: string;
+  notification_sound_team_chat?: string;
+  notification_sound_system?: string;
+  timezone?: string;
+  away_hours_enabled?: boolean;
+  away_hours_schedule?: any;
+  auto_reply_settings?: any;
+}
+
 export interface PatchedStaffAvailabilityRequest {
   staff?: number;
   day_of_week?: DayOfWeekEnum;
@@ -3757,8 +3775,43 @@ export interface SocialClientRequest {
   last_login?: string;
 }
 
-export interface SourceEnum {
-  [key: string]: any;
+export interface SocialIntegrationSettings {
+  id: number;
+  refresh_interval?: number;
+  chat_assignment_enabled?: boolean;
+  session_management_enabled?: boolean;
+  hide_assigned_chats?: boolean;
+  collect_customer_rating?: boolean;
+  notification_sound_facebook?: string;
+  notification_sound_instagram?: string;
+  notification_sound_whatsapp?: string;
+  notification_sound_email?: string;
+  notification_sound_team_chat?: string;
+  notification_sound_system?: string;
+  timezone?: string;
+  away_hours_enabled?: boolean;
+  away_hours_schedule?: any;
+  auto_reply_settings?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SocialIntegrationSettingsRequest {
+  refresh_interval?: number;
+  chat_assignment_enabled?: boolean;
+  session_management_enabled?: boolean;
+  hide_assigned_chats?: boolean;
+  collect_customer_rating?: boolean;
+  notification_sound_facebook?: string;
+  notification_sound_instagram?: string;
+  notification_sound_whatsapp?: string;
+  notification_sound_email?: string;
+  notification_sound_team_chat?: string;
+  notification_sound_system?: string;
+  timezone?: string;
+  away_hours_enabled?: boolean;
+  away_hours_schedule?: any;
+  auto_reply_settings?: any;
 }
 
 export interface StaffAvailability {
