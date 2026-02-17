@@ -640,6 +640,31 @@ export function useSyncWhatsAppHistory() {
 // SOCIAL SETTINGS HOOKS
 // ============================================================================
 
+// Per-platform auto-reply settings
+export interface PlatformAutoReplySettings {
+  welcome_enabled: boolean;
+  welcome_message: string;
+  away_enabled: boolean;
+  away_message: string;
+}
+
+export interface AutoReplySettings {
+  facebook?: PlatformAutoReplySettings;
+  instagram?: PlatformAutoReplySettings;
+  whatsapp?: PlatformAutoReplySettings;
+}
+
+// Away hours schedule - each day maps to array of away hours (0-23)
+export interface AwayHoursSchedule {
+  monday?: number[];
+  tuesday?: number[];
+  wednesday?: number[];
+  thursday?: number[];
+  friday?: number[];
+  saturday?: number[];
+  sunday?: number[];
+}
+
 export interface SocialSettings {
   id: number;
   refresh_interval: number;
@@ -653,6 +678,11 @@ export interface SocialSettings {
   notification_sound_email: string;
   notification_sound_team_chat: string;
   notification_sound_system: string;
+  // Auto-reply settings
+  timezone: string;
+  away_hours_enabled: boolean;
+  away_hours_schedule: AwayHoursSchedule;
+  auto_reply_settings: AutoReplySettings;
   created_at: string;
   updated_at: string;
 }
@@ -687,6 +717,10 @@ export function useUpdateSocialSettings() {
       | 'notification_sound_email'
       | 'notification_sound_team_chat'
       | 'notification_sound_system'
+      | 'timezone'
+      | 'away_hours_enabled'
+      | 'away_hours_schedule'
+      | 'auto_reply_settings'
     >>) => {
       const response = await axios.patch('/api/social/settings/', data);
       return response.data;
