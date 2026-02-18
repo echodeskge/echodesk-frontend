@@ -277,7 +277,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           for (const page of facebookPages) {
             try {
               const messagesResponse = await axios.get("/api/social/facebook-messages/", {
-                params: { page_id: page.page_id },
+                params: { page_id: page.page_id, page_size: 500 },
               });
 
               const messages = (messagesResponse.data as PaginatedResponse<FacebookMessage>).results || [];
@@ -410,7 +410,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           for (const account of instagramAccounts) {
           try {
             const messagesResponse = await axios.get("/api/social/instagram-messages/", {
-              params: { account_id: account.instagram_account_id },
+              params: { account_id: account.instagram_account_id, page_size: 500 },
             });
 
             const messages = (messagesResponse.data as PaginatedResponse<InstagramMessage>).results || [];
@@ -531,7 +531,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           // No WhatsApp accounts connected, skip fetching messages
         } else {
         // Load all WhatsApp messages at once (ViewSet returns all messages for all accounts in tenant)
-        const messagesResponse = await socialWhatsappMessagesList();
+        const messagesResponse = await socialWhatsappMessagesList(undefined, undefined, 500);
         const allWhatsAppMessages = messagesResponse.results || [];
 
         // Helper function to normalize phone numbers (remove + prefix for consistent conversation IDs)
