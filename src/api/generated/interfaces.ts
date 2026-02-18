@@ -4682,6 +4682,8 @@ export interface WhatsAppMessage {
   created_at: string;
 }
 
+export type SourceEnum = 'cloud_api' | 'business_app' | 'synced';
+
 export interface WhatsAppMessageMessageTypeEnum {
   [key: string]: any;
 }
