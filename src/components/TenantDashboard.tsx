@@ -55,7 +55,7 @@ export default function TenantDashboard({ tenant }: TenantDashboardProps) {
               {tenant.tenant_name}
             </h1>
             <p style={{ margin: '5px 0 0 0', color: '#666', fontSize: '14px' }}>
-              {tenant.schema_name}.echodesk.ge
+              {tenant.schema_name}.{process.env.NEXT_PUBLIC_MAIN_DOMAIN || "echodesk.ge"}
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

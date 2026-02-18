@@ -62,9 +62,11 @@ export interface MessageType {
   platformMessageId?: string
   // Sender name (for display in reply preview)
   senderName?: string
-  // WhatsApp Coexistence fields
-  source?: 'cloud_api' | 'business_app' | 'synced'
+  // Message source tracking (all platforms)
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app'
   isEcho?: boolean
+  // Staff member who sent this message via EchoDesk
+  sentByName?: string
   isEdited?: boolean
   editedAt?: Date
   originalText?: string

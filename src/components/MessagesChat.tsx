@@ -52,6 +52,8 @@ interface FacebookMessage {
   delivered_at?: string;
   is_read?: boolean;
   read_at?: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
   page_name: string;
   recipient_id?: string; // The person receiving the message
   // Reply fields
@@ -62,6 +64,10 @@ interface FacebookMessage {
   reaction_emoji?: string;
   reacted_by?: string;
   reacted_at?: string;
+  // Message source tracking
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
+  is_echo?: boolean;
+  sent_by_name?: string;
 }
 
 interface InstagramMessage {
@@ -81,7 +87,13 @@ interface InstagramMessage {
   delivered_at?: string;
   is_read?: boolean;
   read_at?: string;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
   account_username: string;
+  // Message source tracking
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
+  is_echo?: boolean;
+  sent_by_name?: string;
 }
 
 interface InstagramAccount {
@@ -122,9 +134,10 @@ interface UnifiedMessage {
   conversation_id: string;
   platform_message_id: string;
   account_id: string;
-  // WhatsApp Coexistence fields
-  source?: 'cloud_api' | 'business_app' | 'synced';
+  // Message source tracking (all platforms)
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
   is_echo?: boolean;
+  sent_by_name?: string;
   is_edited?: boolean;
   edited_at?: string;
   original_text?: string;
@@ -269,41 +282,16 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
               const messages = (messagesResponse.data as PaginatedResponse<FacebookMessage>).results || [];
 
-              // First pass: identify all unique customer IDs (non-page senders)
-              const customerIds = new Set<string>();
-              messages.forEach((msg) => {
-                if (!msg.is_from_page) {
-                  customerIds.add(msg.sender_id);
-                }
-              });
-
-              // Second pass: group messages by customer
+              // Group messages by customer
+              // Note: Backend stores sender_id=recipient_id for outgoing (page) messages,
+              // so we can use sender_id directly for all messages to group by conversation
               const conversationMap = new Map<string, FacebookMessage[]>();
 
-              // Sort messages by timestamp to help with grouping
-              const sortedMessages = [...messages].sort((a, b) =>
-                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-              );
-
-              // Track the last customer we saw for page messages
-              let lastCustomerId: string | null = null;
-
-              sortedMessages.forEach((msg) => {
-                let customerId: string;
-
-                if (msg.is_from_page) {
-                  // Message from page - use the last customer we saw
-                  // or if only one customer exists, use that
-                  if (lastCustomerId) {
-                    customerId = lastCustomerId;
-                  } else {
-                    customerId = customerIds.size === 1 ? Array.from(customerIds)[0] : msg.sender_id;
-                  }
-                } else {
-                  // Message from customer - sender_id IS the customer ID
-                  customerId = msg.sender_id;
-                  lastCustomerId = customerId; // Remember for next page message
-                }
+              messages.forEach((msg) => {
+                // sender_id is the customer ID for ALL messages:
+                // - Incoming messages: sender_id is the customer who sent it
+                // - Outgoing messages: backend stores recipient_id as sender_id
+                const customerId = msg.sender_id;
 
                 if (!conversationMap.has(customerId)) {
                   conversationMap.set(customerId, []);
@@ -324,6 +312,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 const customerMsg = msgs.find(m => !m.is_from_page);
                 const customerName = customerMsg?.sender_name || "Unknown";
                 const customerAvatar = customerMsg?.profile_pic_url;
+
+                // Calculate unread count: incoming messages not yet read by staff
+                const unreadCount = msgs.filter(m => !m.is_from_page && m.is_read_by_staff === false).length;
 
                 const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
                   id: String(msg.id),
@@ -353,6 +344,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                   reaction_emoji: msg.reaction_emoji,
                   reacted_by: msg.reacted_by,
                   reacted_at: msg.reacted_at,
+                  // Message source tracking
+                  source: msg.source,
+                  is_echo: msg.is_echo,
+                  sent_by_name: msg.sent_by_name,
                 }));
 
                 // Convert latest message to unified format
@@ -388,6 +383,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                   message_count: msgs.length,
                   account_name: page.page_name,
                   account_id: page.page_id,
+                  unread_count: unreadCount,
                 };
 
                 allConversations.push(conversation);
@@ -446,6 +442,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               const customerName = customerMsg?.sender_name || customerMsg?.sender_username || customerMsg?.sender_id || customerId;
               const customerAvatar = customerMsg?.sender_profile_pic;
 
+              // Calculate unread count: incoming messages not yet read by staff
+              const unreadCount = msgs.filter(m => !m.is_from_business && m.is_read_by_staff === false).length;
+
               const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
                 id: String(msg.id),
                 platform: "instagram" as const,
@@ -466,6 +465,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
                 platform_message_id: msg.message_id,
                 account_id: account.instagram_account_id,
+                // Message source tracking
+                source: msg.source,
+                is_echo: msg.is_echo,
+                sent_by_name: msg.sent_by_name,
               }));
 
               // Convert latest message to unified format
@@ -501,6 +504,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 message_count: msgs.length,
                 account_name: `@${account.username}`,
                 account_id: account.instagram_account_id,
+                unread_count: unreadCount,
               };
 
               allConversations.push(conversation);
@@ -601,6 +605,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
               const customerName = customerMsg?.contact_name || customerId;
               const customerAvatar = customerMsg?.profile_pic_url;
 
+              // Calculate unread count: incoming messages not yet read by staff
+              const unreadCount = msgs.filter(m => !m.is_from_business && (m as any).is_read_by_staff === false).length;
+
               const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
                 id: String(msg.id),
                 platform: "whatsapp" as const,
@@ -673,6 +680,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 message_count: msgs.length,
                 account_name: account.business_name,
                 account_id: account.waba_id,
+                unread_count: unreadCount,
               };
 
               allConversations.push(conversation);

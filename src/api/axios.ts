@@ -1,9 +1,14 @@
 import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
+// Domain configuration from environment
+const API_DOMAIN = process.env.NEXT_PUBLIC_API_DOMAIN || 'api.echodesk.ge';
+const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `https://${API_DOMAIN}`;
+
 // Function to get the API URL based on current subdomain
 const getApiUrl = (): string => {
   if (typeof window === 'undefined') {
-    return 'https://api.echodesk.ge'; // fallback for SSR
+    return API_BASE_URL; // fallback for SSR
   }
 
   const hostname = window.location.hostname;
@@ -11,20 +16,17 @@ const getApiUrl = (): string => {
   // On localhost, use dev_tenant from localStorage or default to "groot"
   if (hostname.includes('localhost')) {
     const devTenant = localStorage.getItem('dev_tenant') || 'groot';
-    const devTenantUrl = `https://${devTenant}.api.echodesk.ge`;
-    return devTenantUrl;
+    return `https://${devTenant}.${API_DOMAIN}`;
   }
 
-  // Check if we're on a subdomain of echodesk.ge (production)
-  if (hostname.endsWith('.echodesk.ge') && hostname !== 'echodesk.ge') {
+  // Check if we're on a subdomain of the main domain (production)
+  if (hostname.endsWith(`.${MAIN_DOMAIN}`) && hostname !== MAIN_DOMAIN) {
     const subdomain = hostname.split('.')[0];
-    const apiUrl = `https://${subdomain}.api.echodesk.ge`;
-    return apiUrl;
+    return `https://${subdomain}.${API_DOMAIN}`;
   }
 
   // Default fallback to main API
-  const fallbackUrl = 'https://api.echodesk.ge';
-  return fallbackUrl;
+  return API_BASE_URL;
 };
 
 // Create axios instance with base configuration

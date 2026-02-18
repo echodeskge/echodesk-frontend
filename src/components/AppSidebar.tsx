@@ -140,9 +140,11 @@ export function AppSidebar({
   onMenuClick,
   onLogout
 }: AppSidebarProps) {
-  // Get email unread count for sidebar badge
+  // Get unread counts for sidebar badges
   const { data: unreadCount } = useUnreadMessagesCount()
   const emailUnread = unreadCount?.email ?? 0
+  // Social messages unread = facebook + instagram + whatsapp
+  const socialUnread = (unreadCount?.facebook ?? 0) + (unreadCount?.instagram ?? 0) + (unreadCount?.whatsapp ?? 0)
 
   return (
     <Sidebar variant="inset" className="bg-sidebar border-r border-sidebar-border">
@@ -273,6 +275,15 @@ export function AppSidebar({
                         <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
                       )}
                       <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
+                      {/* Social messages unread badge for Messages menu item */}
+                      {item.id === 'social/messages' && socialUnread > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"
+                        >
+                          {socialUnread > 99 ? '99+' : socialUnread}
+                        </Badge>
+                      )}
                       {/* Email unread badge for Email Messages menu item */}
                       {item.id === 'email/messages' && emailUnread > 0 && (
                         <Badge

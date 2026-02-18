@@ -159,7 +159,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     id: tenantConfig.schema_name,
     name: tenantConfig.tenant_name,
     schema_name: tenantConfig.schema_name,
-    domain: `${tenantConfig.schema_name}.echodesk.ge`,
+    domain: `${tenantConfig.schema_name}.${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`,
     api_url: tenantConfig.api_url,
     theme: tenantConfig.theme,
   } : null;
@@ -378,7 +378,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     // This allows WhatsApp/Instagram message detail pages to work
     if (baseRouteId === 'messages' || currentPath.startsWith('/messages')) {
       const hasSocialAccess = visibleMenuItems.some(item =>
-        item.id === 'social' || item.id === 'messages' ||
+        item.id === 'social' || item.id === 'messages' || item.id === 'social/messages' ||
         item.children?.some(child => child.id === 'social/messages')
       );
       if (hasSocialAccess) {

@@ -50,9 +50,11 @@ interface UnifiedMessage {
   conversation_id: string;
   platform_message_id: string;
   account_id: string;
-  // WhatsApp Coexistence fields
-  source?: 'cloud_api' | 'business_app' | 'synced';
+  // Message source tracking (all platforms)
+  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
   is_echo?: boolean;
+  // Staff member who sent this message via EchoDesk
+  sent_by_name?: string;
   is_edited?: boolean;
   edited_at?: string;
   original_text?: string;
@@ -189,9 +191,10 @@ export function convertFacebookMessagesToChatFormat(
         // Platform-specific message ID for reply functionality
         platformMessageId: msg.platform_message_id,
         senderName: msg.sender_name,
-        // WhatsApp Coexistence fields
+        // Message source tracking (all platforms)
         source: msg.source,
         isEcho: msg.is_echo,
+        sentByName: msg.sent_by_name,
         isEdited: msg.is_edited,
         editedAt: msg.edited_at ? new Date(msg.edited_at) : undefined,
         originalText: msg.original_text,
@@ -380,9 +383,10 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       // Platform-specific message ID for reply functionality
       platformMessageId: msg.platform_message_id,
       senderName: msg.sender_name,
-      // WhatsApp Coexistence fields
+      // Message source tracking (all platforms)
       source: msg.source,
       isEcho: msg.is_echo,
+      sentByName: msg.sent_by_name,
       isEdited: msg.is_edited,
       editedAt: msg.edited_at ? new Date(msg.edited_at) : undefined,
       originalText: msg.original_text,
