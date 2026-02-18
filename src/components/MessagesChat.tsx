@@ -311,7 +311,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
                 // Find customer name and info from non-page messages
                 const customerMsg = msgs.find(m => !m.is_from_page);
                 const customerName = customerMsg?.sender_name || "Unknown";
-                const customerAvatar = customerMsg?.profile_pic_url;
+                // Get profile pic from the latest customer message that has one (sorted by timestamp desc)
+                const sortedCustomerMsgs = msgs
+                  .filter(m => !m.is_from_page && m.profile_pic_url)
+                  .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                const customerAvatar = sortedCustomerMsgs[0]?.profile_pic_url;
 
                 // Calculate unread count: incoming messages not yet read by staff
                 const unreadCount = msgs.filter(m => !m.is_from_page && m.is_read_by_staff === false).length;
@@ -440,7 +444,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
               const customerMsg = msgs.find(m => !m.is_from_business);
               const customerName = customerMsg?.sender_name || customerMsg?.sender_username || customerMsg?.sender_id || customerId;
-              const customerAvatar = customerMsg?.sender_profile_pic;
+              // Get profile pic from the latest customer message that has one
+              const sortedCustomerMsgs = msgs
+                .filter(m => !m.is_from_business && m.sender_profile_pic)
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+              const customerAvatar = sortedCustomerMsgs[0]?.sender_profile_pic;
 
               // Calculate unread count: incoming messages not yet read by staff
               const unreadCount = msgs.filter(m => !m.is_from_business && m.is_read_by_staff === false).length;
@@ -603,7 +611,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
               const customerMsg = msgs.find(m => !m.is_from_business);
               const customerName = customerMsg?.contact_name || customerId;
-              const customerAvatar = customerMsg?.profile_pic_url;
+              // Get profile pic from the latest customer message that has one
+              const sortedCustomerMsgs = msgs
+                .filter(m => !m.is_from_business && m.profile_pic_url)
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+              const customerAvatar = sortedCustomerMsgs[0]?.profile_pic_url;
 
               // Calculate unread count: incoming messages not yet read by staff
               const unreadCount = msgs.filter(m => !m.is_from_business && (m as any).is_read_by_staff === false).length;
