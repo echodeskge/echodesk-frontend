@@ -278,7 +278,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
                     placeholder="email@example.com, another@example.com"
                     value={ccEmails}
                     onChange={(e) => setCcEmails(e.target.value)}
-                    className="h-7 text-sm bg-accent"
+                    className="h-7 text-sm bg-muted"
                     disabled={isSending}
                   />
                 </div>
@@ -289,7 +289,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
                     placeholder="email@example.com, another@example.com"
                     value={bccEmails}
                     onChange={(e) => setBccEmails(e.target.value)}
-                    className="h-7 text-sm bg-accent"
+                    className="h-7 text-sm bg-muted"
                     disabled={isSending}
                   />
                 </div>
@@ -327,7 +327,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
                     type="text"
                     placeholder="Type a message..."
                     autoComplete="off"
-                    className="bg-accent"
+                    className="bg-muted"
                     disabled={isSending}
                     {...field}
                     onChange={(e) => {

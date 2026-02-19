@@ -293,6 +293,7 @@ import type {
   SocialClientCustomFieldRequest,
   SocialClientCustomField,
   PatchedSocialClientCustomFieldRequest,
+  PaginatedUnifiedConversation,
   PaginatedEmailDraftList,
   EmailDraftRequest,
   EmailDraft,
@@ -5932,6 +5933,28 @@ export async function socialClientsCustomFieldsReorderCreate(
   const response = await axios.post(
     `/api/social/clients/custom-fields/reorder/`,
     data,
+  );
+  return response.data;
+}
+
+export async function socialConversationsRetrieve(
+  folder?: string,
+  page?: number,
+  pageSize?: number,
+  platforms?: string,
+  search?: string,
+): Promise<PaginatedUnifiedConversation> {
+  const response = await axios.get(
+    `/api/social/conversations/${(() => {
+      const parts = [
+        folder ? 'folder=' + encodeURIComponent(folder) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        platforms ? 'platforms=' + encodeURIComponent(platforms) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }

@@ -1,15 +1,36 @@
 "use client"
 
-import { useMemo, useEffect } from "react"
+import { useMemo, useEffect, useCallback } from "react"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChatSidebarItem } from "./chat-sidebar-item"
 import { ChatListSkeleton } from "./ChatListSkeleton"
+import { Loader2 } from "lucide-react"
 
 const MESSAGES_LOADED_KEY = 'echodesk_messages_loaded'
 
 export function ChatSidebarList() {
-  const { chatState, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled, isInitialLoading } = useChatContext()
+  const {
+    chatState,
+    chatListSearchQuery,
+    assignmentTab,
+    assignedChatIds,
+    assignmentEnabled,
+    isInitialLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isSearchLoading,
+  } = useChatContext()
+
+  // Handle scroll to load more
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLDivElement
+    const scrolledToBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 100
+
+    if (scrolledToBottom && hasNextPage && !isFetchingNextPage && fetchNextPage) {
+      fetchNextPage()
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   // Check sessionStorage synchronously - has this session ever loaded messages?
   const hasEverLoaded = typeof window !== 'undefined' && sessionStorage.getItem(MESSAGES_LOADED_KEY) === 'true'
@@ -73,34 +94,58 @@ export function ChatSidebarList() {
   // Show loading state only when we have no data yet
   if (showLoading) {
     return (
-      <ScrollArea className={scrollHeight}>
+      <div className={`${scrollHeight} overflow-auto`}>
         <ChatListSkeleton />
-      </ScrollArea>
+      </div>
     )
   }
 
   // When refetching after navigation, show skeleton instead of empty state
   if (isRefetching) {
     return (
-      <ScrollArea className={scrollHeight}>
+      <div className={`${scrollHeight} overflow-auto`}>
         <ChatListSkeleton />
-      </ScrollArea>
+      </div>
+    )
+  }
+
+  // Show skeleton when searching
+  if (isSearchLoading) {
+    return (
+      <div className={`${scrollHeight} overflow-auto`}>
+        <ChatListSkeleton />
+      </div>
     )
   }
 
   return (
-    <ScrollArea className={scrollHeight}>
+    <div
+      className={`${scrollHeight} overflow-auto`}
+      onScroll={handleScroll}
+    >
       <ul className="p-3 space-y-1.5">
         {filteredChats.length === 0 ? (
           <li className="text-center text-muted-foreground py-8">
             {getEmptyMessage()}
           </li>
         ) : (
-          filteredChats.map((chat) => {
-            return <ChatSidebarItem key={chat.id} chat={chat} />
-          })
+          <>
+            {filteredChats.map((chat) => {
+              return <ChatSidebarItem key={chat.id} chat={chat} />
+            })}
+            {/* Loading indicator */}
+            {hasNextPage && (
+              <li className="flex justify-center py-4">
+                {isFetchingNextPage ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <span className="text-xs text-muted-foreground">Scroll for more</span>
+                )}
+              </li>
+            )}
+          </>
         )}
       </ul>
-    </ScrollArea>
+    </div>
   )
 }
