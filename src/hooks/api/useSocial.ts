@@ -114,6 +114,22 @@ export function useMarkConversationRead() {
   });
 }
 
+export function useMarkConversationUnread() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email'; conversation_id: string }) => {
+      const response = await axios.post('/api/social/mark-unread/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate conversations and unread count so they update
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
 export function useDeleteConversation() {
   const queryClient = useQueryClient();
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, ChevronRight, MailOpen, UserRound } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -15,8 +15,12 @@ import {
   useEndSession,
   useEmailFolders,
   useEmailAction,
+  useMarkConversationUnread,
+  useArchiveConversation,
+  useUnarchiveConversation,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
+import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useSocialClientByAccount } from "@/hooks/api/useSocialClients"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -100,6 +104,12 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const isEmail = chat?.platform === 'email'
   const { data: folders } = useEmailFolders()
   const emailAction = useEmailAction()
+
+  // Archive/History functionality
+  const { showArchived } = useChatContext()
+  const markUnread = useMarkConversationUnread()
+  const archiveConversation = useArchiveConversation()
+  const unarchiveConversation = useUnarchiveConversation()
 
   // Parse chat ID for assignment operations
   const chatInfo = useMemo(() => {
@@ -270,8 +280,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     )
   }
 
-  // Handle mark as unread for email threads
-  const handleMarkAsUnread = () => {
+  // Handle mark as unread for email threads (email-specific)
+  const handleEmailMarkAsUnread = () => {
     if (!chatInfo || chatInfo.platform !== 'email') return
 
     emailAction.mutate(
@@ -290,6 +300,91 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
           toast({
             title: "Failed to mark as unread",
             description: error.response?.data?.error || "Failed to mark email as unread",
+            variant: "destructive",
+          })
+        },
+      }
+    )
+  }
+
+  // Handle mark as unread for all platforms (unified endpoint)
+  const handleMarkAsUnread = () => {
+    if (!chatInfo || !chat?.platform) return
+
+    markUnread.mutate(
+      {
+        platform: chat.platform,
+        conversation_id: chatInfo.conversationId,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Marked as unread",
+            description: "Conversation marked as unread",
+          })
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Failed to mark as unread",
+            description: error.response?.data?.error || "Failed to mark conversation as unread",
+            variant: "destructive",
+          })
+        },
+      }
+    )
+  }
+
+  // Handle archive (move to history)
+  const handleArchive = () => {
+    if (!chatInfo || !chat?.platform) return
+
+    archiveConversation.mutate(
+      [{
+        platform: chat.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+      }],
+      {
+        onSuccess: () => {
+          toast({
+            title: "Moved to history",
+            description: "Conversation has been archived",
+          })
+          router.push('/messages')
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Failed to archive",
+            description: error.response?.data?.error || "Failed to archive conversation",
+            variant: "destructive",
+          })
+        },
+      }
+    )
+  }
+
+  // Handle unarchive (restore from history)
+  const handleUnarchive = () => {
+    if (!chatInfo || !chat?.platform) return
+
+    unarchiveConversation.mutate(
+      [{
+        platform: chat.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+      }],
+      {
+        onSuccess: () => {
+          toast({
+            title: "Restored from history",
+            description: "Conversation has been restored",
+          })
+          router.push('/messages')
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Failed to restore",
+            description: error.response?.data?.error || "Failed to restore conversation",
             variant: "destructive",
           })
         },
@@ -336,11 +431,22 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               Search
             </DropdownMenuItem>
 
+            {/* Mark as Unread - for all platforms */}
+            {chatInfo && !isEmail && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleMarkAsUnread} disabled={markUnread.isPending}>
+                  <MailOpen className="size-4 mr-2" />
+                  Mark as Unread
+                </DropdownMenuItem>
+              </>
+            )}
+
             {/* Email-specific actions - only show for email conversations */}
             {isEmail && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleMarkAsUnread} disabled={emailAction.isPending}>
+                <DropdownMenuItem onClick={handleEmailMarkAsUnread} disabled={emailAction.isPending}>
                   <MailOpen className="size-4 mr-2" />
                   Mark as Unread
                 </DropdownMenuItem>
@@ -364,6 +470,24 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                       </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                   </DropdownMenuSub>
+                )}
+              </>
+            )}
+
+            {/* Archive/Unarchive - for all platforms */}
+            {chatInfo && (
+              <>
+                <DropdownMenuSeparator />
+                {showArchived ? (
+                  <DropdownMenuItem onClick={handleUnarchive} disabled={unarchiveConversation.isPending}>
+                    <ArchiveRestore className="size-4 mr-2" />
+                    {unarchiveConversation.isPending ? "Restoring..." : "Restore from History"}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem onClick={handleArchive} disabled={archiveConversation.isPending}>
+                    <Archive className="size-4 mr-2" />
+                    {archiveConversation.isPending ? "Archiving..." : "Move to History"}
+                  </DropdownMenuItem>
                 )}
               </>
             )}
