@@ -20,6 +20,7 @@ export function ChatSidebarList() {
     hasNextPage,
     isFetchingNextPage,
     isSearchLoading,
+    showArchived,
   } = useChatContext()
 
   // Handle scroll to load more
@@ -81,6 +82,9 @@ export function ChatSidebarList() {
   const getEmptyMessage = () => {
     if (chatListSearchQuery) {
       return "No conversations found"
+    }
+    if (showArchived) {
+      return "No archived conversations"
     }
     if (assignmentEnabled && assignmentTab === 'assigned') {
       return "No assigned conversations"

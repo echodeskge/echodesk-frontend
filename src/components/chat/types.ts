@@ -53,6 +53,9 @@ export interface ChatContextType {
   isSearchLoading?: boolean
   // Raw chats data (for race condition handling during state sync)
   rawChatsData?: ChatType[]
+  // History/Archive view mode
+  showArchived: boolean
+  setShowArchived: (show: boolean) => void
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null

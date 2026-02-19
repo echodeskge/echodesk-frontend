@@ -75,6 +75,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const [currentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [assignmentTab, setAssignmentTab] = useState<AssignmentTabType>('all');
+  const [showArchived, setShowArchived] = useState(false);
 
   // Debounce search query (300ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -98,6 +99,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     pageSize: 20,
     search: debouncedSearchQuery,
     assigned: assignmentTab === 'assigned',
+    archived: showArchived,
   });
 
   // State to hold a directly loaded chat (when navigating to a URL not in the list)
@@ -471,6 +473,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       setChatListSearchQuery={setSearchQuery}
       assignmentTab={assignmentTab}
       setAssignmentTab={setAssignmentTab}
+      showArchived={showArchived}
+      setShowArchived={setShowArchived}
     >
       <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
         <ChatSidebar />
