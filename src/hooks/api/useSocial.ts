@@ -37,7 +37,7 @@ export const socialKeys = {
   unreadCount: () => [...socialKeys.all, 'unreadCount'] as const,
   settings: () => [...socialKeys.all, 'settings'] as const,
   conversations: () => [...socialKeys.all, 'conversations'] as const,
-  conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean }) =>
+  conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean; archived?: boolean }) =>
     [...socialKeys.conversations(), filters] as const,
   assignments: () => [...socialKeys.all, 'assignments'] as const,
   myAssignments: () => [...socialKeys.assignments(), 'my'] as const,
@@ -2128,6 +2128,7 @@ export interface UseUnifiedConversationsOptions {
   pageSize?: number;
   enabled?: boolean;
   assigned?: boolean;
+  archived?: boolean;
 }
 
 /**
@@ -2142,12 +2143,13 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
     pageSize = 50,
     enabled = true,
     assigned = false,
+    archived = false,
   } = options;
 
   return useInfiniteQuery({
-    queryKey: socialKeys.conversationsList({ platforms, search, folder, assigned }),
+    queryKey: socialKeys.conversationsList({ platforms, search, folder, assigned, archived }),
     queryFn: async ({ pageParam = 1 }) => {
-      // Use axios directly to support the 'assigned' parameter
+      // Use axios directly to support the 'assigned' and 'archived' parameters
       const params: Record<string, string | number | boolean> = {
         page: pageParam,
         page_size: pageSize,
@@ -2156,6 +2158,7 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
       if (folder) params.folder = folder;
       if (search) params.search = search;
       if (assigned) params.assigned = 'true';
+      if (archived) params.archived = 'true';
 
       const response = await axios.get<PaginatedUnifiedConversation>('/api/social/conversations/', { params });
       return response.data;
@@ -2169,6 +2172,115 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
     },
     enabled,
     staleTime: 30000, // 30 seconds
+  });
+}
+
+// ============================================================================
+// MARK ALL AS READ
+// ============================================================================
+
+interface MarkAllReadResponse {
+  success: boolean;
+  messages_marked_read: number;
+  platform: string;
+}
+
+/**
+ * Hook to mark all conversations as read.
+ */
+export function useMarkAllAsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (platform: string = 'all') => {
+      const response = await axios.post<MarkAllReadResponse>('/api/social/mark-all-read/', { platform });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate conversations and unread count
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
+// ============================================================================
+// ARCHIVE/HISTORY CONVERSATIONS
+// ============================================================================
+
+interface ArchiveConversationRequest {
+  platform: string;
+  conversation_id: string;
+  account_id: string;
+}
+
+interface ArchiveResponse {
+  success: boolean;
+  archived_count: number;
+  message: string;
+  errors?: Array<{ conversation: ArchiveConversationRequest; error: string }>;
+}
+
+interface UnarchiveResponse {
+  success: boolean;
+  unarchived_count: number;
+  message: string;
+  errors?: Array<{ conversation: ArchiveConversationRequest; error: string }>;
+}
+
+/**
+ * Hook to archive one or more conversations (move to history).
+ */
+export function useArchiveConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversations: ArchiveConversationRequest[]) => {
+      const response = await axios.post<ArchiveResponse>('/api/social/conversations/archive/', { conversations });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate both regular and archived conversations
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
+/**
+ * Hook to unarchive (restore) one or more conversations from history.
+ */
+export function useUnarchiveConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversations: ArchiveConversationRequest[]) => {
+      const response = await axios.post<UnarchiveResponse>('/api/social/conversations/unarchive/', { conversations });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate both regular and archived conversations
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+    },
+  });
+}
+
+/**
+ * Hook to archive all conversations (move everything to history).
+ */
+export function useArchiveAllConversations() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (platform: string = 'all') => {
+      const response = await axios.post<ArchiveResponse>('/api/social/conversations/archive-all/', { platform });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidate conversations and unread count
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
   });
 }
 

@@ -411,6 +411,16 @@
     "typeMessage": "Type a message...",
     "send": "Send"
   },
+  "chat": {
+    "history": "History",
+    "backToChats": "Back to Chats",
+    "markAllAsRead": "Mark All as Read",
+    "moveAllToHistory": "Move All to History",
+    "moveToHistory": "Move to History",
+    "restoreFromHistory": "Restore from History",
+    "noArchivedChats": "No archived chats",
+    "archivedChatsEmpty": "Conversations you archive will appear here"
+  },
   "settings": {
     "title": "Settings",
     "general": "General",

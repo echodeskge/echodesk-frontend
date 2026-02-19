@@ -413,6 +413,16 @@
     "typeMessage": "დაწერეთ შეტყობინება...",
     "send": "გაგზავნა"
   },
+  "chat": {
+    "history": "ისტორია",
+    "backToChats": "ჩატებზე დაბრუნება",
+    "markAllAsRead": "ყველას წაკითხულად მონიშვნა",
+    "moveAllToHistory": "ყველას ისტორიაში გადატანა",
+    "moveToHistory": "ისტორიაში გადატანა",
+    "restoreFromHistory": "ისტორიიდან აღდგენა",
+    "noArchivedChats": "არქივში ჩატები არ არის",
+    "archivedChatsEmpty": "დაარქივებული საუბრები აქ გამოჩნდება"
+  },
   "settings": {
     "title": "პარამეტრები",
     "general": "ზოგადი",

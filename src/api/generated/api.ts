@@ -5959,6 +5959,21 @@ export async function socialConversationsRetrieve(
   return response.data;
 }
 
+export async function socialConversationsArchiveCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/conversations/archive/`);
+  return response.data;
+}
+
+export async function socialConversationsArchiveAllCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/conversations/archive-all/`);
+  return response.data;
+}
+
+export async function socialConversationsUnarchiveCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/conversations/unarchive/`);
+  return response.data;
+}
+
 export async function socialDeleteConversationDestroy(): Promise<any> {
   const response = await axios.delete(`/api/social/delete-conversation/`);
   return response.data;
@@ -6399,6 +6414,11 @@ export async function socialInstagramSendMessageCreate(
 
 export async function socialInstagramStatusRetrieve(): Promise<any> {
   const response = await axios.get(`/api/social/instagram/status/`);
+  return response.data;
+}
+
+export async function socialMarkAllReadCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/mark-all-read/`);
   return response.data;
 }
 

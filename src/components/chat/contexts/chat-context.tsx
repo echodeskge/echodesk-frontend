@@ -29,6 +29,8 @@ export function ChatProvider({
   setChatListSearchQuery: externalSetChatListSearchQuery,
   assignmentTab: externalAssignmentTab,
   setAssignmentTab: externalSetAssignmentTab,
+  showArchived: externalShowArchived,
+  setShowArchived: externalSetShowArchived,
 }: {
   chatsData: ChatType[]
   children: ReactNode
@@ -46,6 +48,8 @@ export function ChatProvider({
   setChatListSearchQuery?: (query: string) => void
   assignmentTab?: AssignmentTabType
   setAssignmentTab?: (tab: AssignmentTabType) => void
+  showArchived?: boolean
+  setShowArchived?: (show: boolean) => void
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -66,6 +70,11 @@ export function ChatProvider({
   const [internalAssignmentTab, setInternalAssignmentTab] = useState<AssignmentTabType>('all')
   const assignmentTab = externalAssignmentTab ?? internalAssignmentTab
   const setAssignmentTab = externalSetAssignmentTab ?? setInternalAssignmentTab
+
+  // Archive/History view state - use external if provided, otherwise internal
+  const [internalShowArchived, setInternalShowArchived] = useState(false)
+  const showArchived = externalShowArchived ?? internalShowArchived
+  const setShowArchived = externalSetShowArchived ?? setInternalShowArchived
 
   // Email folder filter state - use external if provided, otherwise internal
   const [internalSelectedEmailFolder, setInternalSelectedEmailFolder] = useState<string>('INBOX')
@@ -175,6 +184,8 @@ export function ChatProvider({
         isFetchingNextPage,
         isSearchLoading,
         rawChatsData: chatsData,
+        showArchived,
+        setShowArchived,
       }}
     >
       {children}
