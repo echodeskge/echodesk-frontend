@@ -414,3 +414,104 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
 
   return chatMessages;
 }
+
+/**
+ * API conversation interface (from unified backend endpoint)
+ */
+interface ApiUnifiedConversation {
+  conversation_id: string;
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | string;
+  sender_id: string;
+  sender_name: string | null;
+  profile_pic_url?: string | null;
+  last_message: {
+    id: string;
+    text: string | null;
+    timestamp: string;
+    is_from_business: boolean;
+    attachment_type?: string | null;
+    platform_message_id: string;
+  };
+  message_count: number;
+  unread_count: number;
+  account_name: string;
+  account_id: string;
+  subject?: string | null;
+}
+
+/**
+ * Converts API unified conversations to ChatType format.
+ * Messages are NOT loaded - they will be fetched lazily when chat is selected.
+ */
+export function convertApiConversationsToChatFormat(
+  conversations: ApiUnifiedConversation[]
+): ChatType[] {
+  const chats = conversations.map((conversation) => {
+    // Create user for the customer
+    const customerUser = {
+      id: conversation.sender_id,
+      name: conversation.sender_name || 'Unknown',
+      avatar: conversation.profile_pic_url || undefined,
+      status: "online",
+    };
+
+    // Create user for the business/page
+    const businessUser = {
+      id: "business",
+      name: conversation.account_name,
+      avatar: undefined,
+      status: "online",
+    };
+
+    // Build last message content
+    const lastMsg = conversation.last_message;
+    let lastMessageContent = lastMsg.text || '';
+
+    // For emails, strip HTML tags from the preview
+    if (conversation.platform === 'email' && lastMessageContent) {
+      lastMessageContent = stripHtmlTags(lastMessageContent);
+    }
+
+    if (!lastMessageContent && lastMsg.attachment_type) {
+      const attachmentLabels: Record<string, string> = {
+        image: '📷 Image',
+        sticker: '🏷️ Sticker',
+        video: '🎬 Video',
+        audio: '🎵 Audio',
+        file: '📎 File',
+        document: '📄 Document',
+        location: '📍 Location',
+        attachment: '📎 Attachment',
+      };
+      lastMessageContent = attachmentLabels[lastMsg.attachment_type] || '📎 Attachment';
+    }
+
+    const lastMessage = {
+      content: lastMessageContent,
+      createdAt: new Date(lastMsg.timestamp),
+    };
+
+    return {
+      id: conversation.conversation_id,
+      lastMessage,
+      name: conversation.sender_name || 'Unknown',
+      avatar: conversation.profile_pic_url || undefined,
+      status: "online",
+      messages: [], // Messages will be loaded lazily
+      users: [customerUser, businessUser],
+      typingUsers: [],
+      unreadCount: conversation.unread_count,
+      platform: conversation.platform as 'facebook' | 'instagram' | 'whatsapp' | 'email',
+      messagesLoaded: false, // Always false - messages need to be fetched
+    };
+  });
+
+  // Sort chats by last message time (most recent first)
+  chats.sort((a, b) => {
+    const timeA = a.lastMessage?.createdAt?.getTime() || 0;
+    const timeB = b.lastMessage?.createdAt?.getTime() || 0;
+    return timeB - timeA;
+  });
+
+  return chats;
+}

@@ -23,7 +23,7 @@ interface ChatBoxFacebookProps {
 }
 
 export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: ChatBoxFacebookProps) {
-  const { chatState, messageSearchQuery, setMessageSearchQuery, loadingMessages, loadChatMessages, isInitialLoading } = useChatContext()
+  const { chatState, messageSearchQuery, setMessageSearchQuery, loadingMessages, loadChatMessages, isInitialLoading, rawChatsData } = useChatContext()
   const params = useParams()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
@@ -32,13 +32,18 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
 
   const chat = useMemo(() => {
     if (chatIdParam) {
-      // Find the chat by ID
-      return chatState.chats.find((c) => c.id === chatIdParam)
+      // Find the chat by ID in reducer state first
+      const fromState = chatState.chats.find((c) => c.id === chatIdParam)
+      if (fromState) return fromState
+
+      // Fallback: check raw chatsData (for race condition during state sync)
+      // This handles the case where chatsData updated but useEffect hasn't synced to chatState yet
+      return rawChatsData?.find((c) => c.id === chatIdParam) || null
     }
 
     // Return null if not found
     return null
-  }, [chatState.chats, chatIdParam])
+  }, [chatState.chats, rawChatsData, chatIdParam])
 
   // Trigger lazy loading when chat is selected via URL navigation
   useEffect(() => {

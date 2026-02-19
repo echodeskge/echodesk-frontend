@@ -1,118 +1,36 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { FacebookPageConnection, WhatsAppMessage, EmailMessage as GeneratedEmailMessage } from "@/api/generated/interfaces";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useParams } from "next/navigation";
 import axios from "@/api/axios";
-import {
-  socialWhatsappMessagesList,
-  socialEmailStatusRetrieve,
-  socialEmailMessagesThreadsRetrieve,
-} from "@/api/generated";
-import { convertFacebookMessagesToChatFormat } from "@/lib/chatAdapter";
+import { socialEmailStatusRetrieve } from "@/api/generated";
+import { convertApiConversationsToChatFormat, convertUnifiedMessagesToMessageType } from "@/lib/chatAdapter";
 import { ChatProvider } from "@/components/chat/contexts/chat-context";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
 import { ChatBoxFacebook } from "@/components/chat/chat-box-facebook";
 import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
-import type { ChatType, MessageType } from "@/components/chat/types";
-import { Card } from "@/components/ui/card";
+import type { ChatType, MessageType, AssignmentTabType } from "@/components/chat/types";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
-import { useMarkConversationRead, useFacebookStatus, useInstagramStatus, useWhatsAppStatus } from "@/hooks/api/useSocial";
-import { convertUnifiedMessagesToMessageType } from "@/lib/chatAdapter";
+import { useMarkConversationRead, useUnifiedConversations } from "@/hooks/api/useSocial";
 
-interface PaginatedResponse<T> {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: T[];
+// Custom hook for debounced value
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
-interface Attachment {
-  type: string;
-  url: string;
-  sticker_id?: string;
-  media_id?: string;
-  mime_type?: string;
-  filename?: string;
-}
-
-interface FacebookMessage {
-  id: number;
-  message_id: string;
-  sender_id: string;
-  sender_name?: string;
-  profile_pic_url?: string;
-  message_text: string;
-  attachment_type?: string;
-  attachment_url?: string;
-  attachments?: Attachment[];
-  timestamp: string;
-  is_from_page?: boolean;
-  is_delivered?: boolean;
-  delivered_at?: string;
-  is_read?: boolean;
-  read_at?: string;
-  is_read_by_staff?: boolean;
-  read_by_staff_at?: string;
-  page_name: string;
-  recipient_id?: string; // The person receiving the message
-  // Reply fields
-  reply_to_message_id?: string;
-  reply_to_id?: number;
-  // Reaction fields
-  reaction?: string;
-  reaction_emoji?: string;
-  reacted_by?: string;
-  reacted_at?: string;
-  // Message source tracking
-  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
-  is_echo?: boolean;
-  sent_by_name?: string;
-}
-
-interface InstagramMessage {
-  id: number;
-  message_id: string;
-  sender_id: string;
-  sender_name?: string;
-  sender_username?: string;
-  sender_profile_pic?: string;
-  message_text: string;
-  attachment_type?: string;
-  attachment_url?: string;
-  attachments?: Attachment[];
-  timestamp: string;
-  is_from_business?: boolean;
-  is_delivered?: boolean;
-  delivered_at?: string;
-  is_read?: boolean;
-  read_at?: string;
-  is_read_by_staff?: boolean;
-  read_by_staff_at?: string;
-  account_username: string;
-  // Message source tracking
-  source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
-  is_echo?: boolean;
-  sent_by_name?: string;
-}
-
-interface InstagramAccount {
-  id: number;
-  instagram_account_id: string;
-  username: string;
-  profile_picture_url?: string;
-  is_active: boolean;
-}
-
-interface WhatsAppAccount {
-  id: number;
-  waba_id: string;
-  business_name: string;
-  phone_number: string;
-  display_phone_number: string;
-  is_active: boolean;
-}
-
+// Unified message interface for lazy loading
 interface UnifiedMessage {
   id: string;
   platform: "facebook" | "instagram" | "whatsapp" | "email";
@@ -123,55 +41,22 @@ interface UnifiedMessage {
   message_type?: string;
   attachment_type?: string;
   attachment_url?: string;
-  attachments?: Attachment[];
+  attachments?: { type: string; url: string; filename?: string; mime_type?: string }[];
   timestamp: string;
   is_from_business: boolean;
   is_delivered?: boolean;
-  delivered_at?: string;
   is_read?: boolean;
-  read_at?: string;
   page_name?: string;
   conversation_id: string;
   platform_message_id: string;
   account_id: string;
-  // Message source tracking (all platforms)
   source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
   is_echo?: boolean;
   sent_by_name?: string;
-  is_edited?: boolean;
-  edited_at?: string;
-  original_text?: string;
-  is_revoked?: boolean;
-  revoked_at?: string;
-  // Email fields
   subject?: string;
   body_html?: string;
-  // Reply fields (Facebook Messenger)
   reply_to_message_id?: string;
   reply_to_id?: number;
-  reply_to_text?: string;
-  reply_to_sender_name?: string;
-  // Reaction fields (Facebook Messenger)
-  reaction?: string;
-  reaction_emoji?: string;
-  reacted_by?: string;
-  reacted_at?: string;
-}
-
-interface UnifiedConversation {
-  platform: "facebook" | "instagram" | "whatsapp" | "email";
-  conversation_id: string;
-  sender_id: string;
-  sender_name: string;
-  profile_pic_url?: string;
-  last_message: UnifiedMessage;
-  message_count: number;
-  account_name: string;
-  account_id: string;
-  // Email-specific fields
-  subject?: string;
-  // Unread count
-  unread_count?: number;
 }
 
 type Platform = "facebook" | "instagram" | "whatsapp" | "email";
@@ -181,648 +66,80 @@ interface MessagesChatProps {
 }
 
 export default function MessagesChat({ platforms }: MessagesChatProps) {
-  // If no platforms specified, show all
   const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email"];
-  const router = useRouter();
   const params = useParams();
-  const chatId = params.id as string | undefined;
+  // params.id is an array for [[...id]] catch-all routes
+  const chatId = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  // Use React Query hooks for platform status (cached and shared across components)
-  const { data: facebookStatusData, isSuccess: facebookStatusLoaded } = useFacebookStatus();
-  const { data: instagramStatusData, isSuccess: instagramStatusLoaded } = useInstagramStatus();
-  const { data: whatsAppStatusData, isSuccess: whatsAppStatusLoaded } = useWhatsAppStatus();
-
-  // Check if all enabled platform statuses are loaded
-  const statusDataReady = (
-    (!enabledPlatforms.includes('facebook') || facebookStatusLoaded) &&
-    (!enabledPlatforms.includes('instagram') || instagramStatusLoaded) &&
-    (!enabledPlatforms.includes('whatsapp') || whatsAppStatusLoaded)
-  );
-
-  // Platform-specific cache key to prevent showing wrong data when navigating
-  const platformsKey = enabledPlatforms.sort().join('_');
-  const CHATS_CACHE_KEY = `echodesk_chats_cache_${platformsKey}`;
-
-  // Initialize chatsData from sessionStorage cache if available
-  const getInitialChatsData = (): ChatType[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const cached = sessionStorage.getItem(CHATS_CACHE_KEY);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        // Restore Date objects
-        return parsed.map((chat: any) => ({
-          ...chat,
-          lastMessage: chat.lastMessage ? {
-            ...chat.lastMessage,
-            createdAt: new Date(chat.lastMessage.createdAt)
-          } : undefined,
-          messages: chat.messages?.map((msg: any) => ({
-            ...msg,
-            createdAt: new Date(msg.createdAt)
-          })) || []
-        }));
-      }
-    } catch (e) {
-      console.error('Failed to parse cached chats:', e);
-    }
-    return [];
-  };
-
-  // Start with loading=true if no cached data for this platform
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    const cached = sessionStorage.getItem(CHATS_CACHE_KEY);
-    return !cached;
-  });
-  const [error, setError] = useState("");
-  const [conversations, setConversations] = useState<UnifiedConversation[]>([]);
-  const [conversationMessages, setConversationMessages] = useState<Map<string, UnifiedMessage[]>>(new Map());
-  const [chatsData, setChatsData] = useState<ChatType[]>(getInitialChatsData);
-  const [currentUser, setCurrentUser] = useState({ id: "business", name: "Me", status: "online" });
-  const [wsConnected, setWsConnected] = useState(false);
   const [selectedEmailFolder, setSelectedEmailFolder] = useState<string>('INBOX');
+  const [currentUser] = useState({ id: "business", name: "Me", status: "online" });
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [assignmentTab, setAssignmentTab] = useState<AssignmentTabType>('all');
 
-  // Ref to ensure initial load only happens once
-  const hasInitiallyLoadedRef = useRef(false);
+  // Debounce search query (300ms delay)
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  // Ref to track previous folder for change detection
-  const previousFolderRef = useRef<string>(selectedEmailFolder);
+  // Track if we're currently searching (search input has value but API hasn't responded yet)
+  const isSearching = searchQuery !== '' && searchQuery !== debouncedSearchQuery;
 
-  // Cache chatsData to sessionStorage whenever it changes
-  useEffect(() => {
-    if (chatsData.length > 0 && typeof window !== 'undefined') {
-      try {
-        sessionStorage.setItem(CHATS_CACHE_KEY, JSON.stringify(chatsData));
-      } catch (e) {
-        console.error('Failed to cache chats:', e);
-      }
+  // Use the unified conversations hook
+  const {
+    data: conversationsData,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+  } = useUnifiedConversations({
+    platforms: enabledPlatforms.join(','),
+    folder: selectedEmailFolder,
+    pageSize: 20,
+    search: debouncedSearchQuery,
+    assigned: assignmentTab === 'assigned',
+  });
+
+  // State to hold a directly loaded chat (when navigating to a URL not in the list)
+  const [directLoadedChat, setDirectLoadedChat] = useState<ChatType | null>(null);
+  // Track if we're currently loading a direct chat
+  const [isLoadingDirectChat, setIsLoadingDirectChat] = useState(false);
+
+  // Convert API conversations to ChatType format
+  const chatsData = useMemo(() => {
+    if (!conversationsData?.pages) return directLoadedChat ? [directLoadedChat] : [];
+
+    // Flatten all pages into a single array and cast platform to string
+    const allConversations = conversationsData.pages.flatMap(page =>
+      (page.results || []).map(conv => ({
+        ...conv,
+        platform: String(conv.platform) as 'facebook' | 'instagram' | 'whatsapp' | 'email',
+      }))
+    );
+
+    const convertedChats = convertApiConversationsToChatFormat(allConversations);
+
+    // If we have a directly loaded chat that's not in the list, add it
+    if (directLoadedChat && !convertedChats.find(c => c.id === directLoadedChat.id)) {
+      return [directLoadedChat, ...convertedChats];
     }
-  }, [chatsData]);
 
-  const loadAllConversations = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const allConversations: UnifiedConversation[] = [];
-      const allMessages = new Map<string, UnifiedMessage[]>();
+    return convertedChats;
+  }, [conversationsData, directLoadedChat]);
 
-      // Load Facebook conversations
-      if (enabledPlatforms.includes("facebook")) {
-      try {
-        // Use cached status from React Query hook
-        const facebookPages = (facebookStatusData?.pages as FacebookPageConnection[]) || [];
+  // Handle WebSocket new message - refetch conversations
+  const handleNewMessage = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
-        // Only fetch messages if there are connected pages
-        if (facebookPages.length > 0) {
-          for (const page of facebookPages) {
-            try {
-              const messagesResponse = await axios.get("/api/social/facebook-messages/", {
-                params: { page_id: page.page_id, page_size: 500 },
-              });
-
-              const messages = (messagesResponse.data as PaginatedResponse<FacebookMessage>).results || [];
-
-              // Group messages by customer
-              // Note: Backend stores sender_id=recipient_id for outgoing (page) messages,
-              // so we can use sender_id directly for all messages to group by conversation
-              const conversationMap = new Map<string, FacebookMessage[]>();
-
-              messages.forEach((msg) => {
-                // sender_id is the customer ID for ALL messages:
-                // - Incoming messages: sender_id is the customer who sent it
-                // - Outgoing messages: backend stores recipient_id as sender_id
-                const customerId = msg.sender_id;
-
-                if (!conversationMap.has(customerId)) {
-                  conversationMap.set(customerId, []);
-                }
-                conversationMap.get(customerId)!.push(msg);
-              });
-
-              // Convert to unified format
-              conversationMap.forEach((msgs, customerId) => {
-                if (msgs.length === 0) return;
-
-                const sortedMsgs = msgs.sort((a, b) =>
-                  new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-                );
-                const latestMsg = sortedMsgs[0];
-
-                // Find customer name and info from non-page messages
-                const customerMsg = msgs.find(m => !m.is_from_page);
-                const customerName = customerMsg?.sender_name || "Unknown";
-                // Get profile pic from the latest customer message that has one (sorted by timestamp desc)
-                const sortedCustomerMsgs = msgs
-                  .filter(m => !m.is_from_page && m.profile_pic_url)
-                  .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                const customerAvatar = sortedCustomerMsgs[0]?.profile_pic_url;
-
-                // Calculate unread count: incoming messages not yet read by staff
-                const unreadCount = msgs.filter(m => !m.is_from_page && m.is_read_by_staff === false).length;
-
-                const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
-                  id: String(msg.id),
-                  platform: "facebook" as const,
-                  sender_id: msg.sender_id,
-                  sender_name: msg.sender_name || "Unknown",
-                  profile_pic_url: msg.profile_pic_url,
-                  message_text: msg.message_text,
-                  attachment_type: msg.attachment_type,
-                  attachment_url: msg.attachment_url,
-                  attachments: msg.attachments,
-                  timestamp: msg.timestamp,
-                  is_from_business: msg.is_from_page || false,
-                  is_delivered: msg.is_delivered,
-                  delivered_at: msg.delivered_at,
-                  is_read: msg.is_read,
-                  read_at: msg.read_at,
-                  page_name: msg.page_name,
-                  conversation_id: `fb_${page.page_id}_${customerId}`,
-                  platform_message_id: msg.message_id,
-                  account_id: page.page_id,
-                  // Reply fields
-                  reply_to_message_id: msg.reply_to_message_id,
-                  reply_to_id: msg.reply_to_id,
-                  // Reaction fields
-                  reaction: msg.reaction,
-                  reaction_emoji: msg.reaction_emoji,
-                  reacted_by: msg.reacted_by,
-                  reacted_at: msg.reacted_at,
-                  // Message source tracking
-                  source: msg.source,
-                  is_echo: msg.is_echo,
-                  sent_by_name: msg.sent_by_name,
-                }));
-
-                // Convert latest message to unified format
-                const lastUnifiedMessage: UnifiedMessage = {
-                  id: String(latestMsg.id),
-                  platform: "facebook" as const,
-                  sender_id: latestMsg.sender_id,
-                  sender_name: latestMsg.sender_name || "Unknown",
-                  profile_pic_url: latestMsg.profile_pic_url,
-                  message_text: latestMsg.message_text,
-                  attachment_type: latestMsg.attachment_type,
-                  attachment_url: latestMsg.attachment_url,
-                  attachments: latestMsg.attachments,
-                  timestamp: latestMsg.timestamp,
-                  is_from_business: latestMsg.is_from_page || false,
-                  is_delivered: latestMsg.is_delivered,
-                  delivered_at: latestMsg.delivered_at,
-                  is_read: latestMsg.is_read,
-                  read_at: latestMsg.read_at,
-                  page_name: latestMsg.page_name,
-                  conversation_id: `fb_${page.page_id}_${customerId}`,
-                  platform_message_id: latestMsg.message_id,
-                  account_id: page.page_id,
-                };
-
-                const conversation: UnifiedConversation = {
-                  platform: "facebook",
-                  conversation_id: `fb_${page.page_id}_${customerId}`,
-                  sender_id: customerId,
-                  sender_name: customerName,
-                  profile_pic_url: customerAvatar,
-                  last_message: lastUnifiedMessage,
-                  message_count: msgs.length,
-                  account_name: page.page_name,
-                  account_id: page.page_id,
-                  unread_count: unreadCount,
-                };
-
-                allConversations.push(conversation);
-                allMessages.set(conversation.conversation_id, unifiedMessages);
-              });
-            } catch (err) {
-              console.error(`Failed to load messages for page ${page.page_id}:`, err);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load Facebook pages:", err);
-      }
-      }
-
-      // Load Instagram conversations
-      if (enabledPlatforms.includes("instagram")) {
-      try {
-        // Use cached status from React Query hook
-        const instagramAccounts = (instagramStatusData?.accounts as InstagramAccount[]) || [];
-
-        // Only fetch messages if there are connected accounts
-        if (instagramAccounts.length > 0) {
-          for (const account of instagramAccounts) {
-          try {
-            const messagesResponse = await axios.get("/api/social/instagram-messages/", {
-              params: { account_id: account.instagram_account_id, page_size: 500 },
-            });
-
-            const messages = (messagesResponse.data as PaginatedResponse<InstagramMessage>).results || [];
-
-            const conversationMap = new Map<string, InstagramMessage[]>();
-
-            // Group messages by customer ID
-            // For both customer and business messages, sender_id contains the customer ID
-            // (Backend stores recipient_id in sender_id for business messages)
-            messages.forEach((msg) => {
-              const customerId = msg.sender_id;
-
-              if (!conversationMap.has(customerId)) {
-                conversationMap.set(customerId, []);
-              }
-              conversationMap.get(customerId)!.push(msg);
-            });
-
-            // Convert to unified format
-            conversationMap.forEach((msgs, customerId) => {
-              if (msgs.length === 0) return;
-
-              const sortedMsgs = msgs.sort((a, b) =>
-                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-              );
-              const latestMsg = sortedMsgs[0];
-
-              const customerMsg = msgs.find(m => !m.is_from_business);
-              const customerName = customerMsg?.sender_name || customerMsg?.sender_username || customerMsg?.sender_id || customerId;
-              // Get profile pic from the latest customer message that has one
-              const sortedCustomerMsgs = msgs
-                .filter(m => !m.is_from_business && m.sender_profile_pic)
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-              const customerAvatar = sortedCustomerMsgs[0]?.sender_profile_pic;
-
-              // Calculate unread count: incoming messages not yet read by staff
-              const unreadCount = msgs.filter(m => !m.is_from_business && m.is_read_by_staff === false).length;
-
-              const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
-                id: String(msg.id),
-                platform: "instagram" as const,
-                sender_id: msg.sender_id,
-                sender_name: msg.sender_name || msg.sender_username || msg.sender_id,
-                profile_pic_url: msg.sender_profile_pic,
-                message_text: msg.message_text,
-                attachment_type: msg.attachment_type,
-                attachment_url: msg.attachment_url,
-                attachments: msg.attachments,
-                timestamp: msg.timestamp,
-                is_from_business: msg.is_from_business || false,
-                is_delivered: msg.is_delivered,
-                delivered_at: msg.delivered_at,
-                is_read: msg.is_read,
-                read_at: msg.read_at,
-                page_name: `@${msg.account_username}`,
-                conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
-                platform_message_id: msg.message_id,
-                account_id: account.instagram_account_id,
-                // Message source tracking
-                source: msg.source,
-                is_echo: msg.is_echo,
-                sent_by_name: msg.sent_by_name,
-              }));
-
-              // Convert latest message to unified format
-              const lastUnifiedMessage: UnifiedMessage = {
-                id: String(latestMsg.id),
-                platform: "instagram" as const,
-                sender_id: latestMsg.sender_id,
-                sender_name: latestMsg.sender_name || latestMsg.sender_username || latestMsg.sender_id,
-                profile_pic_url: latestMsg.sender_profile_pic,
-                message_text: latestMsg.message_text,
-                attachment_type: latestMsg.attachment_type,
-                attachment_url: latestMsg.attachment_url,
-                attachments: latestMsg.attachments,
-                timestamp: latestMsg.timestamp,
-                is_from_business: latestMsg.is_from_business || false,
-                is_delivered: latestMsg.is_delivered,
-                delivered_at: latestMsg.delivered_at,
-                is_read: latestMsg.is_read,
-                read_at: latestMsg.read_at,
-                page_name: `@${latestMsg.account_username}`,
-                conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
-                platform_message_id: latestMsg.message_id,
-                account_id: account.instagram_account_id,
-              };
-
-              const conversation: UnifiedConversation = {
-                platform: "instagram",
-                conversation_id: `ig_${account.instagram_account_id}_${customerId}`,
-                sender_id: customerId,
-                sender_name: customerName,
-                profile_pic_url: customerAvatar,
-                last_message: lastUnifiedMessage,
-                message_count: msgs.length,
-                account_name: `@${account.username}`,
-                account_id: account.instagram_account_id,
-                unread_count: unreadCount,
-              };
-
-              allConversations.push(conversation);
-              allMessages.set(conversation.conversation_id, unifiedMessages);
-            });
-          } catch (err) {
-            console.error(`Failed to load messages for Instagram account ${account.instagram_account_id}:`, err);
-          }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load Instagram accounts:", err);
-      }
-      }
-
-      // Load WhatsApp conversations
-      if (enabledPlatforms.includes("whatsapp")) {
-      try {
-        // Use cached status from React Query hook
-        const whatsappAccounts = (whatsAppStatusData?.accounts as WhatsAppAccount[]) || [];
-
-        // Only fetch messages if there are connected accounts
-        if (whatsappAccounts.length === 0) {
-          // No WhatsApp accounts connected, skip fetching messages
-        } else {
-        // Load all WhatsApp messages at once (ViewSet returns all messages for all accounts in tenant)
-        const messagesResponse = await socialWhatsappMessagesList(undefined, undefined, 500);
-        const allWhatsAppMessages = messagesResponse.results || [];
-
-        // Helper function to normalize phone numbers (remove + prefix for consistent conversation IDs)
-        const normalizePhoneNumber = (phone: string): string => {
-          return phone.startsWith('+') ? phone.substring(1) : phone;
-        };
-
-        // Group messages by WhatsApp Business Account
-        const messagesByAccount = new Map<string, WhatsAppMessage[]>();
-        allWhatsAppMessages.forEach(msg => {
-          const wabaId = msg.waba_id;
-          if (!wabaId) return;
-          if (!messagesByAccount.has(wabaId)) {
-            messagesByAccount.set(wabaId, []);
-          }
-          messagesByAccount.get(wabaId)!.push(msg);
-        });
-
-        // Process messages for each account
-        for (const account of whatsappAccounts) {
-          const messages = messagesByAccount.get(account.waba_id) || [];
-
-            // Group messages by customer (sender phone number) - normalized
-            const customerIds = new Set<string>();
-            messages.forEach((msg) => {
-              if (!msg.is_from_business) {
-                customerIds.add(normalizePhoneNumber(msg.from_number));
-              }
-            });
-
-            const conversationMap = new Map<string, WhatsAppMessage[]>();
-            const sortedMessages = [...messages].sort((a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-            );
-
-            let lastCustomerId: string | null = null;
-
-            sortedMessages.forEach((msg) => {
-              let customerId: string;
-
-              if (msg.is_from_business) {
-                // Message from business - use to_number as customer
-                customerId = normalizePhoneNumber(msg.to_number);
-                if (!customerId && lastCustomerId) {
-                  customerId = lastCustomerId;
-                } else if (!customerId && customerIds.size === 1) {
-                  customerId = Array.from(customerIds)[0];
-                }
-              } else {
-                // Message from customer - from_number IS the customer ID
-                customerId = normalizePhoneNumber(msg.from_number);
-                lastCustomerId = customerId;
-              }
-
-              if (!conversationMap.has(customerId)) {
-                conversationMap.set(customerId, []);
-              }
-              conversationMap.get(customerId)!.push(msg);
-            });
-
-            // Convert to unified format
-            conversationMap.forEach((msgs, customerId) => {
-              if (msgs.length === 0) return;
-
-              const sortedMsgs = msgs.sort((a, b) =>
-                new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-              );
-              const latestMsg = sortedMsgs[0];
-
-              const customerMsg = msgs.find(m => !m.is_from_business);
-              const customerName = customerMsg?.contact_name || customerId;
-              // Get profile pic from the latest customer message that has one
-              const sortedCustomerMsgs = msgs
-                .filter(m => !m.is_from_business && m.profile_pic_url)
-                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-              const customerAvatar = sortedCustomerMsgs[0]?.profile_pic_url;
-
-              // Calculate unread count: incoming messages not yet read by staff
-              const unreadCount = msgs.filter(m => !m.is_from_business && (m as any).is_read_by_staff === false).length;
-
-              const unifiedMessages: UnifiedMessage[] = msgs.map((msg) => ({
-                id: String(msg.id),
-                platform: "whatsapp" as const,
-                sender_id: msg.is_from_business ? msg.to_number : msg.from_number,
-                sender_name: msg.contact_name || (msg.is_from_business ? account.business_name : msg.from_number),
-                profile_pic_url: msg.profile_pic_url,
-                message_text: msg.message_text || '',
-                message_type: msg.message_type as string | undefined,
-                attachment_type: msg.message_type as string | undefined,
-                attachment_url: msg.media_url,
-                attachments: msg.attachments as Attachment[] | undefined,
-                timestamp: msg.timestamp,
-                is_from_business: msg.is_from_business || false,
-                is_delivered: msg.is_delivered,
-                delivered_at: msg.delivered_at,
-                is_read: msg.is_read,
-                read_at: msg.read_at,
-                page_name: account.business_name,
-                conversation_id: `wa_${account.waba_id}_${customerId}`,
-                platform_message_id: msg.message_id,
-                account_id: account.waba_id,
-                // WhatsApp Coexistence fields
-                source: msg.source as unknown as 'cloud_api' | 'business_app' | 'synced' | undefined,
-                is_echo: msg.is_echo,
-                is_edited: msg.is_edited,
-                edited_at: msg.edited_at,
-                original_text: msg.original_text,
-                is_revoked: msg.is_revoked,
-                revoked_at: msg.revoked_at,
-              }));
-
-              const lastUnifiedMessage: UnifiedMessage = {
-                id: String(latestMsg.id),
-                platform: "whatsapp" as const,
-                sender_id: latestMsg.is_from_business ? latestMsg.to_number : latestMsg.from_number,
-                sender_name: latestMsg.contact_name || (latestMsg.is_from_business ? account.business_name : latestMsg.from_number),
-                profile_pic_url: latestMsg.profile_pic_url,
-                message_text: latestMsg.message_text || '',
-                message_type: latestMsg.message_type as string | undefined,
-                attachment_type: latestMsg.message_type as string | undefined,
-                attachment_url: latestMsg.media_url,
-                attachments: latestMsg.attachments as Attachment[] | undefined,
-                timestamp: latestMsg.timestamp,
-                is_from_business: latestMsg.is_from_business || false,
-                is_delivered: latestMsg.is_delivered,
-                delivered_at: latestMsg.delivered_at,
-                is_read: latestMsg.is_read,
-                read_at: latestMsg.read_at,
-                page_name: account.business_name,
-                conversation_id: `wa_${account.waba_id}_${customerId}`,
-                platform_message_id: latestMsg.message_id,
-                account_id: account.waba_id,
-                // WhatsApp Coexistence fields
-                source: latestMsg.source as unknown as 'cloud_api' | 'business_app' | 'synced' | undefined,
-                is_echo: latestMsg.is_echo,
-                is_edited: latestMsg.is_edited,
-                edited_at: latestMsg.edited_at,
-                original_text: latestMsg.original_text,
-                is_revoked: latestMsg.is_revoked,
-                revoked_at: latestMsg.revoked_at,
-              };
-
-              const conversation: UnifiedConversation = {
-                platform: "whatsapp",
-                conversation_id: `wa_${account.waba_id}_${customerId}`,
-                sender_id: customerId,
-                sender_name: customerName,
-                profile_pic_url: customerAvatar,
-                last_message: lastUnifiedMessage,
-                message_count: msgs.length,
-                account_name: account.business_name,
-                account_id: account.waba_id,
-                unread_count: unreadCount,
-              };
-
-              allConversations.push(conversation);
-              allMessages.set(conversation.conversation_id, unifiedMessages);
-            });
-        }
-        } // end else (whatsappAccounts.length > 0)
-      } catch (err) {
-        console.error("Failed to load WhatsApp accounts:", err);
-      }
-      }
-
-      // Load Email conversations (only previews, not all messages)
-      // Now supports multiple email connections - threads from all accounts are loaded together
-      if (enabledPlatforms.includes("email")) {
-      try {
-        const emailStatus = await socialEmailStatusRetrieve();
-
-        if (emailStatus.connected) {
-          // Get email threads from all connections (unified view)
-          // The threads endpoint returns EmailMessage with additional aggregate fields
-          // connection_id, connection_email, connection_display_name are already in GeneratedEmailMessage
-          interface EmailThreadMessage extends GeneratedEmailMessage {
-            message_count?: number;
-            unread_count?: number;
-            customer_email?: string;
-            customer_name?: string;
-          }
-          // Fetch threads with folder filter - returns threads from all connected accounts
-          const folderParam = selectedEmailFolder && selectedEmailFolder !== 'All'
-            ? `?folder=${encodeURIComponent(selectedEmailFolder)}`
-            : '';
-          const threadsResponse = await axios.get(`/api/social/email-messages/threads/${folderParam}`);
-          const threads = threadsResponse.data as EmailThreadMessage[];
-
-          for (const thread of (Array.isArray(threads) ? threads : [])) {
-            // DON'T fetch all messages for each thread upfront
-            // Only create conversation preview from thread data
-            // Messages will be loaded lazily when the chat is selected
-
-            // Use customer_email/customer_name from thread (the external party, not business)
-            // Falls back to from_email if customer fields not available
-            const customerEmail = thread.customer_email || thread.from_email;
-            const customerName = thread.customer_name || thread.from_name || customerEmail;
-
-            // Get account info from thread (supports multiple connections)
-            const accountEmail = thread.connection_email;
-            const accountId = thread.connection_id;
-
-            // Create last message preview from thread data
-            const lastUnifiedMessage: UnifiedMessage = {
-              id: String(thread.id),
-              platform: "email" as const,
-              sender_id: thread.from_email,
-              sender_name: thread.from_name || thread.from_email,
-              profile_pic_url: undefined,
-              message_text: thread.body_text || '',
-              message_type: 'email',
-              attachment_type: thread.attachments?.length > 0 ? 'file' : undefined,
-              attachment_url: thread.attachments?.[0]?.url,
-              attachments: thread.attachments,
-              timestamp: thread.timestamp,
-              is_from_business: thread.is_from_business || false,
-              is_delivered: true,
-              is_read: thread.is_read,
-              page_name: accountEmail,
-              conversation_id: `email_${thread.thread_id}`,
-              platform_message_id: thread.message_id,
-              account_id: String(accountId),
-              subject: thread.subject,
-              body_html: thread.body_html,
-            };
-
-            const conversation: UnifiedConversation = {
-              platform: "email",
-              conversation_id: `email_${thread.thread_id}`,
-              sender_id: customerEmail,
-              sender_name: customerName,
-              profile_pic_url: undefined,
-              last_message: lastUnifiedMessage,
-              message_count: thread.message_count || 1,
-              account_name: accountEmail,
-              account_id: String(accountId),
-              subject: thread.subject,
-              unread_count: thread.unread_count || 0,
-            };
-
-            allConversations.push(conversation);
-            // Don't add messages to allMessages - they'll be loaded lazily
-            // Set empty array to indicate messages need to be loaded
-            allMessages.set(conversation.conversation_id, []);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load email conversations:", err);
-      }
-      }
-
-      setConversations(allConversations);
-      setConversationMessages(allMessages);
-
-      // Convert to chat format
-      const converted = convertFacebookMessagesToChatFormat(allConversations, allMessages);
-      setChatsData(converted);
-    } catch (err: unknown) {
-      console.error("Failed to load conversations:", err);
-      setError("Failed to load conversations");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [enabledPlatforms, selectedEmailFolder, facebookStatusData, instagramStatusData, whatsAppStatusData]);
-
-  // Handle WebSocket new message
-  const handleNewMessage = useCallback((data: any) => {
-    // Sound is played globally in layout.tsx
-    // Reload conversations to get the latest data
-    loadAllConversations(true);
-  }, [loadAllConversations]);
-
-  // Handle WebSocket conversation update - don't reload on every update
-  // Only new_message events should trigger a reload (handled separately)
-  const handleConversationUpdate = useCallback((data: any) => {
-    // Conversation updates (read receipts, delivery receipts, status changes)
-    // don't require a full reload - they're just status updates
-    // New messages are handled by handleNewMessage which does reload
+  // Handle WebSocket conversation update
+  const handleConversationUpdate = useCallback(() => {
+    // Status updates don't require refetch
   }, []);
 
   // Handle WebSocket connection status
-  const handleConnectionChange = useCallback((connected: boolean) => {
-    setWsConnected(connected);
+  const handleConnectionChange = useCallback(() => {
+    // Connection status change
   }, []);
 
   // Initialize WebSocket connection
@@ -834,58 +151,137 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     reconnectInterval: 3000,
   });
 
-  // Initial load - only runs once when status data is ready
-  useEffect(() => {
-    if (hasInitiallyLoadedRef.current) {
-      return;
-    }
-    // Wait for platform status data to be loaded before fetching conversations
-    if (!statusDataReady) {
-      return;
-    }
-    hasInitiallyLoadedRef.current = true;
-    loadAllConversations();
-  }, [loadAllConversations, statusDataReady]);
-
-  // Reload when folder changes (only for email platform)
-  useEffect(() => {
-    // Skip if not on email page or if initial load hasn't happened
-    if (!enabledPlatforms.includes('email') || !hasInitiallyLoadedRef.current) {
-      return;
-    }
-
-    // Check if folder actually changed
-    if (previousFolderRef.current !== selectedEmailFolder) {
-      previousFolderRef.current = selectedEmailFolder;
-      loadAllConversations();
-    }
-  }, [selectedEmailFolder, enabledPlatforms, loadAllConversations]);
-
-  // Define handleMessageSent before any early returns (hooks rule)
+  // Handle message sent - refetch conversations
   const handleMessageSent = useCallback(() => {
-    // Reload conversations after sending a message
-    loadAllConversations(true); // Silent reload
-  }, [loadAllConversations]);
+    refetch();
+  }, [refetch]);
 
-  // Load messages for a specific chat (lazy loading for emails)
+  // Load messages for a specific chat (lazy loading)
   const loadChatMessages = useCallback(async (chatId: string): Promise<MessageType[]> => {
-    // Check if this is an email chat
-    if (chatId.startsWith('email_')) {
-      const threadId = chatId.replace('email_', '');
-      try {
-        const threadMessagesResponse = await axios.get("/api/social/email-messages/", {
+    try {
+      // Parse chat ID to determine platform and IDs
+      // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{thread_id}
+      const parts = chatId.split('_');
+      const platform = parts[0];
+
+      if (platform === 'fb' && parts.length >= 3) {
+        const pageId = parts[1];
+        const senderId = parts.slice(2).join('_');
+
+        const response = await axios.get("/api/social/facebook-messages/", {
+          params: { page_id: pageId, sender_id: senderId, page_size: 500 },
+        });
+        const messages = response.data?.results || [];
+
+        const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => ({
+          id: String(msg.id),
+          platform: "facebook" as const,
+          sender_id: msg.sender_id,
+          sender_name: msg.sender_name || "Unknown",
+          profile_pic_url: msg.profile_pic_url,
+          message_text: msg.message_text || '',
+          attachment_type: msg.attachment_type,
+          attachment_url: msg.attachment_url,
+          attachments: msg.attachments,
+          timestamp: msg.timestamp,
+          is_from_business: msg.is_from_page || false,
+          is_delivered: msg.is_delivered,
+          is_read: msg.is_read,
+          conversation_id: chatId,
+          platform_message_id: msg.message_id,
+          account_id: pageId,
+          source: msg.source,
+          is_echo: msg.is_echo,
+          sent_by_name: msg.sent_by_name,
+          reply_to_message_id: msg.reply_to_message_id,
+          reply_to_id: msg.reply_to_id,
+        }));
+
+        return convertUnifiedMessagesToMessageType(unifiedMessages);
+      }
+
+      if (platform === 'ig' && parts.length >= 3) {
+        const accountId = parts[1];
+        const senderId = parts.slice(2).join('_');
+
+        const response = await axios.get("/api/social/instagram-messages/", {
+          params: { account_id: accountId, sender_id: senderId, page_size: 500 },
+        });
+        const messages = response.data?.results || [];
+
+        const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => ({
+          id: String(msg.id),
+          platform: "instagram" as const,
+          sender_id: msg.sender_id,
+          sender_name: msg.sender_name || msg.sender_username || "Unknown",
+          profile_pic_url: msg.sender_profile_pic,
+          message_text: msg.message_text || '',
+          attachment_type: msg.attachment_type,
+          attachment_url: msg.attachment_url,
+          attachments: msg.attachments,
+          timestamp: msg.timestamp,
+          is_from_business: msg.is_from_business || false,
+          is_delivered: msg.is_delivered,
+          is_read: msg.is_read,
+          conversation_id: chatId,
+          platform_message_id: msg.message_id,
+          account_id: accountId,
+          source: msg.source,
+          is_echo: msg.is_echo,
+          sent_by_name: msg.sent_by_name,
+        }));
+
+        return convertUnifiedMessagesToMessageType(unifiedMessages);
+      }
+
+      if (platform === 'wa' && parts.length >= 3) {
+        const wabaId = parts[1];
+        const fromNumber = parts.slice(2).join('_');
+
+        const response = await axios.get("/api/social/whatsapp-messages/", {
+          params: { waba_id: wabaId, from_number: fromNumber, page_size: 500 },
+        });
+        const messages = response.data?.results || [];
+
+        const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => ({
+          id: String(msg.id),
+          platform: "whatsapp" as const,
+          sender_id: msg.is_from_business ? msg.to_number : msg.from_number,
+          sender_name: msg.contact_name || msg.from_number,
+          profile_pic_url: msg.profile_pic_url,
+          message_text: msg.message_text || '',
+          message_type: msg.message_type,
+          attachment_type: msg.message_type,
+          attachment_url: msg.media_url,
+          attachments: msg.attachments,
+          timestamp: msg.timestamp,
+          is_from_business: msg.is_from_business || false,
+          is_delivered: msg.is_delivered,
+          is_read: msg.is_read,
+          conversation_id: chatId,
+          platform_message_id: msg.message_id,
+          account_id: wabaId,
+          source: msg.source,
+          is_echo: msg.is_echo,
+        }));
+
+        return convertUnifiedMessagesToMessageType(unifiedMessages);
+      }
+
+      if (platform === 'email' && parts.length >= 2) {
+        const threadId = parts.slice(1).join('_');
+
+        const response = await axios.get("/api/social/email-messages/", {
           params: { thread_id: threadId },
         });
-        const threadMessages = threadMessagesResponse.data?.results || [];
+        const messages = response.data?.results || [];
 
-        if (threadMessages.length === 0) return [];
+        if (messages.length === 0) return [];
 
-        // Get email connection info
         const emailStatus = await socialEmailStatusRetrieve();
         const emailConnection = emailStatus.connection;
 
-        // Convert to unified messages then to MessageType
-        const unifiedMessages: UnifiedMessage[] = threadMessages.map((msg: any) => ({
+        const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => ({
           id: String(msg.id),
           platform: "email" as const,
           sender_id: msg.from_email,
@@ -900,7 +296,6 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           is_from_business: msg.is_from_business || false,
           is_delivered: true,
           is_read: msg.is_read,
-          page_name: emailConnection?.email_address || '',
           conversation_id: chatId,
           platform_message_id: msg.message_id,
           account_id: String(emailConnection?.id || ''),
@@ -909,16 +304,114 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         }));
 
         return convertUnifiedMessagesToMessageType(unifiedMessages);
-      } catch (err) {
-        console.error("Failed to load email messages:", err);
-        return [];
       }
+
+      return [];
+    } catch (err) {
+      console.error("Failed to load chat messages:", err);
+      return [];
+    }
+  }, []);
+
+  // Load specific chat when navigating directly to a URL
+  useEffect(() => {
+    if (!chatId || isLoading) return;
+
+    // Check if we already have this chat loaded directly
+    if (directLoadedChat?.id === chatId) {
+      return;
     }
 
-    // For other platforms, messages are already loaded
-    // Return empty array (they should already have messages)
-    return [];
-  }, []);
+    // Check if the chat is in the API-loaded list (not including directLoadedChat)
+    const chatInApiList = conversationsData?.pages?.some(page =>
+      page.results?.some(conv => {
+        const platform = String(conv.platform);
+        const convId = `${platform === 'facebook' ? 'fb' : platform === 'instagram' ? 'ig' : platform === 'whatsapp' ? 'wa' : 'email'}_${conv.account_id}_${conv.sender_id}`;
+        return convId === chatId;
+      })
+    );
+
+    if (chatInApiList) {
+      // Chat is in the API list, clear any direct loaded chat
+      if (directLoadedChat) {
+        setDirectLoadedChat(null);
+      }
+      setIsLoadingDirectChat(false);
+      return;
+    }
+
+    // Chat not in list, need to load it directly
+    const loadDirectChat = async () => {
+      setIsLoadingDirectChat(true);
+      try {
+        const messages = await loadChatMessages(chatId);
+        if (messages.length === 0) {
+          setIsLoadingDirectChat(false);
+          return;
+        }
+
+        // Parse chatId to get platform info
+        const parts = chatId.split('_');
+        const platformPrefix = parts[0];
+
+        let platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
+        let senderName = 'Unknown';
+        let accountName = '';
+
+        if (platformPrefix === 'fb') {
+          platform = 'facebook';
+          // Get sender info from first incoming message
+          const incomingMsg = messages.find(m => m.senderId !== 'business');
+          senderName = incomingMsg?.senderName || 'Unknown';
+        } else if (platformPrefix === 'ig') {
+          platform = 'instagram';
+          const incomingMsg = messages.find(m => m.senderId !== 'business');
+          senderName = incomingMsg?.senderName || 'Unknown';
+        } else if (platformPrefix === 'wa') {
+          platform = 'whatsapp';
+          const incomingMsg = messages.find(m => m.senderId !== 'business');
+          senderName = incomingMsg?.senderName || parts.slice(2).join('_');
+        } else if (platformPrefix === 'email') {
+          platform = 'email';
+          const incomingMsg = messages.find(m => m.senderId !== 'business');
+          senderName = incomingMsg?.senderName || 'Unknown';
+        } else {
+          return;
+        }
+
+        // Get last message
+        const lastMessage = messages[messages.length - 1];
+
+        const chat: ChatType = {
+          id: chatId,
+          name: senderName,
+          avatar: undefined,
+          status: 'online',
+          lastMessage: {
+            content: lastMessage?.text || '',
+            createdAt: lastMessage?.createdAt || new Date(),
+          },
+          messages: messages,
+          users: [
+            { id: 'business', name: accountName || 'Business', avatar: undefined, status: 'online' },
+            { id: parts.slice(2).join('_'), name: senderName, avatar: undefined, status: 'online' },
+          ],
+          typingUsers: [],
+          unreadCount: 0,
+          platform,
+          messagesLoaded: true,
+        };
+
+        setDirectLoadedChat(chat);
+        setIsLoadingDirectChat(false);
+      } catch (err) {
+        console.error('Failed to load direct chat:', err);
+        setIsLoadingDirectChat(false);
+      }
+    };
+
+    loadDirectChat();
+  }, [chatId, isLoading, conversationsData, directLoadedChat, loadChatMessages]);
 
   // Mark conversation as read mutation
   const markReadMutation = useMarkConversationRead();
@@ -930,12 +423,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     const parts = chat.id.split('_');
     let conversationId: string;
 
-    // Handle email format: email_{thread_id}
     if (chat.platform === 'email') {
       if (parts.length < 2) return;
-      conversationId = parts.slice(1).join('_'); // thread_id
+      conversationId = parts.slice(1).join('_');
     } else {
-      // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}
       if (parts.length < 3) return;
       conversationId = parts.slice(2).join('_');
     }
@@ -947,19 +438,40 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   }, [markReadMutation]);
 
   // Show error if there's one
-  if (error) {
+  if (isError) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="text-center text-red-500">
-          <p>{error}</p>
+          <p>Failed to load conversations</p>
         </div>
       </div>
     );
   }
 
-  // Always show the layout - loading state is handled within the chat area
+  // Determine if search is loading (typing or fetching)
+  const searchLoading = isSearching || (isFetching && debouncedSearchQuery !== '');
+
+  // Combined loading state - show loading if initial load OR loading direct chat
+  const isLoadingChat = isLoading || isLoadingDirectChat;
+
   return (
-    <ChatProvider chatsData={chatsData} onChatSelected={handleChatSelected} loadChatMessages={loadChatMessages} isInitialLoading={loading} platforms={enabledPlatforms} selectedEmailFolder={selectedEmailFolder} setSelectedEmailFolder={setSelectedEmailFolder}>
+    <ChatProvider
+      chatsData={chatsData}
+      onChatSelected={handleChatSelected}
+      loadChatMessages={loadChatMessages}
+      isInitialLoading={isLoadingChat}
+      platforms={enabledPlatforms}
+      selectedEmailFolder={selectedEmailFolder}
+      setSelectedEmailFolder={setSelectedEmailFolder}
+      fetchNextPage={fetchNextPage}
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      isSearchLoading={searchLoading}
+      chatListSearchQuery={searchQuery}
+      setChatListSearchQuery={setSearchQuery}
+      assignmentTab={assignmentTab}
+      setAssignmentTab={setAssignmentTab}
+    >
       <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
         <ChatSidebar />
         {chatId ? (

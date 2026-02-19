@@ -22,7 +22,7 @@ import type {
   PaginatedSocialClientListList,
   PaginatedSocialClientCustomFieldList,
   SocialAccount,
-  PlatformEnum,
+  PlatformTypeEnum,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -34,7 +34,7 @@ export type {
   SocialClientCustomField,
   SocialClientCustomFieldRequest,
   SocialAccount,
-  PlatformEnum,
+  PlatformTypeEnum,
 };
 
 // Query keys
