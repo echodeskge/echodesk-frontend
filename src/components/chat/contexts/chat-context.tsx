@@ -21,6 +21,14 @@ export function ChatProvider({
   platforms = ['facebook', 'instagram', 'whatsapp', 'email'],
   selectedEmailFolder: externalSelectedEmailFolder,
   setSelectedEmailFolder: externalSetSelectedEmailFolder,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+  isSearchLoading,
+  chatListSearchQuery: externalChatListSearchQuery,
+  setChatListSearchQuery: externalSetChatListSearchQuery,
+  assignmentTab: externalAssignmentTab,
+  setAssignmentTab: externalSetAssignmentTab,
 }: {
   chatsData: ChatType[]
   children: ReactNode
@@ -30,6 +38,14 @@ export function ChatProvider({
   platforms?: string[]
   selectedEmailFolder?: string
   setSelectedEmailFolder?: (folder: string) => void
+  fetchNextPage?: () => void
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  isSearchLoading?: boolean
+  chatListSearchQuery?: string
+  setChatListSearchQuery?: (query: string) => void
+  assignmentTab?: AssignmentTabType
+  setAssignmentTab?: (tab: AssignmentTabType) => void
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -40,12 +56,16 @@ export function ChatProvider({
   // Sidebar state management
   const [isChatSidebarOpen, setIsChatSidebarOpen] = useState(false)
 
-  // Search state
-  const [chatListSearchQuery, setChatListSearchQuery] = useState("")
+  // Search state - use external if provided, otherwise internal
+  const [internalChatListSearchQuery, setInternalChatListSearchQuery] = useState("")
+  const chatListSearchQuery = externalChatListSearchQuery ?? internalChatListSearchQuery
+  const setChatListSearchQuery = externalSetChatListSearchQuery ?? setInternalChatListSearchQuery
   const [messageSearchQuery, setMessageSearchQuery] = useState("")
 
-  // Assignment tab state
-  const [assignmentTab, setAssignmentTab] = useState<AssignmentTabType>('all')
+  // Assignment tab state - use external if provided, otherwise internal
+  const [internalAssignmentTab, setInternalAssignmentTab] = useState<AssignmentTabType>('all')
+  const assignmentTab = externalAssignmentTab ?? internalAssignmentTab
+  const setAssignmentTab = externalSetAssignmentTab ?? setInternalAssignmentTab
 
   // Email folder filter state - use external if provided, otherwise internal
   const [internalSelectedEmailFolder, setInternalSelectedEmailFolder] = useState<string>('INBOX')
@@ -150,6 +170,11 @@ export function ChatProvider({
         setSelectedEmailFolder,
         replyingTo,
         setReplyingTo,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+        isSearchLoading,
+        rawChatsData: chatsData,
       }}
     >
       {children}

@@ -45,6 +45,14 @@ export interface ChatContextType {
   // Reply functionality
   replyingTo: ReplyingToType | null
   setReplyingTo: (reply: ReplyingToType | null) => void
+  // Infinite scroll pagination
+  fetchNextPage?: () => void
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  // Search loading state
+  isSearchLoading?: boolean
+  // Raw chats data (for race condition handling during state sync)
+  rawChatsData?: ChatType[]
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null

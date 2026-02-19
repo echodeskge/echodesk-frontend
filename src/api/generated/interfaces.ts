@@ -1443,6 +1443,15 @@ export interface LanguageRequest {
   sort_order?: number;
 }
 
+export interface LastMessage {
+  id: string;
+  text: string;
+  timestamp: string;
+  is_from_business: boolean;
+  attachment_type?: string;
+  platform_message_id: string;
+}
+
 export interface LeaveApproval {
   action: ActionEnum;
   comments?: string;
@@ -2383,6 +2392,13 @@ export interface PaginatedTikTokMessageList {
   results: TikTokMessage[];
 }
 
+export interface PaginatedUnifiedConversation {
+  count: number;
+  next: string;
+  previous: string;
+  results: UnifiedConversation[];
+}
+
 export interface PaginatedUserList {
   count: number;
   next?: string;
@@ -3134,10 +3150,6 @@ export interface PlanEnum {
   [key: string]: any;
 }
 
-export interface PlatformEnum {
-  [key: string]: any;
-}
-
 export interface PlatformTypeEnum {
   [key: string]: any;
 }
@@ -3647,7 +3659,7 @@ export interface SipConfigurationRequest {
 
 export interface SocialAccount {
   id: number;
-  platform: PlatformEnum;
+  platform: SocialAccountPlatformEnum;
   platform_id: string;
   account_connection_id: string;
   display_name?: string;
@@ -3659,8 +3671,12 @@ export interface SocialAccount {
   is_auto_created?: boolean;
 }
 
+export interface SocialAccountPlatformEnum {
+  [key: string]: any;
+}
+
 export interface SocialAccountRequest {
-  platform: PlatformEnum;
+  platform: SocialAccountPlatformEnum;
   platform_id: string;
   account_connection_id: string;
   display_name?: string;
@@ -4489,6 +4505,24 @@ export interface TimeTrackingSummary {
   active_sessions: TicketTimeLog[];
 }
 
+export interface UnifiedConversation {
+  conversation_id: string;
+  platform: UnifiedConversationPlatformEnum;
+  sender_id: string;
+  sender_name: string;
+  profile_pic_url?: string;
+  last_message: LastMessage;
+  message_count: number;
+  unread_count: number;
+  account_name: string;
+  account_id: string;
+  subject?: string;
+}
+
+export interface UnifiedConversationPlatformEnum {
+  [key: string]: any;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -4681,8 +4715,6 @@ export interface WhatsAppMessage {
   sent_by_name: string;
   created_at: string;
 }
-
-export type SourceEnum = 'cloud_api' | 'business_app' | 'synced';
 
 export interface WhatsAppMessageMessageTypeEnum {
   [key: string]: any;

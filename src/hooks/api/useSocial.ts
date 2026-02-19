@@ -18,6 +18,7 @@ import {
   socialEmailDraftsCreate,
   socialEmailDraftsPartialUpdate,
   socialEmailDraftsDestroy,
+  socialConversationsRetrieve,
 } from '@/api/generated';
 import type {
   EmailMessage as GeneratedEmailMessage,
@@ -25,6 +26,8 @@ import type {
   PaginatedEmailMessageList,
   EmailDraftRequest,
   PatchedEmailDraftRequest,
+  PaginatedUnifiedConversation,
+  UnifiedConversation,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -33,6 +36,9 @@ export const socialKeys = {
   all: ['social'] as const,
   unreadCount: () => [...socialKeys.all, 'unreadCount'] as const,
   settings: () => [...socialKeys.all, 'settings'] as const,
+  conversations: () => [...socialKeys.all, 'conversations'] as const,
+  conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean }) =>
+    [...socialKeys.conversations(), filters] as const,
   assignments: () => [...socialKeys.all, 'assignments'] as const,
   myAssignments: () => [...socialKeys.assignments(), 'my'] as const,
   allAssignments: () => [...socialKeys.assignments(), 'all'] as const,
@@ -2109,3 +2115,62 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
     isEmpty: !isLoading && recentConversations.length === 0,
   };
 }
+
+
+// ============================================================================
+// UNIFIED CONVERSATIONS (with infinite scroll pagination)
+// ============================================================================
+
+export interface UseUnifiedConversationsOptions {
+  platforms?: string;
+  search?: string;
+  folder?: string;
+  pageSize?: number;
+  enabled?: boolean;
+  assigned?: boolean;
+}
+
+/**
+ * Hook to fetch unified conversations from all social platforms with infinite scroll.
+ * Uses useInfiniteQuery for pagination.
+ */
+export function useUnifiedConversations(options: UseUnifiedConversationsOptions = {}) {
+  const {
+    platforms = 'facebook,instagram,whatsapp,email',
+    search = '',
+    folder = 'INBOX',
+    pageSize = 50,
+    enabled = true,
+    assigned = false,
+  } = options;
+
+  return useInfiniteQuery({
+    queryKey: socialKeys.conversationsList({ platforms, search, folder, assigned }),
+    queryFn: async ({ pageParam = 1 }) => {
+      // Use axios directly to support the 'assigned' parameter
+      const params: Record<string, string | number | boolean> = {
+        page: pageParam,
+        page_size: pageSize,
+        platforms,
+      };
+      if (folder) params.folder = folder;
+      if (search) params.search = search;
+      if (assigned) params.assigned = 'true';
+
+      const response = await axios.get<PaginatedUnifiedConversation>('/api/social/conversations/', { params });
+      return response.data;
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.next) {
+        return allPages.length + 1;
+      }
+      return undefined;
+    },
+    enabled,
+    staleTime: 30000, // 30 seconds
+  });
+}
+
+// Re-export types for convenience
+export type { UnifiedConversation, PaginatedUnifiedConversation };

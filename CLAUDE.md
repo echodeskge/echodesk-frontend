@@ -95,7 +95,11 @@ export function MessagesPage() {
 
 ## Backend/Frontend Deployment Workflow
 
-**IMPORTANT**: After every backend push, WAIT for user signal before continuing with frontend work.
+**IMPORTANT**: On every backend change:
+1. Push changes to the backend repository
+2. Merge to `qa` branch
+3. Merge to `main` branch
+4. **WAIT** for user signal before continuing with frontend work
 
 This ensures:
 - Backend changes are deployed and tested first
