@@ -28,7 +28,7 @@ export const ChatReducer = (
           content: action.text, // Update the last message content
           createdAt: newMessage.createdAt, // Update the timestamp
         },
-        messages: [newMessage, ...messages], // Add the new message to the top
+        messages: [...messages, newMessage], // Add the new message to the END (oldest-to-newest order)
       }
 
       const updatedChats = state.chats.map(
@@ -59,7 +59,7 @@ export const ChatReducer = (
           content: action.images.length > 1 ? "Images" : "Image", // Update the last message to reflect images
           createdAt: newMessage.createdAt,
         },
-        messages: [newMessage, ...messages], // Add the new message
+        messages: [...messages, newMessage], // Add the new message to the END (oldest-to-newest order)
       }
 
       const updatedChats = state.chats.map(
@@ -90,7 +90,7 @@ export const ChatReducer = (
           content: action.files.length > 1 ? "Files" : "File", // Update the last message to reflect files
           createdAt: newMessage.createdAt,
         },
-        messages: [newMessage, ...messages], // Add the new message
+        messages: [...messages, newMessage], // Add the new message to the END (oldest-to-newest order)
       }
 
       const updatedChats = state.chats.map(
@@ -173,9 +173,10 @@ export const ChatReducer = (
       let updatedChats = state.chats.map(chat => {
         if (chat.id === chatId) {
           chatFound = true
+          const currentMessages = chat.messages || []
           return {
             ...chat,
-            messages: [message, ...chat.messages], // Add message to the beginning (newest first)
+            messages: [...currentMessages, message], // Add message to the END (oldest-to-newest order)
             lastMessage: {
               content: message.text || (message.images ? 'Image' : message.files ? 'File' : ''),
               createdAt: message.createdAt,
@@ -214,16 +215,18 @@ export const ChatReducer = (
       }
 
       // Update selectedChat if it's the same chat
-      const updatedSelectedChat = isSelectedChat && state.selectedChat
-        ? {
-            ...state.selectedChat,
-            messages: [message, ...state.selectedChat.messages],
-            lastMessage: {
-              content: message.text || '',
-              createdAt: message.createdAt,
-            },
-          }
-        : state.selectedChat
+      let updatedSelectedChat = state.selectedChat
+      if (isSelectedChat && state.selectedChat) {
+        const currentMessages = state.selectedChat.messages || []
+        updatedSelectedChat = {
+          ...state.selectedChat,
+          messages: [...currentMessages, message], // Add message to the END (oldest-to-newest order)
+          lastMessage: {
+            content: message.text || '',
+            createdAt: message.createdAt,
+          },
+        }
+      }
 
       return {
         ...state,
