@@ -3,7 +3,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import axios from "@/api/axios";
-import { socialEmailStatusRetrieve } from "@/api/generated";
 import { convertApiConversationsToChatFormat, convertUnifiedMessagesToMessageType } from "@/lib/chatAdapter";
 import { ChatProvider } from "@/components/chat/contexts/chat-context";
 import { ChatSidebar } from "@/components/chat/chat-sidebar";
@@ -270,18 +269,16 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         return convertUnifiedMessagesToMessageType(unifiedMessages);
       }
 
-      if (platform === 'email' && parts.length >= 2) {
-        const threadId = parts.slice(1).join('_');
+      if (platform === 'email' && parts.length >= 3) {
+        const connectionId = parts[1];
+        const threadId = parts.slice(2).join('_');
 
         const response = await axios.get("/api/social/email-messages/", {
-          params: { thread_id: threadId },
+          params: { thread_id: threadId, connection_id: connectionId },
         });
         const messages = response.data?.results || [];
 
         if (messages.length === 0) return [];
-
-        const emailStatus = await socialEmailStatusRetrieve();
-        const emailConnection = emailStatus.connection;
 
         const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => ({
           id: String(msg.id),
@@ -300,7 +297,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           is_read: msg.is_read,
           conversation_id: chatId,
           platform_message_id: msg.message_id,
-          account_id: String(emailConnection?.id || ''),
+          account_id: connectionId,
           subject: msg.subject,
           body_html: msg.body_html,
         }));

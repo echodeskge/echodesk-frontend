@@ -55,22 +55,12 @@ interface ChatHeaderActionsProps {
 
 // Helper to parse chat ID into platform, account_id, and conversation_id
 function parseChatId(chatId: string, platform?: string) {
-  // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{thread_id}
+  // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{conn_id}_{thread_id}
   const parts = chatId.split('_')
 
   const prefix = parts[0]
 
-  // Handle email platform separately (no account_id, just thread_id)
-  if (prefix === 'email' || platform === 'email') {
-    if (parts.length < 2) return null
-    return {
-      platform: 'email' as ChatAssignmentPlatform,
-      accountId: 'email', // Use 'email' as placeholder since emails don't have account_id
-      conversationId: parts.slice(1).join('_'), // thread_id
-    }
-  }
-
-  // Other platforms require at least 3 parts
+  // All platforms now have the same format: prefix_{account_id}_{conversation_id}
   if (parts.length < 3) return null
 
   const accountId = parts[1]
@@ -85,6 +75,8 @@ function parseChatId(chatId: string, platform?: string) {
     parsedPlatform = 'instagram'
   } else if (prefix === 'wa') {
     parsedPlatform = 'whatsapp'
+  } else if (prefix === 'email') {
+    parsedPlatform = 'email'
   } else {
     return null
   }
@@ -187,19 +179,12 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     if (!chat?.platform || !chat?.id) return
 
     // Extract conversation_id from chat id
-    // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{thread_id}
+    // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{conn_id}_{thread_id}
     const parts = chat.id.split('_')
 
-    let conversationId: string
-    if (chat.platform === 'email') {
-      // Email format: email_{thread_id}
-      if (parts.length < 2) return
-      conversationId = parts.slice(1).join('_') // thread_id
-    } else {
-      // Other platforms: prefix_{account_id}_{sender_id}
-      if (parts.length < 3) return
-      conversationId = parts.slice(2).join('_')
-    }
+    // All platforms have the same format: prefix_{account_id}_{conversation_id}
+    if (parts.length < 3) return
+    const conversationId = parts.slice(2).join('_')
 
     deleteConversation.mutate(
       {
