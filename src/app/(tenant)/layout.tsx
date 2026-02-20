@@ -139,10 +139,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Global WebSocket for message notifications (plays sound and updates sidebar)
   useMessagesWebSocket({
     onNewMessage: (data) => {
-      // Invalidate conversations and unread count queries to update sidebar in real-time
-      queryClient.invalidateQueries({ queryKey: ['social', 'conversations'] });
-      queryClient.invalidateQueries({ queryKey: ['social', 'unreadCount'] });
-
       // Check assignment - only play sound if:
       // 1. Chat is not assigned to anyone (assigned_user_id is null/undefined)
       // 2. Chat is assigned to the current user

@@ -128,10 +128,53 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     return convertedChats;
   }, [conversationsData, directLoadedChat]);
 
-  // Handle WebSocket new message - refetch conversations
-  const handleNewMessage = useCallback(() => {
-    refetch();
-  }, [refetch]);
+  // Ref to hold the addIncomingMessage dispatch function (set by ChatProvider)
+  const addIncomingMessageRef = useRef<((chatId: string, message: MessageType, senderName?: string) => void) | null>(null);
+
+  // Handle WebSocket new message - add message directly to state
+  const handleNewMessage = useCallback((data: any) => {
+    const messageData = data?.message;
+    const chatId = messageData?.chat_id;
+
+    if (!messageData || !chatId) {
+      return;
+    }
+
+    // Convert WebSocket message to MessageType format
+    const newMessage: MessageType = {
+      id: String(messageData.id),
+      senderId: messageData.sender_id || messageData.from_number || '',
+      text: messageData.message_text || '',
+      status: 'DELIVERED',
+      createdAt: new Date(messageData.timestamp),
+      platformMessageId: messageData.message_id,
+      senderName: messageData.sender_name || messageData.contact_name,
+      platform: messageData.platform,
+      source: messageData.source,
+      isEcho: messageData.is_echo,
+      sentByName: messageData.sent_by_name,
+      replyToMessageId: messageData.reply_to_message_id,
+      replyToId: messageData.reply_to_id,
+    };
+
+    // Add attachments if present
+    if (messageData.attachments?.length > 0 || messageData.attachment_url) {
+      newMessage.files = messageData.attachments?.map((att: any) => ({
+        name: att.filename || 'attachment',
+        url: att.url || messageData.attachment_url,
+        type: att.type || messageData.attachment_type,
+      })) || [{
+        name: 'attachment',
+        url: messageData.attachment_url,
+        type: messageData.attachment_type,
+      }];
+    }
+
+    // Dispatch to chat state if the handler is available
+    if (addIncomingMessageRef.current) {
+      addIncomingMessageRef.current(chatId, newMessage, messageData.sender_name || messageData.contact_name);
+    }
+  }, []);
 
   // Handle WebSocket conversation update
   const handleConversationUpdate = useCallback(() => {
@@ -472,6 +515,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       setAssignmentTab={setAssignmentTab}
       showArchived={showArchived}
       setShowArchived={setShowArchived}
+      onAddIncomingMessageRef={addIncomingMessageRef}
     >
       <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
         <ChatSidebar />

@@ -169,6 +169,12 @@ export type ChatActionType =
       chatId: string
       messages: MessageType[]
     }
+  | {
+      type: "addIncomingMessage"
+      chatId: string
+      message: MessageType
+      senderName?: string
+    }
 
 export type TextMessageFormType = z.infer<typeof TextMessageSchema>
 

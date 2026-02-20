@@ -31,6 +31,7 @@ export function ChatProvider({
   setAssignmentTab: externalSetAssignmentTab,
   showArchived: externalShowArchived,
   setShowArchived: externalSetShowArchived,
+  onAddIncomingMessageRef,
 }: {
   chatsData: ChatType[]
   children: ReactNode
@@ -50,6 +51,7 @@ export function ChatProvider({
   setAssignmentTab?: (tab: AssignmentTabType) => void
   showArchived?: boolean
   setShowArchived?: (show: boolean) => void
+  onAddIncomingMessageRef?: React.MutableRefObject<((chatId: string, message: MessageType, senderName?: string) => void) | null>
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -102,6 +104,20 @@ export function ChatProvider({
   useEffect(() => {
     dispatch({ type: "updateChats", chats: chatsData })
   }, [chatsData])
+
+  // Set up the incoming message handler ref for WebSocket integration
+  useEffect(() => {
+    if (onAddIncomingMessageRef) {
+      onAddIncomingMessageRef.current = (chatId: string, message: MessageType, senderName?: string) => {
+        dispatch({ type: "addIncomingMessage", chatId, message, senderName })
+      }
+    }
+    return () => {
+      if (onAddIncomingMessageRef) {
+        onAddIncomingMessageRef.current = null
+      }
+    }
+  }, [onAddIncomingMessageRef])
 
   // Handlers for message actions
   const handleAddTextMessage = (text: string) => {

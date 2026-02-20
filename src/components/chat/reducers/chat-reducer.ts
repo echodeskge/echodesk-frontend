@@ -1,6 +1,6 @@
 "use client"
 
-import type { ChatActionType, ChatStateType, MessageType } from "../types"
+import type { ChatActionType, ChatStateType, MessageType, ChatType } from "../types"
 
 export const ChatReducer = (
   state: ChatStateType,
@@ -160,6 +160,75 @@ export const ChatReducer = (
         ...state,
         chats: updatedChats,
         selectedChat: updatedSelectedChat
+      }
+    }
+
+    case "addIncomingMessage": {
+      // Add a new incoming message to a specific chat
+      const { chatId, message, senderName } = action
+      const isSelectedChat = state.selectedChat?.id === chatId
+
+      // Find the chat and update it
+      let chatFound = false
+      let updatedChats = state.chats.map(chat => {
+        if (chat.id === chatId) {
+          chatFound = true
+          return {
+            ...chat,
+            messages: [message, ...chat.messages], // Add message to the beginning (newest first)
+            lastMessage: {
+              content: message.text || (message.images ? 'Image' : message.files ? 'File' : ''),
+              createdAt: message.createdAt,
+            },
+            // Only increment unread count if this is not the currently selected chat
+            unreadCount: isSelectedChat ? chat.unreadCount : (chat.unreadCount || 0) + 1,
+          }
+        }
+        return chat
+      })
+
+      // If chat wasn't found in the list, create a new chat entry
+      if (!chatFound) {
+        const newChat: ChatType = {
+          id: chatId,
+          name: senderName || 'Unknown',
+          messages: [message],
+          lastMessage: {
+            content: message.text || '',
+            createdAt: message.createdAt,
+          },
+          users: [],
+          typingUsers: [],
+          unreadCount: 1,
+          platform: message.platform,
+          messagesLoaded: true,
+        }
+        updatedChats = [newChat, ...updatedChats]
+      } else {
+        // Move the updated chat to the top of the list
+        const chatIndex = updatedChats.findIndex(c => c.id === chatId)
+        if (chatIndex > 0) {
+          const [chat] = updatedChats.splice(chatIndex, 1)
+          updatedChats.unshift(chat)
+        }
+      }
+
+      // Update selectedChat if it's the same chat
+      const updatedSelectedChat = isSelectedChat && state.selectedChat
+        ? {
+            ...state.selectedChat,
+            messages: [message, ...state.selectedChat.messages],
+            lastMessage: {
+              content: message.text || '',
+              createdAt: message.createdAt,
+            },
+          }
+        : state.selectedChat
+
+      return {
+        ...state,
+        chats: updatedChats,
+        selectedChat: updatedSelectedChat,
       }
     }
 
