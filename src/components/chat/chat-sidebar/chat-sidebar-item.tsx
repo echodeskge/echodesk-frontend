@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, usePathname } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { Facebook, Instagram, MessageCircle, Mail } from "lucide-react"
 
@@ -15,8 +15,16 @@ import { ChatAvatar } from "../chat-avatar"
 export function ChatSidebarItem({ chat }: { chat: ChatType }) {
   const { setIsChatSidebarOpen } = useChatContext()
   const params = useParams()
+  const pathname = usePathname()
 
   const chatIdParam = params.id?.[0]
+
+  // Determine base route from current pathname (e.g., /email/messages or /messages or /social/messages)
+  const getBaseRoute = () => {
+    if (pathname.startsWith('/email/messages')) return '/email/messages'
+    if (pathname.startsWith('/social/messages')) return '/social/messages'
+    return '/messages'
+  }
 
   const handleOnCLick = () => {
     // Close the sidebar when a chat is selected
@@ -25,7 +33,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
 
   return (
     <Link
-      href={`/messages/${chat.id}`}
+      href={`${getBaseRoute()}/${chat.id}`}
       prefetch={false}
       className={cn(
         buttonVariants({ variant: "ghost" }),
