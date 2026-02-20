@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useMemo, useCallback } from "react"
+import { useRouter, usePathname } from "next/navigation"
 import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
@@ -94,10 +94,18 @@ function parseChatId(chatId: string, platform?: string) {
 
 export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: ChatHeaderActionsProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { user } = useAuth()
   const { toast } = useToast()
   const deleteConversation = useDeleteConversation()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  // Determine base route from current pathname
+  const getBaseRoute = useCallback(() => {
+    if (pathname.startsWith('/email/messages')) return '/email/messages'
+    if (pathname.startsWith('/social/messages')) return '/social/messages'
+    return '/messages'
+  }, [pathname])
   const [showClientPanel, setShowClientPanel] = useState(false)
 
   // Email folder functionality
@@ -202,7 +210,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
         onSuccess: () => {
           setShowDeleteDialog(false)
           // Navigate back to messages list
-          router.push('/messages')
+          router.push(getBaseRoute())
         },
         onError: (error) => {
           console.error('Failed to delete conversation:', error)
@@ -350,7 +358,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Moved to history",
             description: "Conversation has been archived",
           })
-          router.push('/messages')
+          router.push(getBaseRoute())
         },
         onError: (error: any) => {
           toast({
@@ -379,7 +387,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Restored from history",
             description: "Conversation has been restored",
           })
-          router.push('/messages')
+          router.push(getBaseRoute())
         },
         onError: (error: any) => {
           toast({
