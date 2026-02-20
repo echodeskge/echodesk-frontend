@@ -85,6 +85,8 @@
     "dashboard": "Dashboard",
     "help": "Help Center",
     "createTask": "Create Task",
+    "mute": "Mute notifications",
+    "unmute": "Unmute notifications",
     "description": {
       "tickets": "View and manage boards",
       "calls": "VoIP calling system with SIP configuration",

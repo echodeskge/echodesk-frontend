@@ -44,7 +44,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
 import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
-import { Plus } from "lucide-react";
+import { Plus, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -84,6 +84,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [ticketsBeingMoved, setTicketsBeingMoved] = useState<Map<number, string>>(new Map());
   const [ticketsBeingEdited, setTicketsBeingEdited] = useState<Map<number, string>>(new Map());
+  const [isSoundMuted, setIsSoundMuted] = useState(() => {
+    // Initialize from sound manager (which reads from localStorage)
+    if (typeof window !== 'undefined') {
+      return !getNotificationSound().isEnabled();
+    }
+    return false;
+  });
 
   const {
     isConnected: boardIsConnected,
@@ -132,6 +139,17 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Global WebSocket for message notifications (plays sound when new messages arrive)
   useMessagesWebSocket({
     onNewMessage: (data) => {
+      // Check assignment - only play sound if:
+      // 1. Chat is not assigned to anyone (assigned_user_id is null/undefined)
+      // 2. Chat is assigned to the current user
+      const assignedUserId = data?.assigned_user_id;
+      const currentUserId = user?.id;
+
+      // If chat is assigned to someone else, don't play sound
+      if (assignedUserId !== null && assignedUserId !== undefined && assignedUserId !== currentUserId) {
+        return;
+      }
+
       // Play platform-specific notification sound
       const platform = data?.platform || data?.message?.platform;
       if (platform && ['facebook', 'instagram', 'whatsapp', 'email'].includes(platform)) {
@@ -658,6 +676,22 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 title={t("createTask")}
               >
                 <Plus className="h-5 w-5" />
+              </Button>
+              {/* Sound Mute Toggle Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  const newEnabled = getNotificationSound().toggle();
+                  setIsSoundMuted(!newEnabled);
+                }}
+                title={isSoundMuted ? t("unmute") : t("mute")}
+              >
+                {isSoundMuted ? (
+                  <VolumeX className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <Volume2 className="h-5 w-5" />
+                )}
               </Button>
               <MessengerBell />
               <NotificationBell
