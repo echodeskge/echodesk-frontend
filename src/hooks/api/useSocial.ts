@@ -37,7 +37,7 @@ export const socialKeys = {
   unreadCount: () => [...socialKeys.all, 'unreadCount'] as const,
   settings: () => [...socialKeys.all, 'settings'] as const,
   conversations: () => [...socialKeys.all, 'conversations'] as const,
-  conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean; archived?: boolean }) =>
+  conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean; archived?: boolean; unreadOnly?: boolean }) =>
     [...socialKeys.conversations(), filters] as const,
   assignments: () => [...socialKeys.all, 'assignments'] as const,
   myAssignments: () => [...socialKeys.assignments(), 'my'] as const,
@@ -2145,6 +2145,7 @@ export interface UseUnifiedConversationsOptions {
   enabled?: boolean;
   assigned?: boolean;
   archived?: boolean;
+  unreadOnly?: boolean;
 }
 
 /**
@@ -2160,16 +2161,18 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
     enabled = true,
     assigned = false,
     archived = false,
+    unreadOnly = true,
   } = options;
 
   return useInfiniteQuery({
-    queryKey: socialKeys.conversationsList({ platforms, search, folder, assigned, archived }),
+    queryKey: socialKeys.conversationsList({ platforms, search, folder, assigned, archived, unreadOnly }),
     queryFn: async ({ pageParam = 1 }) => {
-      // Use axios directly to support the 'assigned' and 'archived' parameters
+      // Use axios directly to support the 'assigned', 'archived', and 'unread_only' parameters
       const params: Record<string, string | number | boolean> = {
         page: pageParam,
         page_size: pageSize,
         platforms,
+        unread_only: unreadOnly ? 'true' : 'false',
       };
       if (folder) params.folder = folder;
       if (search) params.search = search;

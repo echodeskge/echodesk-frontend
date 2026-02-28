@@ -31,6 +31,8 @@ export function ChatProvider({
   setAssignmentTab: externalSetAssignmentTab,
   showArchived: externalShowArchived,
   setShowArchived: externalSetShowArchived,
+  showAllConversations: externalShowAllConversations,
+  setShowAllConversations: externalSetShowAllConversations,
   onAddIncomingMessageRef,
 }: {
   chatsData: ChatType[]
@@ -51,6 +53,8 @@ export function ChatProvider({
   setAssignmentTab?: (tab: AssignmentTabType) => void
   showArchived?: boolean
   setShowArchived?: (show: boolean) => void
+  showAllConversations?: boolean
+  setShowAllConversations?: (show: boolean) => void
   onAddIncomingMessageRef?: React.MutableRefObject<((chatId: string, message: MessageType, senderName?: string) => void) | null>
 }) {
   // Reducer to manage Chat state
@@ -77,6 +81,11 @@ export function ChatProvider({
   const [internalShowArchived, setInternalShowArchived] = useState(false)
   const showArchived = externalShowArchived ?? internalShowArchived
   const setShowArchived = externalSetShowArchived ?? setInternalShowArchived
+
+  // Show all conversations (including read) vs unread only - use external if provided, otherwise internal
+  const [internalShowAllConversations, setInternalShowAllConversations] = useState(false)
+  const showAllConversations = externalShowAllConversations ?? internalShowAllConversations
+  const setShowAllConversations = externalSetShowAllConversations ?? setInternalShowAllConversations
 
   // Email folder filter state - use external if provided, otherwise internal
   const [internalSelectedEmailFolder, setInternalSelectedEmailFolder] = useState<string>('INBOX')
@@ -202,6 +211,8 @@ export function ChatProvider({
         rawChatsData: chatsData,
         showArchived,
         setShowArchived,
+        showAllConversations,
+        setShowAllConversations,
       }}
     >
       {children}

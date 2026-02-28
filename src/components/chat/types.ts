@@ -56,6 +56,9 @@ export interface ChatContextType {
   // History/Archive view mode
   showArchived: boolean
   setShowArchived: (show: boolean) => void
+  // Show all conversations (including read) vs unread only
+  showAllConversations: boolean
+  setShowAllConversations: (show: boolean) => void
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null
