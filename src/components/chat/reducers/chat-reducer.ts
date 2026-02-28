@@ -125,15 +125,30 @@ export const ChatReducer = (
 
     case "updateChats": {
       // Update chats from external source (e.g., after reloading from API)
+      // Preserve messagesLoaded status and messages from existing chats
+      const existingChatsMap = new Map(state.chats.map(c => [c.id, c]))
+      const mergedChats = action.chats.map(chat => {
+        const existing = existingChatsMap.get(chat.id)
+        if (existing?.messagesLoaded) {
+          // Preserve loaded messages to avoid re-fetching
+          return {
+            ...chat,
+            messages: existing.messages,
+            messagesLoaded: true
+          }
+        }
+        return chat
+      })
+
       // Preserve selectedChat if it still exists in the new chats
       const selectedChatId = state.selectedChat?.id
       const updatedSelectedChat = selectedChatId
-        ? action.chats.find(chat => chat.id === selectedChatId) || null
+        ? mergedChats.find(chat => chat.id === selectedChatId) || null
         : null
 
       return {
         ...state,
-        chats: action.chats,
+        chats: mergedChats,
         selectedChat: updatedSelectedChat
       }
     }

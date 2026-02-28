@@ -1889,21 +1889,30 @@ interface ConversationGroup {
 export function useRecentConversations(options?: { enabled?: boolean; limit?: number }) {
   const limit = options?.limit ?? 15;
 
-  // Use the unified conversations API which is already optimized
-  // This fetches conversation list with last message, not all messages
-  const { data, isLoading, isFetching } = useUnifiedConversations({
-    platforms: 'facebook,instagram,whatsapp',
-    pageSize: limit,
+  // Use a simple query to fetch recent conversations from the unified API
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['recent-conversations', limit],
+    queryFn: async () => {
+      const response = await axios.get<PaginatedUnifiedConversation>('/api/social/conversations/', {
+        params: {
+          page: 1,
+          page_size: limit,
+          platforms: 'facebook,instagram,whatsapp',
+        },
+      });
+      return response.data;
+    },
     enabled: options?.enabled ?? true,
+    staleTime: 30000, // 30 seconds
   });
 
   // Transform the API response to RecentConversation format
   const conversations: RecentConversation[] = useMemo(() => {
-    if (!data?.pages?.[0]?.results) return [];
+    if (!data?.results) return [];
 
-    return data.pages[0].results.slice(0, limit).map((conv) => ({
+    return data.results.slice(0, limit).map((conv) => ({
       id: conv.conversation_id,
-      platform: conv.platform as 'facebook' | 'instagram' | 'whatsapp',
+      platform: String(conv.platform) as 'facebook' | 'instagram' | 'whatsapp',
       conversationId: conv.sender_id,
       accountId: conv.account_id,
       senderName: conv.sender_name,

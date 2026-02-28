@@ -131,6 +131,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   // Ref to hold the addIncomingMessage dispatch function (set by ChatProvider)
   const addIncomingMessageRef = useRef<((chatId: string, message: MessageType, senderName?: string) => void) | null>(null);
 
+  // Track which chats have been directly loaded to prevent duplicate loads
+  const directLoadedChatsRef = useRef<Set<string>>(new Set());
+
   // Handle WebSocket new message - add message directly to state
   const handleNewMessage = useCallback((data: any) => {
     const messageData = data?.message;
@@ -364,6 +367,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       return;
     }
 
+    // Prevent duplicate direct loads for the same chat
+    if (directLoadedChatsRef.current.has(chatId)) {
+      return;
+    }
+
     // Check if the chat is in the API-loaded list (not including directLoadedChat)
     const chatInApiList = conversationsData?.pages?.some(page =>
       page.results?.some(conv => {
@@ -381,6 +389,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       setIsLoadingDirectChat(false);
       return;
     }
+
+    // Mark this chat as being loaded to prevent duplicate loads
+    directLoadedChatsRef.current.add(chatId);
 
     // Chat not in list, need to load it directly
     const loadDirectChat = async () => {

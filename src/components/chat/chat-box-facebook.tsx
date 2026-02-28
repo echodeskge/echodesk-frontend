@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState, useEffect } from "react"
+import { useCallback, useMemo, useState, useEffect, useRef } from "react"
 import { useParams } from "next/navigation"
 
 import type { UserType } from "@/components/chat/types"
@@ -30,6 +30,9 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
 
   const chatIdParam = params.id?.[0] // Get the chat ID from route params
 
+  // Track which chats have already triggered loading to prevent duplicate calls
+  const loadingTriggeredRef = useRef<Set<string>>(new Set())
+
   const chat = useMemo(() => {
     if (chatIdParam) {
       // Find the chat by ID in reducer state first
@@ -48,6 +51,11 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
   // Trigger lazy loading when chat is selected via URL navigation
   useEffect(() => {
     if (chat && !chat.messagesLoaded && loadChatMessages) {
+      // Prevent duplicate loading for the same chat
+      if (loadingTriggeredRef.current.has(chat.id)) {
+        return
+      }
+      loadingTriggeredRef.current.add(chat.id)
       loadChatMessages(chat.id)
     }
   }, [chat, loadChatMessages])
