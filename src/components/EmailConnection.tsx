@@ -78,39 +78,39 @@ function EmailAccountCard({
 
   return (
     <div className="border rounded-lg p-4 space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 text-red-600">
             <Mail className="h-5 w-5" />
           </div>
           <div>
             <p className="font-medium">{connection.display_name || connection.email_address}</p>
-            <p className="text-sm text-muted-foreground">{connection.email_address}</p>
+            <p className="text-sm text-muted-foreground break-all">{connection.email_address}</p>
           </div>
         </div>
         <Badge
           variant={connection.is_active ? 'default' : 'secondary'}
-          className={cn(connection.is_active && 'bg-green-600 hover:bg-green-700')}
+          className={cn('self-start sm:self-auto', connection.is_active && 'bg-green-600 hover:bg-green-700')}
         >
           {connection.is_active ? 'Active' : 'Inactive'}
         </Badge>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <div>
           <span className="text-muted-foreground">IMAP:</span>
-          <span className="ml-2">{connection.imap_server}</span>
+          <span className="ml-2 break-all">{connection.imap_server}</span>
         </div>
         <div>
           <span className="text-muted-foreground">SMTP:</span>
-          <span className="ml-2">{connection.smtp_server}</span>
+          <span className="ml-2 break-all">{connection.smtp_server}</span>
         </div>
         <div>
           <span className="text-muted-foreground">Folder:</span>
           <span className="ml-2">{connection.sync_folder}</span>
         </div>
         <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3 text-muted-foreground" />
+          <Clock className="h-3 w-3 text-muted-foreground flex-shrink-0" />
           <span className="text-muted-foreground">Synced:</span>
           <span className="ml-1">
             {connection.last_sync_at ? formatDate(connection.last_sync_at) : 'Never'}
@@ -379,7 +379,7 @@ export function EmailConnection() {
     <>
       <Card className={cn('border-2', hasConnections ? 'border-red-200 bg-red-50/50' : 'border-border')}>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-600 text-white">
                 <Mail className="h-6 w-6" />
@@ -403,7 +403,7 @@ export function EmailConnection() {
             </div>
             <Badge
               variant={hasConnections ? 'default' : 'secondary'}
-              className={cn('h-8', hasConnections && 'bg-red-600 hover:bg-red-700')}
+              className={cn('h-8 self-start sm:self-auto', hasConnections && 'bg-red-600 hover:bg-red-700')}
             >
               {hasConnections ? `${connections.length} Connected` : 'Not Connected'}
             </Badge>
@@ -412,11 +412,11 @@ export function EmailConnection() {
 
         <CardContent className="space-y-4">
           {/* Action buttons */}
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Button
               onClick={() => setShowConnectDialog(true)}
               disabled={loading}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Email Account
@@ -426,6 +426,7 @@ export function EmailConnection() {
                 onClick={handleSyncAll}
                 disabled={loading || syncEmail.isPending}
                 variant="outline"
+                className="w-full sm:w-auto"
               >
                 {syncEmail.isPending && syncingConnectionId === null ? (
                   <>
@@ -440,7 +441,7 @@ export function EmailConnection() {
                 )}
               </Button>
             )}
-            <Button onClick={() => refetch()} disabled={loading} variant="outline">
+            <Button onClick={() => refetch()} disabled={loading} variant="outline" className="w-full sm:w-auto">
               <RefreshCw className={cn('mr-2 h-4 w-4', loading && 'animate-spin')} />
               Refresh
             </Button>
@@ -544,7 +545,7 @@ export function EmailConnection() {
             </div>
 
             {/* Server Settings */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="imap_server">IMAP Server *</Label>
                 <Input
@@ -565,7 +566,7 @@ export function EmailConnection() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="smtp_server">SMTP Server *</Label>
                 <Input
@@ -639,7 +640,7 @@ export function EmailConnection() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="sync_folder">Sync Folder</Label>
                     <Input

@@ -335,14 +335,14 @@ function NotificationsTab({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Facebook Sound */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <Label className="flex items-center gap-2">
               <span className="text-blue-600">&#9679;</span>
               {t("settingsPage.notificationSounds.facebook") || "Facebook"}
             </Label>
             <div className="flex gap-2">
               <Select value={soundFacebook} onValueChange={setSoundFacebook}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -362,14 +362,14 @@ function NotificationsTab({
           <Separator />
 
           {/* Instagram Sound */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <Label className="flex items-center gap-2">
               <span className="text-pink-600">&#9679;</span>
               {t("settingsPage.notificationSounds.instagram") || "Instagram"}
             </Label>
             <div className="flex gap-2">
               <Select value={soundInstagram} onValueChange={setSoundInstagram}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -389,14 +389,14 @@ function NotificationsTab({
           <Separator />
 
           {/* WhatsApp Sound */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <Label className="flex items-center gap-2">
               <span className="text-green-600">&#9679;</span>
               {t("settingsPage.notificationSounds.whatsapp") || "WhatsApp"}
             </Label>
             <div className="flex gap-2">
               <Select value={soundWhatsapp} onValueChange={setSoundWhatsapp}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -416,14 +416,14 @@ function NotificationsTab({
           <Separator />
 
           {/* Email Sound */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <Label className="flex items-center gap-2">
               <span className="text-red-600">&#9679;</span>
               {t("settingsPage.notificationSounds.email") || "Email"}
             </Label>
             <div className="flex gap-2">
               <Select value={soundEmail} onValueChange={setSoundEmail}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -443,14 +443,14 @@ function NotificationsTab({
           <Separator />
 
           {/* Team Chat Sound */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <Label className="flex items-center gap-2">
               <span className="text-purple-600">&#9679;</span>
               {t("settingsPage.notificationSounds.teamChat") || "Team Chat"}
             </Label>
             <div className="flex gap-2">
               <Select value={soundTeamChat} onValueChange={setSoundTeamChat}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -470,14 +470,14 @@ function NotificationsTab({
           <Separator />
 
           {/* System Sound */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <Label className="flex items-center gap-2">
               <span className="text-gray-600">&#9679;</span>
               {t("settingsPage.notificationSounds.system") || "System"}
             </Label>
             <div className="flex gap-2">
               <Select value={soundSystem} onValueChange={setSoundSystem}>
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -531,7 +531,7 @@ function AutoReplyTab({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Timezone Selection */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
@@ -542,7 +542,7 @@ function AutoReplyTab({
             </p>
           </div>
           <Select value={timezone} onValueChange={setTimezone}>
-            <SelectTrigger className="w-[280px]">
+            <SelectTrigger className="w-full sm:w-[280px]">
               <SelectValue placeholder="Select timezone" />
             </SelectTrigger>
             <SelectContent>
@@ -558,7 +558,7 @@ function AutoReplyTab({
         <Separator />
 
         {/* Away Hours Toggle */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
@@ -594,7 +594,7 @@ function AutoReplyTab({
         <div>
           <Label className="mb-3 block">Platform-Specific Messages</Label>
           <Tabs defaultValue="facebook" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="h-auto flex-wrap">
               <TabsTrigger value="facebook" className="flex items-center gap-2">
                 <span className="text-blue-600">&#9679;</span>
                 Facebook
@@ -671,7 +671,7 @@ function ChatManagementTab({
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Chat Assignment Toggle */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="chat-assignment" className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-blue-500" />
@@ -691,7 +691,7 @@ function ChatManagementTab({
           <Separator />
 
           {/* Hide Assigned Chats Toggle */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="hide-assigned" className="flex items-center gap-2">
                 <EyeOff className="h-4 w-4 text-orange-500" />
@@ -711,7 +711,7 @@ function ChatManagementTab({
           <Separator />
 
           {/* Collect Customer Rating Toggle */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="collect-rating" className="flex items-center gap-2">
                 <Star className="h-4 w-4 text-yellow-500" />
@@ -768,7 +768,7 @@ function ChatManagementTab({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="auto-assign">{t("settingsPage.autoAssignment.enable") || "Auto-assign conversations"}</Label>
               <p className="text-sm text-muted-foreground">
@@ -946,14 +946,14 @@ export default function SocialSettingsPage() {
       </div>
 
       <Tabs defaultValue="notifications" className="w-full">
-        <TabsList className="mb-6 w-full justify-start border-b bg-transparent p-0 h-auto">
+        <TabsList className="mb-6 h-auto flex-wrap">
           {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="relative rounded-none border-b-2 border-transparent bg-transparent px-4 py-3 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              className="flex items-center gap-2"
             >
-              <tab.icon className="mr-2 h-4 w-4" />
+              <tab.icon className="h-4 w-4" />
               {tab.label}
             </TabsTrigger>
           ))}

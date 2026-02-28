@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useState, useRef, useEffect, useTransition } from "react";
+import { useTranslations, useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GeneralSettingsSkeleton } from "@/components/GeneralSettingsSkeleton";
-import { Upload, Image as ImageIcon, X } from "lucide-react";
+import { Upload, Image as ImageIcon, X, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { useTenantSettings, useUpdateTenantSettings, useUploadTenantLogo, useRemoveTenantLogo } from "@/hooks/api";
+import { locales, localeNames, type Locale } from "@/lib/i18n";
 
 interface TenantSettings {
   logo?: string;
@@ -23,6 +26,9 @@ interface TenantSettings {
 export default function GeneralSettingsPage() {
   const t = useTranslations('settings.general');
   const tCommon = useTranslations('common');
+  const router = useRouter();
+  const currentLocale = useLocale() as Locale;
+  const [isLocaleChanging, startLocaleTransition] = useTransition();
 
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [formSettings, setFormSettings] = useState<TenantSettings>({});
@@ -113,6 +119,22 @@ export default function GeneralSettingsPage() {
     }
   };
 
+  const handleLocaleChange = async (newLocale: Locale) => {
+    if (newLocale === currentLocale) return;
+
+    // Set cookie via server action
+    await fetch('/api/set-locale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: newLocale }),
+    });
+
+    // Refresh the page to apply new locale
+    startLocaleTransition(() => {
+      router.refresh();
+    });
+  };
+
   if (loading) {
     return <GeneralSettingsSkeleton />;
   }
@@ -195,6 +217,41 @@ export default function GeneralSettingsPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Language Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Languages className="h-5 w-5" />
+            {t('languageTitle') || 'Language'}
+          </CardTitle>
+          <CardDescription>
+            {t('languageDescription') || 'Choose your preferred display language'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <Label>{t('languageSelect') || 'Display language'}</Label>
+              <p className="text-sm text-muted-foreground">
+                {t('languageSelectDescription') || 'This will change the language across the entire application'}
+              </p>
+            </div>
+            <Select value={currentLocale} onValueChange={(v) => handleLocaleChange(v as Locale)} disabled={isLocaleChanging}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {locales.map((loc) => (
+                  <SelectItem key={loc} value={loc}>
+                    {localeNames[loc]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

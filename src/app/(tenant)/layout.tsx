@@ -20,7 +20,6 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { LayoutSkeleton } from "@/components/LayoutSkeleton";
 import { TenantInfo } from "@/types/auth";
 import { useTenant } from "@/contexts/TenantContext";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
 import { MessengerBell } from "@/components/MessengerBell";
 import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
@@ -702,7 +701,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                   }
                 }}
               />
-              <LanguageSwitcher currentLocale={locale} />
             </div>
           </div>
 

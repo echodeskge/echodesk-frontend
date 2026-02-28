@@ -264,12 +264,6 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         isPremium: true,
       },
       {
-        id: "social/templates",
-        icon: "FileText",
-        requiredFeatureKey: "social_integrations",
-        isPremium: true,
-      },
-      {
         id: "social/settings",
         icon: "Settings",
         requiredFeatureKey: "social_integrations",

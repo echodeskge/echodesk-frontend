@@ -112,7 +112,7 @@ export function TikTokConnection() {
       )}
     >
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-black text-white">
               <TikTokIcon className="h-6 w-6" />
@@ -137,7 +137,7 @@ export function TikTokConnection() {
           <Badge
             variant={isConnected ? 'default' : 'secondary'}
             className={cn(
-              'h-8',
+              'h-8 self-start sm:self-auto',
               isConnected && 'bg-black hover:bg-gray-800'
             )}
           >
@@ -157,12 +157,12 @@ export function TikTokConnection() {
           </Alert>
         )}
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           {!isConnected ? (
             <Button
               onClick={handleConnect}
               disabled={loading || connectTikTok.isPending}
-              className="bg-black hover:bg-gray-800"
+              className="bg-black hover:bg-gray-800 w-full sm:w-auto"
             >
               {loading || connectTikTok.isPending ? (
                 <>
@@ -181,6 +181,7 @@ export function TikTokConnection() {
               onClick={() => handleDisconnect()}
               disabled={loading || disconnectTikTok.isPending}
               variant="destructive"
+              className="w-full sm:w-auto"
             >
               {disconnectTikTok.isPending ? (
                 <>
@@ -195,7 +196,7 @@ export function TikTokConnection() {
               )}
             </Button>
           )}
-          <Button onClick={() => refetch()} disabled={loading} variant="outline">
+          <Button onClick={() => refetch()} disabled={loading} variant="outline" className="w-full sm:w-auto">
             <RefreshCw
               className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
             />
@@ -210,7 +211,7 @@ export function TikTokConnection() {
             {status.accounts.map((account, index) => (
               <div key={account.id}>
                 {index > 0 && <Separator className="my-3" />}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       {account.avatar_url ? (
@@ -224,15 +225,17 @@ export function TikTokConnection() {
                       <p className="font-medium">
                         {account.display_name || `@${account.username}` || 'TikTok User'}
                       </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         {account.username && <span>@{account.username}</span>}
-                        <span>•</span>
-                        <Clock className="h-3 w-3" />
-                        <span>{formatDate(account.created_at)}</span>
+                        <span className="hidden sm:inline">•</span>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDate(account.created_at)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
                     <Badge
                       variant={account.is_active ? 'default' : 'secondary'}
                       className={account.is_active ? 'bg-black' : ''}

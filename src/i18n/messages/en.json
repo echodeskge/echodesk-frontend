@@ -491,7 +491,11 @@
       "minUsersLabel": "Minimum Users Per Ticket",
       "minUsersDescription": "Once users are assigned to a ticket and reach this minimum, only superadmins can reduce the number below this threshold. Set to 0 to disable.",
       "onlySuperadminDeleteLabel": "Only Superadmins Can Delete Tickets",
-      "onlySuperadminDeleteDescription": "When enabled, only superadmins can delete tickets. When disabled, ticket owners and superadmins can delete tickets."
+      "onlySuperadminDeleteDescription": "When enabled, only superadmins can delete tickets. When disabled, ticket owners and superadmins can delete tickets.",
+      "languageTitle": "Language",
+      "languageDescription": "Choose your preferred display language",
+      "languageSelect": "Display language",
+      "languageSelectDescription": "This will change the language across the entire application"
     },
     "security": {
       "title": "Security Settings",

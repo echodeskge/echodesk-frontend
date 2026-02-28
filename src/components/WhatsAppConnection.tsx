@@ -149,19 +149,19 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-3 pt-2">
         {/* Status Info */}
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <div className="flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-muted-foreground" />
+            <Cloud className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span className="text-muted-foreground">Platform:</span>
             <span className="font-medium">{localStatus?.platform_type || account.platform_type || 'Cloud API'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <Zap className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span className="text-muted-foreground">Throughput:</span>
             <span className="font-medium">{localStatus?.throughput_limit || account.throughput_limit || 80} mps</span>
           </div>
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span className="text-muted-foreground">Contacts Synced:</span>
             <span className="font-medium">
               {localStatus?.contacts_synced_at
@@ -170,7 +170,7 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-muted-foreground" />
+            <History className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span className="text-muted-foreground">History Synced:</span>
             <span className="font-medium">
               {localStatus?.history_synced_at
@@ -201,12 +201,13 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
 
         {/* Sync Controls */}
         {syncWindowOpen && (
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2 pt-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handleSyncContacts}
               disabled={syncContacts.isPending}
+              className="w-full sm:w-auto"
             >
               {syncContacts.isPending ? (
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -216,9 +217,9 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
               Sync Contacts
             </Button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <Select value={historyPhase} onValueChange={setHistoryPhase}>
-                <SelectTrigger className="w-[120px] h-9">
+                <SelectTrigger className="w-full sm:w-[120px] h-9">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -232,6 +233,7 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
                 size="sm"
                 onClick={handleSyncHistory}
                 disabled={syncHistory.isPending}
+                className="w-full sm:w-auto"
               >
                 {syncHistory.isPending ? (
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -326,7 +328,7 @@ export function WhatsAppConnection() {
       )}
     >
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#25D366] text-white">
               <WhatsAppIcon className="h-6 w-6" />
@@ -351,7 +353,7 @@ export function WhatsAppConnection() {
           <Badge
             variant={isConnected ? 'default' : 'secondary'}
             className={cn(
-              'h-8',
+              'h-8 self-start sm:self-auto',
               isConnected && 'bg-green-600 hover:bg-green-700'
             )}
           >
@@ -361,12 +363,12 @@ export function WhatsAppConnection() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           {!isConnected ? (
             <Button
               onClick={handleConnect}
               disabled={loading || connectWhatsApp.isPending}
-              className="bg-[#25D366] hover:bg-[#20BA59]"
+              className="bg-[#25D366] hover:bg-[#20BA59] w-full sm:w-auto"
             >
               {loading || connectWhatsApp.isPending ? (
                 <>
@@ -385,6 +387,7 @@ export function WhatsAppConnection() {
               onClick={() => handleDisconnect()}
               disabled={loading || disconnectWhatsApp.isPending}
               variant="destructive"
+              className="w-full sm:w-auto"
             >
               {disconnectWhatsApp.isPending ? (
                 <>
@@ -399,7 +402,7 @@ export function WhatsAppConnection() {
               )}
             </Button>
           )}
-          <Button onClick={() => refetch()} disabled={loading} variant="outline">
+          <Button onClick={() => refetch()} disabled={loading} variant="outline" className="w-full sm:w-auto">
             <RefreshCw
               className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
             />
@@ -414,7 +417,7 @@ export function WhatsAppConnection() {
             {status.accounts.map((account, index) => (
               <div key={account.id}>
                 {index > 0 && <Separator className="my-3" />}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       <AvatarFallback className="bg-green-100 text-green-600">
@@ -423,21 +426,23 @@ export function WhatsAppConnection() {
                     </Avatar>
                     <div>
                       <p className="font-medium">{account.business_name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <span>{account.phone_number}</span>
                         {account.quality_rating && (
                           <>
-                            <span>•</span>
+                            <span className="hidden sm:inline">•</span>
                             <span>Quality: {account.quality_rating}</span>
                           </>
                         )}
-                        <span>•</span>
-                        <Clock className="h-3 w-3" />
-                        <span>{formatDate(account.connected_at)}</span>
+                        <span className="hidden sm:inline">•</span>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDate(account.connected_at)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
                     {account.coex_enabled && (
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                         Coex
