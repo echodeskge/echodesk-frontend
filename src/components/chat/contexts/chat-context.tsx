@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useReducer, useState, useEffect, useCallback, useMemo } from "react"
+import { createContext, useReducer, useState, useEffect, useCallback, useMemo, useRef } from "react"
 
 import type { FileType } from "@/types"
 import type { ReactNode } from "react"
@@ -88,7 +88,7 @@ export function ChatProvider({
 
   // Full history loading state
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
-  const [fullHistoryLoadedChats, setFullHistoryLoadedChats] = useState<Set<string>>(new Set())
+  const fullHistoryLoadedChatsRef = useRef<Set<string>>(new Set())
 
   // Reply state
   const [replyingTo, setReplyingTo] = useState<ReplyingToType | null>(null)
@@ -163,21 +163,21 @@ export function ChatProvider({
   // Load full message history for a chat (when user clicks "Load History")
   const handleLoadFullHistory = useCallback(async (chatId: string) => {
     if (!loadChatMessages) return
-    if (fullHistoryLoadedChats.has(chatId)) return // Already loaded
+    if (fullHistoryLoadedChatsRef.current.has(chatId)) return // Already loaded
 
     setIsLoadingHistory(true)
     try {
       const messages = await loadChatMessages(chatId, false) // false = full history
       if (messages.length > 0) {
         dispatch({ type: "updateChatMessages", chatId, messages })
-        setFullHistoryLoadedChats(prev => new Set(prev).add(chatId))
+        fullHistoryLoadedChatsRef.current.add(chatId)
       }
     } catch (error) {
       console.error("Failed to load full history:", error)
     } finally {
       setIsLoadingHistory(false)
     }
-  }, [loadChatMessages, fullHistoryLoadedChats])
+  }, [loadChatMessages])
 
   // Selection handlers
   const handleSelectChat = useCallback((chat: ChatType) => {
@@ -227,7 +227,7 @@ export function ChatProvider({
         setShowArchived,
         loadFullHistory: handleLoadFullHistory,
         isLoadingHistory,
-        fullHistoryLoadedChats,
+        fullHistoryLoadedChats: fullHistoryLoadedChatsRef.current,
       }}
     >
       {children}
