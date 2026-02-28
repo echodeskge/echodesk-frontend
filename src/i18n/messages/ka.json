@@ -1316,10 +1316,14 @@
       "total": "სულ კლიენტები",
       "linked": "დაკავშირებული ანგარიშებით",
       "whatsapp": "WhatsApp",
-      "facebook": "Facebook"
+      "facebook": "Facebook",
+      "bookingClients": "ჯავშნის კლიენტები"
     },
     "filters": {
-      "allPlatforms": "ყველა პლატფორმა"
+      "allPlatforms": "ყველა პლატფორმა",
+      "allClients": "ყველა კლიენტი",
+      "bookingEnabled": "ჯავშნით",
+      "socialOnly": "მხოლოდ სოციალური"
     },
     "table": {
       "client": "კლიენტი",

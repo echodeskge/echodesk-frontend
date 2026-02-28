@@ -1315,10 +1315,14 @@
       "total": "Total Clients",
       "linked": "With Linked Accounts",
       "whatsapp": "WhatsApp",
-      "facebook": "Facebook"
+      "facebook": "Facebook",
+      "bookingClients": "Booking Clients"
     },
     "filters": {
-      "allPlatforms": "All Platforms"
+      "allPlatforms": "All Platforms",
+      "allClients": "All Clients",
+      "bookingEnabled": "Booking Enabled",
+      "socialOnly": "Social Only"
     },
     "table": {
       "client": "Client",
