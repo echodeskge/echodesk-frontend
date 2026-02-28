@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FolderOpen, ChevronDown, PenSquare, Inbox, History } from "lucide-react"
+import { FolderOpen, ChevronDown, PenSquare } from "lucide-react"
 import { CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +17,7 @@ import { useEmailFolders } from "@/hooks/api/useSocial"
 import { ComposeEmailDialog } from "@/components/email/ComposeEmailDialog"
 
 export function ChatSidebarHeader() {
-  const { platforms, selectedEmailFolder, setSelectedEmailFolder, showAllConversations, setShowAllConversations } = useChatContext()
+  const { platforms, selectedEmailFolder, setSelectedEmailFolder } = useChatContext()
   const isEmailOnly = platforms.length === 1 && platforms[0] === 'email'
   const [composeOpen, setComposeOpen] = useState(false)
 
@@ -37,26 +37,6 @@ export function ChatSidebarHeader() {
         <ChatSidebarSearchInput />
         <ChatSidebarActionButtons />
       </div>
-
-      {/* Toggle between unread only and all conversations */}
-      <Button
-        variant={showAllConversations ? "default" : "outline"}
-        size="sm"
-        className="w-full"
-        onClick={() => setShowAllConversations(!showAllConversations)}
-      >
-        {showAllConversations ? (
-          <>
-            <Inbox className="h-4 w-4 mr-2" />
-            Show Unread Only
-          </>
-        ) : (
-          <>
-            <History className="h-4 w-4 mr-2" />
-            Load All Conversations
-          </>
-        )}
-      </Button>
 
       {/* Compose button and folder dropdown for email view */}
       {isEmailOnly && (
