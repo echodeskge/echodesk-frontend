@@ -204,7 +204,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   }, [refetch]);
 
   // Load messages for a specific chat (lazy loading)
-  const loadChatMessages = useCallback(async (chatId: string): Promise<MessageType[]> => {
+  // initialLoad=true: fetch only unread + 10 messages (default)
+  // initialLoad=false: fetch all messages (for loading history)
+  const loadChatMessages = useCallback(async (chatId: string, initialLoad: boolean = true): Promise<MessageType[]> => {
     try {
       // Parse chat ID to determine platform and IDs
       // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{thread_id}
@@ -216,7 +218,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const senderId = parts.slice(2).join('_');
 
         const response = await axios.get("/api/social/facebook-messages/", {
-          params: { page_id: pageId, sender_id: senderId, page_size: 500 },
+          params: {
+            page_id: pageId,
+            sender_id: senderId,
+            page_size: initialLoad ? 100 : 500,
+            ...(initialLoad && { initial_load: 'true' }),
+          },
         });
         const messages = response.data?.results || [];
 
@@ -252,7 +259,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const senderId = parts.slice(2).join('_');
 
         const response = await axios.get("/api/social/instagram-messages/", {
-          params: { account_id: accountId, sender_id: senderId, page_size: 500 },
+          params: {
+            account_id: accountId,
+            sender_id: senderId,
+            page_size: initialLoad ? 100 : 500,
+            ...(initialLoad && { initial_load: 'true' }),
+          },
         });
         const messages = response.data?.results || [];
 
@@ -286,7 +298,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const fromNumber = parts.slice(2).join('_');
 
         const response = await axios.get("/api/social/whatsapp-messages/", {
-          params: { waba_id: wabaId, from_number: fromNumber, page_size: 500 },
+          params: {
+            waba_id: wabaId,
+            from_number: fromNumber,
+            page_size: initialLoad ? 100 : 500,
+            ...(initialLoad && { initial_load: 'true' }),
+          },
         });
         const messages = response.data?.results || [];
 

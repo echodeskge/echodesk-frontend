@@ -36,7 +36,7 @@ export function ChatProvider({
   chatsData: ChatType[]
   children: ReactNode
   onChatSelected?: (chat: ChatType) => void
-  loadChatMessages?: (chatId: string) => Promise<MessageType[]>
+  loadChatMessages?: (chatId: string, initialLoad?: boolean) => Promise<MessageType[]>
   isInitialLoading?: boolean
   platforms?: string[]
   selectedEmailFolder?: string
@@ -85,6 +85,10 @@ export function ChatProvider({
 
   // Lazy loading state
   const [loadingMessages, setLoadingMessages] = useState(false)
+
+  // Full history loading state
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  const [fullHistoryLoadedChats, setFullHistoryLoadedChats] = useState<Set<string>>(new Set())
 
   // Reply state
   const [replyingTo, setReplyingTo] = useState<ReplyingToType | null>(null)
@@ -156,6 +160,25 @@ export function ChatProvider({
     }
   }, [loadChatMessages, chatState.chats])
 
+  // Load full message history for a chat (when user clicks "Load History")
+  const handleLoadFullHistory = useCallback(async (chatId: string) => {
+    if (!loadChatMessages) return
+    if (fullHistoryLoadedChats.has(chatId)) return // Already loaded
+
+    setIsLoadingHistory(true)
+    try {
+      const messages = await loadChatMessages(chatId, false) // false = full history
+      if (messages.length > 0) {
+        dispatch({ type: "updateChatMessages", chatId, messages })
+        setFullHistoryLoadedChats(prev => new Set(prev).add(chatId))
+      }
+    } catch (error) {
+      console.error("Failed to load full history:", error)
+    } finally {
+      setIsLoadingHistory(false)
+    }
+  }, [loadChatMessages, fullHistoryLoadedChats])
+
   // Selection handlers
   const handleSelectChat = useCallback((chat: ChatType) => {
     dispatch({ type: "selectChat", chat })
@@ -202,6 +225,9 @@ export function ChatProvider({
         rawChatsData: chatsData,
         showArchived,
         setShowArchived,
+        loadFullHistory: handleLoadFullHistory,
+        isLoadingHistory,
+        fullHistoryLoadedChats,
       }}
     >
       {children}

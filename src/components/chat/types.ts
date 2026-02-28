@@ -37,6 +37,10 @@ export interface ChatContextType {
   loadingMessages: boolean
   loadChatMessages?: (chatId: string) => Promise<void>
   isInitialLoading: boolean
+  // Load full message history
+  loadFullHistory?: (chatId: string) => Promise<void>
+  isLoadingHistory?: boolean
+  fullHistoryLoadedChats?: Set<string>
   // Platform filter
   platforms: string[]
   // Email folder filter

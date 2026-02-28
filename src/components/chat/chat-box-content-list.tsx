@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react"
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
+import { History, Loader2 } from "lucide-react"
 
 import type { ChatType, UserType } from "@/components/chat/types"
 
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils"
 
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { ScrollBar } from "@/components/ui/scroll-area"
+import { Button } from "@/components/ui/button"
 import { MessageBubble } from "./message-bubble"
 
 interface ChatBoxContentListProps {
@@ -22,7 +24,7 @@ export function ChatBoxContentList({
   chat,
   highlightedMessageIndex,
 }: ChatBoxContentListProps) {
-  const { chatState, handleSelectChat, handleSetUnreadCount, messageSearchQuery } = useChatContext()
+  const { chatState, handleSelectChat, handleSetUnreadCount, messageSearchQuery, loadFullHistory, isLoadingHistory, fullHistoryLoadedChats } = useChatContext()
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const messageRefs = useRef<Map<number, HTMLLIElement>>(new Map())
 
@@ -66,6 +68,30 @@ export function ChatBoxContentList({
         ref={scrollAreaRef}
         className="h-full w-full overflow-y-auto overflow-x-hidden"
       >
+        {/* Load History Button - shows at top when full history not yet loaded */}
+        {loadFullHistory && !fullHistoryLoadedChats?.has(chat.id) && (
+          <div className="flex justify-center py-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => loadFullHistory(chat.id)}
+              disabled={isLoadingHistory}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              {isLoadingHistory ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Loading history...
+                </>
+              ) : (
+                <>
+                  <History className="mr-2 h-4 w-4" />
+                  Load older messages
+                </>
+              )}
+            </Button>
+          </div>
+        )}
         <ul className="flex flex-col gap-y-1.5 px-6 py-3">
           {chat.messages.map((message, index) => {
             const sender = userMap.get(message.senderId) as UserType
