@@ -88,7 +88,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
                 ? "text-foreground font-medium"
                 : "text-muted-foreground font-semibold"
             )}>
-              {chat.lastMessage?.content || "No messages yet..."}
+              {chat.lastMessage?.content?.replace(/\n+/g, ' ') || "No messages yet..."}
             </span>
           </div>
           <div className="flex flex-col items-end gap-1">
