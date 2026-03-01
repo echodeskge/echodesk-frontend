@@ -137,9 +137,34 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   // Handle WebSocket new message - add message directly to state
   const handleNewMessage = useCallback((data: any) => {
     const messageData = data?.message;
-    const chatId = messageData?.chat_id;
 
-    if (!messageData || !chatId) {
+    if (!messageData) {
+      return;
+    }
+
+    // Build chat ID based on platform
+    // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{number}, email_{thread_id}
+    let chatId: string | undefined;
+    const platform = messageData.platform;
+    const conversationId = data?.conversation_id || messageData.sender_id || messageData.from_number || messageData.to_number;
+
+    if (platform === 'facebook' && messageData.page_id) {
+      chatId = `fb_${messageData.page_id}_${conversationId}`;
+    } else if (platform === 'instagram' && messageData.account_id) {
+      chatId = `ig_${messageData.account_id}_${conversationId}`;
+    } else if (platform === 'whatsapp' && messageData.waba_id) {
+      // For WhatsApp, use to_number for sent messages, from_number for received
+      const number = messageData.is_from_business ? messageData.to_number : messageData.from_number;
+      chatId = `wa_${messageData.waba_id}_${number || conversationId}`;
+    } else if (platform === 'email') {
+      chatId = conversationId;
+    } else {
+      // Fallback: try to use chat_id from message or conversation_id from data
+      chatId = messageData.chat_id || data?.conversation_id;
+    }
+
+    if (!chatId) {
+      console.warn('Could not determine chat ID from WebSocket message:', data);
       return;
     }
 
