@@ -5943,7 +5943,6 @@ export async function socialConversationsRetrieve(
   pageSize?: number,
   platforms?: string,
   search?: string,
-  unreadOnly?: boolean,
 ): Promise<PaginatedUnifiedConversation> {
   const response = await axios.get(
     `/api/social/conversations/${(() => {
@@ -5953,7 +5952,6 @@ export async function socialConversationsRetrieve(
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         platforms ? 'platforms=' + encodeURIComponent(platforms) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
-        unreadOnly ? 'unread_only=' + encodeURIComponent(unreadOnly) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -6431,6 +6429,20 @@ export async function socialMarkReadCreate(): Promise<any> {
 
 export async function socialMarkUnreadCreate(): Promise<any> {
   const response = await axios.post(`/api/social/mark-unread/`);
+  return response.data;
+}
+
+export async function socialPublicRatingRetrieve(token: string): Promise<any> {
+  const response = await axios.get(`/api/social/public/rating/${token}/`);
+  return response.data;
+}
+
+export async function socialPublicRatingSubmitCreate(
+  token: string,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/social/public/rating/${token}/submit/`,
+  );
   return response.data;
 }
 

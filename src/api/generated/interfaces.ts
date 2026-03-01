@@ -2941,6 +2941,9 @@ export interface PatchedSocialIntegrationSettingsRequest {
   session_management_enabled?: boolean;
   hide_assigned_chats?: boolean;
   collect_customer_rating?: boolean;
+  link_based_rating_enabled?: boolean;
+  rating_request_message_template_ka?: string;
+  rating_request_message_template_en?: string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -3798,6 +3801,9 @@ export interface SocialIntegrationSettings {
   session_management_enabled?: boolean;
   hide_assigned_chats?: boolean;
   collect_customer_rating?: boolean;
+  link_based_rating_enabled?: boolean;
+  rating_request_message_template_ka?: string;
+  rating_request_message_template_en?: string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -3818,6 +3824,9 @@ export interface SocialIntegrationSettingsRequest {
   session_management_enabled?: boolean;
   hide_assigned_chats?: boolean;
   collect_customer_rating?: boolean;
+  link_based_rating_enabled?: boolean;
+  rating_request_message_template_ka?: string;
+  rating_request_message_template_en?: string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
