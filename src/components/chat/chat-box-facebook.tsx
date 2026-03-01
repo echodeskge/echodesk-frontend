@@ -97,13 +97,17 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
     )
   }, [matchingMessageIndices.length])
 
-  // If initial loading, show loading state
-  if (isInitialLoading) {
-    return <ChatBoxInitialSkeleton />;
+  // If chat ID exists but no matching chat is found
+  // Only show loading skeleton if we're still loading AND don't have the chat yet
+  // This prevents showing skeleton when navigating to a chat that's already loaded
+  if (!chat) {
+    // Still loading - show skeleton
+    if (isInitialLoading) {
+      return <ChatBoxInitialSkeleton />;
+    }
+    // Done loading but chat not found - show not found UI
+    return <ChatBoxNotFound />
   }
-
-  // If chat ID exists but no matching chat is found, show a not found UI
-  if (!chat) return <ChatBoxNotFound />
 
   // Show loading state while messages are being fetched for this specific chat
   const showLoading = loadingMessages || (!chat.messagesLoaded && chat.messages.length === 0)

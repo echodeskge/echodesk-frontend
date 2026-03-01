@@ -168,10 +168,14 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       return;
     }
 
+    // Determine if this message is from the business/page (sent by us)
+    const isFromBusiness = messageData.is_from_page || messageData.is_from_business || false;
+
     // Convert WebSocket message to MessageType format
+    // For sent messages (from business), use "business" as senderId to match currentUser.id
     const newMessage: MessageType = {
       id: String(messageData.id),
-      senderId: messageData.sender_id || messageData.from_number || '',
+      senderId: isFromBusiness ? 'business' : (messageData.sender_id || messageData.from_number || ''),
       text: messageData.message_text || '',
       status: 'DELIVERED',
       createdAt: new Date(messageData.timestamp),
@@ -180,7 +184,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       platform: messageData.platform,
       source: messageData.source,
       isEcho: messageData.is_echo,
-      sentByName: messageData.sent_by_name,
+      sentByName: messageData.sent_by || messageData.sent_by_name,
       replyToMessageId: messageData.reply_to_message_id,
       replyToId: messageData.reply_to_id,
     };
@@ -401,8 +405,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   }, []);
 
   // Load specific chat when navigating directly to a URL
+  // This effect loads the chat immediately without waiting for the conversations list
   useEffect(() => {
-    if (!chatId || isLoading) return;
+    if (!chatId) return;
 
     // Check if we already have this chat loaded directly
     if (directLoadedChat?.id === chatId) {
@@ -414,21 +419,17 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       return;
     }
 
-    // Check if the chat is in the API-loaded list (not including directLoadedChat)
-    const chatInApiList = conversationsData?.pages?.some(page =>
-      page.results?.some(conv => {
-        const platform = String(conv.platform);
-        const convId = `${platform === 'facebook' ? 'fb' : platform === 'instagram' ? 'ig' : platform === 'whatsapp' ? 'wa' : 'email'}_${conv.account_id}_${conv.sender_id}`;
-        return convId === chatId;
-      })
-    );
-
-    if (chatInApiList) {
-      // Chat is in the API list, clear any direct loaded chat
-      if (directLoadedChat) {
-        setDirectLoadedChat(null);
-      }
+    // Check if the chat is already in chatsData (which includes conversions from API)
+    const chatInList = chatsData.some(chat => chat.id === chatId);
+    if (chatInList) {
+      // Chat is already available, no need to load directly
       setIsLoadingDirectChat(false);
+      return;
+    }
+
+    // If conversations are still loading, wait a bit longer
+    // But if we don't have the chat after loading completes, we'll load it directly
+    if (isLoading) {
       return;
     }
 
@@ -506,7 +507,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     };
 
     loadDirectChat();
-  }, [chatId, isLoading, conversationsData, directLoadedChat, loadChatMessages]);
+  }, [chatId, isLoading, chatsData, directLoadedChat, loadChatMessages]);
 
   // Mark conversation as read mutation
   const markReadMutation = useMarkConversationRead();
