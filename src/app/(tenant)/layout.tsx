@@ -138,6 +138,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Global WebSocket for message notifications (plays sound and updates sidebar)
   useMessagesWebSocket({
     onNewMessage: (data) => {
+      const messageData = data?.message;
+
+      // Don't play sound for messages we sent (from page/business)
+      if (messageData?.is_from_page || messageData?.is_from_business) {
+        return;
+      }
+
       // Check assignment - only play sound if:
       // 1. Chat is not assigned to anyone (assigned_user_id is null/undefined)
       // 2. Chat is assigned to the current user
@@ -150,7 +157,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       }
 
       // Play platform-specific notification sound
-      const platform = data?.platform || data?.message?.platform;
+      const platform = data?.platform || messageData?.platform;
       if (platform && ['facebook', 'instagram', 'whatsapp', 'email'].includes(platform)) {
         getNotificationSound().playForPlatform(platform);
       } else {

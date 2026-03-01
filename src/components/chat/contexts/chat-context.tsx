@@ -145,9 +145,17 @@ export function ChatProvider({
   const handleLoadChatMessages = useCallback(async (chatId: string) => {
     if (!loadChatMessages) return
 
-    // Find the chat
-    const chat = chatState.chats.find(c => c.id === chatId)
-    if (!chat || chat.messagesLoaded) return // Already loaded
+    // Find the chat - check both chatState.chats and chatsData prop to handle race condition
+    // where the useEffect hasn't synced chatsData to chatState yet
+    const chatFromState = chatState.chats.find(c => c.id === chatId)
+    const chatFromProps = chatsData.find(c => c.id === chatId)
+    const chat = chatFromState || chatFromProps
+
+    // Skip if already loaded (check both sources)
+    if (chatFromState?.messagesLoaded || chatFromProps?.messagesLoaded) return
+
+    // If chat doesn't exist in either source, still try to load messages
+    // This handles the case where we're loading a chat not in the list
 
     setLoadingMessages(true)
     try {
@@ -158,7 +166,7 @@ export function ChatProvider({
     } finally {
       setLoadingMessages(false)
     }
-  }, [loadChatMessages, chatState.chats])
+  }, [loadChatMessages, chatState.chats, chatsData])
 
   // Load full message history for a chat (when user clicks "Load History")
   const handleLoadFullHistory = useCallback(async (chatId: string) => {

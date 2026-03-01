@@ -154,7 +154,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       chatId = `ig_${messageData.account_id}_${conversationId}`;
     } else if (platform === 'whatsapp' && messageData.waba_id) {
       // For WhatsApp, use to_number for sent messages, from_number for received
-      const number = messageData.is_from_business ? messageData.to_number : messageData.from_number;
+      let number = messageData.is_from_business ? messageData.to_number : messageData.from_number;
+      // Strip the + prefix from phone numbers to match chat ID format
+      if (number?.startsWith('+')) {
+        number = number.slice(1);
+      }
       chatId = `wa_${messageData.waba_id}_${number || conversationId}`;
     } else if (platform === 'email') {
       chatId = conversationId;
