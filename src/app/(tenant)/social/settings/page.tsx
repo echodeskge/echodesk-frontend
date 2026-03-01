@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench } from "lucide-react";
+import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -643,6 +643,12 @@ function ChatManagementTab({
   setHideAssignedChats,
   collectCustomerRating,
   setCollectCustomerRating,
+  linkBasedRatingEnabled,
+  setLinkBasedRatingEnabled,
+  ratingRequestMessageKa,
+  setRatingRequestMessageKa,
+  ratingRequestMessageEn,
+  setRatingRequestMessageEn,
   autoAssign,
   setAutoAssign,
   t,
@@ -653,6 +659,12 @@ function ChatManagementTab({
   setHideAssignedChats: (v: boolean) => void;
   collectCustomerRating: boolean;
   setCollectCustomerRating: (v: boolean) => void;
+  linkBasedRatingEnabled: boolean;
+  setLinkBasedRatingEnabled: (v: boolean) => void;
+  ratingRequestMessageKa: string;
+  setRatingRequestMessageKa: (v: string) => void;
+  ratingRequestMessageEn: string;
+  setRatingRequestMessageEn: (v: string) => void;
   autoAssign: boolean;
   setAutoAssign: (v: boolean) => void;
   t: ReturnType<typeof useTranslations>;
@@ -728,6 +740,68 @@ function ChatManagementTab({
             />
           </div>
 
+          {/* Link-based Rating Settings (shown when collect rating is enabled) */}
+          {collectCustomerRating && (
+            <>
+              <Separator />
+              <div className="space-y-4 pl-6 border-l-2 border-muted">
+                {/* Link-based Rating Toggle */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="link-based-rating" className="flex items-center gap-2">
+                      <Link className="h-4 w-4 text-blue-500" />
+                      {t("settingsPage.chatManagement.linkBasedRating") || "Use link-based rating"}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      {t("settingsPage.chatManagement.linkBasedRatingDescription") || "Send a link to a review page instead of in-chat quick replies"}
+                    </p>
+                  </div>
+                  <Switch
+                    id="link-based-rating"
+                    checked={linkBasedRatingEnabled}
+                    onCheckedChange={setLinkBasedRatingEnabled}
+                  />
+                </div>
+
+                {/* Message Templates (shown when link-based rating is enabled) */}
+                {linkBasedRatingEnabled && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="rating-message-ka">
+                        {t("settingsPage.chatManagement.ratingMessageKa") || "Rating request message (Georgian)"}
+                      </Label>
+                      <Textarea
+                        id="rating-message-ka"
+                        placeholder="გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}"
+                        value={ratingRequestMessageKa}
+                        onChange={(e) => setRatingRequestMessageKa(e.target.value)}
+                        rows={2}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="rating-message-en">
+                        {t("settingsPage.chatManagement.ratingMessageEn") || "Rating request message (English)"}
+                      </Label>
+                      <Textarea
+                        id="rating-message-en"
+                        placeholder="Thank you for chatting with us! Please rate your experience: {link}"
+                        value={ratingRequestMessageEn}
+                        onChange={(e) => setRatingRequestMessageEn(e.target.value)}
+                        rows={2}
+                      />
+                    </div>
+                    <div className="rounded-lg bg-muted/50 p-3">
+                      <p className="text-xs text-muted-foreground">
+                        <strong>{t("settingsPage.chatManagement.templateHint") || "Hint"}:</strong>{" "}
+                        {t("settingsPage.chatManagement.templateHintDescription") || "Use {link} placeholder where you want the rating link to appear."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
           {/* Info box showing enabled features */}
           {(chatAssignmentEnabled || hideAssignedChats || collectCustomerRating) && (
             <>
@@ -747,7 +821,11 @@ function ChatManagementTab({
                     <li>{t("settingsPage.enabledFeatures.hiddenChats") || "Assigned chats are hidden from other users (admins see all)"}</li>
                   )}
                   {collectCustomerRating && (
-                    <li>{t("settingsPage.enabledFeatures.ratingRequest") || "When session ends, customer receives rating request (1-5)"}</li>
+                    <li>
+                      {linkBasedRatingEnabled
+                        ? (t("settingsPage.enabledFeatures.linkBasedRating") || "When session ends, customer receives a link to review page with emoji rating")
+                        : (t("settingsPage.enabledFeatures.ratingRequest") || "When session ends, customer receives rating request (1-5)")}
+                    </li>
                   )}
                 </ul>
               </div>
@@ -828,6 +906,9 @@ export default function SocialSettingsPage() {
   const [chatAssignmentEnabled, setChatAssignmentEnabled] = useState(false);
   const [hideAssignedChats, setHideAssignedChats] = useState(false);
   const [collectCustomerRating, setCollectCustomerRating] = useState(false);
+  const [linkBasedRatingEnabled, setLinkBasedRatingEnabled] = useState(false);
+  const [ratingRequestMessageKa, setRatingRequestMessageKa] = useState("გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
+  const [ratingRequestMessageEn, setRatingRequestMessageEn] = useState("Thank you for chatting with us! Please rate your experience: {link}");
 
   // Notification sound settings
   const [soundFacebook, setSoundFacebook] = useState('mixkit-bubble-pop-up-alert-notification-2357.wav');
@@ -853,6 +934,10 @@ export default function SocialSettingsPage() {
       setChatAssignmentEnabled(settings.chat_assignment_enabled ?? false);
       setHideAssignedChats(settings.hide_assigned_chats ?? false);
       setCollectCustomerRating(settings.collect_customer_rating ?? false);
+      // Link-based rating settings
+      setLinkBasedRatingEnabled(settings.link_based_rating_enabled ?? false);
+      setRatingRequestMessageKa(settings.rating_request_message_template_ka || "გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
+      setRatingRequestMessageEn(settings.rating_request_message_template_en || "Thank you for chatting with us! Please rate your experience: {link}");
       // Notification sounds
       setSoundFacebook(settings.notification_sound_facebook || 'mixkit-bubble-pop-up-alert-notification-2357.wav');
       setSoundInstagram(settings.notification_sound_instagram || 'mixkit-magic-notification-ring-2344.wav');
@@ -892,6 +977,10 @@ export default function SocialSettingsPage() {
       session_management_enabled: Boolean(chatAssignmentEnabled),
       hide_assigned_chats: Boolean(hideAssignedChats),
       collect_customer_rating: Boolean(collectCustomerRating),
+      // Link-based rating settings
+      link_based_rating_enabled: Boolean(linkBasedRatingEnabled),
+      rating_request_message_template_ka: ratingRequestMessageKa,
+      rating_request_message_template_en: ratingRequestMessageEn,
       // Notification sound settings
       notification_sound_facebook: soundFacebook,
       notification_sound_instagram: soundInstagram,
@@ -1006,6 +1095,12 @@ export default function SocialSettingsPage() {
               setHideAssignedChats={setHideAssignedChats}
               collectCustomerRating={collectCustomerRating}
               setCollectCustomerRating={setCollectCustomerRating}
+              linkBasedRatingEnabled={linkBasedRatingEnabled}
+              setLinkBasedRatingEnabled={setLinkBasedRatingEnabled}
+              ratingRequestMessageKa={ratingRequestMessageKa}
+              setRatingRequestMessageKa={setRatingRequestMessageKa}
+              ratingRequestMessageEn={ratingRequestMessageEn}
+              setRatingRequestMessageEn={setRatingRequestMessageEn}
               autoAssign={autoAssign}
               setAutoAssign={setAutoAssign}
               t={t}
