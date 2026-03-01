@@ -1,10 +1,8 @@
 "use client";
 
 import { useQuery, useMutation } from '@tanstack/react-query';
-import {
-  socialPublicRatingRetrieve,
-  socialPublicRatingSubmitCreate,
-} from '@/api/generated';
+import axios from '@/api/axios';
+import { socialPublicRatingRetrieve } from '@/api/generated';
 
 // Public rating API - no authentication required
 // These endpoints are accessed via tenant subdomain
@@ -68,8 +66,8 @@ export function useRatingInfo(token: string | null) {
 export function useSubmitRating() {
   return useMutation<SubmitRatingResponse, Error, { token: string; data: SubmitRatingRequest }>({
     mutationFn: async ({ token, data }) => {
-      const response = await socialPublicRatingSubmitCreate(token, data);
-      return response as SubmitRatingResponse;
+      const response = await axios.post(`/api/social/public/rating/${token}/submit/`, data);
+      return response.data as SubmitRatingResponse;
     },
   });
 }
