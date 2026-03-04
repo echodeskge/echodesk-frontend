@@ -11,8 +11,15 @@ export async function POST() {
     ? '__Secure-authjs.session-token'
     : 'authjs.session-token';
 
-  // Clear the session cookie
-  response.cookies.delete(cookieName);
+  // Clear the session cookie by setting it to expire immediately
+  // Must match the options used when setting the cookie
+  response.cookies.set(cookieName, '', {
+    expires: new Date(0),
+    path: '/',
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'lax',
+  });
 
   return response;
 }

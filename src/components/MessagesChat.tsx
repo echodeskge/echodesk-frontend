@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter, usePathname } from "next/navigation";
 import axios from "@/api/axios";
 import { convertApiConversationsToChatFormat, convertUnifiedMessagesToMessageType } from "@/lib/chatAdapter";
 import { ChatProvider } from "@/components/chat/contexts/chat-context";
@@ -67,14 +67,33 @@ interface MessagesChatProps {
 export default function MessagesChat({ platforms }: MessagesChatProps) {
   const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email"];
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   // params.id is an array for [[...id]] catch-all routes
   const chatId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [selectedEmailFolder, setSelectedEmailFolder] = useState<string>('INBOX');
   const [currentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [assignmentTab, setAssignmentTab] = useState<AssignmentTabType>('all');
   const [showArchived, setShowArchived] = useState(false);
+
+  // Read assignment tab from URL search params (persists across navigation)
+  const assignmentTabFromUrl = searchParams.get('tab') as AssignmentTabType | null;
+  const assignmentTab: AssignmentTabType = assignmentTabFromUrl === 'assigned' ? 'assigned' : 'all';
+
+  // Update assignment tab in URL
+  const setAssignmentTab = useCallback((tab: AssignmentTabType) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (tab === 'assigned') {
+      newParams.set('tab', 'assigned');
+    } else {
+      newParams.delete('tab');
+    }
+    const queryString = newParams.toString();
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   // Debounce search query (300ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 300);

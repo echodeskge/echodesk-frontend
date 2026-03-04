@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { useParams, usePathname } from "next/navigation"
+import { useParams, usePathname, useSearchParams } from "next/navigation"
 import { formatDistanceToNow } from "date-fns"
 import { Facebook, Instagram, MessageCircle, Mail } from "lucide-react"
 
@@ -16,6 +16,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
   const { setIsChatSidebarOpen } = useChatContext()
   const params = useParams()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
 
   const chatIdParam = params.id?.[0]
 
@@ -26,6 +27,13 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
     return '/messages'
   }
 
+  // Build href with preserved search params (e.g., ?tab=assigned)
+  const buildHref = () => {
+    const base = `${getBaseRoute()}/${chat.id}`
+    const queryString = searchParams.toString()
+    return queryString ? `${base}?${queryString}` : base
+  }
+
   const handleOnCLick = () => {
     // Close the sidebar when a chat is selected
     setIsChatSidebarOpen(false)
@@ -33,7 +41,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
 
   return (
     <Link
-      href={`${getBaseRoute()}/${chat.id}`}
+      href={buildHref()}
       prefetch={false}
       className={cn(
         buttonVariants({ variant: "ghost" }),

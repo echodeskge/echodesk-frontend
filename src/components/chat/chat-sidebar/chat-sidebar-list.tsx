@@ -52,7 +52,7 @@ export function ChatSidebarList() {
   // BUT only show this if we're actually still loading - if loading is done, show empty state
   const isRefetching = isInitialLoading && chatState.chats.length === 0 && hasEverLoaded
 
-  // Filter chats based on search query and assignment tab
+  // Filter and sort chats based on search query and assignment tab
   const filteredChats = useMemo(() => {
     let chats = chatState.chats
 
@@ -67,20 +67,34 @@ export function ChatSidebarList() {
       }
     }
 
-    // Then filter by search query
-    if (!chatListSearchQuery.trim()) {
-      return chats
+    // Filter by search query
+    if (chatListSearchQuery.trim()) {
+      const query = chatListSearchQuery.toLowerCase().trim()
+      chats = chats.filter((chat) => {
+        // Search by chat name
+        if (chat.name.toLowerCase().includes(query)) return true
+        // Search by last message content
+        if (chat.lastMessage?.content?.toLowerCase().includes(query)) return true
+        // Search by platform
+        if (chat.platform?.toLowerCase().includes(query)) return true
+        return false
+      })
     }
 
-    const query = chatListSearchQuery.toLowerCase().trim()
-    return chats.filter((chat) => {
-      // Search by chat name
-      if (chat.name.toLowerCase().includes(query)) return true
-      // Search by last message content
-      if (chat.lastMessage?.content?.toLowerCase().includes(query)) return true
-      // Search by platform
-      if (chat.platform?.toLowerCase().includes(query)) return true
-      return false
+    // Sort chats: unread chats first, then by last message date
+    return [...chats].sort((a, b) => {
+      const aUnread = a.unreadCount && a.unreadCount > 0 ? 1 : 0
+      const bUnread = b.unreadCount && b.unreadCount > 0 ? 1 : 0
+
+      // Unread chats come first
+      if (aUnread !== bUnread) {
+        return bUnread - aUnread
+      }
+
+      // Within same category, sort by most recent message
+      const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0
+      const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0
+      return bTime - aTime
     })
   }, [chatState.chats, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
 

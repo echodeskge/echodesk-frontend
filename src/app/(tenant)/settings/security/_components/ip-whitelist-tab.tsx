@@ -377,7 +377,7 @@ export function IPWhitelistTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('whitelist.cidr')} <span className="text-muted-foreground">({t('common.optional')})</span></Label>
+              <Label>{t('whitelist.cidr')} <span className="text-muted-foreground">({tCommon('optional')})</span></Label>
               <Input
                 placeholder="24"
                 value={formData.cidr_notation}
@@ -386,7 +386,7 @@ export function IPWhitelistTab() {
               <p className="text-xs text-muted-foreground">{t('whitelist.cidrHelp')}</p>
             </div>
             <div className="space-y-2">
-              <Label>{t('whitelist.description')} <span className="text-muted-foreground">({t('common.optional')})</span></Label>
+              <Label>{t('whitelist.description')} <span className="text-muted-foreground">({tCommon('optional')})</span></Label>
               <Input
                 placeholder={t('whitelist.descriptionPlaceholder')}
                 value={formData.description}
@@ -410,7 +410,7 @@ export function IPWhitelistTab() {
               {createMutation.isPending ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />
-                  {t('common.saving')}
+                  {tCommon('saving')}
                 </>
               ) : (
                 t('whitelist.add')
@@ -437,7 +437,7 @@ export function IPWhitelistTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('whitelist.cidr')} <span className="text-muted-foreground">({t('common.optional')})</span></Label>
+              <Label>{t('whitelist.cidr')} <span className="text-muted-foreground">({tCommon('optional')})</span></Label>
               <Input
                 placeholder="24"
                 value={formData.cidr_notation}
@@ -445,7 +445,7 @@ export function IPWhitelistTab() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t('whitelist.description')} <span className="text-muted-foreground">({t('common.optional')})</span></Label>
+              <Label>{t('whitelist.description')} <span className="text-muted-foreground">({tCommon('optional')})</span></Label>
               <Input
                 placeholder={t('whitelist.descriptionPlaceholder')}
                 value={formData.description}
@@ -469,10 +469,10 @@ export function IPWhitelistTab() {
               {updateMutation.isPending ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />
-                  {t('common.saving')}
+                  {tCommon('saving')}
                 </>
               ) : (
-                t('common.save')
+                tCommon('save')
               )}
             </Button>
           </DialogFooter>
@@ -499,10 +499,10 @@ export function IPWhitelistTab() {
               {deleteMutation.isPending ? (
                 <>
                   <Spinner className="mr-2 h-4 w-4" />
-                  {t('common.deleting')}
+                  {tCommon('deleting')}
                 </>
               ) : (
-                t('common.delete')
+                tCommon('delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

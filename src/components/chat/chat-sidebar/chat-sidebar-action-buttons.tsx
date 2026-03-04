@@ -28,9 +28,9 @@ export function ChatSidebarActionButtons() {
   const archiveAllMutation = useArchiveAllConversations()
   const { data: userProfile } = useUserProfile()
 
-  // Check if user is admin (tenant admin)
-  // Admin can be determined by role='admin', is_staff=true, or is_superuser=true
-  const isAdmin = userProfile?.role === 'admin' || userProfile?.is_staff === true
+  // Check if user is staff/admin (tenant admin)
+  // Admin is determined by is_staff=true
+  const isAdmin = userProfile?.is_staff === true
 
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate('all')

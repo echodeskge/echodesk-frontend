@@ -533,12 +533,14 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const handleLogout = async () => {
     try {
       // Use auth context logout to clear both local and NextAuth session
-      logout();
+      await logout();
 
-      // Redirect to home page
-      window.location.href = "/";
+      // Force redirect to login page with a full page reload to clear all state
+      window.location.replace("/");
     } catch (err) {
       console.error("Logout failed:", err);
+      // Even if logout fails, redirect to login page
+      window.location.replace("/");
     }
   };
 

@@ -224,6 +224,11 @@ class AuthService {
           };
         }
 
+        // Check if this is a 403 IP restriction error
+        if (axiosError.response?.status === 403) {
+          throw new Error("Your IP address is not allowed. Please contact your administrator.");
+        }
+
         const message = axiosError.response?.data?.message || "Login failed";
         throw new Error(message);
       }

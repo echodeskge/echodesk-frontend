@@ -86,18 +86,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Clear local state first
     setToken(null);
     setUser(null);
     authService.clearLocalAuth();
 
-    // Clear React Query cache
-    queryClient.removeQueries({ queryKey: ['userProfile'] });
+    // Clear all React Query cache
+    queryClient.clear();
 
-    // Sign out from NextAuth session via server-side route (non-blocking)
-    fetch('/api/auth/signout', { method: 'POST' }).catch((err) => {
+    // Sign out from NextAuth session via server-side route
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+    } catch (err) {
       console.error('[NextAuth] Sign out failed:', err);
-    });
+    }
   };
 
   const checkAuth = async (): Promise<boolean> => {
