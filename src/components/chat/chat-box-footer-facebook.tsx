@@ -58,7 +58,7 @@ function parseChatId(chatId: string, platform?: string) {
 }
 
 export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookProps) {
-  const { chatState } = useChatContext()
+  const { chatState, setAssignmentTab } = useChatContext()
   const { user } = useAuth()
   const params = useParams()
 
@@ -106,11 +106,18 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
   // Handle assign to me (this now automatically starts the session)
   const handleAssign = () => {
     if (!chatInfo) return
-    assignChat.mutate({
-      platform: chatInfo.platform,
-      conversation_id: chatInfo.conversationId,
-      account_id: chatInfo.accountId,
-    })
+    assignChat.mutate(
+      {
+        platform: chatInfo.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+      },
+      {
+        onSuccess: () => {
+          setAssignmentTab('assigned')
+        },
+      }
+    )
   }
 
   // Show loading state while fetching assignment status

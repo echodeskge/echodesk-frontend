@@ -278,12 +278,24 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
   const handleEndSession = () => {
     if (!chatInfo) return
-    // End session - backend already unassigns the user
-    endSession.mutate({
-      platform: chatInfo.platform,
-      conversation_id: chatInfo.conversationId,
-      account_id: chatInfo.accountId,
-    })
+    // End session - backend archives the conversation automatically
+    endSession.mutate(
+      {
+        platform: chatInfo.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Session ended",
+            description: "Conversation moved to history",
+          })
+          setAssignmentTab('all')
+          router.push(getBaseRoute())
+        },
+      }
+    )
   }
 
   const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending
