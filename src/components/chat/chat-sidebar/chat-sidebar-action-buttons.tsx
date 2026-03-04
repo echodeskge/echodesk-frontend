@@ -16,6 +16,7 @@ import { ChatSidebarNotificationDropdown } from "./chat-sidebar-notification-dro
 import { ChatSidebarStatusDropdown } from "./chat-sidebar-status-dropdown"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useMarkAllAsRead, useArchiveAllConversations } from "@/hooks/api/useSocial"
+import { useUserProfile } from "@/hooks/useUserProfile"
 
 export function ChatSidebarActionButtons() {
   const t = useTranslations("chat")
@@ -25,6 +26,10 @@ export function ChatSidebarActionButtons() {
   const { showArchived, setShowArchived } = useChatContext()
   const markAllAsReadMutation = useMarkAllAsRead()
   const archiveAllMutation = useArchiveAllConversations()
+  const { data: userProfile } = useUserProfile()
+
+  // Check if user is admin (tenant admin)
+  const isAdmin = userProfile?.role === 'admin'
 
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate('all')
@@ -63,26 +68,31 @@ export function ChatSidebarActionButtons() {
             )}
           </DropdownMenuItem>
 
-          <DropdownMenuSeparator />
+          {/* Admin-only actions */}
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
 
-          {/* Mark All as Read */}
-          <DropdownMenuItem
-            onClick={handleMarkAllAsRead}
-            disabled={markAllAsReadMutation.isPending}
-          >
-            <CheckCheck className="mr-2 h-4 w-4" />
-            {t("markAllAsRead")}
-          </DropdownMenuItem>
+              {/* Mark All as Read */}
+              <DropdownMenuItem
+                onClick={handleMarkAllAsRead}
+                disabled={markAllAsReadMutation.isPending}
+              >
+                <CheckCheck className="mr-2 h-4 w-4" />
+                {t("markAllAsRead")}
+              </DropdownMenuItem>
 
-          {/* Move All to History (only show when not in history view) */}
-          {!showArchived && (
-            <DropdownMenuItem
-              onClick={handleArchiveAll}
-              disabled={archiveAllMutation.isPending}
-            >
-              <Archive className="mr-2 h-4 w-4" />
-              {t("moveAllToHistory")}
-            </DropdownMenuItem>
+              {/* Move All to History (only show when not in history view) */}
+              {!showArchived && (
+                <DropdownMenuItem
+                  onClick={handleArchiveAll}
+                  disabled={archiveAllMutation.isPending}
+                >
+                  <Archive className="mr-2 h-4 w-4" />
+                  {t("moveAllToHistory")}
+                </DropdownMenuItem>
+              )}
+            </>
           )}
 
           <DropdownMenuSeparator />
