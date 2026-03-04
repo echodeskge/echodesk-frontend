@@ -29,7 +29,8 @@ export function ChatSidebarActionButtons() {
   const { data: userProfile } = useUserProfile()
 
   // Check if user is admin (tenant admin)
-  const isAdmin = userProfile?.role === 'admin'
+  // Admin can be determined by role='admin', is_staff=true, or is_superuser=true
+  const isAdmin = userProfile?.role === 'admin' || userProfile?.is_staff === true
 
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate('all')
