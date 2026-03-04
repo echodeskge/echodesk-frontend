@@ -516,13 +516,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   // Mark conversation as read mutation
   const markReadMutation = useMarkConversationRead();
 
-  // Handle chat selection - mark as read and keep in list
+  // Handle chat selection - mark as read
   const handleChatSelected = useCallback((chat: ChatType) => {
     if (!chat.platform) return;
 
-    // Save the selected chat so it stays visible even after being marked as read
-    // This prevents the chat from disappearing from the list when unread_only=true
-    setDirectLoadedChat(chat);
+    // Note: We don't call setDirectLoadedChat here to avoid infinite loops
+    // The directLoadedChat is only set when loading a chat via URL that's not in the list
 
     const parts = chat.id.split('_');
     let conversationId: string;

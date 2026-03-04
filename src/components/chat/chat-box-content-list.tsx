@@ -29,15 +29,16 @@ export function ChatBoxContentList({
   const messageRefs = useRef<Map<number, HTMLLIElement>>(new Map())
 
   // Synchronize chat selection and scroll to the bottom on updates
+  // Compare by ID instead of reference to avoid infinite loops when objects are recreated
   useEffect(() => {
-    if (chat && chat !== chatState.selectedChat) {
+    if (chat && chat.id !== chatState.selectedChat?.id) {
       handleSelectChat(chat)
     }
 
     if (!!chat?.unreadCount) {
       handleSetUnreadCount()
     }
-  }, [chat, chatState.selectedChat, handleSelectChat, handleSetUnreadCount])
+  }, [chat, chatState.selectedChat?.id, handleSelectChat, handleSetUnreadCount])
 
   // Scroll to bottom whenever messages change (only when not searching)
   useEffect(() => {
