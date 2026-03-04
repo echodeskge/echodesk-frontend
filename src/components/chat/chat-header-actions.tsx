@@ -101,7 +101,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const [showClientPanel, setShowClientPanel] = useState(false)
 
   // Archive/History functionality
-  const { showArchived, setShowArchived, selectedEmailConnectionId } = useChatContext()
+  const { showArchived, setShowArchived, selectedEmailConnectionId, setAssignmentTab } = useChatContext()
 
   // Email folder functionality
   const isEmail = chat?.platform === 'email'
@@ -232,8 +232,9 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                     title: "Chat assigned",
                     description: "Chat assigned to you and restored from history",
                   })
-                  // Exit history view and go back to main chat list
+                  // Exit history view, switch to assigned tab
                   setShowArchived(false)
+                  setAssignmentTab('assigned')
                   router.push(getBaseRoute())
                 },
                 onError: (error: any) => {
@@ -250,6 +251,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               title: "Chat assigned",
               description: "Chat has been assigned to you",
             })
+            setAssignmentTab('assigned')
           }
         },
       }
