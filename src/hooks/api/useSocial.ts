@@ -38,7 +38,7 @@ export const socialKeys = {
   unreadCount: () => [...socialKeys.all, 'unreadCount'] as const,
   settings: () => [...socialKeys.all, 'settings'] as const,
   conversations: () => [...socialKeys.all, 'conversations'] as const,
-  conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean; archived?: boolean }) =>
+  conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean; archived?: boolean; connectionId?: number | null }) =>
     [...socialKeys.conversations(), filters] as const,
   assignments: () => [...socialKeys.all, 'assignments'] as const,
   myAssignments: () => [...socialKeys.assignments(), 'my'] as const,
@@ -1048,6 +1048,14 @@ export interface EmailConnection {
   updated_at: string;
 }
 
+export interface EmailConnectionAssignedUser {
+  id: number;
+  user_id: number;
+  user_email: string;
+  user_name: string;
+  assigned_at: string;
+}
+
 export interface EmailConnectionDetail {
   id: number;
   email_address: string;
@@ -1062,6 +1070,7 @@ export interface EmailConnectionDetail {
   signature_enabled?: boolean;
   signature_html?: string;
   signature_text?: string;
+  assigned_users?: EmailConnectionAssignedUser[];
 }
 
 export interface EmailConnectionStatus {
@@ -1375,6 +1384,106 @@ export function useUpdateEmailConnection() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+    },
+  });
+}
+
+// ============================================================================
+// EMAIL USER ASSIGNMENT HOOKS
+// ============================================================================
+
+export interface EmailConnectionAssignment {
+  id: number;
+  connection: number;
+  user: number;
+  user_email: string;
+  user_name: string;
+  assigned_by: number | null;
+  assigned_by_email: string | null;
+  assigned_by_name: string | null;
+  connection_email: string;
+  assigned_at: string;
+}
+
+export interface EmailConnectionWithAssignments {
+  id: number;
+  email_address: string;
+  display_name: string;
+  is_active: boolean;
+  assigned_users: EmailConnectionAssignment[];
+}
+
+export interface UpdateEmailAssignmentsRequest {
+  user_ids: number[];
+}
+
+// Get assigned users for an email connection
+export function useEmailConnectionAssignedUsers(connectionId: number) {
+  return useQuery<{
+    connection_id: number;
+    connection_email: string;
+    assigned_users: EmailConnectionAssignment[];
+  }>({
+    queryKey: [...socialKeys.email(), 'assignments', connectionId],
+    queryFn: async () => {
+      const response = await axios.get(`/api/social/email/${connectionId}/assigned-users/`);
+      return response.data;
+    },
+    enabled: !!connectionId,
+    staleTime: 30 * 1000,
+  });
+}
+
+// Update assigned users for an email connection
+export function useUpdateEmailConnectionAssignments() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ connectionId, userIds }: { connectionId: number; userIds: number[] }) => {
+      const response = await axios.put(`/api/social/email/${connectionId}/assigned-users/`, {
+        user_ids: userIds,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.email() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+    },
+  });
+}
+
+// Create a single email assignment
+export function useCreateEmailAssignment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ connectionId, userId }: { connectionId: number; userId: number }) => {
+      const response = await axios.post('/api/social/email/assignments/create/', {
+        connection_id: connectionId,
+        user_id: userId,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.email() });
+    },
+  });
+}
+
+// Delete an email assignment
+export function useDeleteEmailAssignment() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (assignmentId: number) => {
+      const response = await axios.delete(`/api/social/email/assignments/${assignmentId}/`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.email() });
     },
   });
 }
@@ -1948,6 +2057,7 @@ export interface UseUnifiedConversationsOptions {
   enabled?: boolean;
   assigned?: boolean;
   archived?: boolean;
+  connectionId?: number | null;  // Filter by email connection ID
 }
 
 /**
@@ -1963,10 +2073,11 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
     enabled = true,
     assigned = false,
     archived = false,
+    connectionId = null,
   } = options;
 
   return useInfiniteQuery({
-    queryKey: socialKeys.conversationsList({ platforms, search, folder, assigned, archived }),
+    queryKey: socialKeys.conversationsList({ platforms, search, folder, assigned, archived, connectionId }),
     queryFn: async ({ pageParam = 1 }) => {
       // Use axios directly to support the 'assigned' and 'archived' parameters
       const params: Record<string, string | number | boolean> = {
@@ -1978,6 +2089,7 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
       if (search) params.search = search;
       if (assigned) params.assigned = 'true';
       if (archived) params.archived = 'true';
+      if (connectionId) params.connection_id = connectionId;
 
       const response = await axios.get<PaginatedUnifiedConversation>('/api/social/conversations/', { params });
       return response.data;

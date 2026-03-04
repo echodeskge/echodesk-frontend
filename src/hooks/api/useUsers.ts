@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { usersList, usersCreate, usersUpdate, usersPartialUpdate, usersDestroy } from '@/api/generated/api';
 import type { PaginatedUserList, UserCreateRequest, UserUpdateRequest, PatchedUserUpdateRequest, UserCreate, UserUpdate } from '@/api/generated/interfaces';
 import { authService } from '@/services/auth';
@@ -26,6 +26,28 @@ export function useUsers(options?: { page?: number; search?: string; enabled?: b
     enabled: enabled !== false && authService.isAuthenticated(),
     staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+}
+
+// Infinite scroll query for users
+export function useInfiniteUsers(options?: { search?: string; enabled?: boolean; pageSize?: number }) {
+  const { search, enabled, pageSize = 50 } = options || {};
+
+  return useInfiniteQuery<PaginatedUserList>({
+    queryKey: [...userKeys.lists(), 'infinite', { search }],
+    queryFn: async ({ pageParam = 1 }) => {
+      return await usersList(undefined, pageParam as number, pageSize, search);
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.next) {
+        return allPages.length + 1;
+      }
+      return undefined;
+    },
+    enabled: enabled !== false && authService.isAuthenticated(),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 }
 

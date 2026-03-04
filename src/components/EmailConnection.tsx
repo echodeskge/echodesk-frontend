@@ -46,9 +46,11 @@ import {
   Trash2,
   FileSignature,
   Loader2,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { EmailUserAssignmentDialog } from '@/components/email/EmailUserAssignmentDialog';
 
 // Individual email account card
 function EmailAccountCard({
@@ -56,6 +58,7 @@ function EmailAccountCard({
   onSync,
   onDisconnect,
   onEditSignature,
+  onManageAccess,
   isSyncing,
   isDisconnecting,
 }: {
@@ -63,6 +66,7 @@ function EmailAccountCard({
   onSync: () => void;
   onDisconnect: () => void;
   onEditSignature: () => void;
+  onManageAccess: () => void;
   isSyncing: boolean;
   isDisconnecting: boolean;
 }) {
@@ -156,6 +160,19 @@ function EmailAccountCard({
           )}
         </Button>
         <Button
+          onClick={onManageAccess}
+          variant="outline"
+          size="sm"
+        >
+          <Users className="mr-2 h-3 w-3" />
+          Access
+          {connection.assigned_users && connection.assigned_users.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-4 px-1 text-xs">
+              {connection.assigned_users.length}
+            </Badge>
+          )}
+        </Button>
+        <Button
           onClick={onDisconnect}
           disabled={isDisconnecting}
           variant="destructive"
@@ -181,6 +198,7 @@ function EmailAccountCard({
 export function EmailConnection() {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
+  const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [editingConnection, setEditingConnection] = useState<EmailConnectionDetail | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -357,6 +375,11 @@ export function EmailConnection() {
     setShowSignatureDialog(true);
   };
 
+  const handleManageAccess = (connection: EmailConnectionDetail) => {
+    setEditingConnection(connection);
+    setShowAccessDialog(true);
+  };
+
   const handleSaveSignature = async () => {
     if (!editingConnection) return;
 
@@ -458,6 +481,7 @@ export function EmailConnection() {
                   onSync={() => handleSync(connection.id)}
                   onDisconnect={() => handleDisconnect(connection.id, connection.email_address)}
                   onEditSignature={() => handleEditSignature(connection)}
+                  onManageAccess={() => handleManageAccess(connection)}
                   isSyncing={syncingConnectionId === connection.id}
                   isDisconnecting={disconnectingConnectionId === connection.id}
                 />
@@ -806,6 +830,16 @@ Marketing Manager<br/>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Access Assignment Dialog */}
+      <EmailUserAssignmentDialog
+        open={showAccessDialog}
+        onOpenChange={(open) => {
+          setShowAccessDialog(open);
+          if (!open) setEditingConnection(null);
+        }}
+        connection={editingConnection}
+      />
     </>
   );
 }
