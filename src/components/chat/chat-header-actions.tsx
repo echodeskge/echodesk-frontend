@@ -106,7 +106,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const emailAction = useEmailAction()
 
   // Archive/History functionality
-  const { showArchived } = useChatContext()
+  const { showArchived, setShowArchived } = useChatContext()
   const markUnread = useMarkConversationUnread()
   const archiveConversation = useArchiveConversation()
   const unarchiveConversation = useUnarchiveConversation()
@@ -207,12 +207,53 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
   // Assignment action handlers
   const handleAssign = () => {
-    if (!chatInfo) return
-    assignChat.mutate({
-      platform: chatInfo.platform,
-      conversation_id: chatInfo.conversationId,
-      account_id: chatInfo.accountId,
-    })
+    if (!chatInfo || !chat?.platform) return
+
+    // Assign the chat to the current user
+    assignChat.mutate(
+      {
+        platform: chatInfo.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+      },
+      {
+        onSuccess: () => {
+          // If we're in history view, also unarchive the conversation and exit history view
+          if (showArchived) {
+            unarchiveConversation.mutate(
+              [{
+                platform: chat.platform!,
+                conversation_id: chatInfo.conversationId,
+                account_id: chatInfo.accountId,
+              }],
+              {
+                onSuccess: () => {
+                  toast({
+                    title: "Chat assigned",
+                    description: "Chat assigned to you and restored from history",
+                  })
+                  // Exit history view and go back to main chat list
+                  setShowArchived(false)
+                  router.push(getBaseRoute())
+                },
+                onError: (error: any) => {
+                  toast({
+                    title: "Assigned but failed to restore",
+                    description: error.response?.data?.error || "Chat was assigned but could not be restored from history",
+                    variant: "destructive",
+                  })
+                },
+              }
+            )
+          } else {
+            toast({
+              title: "Chat assigned",
+              description: "Chat has been assigned to you",
+            })
+          }
+        },
+      }
+    )
   }
 
   const handleUnassign = () => {

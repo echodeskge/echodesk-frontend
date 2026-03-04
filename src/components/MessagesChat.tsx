@@ -74,6 +74,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const chatId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [selectedEmailFolder, setSelectedEmailFolder] = useState<string>('INBOX');
+  const [selectedEmailConnectionId, setSelectedEmailConnectionId] = useState<number | null>(null);
   const [currentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
@@ -118,6 +119,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     search: debouncedSearchQuery,
     assigned: assignmentTab === 'assigned',
     archived: showArchived,
+    connectionId: selectedEmailConnectionId,
   });
 
   // State to hold a directly loaded chat (when navigating to a URL not in the list)
@@ -166,6 +168,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     let chatId: string | undefined;
     const platform = messageData.platform;
     const isFromBusiness = messageData.is_from_page || messageData.is_from_business || false;
+
+    // Only process messages for enabled platforms on this page
+    if (!enabledPlatforms.includes(platform)) {
+      return;
+    }
 
     // For outgoing messages (from page/business), use recipient_id as the conversation identifier
     // For incoming messages, use sender_id
@@ -230,9 +237,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
     // Dispatch to chat state if the handler is available
     if (addIncomingMessageRef.current) {
-      addIncomingMessageRef.current(chatId, newMessage, messageData.sender_name || messageData.contact_name);
+      // Only pass senderName for incoming messages (from customer)
+      // For outgoing messages (from business), pass undefined to avoid overwriting the customer's name
+      const senderNameForChat = isFromBusiness ? undefined : (messageData.sender_name || messageData.contact_name);
+      addIncomingMessageRef.current(chatId, newMessage, senderNameForChat);
     }
-  }, []);
+  }, [enabledPlatforms]);
 
   // Handle WebSocket conversation update
   const handleConversationUpdate = useCallback(() => {
@@ -588,6 +598,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       platforms={enabledPlatforms}
       selectedEmailFolder={selectedEmailFolder}
       setSelectedEmailFolder={setSelectedEmailFolder}
+      selectedEmailConnectionId={selectedEmailConnectionId}
+      setSelectedEmailConnectionId={setSelectedEmailConnectionId}
       fetchNextPage={fetchNextPage}
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}

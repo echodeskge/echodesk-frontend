@@ -21,6 +21,8 @@ export function ChatProvider({
   platforms = ['facebook', 'instagram', 'whatsapp', 'email'],
   selectedEmailFolder: externalSelectedEmailFolder,
   setSelectedEmailFolder: externalSetSelectedEmailFolder,
+  selectedEmailConnectionId: externalSelectedEmailConnectionId,
+  setSelectedEmailConnectionId: externalSetSelectedEmailConnectionId,
   fetchNextPage,
   hasNextPage,
   isFetchingNextPage,
@@ -41,6 +43,8 @@ export function ChatProvider({
   platforms?: string[]
   selectedEmailFolder?: string
   setSelectedEmailFolder?: (folder: string) => void
+  selectedEmailConnectionId?: number | null
+  setSelectedEmailConnectionId?: (id: number | null) => void
   fetchNextPage?: () => void
   hasNextPage?: boolean
   isFetchingNextPage?: boolean
@@ -82,6 +86,11 @@ export function ChatProvider({
   const [internalSelectedEmailFolder, setInternalSelectedEmailFolder] = useState<string>('INBOX')
   const selectedEmailFolder = externalSelectedEmailFolder ?? internalSelectedEmailFolder
   const setSelectedEmailFolder = externalSetSelectedEmailFolder ?? setInternalSelectedEmailFolder
+
+  // Email connection/account filter state - use external if provided, otherwise internal
+  const [internalSelectedEmailConnectionId, setInternalSelectedEmailConnectionId] = useState<number | null>(null)
+  const selectedEmailConnectionId = externalSelectedEmailConnectionId ?? internalSelectedEmailConnectionId
+  const setSelectedEmailConnectionId = externalSetSelectedEmailConnectionId ?? setInternalSelectedEmailConnectionId
 
   // Lazy loading state
   const [loadingMessages, setLoadingMessages] = useState(false)
@@ -224,6 +233,8 @@ export function ChatProvider({
         platforms,
         selectedEmailFolder,
         setSelectedEmailFolder,
+        selectedEmailConnectionId,
+        setSelectedEmailConnectionId,
         replyingTo,
         setReplyingTo,
         fetchNextPage,

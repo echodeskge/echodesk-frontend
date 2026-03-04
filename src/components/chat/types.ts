@@ -46,6 +46,9 @@ export interface ChatContextType {
   // Email folder filter
   selectedEmailFolder: string
   setSelectedEmailFolder: (folder: string) => void
+  // Email connection/account filter
+  selectedEmailConnectionId: number | null
+  setSelectedEmailConnectionId: (id: number | null) => void
   // Reply functionality
   replyingTo: ReplyingToType | null
   setReplyingTo: (reply: ReplyingToType | null) => void

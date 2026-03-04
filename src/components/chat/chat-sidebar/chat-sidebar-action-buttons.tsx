@@ -33,11 +33,13 @@ export function ChatSidebarActionButtons() {
   const isAdmin = userProfile?.is_staff === true
 
   const handleMarkAllAsRead = () => {
-    markAllAsReadMutation.mutate('all')
+    // Only mark social messages as read, not email (email has its own page)
+    markAllAsReadMutation.mutate('facebook,instagram,whatsapp')
   }
 
   const handleArchiveAll = () => {
-    archiveAllMutation.mutate('all')
+    // Only archive social messages, not email
+    archiveAllMutation.mutate('facebook,instagram,whatsapp')
   }
 
   const handleToggleHistory = () => {

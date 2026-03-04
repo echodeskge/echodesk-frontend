@@ -3645,6 +3645,7 @@ export async function ecommerceClientOrdersDestroy(id: string): Promise<any> {
 }
 
 export async function ecommerceClientProductsList(
+  attr_Furniture?: string,
   attrColor?: string,
   attrMaterial?: string,
   attrNumberOfLamps?: string,
@@ -3662,6 +3663,9 @@ export async function ecommerceClientProductsList(
   const response = await axios.get(
     `/api/ecommerce/client/products/${(() => {
       const parts = [
+        attr_Furniture
+          ? 'attr_Furniture=' + encodeURIComponent(attr_Furniture)
+          : null,
         attrColor ? 'attr_color=' + encodeURIComponent(attrColor) : null,
         attrMaterial
           ? 'attr_material=' + encodeURIComponent(attrMaterial)
@@ -6078,8 +6082,45 @@ export async function socialEmailMessagesThreadsRetrieve(): Promise<EmailMessage
   return response.data;
 }
 
+export async function socialEmailAssignedUsersRetrieve(
+  connectionId: number,
+): Promise<any> {
+  const response = await axios.get(
+    `/api/social/email/${connectionId}/assigned-users/`,
+  );
+  return response.data;
+}
+
+export async function socialEmailAssignedUsersUpdate(
+  connectionId: number,
+): Promise<any> {
+  const response = await axios.put(
+    `/api/social/email/${connectionId}/assigned-users/`,
+  );
+  return response.data;
+}
+
 export async function socialEmailActionCreate(): Promise<any> {
   const response = await axios.post(`/api/social/email/action/`);
+  return response.data;
+}
+
+export async function socialEmailAssignmentsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/email/assignments/`);
+  return response.data;
+}
+
+export async function socialEmailAssignmentsDestroy(
+  assignmentId: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/social/email/assignments/${assignmentId}/`,
+  );
+  return response.data;
+}
+
+export async function socialEmailAssignmentsCreateCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/assignments/create/`);
   return response.data;
 }
 
