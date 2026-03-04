@@ -56,9 +56,15 @@ export function ChatSidebarList() {
   const filteredChats = useMemo(() => {
     let chats = chatState.chats
 
-    // First filter by assignment tab if assignment mode is enabled
-    if (assignmentEnabled && assignmentTab === 'assigned') {
-      chats = chats.filter((chat) => assignedChatIds.has(chat.id))
+    // Filter by assignment tab if assignment mode is enabled
+    if (assignmentEnabled) {
+      if (assignmentTab === 'assigned') {
+        // Show only chats assigned to me
+        chats = chats.filter((chat) => assignedChatIds.has(chat.id))
+      } else {
+        // "All" tab: hide chats that are assigned to me (they appear in "Assigned to Me" tab)
+        chats = chats.filter((chat) => !assignedChatIds.has(chat.id))
+      }
     }
 
     // Then filter by search query
