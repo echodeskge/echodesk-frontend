@@ -237,9 +237,16 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
     // Dispatch to chat state if the handler is available
     if (addIncomingMessageRef.current) {
-      // Only pass senderName for incoming messages (from customer)
-      // For outgoing messages (from business), pass undefined to avoid overwriting the customer's name
-      const senderNameForChat = isFromBusiness ? undefined : (messageData.sender_name || messageData.contact_name);
+      // For incoming messages (from customer): use sender_name or contact_name
+      // For outgoing messages (from business): use recipient_name (the customer's name) if available
+      let senderNameForChat: string | undefined;
+      if (isFromBusiness) {
+        // Use recipient_name for outgoing messages (backend looks up the customer's name)
+        senderNameForChat = messageData.recipient_name || messageData.contact_name;
+      } else {
+        // Use sender_name for incoming messages
+        senderNameForChat = messageData.sender_name || messageData.contact_name;
+      }
       addIncomingMessageRef.current(chatId, newMessage, senderNameForChat);
     }
   }, [enabledPlatforms]);

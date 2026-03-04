@@ -135,7 +135,7 @@ export function MessageBubbleContent({
     <div
       className={cn(
         "text-sm p-2 space-y-2 rounded-lg overflow-hidden",
-        isEmailMessage ? "break-words" : "break-all",
+        "break-words",
         isByCurrentUser
           ? isEmailMessage
             ? "bg-blue-50 border border-blue-200 text-gray-900 rounded-se-none"
