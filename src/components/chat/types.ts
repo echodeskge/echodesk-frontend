@@ -80,6 +80,8 @@ export interface MessageType {
   platformMessageId?: string
   // Sender name (for display in reply preview)
   senderName?: string
+  // Recipient name (for outgoing messages - the customer's name)
+  recipientName?: string
   // Message source tracking (all platforms)
   source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app'
   isEcho?: boolean

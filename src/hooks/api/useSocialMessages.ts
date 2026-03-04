@@ -13,6 +13,7 @@ interface FacebookMessage {
   message_id: string;
   sender_id: string;
   sender_name?: string;
+  recipient_name?: string;
   profile_pic_url?: string;
   message_text: string;
   attachment_type?: string;
@@ -44,6 +45,7 @@ interface InstagramMessage {
   message_id: string;
   sender_id: string;
   sender_name?: string;
+  recipient_name?: string;
   sender_username?: string;
   sender_profile_pic?: string;
   message_text: string;

@@ -35,6 +35,7 @@ interface UnifiedMessage {
   platform: "facebook" | "instagram" | "whatsapp" | "email";
   sender_id: string;
   sender_name: string;
+  recipient_name?: string;
   profile_pic_url?: string;
   message_text: string;
   message_type?: string;
@@ -304,6 +305,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           platform: "facebook" as const,
           sender_id: msg.sender_id,
           sender_name: msg.sender_name || "Unknown",
+          recipient_name: msg.recipient_name,
           profile_pic_url: msg.profile_pic_url,
           message_text: msg.message_text || '',
           attachment_type: msg.attachment_type,
@@ -345,6 +347,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           platform: "instagram" as const,
           sender_id: msg.sender_id,
           sender_name: msg.sender_name || msg.sender_username || "Unknown",
+          recipient_name: msg.recipient_name,
           profile_pic_url: msg.sender_profile_pic,
           message_text: msg.message_text || '',
           attachment_type: msg.attachment_type,

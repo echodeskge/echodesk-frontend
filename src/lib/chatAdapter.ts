@@ -34,6 +34,7 @@ interface UnifiedMessage {
   platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
   sender_id: string;
   sender_name: string;
+  recipient_name?: string; // For outgoing messages - the customer's name
   profile_pic_url?: string;
   message_text: string;
   message_type?: string;
@@ -179,6 +180,12 @@ export function convertFacebookMessagesToChatFormat(
         }
       }
 
+      // For outgoing messages, use recipient_name to identify who we're talking to
+      // For incoming messages, use sender_name (the customer)
+      const effectiveSenderName = msg.is_from_business
+        ? (msg.recipient_name || msg.sender_name)
+        : msg.sender_name;
+
       return {
         id: msg.id,
         senderId: msg.is_from_business ? businessUser.id : customerUser.id,
@@ -190,7 +197,8 @@ export function convertFacebookMessagesToChatFormat(
         createdAt: new Date(msg.timestamp),
         // Platform-specific message ID for reply functionality
         platformMessageId: msg.platform_message_id,
-        senderName: msg.sender_name,
+        senderName: effectiveSenderName,
+        recipientName: msg.recipient_name,
         // Message source tracking (all platforms)
         source: msg.source,
         isEcho: msg.is_echo,
@@ -371,6 +379,12 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       }
     }
 
+    // For outgoing messages, use recipient_name to identify who we're talking to
+    // For incoming messages, use sender_name (the customer)
+    const effectiveSenderName = msg.is_from_business
+      ? (msg.recipient_name || msg.sender_name)
+      : msg.sender_name;
+
     return {
       id: msg.id,
       senderId: msg.is_from_business ? "business" : msg.sender_id,
@@ -382,7 +396,8 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
       createdAt: new Date(msg.timestamp),
       // Platform-specific message ID for reply functionality
       platformMessageId: msg.platform_message_id,
-      senderName: msg.sender_name,
+      senderName: effectiveSenderName,
+      recipientName: msg.recipient_name,
       // Message source tracking (all platforms)
       source: msg.source,
       isEcho: msg.is_echo,
