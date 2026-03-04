@@ -78,6 +78,13 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
 
+  // Base route without chat ID (e.g., /email/messages, /social/messages, /messages)
+  const getBaseRoute = useCallback(() => {
+    if (pathname.startsWith('/email/messages')) return '/email/messages'
+    if (pathname.startsWith('/social/messages')) return '/social/messages'
+    return '/messages'
+  }, [pathname])
+
   // Read email folder from URL search params (persists across navigation)
   const selectedEmailFolder = searchParams.get('folder') || 'INBOX';
   const setSelectedEmailFolder = useCallback((folder: string) => {
@@ -88,9 +95,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       newParams.set('folder', folder);
     }
     const queryString = newParams.toString();
-    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    router.replace(newUrl, { scroll: false });
-  }, [searchParams, pathname, router]);
+    const base = getBaseRoute();
+    const newUrl = queryString ? `${base}?${queryString}` : base;
+    router.push(newUrl, { scroll: false });
+  }, [searchParams, router, getBaseRoute]);
 
   // Read email connection ID from URL search params (persists across navigation)
   const connectionIdParam = searchParams.get('account');
@@ -103,9 +111,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       newParams.set('account', String(id));
     }
     const queryString = newParams.toString();
-    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    router.replace(newUrl, { scroll: false });
-  }, [searchParams, pathname, router]);
+    const base = getBaseRoute();
+    const newUrl = queryString ? `${base}?${queryString}` : base;
+    router.push(newUrl, { scroll: false });
+  }, [searchParams, router, getBaseRoute]);
 
   // Read assignment tab from URL search params (persists across navigation)
   const assignmentTabFromUrl = searchParams.get('tab') as AssignmentTabType | null;

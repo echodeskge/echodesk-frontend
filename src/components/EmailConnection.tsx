@@ -47,6 +47,7 @@ import {
   FileSignature,
   Loader2,
   Users,
+  Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -57,6 +58,7 @@ function EmailAccountCard({
   connection,
   onSync,
   onDisconnect,
+  onEdit,
   onEditSignature,
   onManageAccess,
   isSyncing,
@@ -65,6 +67,7 @@ function EmailAccountCard({
   connection: EmailConnectionDetail;
   onSync: () => void;
   onDisconnect: () => void;
+  onEdit: () => void;
   onEditSignature: () => void;
   onManageAccess: () => void;
   isSyncing: boolean;
@@ -130,6 +133,14 @@ function EmailAccountCard({
       )}
 
       <div className="flex gap-2 pt-2 flex-wrap">
+        <Button
+          onClick={onEdit}
+          variant="outline"
+          size="sm"
+        >
+          <Pencil className="mr-2 h-3 w-3" />
+          Edit
+        </Button>
         <Button
           onClick={onSync}
           disabled={isSyncing}
@@ -197,11 +208,14 @@ function EmailAccountCard({
 
 export function EmailConnection() {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
   const [showAccessDialog, setShowAccessDialog] = useState(false);
   const [editingConnection, setEditingConnection] = useState<EmailConnectionDetail | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEditAdvanced, setShowEditAdvanced] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [showSignaturePreview, setShowSignaturePreview] = useState(false);
   const [syncingConnectionId, setSyncingConnectionId] = useState<number | null>(null);
   const [disconnectingConnectionId, setDisconnectingConnectionId] = useState<number | null>(null);
@@ -367,6 +381,76 @@ export function EmailConnection() {
     }
   };
 
+  // Edit form state
+  const [editFormData, setEditFormData] = useState({
+    display_name: '',
+    imap_server: '',
+    imap_port: 993,
+    imap_use_ssl: true,
+    smtp_server: '',
+    smtp_port: 587,
+    smtp_use_tls: true,
+    smtp_use_ssl: false,
+    username: '',
+    password: '',
+    sync_folder: 'INBOX',
+    sync_days_back: 30,
+  });
+
+  const handleEdit = (connection: EmailConnectionDetail) => {
+    setEditingConnection(connection);
+    setEditFormData({
+      display_name: connection.display_name || '',
+      imap_server: connection.imap_server || '',
+      imap_port: connection.imap_port || 993,
+      imap_use_ssl: connection.imap_use_ssl ?? true,
+      smtp_server: connection.smtp_server || '',
+      smtp_port: connection.smtp_port || 587,
+      smtp_use_tls: connection.smtp_use_tls ?? true,
+      smtp_use_ssl: connection.smtp_use_ssl ?? false,
+      username: connection.username || '',
+      password: '',
+      sync_folder: connection.sync_folder || 'INBOX',
+      sync_days_back: connection.sync_days_back || 30,
+    });
+    setShowEditAdvanced(false);
+    setShowEditPassword(false);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingConnection) return;
+    if (!editFormData.imap_server || !editFormData.smtp_server) {
+      toast.error('IMAP and SMTP servers are required');
+      return;
+    }
+
+    try {
+      await updateEmailConnection.mutateAsync({
+        connection_id: editingConnection.id,
+        display_name: editFormData.display_name,
+        imap_server: editFormData.imap_server,
+        imap_port: editFormData.imap_port,
+        imap_use_ssl: editFormData.imap_use_ssl,
+        smtp_server: editFormData.smtp_server,
+        smtp_port: editFormData.smtp_port,
+        smtp_use_tls: editFormData.smtp_use_tls,
+        smtp_use_ssl: editFormData.smtp_use_ssl,
+        username: editFormData.username,
+        ...(editFormData.password ? { password: editFormData.password } : {}),
+        sync_folder: editFormData.sync_folder,
+        sync_days_back: editFormData.sync_days_back,
+      });
+      toast.success('Connection updated successfully');
+      setShowEditDialog(false);
+      setEditingConnection(null);
+    } catch (error: any) {
+      console.error('Failed to update email connection:', error);
+      const errorMessage = error.response?.data?.error || 'Failed to update connection';
+      toast.error(errorMessage);
+    }
+  };
+
   const handleEditSignature = (connection: EmailConnectionDetail) => {
     setEditingConnection(connection);
     setSignatureHtml(connection.signature_html || '');
@@ -480,6 +564,7 @@ export function EmailConnection() {
                   connection={connection}
                   onSync={() => handleSync(connection.id)}
                   onDisconnect={() => handleDisconnect(connection.id, connection.email_address)}
+                  onEdit={() => handleEdit(connection)}
                   onEditSignature={() => handleEditSignature(connection)}
                   onManageAccess={() => handleManageAccess(connection)}
                   isSyncing={syncingConnectionId === connection.id}
@@ -708,6 +793,197 @@ export function EmailConnection() {
                   <Mail className="mr-2 h-4 w-4" />
                   Connect
                 </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Connection Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => {
+        setShowEditDialog(open);
+        if (!open) setEditingConnection(null);
+      }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Edit Email Connection
+            </DialogTitle>
+            <DialogDescription>
+              Update settings for {editingConnection?.email_address}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit_display_name">Display Name</Label>
+              <Input
+                id="edit_display_name"
+                placeholder="Your Name"
+                value={editFormData.display_name}
+                onChange={(e) => setEditFormData((prev) => ({ ...prev, display_name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_password">Password / App Password</Label>
+              <div className="relative">
+                <Input
+                  id="edit_password"
+                  type={showEditPassword ? 'text' : 'password'}
+                  placeholder="Leave blank to keep current"
+                  value={editFormData.password}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, password: e.target.value }))}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowEditPassword(!showEditPassword)}
+                >
+                  {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_imap_server">IMAP Server *</Label>
+                <Input
+                  id="edit_imap_server"
+                  placeholder="imap.example.com"
+                  value={editFormData.imap_server}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, imap_server: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_imap_port">IMAP Port</Label>
+                <Input
+                  id="edit_imap_port"
+                  type="number"
+                  value={editFormData.imap_port}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, imap_port: parseInt(e.target.value) || 993 }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_smtp_server">SMTP Server *</Label>
+                <Input
+                  id="edit_smtp_server"
+                  placeholder="smtp.example.com"
+                  value={editFormData.smtp_server}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, smtp_server: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_smtp_port">SMTP Port</Label>
+                <Input
+                  id="edit_smtp_port"
+                  type="number"
+                  value={editFormData.smtp_port}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, smtp_port: parseInt(e.target.value) || 587 }))}
+                />
+              </div>
+            </div>
+
+            {/* Advanced Settings */}
+            <Collapsible open={showEditAdvanced} onOpenChange={setShowEditAdvanced}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full justify-between">
+                  <span className="flex items-center gap-2">
+                    <Settings2 className="h-4 w-4" />
+                    Advanced Settings
+                  </span>
+                  <ChevronDown className={cn('h-4 w-4 transition-transform', showEditAdvanced && 'rotate-180')} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_username">Username (if different from email)</Label>
+                  <Input
+                    id="edit_username"
+                    placeholder="Username"
+                    value={editFormData.username}
+                    onChange={(e) => setEditFormData((prev) => ({ ...prev, username: e.target.value }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit_imap_ssl">IMAP SSL</Label>
+                  <Switch
+                    id="edit_imap_ssl"
+                    checked={editFormData.imap_use_ssl}
+                    onCheckedChange={(checked) => setEditFormData((prev) => ({ ...prev, imap_use_ssl: checked }))}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit_smtp_tls">SMTP TLS/STARTTLS</Label>
+                  <Switch
+                    id="edit_smtp_tls"
+                    checked={editFormData.smtp_use_tls}
+                    onCheckedChange={(checked) =>
+                      setEditFormData((prev) => ({ ...prev, smtp_use_tls: checked, smtp_use_ssl: checked ? false : prev.smtp_use_ssl }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit_smtp_ssl">SMTP SSL (alternative to TLS)</Label>
+                  <Switch
+                    id="edit_smtp_ssl"
+                    checked={editFormData.smtp_use_ssl}
+                    onCheckedChange={(checked) =>
+                      setEditFormData((prev) => ({ ...prev, smtp_use_ssl: checked, smtp_use_tls: checked ? false : prev.smtp_use_tls }))
+                    }
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_sync_folder">Sync Folder</Label>
+                    <Input
+                      id="edit_sync_folder"
+                      value={editFormData.sync_folder}
+                      onChange={(e) => setEditFormData((prev) => ({ ...prev, sync_folder: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_sync_days">Sync Days Back</Label>
+                    <Input
+                      id="edit_sync_days"
+                      type="number"
+                      min={1}
+                      max={365}
+                      value={editFormData.sync_days_back}
+                      onChange={(e) => setEditFormData((prev) => ({ ...prev, sync_days_back: parseInt(e.target.value) || 30 }))}
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={updateEmailConnection.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {updateEmailConnection.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
               )}
             </Button>
           </DialogFooter>

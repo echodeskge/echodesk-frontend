@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
 import { FolderOpen, ChevronDown, Plus, Mail } from "lucide-react"
 import { CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -25,16 +24,8 @@ export function ChatSidebarHeader() {
     selectedEmailConnectionId,
     setSelectedEmailConnectionId,
   } = useChatContext()
-  const router = useRouter()
-  const pathname = usePathname()
   const isEmailOnly = platforms.length === 1 && platforms[0] === 'email'
   const [composeOpen, setComposeOpen] = useState(false)
-
-  // Navigate to base email route (deselect any open chat)
-  const deselectChat = () => {
-    const base = pathname.startsWith('/email/messages') ? '/email/messages' : '/messages'
-    router.push(base)
-  }
 
   // Only fetch folders when on email page (filter by selected connection if any)
   const { data: folders, isLoading: foldersLoading } = useEmailFolders(selectedEmailConnectionId)
@@ -93,13 +84,13 @@ export function ChatSidebarHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem onClick={() => { setSelectedEmailConnectionId(null); deselectChat() }}>
+            <DropdownMenuItem onClick={() => setSelectedEmailConnectionId(null)}>
               All Accounts
             </DropdownMenuItem>
             {emailConnections.map((connection) => (
               <DropdownMenuItem
                 key={connection.id}
-                onClick={() => { setSelectedEmailConnectionId(connection.id); deselectChat() }}
+                onClick={() => setSelectedEmailConnectionId(connection.id)}
               >
                 <span className="truncate">
                   {connection.email_address}
@@ -123,7 +114,7 @@ export function ChatSidebarHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem onClick={() => { setSelectedEmailFolder('All'); deselectChat() }}>
+            <DropdownMenuItem onClick={() => setSelectedEmailFolder('All')}>
               All Folders
             </DropdownMenuItem>
             {foldersLoading ? (
@@ -132,7 +123,7 @@ export function ChatSidebarHeader() {
               folders.map((folder) => (
                 <DropdownMenuItem
                   key={folder.name}
-                  onClick={() => { setSelectedEmailFolder(folder.name); deselectChat() }}
+                  onClick={() => setSelectedEmailFolder(folder.name)}
                 >
                   {folder.display_name}
                 </DropdownMenuItem>

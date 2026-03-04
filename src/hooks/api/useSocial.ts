@@ -1061,11 +1061,18 @@ export interface EmailConnectionDetail {
   email_address: string;
   display_name: string;
   imap_server: string;
+  imap_port: number;
+  imap_use_ssl: boolean;
   smtp_server: string;
+  smtp_port: number;
+  smtp_use_tls: boolean;
+  smtp_use_ssl: boolean;
+  username: string;
   is_active: boolean;
   last_sync_at: string | null;
   last_sync_error: string;
   sync_folder: string;
+  sync_days_back: number;
   connected_at: string;
   signature_enabled?: boolean;
   signature_html?: string;
@@ -1411,9 +1418,21 @@ export function useSyncEmail() {
   });
 }
 
-// Update Email Connection (for signature settings)
+// Update Email Connection
 export interface EmailConnectionUpdateRequest {
   connection_id: number;
+  display_name?: string;
+  imap_server?: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server?: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+  username?: string;
+  password?: string;
+  sync_folder?: string;
+  sync_days_back?: number;
   signature_enabled?: boolean;
   signature_html?: string;
   signature_text?: string;
