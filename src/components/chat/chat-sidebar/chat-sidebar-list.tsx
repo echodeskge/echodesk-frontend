@@ -25,7 +25,7 @@ export function ChatSidebarList() {
   } = useChatContext()
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const prevSelectedId = useRef<string | undefined>(undefined)
+  const hasScrolledToSelected = useRef(false)
 
   const params = useParams()
   const selectedId = params.id?.[0] as string | undefined
@@ -51,14 +51,6 @@ export function ChatSidebarList() {
   const showLoading = isInitialLoading && chatState.chats.length === 0 && !hasEverLoaded
   const isRefetching = isInitialLoading && chatState.chats.length === 0 && hasEverLoaded
 
-  // Scroll to top when selected chat changes
-  useEffect(() => {
-    if (selectedId && selectedId !== prevSelectedId.current && scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0 })
-    }
-    prevSelectedId.current = selectedId
-  }, [selectedId])
-
   // Filter and sort chats
   const filteredChats = useMemo(() => {
     let chats = chatState.chats
@@ -82,15 +74,24 @@ export function ChatSidebarList() {
     }
 
     return [...chats].sort((a, b) => {
-      if (selectedId) {
-        if (a.id === selectedId) return -1
-        if (b.id === selectedId) return 1
-      }
       const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0
       const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0
       return bTime - aTime
     })
-  }, [chatState.chats, selectedId, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
+  }, [chatState.chats, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
+
+  // On initial load, scroll to the selected chat if it's not visible
+  useEffect(() => {
+    if (hasScrolledToSelected.current || !selectedId || filteredChats.length === 0) return
+    hasScrolledToSelected.current = true
+
+    requestAnimationFrame(() => {
+      const el = scrollContainerRef.current?.querySelector(`[data-chat-id="${selectedId}"]`)
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      }
+    })
+  }, [selectedId, filteredChats.length])
 
   const getEmptyMessage = () => {
     if (chatListSearchQuery) return "No conversations found"
@@ -123,7 +124,7 @@ export function ChatSidebarList() {
         ) : (
           <>
             {filteredChats.map((chat) => (
-              <li key={chat.id}>
+              <li key={chat.id} data-chat-id={chat.id}>
                 <ChatSidebarItem chat={chat} />
               </li>
             ))}
