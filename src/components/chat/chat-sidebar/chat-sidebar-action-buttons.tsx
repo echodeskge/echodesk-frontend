@@ -23,23 +23,34 @@ export function ChatSidebarActionButtons() {
   const [notifications, setNotifications] = useState<string>("ALL_MESSAGES")
   const [status, setStatus] = useState<string>("ONLINE")
 
-  const { showArchived, setShowArchived } = useChatContext()
+  const { showArchived, setShowArchived, platforms } = useChatContext()
   const markAllAsReadMutation = useMarkAllAsRead()
   const archiveAllMutation = useArchiveAllConversations()
   const { data: userProfile } = useUserProfile()
+
+  const isEmailOnly = platforms.length === 1 && platforms[0] === 'email'
 
   // Check if user is staff/admin (tenant admin)
   // Admin is determined by is_staff=true
   const isAdmin = userProfile?.is_staff === true
 
   const handleMarkAllAsRead = () => {
-    // Only mark social messages as read, not email (email has its own page)
-    markAllAsReadMutation.mutate('facebook,instagram,whatsapp')
+    if (isEmailOnly) {
+      // On email page: archive all email conversations (send to history)
+      archiveAllMutation.mutate('email')
+    } else {
+      // On social page: only mark social messages as read
+      markAllAsReadMutation.mutate('facebook,instagram,whatsapp')
+    }
   }
 
   const handleArchiveAll = () => {
-    // Only archive social messages, not email
-    archiveAllMutation.mutate('facebook,instagram,whatsapp')
+    if (isEmailOnly) {
+      archiveAllMutation.mutate('email')
+    } else {
+      // Only archive social messages, not email
+      archiveAllMutation.mutate('facebook,instagram,whatsapp')
+    }
   }
 
   const handleToggleHistory = () => {
