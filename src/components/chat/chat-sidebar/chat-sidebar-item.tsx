@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { ChatAvatar } from "../chat-avatar"
 
-export function ChatSidebarItem({ chat }: { chat: ChatType }) {
+export function ChatSidebarItem({ chat, onSelect }: { chat: ChatType; onSelect?: (chatId: string) => void }) {
   const { setIsChatSidebarOpen } = useChatContext()
   const params = useParams()
   const pathname = usePathname()
@@ -35,7 +35,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
   }
 
   const handleOnCLick = () => {
-    // Close the sidebar when a chat is selected
+    onSelect?.(chat.id)
     setIsChatSidebarOpen(false)
   }
 
@@ -54,7 +54,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
       aria-current={chatIdParam === chat.id ? "true" : undefined}
       onClick={handleOnCLick}
     >
-      <li className="w-full flex items-center gap-2">
+      <div className="w-full flex items-center gap-2">
         <div className="relative shrink-0">
           <ChatAvatar
             src={chat.avatar}
@@ -109,7 +109,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
             )}
           </div>
         </div>
-      </li>
+      </div>
     </Link>
   )
 }

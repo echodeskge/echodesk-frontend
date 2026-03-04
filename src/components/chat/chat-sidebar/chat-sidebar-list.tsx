@@ -1,7 +1,9 @@
 "use client"
 
-import { useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect, useCallback, useRef } from "react"
+import { useParams } from "next/navigation"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
+import { motion } from "framer-motion"
 import { ChatSidebarItem } from "./chat-sidebar-item"
 import { ChatListSkeleton } from "./ChatListSkeleton"
 import { Loader2 } from "lucide-react"
@@ -23,6 +25,20 @@ export function ChatSidebarList() {
     showArchived,
   } = useChatContext()
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const prevPinnedId = useRef<string | undefined>(undefined)
+
+  const params = useParams()
+  const urlSelectedId = params.id?.[0] as string | undefined
+
+  // Local state for pinned chat - updates synchronously on click (not deferred like useParams)
+  const [pinnedChatId, setPinnedChatId] = useState<string | undefined>(urlSelectedId)
+
+  // Sync with URL for initial load / browser back-forward
+  useEffect(() => {
+    setPinnedChatId(urlSelectedId)
+  }, [urlSelectedId])
+
   // Handle scroll to load more
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.target as HTMLDivElement
@@ -33,108 +49,76 @@ export function ChatSidebarList() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Check sessionStorage synchronously - has this session ever loaded messages?
   const hasEverLoaded = typeof window !== 'undefined' && sessionStorage.getItem(MESSAGES_LOADED_KEY) === 'true'
 
-  // Mark as loaded when we have chats
   useEffect(() => {
     if (chatState.chats.length > 0 && typeof window !== 'undefined') {
       sessionStorage.setItem(MESSAGES_LOADED_KEY, 'true')
     }
   }, [chatState.chats.length])
 
-  // Only show loading on the very first load (not on navigation)
-  // If we've ever loaded data in this session, don't show the loading spinner
   const showLoading = isInitialLoading && chatState.chats.length === 0 && !hasEverLoaded
-
-  // If we've loaded before but currently have no data (component remounted), show a minimal loading state
-  // This prevents showing "No conversations yet" while data is being refetched after navigation
-  // BUT only show this if we're actually still loading - if loading is done, show empty state
   const isRefetching = isInitialLoading && chatState.chats.length === 0 && hasEverLoaded
 
-  // Filter and sort chats based on search query and assignment tab
+  // Scroll to top after layout animation completes
+  useEffect(() => {
+    if (pinnedChatId && pinnedChatId !== prevPinnedId.current && scrollContainerRef.current) {
+      const timeout = setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      }, 50)
+      prevPinnedId.current = pinnedChatId
+      return () => clearTimeout(timeout)
+    }
+    prevPinnedId.current = pinnedChatId
+  }, [pinnedChatId])
+
+  // Filter and sort chats
   const filteredChats = useMemo(() => {
     let chats = chatState.chats
 
-    // Filter by assignment tab if assignment mode is enabled
     if (assignmentEnabled) {
       if (assignmentTab === 'assigned') {
-        // Show only chats assigned to me
         chats = chats.filter((chat) => assignedChatIds.has(chat.id))
       } else {
-        // "All" tab: hide chats that are assigned to me (they appear in "Assigned to Me" tab)
         chats = chats.filter((chat) => !assignedChatIds.has(chat.id))
       }
     }
 
-    // Filter by search query
     if (chatListSearchQuery.trim()) {
       const query = chatListSearchQuery.toLowerCase().trim()
       chats = chats.filter((chat) => {
-        // Search by chat name
         if (chat.name.toLowerCase().includes(query)) return true
-        // Search by last message content
         if (chat.lastMessage?.content?.toLowerCase().includes(query)) return true
-        // Search by platform
         if (chat.platform?.toLowerCase().includes(query)) return true
         return false
       })
     }
 
-    // Sort chats: unread chats first, then by last message date
     return [...chats].sort((a, b) => {
-      const aUnread = a.unreadCount && a.unreadCount > 0 ? 1 : 0
-      const bUnread = b.unreadCount && b.unreadCount > 0 ? 1 : 0
-
-      // Unread chats come first
-      if (aUnread !== bUnread) {
-        return bUnread - aUnread
+      if (pinnedChatId) {
+        if (a.id === pinnedChatId) return -1
+        if (b.id === pinnedChatId) return 1
       }
-
-      // Within same category, sort by most recent message
       const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0
       const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0
       return bTime - aTime
     })
-  }, [chatState.chats, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
+  }, [chatState.chats, pinnedChatId, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
 
-  // Determine the empty state message based on context
+  const handleSelectChat = useCallback((chatId: string) => {
+    setPinnedChatId(chatId)
+  }, [])
+
   const getEmptyMessage = () => {
-    if (chatListSearchQuery) {
-      return "No conversations found"
-    }
-    if (showArchived) {
-      return "No archived conversations"
-    }
-    if (assignmentEnabled && assignmentTab === 'assigned') {
-      return "No assigned conversations"
-    }
+    if (chatListSearchQuery) return "No conversations found"
+    if (showArchived) return "No archived conversations"
+    if (assignmentEnabled && assignmentTab === 'assigned') return "No assigned conversations"
     return "No conversations yet"
   }
 
-  // Use full height - parent container controls the height
   const scrollHeight = "h-full"
 
-  // Show loading state only when we have no data yet
-  if (showLoading) {
-    return (
-      <div className={`${scrollHeight} overflow-auto`}>
-        <ChatListSkeleton />
-      </div>
-    )
-  }
-
-  // When refetching after navigation, show skeleton instead of empty state
-  if (isRefetching) {
-    return (
-      <div className={`${scrollHeight} overflow-auto`}>
-        <ChatListSkeleton />
-      </div>
-    )
-  }
-
-  // Show skeleton when searching
-  if (isSearchLoading) {
+  if (showLoading || isRefetching || isSearchLoading) {
     return (
       <div className={`${scrollHeight} overflow-auto`}>
         <ChatListSkeleton />
@@ -143,33 +127,40 @@ export function ChatSidebarList() {
   }
 
   return (
-    <div
+    <motion.div
+      ref={scrollContainerRef}
       className={`${scrollHeight} overflow-auto`}
       onScroll={handleScroll}
+      layoutScroll
     >
-      <ul className="p-3 space-y-1.5">
+      <div className="p-3 flex flex-col gap-1.5">
         {filteredChats.length === 0 ? (
-          <li className="text-center text-muted-foreground py-8">
+          <div className="text-center text-muted-foreground py-8">
             {getEmptyMessage()}
-          </li>
+          </div>
         ) : (
           <>
-            {filteredChats.map((chat) => {
-              return <ChatSidebarItem key={chat.id} chat={chat} />
-            })}
-            {/* Loading indicator */}
+            {filteredChats.map((chat) => (
+              <motion.div
+                key={chat.id}
+                layout
+                transition={{ type: "spring", stiffness: 5000, damping: 120 }}
+              >
+                <ChatSidebarItem chat={chat} onSelect={handleSelectChat} />
+              </motion.div>
+            ))}
             {hasNextPage && (
-              <li className="flex justify-center py-4">
+              <div className="flex justify-center py-4">
                 {isFetchingNextPage ? (
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 ) : (
                   <span className="text-xs text-muted-foreground">Scroll for more</span>
                 )}
-              </li>
+              </div>
             )}
           </>
         )}
-      </ul>
-    </div>
+      </div>
+    </motion.div>
   )
 }
