@@ -100,13 +100,13 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   }, [pathname])
   const [showClientPanel, setShowClientPanel] = useState(false)
 
+  // Archive/History functionality
+  const { showArchived, setShowArchived, selectedEmailConnectionId } = useChatContext()
+
   // Email folder functionality
   const isEmail = chat?.platform === 'email'
-  const { data: folders } = useEmailFolders()
+  const { data: folders } = useEmailFolders(selectedEmailConnectionId)
   const emailAction = useEmailAction()
-
-  // Archive/History functionality
-  const { showArchived, setShowArchived } = useChatContext()
   const markUnread = useMarkConversationUnread()
   const archiveConversation = useArchiveConversation()
   const unarchiveConversation = useUnarchiveConversation()

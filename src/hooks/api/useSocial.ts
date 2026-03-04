@@ -66,7 +66,7 @@ export const socialKeys = {
   emailMessages: () => [...socialKeys.email(), 'messages'] as const,
   emailMessagesList: (filters: Record<string, any>) => [...socialKeys.emailMessages(), filters] as const,
   emailThreads: () => [...socialKeys.email(), 'threads'] as const,
-  emailFolders: () => [...socialKeys.email(), 'folders'] as const,
+  emailFolders: (connectionId?: number | null) => [...socialKeys.email(), 'folders', connectionId ?? 'all'] as const,
   emailDrafts: () => [...socialKeys.email(), 'drafts'] as const,
   tiktok: () => [...socialKeys.all, 'tiktok'] as const,
   tiktokStatus: () => [...socialKeys.tiktok(), 'status'] as const,
@@ -1283,13 +1283,58 @@ export function useEmailThreads(filters?: { folder?: string; connection_id?: num
   });
 }
 
+// Email Folders Response Types
+interface EmailConnectionFolders {
+  connection_id: number;
+  email: string;
+  folders: string[];
+  success: boolean;
+  error?: string;
+}
+
+interface EmailFoldersAllResponse {
+  connections: EmailConnectionFolders[];
+}
+
+interface EmailFoldersSingleResponse {
+  connection_id: number;
+  email: string;
+  folders: string[];
+}
+
+// Helper to transform folder strings to EmailFolder objects
+function transformFolders(folderNames: string[]): EmailFolder[] {
+  return folderNames.map(name => ({
+    name,
+    display_name: name.replace(/^INBOX\.?/i, '').replace(/\./g, ' / ') || name,
+  }));
+}
+
 // Email Folders Query
-export function useEmailFolders() {
+export function useEmailFolders(connectionId?: number | null) {
   return useQuery<EmailFolder[]>({
-    queryKey: socialKeys.emailFolders(),
+    queryKey: socialKeys.emailFolders(connectionId),
     queryFn: async () => {
-      const response = await axios.get('/api/social/email-messages/folders/');
-      return response.data as EmailFolder[];
+      const url = connectionId
+        ? `/api/social/email/folders/?connection_id=${connectionId}`
+        : '/api/social/email/folders/';
+      const response = await axios.get(url);
+
+      if (connectionId) {
+        // Single connection response
+        const data = response.data as EmailFoldersSingleResponse;
+        return transformFolders(data.folders);
+      } else {
+        // All connections response - merge unique folders
+        const data = response.data as EmailFoldersAllResponse;
+        const allFolders = new Set<string>();
+        data.connections.forEach(conn => {
+          if (conn.success) {
+            conn.folders.forEach(folder => allFolders.add(folder));
+          }
+        });
+        return transformFolders(Array.from(allFolders).sort());
+      }
     },
     staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
   });

@@ -27,8 +27,8 @@ export function ChatSidebarHeader() {
   const isEmailOnly = platforms.length === 1 && platforms[0] === 'email'
   const [composeOpen, setComposeOpen] = useState(false)
 
-  // Only fetch folders when on email page
-  const { data: folders, isLoading: foldersLoading } = useEmailFolders()
+  // Only fetch folders when on email page (filter by selected connection if any)
+  const { data: folders, isLoading: foldersLoading } = useEmailFolders(selectedEmailConnectionId)
 
   // Fetch email connections/accounts
   const { data: emailStatus } = useEmailStatus({ enabled: isEmailOnly })
