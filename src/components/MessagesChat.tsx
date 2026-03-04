@@ -74,11 +74,38 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   // params.id is an array for [[...id]] catch-all routes
   const chatId = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  const [selectedEmailFolder, setSelectedEmailFolder] = useState<string>('INBOX');
-  const [selectedEmailConnectionId, setSelectedEmailConnectionId] = useState<number | null>(null);
   const [currentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
+
+  // Read email folder from URL search params (persists across navigation)
+  const selectedEmailFolder = searchParams.get('folder') || 'INBOX';
+  const setSelectedEmailFolder = useCallback((folder: string) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (folder === 'INBOX') {
+      newParams.delete('folder');
+    } else {
+      newParams.set('folder', folder);
+    }
+    const queryString = newParams.toString();
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [searchParams, pathname, router]);
+
+  // Read email connection ID from URL search params (persists across navigation)
+  const connectionIdParam = searchParams.get('account');
+  const selectedEmailConnectionId = connectionIdParam ? Number(connectionIdParam) : null;
+  const setSelectedEmailConnectionId = useCallback((id: number | null) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (id === null) {
+      newParams.delete('account');
+    } else {
+      newParams.set('account', String(id));
+    }
+    const queryString = newParams.toString();
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   // Read assignment tab from URL search params (persists across navigation)
   const assignmentTabFromUrl = searchParams.get('tab') as AssignmentTabType | null;

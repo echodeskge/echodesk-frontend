@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { ChatAvatar } from "../chat-avatar"
 
-export function ChatSidebarItem({ chat, onSelect }: { chat: ChatType; onSelect?: (chatId: string) => void }) {
+export function ChatSidebarItem({ chat }: { chat: ChatType }) {
   const { setIsChatSidebarOpen } = useChatContext()
   const params = useParams()
   const pathname = usePathname()
@@ -35,7 +35,6 @@ export function ChatSidebarItem({ chat, onSelect }: { chat: ChatType; onSelect?:
   }
 
   const handleOnCLick = () => {
-    onSelect?.(chat.id)
     setIsChatSidebarOpen(false)
   }
 

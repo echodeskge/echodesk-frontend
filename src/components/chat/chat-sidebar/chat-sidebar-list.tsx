@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback, useRef } from "react"
+import { useMemo, useEffect, useCallback, useRef } from "react"
 import { useParams } from "next/navigation"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
-import { motion } from "framer-motion"
 import { ChatSidebarItem } from "./chat-sidebar-item"
 import { ChatListSkeleton } from "./ChatListSkeleton"
 import { Loader2 } from "lucide-react"
@@ -26,18 +25,10 @@ export function ChatSidebarList() {
   } = useChatContext()
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const prevPinnedId = useRef<string | undefined>(undefined)
+  const prevSelectedId = useRef<string | undefined>(undefined)
 
   const params = useParams()
-  const urlSelectedId = params.id?.[0] as string | undefined
-
-  // Local state for pinned chat - updates synchronously on click (not deferred like useParams)
-  const [pinnedChatId, setPinnedChatId] = useState<string | undefined>(urlSelectedId)
-
-  // Sync with URL for initial load / browser back-forward
-  useEffect(() => {
-    setPinnedChatId(urlSelectedId)
-  }, [urlSelectedId])
+  const selectedId = params.id?.[0] as string | undefined
 
   // Handle scroll to load more
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -60,17 +51,13 @@ export function ChatSidebarList() {
   const showLoading = isInitialLoading && chatState.chats.length === 0 && !hasEverLoaded
   const isRefetching = isInitialLoading && chatState.chats.length === 0 && hasEverLoaded
 
-  // Scroll to top after layout animation completes
+  // Scroll to top when selected chat changes
   useEffect(() => {
-    if (pinnedChatId && pinnedChatId !== prevPinnedId.current && scrollContainerRef.current) {
-      const timeout = setTimeout(() => {
-        scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-      }, 50)
-      prevPinnedId.current = pinnedChatId
-      return () => clearTimeout(timeout)
+    if (selectedId && selectedId !== prevSelectedId.current && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0 })
     }
-    prevPinnedId.current = pinnedChatId
-  }, [pinnedChatId])
+    prevSelectedId.current = selectedId
+  }, [selectedId])
 
   // Filter and sort chats
   const filteredChats = useMemo(() => {
@@ -95,19 +82,15 @@ export function ChatSidebarList() {
     }
 
     return [...chats].sort((a, b) => {
-      if (pinnedChatId) {
-        if (a.id === pinnedChatId) return -1
-        if (b.id === pinnedChatId) return 1
+      if (selectedId) {
+        if (a.id === selectedId) return -1
+        if (b.id === selectedId) return 1
       }
       const aTime = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0
       const bTime = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0
       return bTime - aTime
     })
-  }, [chatState.chats, pinnedChatId, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
-
-  const handleSelectChat = useCallback((chatId: string) => {
-    setPinnedChatId(chatId)
-  }, [])
+  }, [chatState.chats, selectedId, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
 
   const getEmptyMessage = () => {
     if (chatListSearchQuery) return "No conversations found"
@@ -127,40 +110,35 @@ export function ChatSidebarList() {
   }
 
   return (
-    <motion.div
+    <div
       ref={scrollContainerRef}
       className={`${scrollHeight} overflow-auto`}
       onScroll={handleScroll}
-      layoutScroll
     >
-      <div className="p-3 flex flex-col gap-1.5">
+      <ul className="p-3 space-y-1.5">
         {filteredChats.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
+          <li className="text-center text-muted-foreground py-8">
             {getEmptyMessage()}
-          </div>
+          </li>
         ) : (
           <>
             {filteredChats.map((chat) => (
-              <motion.div
-                key={chat.id}
-                layout
-                transition={{ type: "spring", stiffness: 5000, damping: 120 }}
-              >
-                <ChatSidebarItem chat={chat} onSelect={handleSelectChat} />
-              </motion.div>
+              <li key={chat.id}>
+                <ChatSidebarItem chat={chat} />
+              </li>
             ))}
             {hasNextPage && (
-              <div className="flex justify-center py-4">
+              <li className="flex justify-center py-4">
                 {isFetchingNextPage ? (
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 ) : (
                   <span className="text-xs text-muted-foreground">Scroll for more</span>
                 )}
-              </div>
+              </li>
             )}
           </>
         )}
-      </div>
-    </motion.div>
+      </ul>
+    </div>
   )
 }
