@@ -52,13 +52,13 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
             src={chat.avatar}
             fallback={getInitials(chat.name)}
             status={chat.status}
-            size={1.75}
+            size={2.5}
             className="shrink-0"
           />
           {/* Platform indicator badge */}
           {chat.platform && (
             <div className={cn(
-              "absolute -bottom-0.5 -right-0.5 rounded-full p-0.5 ring-2 ring-background",
+              "absolute -bottom-0.5 -right-0.5 rounded-full p-[3px] ring-2 ring-background",
               chat.platform === "facebook"
                 ? "bg-blue-600"
                 : chat.platform === "instagram"
@@ -68,13 +68,13 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
                 : "bg-green-600"
             )}>
               {chat.platform === "facebook" ? (
-                <Facebook className="h-2.5 w-2.5 text-white" />
+                <Facebook className="h-3 w-3 text-white" />
               ) : chat.platform === "instagram" ? (
-                <Instagram className="h-2.5 w-2.5 text-white" />
+                <Instagram className="h-3 w-3 text-white" />
               ) : chat.platform === "email" ? (
-                <Mail className="h-2.5 w-2.5 text-white" />
+                <Mail className="h-3 w-3 text-white" />
               ) : (
-                <MessageCircle className="h-2.5 w-2.5 text-white" />
+                <MessageCircle className="h-3 w-3 text-white" />
               )}
             </div>
           )}
