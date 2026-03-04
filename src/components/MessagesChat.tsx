@@ -146,7 +146,13 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{number}, email_{thread_id}
     let chatId: string | undefined;
     const platform = messageData.platform;
-    const conversationId = data?.conversation_id || messageData.sender_id || messageData.from_number || messageData.to_number;
+    const isFromBusiness = messageData.is_from_page || messageData.is_from_business || false;
+
+    // For outgoing messages (from page/business), use recipient_id as the conversation identifier
+    // For incoming messages, use sender_id
+    const conversationId = isFromBusiness
+      ? (messageData.recipient_id || data?.conversation_id)
+      : (data?.conversation_id || messageData.sender_id || messageData.from_number || messageData.to_number);
 
     if (platform === 'facebook' && messageData.page_id) {
       chatId = `fb_${messageData.page_id}_${conversationId}`;
@@ -171,9 +177,6 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       console.warn('Could not determine chat ID from WebSocket message:', data);
       return;
     }
-
-    // Determine if this message is from the business/page (sent by us)
-    const isFromBusiness = messageData.is_from_page || messageData.is_from_business || false;
 
     // Convert WebSocket message to MessageType format
     // For sent messages (from business), use "business" as senderId to match currentUser.id
