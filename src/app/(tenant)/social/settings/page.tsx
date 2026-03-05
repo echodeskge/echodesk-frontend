@@ -9,11 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link } from "lucide-react";
+import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSocialSettings, useUpdateSocialSettings, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings } from "@/hooks/api/useSocial";
+import { useSocialSettings, useUpdateSocialSettings, useClearPlatformHistory, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings } from "@/hooks/api/useSocial";
 import { EmailSyncDebug } from "@/components/social/EmailSyncDebug";
 import { NOTIFICATION_SOUNDS, getNotificationSound } from "@/utils/notificationSound";
 
@@ -877,10 +877,94 @@ function ChatManagementTab({
   );
 }
 
+function ClearHistoryCard() {
+  const { toast } = useToast();
+  const clearHistory = useClearPlatformHistory();
+  const [confirmPlatform, setConfirmPlatform] = useState<'facebook' | 'instagram' | 'whatsapp' | null>(null);
+
+  const handleClear = (platform: 'facebook' | 'instagram' | 'whatsapp') => {
+    clearHistory.mutate(platform, {
+      onSuccess: (data) => {
+        toast({
+          title: "History cleared",
+          description: `Deleted ${data.messages_deleted} ${platform} messages.`,
+        });
+        setConfirmPlatform(null);
+      },
+      onError: (error: any) => {
+        toast({
+          title: "Error",
+          description: error?.response?.data?.error || "Failed to clear history.",
+          variant: "destructive",
+        });
+        setConfirmPlatform(null);
+      },
+    });
+  };
+
+  const platforms = [
+    { key: 'facebook' as const, label: 'Facebook' },
+    { key: 'instagram' as const, label: 'Instagram' },
+    { key: 'whatsapp' as const, label: 'WhatsApp' },
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Trash2 className="size-5" />
+          Clear Message History
+        </CardTitle>
+        <CardDescription>
+          Permanently delete all messages for a platform. This action cannot be undone.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {platforms.map(({ key, label }) => (
+          <div key={key} className="flex items-center justify-between">
+            <span className="text-sm">{label} Messages</span>
+            {confirmPlatform === key ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-destructive">Are you sure?</span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={clearHistory.isPending}
+                  onClick={() => handleClear(key)}
+                >
+                  {clearHistory.isPending ? <Loader2 className="size-4 animate-spin" /> : "Yes, Delete All"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={clearHistory.isPending}
+                  onClick={() => setConfirmPlatform(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setConfirmPlatform(key)}
+              >
+                <Trash2 className="size-4 mr-1" />
+                Clear
+              </Button>
+            )}
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 function AdvancedTab() {
   return (
     <div className="space-y-6">
       <EmailSyncDebug />
+      <ClearHistoryCard />
     </div>
   );
 }

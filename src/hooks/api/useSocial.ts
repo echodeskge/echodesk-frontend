@@ -45,6 +45,8 @@ export const socialKeys = {
   allAssignments: () => [...socialKeys.assignments(), 'all'] as const,
   assignmentStatus: (platform: string, conversationId: string, accountId: string) =>
     [...socialKeys.assignments(), 'status', platform, conversationId, accountId] as const,
+  messagingWindow: (platform: string, conversationId: string, accountId: string) =>
+    [...socialKeys.all, 'messagingWindow', platform, conversationId, accountId] as const,
   facebook: () => [...socialKeys.all, 'facebook'] as const,
   facebookStatus: () => [...socialKeys.facebook(), 'status'] as const,
   facebookPages: () => [...socialKeys.facebook(), 'pages'] as const,
@@ -2274,6 +2276,60 @@ export function useArchiveAllConversations() {
     onSuccess: () => {
       // Invalidate conversations and unread count
       queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    },
+  });
+}
+
+// ============================================================================
+// MESSAGING WINDOW (24-hour check)
+// ============================================================================
+
+export interface MessagingWindowStatus {
+  window_open: boolean;
+  hours_remaining: number | null;
+  last_user_message_at?: string;
+  hours_passed?: number;
+  message?: string;
+}
+
+export function useMessagingWindow(
+  platform: string,
+  conversationId: string,
+  accountId: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery<MessagingWindowStatus>({
+    queryKey: socialKeys.messagingWindow(platform, conversationId, accountId),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/messaging-window/', {
+        params: { platform, conversation_id: conversationId, account_id: accountId },
+      });
+      return response.data;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 60 * 1000, // Fresh for 1 minute
+    refetchInterval: 60 * 1000, // Re-check every minute
+  });
+}
+
+// ============================================================================
+// CLEAR PLATFORM HISTORY
+// ============================================================================
+
+export function useClearPlatformHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (platform: 'facebook' | 'instagram' | 'whatsapp') => {
+      const response = await axios.post('/api/social/clear-history/', { platform });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
   });
