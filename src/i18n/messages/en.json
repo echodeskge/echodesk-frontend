@@ -977,7 +977,13 @@
         "hideAssigned": "Hide assigned chats from others",
         "hideAssignedDescription": "When enabled, assigned chats are hidden from other users (admins can still see all)",
         "collectRating": "Collect customer rating",
-        "collectRatingDescription": "Send rating request (1-5) to customer when session ends"
+        "collectRatingDescription": "Send rating request (1-5) to customer when session ends",
+        "linkBasedRating": "Use link-based rating",
+        "linkBasedRatingDescription": "Send a link to a review page instead of in-chat quick replies",
+        "ratingMessageKa": "Rating request message (Georgian)",
+        "ratingMessageEn": "Rating request message (English)",
+        "templateHint": "Hint",
+        "templateHintDescription": "Use {link} placeholder where you want the rating link to appear."
       },
       "enabledFeatures": {
         "title": "Enabled features:",
@@ -986,7 +992,8 @@
         "assignedNotifications": "Only assigned user receives notifications for that chat (others see 0 unread)",
         "sessionEndNotifications": "When session ends, notifications return to all users",
         "hiddenChats": "Assigned chats are hidden from other users (admins see all)",
-        "ratingRequest": "When session ends, customer receives rating request (1-5)"
+        "ratingRequest": "When session ends, customer receives rating request (1-5)",
+        "linkBasedRating": "When session ends, customer receives a link to review page with emoji rating"
       },
       "autoAssignment": {
         "title": "Automatic Assignment",
@@ -1019,6 +1026,53 @@
         "email": "Email",
         "teamChat": "Team Chat",
         "system": "System"
+      },
+      "tabs": {
+        "notifications": "Notifications",
+        "autoReply": "Auto-Reply",
+        "chatManagement": "Chat Management",
+        "advanced": "Advanced"
+      },
+      "autoReply": {
+        "title": "Auto-Reply Settings",
+        "description": "Configure automatic welcome and away messages for each platform",
+        "businessTimezone": "Business Timezone",
+        "businessTimezoneDescription": "Used to calculate away hours",
+        "selectTimezone": "Select timezone",
+        "awayHoursSchedule": "Away Hours Schedule",
+        "awayHoursDescription": "Define when your business is away (auto-reply will be sent during these hours)",
+        "awayHoursInstruction": "Click or drag to select hours when your business is <strong>away</strong>. Away messages will be sent during selected (orange) hours.",
+        "platformMessages": "Platform-Specific Messages",
+        "welcomeMessage": "Welcome Message",
+        "welcomeMessageDescription": "Sent to new conversations (if 12+ hours since last welcome)",
+        "awayMessage": "Away Message",
+        "awayMessageDescription": "Sent during away hours (based on schedule above)",
+        "availableVariables": "Available variables:",
+        "variableHint": "Use <code>{{customer_name}}</code> to include the customer's name in your message.",
+        "available": "Available",
+        "awayActive": "Away (auto-reply active)",
+        "days": {
+          "monday": "Mon",
+          "tuesday": "Tue",
+          "wednesday": "Wed",
+          "thursday": "Thu",
+          "friday": "Fri",
+          "saturday": "Sat",
+          "sunday": "Sun"
+        }
+      },
+      "clearHistory": {
+        "title": "Clear Message History",
+        "description": "Permanently delete all messages for a platform. This action cannot be undone.",
+        "platformMessages": "{platform} Messages",
+        "areYouSure": "Are you sure?",
+        "yesDeleteAll": "Yes, Delete All",
+        "cancel": "Cancel",
+        "clear": "Clear",
+        "historyCleared": "History cleared",
+        "deletedMessages": "Deleted {count} {platform} messages.",
+        "error": "Error",
+        "failedToClear": "Failed to clear history."
       },
       "cancel": "Cancel",
       "saveSettings": "Save Settings",

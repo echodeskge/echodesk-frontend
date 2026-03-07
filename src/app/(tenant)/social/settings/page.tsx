@@ -53,6 +53,7 @@ interface AwayHoursGridProps {
 }
 
 function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
+  const t = useTranslations("social");
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'select' | 'deselect'>('select');
 
@@ -113,7 +114,7 @@ function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
         {DAYS.map(day => (
           <div key={day} className="flex mb-px">
             <div className="w-20 shrink-0 text-sm font-medium capitalize py-1">
-              {day.substring(0, 3)}
+              {t(`settingsPage.autoReply.days.${day}`)}
             </div>
             <div className="flex flex-1 gap-px">
               {HOURS.map(hour => (
@@ -140,11 +141,11 @@ function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
         <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 rounded-sm bg-muted" />
-            <span>Available</span>
+            <span>{t("settingsPage.autoReply.available")}</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 rounded-sm bg-orange-500" />
-            <span>Away (auto-reply active)</span>
+            <span>{t("settingsPage.autoReply.awayActive")}</span>
           </div>
         </div>
       </div>
@@ -159,6 +160,7 @@ interface PlatformAutoReplyFormProps {
 }
 
 function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoReplyFormProps) {
+  const t = useTranslations("social");
   const platformLabels = {
     facebook: 'Facebook Messenger',
     instagram: 'Instagram DMs',
@@ -173,10 +175,10 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-green-500" />
-              Welcome Message
+              {t("settingsPage.autoReply.welcomeMessage")}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Sent to new conversations (if 12+ hours since last welcome)
+              {t("settingsPage.autoReply.welcomeMessageDescription")}
             </p>
           </div>
           <Switch
@@ -202,10 +204,10 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
-              Away Message
+              {t("settingsPage.autoReply.awayMessage")}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Sent during away hours (based on schedule above)
+              {t("settingsPage.autoReply.awayMessageDescription")}
             </p>
           </div>
           <Switch
@@ -226,7 +228,10 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
       {/* Variable hint */}
       <div className="rounded-lg bg-muted/50 p-3">
         <p className="text-xs text-muted-foreground">
-          <strong>Available variables:</strong> Use <code className="bg-muted px-1 rounded">{"{{customer_name}}"}</code> to include the customer&apos;s name in your message.
+          <strong>{t("settingsPage.autoReply.availableVariables")}</strong>{" "}
+          {t.rich("settingsPage.autoReply.variableHint", {
+            code: (chunks) => <code className="bg-muted px-1 rounded">{chunks}</code>
+          })}
         </p>
       </div>
     </div>
@@ -518,15 +523,16 @@ function AutoReplyTab({
   autoReplySettings: AutoReplySettings;
   updatePlatformSettings: (platform: 'facebook' | 'instagram' | 'whatsapp', settings: PlatformAutoReplySettings) => void;
 }) {
+  const t = useTranslations("social");
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          Auto-Reply Settings
+          {t("settingsPage.autoReply.title")}
         </CardTitle>
         <CardDescription>
-          Configure automatic welcome and away messages for each platform
+          {t("settingsPage.autoReply.description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -535,15 +541,15 @@ function AutoReplyTab({
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              Business Timezone
+              {t("settingsPage.autoReply.businessTimezone")}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Used to calculate away hours
+              {t("settingsPage.autoReply.businessTimezoneDescription")}
             </p>
           </div>
           <Select value={timezone} onValueChange={setTimezone}>
             <SelectTrigger className="w-full sm:w-[280px]">
-              <SelectValue placeholder="Select timezone" />
+              <SelectValue placeholder={t("settingsPage.autoReply.selectTimezone")} />
             </SelectTrigger>
             <SelectContent>
               {TIMEZONES.map((tz) => (
@@ -562,10 +568,10 @@ function AutoReplyTab({
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
-              Away Hours Schedule
+              {t("settingsPage.autoReply.awayHoursSchedule")}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Define when your business is away (auto-reply will be sent during these hours)
+              {t("settingsPage.autoReply.awayHoursDescription")}
             </p>
           </div>
           <Switch
@@ -578,7 +584,9 @@ function AutoReplyTab({
         {awayHoursEnabled && (
           <div className="mt-4">
             <p className="text-sm text-muted-foreground mb-3">
-              Click or drag to select hours when your business is <strong>away</strong>. Away messages will be sent during selected (orange) hours.
+              {t.rich("settingsPage.autoReply.awayHoursInstruction", {
+                strong: (chunks) => <strong>{chunks}</strong>
+              })}
             </p>
             <AwayHoursGrid
               schedule={awayHoursSchedule}
@@ -592,7 +600,7 @@ function AutoReplyTab({
 
         {/* Per-Platform Settings */}
         <div>
-          <Label className="mb-3 block">Platform-Specific Messages</Label>
+          <Label className="mb-3 block">{t("settingsPage.autoReply.platformMessages")}</Label>
           <Tabs defaultValue="facebook" className="w-full">
             <TabsList className="h-auto flex-wrap">
               <TabsTrigger value="facebook" className="flex items-center gap-2">
@@ -878,6 +886,7 @@ function ChatManagementTab({
 }
 
 function ClearHistoryCard() {
+  const t = useTranslations("social");
   const { toast } = useToast();
   const clearHistory = useClearPlatformHistory();
   const [confirmPlatform, setConfirmPlatform] = useState<'facebook' | 'instagram' | 'whatsapp' | null>(null);
@@ -886,15 +895,15 @@ function ClearHistoryCard() {
     clearHistory.mutate(platform, {
       onSuccess: (data) => {
         toast({
-          title: "History cleared",
-          description: `Deleted ${data.messages_deleted} ${platform} messages.`,
+          title: t("settingsPage.clearHistory.historyCleared"),
+          description: t("settingsPage.clearHistory.deletedMessages", { count: data.messages_deleted, platform }),
         });
         setConfirmPlatform(null);
       },
       onError: (error: any) => {
         toast({
-          title: "Error",
-          description: error?.response?.data?.error || "Failed to clear history.",
+          title: t("settingsPage.clearHistory.error"),
+          description: error?.response?.data?.error || t("settingsPage.clearHistory.failedToClear"),
           variant: "destructive",
         });
         setConfirmPlatform(null);
@@ -913,26 +922,26 @@ function ClearHistoryCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trash2 className="size-5" />
-          Clear Message History
+          {t("settingsPage.clearHistory.title")}
         </CardTitle>
         <CardDescription>
-          Permanently delete all messages for a platform. This action cannot be undone.
+          {t("settingsPage.clearHistory.description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {platforms.map(({ key, label }) => (
           <div key={key} className="flex items-center justify-between">
-            <span className="text-sm">{label} Messages</span>
+            <span className="text-sm">{t("settingsPage.clearHistory.platformMessages", { platform: label })}</span>
             {confirmPlatform === key ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-destructive">Are you sure?</span>
+                <span className="text-xs text-destructive">{t("settingsPage.clearHistory.areYouSure")}</span>
                 <Button
                   variant="destructive"
                   size="sm"
                   disabled={clearHistory.isPending}
                   onClick={() => handleClear(key)}
                 >
-                  {clearHistory.isPending ? <Loader2 className="size-4 animate-spin" /> : "Yes, Delete All"}
+                  {clearHistory.isPending ? <Loader2 className="size-4 animate-spin" /> : t("settingsPage.clearHistory.yesDeleteAll")}
                 </Button>
                 <Button
                   variant="outline"
@@ -940,7 +949,7 @@ function ClearHistoryCard() {
                   disabled={clearHistory.isPending}
                   onClick={() => setConfirmPlatform(null)}
                 >
-                  Cancel
+                  {t("settingsPage.clearHistory.cancel")}
                 </Button>
               </div>
             ) : (
@@ -950,7 +959,7 @@ function ClearHistoryCard() {
                 onClick={() => setConfirmPlatform(key)}
               >
                 <Trash2 className="size-4 mr-1" />
-                Clear
+                {t("settingsPage.clearHistory.clear")}
               </Button>
             )}
           </div>
@@ -1082,15 +1091,15 @@ export default function SocialSettingsPage() {
     updateSettings.mutate(payload, {
       onSuccess: () => {
         toast({
-          title: "Settings saved",
-          description: "Your social media settings have been updated successfully.",
+          title: t("settingsPage.settingsSaved"),
+          description: t("settingsPage.settingsSavedDescription"),
         });
       },
       onError: (error: any) => {
         console.error("Failed to save settings:", error);
         toast({
-          title: "Error saving settings",
-          description: error.response?.data?.error || "Failed to update settings. Please try again.",
+          title: t("settingsPage.errorSaving"),
+          description: error.response?.data?.error || t("settingsPage.errorSavingDescription"),
           variant: "destructive",
         });
       },
@@ -1101,20 +1110,20 @@ export default function SocialSettingsPage() {
 
   // Build tabs based on user role
   const tabs = [
-    { value: "notifications", label: "Notifications", icon: Bell },
-    ...(isSuperAdmin ? [{ value: "auto-reply", label: "Auto-Reply", icon: MessageSquare }] : []),
-    ...(isSuperAdmin ? [{ value: "chat-management", label: "Chat Management", icon: Users }] : []),
-    ...(isSuperAdmin ? [{ value: "advanced", label: "Advanced", icon: Wrench }] : []),
+    { value: "notifications", label: t("settingsPage.tabs.notifications"), icon: Bell },
+    ...(isSuperAdmin ? [{ value: "auto-reply", label: t("settingsPage.tabs.autoReply"), icon: MessageSquare }] : []),
+    ...(isSuperAdmin ? [{ value: "chat-management", label: t("settingsPage.tabs.chatManagement"), icon: Users }] : []),
+    ...(isSuperAdmin ? [{ value: "advanced", label: t("settingsPage.tabs.advanced"), icon: Wrench }] : []),
   ];
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">
-          {t("settingsPage.title") || t("settings") || "Social Media Settings"}
+          {t("settingsPage.title")}
         </h1>
         <p className="text-muted-foreground mt-2">
-          {t("settingsPage.description") || t("settingsDescription") || "Configure how social media integrations work"}
+          {t("settingsPage.description")}
         </p>
       </div>
 
@@ -1202,11 +1211,11 @@ export default function SocialSettingsPage() {
       {/* Save Button - Fixed at bottom */}
       <div className="flex justify-end gap-3 mt-6 pt-6 border-t">
         <Button variant="outline" onClick={() => window.history.back()} disabled={saving}>
-          {t("settingsPage.cancel") || "Cancel"}
+          {t("settingsPage.cancel")}
         </Button>
         <Button onClick={handleSaveSettings} disabled={saving || loading}>
           {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {saving ? (t("settingsPage.saving") || "Saving...") : (t("settingsPage.saveSettings") || "Save Settings")}
+          {saving ? t("settingsPage.saving") : t("settingsPage.saveSettings")}
         </Button>
       </div>
     </div>
