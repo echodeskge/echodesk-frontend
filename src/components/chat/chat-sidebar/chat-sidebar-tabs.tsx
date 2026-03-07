@@ -4,10 +4,10 @@ import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function ChatSidebarTabs() {
-  const { assignmentEnabled, assignmentTab, setAssignmentTab, assignedChatIds } = useChatContext()
+  const { assignmentEnabled, assignmentTab, setAssignmentTab, assignedChatIds, showArchived } = useChatContext()
 
-  // Only show tabs when assignment mode is enabled
-  if (!assignmentEnabled) {
+  // Hide tabs when assignment mode is disabled or when viewing history
+  if (!assignmentEnabled || showArchived) {
     return null
   }
 
