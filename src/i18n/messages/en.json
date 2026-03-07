@@ -1031,7 +1031,13 @@
         "notifications": "Notifications",
         "autoReply": "Auto-Reply",
         "chatManagement": "Chat Management",
-        "advanced": "Advanced"
+        "advanced": "Advanced",
+        "email": "Email"
+      },
+      "email": {
+        "selectConnection": "Email Connection",
+        "selectEmail": "Select email",
+        "noConnections": "No email connections configured"
       },
       "autoReply": {
         "title": "Auto-Reply Settings",

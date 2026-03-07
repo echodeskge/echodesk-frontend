@@ -9,11 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2 } from "lucide-react";
+import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSocialSettings, useUpdateSocialSettings, useClearPlatformHistory, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings } from "@/hooks/api/useSocial";
+import { useSocialSettings, useUpdateSocialSettings, useClearPlatformHistory, useEmailStatus, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings } from "@/hooks/api/useSocial";
 import { EmailSyncDebug } from "@/components/social/EmailSyncDebug";
 import { NOTIFICATION_SOUNDS, getNotificationSound } from "@/utils/notificationSound";
 
@@ -969,10 +969,66 @@ function ClearHistoryCard() {
   );
 }
 
+function EmailTab() {
+  const t = useTranslations("social");
+  const { data: emailStatus } = useEmailStatus();
+  const [selectedConnectionId, setSelectedConnectionId] = useState<number | undefined>(undefined);
+
+  const connections = emailStatus?.connections || [];
+
+  // Auto-select first connection
+  useEffect(() => {
+    if (connections.length > 0 && selectedConnectionId === undefined) {
+      setSelectedConnectionId(connections[0].id);
+    }
+  }, [connections, selectedConnectionId]);
+
+  return (
+    <div className="space-y-6">
+      {connections.length > 1 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <Label className="flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                {t("settingsPage.email.selectConnection")}
+              </Label>
+              <Select
+                value={selectedConnectionId?.toString() || ''}
+                onValueChange={(v) => setSelectedConnectionId(Number(v))}
+              >
+                <SelectTrigger className="w-full sm:w-[300px]">
+                  <SelectValue placeholder={t("settingsPage.email.selectEmail")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {connections.map((conn) => (
+                    <SelectItem key={conn.id} value={conn.id.toString()}>
+                      {conn.email_address}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {connections.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            {t("settingsPage.email.noConnections")}
+          </CardContent>
+        </Card>
+      ) : (
+        <EmailSyncDebug connectionId={selectedConnectionId} />
+      )}
+    </div>
+  );
+}
+
 function AdvancedTab() {
   return (
     <div className="space-y-6">
-      <EmailSyncDebug />
       <ClearHistoryCard />
     </div>
   );
@@ -1113,6 +1169,7 @@ export default function SocialSettingsPage() {
     { value: "notifications", label: t("settingsPage.tabs.notifications"), icon: Bell },
     ...(isSuperAdmin ? [{ value: "auto-reply", label: t("settingsPage.tabs.autoReply"), icon: MessageSquare }] : []),
     ...(isSuperAdmin ? [{ value: "chat-management", label: t("settingsPage.tabs.chatManagement"), icon: Users }] : []),
+    ...(isSuperAdmin ? [{ value: "email", label: t("settingsPage.tabs.email"), icon: Mail }] : []),
     ...(isSuperAdmin ? [{ value: "advanced", label: t("settingsPage.tabs.advanced"), icon: Wrench }] : []),
   ];
 
@@ -1198,6 +1255,12 @@ export default function SocialSettingsPage() {
               setAutoAssign={setAutoAssign}
               t={t}
             />
+          </TabsContent>
+        )}
+
+        {isSuperAdmin && (
+          <TabsContent value="email" className="mt-0">
+            <EmailTab />
           </TabsContent>
         )}
 

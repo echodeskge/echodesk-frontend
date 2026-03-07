@@ -79,9 +79,9 @@ function FolderCard({ folder, isSkipped }: { folder: EmailSyncFolderDebug; isSki
   );
 }
 
-export function EmailSyncDebug() {
+export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
   const { toast } = useToast();
-  const { data: debugInfo, isLoading, refetch, isRefetching } = useEmailSyncDebug();
+  const { data: debugInfo, isLoading, refetch, isRefetching } = useEmailSyncDebug(connectionId);
   const syncMutation = useEmailSync();
   const updateSettings = useUpdateEmailSyncSettings();
 
@@ -92,7 +92,7 @@ export function EmailSyncDebug() {
   };
 
   const handleSync = () => {
-    syncMutation.mutate(undefined, {
+    syncMutation.mutate(connectionId, {
       onSuccess: (data) => {
         toast({
           title: "Sync completed",
@@ -121,7 +121,7 @@ export function EmailSyncDebug() {
       return;
     }
 
-    updateSettings.mutate(days, {
+    updateSettings.mutate({ syncDaysBack: days, connectionId }, {
       onSuccess: (data) => {
         toast({
           title: "Settings updated",

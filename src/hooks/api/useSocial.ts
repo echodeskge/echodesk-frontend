@@ -1819,15 +1819,17 @@ export interface EmailSyncDebugInfo {
   errors: string[];
 }
 
-export function useEmailSyncDebug() {
+export function useEmailSyncDebug(connectionId?: number | null) {
   return useQuery<EmailSyncDebugInfo>({
-    queryKey: [...socialKeys.email(), 'syncDebug'],
+    queryKey: [...socialKeys.email(), 'syncDebug', connectionId ?? 'default'],
     queryFn: async () => {
-      const response = await axios.get('/api/social/email/sync/debug/');
+      const params = connectionId ? `?connection_id=${connectionId}` : '';
+      const response = await axios.get(`/api/social/email/sync/debug/${params}`);
       return response.data;
     },
-    staleTime: 0, // Always fetch fresh data
-    gcTime: 0, // Don't cache
+    staleTime: 0,
+    gcTime: 0,
+    enabled: connectionId !== null,
   });
 }
 
@@ -1835,12 +1837,11 @@ export function useEmailSync() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async () => {
-      const response = await axios.post('/api/social/email/sync/');
+    mutationFn: async (connectionId?: number) => {
+      const response = await axios.post('/api/social/email/sync/', connectionId ? { connection_id: connectionId } : {});
       return response.data;
     },
     onSuccess: () => {
-      // Invalidate email-related queries after sync
       queryClient.invalidateQueries({ queryKey: socialKeys.email() });
     },
   });
@@ -1850,9 +1851,10 @@ export function useUpdateEmailSyncSettings() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (syncDaysBack: number) => {
+    mutationFn: async ({ syncDaysBack, connectionId }: { syncDaysBack: number; connectionId?: number }) => {
       const response = await axios.post('/api/social/email/sync/settings/', {
         sync_days_back: syncDaysBack,
+        ...(connectionId ? { connection_id: connectionId } : {}),
       });
       return response.data;
     },

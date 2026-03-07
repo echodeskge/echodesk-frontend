@@ -1032,7 +1032,13 @@
         "notifications": "შეტყობინებები",
         "autoReply": "ავტო-პასუხი",
         "chatManagement": "ჩატის მართვა",
-        "advanced": "დამატებითი"
+        "advanced": "დამატებითი",
+        "email": "ელ-ფოსტა"
+      },
+      "email": {
+        "selectConnection": "ელ-ფოსტის კავშირი",
+        "selectEmail": "აირჩიეთ ელ-ფოსტა",
+        "noConnections": "ელ-ფოსტის კავშირები არ არის კონფიგურირებული"
       },
       "autoReply": {
         "title": "ავტო-პასუხის პარამეტრები",
