@@ -996,6 +996,7 @@ export interface ChatSession {
   session_started_at: string | null;
   session_ended_at: string | null;
   created_at: string;
+  is_archived: boolean;
 }
 
 export interface UserChatSessionsResponse {

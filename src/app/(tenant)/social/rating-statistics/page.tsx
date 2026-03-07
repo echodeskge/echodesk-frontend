@@ -100,7 +100,8 @@ export default function RatingStatisticsPage() {
     const platformPrefix = session.platform === 'facebook' ? 'fb' : session.platform === 'instagram' ? 'ig' : 'wa';
     const chatId = `${platformPrefix}_${session.account_id}_${session.conversation_id}`;
     setSelectedUserId(null); // Close the modal
-    router.push(`/social/messages/${chatId}`);
+    const viewParam = session.is_archived ? '?view=history' : '';
+    router.push(`/social/messages/${chatId}${viewParam}`);
   };
 
   const handleSort = (field: SortField) => {
@@ -508,7 +509,7 @@ export default function RatingStatisticsPage() {
 
       {/* User Chat Sessions Modal */}
       <Dialog open={selectedUserId !== null} onOpenChange={(open) => !open && setSelectedUserId(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="sm:max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
@@ -550,10 +551,7 @@ export default function RatingStatisticsPage() {
                     >
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div>
-                            <div className="font-medium">{session.customer_name}</div>
-                            <div className="text-xs text-muted-foreground">{session.conversation_id}</div>
-                          </div>
+                          <div className="font-medium">{session.customer_name}</div>
                           <ExternalLink className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </TableCell>
