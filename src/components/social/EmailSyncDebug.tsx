@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-function FolderCard({ folder, isSkipped }: { folder: EmailSyncFolderDebug; isSkipped?: boolean }) {
+function FolderCard({ folder, isSkipped, t }: { folder: EmailSyncFolderDebug; isSkipped?: boolean; t: ReturnType<typeof useTranslations> }) {
   return (
     <div className="flex items-start justify-between p-3 rounded-lg border bg-card">
       <div className="space-y-1">
@@ -46,24 +47,24 @@ function FolderCard({ folder, isSkipped }: { folder: EmailSyncFolderDebug; isSki
           <span className="font-medium">{folder.name}</span>
           {isSkipped && (
             <Badge variant="secondary" className="text-xs">
-              Skipped
+              {t("settingsPage.emailSync.skipped")}
             </Badge>
           )}
         </div>
         {!isSkipped && (
           <div className="text-sm text-muted-foreground space-y-0.5">
             {folder.total_messages_on_server !== undefined && (
-              <p>Server: {folder.total_messages_on_server} messages</p>
+              <p>{t("settingsPage.emailSync.serverMessages", { count: folder.total_messages_on_server })}</p>
             )}
             {folder.messages_matching_filter !== undefined && (
-              <p>Matching filter: {folder.messages_matching_filter} messages</p>
+              <p>{t("settingsPage.emailSync.matchingFilter", { count: folder.messages_matching_filter })}</p>
             )}
             {folder.messages_already_synced !== undefined && (
-              <p>Already synced: {folder.messages_already_synced} messages</p>
+              <p>{t("settingsPage.emailSync.alreadySynced", { count: folder.messages_already_synced })}</p>
             )}
             {folder.search_filter && (
               <p className="text-xs font-mono bg-muted px-1 rounded">
-                Filter: {folder.search_filter}
+                {t("settingsPage.emailSync.filter")}: {folder.search_filter}
               </p>
             )}
           </div>
@@ -80,6 +81,7 @@ function FolderCard({ folder, isSkipped }: { folder: EmailSyncFolderDebug; isSki
 }
 
 export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
+  const t = useTranslations("social");
   const { toast } = useToast();
   const { data: debugInfo, isLoading, refetch, isRefetching } = useEmailSyncDebug(connectionId);
   const syncMutation = useEmailSync();
@@ -95,14 +97,14 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
     syncMutation.mutate(connectionId, {
       onSuccess: (data) => {
         toast({
-          title: "Sync completed",
-          description: `Synced ${data.new_messages} new messages`,
+          title: t("settingsPage.emailSync.syncCompleted"),
+          description: t("settingsPage.emailSync.syncedMessages", { count: data.new_messages }),
         });
         refetch();
       },
       onError: (error: Error) => {
         toast({
-          title: "Sync failed",
+          title: t("settingsPage.emailSync.syncFailed"),
           description: error.message,
           variant: "destructive",
         });
@@ -114,8 +116,8 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
     const days = parseInt(syncDaysBack, 10);
     if (isNaN(days) || days < 0) {
       toast({
-        title: "Invalid value",
-        description: "Please enter 0 or a positive number",
+        title: t("settingsPage.emailSync.invalidValue"),
+        description: t("settingsPage.emailSync.invalidValueDescription"),
         variant: "destructive",
       });
       return;
@@ -124,15 +126,15 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
     updateSettings.mutate({ syncDaysBack: days, connectionId }, {
       onSuccess: (data) => {
         toast({
-          title: "Settings updated",
-          description: `Sync days set to ${data.meaning}`,
+          title: t("settingsPage.emailSync.settingsUpdated"),
+          description: t("settingsPage.emailSync.syncDaysSet", { meaning: data.meaning }),
         });
         setSyncDaysBack("");
         refetch();
       },
       onError: (error: Error) => {
         toast({
-          title: "Update failed",
+          title: t("settingsPage.emailSync.updateFailed"),
           description: error.message,
           variant: "destructive",
         });
@@ -146,7 +148,7 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Email Sync Debug
+            {t("settingsPage.emailSync.title")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-8">
@@ -162,11 +164,11 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Email Sync Debug
+            {t("settingsPage.emailSync.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">No email connection configured</p>
+          <p className="text-muted-foreground">{t("settingsPage.email.noConnections")}</p>
         </CardContent>
       </Card>
     );
@@ -179,10 +181,10 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
           <div>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Email Sync Debug
+              {t("settingsPage.emailSync.title")}
             </CardTitle>
             <CardDescription>
-              Debug information for email synchronization
+              {t("settingsPage.emailSync.description")}
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -208,7 +210,7 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
               ) : (
                 <RefreshCw className="h-4 w-4 mr-2" />
               )}
-              Sync Now
+              {t("settingsPage.emailSync.syncNow")}
             </Button>
           </div>
         </div>
@@ -218,28 +220,28 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
         <div className="space-y-3">
           <h4 className="font-medium flex items-center gap-2">
             <Database className="h-4 w-4" />
-            Connection
+            {t("settingsPage.emailSync.connection")}
           </h4>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">Email:</span>
+              <span className="text-muted-foreground">{t("settingsPage.emailSync.emailLabel")}:</span>
               <span className="ml-2 font-medium">{debugInfo.connection.email}</span>
             </div>
             <div>
-              <span className="text-muted-foreground">Server:</span>
+              <span className="text-muted-foreground">{t("settingsPage.emailSync.server")}:</span>
               <span className="ml-2 font-medium">{debugInfo.connection.imap_server}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Sync range:</span>
+              <span className="text-muted-foreground">{t("settingsPage.emailSync.syncRange")}:</span>
               <Badge variant="outline">{debugInfo.connection.sync_days_back_meaning}</Badge>
             </div>
             <div>
-              <span className="text-muted-foreground">Last sync:</span>
+              <span className="text-muted-foreground">{t("settingsPage.emailSync.lastSync")}:</span>
               <span className="ml-2">
                 {debugInfo.connection.last_sync_at
                   ? new Date(debugInfo.connection.last_sync_at).toLocaleString()
-                  : "Never"}
+                  : t("settingsPage.emailSync.never")}
               </span>
             </div>
           </div>
@@ -257,11 +259,11 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
         <div className="space-y-3">
           <h4 className="font-medium flex items-center gap-2">
             <Settings className="h-4 w-4" />
-            Sync Settings
+            {t("settingsPage.emailSync.syncSettings")}
           </h4>
           <div className="flex items-end gap-3">
             <div className="space-y-2 flex-1">
-              <Label htmlFor="sync-days">Days to sync (0 = all history)</Label>
+              <Label htmlFor="sync-days">{t("settingsPage.emailSync.daysToSync")}</Label>
               <Input
                 id="sync-days"
                 type="number"
@@ -278,11 +280,11 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
               {updateSettings.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               )}
-              Update
+              {t("settingsPage.emailSync.update")}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Set to 0 to sync all email history. Current: {debugInfo.connection.sync_days_back_meaning}
+            {t("settingsPage.emailSync.syncHint", { current: debugInfo.connection.sync_days_back_meaning })}
           </p>
         </div>
 
@@ -290,23 +292,23 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
 
         {/* Summary */}
         <div className="space-y-3">
-          <h4 className="font-medium">Summary</h4>
+          <h4 className="font-medium">{t("settingsPage.emailSync.summary")}</h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-3 rounded-lg bg-muted">
               <div className="text-2xl font-bold">{debugInfo.summary.total_folders_on_server}</div>
-              <div className="text-xs text-muted-foreground">Total Folders</div>
+              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.totalFolders")}</div>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted">
               <div className="text-2xl font-bold text-blue-600">{debugInfo.summary.folders_being_synced}</div>
-              <div className="text-xs text-muted-foreground">Syncing</div>
+              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.syncing")}</div>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted">
               <div className="text-2xl font-bold text-orange-600">{debugInfo.summary.folders_skipped}</div>
-              <div className="text-xs text-muted-foreground">Skipped</div>
+              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.skipped")}</div>
             </div>
             <div className="text-center p-3 rounded-lg bg-muted">
               <div className="text-2xl font-bold text-green-600">{debugInfo.summary.total_messages_in_db}</div>
-              <div className="text-xs text-muted-foreground">In Database</div>
+              <div className="text-xs text-muted-foreground">{t("settingsPage.emailSync.inDatabase")}</div>
             </div>
           </div>
         </div>
@@ -319,13 +321,13 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
             <AccordionTrigger>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Synced Folders ({debugInfo.folders.length})
+                {t("settingsPage.emailSync.syncedFolders", { count: debugInfo.folders.length })}
               </div>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-2 pt-2">
                 {debugInfo.folders.map((folder) => (
-                  <FolderCard key={folder.name} folder={folder} />
+                  <FolderCard key={folder.name} folder={folder} t={t} />
                 ))}
               </div>
             </AccordionContent>
@@ -335,13 +337,13 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
             <AccordionTrigger>
               <div className="flex items-center gap-2">
                 <FolderX className="h-4 w-4 text-muted-foreground" />
-                Skipped Folders ({debugInfo.skipped_folders.length})
+                {t("settingsPage.emailSync.skippedFolders", { count: debugInfo.skipped_folders.length })}
               </div>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-2 pt-2">
                 {debugInfo.skipped_folders.map((folder) => (
-                  <FolderCard key={folder.name} folder={folder} isSkipped />
+                  <FolderCard key={folder.name} folder={folder} isSkipped t={t} />
                 ))}
               </div>
             </AccordionContent>
@@ -355,7 +357,7 @@ export function EmailSyncDebug({ connectionId }: { connectionId?: number }) {
             <div className="space-y-2">
               <h4 className="font-medium text-destructive flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
-                Errors
+                {t("settingsPage.emailSync.errors")}
               </h4>
               <ul className="space-y-1 text-sm text-destructive">
                 {debugInfo.errors.map((error, i) => (
