@@ -87,8 +87,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       newParams.delete('view');
     }
     const queryString = newParams.toString();
-    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    router.replace(newUrl, { scroll: false });
+    // Navigate to base route (without chat ID) to clear selected chat
+    const base = pathname.startsWith('/email/messages') ? '/email/messages'
+      : pathname.startsWith('/social/messages') ? '/social/messages'
+      : '/messages';
+    const newUrl = queryString ? `${base}?${queryString}` : base;
+    router.push(newUrl, { scroll: false });
   }, [searchParams, pathname, router]);
 
   // Base route without chat ID (e.g., /email/messages, /social/messages, /messages)
