@@ -83,6 +83,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     const newParams = new URLSearchParams(searchParams.toString());
     if (show) {
       newParams.set('view', 'history');
+      // History doesn't have assignment tabs, reset to all chats
+      newParams.delete('tab');
     } else {
       newParams.delete('view');
     }
