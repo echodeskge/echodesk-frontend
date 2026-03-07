@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FolderOpen, ChevronDown, Plus, Mail } from "lucide-react"
+import { FolderOpen, ChevronDown, Plus, Mail, History, ArrowLeft } from "lucide-react"
 import { CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,6 +23,8 @@ export function ChatSidebarHeader() {
     setSelectedEmailFolder,
     selectedEmailConnectionId,
     setSelectedEmailConnectionId,
+    showArchived,
+    setShowArchived,
   } = useChatContext()
   const isEmailOnly = platforms.length === 1 && platforms[0] === 'email'
   const [composeOpen, setComposeOpen] = useState(false)
@@ -70,6 +72,25 @@ export function ChatSidebarHeader() {
         )}
         <ChatSidebarActionButtons />
       </div>
+
+      {/* History mode indicator */}
+      {showArchived && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-between bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+          onClick={() => setShowArchived(false)}
+        >
+          <span className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+            <History className="h-4 w-4" />
+            Viewing History
+          </span>
+          <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+            <ArrowLeft className="h-3 w-3" />
+            Back
+          </span>
+        </Button>
+      )}
 
       {/* Email account switcher (only show when multiple accounts) */}
       {isEmailOnly && hasMultipleAccounts && (

@@ -76,7 +76,20 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
   const [currentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showArchived, setShowArchived] = useState(false);
+
+  // Read showArchived from URL search params (persists across navigation)
+  const showArchived = searchParams.get('view') === 'history';
+  const setShowArchived = useCallback((show: boolean) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    if (show) {
+      newParams.set('view', 'history');
+    } else {
+      newParams.delete('view');
+    }
+    const queryString = newParams.toString();
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    router.replace(newUrl, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   // Base route without chat ID (e.g., /email/messages, /social/messages, /messages)
   const getBaseRoute = useCallback(() => {
