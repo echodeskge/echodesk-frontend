@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRatingStatistics, useUserChatSessions, RatingUserStats, ChatSession } from "@/hooks/api/useSocial";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,7 @@ function formatDateTime(dateString: string | null): string {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   });
 }
 
@@ -79,6 +81,7 @@ function formatDuration(start: string | null, end: string | null): string {
 export default function RatingStatisticsPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const t = useTranslations("ratingStatistics");
   const isSuperAdmin = user?.is_staff === true;
 
   // Default date range: this month
@@ -198,7 +201,7 @@ export default function RatingStatisticsPage() {
               key={rating}
               className={`${colors[rating]}`}
               style={{ width: `${percentage}%` }}
-              title={`${rating} stars: ${count} (${percentage.toFixed(1)}%)`}
+              title={`${rating} ${t("stars")}: ${count} (${percentage.toFixed(1)}%)`}
             />
           );
         })}
@@ -208,7 +211,7 @@ export default function RatingStatisticsPage() {
 
   const renderRatingBadge = (rating: number | null) => {
     if (rating === null) {
-      return <Badge variant="secondary">No rating</Badge>;
+      return <Badge variant="secondary">{t("noRating")}</Badge>;
     }
     const colors = {
       5: 'bg-green-100 text-green-800',
@@ -231,7 +234,7 @@ export default function RatingStatisticsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
-              Only superadmins can view rating statistics.
+              {t("onlySuperadmins")}
             </div>
           </CardContent>
         </Card>
@@ -245,7 +248,7 @@ export default function RatingStatisticsPage() {
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
             <Spinner className="h-6 w-6" />
-            <span className="text-muted-foreground">Loading statistics...</span>
+            <span className="text-muted-foreground">{t("loadingStatistics")}</span>
           </div>
         </div>
       </div>
@@ -258,7 +261,7 @@ export default function RatingStatisticsPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
-              Failed to load rating statistics. Please try again.
+              {t("loadError")}
             </div>
           </CardContent>
         </Card>
@@ -273,10 +276,10 @@ export default function RatingStatisticsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-6 w-6 text-yellow-500" />
-            Chat Rating Statistics
+            {t("title")}
           </CardTitle>
           <CardDescription>
-            Customer satisfaction ratings for chat sessions. Click on a user to view their chat history.
+            {t("description")}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -284,13 +287,13 @@ export default function RatingStatisticsPage() {
       {/* Date Range Filter */}
       <Card className="mb-6 shadow-none border border-gray-200">
         <CardContent className="pt-6">
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-muted-foreground" />
-              <span className="text-sm font-medium">Date Range:</span>
+              <span className="text-sm font-medium">{t("dateRange")}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="start-date" className="sr-only">Start Date</Label>
+              <Label htmlFor="start-date" className="sr-only">{t("sessionStart")}</Label>
               <Input
                 id="start-date"
                 type="date"
@@ -298,8 +301,8 @@ export default function RatingStatisticsPage() {
                 onChange={(e) => setStartDate(e.target.value)}
                 className="w-40"
               />
-              <span className="text-muted-foreground">to</span>
-              <Label htmlFor="end-date" className="sr-only">End Date</Label>
+              <span className="text-muted-foreground">{t("to")}</span>
+              <Label htmlFor="end-date" className="sr-only">{t("sessionEnd")}</Label>
               <Input
                 id="end-date"
                 type="date"
@@ -319,7 +322,7 @@ export default function RatingStatisticsPage() {
                   setEndDate(today.toISOString().split('T')[0]);
                 }}
               >
-                This Month
+                {t("thisMonth")}
               </Button>
               <Button
                 variant="outline"
@@ -332,7 +335,7 @@ export default function RatingStatisticsPage() {
                   setEndDate(lastOfLastMonth.toISOString().split('T')[0]);
                 }}
               >
-                Last Month
+                {t("lastMonth")}
               </Button>
             </div>
           </div>
@@ -348,7 +351,7 @@ export default function RatingStatisticsPage() {
               {data?.users?.length || 0}
             </div>
             <div className="text-sm text-muted-foreground">
-              Rated Users
+              {t("ratedUsers")}
             </div>
           </CardContent>
         </Card>
@@ -360,7 +363,7 @@ export default function RatingStatisticsPage() {
               {data?.overall?.total_ratings || 0}
             </div>
             <div className="text-sm text-muted-foreground">
-              Total Ratings
+              {t("totalRatings")}
             </div>
           </CardContent>
         </Card>
@@ -372,7 +375,7 @@ export default function RatingStatisticsPage() {
               {data?.overall?.average_rating?.toFixed(1) || '0.0'}
             </div>
             <div className="text-sm text-muted-foreground">
-              Average Rating
+              {t("averageRating")}
             </div>
           </CardContent>
         </Card>
@@ -386,7 +389,7 @@ export default function RatingStatisticsPage() {
                 : '0.0'}
             </div>
             <div className="text-sm text-muted-foreground">
-              Top Rating
+              {t("topRating")}
             </div>
           </CardContent>
         </Card>
@@ -403,7 +406,7 @@ export default function RatingStatisticsPage() {
                   onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center gap-2">
-                    User {getSortIcon('name')}
+                    {t("user")} {getSortIcon('name')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -411,7 +414,7 @@ export default function RatingStatisticsPage() {
                   onClick={() => handleSort('total_ratings')}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    Total Ratings {getSortIcon('total_ratings')}
+                    {t("totalRatings")} {getSortIcon('total_ratings')}
                   </div>
                 </TableHead>
                 <TableHead
@@ -419,11 +422,11 @@ export default function RatingStatisticsPage() {
                   onClick={() => handleSort('average_rating')}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    Average {getSortIcon('average_rating')}
+                    {t("average")} {getSortIcon('average_rating')}
                   </div>
                 </TableHead>
-                <TableHead className="text-center">Rating Breakdown</TableHead>
-                <TableHead className="text-center">Distribution</TableHead>
+                <TableHead className="text-center">{t("ratingBreakdown")}</TableHead>
+                <TableHead className="text-center">{t("distribution")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="[&_tr:last-child]:border-0 [&_tr]:border-b [&_tr]:border-gray-100">
@@ -454,7 +457,7 @@ export default function RatingStatisticsPage() {
                         <div
                           key={rating}
                           className="flex flex-col items-center px-1"
-                          title={`${rating} star ratings`}
+                          title={`${rating} ${t("star")}`}
                         >
                           <span className="font-medium">{userStats.rating_breakdown[rating]}</span>
                           <span className="text-muted-foreground">{rating}★</span>
@@ -472,7 +475,7 @@ export default function RatingStatisticsPage() {
 
           {sortedUsers.length === 0 && (
             <div className="text-center py-10 text-muted-foreground">
-              No rating data available for the selected period.
+              {t("noData")}
             </div>
           )}
         </CardContent>
@@ -482,26 +485,26 @@ export default function RatingStatisticsPage() {
       <Card className="mt-4 shadow-none border border-gray-200">
         <CardContent className="pt-6">
           <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="font-medium">Distribution Legend:</span>
+            <span className="font-medium">{t("distributionLegend")}</span>
             <div className="flex items-center gap-1">
               <div className="h-3 w-3 rounded bg-green-500" />
-              <span>5 stars</span>
+              <span>5 {t("stars")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="h-3 w-3 rounded bg-green-400" />
-              <span>4 stars</span>
+              <span>4 {t("stars")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="h-3 w-3 rounded bg-yellow-400" />
-              <span>3 stars</span>
+              <span>3 {t("stars")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="h-3 w-3 rounded bg-orange-400" />
-              <span>2 stars</span>
+              <span>2 {t("stars")}</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="h-3 w-3 rounded bg-red-400" />
-              <span>1 star</span>
+              <span>1 {t("star")}</span>
             </div>
           </div>
         </CardContent>
@@ -509,17 +512,17 @@ export default function RatingStatisticsPage() {
 
       {/* User Chat Sessions Modal */}
       <Dialog open={selectedUserId !== null} onOpenChange={(open) => !open && setSelectedUserId(null)}>
-        <DialogContent className="sm:max-w-[90vw] max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-[100vw] sm:max-w-[90vw] h-[100dvh] sm:h-[80vh] max-h-[100dvh] sm:max-h-[80vh] overflow-hidden flex flex-col rounded-none sm:rounded-lg border-0 sm:border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              Chat Sessions - {sessionsData?.user?.name || 'Loading...'}
+              {t("chatSessions")} - {sessionsData?.user?.name || t("loading")}
             </DialogTitle>
             <DialogDescription>
               {sessionsData ? (
-                <>Showing {sessionsData.total_sessions} chat sessions from {sessionsData.start_date} to {sessionsData.end_date}. Click on a session to open the conversation.</>
+                <>{t("showingSessions", { count: sessionsData.total_sessions, start: sessionsData.start_date, end: sessionsData.end_date })}</>
               ) : (
-                'Loading chat sessions...'
+                t("loadingSessions")
               )}
             </DialogDescription>
           </DialogHeader>
@@ -528,67 +531,111 @@ export default function RatingStatisticsPage() {
             {sessionsLoading ? (
               <div className="flex items-center justify-center h-32">
                 <Spinner className="h-6 w-6" />
-                <span className="ml-2 text-muted-foreground">Loading sessions...</span>
+                <span className="ml-2 text-muted-foreground">{t("loadingSessions")}</span>
               </div>
             ) : sessionsData?.sessions && sessionsData.sessions.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Platform</TableHead>
-                    <TableHead>Rating</TableHead>
-                    <TableHead>Session Start</TableHead>
-                    <TableHead>Session End</TableHead>
-                    <TableHead>Duration</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Desktop: Table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("customer")}</TableHead>
+                        <TableHead>{t("platform")}</TableHead>
+                        <TableHead>{t("rating")}</TableHead>
+                        <TableHead>{t("sessionStart")}</TableHead>
+                        <TableHead>{t("sessionEnd")}</TableHead>
+                        <TableHead>{t("duration")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sessionsData.sessions.map((session: ChatSession) => (
+                        <TableRow
+                          key={session.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigateToChat(session)}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium">{session.customer_name}</div>
+                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={platformColors[session.platform]}>
+                              {platformLabels[session.platform]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {renderRatingBadge(session.rating)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {formatDateTime(session.session_started_at)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {formatDateTime(session.session_ended_at)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-sm">
+                              <Clock className="h-3 w-3" />
+                              {formatDuration(session.session_started_at, session.session_ended_at)}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile: Cards */}
+                <div className="grid gap-3 md:hidden">
                   {sessionsData.sessions.map((session: ChatSession) => (
-                    <TableRow
+                    <Card
                       key={session.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className="cursor-pointer hover:bg-muted/50 transition-colors shadow-none"
                       onClick={() => navigateToChat(session)}
                     >
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium">{session.customer_name}</div>
-                          <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium truncate">{session.customer_name}</span>
+                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={platformColors[session.platform]}>
-                          {platformLabels[session.platform]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {renderRatingBadge(session.rating)}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatDateTime(session.session_started_at)}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatDateTime(session.session_ended_at)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Clock className="h-3 w-3" />
-                          {formatDuration(session.session_started_at, session.session_ended_at)}
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <Badge className={platformColors[session.platform]}>
+                            {platformLabels[session.platform]}
+                          </Badge>
+                          {renderRatingBadge(session.rating)}
                         </div>
-                      </TableCell>
-                    </TableRow>
+                        <div className="grid gap-1 text-sm text-muted-foreground">
+                          <div>
+                            <span className="font-medium text-foreground">{t("sessionStart")}:</span>{" "}
+                            {formatDateTime(session.session_started_at)}
+                          </div>
+                          <div>
+                            <span className="font-medium text-foreground">{t("sessionEnd")}:</span>{" "}
+                            {formatDateTime(session.session_ended_at)}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span className="font-medium text-foreground">{t("duration")}:</span>{" "}
+                            {formatDuration(session.session_started_at, session.session_ended_at)}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              </>
             ) : (
               <div className="text-center py-10 text-muted-foreground">
-                No chat sessions found for this user in the selected period.
+                {t("noSessions")}
               </div>
             )}
           </div>
 
           <div className="flex justify-end pt-4 border-t">
             <Button variant="outline" onClick={() => setSelectedUserId(null)}>
-              Close
+              {t("close")}
             </Button>
           </div>
         </DialogContent>
