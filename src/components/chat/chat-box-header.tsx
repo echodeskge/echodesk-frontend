@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useCallback } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Square } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
@@ -10,6 +11,8 @@ import {
   useEndSession,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
+import { useToast } from "@/hooks/use-toast"
+import { useTranslations } from "next-intl"
 
 import { CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -61,7 +64,19 @@ function parseChatId(chatId: string, platform?: string) {
 }
 
 export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: ChatBoxHeaderProps) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { user } = useAuth()
+  const { toast } = useToast()
+  const t = useTranslations("chat")
+
+  // Determine base route from current pathname
+  const getBaseRoute = useCallback(() => {
+    if (pathname.startsWith('/email/messages')) return '/email/messages'
+    if (pathname.startsWith('/social/messages')) return '/social/messages'
+    return '/messages'
+  }, [pathname])
 
   // Parse chat ID for assignment operations
   const chatInfo = useMemo(() => {
@@ -93,11 +108,24 @@ export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: Chat
   // Handle end session
   const handleEndSession = () => {
     if (!chatInfo) return
-    endSession.mutate({
-      platform: chatInfo.platform,
-      conversation_id: chatInfo.conversationId,
-      account_id: chatInfo.accountId,
-    })
+    endSession.mutate(
+      {
+        platform: chatInfo.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("sessionEnded"),
+            description: t("movedToHistory"),
+          })
+          // Clear chat ID from URL but preserve query params (e.g. ?tab=assigned)
+          const params = searchParams.toString()
+          router.push(getBaseRoute() + (params ? `?${params}` : ''))
+        },
+      }
+    )
   }
 
   return (

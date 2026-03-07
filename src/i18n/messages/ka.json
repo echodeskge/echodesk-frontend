@@ -423,7 +423,9 @@
     "moveToHistory": "ისტორიაში გადატანა",
     "restoreFromHistory": "ისტორიიდან აღდგენა",
     "noArchivedChats": "არქივში ჩატები არ არის",
-    "archivedChatsEmpty": "დაარქივებული საუბრები აქ გამოჩნდება"
+    "archivedChatsEmpty": "დაარქივებული საუბრები აქ გამოჩნდება",
+    "sessionEnded": "სესია დასრულდა",
+    "movedToHistory": "გადატანილია ისტორიაში"
   },
   "settings": {
     "title": "პარამეტრები",

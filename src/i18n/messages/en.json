@@ -421,7 +421,9 @@
     "moveToHistory": "Move to History",
     "restoreFromHistory": "Restore from History",
     "noArchivedChats": "No archived chats",
-    "archivedChatsEmpty": "Conversations you archive will appear here"
+    "archivedChatsEmpty": "Conversations you archive will appear here",
+    "sessionEnded": "Session ended",
+    "movedToHistory": "Moved to history"
   },
   "settings": {
     "title": "Settings",
