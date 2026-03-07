@@ -291,8 +291,9 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Session ended",
             description: "Conversation moved to history",
           })
-          setAssignmentTab('all')
-          router.push(getBaseRoute())
+          // Navigate to base route without any params to clear chat and reset to all chats tab
+          // Use window.location to avoid race with query invalidation re-renders
+          window.location.href = getBaseRoute()
         },
       }
     )
