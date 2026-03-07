@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useParams } from "next/navigation"
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
 import { UserPlus, Clock } from "lucide-react"
 
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
@@ -59,9 +59,12 @@ function parseChatId(chatId: string, platform?: string) {
 }
 
 export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookProps) {
-  const { chatState, setAssignmentTab } = useChatContext()
+  const { chatState, setAssignmentTab, showArchived } = useChatContext()
   const { user } = useAuth()
   const params = useParams()
+  const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   // Get chat from URL params (same as ChatBoxFacebook)
   const chatIdParam = params.id?.[0] as string | undefined
@@ -124,7 +127,19 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
       },
       {
         onSuccess: () => {
-          setAssignmentTab('assigned')
+          if (showArchived) {
+            // Navigate to the same chat with ?tab=assigned, without ?view=history
+            const base = pathname.startsWith('/email/messages') ? '/email/messages'
+              : pathname.startsWith('/social/messages') ? '/social/messages'
+              : '/messages';
+            const chatPath = chatIdParam ? `${base}/${chatIdParam}` : base;
+            const newParams = new URLSearchParams(searchParams.toString());
+            newParams.delete('view');
+            newParams.set('tab', 'assigned');
+            router.push(`${chatPath}?${newParams.toString()}`, { scroll: false });
+          } else {
+            setAssignmentTab('assigned')
+          }
         },
       }
     )
