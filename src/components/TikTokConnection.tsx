@@ -10,16 +10,14 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import {
   Check,
   X,
   RefreshCw,
   AlertCircle,
   Clock,
-  Info,
+  Store,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -53,12 +51,12 @@ export function TikTokConnection() {
     const message = urlParams.get('message');
 
     if (tiktokStatus === 'connected') {
-      toast.success(message || 'TikTok account connected successfully!');
+      toast.success(message || 'TikTok Shop account connected successfully!');
       refetch();
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (tiktokStatus === 'error') {
-      toast.error(message || 'Failed to connect TikTok account');
+      toast.error(message || 'Failed to connect TikTok Shop account');
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }
@@ -73,22 +71,22 @@ export function TikTokConnection() {
         throw new Error('No OAuth URL received');
       }
     } catch (error: any) {
-      console.error('Failed to start TikTok OAuth:', error);
-      toast.error(error.response?.data?.error || error.message || 'Failed to start TikTok connection');
+      console.error('Failed to start TikTok Shop OAuth:', error);
+      toast.error(error.response?.data?.error || error.message || 'Failed to start TikTok Shop connection');
     }
   };
 
-  const handleDisconnect = async (accountId?: number) => {
-    if (!confirm('Are you sure you want to disconnect this TikTok account?')) {
+  const handleDisconnect = async () => {
+    if (!confirm('Are you sure you want to disconnect this TikTok Shop account?')) {
       return;
     }
 
     try {
-      await disconnectTikTok.mutateAsync(accountId);
-      toast.success('TikTok account disconnected successfully');
+      await disconnectTikTok.mutateAsync();
+      toast.success('TikTok Shop account disconnected successfully');
     } catch (error: any) {
-      console.error('Failed to disconnect TikTok:', error);
-      toast.error(error.response?.data?.error || 'Failed to disconnect TikTok account');
+      console.error('Failed to disconnect TikTok Shop:', error);
+      toast.error(error.response?.data?.error || 'Failed to disconnect TikTok Shop account');
     }
   };
 
@@ -103,6 +101,7 @@ export function TikTokConnection() {
   };
 
   const isConnected = status?.connected || false;
+  const account = status?.account;
 
   return (
     <Card
@@ -118,12 +117,12 @@ export function TikTokConnection() {
               <TikTokIcon className="h-6 w-6" />
             </div>
             <div>
-              <CardTitle className="text-xl">TikTok</CardTitle>
+              <CardTitle className="text-xl">TikTok Shop</CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
-                {isConnected && status ? (
+                {isConnected && account ? (
                   <>
                     <Check className="h-4 w-4 text-green-600" />
-                    <span>{status.accounts_count} account(s) connected</span>
+                    <span>Connected</span>
                   </>
                 ) : (
                   <>
@@ -147,16 +146,6 @@ export function TikTokConnection() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Messaging Info Alert */}
-        {isConnected && status && !status.messaging_available && (
-          <Alert className="bg-amber-50 border-amber-200">
-            <Info className="h-4 w-4 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <strong>Note:</strong> {status.messaging_note || 'Make sure your TikTok account is upgraded to a Business Account for messaging features.'}
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="flex flex-col sm:flex-row gap-3">
           {!isConnected ? (
             <Button
@@ -172,13 +161,13 @@ export function TikTokConnection() {
               ) : (
                 <>
                   <TikTokIcon className="mr-2 h-4 w-4" />
-                  Connect TikTok
+                  Connect TikTok Shop
                 </>
               )}
             </Button>
           ) : (
             <Button
-              onClick={() => handleDisconnect()}
+              onClick={handleDisconnect}
               disabled={loading || disconnectTikTok.isPending}
               variant="destructive"
               className="w-full sm:w-auto"
@@ -191,7 +180,7 @@ export function TikTokConnection() {
               ) : (
                 <>
                   <X className="mr-2 h-4 w-4" />
-                  Disconnect All
+                  Disconnect
                 </>
               )}
             </Button>
@@ -204,58 +193,53 @@ export function TikTokConnection() {
           </Button>
         </div>
 
-        {/* Connected Accounts List */}
-        {status && status.accounts && status.accounts.length > 0 && (
+        {/* Connected Account Details */}
+        {isConnected && account && (
           <div className="space-y-3 pt-4">
-            <h4 className="font-semibold text-sm">Connected Accounts</h4>
-            {status.accounts.map((account, index) => (
-              <div key={account.id}>
-                {index > 0 && <Separator className="my-3" />}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      {account.avatar_url ? (
-                        <AvatarImage src={account.avatar_url} alt={`@${account.username}`} />
-                      ) : null}
-                      <AvatarFallback className="bg-black text-white">
-                        <TikTokIcon className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">
-                        {account.display_name || `@${account.username}` || 'TikTok User'}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        {account.username && <span>@{account.username}</span>}
-                        <span className="hidden sm:inline">•</span>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{formatDate(account.created_at)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-                    <Badge
-                      variant={account.is_active ? 'default' : 'secondary'}
-                      className={account.is_active ? 'bg-black' : ''}
-                    >
-                      {account.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                    {account.is_active && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDisconnect(account.id)}
-                      >
-                        Disconnect
-                      </Button>
+            <h4 className="font-semibold text-sm">Connected Shop</h4>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white">
+                  <Store className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {account.seller_name || 'TikTok Shop Seller'}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    {account.seller_base_region && (
+                      <Badge variant="outline" className="text-xs">
+                        {account.seller_base_region}
+                      </Badge>
                     )}
+                    <span className="hidden sm:inline">•</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatDate(account.created_at)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                <Badge
+                  variant={account.is_active ? 'default' : 'secondary'}
+                  className={account.is_active ? 'bg-black' : ''}
+                >
+                  {account.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Token expiration warning */}
+        {isConnected && status?.is_token_expired && (
+          <Alert className="bg-amber-50 border-amber-200">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Token expired.</strong> Please reconnect your TikTok Shop account to continue receiving messages.
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Setup Instructions */}
@@ -263,12 +247,8 @@ export function TikTokConnection() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Requirements:</strong> You need a TikTok Business Account (not personal or creator) to use messaging.
-              Go to TikTok settings and switch to Business Account before connecting.
-              <br />
-              <span className="text-xs text-muted-foreground mt-1 block">
-                Note: Not available in US, UK, Switzerland, or European Economic Area.
-              </span>
+              <strong>Requirements:</strong> You need a TikTok Shop seller account to connect.
+              Your shop must be authorized through the TikTok Shop Partner Center.
             </AlertDescription>
           </Alert>
         )}

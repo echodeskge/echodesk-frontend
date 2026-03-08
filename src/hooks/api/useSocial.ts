@@ -1636,20 +1636,24 @@ export function useDeleteEmailDraft() {
 export interface TikTokAccount {
   id: number;
   open_id: string;
-  username: string;
-  display_name: string;
-  avatar_url: string | null;
+  seller_name: string;
+  seller_base_region: string;
+  shop_id: string;
+  shop_cipher: string;
+  user_type: number;
+  scope: string;
   is_active: boolean;
+  token_expires_at: string;
+  refresh_token_expires_at: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface TikTokStatus {
   connected: boolean;
-  accounts_count: number;
-  accounts: TikTokAccount[];
-  messaging_available: boolean;
-  messaging_note: string;
+  account: TikTokAccount | null;
+  token_expires_at: string | null;
+  is_token_expired: boolean;
 }
 
 // TikTok Status Query
