@@ -268,6 +268,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "social/connections": "socialConnections",
     "social/templates": "socialTemplates",
     "social/settings": "socialSettings",
+    "social/auto-posting": "socialAutoPosting",
     "social/rating-statistics": "socialRatingStatistics",
     settings: "settings",
     "settings/general": "settingsGeneral",
