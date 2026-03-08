@@ -858,6 +858,7 @@ export interface FacebookMessage {
   is_echo: boolean;
   sent_by: number;
   sent_by_name: string;
+  recipient_name: string;
 }
 
 export interface FacebookMessageAttachmentTypeEnum {
@@ -1106,6 +1107,7 @@ export interface InstagramMessage {
   is_echo: boolean;
   sent_by: number;
   sent_by_name: string;
+  recipient_name: string;
 }
 
 export interface InstagramMessageAttachmentTypeEnum {

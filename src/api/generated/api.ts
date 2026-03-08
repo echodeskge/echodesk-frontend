@@ -2021,6 +2021,16 @@ export async function cronEmailSyncCreate(): Promise<any> {
   return response.data;
 }
 
+export async function cronGenerateDailyPostsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/generate-daily-posts/`);
+  return response.data;
+}
+
+export async function cronGenerateDailyPostsCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/generate-daily-posts/`);
+  return response.data;
+}
+
 export async function cronHealthRetrieve(): Promise<any> {
   const response = await axios.get(`/api/cron/health/`);
   return response.data;
@@ -2043,6 +2053,16 @@ export async function cronProcessTrialExpirationsRetrieve(): Promise<any> {
 
 export async function cronProcessTrialExpirationsCreate(): Promise<any> {
   const response = await axios.post(`/api/cron/process-trial-expirations/`);
+  return response.data;
+}
+
+export async function cronPublishApprovedPostsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/cron/publish-approved-posts/`);
+  return response.data;
+}
+
+export async function cronPublishApprovedPostsCreate(): Promise<any> {
+  const response = await axios.post(`/api/cron/publish-approved-posts/`);
   return response.data;
 }
 
@@ -5770,6 +5790,61 @@ export async function socialAssignmentsUnassignCreate(): Promise<any> {
   return response.data;
 }
 
+export async function socialAutoPostRetrieve(id: number): Promise<any> {
+  const response = await axios.get(`/api/social/auto-post/${id}/`);
+  return response.data;
+}
+
+export async function socialAutoPostApproveCreate(id: number): Promise<any> {
+  const response = await axios.post(`/api/social/auto-post/${id}/approve/`);
+  return response.data;
+}
+
+export async function socialAutoPostEditUpdate(id: number): Promise<any> {
+  const response = await axios.put(`/api/social/auto-post/${id}/edit/`);
+  return response.data;
+}
+
+export async function socialAutoPostPublishCreate(id: number): Promise<any> {
+  const response = await axios.post(`/api/social/auto-post/${id}/publish/`);
+  return response.data;
+}
+
+export async function socialAutoPostRejectCreate(id: number): Promise<any> {
+  const response = await axios.post(`/api/social/auto-post/${id}/reject/`);
+  return response.data;
+}
+
+export async function socialAutoPostGenerateCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/auto-post/generate/`);
+  return response.data;
+}
+
+export async function socialAutoPostListRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/auto-post/list/`);
+  return response.data;
+}
+
+export async function socialAutoPostPublishingStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/auto-post/publishing-status/`);
+  return response.data;
+}
+
+export async function socialAutoPostSettingsRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/auto-post/settings/`);
+  return response.data;
+}
+
+export async function socialAutoPostSettingsUpdate(): Promise<any> {
+  const response = await axios.put(`/api/social/auto-post/settings/`);
+  return response.data;
+}
+
+export async function socialClearHistoryCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/clear-history/`);
+  return response.data;
+}
+
 export async function socialClientsList(
   ordering?: string,
   page?: number,
@@ -6306,6 +6381,13 @@ export async function socialFacebookOauthStartRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function socialFacebookOauthStartPublishingRetrieve(): Promise<any> {
+  const response = await axios.get(
+    `/api/social/facebook/oauth/start-publishing/`,
+  );
+  return response.data;
+}
+
 export async function socialFacebookPagesDisconnectCreate(
   pageId: string,
 ): Promise<any> {
@@ -6470,6 +6552,11 @@ export async function socialMarkReadCreate(): Promise<any> {
 
 export async function socialMarkUnreadCreate(): Promise<any> {
   const response = await axios.post(`/api/social/mark-unread/`);
+  return response.data;
+}
+
+export async function socialMessagingWindowRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/messaging-window/`);
   return response.data;
 }
 

@@ -270,6 +270,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         isPremium: true,
       },
       {
+        id: "social/auto-posting",
+        icon: "Sparkles",
+        requiredFeatureKey: "social_integrations",
+        isPremium: true,
+      },
+      {
         id: "social/rating-statistics",
         icon: "BarChart3",
         requiredFeatureKey: "social_integrations",

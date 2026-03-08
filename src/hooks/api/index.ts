@@ -21,3 +21,6 @@ export * from './useEcommerce';
 
 // Security hooks
 export * from './useSecurity';
+
+// Auto-posting hooks
+export * from './useAutoPost';
