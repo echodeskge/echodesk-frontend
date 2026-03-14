@@ -82,7 +82,7 @@ export function TikTokConnection() {
     }
 
     try {
-      await disconnectTikTok.mutateAsync();
+      await disconnectTikTok.mutateAsync(undefined);
       toast.success('TikTok Shop account disconnected successfully');
     } catch (error: any) {
       console.error('Failed to disconnect TikTok Shop:', error);
