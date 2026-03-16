@@ -1,5 +1,5 @@
-import Link from "next/link"
-import { useParams, usePathname, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
+import { useCallback } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Facebook, Instagram, MessageCircle, Mail } from "lucide-react"
 
@@ -13,45 +13,43 @@ import { buttonVariants } from "@/components/ui/button"
 import { ChatAvatar } from "../chat-avatar"
 
 export function ChatSidebarItem({ chat }: { chat: ChatType }) {
-  const { setIsChatSidebarOpen } = useChatContext()
-  const params = useParams()
+  const { setIsChatSidebarOpen, selectedChatId, setSelectedChatId } = useChatContext()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const chatIdParam = params.id?.[0]
 
   // Determine base route from current pathname (e.g., /email/messages or /messages or /social/messages)
-  const getBaseRoute = () => {
+  const getBaseRoute = useCallback(() => {
     if (pathname.startsWith('/email/messages')) return '/email/messages'
     if (pathname.startsWith('/social/messages')) return '/social/messages'
     return '/messages'
-  }
+  }, [pathname])
 
-  // Build href with preserved search params (e.g., ?tab=assigned)
-  const buildHref = () => {
+  // Build href for the <a> tag (for accessibility / right-click / open in new tab)
+  const buildHref = useCallback(() => {
     const base = `${getBaseRoute()}/${chat.id}`
-    const queryString = searchParams.toString()
-    return queryString ? `${base}?${queryString}` : base
-  }
+    const queryString = window.location.search
+    return queryString ? `${base}${queryString}` : base
+  }, [getBaseRoute, chat.id])
 
-  const handleOnCLick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
     setIsChatSidebarOpen(false)
+    // Update state only — no Next.js navigation, so sidebar scroll is preserved
+    setSelectedChatId(chat.id)
   }
 
   return (
-    <Link
+    <a
       href={buildHref()}
-      prefetch={false}
+      onClick={handleClick}
       className={cn(
         buttonVariants({ variant: "ghost" }),
         // Unread chats get muted background (lighter)
         chat.unreadCount && chat.unreadCount > 0 && "bg-muted/60",
         // Active chat gets darker background (overrides unread)
-        chatIdParam === chat.id && "bg-primary/20 hover:bg-primary/25",
+        selectedChatId === chat.id && "bg-primary/20 hover:bg-primary/25",
         "h-fit w-full"
       )}
-      aria-current={chatIdParam === chat.id ? "true" : undefined}
-      onClick={handleOnCLick}
+      aria-current={selectedChatId === chat.id ? "true" : undefined}
     >
       <div className="w-full flex items-center gap-2">
         <div className="relative shrink-0">
@@ -109,6 +107,6 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
           </div>
         </div>
       </div>
-    </Link>
+    </a>
   )
 }

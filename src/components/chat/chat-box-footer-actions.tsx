@@ -1,7 +1,6 @@
 "use client"
 
 import { useMedia } from "react-use"
-import { useParams } from "next/navigation"
 import { useMemo } from "react"
 import { ChevronRight, CirclePlus, Mic, FileText } from "lucide-react"
 
@@ -27,16 +26,14 @@ import { toast } from "sonner"
 
 export function ChatBoxFooterActions() {
   const isMobile = useMedia("(max-width: 480px)")
-  const { chatState } = useChatContext()
-  const params = useParams()
+  const { chatState, selectedChatId } = useChatContext()
 
-  const chatIdParam = params.id?.[0]
   const chat = useMemo(() => {
-    if (chatIdParam) {
-      return chatState.chats.find((c) => c.id === chatIdParam)
+    if (selectedChatId) {
+      return chatState.chats.find((c) => c.id === selectedChatId)
     }
     return null
-  }, [chatState.chats, chatIdParam])
+  }, [chatState.chats, selectedChatId])
 
   const isWhatsApp = chat?.platform === "whatsapp"
   const sendTemplate = useSendWhatsAppTemplateMessage()

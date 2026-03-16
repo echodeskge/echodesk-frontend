@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MoreVertical, Archive, CheckCheck, History, ArrowLeft } from "lucide-react"
+import { MoreVertical, Archive, CheckCheck, History, ArrowLeft, Filter, Facebook, Instagram, MessageCircle } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ export function ChatSidebarActionButtons() {
   const [notifications, setNotifications] = useState<string>("ALL_MESSAGES")
   const [status, setStatus] = useState<string>("ONLINE")
 
-  const { showArchived, setShowArchived, platforms } = useChatContext()
+  const { showArchived, setShowArchived, platforms, platformFilter, setPlatformFilter, setSelectedChatId } = useChatContext()
   const markAllAsReadMutation = useMarkAllAsRead()
   const archiveAllMutation = useArchiveAllConversations()
   const { data: userProfile } = useUserProfile()
@@ -57,8 +57,45 @@ export function ChatSidebarActionButtons() {
     setShowArchived(!showArchived)
   }
 
+  const isSocialView = !isEmailOnly
+
+  const platformOptions = [
+    { value: 'facebook', label: 'Messenger', icon: Facebook },
+    { value: 'instagram', label: 'Instagram', icon: Instagram },
+    { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  ]
+
   return (
     <div className="flex gap-1">
+      {/* Platform Filter - only show on social messages page */}
+      {isSocialView && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Filter by platform"
+              className={platformFilter ? "text-primary" : ""}
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-36">
+            <DropdownMenuItem onClick={() => { setPlatformFilter(null); setSelectedChatId(null) }}>
+              <MessageCircle className="mr-2 h-4 w-4" />
+              {platformFilter === null ? <strong>All Platforms</strong> : "All Platforms"}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {platformOptions.map(({ value, label, icon: Icon }) => (
+              <DropdownMenuItem key={value} onClick={() => { setPlatformFilter(value); setSelectedChatId(null) }}>
+                <Icon className="mr-2 h-4 w-4" />
+                {platformFilter === value ? <strong>{label}</strong> : label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+
       {/* More Actions Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>

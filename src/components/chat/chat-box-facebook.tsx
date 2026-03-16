@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useMemo, useState, useEffect, useRef } from "react"
-import { useParams } from "next/navigation"
 
 import type { UserType } from "@/components/chat/types"
 
@@ -23,12 +22,11 @@ interface ChatBoxFacebookProps {
 }
 
 export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: ChatBoxFacebookProps) {
-  const { chatState, messageSearchQuery, setMessageSearchQuery, loadingMessages, loadChatMessages, isInitialLoading, rawChatsData } = useChatContext()
-  const params = useParams()
+  const { chatState, messageSearchQuery, setMessageSearchQuery, loadingMessages, loadChatMessages, isInitialLoading, rawChatsData, selectedChatId } = useChatContext()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0)
 
-  const chatIdParam = params.id?.[0] // Get the chat ID from route params
+  const chatIdParam = selectedChatId
 
   // Track which chats have already triggered loading to prevent duplicate calls
   const loadingTriggeredRef = useRef<Set<string>>(new Set())

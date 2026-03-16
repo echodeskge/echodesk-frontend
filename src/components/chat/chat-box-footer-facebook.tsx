@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { UserPlus, Clock } from "lucide-react"
 
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
@@ -26,13 +26,13 @@ function parseChatId(chatId: string, platform?: string) {
   const parts = chatId.split('_')
   const prefix = parts[0]
 
-  // Handle email platform separately (no account_id, just thread_id)
+  // Handle email platform: email_{connection_id}_{thread_id}
   if (prefix === 'email' || platform === 'email') {
-    if (parts.length < 2) return null
+    if (parts.length < 3) return null
     return {
       platform: 'email' as ChatAssignmentPlatform,
-      accountId: 'email', // Use 'email' as placeholder since emails don't have account_id
-      conversationId: parts.slice(1).join('_'), // thread_id
+      accountId: parts[1], // connection_id
+      conversationId: parts.slice(2).join('_'), // thread_id
     }
   }
 
@@ -59,15 +59,14 @@ function parseChatId(chatId: string, platform?: string) {
 }
 
 export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookProps) {
-  const { chatState, setAssignmentTab, showArchived } = useChatContext()
+  const { chatState, setAssignmentTab, showArchived, selectedChatId } = useChatContext()
   const { user } = useAuth()
-  const params = useParams()
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Get chat from URL params (same as ChatBoxFacebook)
-  const chatIdParam = params.id?.[0] as string | undefined
+  // Get chat from context-based selectedChatId
+  const chatIdParam = selectedChatId
   const currentChat = useMemo(() => {
     if (chatIdParam) {
       return chatState.chats.find((c) => c.id === chatIdParam)

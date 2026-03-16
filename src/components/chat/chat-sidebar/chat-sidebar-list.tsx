@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useEffect, useCallback, useRef } from "react"
-import { useParams } from "next/navigation"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { ChatSidebarItem } from "./chat-sidebar-item"
 import { ChatListSkeleton } from "./ChatListSkeleton"
@@ -16,6 +15,7 @@ export function ChatSidebarList() {
     assignmentTab,
     assignedChatIds,
     assignmentEnabled,
+    platformFilter,
     isInitialLoading,
     fetchNextPage,
     hasNextPage,
@@ -25,10 +25,6 @@ export function ChatSidebarList() {
   } = useChatContext()
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  const hasScrolledToSelected = useRef(false)
-
-  const params = useParams()
-  const selectedId = params.id?.[0] as string | undefined
 
   // Handle scroll to load more
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -52,15 +48,13 @@ export function ChatSidebarList() {
   const isRefetching = isInitialLoading && chatState.chats.length === 0 && hasEverLoaded
 
   // Filter and sort chats
+  // "Assigned" tab filtering is handled by the backend via the `assigned` query param.
+  // "All" tab: hide assigned chats so they only appear in the "assigned" tab.
   const filteredChats = useMemo(() => {
     let chats = chatState.chats
 
-    if (assignmentEnabled) {
-      if (assignmentTab === 'assigned') {
-        chats = chats.filter((chat) => assignedChatIds.has(chat.id))
-      } else {
-        chats = chats.filter((chat) => !assignedChatIds.has(chat.id))
-      }
+    if (assignmentEnabled && assignmentTab === 'all') {
+      chats = chats.filter((chat) => !assignedChatIds.has(chat.id))
     }
 
     if (chatListSearchQuery.trim()) {
@@ -80,66 +74,50 @@ export function ChatSidebarList() {
     })
   }, [chatState.chats, chatListSearchQuery, assignmentTab, assignedChatIds, assignmentEnabled])
 
-  // On initial load, scroll to the selected chat if it's not visible
-  useEffect(() => {
-    if (hasScrolledToSelected.current || !selectedId || filteredChats.length === 0) return
-    hasScrolledToSelected.current = true
-
-    requestAnimationFrame(() => {
-      const el = scrollContainerRef.current?.querySelector(`[data-chat-id="${selectedId}"]`)
-      if (el) {
-        el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-      }
-    })
-  }, [selectedId, filteredChats.length])
-
   const getEmptyMessage = () => {
     if (chatListSearchQuery) return "No conversations found"
     if (showArchived) return "No archived conversations"
+    if (platformFilter) return `No ${platformFilter} conversations`
     if (assignmentEnabled && assignmentTab === 'assigned') return "No assigned conversations"
     return "No conversations yet"
   }
 
-  const scrollHeight = "h-full"
-
-  if (showLoading || isRefetching || isSearchLoading) {
-    return (
-      <div className={`${scrollHeight} overflow-auto`}>
-        <ChatListSkeleton />
-      </div>
-    )
-  }
+  const showSkeleton = showLoading || isRefetching || isSearchLoading
 
   return (
     <div
       ref={scrollContainerRef}
-      className={`${scrollHeight} overflow-auto`}
+      className="h-full overflow-auto"
       onScroll={handleScroll}
     >
-      <ul className="p-3 space-y-1.5">
-        {filteredChats.length === 0 ? (
-          <li className="text-center text-muted-foreground py-8">
-            {getEmptyMessage()}
-          </li>
-        ) : (
-          <>
-            {filteredChats.map((chat) => (
-              <li key={chat.id} data-chat-id={chat.id}>
-                <ChatSidebarItem chat={chat} />
-              </li>
-            ))}
-            {hasNextPage && (
-              <li className="flex justify-center py-4">
-                {isFetchingNextPage ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                ) : (
-                  <span className="text-xs text-muted-foreground">Scroll for more</span>
-                )}
-              </li>
-            )}
-          </>
-        )}
-      </ul>
+      {showSkeleton ? (
+        <ChatListSkeleton />
+      ) : (
+        <ul className="p-3 space-y-1.5">
+          {filteredChats.length === 0 ? (
+            <li className="text-center text-muted-foreground py-8">
+              {getEmptyMessage()}
+            </li>
+          ) : (
+            <>
+              {filteredChats.map((chat) => (
+                <li key={chat.id} data-chat-id={chat.id}>
+                  <ChatSidebarItem chat={chat} />
+                </li>
+              ))}
+              {hasNextPage && (
+                <li className="flex justify-center py-4">
+                  {isFetchingNextPage ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Scroll for more</span>
+                  )}
+                </li>
+              )}
+            </>
+          )}
+        </ul>
+      )}
     </div>
   )
 }

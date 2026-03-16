@@ -36,6 +36,7 @@ export interface ChatContextType {
   // Lazy loading
   loadingMessages: boolean
   loadChatMessages?: (chatId: string) => Promise<void>
+  reloadChatMessages?: (chatId: string) => Promise<void>
   isInitialLoading: boolean
   // Load full message history
   loadFullHistory?: (chatId: string) => Promise<void>
@@ -43,6 +44,8 @@ export interface ChatContextType {
   fullHistoryLoadedChats?: Set<string>
   // Platform filter
   platforms: string[]
+  platformFilter: string | null
+  setPlatformFilter: (platform: string | null) => void
   // Email folder filter
   selectedEmailFolder: string
   setSelectedEmailFolder: (folder: string) => void
@@ -63,6 +66,9 @@ export interface ChatContextType {
   // History/Archive view mode
   showArchived: boolean
   setShowArchived: (show: boolean) => void
+  // URL-less chat selection (avoids Next.js re-renders on chat click)
+  selectedChatId: string | null
+  setSelectedChatId: (id: string | null) => void
 }
 
 export type ChatStatusType = "READ" | "DELIVERED" | "SENT" | null

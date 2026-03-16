@@ -72,10 +72,47 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const router = useRouter();
   const pathname = usePathname();
   // params.id is an array for [[...id]] catch-all routes
-  const chatId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const initialChatId = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  // State-based chat selection: avoids Next.js re-renders when clicking sidebar items
+  const [selectedChatId, setSelectedChatIdRaw] = useState<string | null>(initialChatId || null);
+
+  // Sync URL via pushState when selectedChatId changes (no Next.js re-render)
+  const setSelectedChatId = useCallback((id: string | null) => {
+    setSelectedChatIdRaw(id);
+    // Build the new URL preserving query params
+    const base = pathname.startsWith('/email/messages') ? '/email/messages'
+      : pathname.startsWith('/social/messages') ? '/social/messages'
+      : '/messages';
+    const newPath = id ? `${base}/${id}` : base;
+    const queryString = window.location.search;
+    const newUrl = queryString ? `${newPath}${queryString}` : newPath;
+    window.history.pushState(null, '', newUrl);
+  }, [pathname]);
+
+  // Listen for browser back/forward to update selectedChatId
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const match = path.match(/\/messages\/(.+)$/);
+      setSelectedChatIdRaw(match ? match[1] : null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Keep selectedChatId in sync if URL-based params change (e.g., full page navigation)
+  useEffect(() => {
+    if (initialChatId && initialChatId !== selectedChatId) {
+      setSelectedChatIdRaw(initialChatId);
+    }
+  }, [initialChatId]);
+
+  const chatId = selectedChatId;
 
   const [currentUser] = useState({ id: "business", name: "Me", status: "online" });
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [platformFilter, setPlatformFilter] = useState<string | null>(null);
 
   // Read showArchived from URL search params (persists across navigation)
   const showArchived = searchParams.get('view') === 'history';
@@ -169,7 +206,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     isFetchingNextPage,
     isFetching,
   } = useUnifiedConversations({
-    platforms: enabledPlatforms.join(','),
+    platforms: platformFilter || enabledPlatforms.join(','),
     folder: selectedEmailFolder,
     pageSize: 20,
     search: debouncedSearchQuery,
@@ -661,6 +698,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       loadChatMessages={loadChatMessages}
       isInitialLoading={isLoadingChat}
       platforms={enabledPlatforms}
+      platformFilter={platformFilter}
+      setPlatformFilter={setPlatformFilter}
       selectedEmailFolder={selectedEmailFolder}
       setSelectedEmailFolder={setSelectedEmailFolder}
       selectedEmailConnectionId={selectedEmailConnectionId}
@@ -676,6 +715,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       showArchived={showArchived}
       setShowArchived={setShowArchived}
       onAddIncomingMessageRef={addIncomingMessageRef}
+      selectedChatId={selectedChatId}
+      setSelectedChatId={setSelectedChatId}
     >
       <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
         <ChatSidebar />

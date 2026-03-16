@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo } from "react"
-import { useParams } from "next/navigation"
 
 import type { UserType } from "@/components/chat/types"
 
@@ -13,20 +12,14 @@ import { ChatBoxHeader } from "./chat-box-header"
 import { ChatBoxNotFound } from "./chat-box-not-found"
 
 export function ChatBox({ user }: { user: UserType }) {
-  const { chatState } = useChatContext()
-  const params = useParams()
-
-  const chatIdParam = params.id?.[0] // Get the chat ID from route params
+  const { chatState, selectedChatId } = useChatContext()
 
   const chat = useMemo(() => {
-    if (chatIdParam) {
-      // Find the chat by ID
-      return chatState.chats.find((c) => c.id === chatIdParam)
+    if (selectedChatId) {
+      return chatState.chats.find((c) => c.id === selectedChatId)
     }
-
-    // Return null if not found
     return null
-  }, [chatState.chats, chatIdParam])
+  }, [chatState.chats, selectedChatId])
 
   // If chat ID exists but no matching chat is found, show a not found UI
   if (!chat) return <ChatBoxNotFound />

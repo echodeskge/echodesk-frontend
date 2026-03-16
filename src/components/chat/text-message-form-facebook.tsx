@@ -39,7 +39,7 @@ interface WhatsAppSendMessagePayload {
 }
 
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
-  const { chatState, replyingTo, setReplyingTo } = useChatContext()
+  const { chatState, replyingTo, setReplyingTo, reloadChatMessages } = useChatContext()
   const { user } = useAuth()
   const [isSending, setIsSending] = useState(false)
   const [showCcBcc, setShowCcBcc] = useState(false)
@@ -115,11 +115,13 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         }
         await axios.post('/api/social/whatsapp/send-message/', payload)
       } else if (platform === 'email') {
-        // For email, the ID format is email_{threadId}
-        // We need to get the thread messages to find recipient and latest message
-        const threadId = selectedChat.id.replace('email_', '')
+        // Email chat ID format: email_{connectionId}_{threadId}
+        // accountId = connectionId, recipientId = threadId (already parsed above)
+        const connectionId = accountId
+        const threadId = recipientId
+
         const threadMessagesResponse = await axios.get("/api/social/email-messages/", {
-          params: { thread_id: threadId, page: 1 }
+          params: { thread_id: threadId, connection_id: connectionId, page: 1 }
         })
         const messages = threadMessagesResponse.data?.results || []
         const latestMessage = messages.length > 0 ? messages[0] : null
@@ -127,9 +129,6 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         if (!latestMessage) {
           throw new Error('No message found to reply to')
         }
-
-        // Get connection_id from the thread messages to send from the correct account
-        const connectionId = latestMessage.connection_id
 
         // Find customer email - look for a message NOT from business
         // If latest is from customer, use their email; otherwise find first customer message
@@ -181,6 +180,11 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         setCcEmails("");
         setBccEmails("");
         setShowCcBcc(false);
+
+        // Reload chat messages to show the sent email (no WebSocket echo for email)
+        if (reloadChatMessages) {
+          reloadChatMessages(selectedChat.id);
+        }
       } else {
         throw new Error('Unsupported platform: ' + platform)
       }

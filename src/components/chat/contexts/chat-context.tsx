@@ -19,6 +19,8 @@ export function ChatProvider({
   loadChatMessages,
   isInitialLoading = false,
   platforms = ['facebook', 'instagram', 'whatsapp', 'email'],
+  platformFilter: externalPlatformFilter,
+  setPlatformFilter: externalSetPlatformFilter,
   selectedEmailFolder: externalSelectedEmailFolder,
   setSelectedEmailFolder: externalSetSelectedEmailFolder,
   selectedEmailConnectionId: externalSelectedEmailConnectionId,
@@ -34,6 +36,8 @@ export function ChatProvider({
   showArchived: externalShowArchived,
   setShowArchived: externalSetShowArchived,
   onAddIncomingMessageRef,
+  selectedChatId: externalSelectedChatId,
+  setSelectedChatId: externalSetSelectedChatId,
 }: {
   chatsData: ChatType[]
   children: ReactNode
@@ -41,6 +45,8 @@ export function ChatProvider({
   loadChatMessages?: (chatId: string, initialLoad?: boolean) => Promise<MessageType[]>
   isInitialLoading?: boolean
   platforms?: string[]
+  platformFilter?: string | null
+  setPlatformFilter?: (platform: string | null) => void
   selectedEmailFolder?: string
   setSelectedEmailFolder?: (folder: string) => void
   selectedEmailConnectionId?: number | null
@@ -56,6 +62,8 @@ export function ChatProvider({
   showArchived?: boolean
   setShowArchived?: (show: boolean) => void
   onAddIncomingMessageRef?: React.MutableRefObject<((chatId: string, message: MessageType, senderName?: string) => void) | null>
+  selectedChatId?: string | null
+  setSelectedChatId?: (id: string | null) => void
 }) {
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
@@ -98,6 +106,16 @@ export function ChatProvider({
   // Full history loading state
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const fullHistoryLoadedChatsRef = useRef<Set<string>>(new Set())
+
+  // Platform filter state - use external if provided, otherwise internal
+  const [internalPlatformFilter, setInternalPlatformFilter] = useState<string | null>(null)
+  const platformFilter = externalPlatformFilter !== undefined ? externalPlatformFilter : internalPlatformFilter
+  const setPlatformFilter = externalSetPlatformFilter ?? setInternalPlatformFilter
+
+  // Selected chat ID state - use external if provided, otherwise internal
+  const [internalSelectedChatId, setInternalSelectedChatId] = useState<string | null>(null)
+  const selectedChatId = externalSelectedChatId !== undefined ? externalSelectedChatId : internalSelectedChatId
+  const setSelectedChatId = externalSetSelectedChatId ?? setInternalSelectedChatId
 
   // Reply state
   const [replyingTo, setReplyingTo] = useState<ReplyingToType | null>(null)
@@ -177,6 +195,19 @@ export function ChatProvider({
     }
   }, [loadChatMessages, chatState.chats, chatsData])
 
+  // Force reload messages for a chat (e.g., after sending an email where there's no WebSocket echo)
+  const handleReloadChatMessages = useCallback(async (chatId: string) => {
+    if (!loadChatMessages) return
+    try {
+      const messages = await loadChatMessages(chatId)
+      if (messages.length > 0) {
+        dispatch({ type: "updateChatMessages", chatId, messages })
+      }
+    } catch (error) {
+      console.error("Failed to reload chat messages:", error)
+    }
+  }, [loadChatMessages])
+
   // Load full message history for a chat (when user clicks "Load History")
   const handleLoadFullHistory = useCallback(async (chatId: string) => {
     if (!loadChatMessages) return
@@ -229,8 +260,11 @@ export function ChatProvider({
         assignmentEnabled,
         loadingMessages,
         loadChatMessages: handleLoadChatMessages,
+        reloadChatMessages: handleReloadChatMessages,
         isInitialLoading,
         platforms,
+        platformFilter,
+        setPlatformFilter,
         selectedEmailFolder,
         setSelectedEmailFolder,
         selectedEmailConnectionId,
@@ -247,6 +281,8 @@ export function ChatProvider({
         loadFullHistory: handleLoadFullHistory,
         isLoadingHistory,
         fullHistoryLoadedChats: fullHistoryLoadedChatsRef.current,
+        selectedChatId,
+        setSelectedChatId,
       }}
     >
       {children}

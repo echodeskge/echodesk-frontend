@@ -147,16 +147,9 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
 
   const onSubmit = async (data: EmailFormData) => {
     try {
-      // Construct the email body with signature if enabled
+      // Construct the email body (signature is appended by the backend)
       let bodyText = data.body_text;
       let bodyHtml = `<div>${data.body_text.replace(/\n/g, "<br/>")}</div>`;
-
-      if (signature?.is_enabled && signature.signature_html) {
-        bodyHtml += `<br/><br/>${signature.signature_html}`;
-        if (signature.signature_text) {
-          bodyText += `\n\n${signature.signature_text}`;
-        }
-      }
 
       await sendEmail.mutateAsync({
         to_emails: data.to_emails,
