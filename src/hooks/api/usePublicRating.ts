@@ -25,6 +25,7 @@ export interface SubmitRatingResponse {
   success: boolean;
   message?: string;
   error?: string;
+  redirect_url?: string;
 }
 
 /**

@@ -701,6 +701,7 @@ export interface SocialSettings {
   link_based_rating_enabled: boolean;
   rating_request_message_template_ka: string;
   rating_request_message_template_en: string;
+  post_review_redirect_url: string;
   notification_sound_facebook: string;
   notification_sound_instagram: string;
   notification_sound_whatsapp: string;
@@ -901,6 +902,24 @@ export function useUnassignChat() {
   });
 }
 
+// Transfer chat to another user
+export function useTransferChat() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { platform: ChatAssignmentPlatform; conversation_id: string; account_id: string; target_user_id: number }) => {
+      const response = await axios.post('/api/social/assignments/transfer/', data);
+      return response.data as { message: string; assignment: ChatAssignment };
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      queryClient.invalidateQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+    },
+  });
+}
+
 // Start session
 export function useStartSession() {
   const queryClient = useQueryClient();
@@ -993,6 +1012,7 @@ export interface ChatSession {
   account_id: string;
   customer_name: string;
   rating: number | null;
+  comment: string;
   session_started_at: string | null;
   session_ended_at: string | null;
   created_at: string;

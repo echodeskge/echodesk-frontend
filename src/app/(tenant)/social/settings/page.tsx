@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail } from "lucide-react";
+import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -657,6 +658,8 @@ function ChatManagementTab({
   setRatingRequestMessageKa,
   ratingRequestMessageEn,
   setRatingRequestMessageEn,
+  postReviewRedirectUrl,
+  setPostReviewRedirectUrl,
   autoAssign,
   setAutoAssign,
   t,
@@ -673,6 +676,8 @@ function ChatManagementTab({
   setRatingRequestMessageKa: (v: string) => void;
   ratingRequestMessageEn: string;
   setRatingRequestMessageEn: (v: string) => void;
+  postReviewRedirectUrl: string;
+  setPostReviewRedirectUrl: (v: string) => void;
   autoAssign: boolean;
   setAutoAssign: (v: boolean) => void;
   t: ReturnType<typeof useTranslations>;
@@ -803,6 +808,23 @@ function ChatManagementTab({
                         <strong>{t("settingsPage.chatManagement.templateHint") || "Hint"}:</strong>{" "}
                         {t("settingsPage.chatManagement.templateHintDescription") || "Use {link} placeholder where you want the rating link to appear."}
                       </p>
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label htmlFor="post-review-redirect-url" className="flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4 text-green-500" />
+                        {t("settingsPage.chatManagement.postReviewRedirectUrl") || "Post-review redirect URL"}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {t("settingsPage.chatManagement.postReviewRedirectUrlDescription") || "After submitting a review, the customer will be redirected to this URL (e.g. your website)"}
+                      </p>
+                      <Input
+                        id="post-review-redirect-url"
+                        type="url"
+                        placeholder="https://example.com"
+                        value={postReviewRedirectUrl}
+                        onChange={(e) => setPostReviewRedirectUrl(e.target.value)}
+                      />
                     </div>
                   </div>
                 )}
@@ -1058,6 +1080,7 @@ export default function SocialSettingsPage() {
   const [linkBasedRatingEnabled, setLinkBasedRatingEnabled] = useState(false);
   const [ratingRequestMessageKa, setRatingRequestMessageKa] = useState("გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
   const [ratingRequestMessageEn, setRatingRequestMessageEn] = useState("Thank you for chatting with us! Please rate your experience: {link}");
+  const [postReviewRedirectUrl, setPostReviewRedirectUrl] = useState("");
 
   // Notification sound settings
   const [soundFacebook, setSoundFacebook] = useState('mixkit-bubble-pop-up-alert-notification-2357.wav');
@@ -1087,6 +1110,7 @@ export default function SocialSettingsPage() {
       setLinkBasedRatingEnabled(settings.link_based_rating_enabled ?? false);
       setRatingRequestMessageKa(settings.rating_request_message_template_ka || "გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
       setRatingRequestMessageEn(settings.rating_request_message_template_en || "Thank you for chatting with us! Please rate your experience: {link}");
+      setPostReviewRedirectUrl(settings.post_review_redirect_url || '');
       // Notification sounds
       setSoundFacebook(settings.notification_sound_facebook || 'mixkit-bubble-pop-up-alert-notification-2357.wav');
       setSoundInstagram(settings.notification_sound_instagram || 'mixkit-magic-notification-ring-2344.wav');
@@ -1130,6 +1154,7 @@ export default function SocialSettingsPage() {
       link_based_rating_enabled: Boolean(linkBasedRatingEnabled),
       rating_request_message_template_ka: ratingRequestMessageKa,
       rating_request_message_template_en: ratingRequestMessageEn,
+      post_review_redirect_url: postReviewRedirectUrl,
       // Notification sound settings
       notification_sound_facebook: soundFacebook,
       notification_sound_instagram: soundInstagram,
@@ -1251,6 +1276,8 @@ export default function SocialSettingsPage() {
               setRatingRequestMessageKa={setRatingRequestMessageKa}
               ratingRequestMessageEn={ratingRequestMessageEn}
               setRatingRequestMessageEn={setRatingRequestMessageEn}
+              postReviewRedirectUrl={postReviewRedirectUrl}
+              setPostReviewRedirectUrl={setPostReviewRedirectUrl}
               autoAssign={autoAssign}
               setAutoAssign={setAutoAssign}
               t={t}

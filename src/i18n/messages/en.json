@@ -456,6 +456,7 @@
     "customer": "Customer",
     "platform": "Platform",
     "rating": "Rating",
+    "comment": "Comment",
     "sessionStart": "Session Start",
     "sessionEnd": "Session End",
     "duration": "Duration",
@@ -985,7 +986,9 @@
         "ratingMessageKa": "Rating request message (Georgian)",
         "ratingMessageEn": "Rating request message (English)",
         "templateHint": "Hint",
-        "templateHintDescription": "Use {link} placeholder where you want the rating link to appear."
+        "templateHintDescription": "Use '{'link'}' placeholder where you want the rating link to appear.",
+        "postReviewRedirectUrl": "Post-review redirect URL",
+        "postReviewRedirectUrlDescription": "After submitting a review, the customer will be redirected to this URL (e.g. your website)"
       },
       "enabledFeatures": {
         "title": "Enabled features:",

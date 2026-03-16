@@ -19,9 +19,10 @@ interface EmojiRatingSelectorProps {
   value: 1 | 3 | 5 | null;
   onChange: (value: 1 | 3 | 5) => void;
   disabled?: boolean;
+  lang?: 'ka' | 'en';
 }
 
-export function EmojiRatingSelector({ value, onChange, disabled }: EmojiRatingSelectorProps) {
+export function EmojiRatingSelector({ value, onChange, disabled, lang = 'ka' }: EmojiRatingSelectorProps) {
   return (
     <div className="flex justify-center gap-6 md:gap-10">
       {EMOJI_OPTIONS.map((option) => (
@@ -42,7 +43,7 @@ export function EmojiRatingSelector({ value, onChange, disabled }: EmojiRatingSe
             {option.emoji}
           </span>
           <span className="text-sm font-medium text-muted-foreground">
-            {option.labelKa}
+            {lang === 'ka' ? option.labelKa : option.labelEn}
           </span>
         </button>
       ))}

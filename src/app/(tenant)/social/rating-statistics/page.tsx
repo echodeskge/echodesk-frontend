@@ -29,6 +29,7 @@ import {
   ChevronsUpDown,
   Calendar,
   MessageSquare,
+  MessageCircle,
   Clock,
   ExternalLink,
   X
@@ -543,6 +544,7 @@ export default function RatingStatisticsPage() {
                         <TableHead>{t("customer")}</TableHead>
                         <TableHead>{t("platform")}</TableHead>
                         <TableHead>{t("rating")}</TableHead>
+                        <TableHead>{t("comment")}</TableHead>
                         <TableHead>{t("sessionStart")}</TableHead>
                         <TableHead>{t("sessionEnd")}</TableHead>
                         <TableHead>{t("duration")}</TableHead>
@@ -568,6 +570,15 @@ export default function RatingStatisticsPage() {
                           </TableCell>
                           <TableCell>
                             {renderRatingBadge(session.rating)}
+                          </TableCell>
+                          <TableCell className="text-sm max-w-[200px]">
+                            {session.comment ? (
+                              <span className="text-muted-foreground line-clamp-2" title={session.comment}>
+                                {session.comment}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/50">-</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm">
                             {formatDateTime(session.session_started_at)}
@@ -606,6 +617,12 @@ export default function RatingStatisticsPage() {
                           </Badge>
                           {renderRatingBadge(session.rating)}
                         </div>
+                        {session.comment && (
+                          <div className="mb-3 p-2 bg-muted/50 rounded-md text-sm text-muted-foreground flex items-start gap-1.5">
+                            <MessageCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            <span>{session.comment}</span>
+                          </div>
+                        )}
                         <div className="grid gap-1 text-sm text-muted-foreground">
                           <div>
                             <span className="font-medium text-foreground">{t("sessionStart")}:</span>{" "}

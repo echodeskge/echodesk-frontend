@@ -5785,6 +5785,11 @@ export async function socialAssignmentsStatusRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function socialAssignmentsTransferCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/assignments/transfer/`);
+  return response.data;
+}
+
 export async function socialAssignmentsUnassignCreate(): Promise<any> {
   const response = await axios.post(`/api/social/assignments/unassign/`);
   return response.data;

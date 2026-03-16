@@ -96,12 +96,12 @@ export function MessagesPage() {
 ## Backend/Frontend Deployment Workflow
 
 **IMPORTANT**: On every backend change:
-1. Push changes to the backend repository
-2. Merge to `qa` branch
-3. Merge to `main` branch
-4. **WAIT** for user signal before continuing with frontend work
+1. Run `python manage.py migrate_schemas` (always, even if no new migrations)
+2. Push changes to the backend repository
+3. **WAIT** for user signal before continuing with frontend work
 
 This ensures:
+- Database schema is always up to date before deploy
 - Backend changes are deployed and tested first
 - Frontend can be developed against live backend
 - User can verify backend functionality before frontend implementation

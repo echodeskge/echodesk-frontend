@@ -458,6 +458,7 @@
     "customer": "კლიენტი",
     "platform": "პლატფორმა",
     "rating": "შეფასება",
+    "comment": "კომენტარი",
     "sessionStart": "სესიის დაწყება",
     "sessionEnd": "სესიის დასრულება",
     "duration": "ხანგრძლივობა",
@@ -986,7 +987,9 @@
         "ratingMessageKa": "შეფასების მოთხოვნის შეტყობინება (ქართული)",
         "ratingMessageEn": "შეფასების მოთხოვნის შეტყობინება (ინგლისური)",
         "templateHint": "მინიშნება",
-        "templateHintDescription": "გამოიყენეთ {link} ჩანაცვლება იქ, სადაც გსურთ შეფასების ბმულის ჩვენება."
+        "templateHintDescription": "გამოიყენეთ '{'link'}' ჩანაცვლება იქ, სადაც გსურთ შეფასების ბმულის ჩვენება.",
+        "postReviewRedirectUrl": "შეფასების შემდეგ გადამისამართების URL",
+        "postReviewRedirectUrlDescription": "შეფასების გაგზავნის შემდეგ მომხმარებელი გადამისამართდება ამ URL-ზე (მაგ. თქვენი ვებსაიტი)"
       },
       "enabledFeatures": {
         "title": "ჩართული ფუნქციები:",

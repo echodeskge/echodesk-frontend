@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -13,6 +13,7 @@ import {
   useUnassignChat,
   useStartSession,
   useEndSession,
+  useTransferChat,
   useEmailFolders,
   useEmailAction,
   useMarkConversationUnread,
@@ -20,6 +21,7 @@ import {
   useUnarchiveConversation,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
+import { useUsers } from "@/hooks/api/useUsers"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useSocialClientByAccount } from "@/hooks/api/useSocialClients"
 import { useToast } from "@/hooks/use-toast"
@@ -159,6 +161,14 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const unassignChat = useUnassignChat()
   const startSession = useStartSession()
   const endSession = useEndSession()
+  const transferChat = useTransferChat()
+
+  // Fetch users for transfer dropdown
+  const { data: usersData } = useUsers({ enabled: !!chatInfo })
+  const transferableUsers = useMemo(() => {
+    if (!usersData?.results || !user?.id) return []
+    return usersData.results.filter((u) => u.id !== user.id)
+  }, [usersData, user?.id])
 
   const canDelete = user?.is_staff === true
 
@@ -299,7 +309,34 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     )
   }
 
-  const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending
+  const handleTransfer = (targetUserId: number) => {
+    if (!chatInfo) return
+    transferChat.mutate(
+      {
+        platform: chatInfo.platform,
+        conversation_id: chatInfo.conversationId,
+        account_id: chatInfo.accountId,
+        target_user_id: targetUserId,
+      },
+      {
+        onSuccess: (data) => {
+          toast({
+            title: "Chat transferred",
+            description: data.message,
+          })
+        },
+        onError: (error: any) => {
+          toast({
+            title: "Transfer failed",
+            description: error.response?.data?.error || "Failed to transfer chat",
+            variant: "destructive",
+          })
+        },
+      }
+    )
+  }
+
+  const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending || transferChat.isPending
 
   // Handle move to folder for email threads
   const handleMoveToFolder = (targetFolder: string) => {
@@ -580,6 +617,29 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                     <UserMinus className="size-4 mr-2" />
                     {unassignChat.isPending ? "Unassigning..." : "Unassign"}
                   </DropdownMenuItem>
+                )}
+
+                {/* Transfer chat - show for everyone when there are users to transfer to */}
+                {transferableUsers.length > 0 && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger disabled={isAssignmentLoading}>
+                      <ArrowRightLeft className="size-4 mr-2" />
+                      {transferChat.isPending ? "Transferring..." : "Transfer Chat"}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                      <DropdownMenuSubContent className="max-h-60 overflow-y-auto">
+                        {transferableUsers.map((u) => (
+                          <DropdownMenuItem
+                            key={u.id}
+                            onClick={() => handleTransfer(u.id)}
+                            disabled={isAssignmentLoading}
+                          >
+                            {u.full_name || u.email}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                  </DropdownMenuSub>
                 )}
 
                 {/* Show who it's assigned to if assigned to someone else */}

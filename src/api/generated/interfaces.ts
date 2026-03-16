@@ -2946,6 +2946,7 @@ export interface PatchedSocialIntegrationSettingsRequest {
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
+  post_review_redirect_url?: string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -3510,6 +3511,10 @@ export interface SectionTypeEnum {
   [key: string]: any;
 }
 
+export interface SenderRoleEnum {
+  [key: string]: any;
+}
+
 export interface ServiceCategory {
   id: number;
   name: any;
@@ -3806,6 +3811,7 @@ export interface SocialIntegrationSettings {
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
+  post_review_redirect_url?: string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -3829,6 +3835,7 @@ export interface SocialIntegrationSettingsRequest {
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
+  post_review_redirect_url?: string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -4477,10 +4484,11 @@ export interface TikTokMessage {
   id: number;
   message_id: string;
   conversation_id: string;
+  index: string;
   sender_id: string;
-  sender_username: string;
-  sender_display_name: string;
-  sender_avatar_url: string;
+  sender_role: SenderRoleEnum;
+  sender_im_user_id: string;
+  buyer_user_id: string;
   message_type: TikTokMessageMessageTypeEnum;
   message_text?: string;
   media_url: string;
@@ -4495,8 +4503,7 @@ export interface TikTokMessage {
   is_read_by_staff?: boolean;
   read_by_staff_at?: string;
   error_message: string;
-  account_username: string;
-  account_display_name: string;
+  account_seller_name: string;
   account_id: string;
   created_at: string;
 }
