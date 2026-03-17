@@ -88,8 +88,8 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
     { enabled: !!chatInfo }
   )
 
-  // Check 24-hour messaging window for non-email platforms
-  const isWindowCheckPlatform = chatInfo?.platform === 'facebook' || chatInfo?.platform === 'instagram' || chatInfo?.platform === 'whatsapp'
+  // Check 24-hour messaging window for Facebook and Instagram only (WhatsApp allows messaging anytime)
+  const isWindowCheckPlatform = chatInfo?.platform === 'facebook' || chatInfo?.platform === 'instagram'
   const { data: messagingWindow } = useMessagingWindow(
     chatInfo?.platform || 'facebook',
     chatInfo?.conversationId || '',
@@ -212,7 +212,6 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
             </p>
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
               You can only reply within 24 hours of the customer&apos;s last message.
-              {chatInfo?.platform === 'whatsapp' && ' Use a message template to re-engage.'}
             </p>
           </div>
         </div>
