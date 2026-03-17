@@ -57,6 +57,10 @@ export function ChatSidebarList() {
       chats = chats.filter((chat) => !assignedChatIds.has(chat.id))
     }
 
+    if (assignmentEnabled && assignmentTab === 'assigned') {
+      chats = chats.filter((chat) => assignedChatIds.has(chat.id))
+    }
+
     if (chatListSearchQuery.trim()) {
       const query = chatListSearchQuery.toLowerCase().trim()
       chats = chats.filter((chat) => {
