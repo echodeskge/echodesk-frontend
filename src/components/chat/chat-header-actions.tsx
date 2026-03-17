@@ -96,6 +96,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const deleteConversation = useDeleteConversation()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showClientPanel, setShowClientPanel] = useState(false)
+  const [transferTarget, setTransferTarget] = useState<{ id: number; name: string } | null>(null)
 
   // Archive/History functionality
   const { showArchived, setShowArchived, selectedEmailConnectionId, setAssignmentTab, setSelectedChatId } = useChatContext()
@@ -303,14 +304,14 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     )
   }
 
-  const handleTransfer = (targetUserId: number) => {
-    if (!chatInfo) return
+  const handleTransfer = () => {
+    if (!chatInfo || !transferTarget) return
     transferChat.mutate(
       {
         platform: chatInfo.platform,
         conversation_id: chatInfo.conversationId,
         account_id: chatInfo.accountId,
-        target_user_id: targetUserId,
+        target_user_id: transferTarget.id,
       },
       {
         onSuccess: (data) => {
@@ -318,6 +319,9 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Chat transferred",
             description: data.message,
           })
+          setTransferTarget(null)
+          setSelectedChatId(null)
+          queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
         },
         onError: (error: any) => {
           toast({
@@ -325,6 +329,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             description: error.response?.data?.error || "Failed to transfer chat",
             variant: "destructive",
           })
+          setTransferTarget(null)
         },
       }
     )
@@ -500,6 +505,32 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
           </Button>
         )}
 
+        {/* Transfer Chat Button */}
+        {transferableUsers.length > 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Transfer chat"
+                disabled={transferChat.isPending}
+              >
+                <ArrowRightLeft className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-60 overflow-y-auto">
+              {transferableUsers.map((u) => (
+                <DropdownMenuItem
+                  key={u.id}
+                  onClick={() => setTransferTarget({ id: u.id, name: u.full_name || u.email })}
+                >
+                  {u.full_name || u.email}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         {/* More Actions Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger className="self-center" asChild>
@@ -615,29 +646,6 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                   </DropdownMenuItem>
                 )}
 
-                {/* Transfer chat - show for everyone when there are users to transfer to */}
-                {transferableUsers.length > 0 && (
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger disabled={isAssignmentLoading}>
-                      <ArrowRightLeft className="size-4 mr-2" />
-                      {transferChat.isPending ? "Transferring..." : "Transfer Chat"}
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                      <DropdownMenuSubContent className="max-h-60 overflow-y-auto">
-                        {transferableUsers.map((u) => (
-                          <DropdownMenuItem
-                            key={u.id}
-                            onClick={() => handleTransfer(u.id)}
-                            disabled={isAssignmentLoading}
-                          >
-                            {u.full_name || u.email}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                  </DropdownMenuSub>
-                )}
-
                 {/* Show who it's assigned to if assigned to someone else */}
                 {isAssigned && !isAssignedToMe && assignment?.assigned_user_name && (
                   <DropdownMenuItem disabled className="text-muted-foreground">
@@ -691,6 +699,27 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteConversation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Transfer Confirmation Dialog */}
+      <AlertDialog open={!!transferTarget} onOpenChange={(open) => { if (!open) setTransferTarget(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Transfer Chat</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to transfer this chat to <span className="font-medium text-foreground">{transferTarget?.name}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={transferChat.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleTransfer}
+              disabled={transferChat.isPending}
+            >
+              {transferChat.isPending ? "Transferring..." : "Transfer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
