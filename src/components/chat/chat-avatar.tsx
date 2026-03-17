@@ -1,11 +1,13 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useState, useEffect, useRef } from "react"
 
 import { cn } from "@/lib/utils"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserStatusIcon } from "./user-status-icon"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+
+// Simple in-memory cache to track loaded image URLs across renders
+const loadedImages = new Set<string>()
 
 const ChatAvatar = memo(
   ({
@@ -21,6 +23,40 @@ const ChatAvatar = memo(
     size: number
     className?: string
   }) => {
+    const alreadyCached = src ? loadedImages.has(src) : false
+    const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>(
+      alreadyCached ? 'loaded' : src ? 'loading' : 'error'
+    )
+    const imgRef = useRef<HTMLImageElement>(null)
+
+    useEffect(() => {
+      if (!src) {
+        setImageState('error')
+        return
+      }
+
+      if (loadedImages.has(src)) {
+        setImageState('loaded')
+        return
+      }
+
+      setImageState('loading')
+      const img = new Image()
+      img.src = src
+      img.onload = () => {
+        loadedImages.add(src)
+        setImageState('loaded')
+      }
+      img.onerror = () => {
+        setImageState('error')
+      }
+
+      return () => {
+        img.onload = null
+        img.onerror = null
+      }
+    }, [src])
+
     return (
       <div
         style={{
@@ -36,11 +72,30 @@ const ChatAvatar = memo(
           style={{
             height: size + "rem",
             width: size + "rem",
-            fontSize: size / 2.5 + "rem", // Font size of fallback text scales proportionally to the avatar size
+            fontSize: size / 2.5 + "rem",
           }}
         >
-          <AvatarImage src={src} alt="Avatar" />
-          <AvatarFallback>{fallback}</AvatarFallback>
+          {/* Skeleton loader while image is loading */}
+          {imageState === 'loading' && (
+            <div className="absolute inset-0 rounded-lg bg-muted animate-pulse" />
+          )}
+
+          {/* Actual image - hidden until loaded */}
+          {src && imageState === 'loaded' && (
+            <img
+              ref={imgRef}
+              src={src}
+              alt="Avatar"
+              className="aspect-square h-full w-full bg-muted rounded-lg object-cover"
+              loading="eager"
+              decoding="async"
+            />
+          )}
+
+          {/* Fallback initials when no image or image failed */}
+          {imageState === 'error' && (
+            <AvatarFallback>{fallback}</AvatarFallback>
+          )}
         </Avatar>
       </div>
     )
