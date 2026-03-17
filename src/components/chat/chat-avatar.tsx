@@ -1,12 +1,12 @@
 "use client"
 
-import { memo, useState, useEffect, useRef } from "react"
+import { memo, useState, useCallback } from "react"
 
 import { cn } from "@/lib/utils"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-// Simple in-memory cache to track loaded image URLs across renders
+// In-memory cache to track loaded image URLs — survives re-renders and tab switches
 const loadedImages = new Set<string>()
 
 const ChatAvatar = memo(
@@ -23,39 +23,22 @@ const ChatAvatar = memo(
     size: number
     className?: string
   }) => {
-    const alreadyCached = src ? loadedImages.has(src) : false
-    const [imageState, setImageState] = useState<'loading' | 'loaded' | 'error'>(
-      alreadyCached ? 'loaded' : src ? 'loading' : 'error'
-    )
-    const imgRef = useRef<HTMLImageElement>(null)
+    const isCached = !!src && loadedImages.has(src)
+    const [loaded, setLoaded] = useState(isCached)
+    const [errored, setErrored] = useState(false)
 
-    useEffect(() => {
-      if (!src) {
-        setImageState('error')
-        return
-      }
-
-      if (loadedImages.has(src)) {
-        setImageState('loaded')
-        return
-      }
-
-      setImageState('loading')
-      const img = new Image()
-      img.src = src
-      img.onload = () => {
-        loadedImages.add(src)
-        setImageState('loaded')
-      }
-      img.onerror = () => {
-        setImageState('error')
-      }
-
-      return () => {
-        img.onload = null
-        img.onerror = null
-      }
+    const handleLoad = useCallback(() => {
+      if (src) loadedImages.add(src)
+      setLoaded(true)
     }, [src])
+
+    const handleError = useCallback(() => {
+      setErrored(true)
+    }, [])
+
+    const showImage = !!src && !errored
+    const showSkeleton = showImage && !loaded
+    const showFallback = !src || errored
 
     return (
       <div
@@ -75,25 +58,29 @@ const ChatAvatar = memo(
             fontSize: size / 2.5 + "rem",
           }}
         >
-          {/* Skeleton loader while image is loading */}
-          {imageState === 'loading' && (
-            <div className="absolute inset-0 rounded-lg bg-muted animate-pulse" />
-          )}
-
-          {/* Actual image - hidden until loaded */}
-          {src && imageState === 'loaded' && (
+          {/* Always render img if src exists — browser cache keeps it decoded */}
+          {showImage && (
             <img
-              ref={imgRef}
               src={src}
               alt="Avatar"
-              className="aspect-square h-full w-full bg-muted rounded-lg object-cover"
+              className={cn(
+                "aspect-square h-full w-full rounded-lg object-cover",
+                loaded ? "opacity-100" : "opacity-0"
+              )}
               loading="eager"
               decoding="async"
+              onLoad={handleLoad}
+              onError={handleError}
             />
           )}
 
-          {/* Fallback initials when no image or image failed */}
-          {imageState === 'error' && (
+          {/* Skeleton pulse overlay while loading */}
+          {showSkeleton && (
+            <div className="absolute inset-0 rounded-lg bg-muted animate-pulse" />
+          )}
+
+          {/* Initials fallback when no src or image failed */}
+          {showFallback && (
             <AvatarFallback>{fallback}</AvatarFallback>
           )}
         </Avatar>
