@@ -4,7 +4,7 @@ import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function ChatSidebarTabs() {
-  const { assignmentEnabled, assignmentTab, setAssignmentTab, assignedChatIds, showArchived, setSelectedChatId } = useChatContext()
+  const { assignmentEnabled, assignmentTab, setAssignmentTab, assignedChatIds, showArchived } = useChatContext()
 
   // Hide tabs when assignment mode is disabled or when viewing history
   if (!assignmentEnabled || showArchived) {
@@ -15,7 +15,7 @@ export function ChatSidebarTabs() {
 
   return (
     <div className="px-3 py-2 border-b border-border">
-      <Tabs value={assignmentTab} onValueChange={(value) => { setAssignmentTab(value as 'all' | 'assigned'); setSelectedChatId(null); }}>
+      <Tabs value={assignmentTab} onValueChange={(value) => setAssignmentTab(value as 'all' | 'assigned')}>
         <TabsList className="w-full">
           <TabsTrigger value="all" className="flex-1">
             All Chats

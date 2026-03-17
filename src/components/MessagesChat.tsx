@@ -178,6 +178,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
   // Update assignment tab in URL
   const setAssignmentTab = useCallback((tab: AssignmentTabType) => {
+    // Clear selected chat when switching tabs
+    setSelectedChatIdRaw(null);
+
+    const base = pathname.startsWith('/email/messages') ? '/email/messages'
+      : pathname.startsWith('/social/messages') ? '/social/messages'
+      : '/messages';
     const newParams = new URLSearchParams(searchParams.toString());
     if (tab === 'assigned') {
       newParams.set('tab', 'assigned');
@@ -185,7 +191,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       newParams.delete('tab');
     }
     const queryString = newParams.toString();
-    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+    const newUrl = queryString ? `${base}?${queryString}` : base;
     router.replace(newUrl, { scroll: false });
   }, [searchParams, pathname, router]);
 
