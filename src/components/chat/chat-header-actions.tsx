@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useState, useMemo } from "react"
+import { usePathname } from "next/navigation"
 import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   useDeleteConversation,
   useAssignmentStatus,
@@ -19,6 +20,7 @@ import {
   useMarkConversationUnread,
   useArchiveConversation,
   useUnarchiveConversation,
+  socialKeys,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
 import { useUsers } from "@/hooks/api/useUsers"
@@ -87,23 +89,16 @@ function parseChatId(chatId: string, platform?: string) {
 }
 
 export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: ChatHeaderActionsProps) {
-  const router = useRouter()
   const pathname = usePathname()
+  const queryClient = useQueryClient()
   const { user } = useAuth()
   const { toast } = useToast()
   const deleteConversation = useDeleteConversation()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-
-  // Determine base route from current pathname
-  const getBaseRoute = useCallback(() => {
-    if (pathname.startsWith('/email/messages')) return '/email/messages'
-    if (pathname.startsWith('/social/messages')) return '/social/messages'
-    return '/messages'
-  }, [pathname])
   const [showClientPanel, setShowClientPanel] = useState(false)
 
   // Archive/History functionality
-  const { showArchived, setShowArchived, selectedEmailConnectionId, setAssignmentTab } = useChatContext()
+  const { showArchived, setShowArchived, selectedEmailConnectionId, setAssignmentTab, setSelectedChatId } = useChatContext()
 
   // Email folder functionality
   const isEmail = chat?.platform === 'email'
@@ -204,8 +199,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
       {
         onSuccess: () => {
           setShowDeleteDialog(false)
-          // Navigate back to messages list
-          router.push(getBaseRoute())
+          setSelectedChatId(null)
+          queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
         },
         onError: (error) => {
           console.error('Failed to delete conversation:', error)
@@ -245,7 +240,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                   // Exit history view, switch to assigned tab
                   setShowArchived(false)
                   setAssignmentTab('assigned')
-                  router.push(getBaseRoute())
+                  queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
                 },
                 onError: (error: any) => {
                   toast({
@@ -301,9 +296,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Session ended",
             description: "Conversation moved to history",
           })
-          // Navigate to base route without any params to clear chat and reset to all chats tab
-          // Use window.location to avoid race with query invalidation re-renders
-          window.location.href = getBaseRoute()
+          setSelectedChatId(null)
+          queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
         },
       }
     )
@@ -436,7 +430,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Moved to history",
             description: "Conversation has been archived",
           })
-          router.push(getBaseRoute())
+          setSelectedChatId(null)
+          queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
         },
         onError: (error: any) => {
           toast({
@@ -465,7 +460,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Restored from history",
             description: "Conversation has been restored",
           })
-          router.push(getBaseRoute())
+          setSelectedChatId(null)
+          queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
         },
         onError: (error: any) => {
           toast({
