@@ -38,6 +38,7 @@ export function ChatWindow({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +48,11 @@ export function ChatWindow({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-focus input when chat is opened/switched
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [recipient.id]);
 
   const getInitials = (name: string) => {
     return name
@@ -319,6 +325,7 @@ export function ChatWindow({
               <Mic className="h-5 w-5" />
             </Button>
             <Input
+              ref={inputRef}
               placeholder="Type a message..."
               value={inputValue}
               onChange={handleInputChange}
