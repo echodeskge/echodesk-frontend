@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Send, ChevronDown, ChevronUp, X, Reply } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 
 import type { TextMessageFormType } from "@/components/chat/types"
 
@@ -21,6 +21,7 @@ import {
   FormLabel,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { socialFacebookSendMessageCreate } from "@/api/generated/api"
 import axios from "@/api/axios"
 import { toast } from "sonner"
@@ -39,12 +40,14 @@ interface WhatsAppSendMessagePayload {
 }
 
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
-  const { chatState, replyingTo, setReplyingTo, reloadChatMessages } = useChatContext()
+  const { chatState, replyingTo, setReplyingTo, reloadChatMessages, handleAddImagesMessage } = useChatContext()
   const { user } = useAuth()
   const [isSending, setIsSending] = useState(false)
   const [showCcBcc, setShowCcBcc] = useState(false)
   const [ccEmails, setCcEmails] = useState("")
   const [bccEmails, setBccEmails] = useState("")
+  const [pastedImages, setPastedImages] = useState<File[]>([])
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Check if current chat is email
   const isEmailPlatform = chatState.selectedChat?.platform === 'email' ||
@@ -193,6 +196,17 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
       form.reset()
       setReplyingTo(null)
 
+      // Send pasted images if any
+      if (pastedImages.length > 0) {
+        handleAddImagesMessage(pastedImages)
+        setPastedImages([])
+      }
+
+      // Reset textarea height
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
+
       // Stop typing indicator after sending
       sendTypingStop()
 
@@ -221,12 +235,53 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     }
   }
 
+  // Auto-resize textarea to fit content
+  const autoResize = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px'
+  }, [])
+
   // Handle typing notification
   const handleInputChange = (value: string) => {
     if (value.length > 0) {
       notifyTyping()
     }
+    // Auto-resize after value change
+    requestAnimationFrame(autoResize)
   }
+
+  // Handle paste - detect images from clipboard
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    const imageFiles: File[] = []
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile()
+        if (file) imageFiles.push(file)
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      e.preventDefault()
+      setPastedImages(prev => [...prev, ...imageFiles])
+    }
+  }, [])
+
+  // Send pasted images
+  const sendPastedImages = useCallback(() => {
+    if (pastedImages.length === 0) return
+    handleAddImagesMessage(pastedImages)
+    setPastedImages([])
+  }, [pastedImages, handleAddImagesMessage])
+
+  // Remove a pasted image
+  const removePastedImage = useCallback((index: number) => {
+    setPastedImages(prev => prev.filter((_, i) => i !== index))
+  }, [])
 
   // Get platform for quick reply filtering
   const getPlatform = (): QuickReplyPlatform => {
@@ -313,10 +368,32 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           </div>
         )}
 
+        {/* Pasted images preview */}
+        {pastedImages.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {pastedImages.map((file, index) => (
+              <div key={index} className="relative group">
+                <img
+                  src={URL.createObjectURL(file)}
+                  alt="Pasted"
+                  className="h-16 w-16 object-cover rounded-md border"
+                />
+                <button
+                  type="button"
+                  onClick={() => removePastedImage(index)}
+                  className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full h-4 w-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Message input */}
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full flex justify-center items-center gap-1.5"
+          className="w-full flex justify-center items-end gap-1.5"
         >
           <QuickReplySelector
             platform={getPlatform()}
@@ -328,26 +405,40 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
             onEmojiClick={(e) => {
               form.setValue("text", text + e.emoji)
               form.trigger()
+              requestAnimationFrame(autoResize)
             }}
           />
 
           <FormField
             control={form.control}
             name="text"
-            render={({ field }) => (
+            render={({ field: { ref: fieldRef, ...field } }) => (
               <FormItem className="grow space-y-0">
                 <FormLabel className="sr-only">Type a message</FormLabel>
                 <FormControl>
-                  <Input
-                    type="text"
+                  <Textarea
+                    ref={(el) => {
+                      fieldRef(el)
+                      ;(textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el
+                    }}
                     placeholder="Type a message..."
                     autoComplete="off"
-                    className="bg-muted"
+                    className="bg-muted min-h-[36px] max-h-[120px] py-2 resize-none"
+                    rows={1}
                     disabled={isSending}
                     {...field}
                     onChange={(e) => {
                       field.onChange(e)
                       handleInputChange(e.target.value)
+                    }}
+                    onPaste={handlePaste}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        if (!isDisabled) {
+                          form.handleSubmit(onSubmit)()
+                        }
+                      }
                     }}
                   />
                 </FormControl>
@@ -357,11 +448,16 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
           <ButtonLoading
             isLoading={isSending}
-            disabled={isDisabled}
+            disabled={isDisabled && pastedImages.length === 0}
             size="icon"
             icon={Send}
             iconClassName="me-0"
             loadingIconClassName="me-0"
+            onClick={() => {
+              if (pastedImages.length > 0 && !text.trim()) {
+                sendPastedImages()
+              }
+            }}
           />
         </form>
       </div>

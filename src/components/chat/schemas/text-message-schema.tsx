@@ -5,5 +5,5 @@ export const TextMessageSchema = z.object({
     .string()
     .trim()
     .min(1, "Message text cannot be empty")
-    .max(280, "Message text cannot exceed 280 characters"),
+    .max(5000, "Message text cannot exceed 5000 characters"),
 })
