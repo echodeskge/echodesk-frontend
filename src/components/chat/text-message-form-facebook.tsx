@@ -198,7 +198,13 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
       // Send pasted images if any
       if (pastedImages.length > 0) {
-        handleAddImagesMessage(pastedImages)
+        const fileTypes = pastedImages.map(file => ({
+          name: file.name || 'pasted-image.png',
+          size: file.size,
+          type: file.type,
+          url: URL.createObjectURL(file),
+        }))
+        handleAddImagesMessage(fileTypes)
         setPastedImages([])
       }
 
@@ -271,10 +277,16 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     }
   }, [])
 
-  // Send pasted images
+  // Convert File[] to FileType[] and send
   const sendPastedImages = useCallback(() => {
     if (pastedImages.length === 0) return
-    handleAddImagesMessage(pastedImages)
+    const fileTypes = pastedImages.map(file => ({
+      name: file.name || 'pasted-image.png',
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+    }))
+    handleAddImagesMessage(fileTypes)
     setPastedImages([])
   }, [pastedImages, handleAddImagesMessage])
 
