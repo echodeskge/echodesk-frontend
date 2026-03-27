@@ -14,7 +14,6 @@ import {
 } from "@/hooks/api/useSocial"
 import { CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ChatBoxFooterActions } from "./chat-box-footer-actions"
 import { TextMessageFormFacebook } from "./text-message-form-facebook"
 
 interface ChatBoxFooterFacebookProps {
@@ -222,7 +221,6 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
   // Normal footer with message input
   return (
     <CardFooter className="py-3 border-t border-border">
-      <ChatBoxFooterActions />
       <TextMessageFormFacebook onMessageSent={onMessageSent} />
     </CardFooter>
   )

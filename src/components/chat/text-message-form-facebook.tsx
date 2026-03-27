@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Send, ChevronDown, ChevronUp, X, Reply, Paperclip, FileText } from "lucide-react"
+import { Send, ChevronDown, ChevronUp, X, Reply, Paperclip, FileText, Mic } from "lucide-react"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
 import type { TextMessageFormType } from "@/components/chat/types"
@@ -26,7 +26,11 @@ import axios from "@/api/axios"
 import { toast } from "sonner"
 import { QuickReplySelector } from "@/components/social/QuickReplySelector"
 import { QuickReplyPlatform } from "@/hooks/api/useSocial"
+import { useSendWhatsAppTemplateMessage } from "@/hooks/api/useSocial"
 import { useAuth } from "@/contexts/AuthContext"
+import TemplateSelector from "@/components/social/TemplateSelector"
+import type { WhatsAppMessageTemplate } from "@/api/generated"
+import { addPendingMedia } from "@/lib/pendingMedia"
 
 interface TextMessageFormFacebookProps {
   onMessageSent?: () => void;
@@ -52,6 +56,35 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   // Check if current chat is email
   const isEmailPlatform = chatState.selectedChat?.platform === 'email' ||
     chatState.selectedChat?.id?.startsWith('email_')
+
+  // WhatsApp template support
+  const isWhatsApp = chatState.selectedChat?.platform === 'whatsapp'
+  const sendTemplate = useSendWhatsAppTemplateMessage()
+
+  const handleTemplateSelect = async (
+    template: WhatsAppMessageTemplate,
+    parameters: Record<string, string>
+  ) => {
+    const selectedChat = chatState.selectedChat
+    if (!selectedChat) return
+
+    try {
+      const recipientNumber = selectedChat.id.split("_")[2]
+      const wabaId = selectedChat.id.split("_")[1]
+
+      await sendTemplate.mutateAsync({
+        waba_id: wabaId,
+        template_id: template.id!,
+        to_number: recipientNumber,
+        parameters: parameters,
+      })
+
+      toast.success("Template message sent successfully")
+    } catch (error: any) {
+      console.error("Failed to send template message:", error)
+      toast.error(error.response?.data?.error || "Failed to send template message")
+    }
+  }
 
   // Clear reply state when chat changes
   useEffect(() => {
@@ -133,6 +166,14 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     const accountId = chatIdParts[1]
     const recipientId = chatIdParts.slice(2).join('_')
     const files = attachedFiles
+
+    // Queue blob URLs for pending media so WebSocket handler can display them immediately
+    if (files.length > 0) {
+      for (const file of files) {
+        const blobUrl = URL.createObjectURL(file)
+        addPendingMedia(selectedChat.id, blobUrl, file.type.startsWith('image/'), file.name)
+      }
+    }
 
     if (platform === 'fb') {
       if (files.length > 0) {
@@ -505,7 +546,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         {/* Message input */}
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full flex justify-center items-end gap-1.5"
+          className="w-full flex items-center gap-1.5"
         >
           <QuickReplySelector
             platform={getPlatform()}
@@ -531,6 +572,35 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
             disabled={isSending}
           >
             <Paperclip className="h-4 w-4" />
+          </Button>
+
+          {/* WhatsApp template selector */}
+          {isWhatsApp && (
+            <TemplateSelector
+              onSelect={handleTemplateSelect}
+              trigger={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 flex-shrink-0"
+                  aria-label="Send a template message"
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              }
+            />
+          )}
+
+          {/* Mic button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 flex-shrink-0"
+            aria-label="Send a voice message"
+          >
+            <Mic className="h-4 w-4" />
           </Button>
 
           <FormField

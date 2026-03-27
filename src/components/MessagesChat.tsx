@@ -11,6 +11,7 @@ import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType, MessageType, AssignmentTabType } from "@/components/chat/types";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { useMarkConversationRead, useUnifiedConversations } from "@/hooks/api/useSocial";
+import { consumePendingMedia } from "@/lib/pendingMedia";
 
 // Custom hook for debounced value
 function useDebounce<T>(value: T, delay: number): T {
@@ -342,8 +343,21 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         }]).filter((img: any) => img.url);
         if (images.length > 0) {
           newMessage.images = images;
+        } else if (chatId && isFromBusiness) {
+          // Sent media without URL — try pending blob URL from local send
+          const pending = consumePendingMedia(chatId);
+          if (pending && pending.isImage) {
+            newMessage.images = [{
+              name: pending.fileName,
+              url: pending.blobUrl,
+              size: 0,
+              type: 'image',
+            }];
+          } else if (!newMessage.text) {
+            const attName = messageData.attachments?.[0]?.filename;
+            newMessage.text = attName ? `📷 ${attName}` : '📷 Image sent';
+          }
         } else if (!newMessage.text) {
-          // Sent media without URL — show placeholder
           const attName = messageData.attachments?.[0]?.filename;
           newMessage.text = attName ? `📷 ${attName}` : '📷 Image sent';
         }
@@ -359,6 +373,20 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         }]).filter((f: any) => f.url);
         if (files.length > 0) {
           newMessage.files = files;
+        } else if (chatId && isFromBusiness) {
+          // Sent file without URL — try pending blob URL from local send
+          const pending = consumePendingMedia(chatId);
+          if (pending) {
+            newMessage.files = [{
+              name: pending.fileName,
+              url: pending.blobUrl,
+              size: 0,
+              type: pending.isImage ? 'image' : 'file',
+            }];
+          } else if (!newMessage.text) {
+            const attName = messageData.attachments?.[0]?.filename;
+            newMessage.text = attName ? `📎 ${attName}` : '📎 Attachment sent';
+          }
         } else if (!newMessage.text) {
           const attName = messageData.attachments?.[0]?.filename;
           newMessage.text = attName ? `📎 ${attName}` : '📎 Attachment sent';
