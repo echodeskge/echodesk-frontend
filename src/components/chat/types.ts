@@ -21,6 +21,7 @@ export interface ChatContextType {
   handleAddTextMessage: (text: string) => void
   handleAddImagesMessage: (images: FileType[]) => void
   handleAddFilesMessage: (files: FileType[]) => void
+  handleRemoveChat: (chatId: string) => void
   handleSetUnreadCount: () => void
   onChatSelected?: (chat: ChatType) => void
   // Search functionality
@@ -189,6 +190,10 @@ export type ChatActionType =
       chatId: string
       message: MessageType
       senderName?: string
+    }
+  | {
+      type: "removeChat"
+      chatId: string
     }
 
 export type TextMessageFormType = z.infer<typeof TextMessageSchema>

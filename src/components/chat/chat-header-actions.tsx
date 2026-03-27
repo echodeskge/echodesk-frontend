@@ -99,7 +99,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const [transferTarget, setTransferTarget] = useState<{ id: number; name: string } | null>(null)
 
   // Archive/History functionality
-  const { showArchived, setShowArchived, selectedEmailConnectionId, setAssignmentTab, setSelectedChatId } = useChatContext()
+  const { showArchived, setShowArchived, selectedEmailConnectionId, setAssignmentTab, setSelectedChatId, handleRemoveChat } = useChatContext()
 
   // Email folder functionality
   const isEmail = chat?.platform === 'email'
@@ -283,7 +283,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   }
 
   const handleEndSession = () => {
-    if (!chatInfo) return
+    if (!chatInfo || !chat) return
+    const chatIdToRemove = chat.id
     // End session - backend archives the conversation automatically
     endSession.mutate(
       {
@@ -297,6 +298,8 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             title: "Session ended",
             description: "Conversation moved to history",
           })
+          // Immediately remove chat from sidebar and clear selection
+          handleRemoveChat(chatIdToRemove)
           setSelectedChatId(null)
           queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
         },

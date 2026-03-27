@@ -163,6 +163,10 @@ export function ChatProvider({
     dispatch({ type: "addFilesMessage", files })
   }
 
+  const handleRemoveChat = (chatId: string) => {
+    dispatch({ type: "removeChat", chatId })
+  }
+
   // Handlers for chat actions
   const handleSetUnreadCount = () => {
     dispatch({ type: "setUnreadCount" })
@@ -248,6 +252,7 @@ export function ChatProvider({
         handleAddTextMessage,
         handleAddImagesMessage,
         handleAddFilesMessage,
+        handleRemoveChat,
         handleSetUnreadCount,
         onChatSelected,
         chatListSearchQuery,

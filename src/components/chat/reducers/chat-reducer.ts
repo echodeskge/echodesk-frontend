@@ -250,6 +250,15 @@ export const ChatReducer = (
       }
     }
 
+    case "removeChat": {
+      const filteredChats = state.chats.filter(c => c.id !== action.chatId)
+      return {
+        ...state,
+        chats: filteredChats,
+        selectedChat: state.selectedChat?.id === action.chatId ? null : state.selectedChat,
+      }
+    }
+
     default:
       return state // Return the current state for unknown actions
   }
