@@ -137,6 +137,18 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     // If there were files but we still need to send text-only (no files scenario handled by caller)
   }
 
+  // Helper: send files for Instagram (one per API call, same as WhatsApp)
+  const sendInstagramFiles = async (files: File[], recipientId: string, accountId: string, messageText: string) => {
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData()
+      formData.append('recipient_id', recipientId)
+      formData.append('instagram_account_id', accountId)
+      formData.append('message', i === 0 ? messageText : '')
+      formData.append('media', files[i])
+      await axios.post('/api/social/instagram/send-message/', formData)
+    }
+  }
+
   // Helper: send files for Facebook
   const sendFacebookFiles = async (files: File[], recipientId: string, pageId: string, messageText: string, replyToMid?: string) => {
     // Send first file with text, rest without
@@ -199,11 +211,15 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
         })
       }
     } else if (platform === 'ig') {
-      await axios.post('/api/social/instagram/send-message/', {
-        recipient_id: recipientId,
-        message: messageText,
-        instagram_account_id: accountId
-      })
+      if (files.length > 0) {
+        await sendInstagramFiles(files, recipientId, accountId, messageText)
+      } else {
+        await axios.post('/api/social/instagram/send-message/', {
+          recipient_id: recipientId,
+          message: messageText,
+          instagram_account_id: accountId
+        })
+      }
     } else if (platform === 'wa') {
       const phoneNumber = recipientId.startsWith('+') ? recipientId : `+${recipientId}`
 
