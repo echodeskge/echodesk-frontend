@@ -22,11 +22,6 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     requiredFeatureKey: "ticket_management",
   },
   {
-    id: "time-tracking",
-    icon: "Clock",
-    requiredFeatureKey: "ticket_management",
-  },
-  {
     id: "user-statistics",
     icon: "BarChart3",
     requiredFeatureKey: "advanced_analytics",
