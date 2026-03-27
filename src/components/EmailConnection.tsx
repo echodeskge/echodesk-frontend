@@ -470,6 +470,7 @@ export function EmailConnection() {
     try {
       await updateEmailConnection.mutateAsync({
         connection_id: editingConnection.id,
+        signature_enabled: !!(signatureHtml || signatureText),
         signature_html: signatureHtml,
         signature_text: signatureText,
       });
