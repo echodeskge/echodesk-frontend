@@ -39,6 +39,7 @@ import {
   Shield,
   CreditCard,
   Sparkles,
+  Bug,
 } from "lucide-react"
 
 import {
@@ -108,6 +109,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Shield": Shield,
   "CreditCard": CreditCard,
   "Sparkles": Sparkles,
+  "Bug": Bug,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,

@@ -15,6 +15,8 @@ import {
 import BoardSwitcher from "@/components/BoardSwitcher";
 import { TicketCreateProvider, useTicketCreate } from "@/contexts/TicketCreateContext";
 import { TicketCreateSheet } from "@/components/TicketCreateSheet";
+import { BugReportProvider, useBugReport } from "@/contexts/BugReportContext";
+import { BugReportDialog } from "@/components/BugReportDialog";
 import { BoardProvider, useBoard } from "@/contexts/BoardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { LayoutSkeleton } from "@/components/LayoutSkeleton";
@@ -43,7 +45,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
 import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
-import { Plus, Volume2, VolumeX } from "lucide-react";
+import { Plus, Volume2, VolumeX, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -55,12 +57,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { hasFeature, subscription, loading: subscriptionLoading } = useSubscription();
   const { user, logout } = useAuth();
   const { openTicketCreate } = useTicketCreate();
+  const { openBugReport } = useBugReport();
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
   const { data: boards } = useBoards();
   const { data: appearance } = useDashboardAppearance();
-  const { setAppearance } = useTheme();
+  const { setAppearance, resolvedMode, setMode } = useTheme();
   const { selectedBoardId, setSelectedBoardId } = useBoard();
   const { data: socialSettings } = useSocialSettings();
 
@@ -277,6 +280,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "settings/ticket-forms": "settingsTicketForms",
     "settings/subscription": "settingsSubscription",
     "settings/security": "settingsSecurity",
+    "report-bug": "reportBug",
     help: "help",
   };
 
@@ -527,6 +531,10 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   }, [pathname, visibleMenuItems, profileLoading, tenantLoading, userProfile]);
 
   const handleMenuClick = (viewId: string) => {
+    if (viewId === "report-bug") {
+      openBugReport();
+      return;
+    }
     // Pure subdomain routing - just navigate to /viewId
     router.push(`/${viewId}`);
   };
@@ -702,6 +710,19 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                   <Volume2 className="h-5 w-5" />
                 )}
               </Button>
+              {/* Dark/Light Mode Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')}
+                title={resolvedMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {resolvedMode === 'dark' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
               <MessengerBell />
               <NotificationBell
                 onNotificationClick={(notification) => {
@@ -729,6 +750,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       </div>
 
       <TicketCreateSheet />
+      <BugReportDialog />
 
       {/* Board Create Sheet */}
       <BoardCreateSheet
@@ -770,9 +792,11 @@ export default function TenantLayout({
   return (
     <SubscriptionProvider>
       <TicketCreateProvider>
-        <BoardProvider>
-          <TenantLayoutContent>{children}</TenantLayoutContent>
-        </BoardProvider>
+        <BugReportProvider>
+          <BoardProvider>
+            <TenantLayoutContent>{children}</TenantLayoutContent>
+          </BoardProvider>
+        </BugReportProvider>
       </TicketCreateProvider>
     </SubscriptionProvider>
   );

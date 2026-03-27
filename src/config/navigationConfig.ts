@@ -319,6 +319,11 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     ],
   },
   {
+    id: "report-bug",
+    icon: "Bug",
+    // No requiredFeatureKey - bug reporting is available to all users
+  },
+  {
     id: "help",
     icon: "HelpCircle",
     // No requiredFeatureKey - help is available to all users

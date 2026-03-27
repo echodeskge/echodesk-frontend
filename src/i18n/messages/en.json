@@ -84,6 +84,7 @@
     "timeTracking": "My Time",
     "userStatistics": "Time Statistics",
     "dashboard": "Dashboard",
+    "reportBug": "Report Bug",
     "help": "Help Center",
     "createTask": "Create Task",
     "mute": "Mute notifications",
@@ -141,8 +142,32 @@
       "settingsSecurity": "View security logs and manage IP whitelist",
       "timeTracking": "View your time tracking data",
       "userStatistics": "View time tracking statistics for all users",
+      "reportBug": "Report a bug to the EchoDesk team",
       "help": "Access tutorials, guides and documentation"
     }
+  },
+  "bugReport": {
+    "title": "Report a Bug",
+    "fieldTitle": "Title",
+    "fieldTitlePlaceholder": "Brief summary of the issue",
+    "fieldDescription": "Description",
+    "fieldDescriptionPlaceholder": "Describe what happened and how to reproduce it",
+    "fieldPriority": "Priority",
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "sla": {
+      "high": "Fixed in 3 hours",
+      "medium": "Fixed in 6 hours",
+      "low": "Fixed in 24 hours"
+    },
+    "fieldAttachments": "Attachments",
+    "submit": "Submit Bug Report",
+    "cancel": "Cancel",
+    "success": "Bug report submitted successfully!",
+    "error": "Failed to submit bug report. Please try again."
   },
   "auth": {
     "login": "Login",
@@ -298,6 +323,22 @@
     "editTask": "Edit Task",
     "deleteTask": "Delete Task",
     "deleteTaskConfirm": "Are you sure you want to delete this task? This action cannot be undone.",
+    "assignUsers": "Assign Users",
+    "assignUsersOptional": "Assign to Users (Optional)",
+    "selectUsersPlaceholder": "Select users to assign...",
+    "searchUsers": "Search users...",
+    "noUsersFound": "No users found",
+    "noUsersAvailable": "No users available",
+    "usersSelected": "users selected",
+    "assignGroupsOptional": "Assign to Groups (Optional)",
+    "selectGroupsPlaceholder": "Select groups to assign...",
+    "ticketFormOptional": "Ticket Form (Optional)",
+    "selectFormPlaceholder": "Select a form (optional)",
+    "customFields": "Custom Fields",
+    "selectItem": "Select item...",
+    "clearSelection": "Clear selection",
+    "noItemsInList": "No items in this list",
+    "selectItemsFromLists": "Select Items from Lists (Optional)",
     "ticketCreatedSuccess": "Ticket created successfully!",
     "ticketCreatedError": "Failed to create ticket. Please try again.",
     "ticketDeletedSuccess": "Ticket deleted successfully!",
