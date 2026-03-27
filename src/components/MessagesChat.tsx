@@ -317,15 +317,46 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
     // Add attachments if present
     if (messageData.attachments?.length > 0 || messageData.attachment_url) {
-      newMessage.files = messageData.attachments?.map((att: any) => ({
-        name: att.filename || 'attachment',
-        url: att.url || messageData.attachment_url,
-        type: att.type || messageData.attachment_type,
-      })) || [{
-        name: 'attachment',
-        url: messageData.attachment_url,
-        type: messageData.attachment_type,
-      }];
+      // For WhatsApp, use proxy URL to avoid browser ORB blocking on Meta URLs
+      const resolveUrl = (att: any) => {
+        if (platform === 'whatsapp' && att?.media_id && messageData.waba_id) {
+          return `/api/social/whatsapp-media/${att.media_id}/?waba_id=${messageData.waba_id}`;
+        }
+        return att?.url || messageData.attachment_url;
+      };
+
+      const attachmentType = messageData.attachments?.[0]?.type || messageData.attachment_type || messageData.message_type || '';
+      const isImageType = ['image', 'sticker'].includes(attachmentType);
+
+      if (isImageType) {
+        const images = (messageData.attachments?.map((att: any) => ({
+          name: att.type || 'image',
+          url: resolveUrl(att),
+          size: 0,
+          type: 'image',
+        })) || [{
+          name: 'image',
+          url: resolveUrl(null),
+          size: 0,
+          type: 'image',
+        }]).filter((img: any) => img.url);
+        if (images.length > 0) {
+          newMessage.images = images;
+        }
+      } else {
+        const files = (messageData.attachments?.map((att: any) => ({
+          name: att.filename || 'attachment',
+          url: resolveUrl(att),
+          type: att.type || messageData.attachment_type,
+        })) || [{
+          name: 'attachment',
+          url: resolveUrl(null),
+          type: messageData.attachment_type,
+        }]).filter((f: any) => f.url);
+        if (files.length > 0) {
+          newMessage.files = files;
+        }
+      }
     }
 
     // Dispatch to chat state if the handler is available
@@ -474,27 +505,36 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         });
         const messages = response.data?.results || [];
 
-        const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => ({
-          id: String(msg.id),
-          platform: "whatsapp" as const,
-          sender_id: msg.is_from_business ? msg.to_number : msg.from_number,
-          sender_name: msg.contact_name || msg.from_number,
-          profile_pic_url: msg.profile_pic_url,
-          message_text: msg.message_text || '',
-          message_type: msg.message_type,
-          attachment_type: msg.message_type,
-          attachment_url: msg.media_url,
-          attachments: msg.attachments,
-          timestamp: msg.timestamp,
-          is_from_business: msg.is_from_business || false,
-          is_delivered: msg.is_delivered,
-          is_read: msg.is_read,
-          conversation_id: chatId,
-          platform_message_id: msg.message_id,
-          account_id: wabaId,
-          source: msg.source,
-          is_echo: msg.is_echo,
-        }));
+        const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => {
+          // Use proxy URL for WhatsApp media (direct Meta URLs are blocked by browsers)
+          const mediaId = msg.attachments?.[0]?.media_id;
+          const proxyUrl = mediaId ? `/api/social/whatsapp-media/${mediaId}/?waba_id=${wabaId}` : msg.media_url;
+
+          return {
+            id: String(msg.id),
+            platform: "whatsapp" as const,
+            sender_id: msg.is_from_business ? msg.to_number : msg.from_number,
+            sender_name: msg.contact_name || msg.from_number,
+            profile_pic_url: msg.profile_pic_url,
+            message_text: msg.message_text || '',
+            message_type: msg.message_type,
+            attachment_type: msg.message_type,
+            attachment_url: proxyUrl,
+            attachments: msg.attachments?.map((att: any) => ({
+              ...att,
+              url: att.media_id ? `/api/social/whatsapp-media/${att.media_id}/?waba_id=${wabaId}` : att.url,
+            })),
+            timestamp: msg.timestamp,
+            is_from_business: msg.is_from_business || false,
+            is_delivered: msg.is_delivered,
+            is_read: msg.is_read,
+            conversation_id: chatId,
+            platform_message_id: msg.message_id,
+            account_id: wabaId,
+            source: msg.source,
+            is_echo: msg.is_echo,
+          };
+        });
 
         return convertUnifiedMessagesToMessageType(unifiedMessages);
       }

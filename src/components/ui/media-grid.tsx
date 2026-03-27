@@ -26,7 +26,8 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
 }
 
 // Check if URL is from an external CDN or storage that requires unoptimized images
-function isExternalUrl(src: string): boolean {
+function isExternalUrl(src: string | undefined | null): boolean {
+  if (!src) return false;
   const externalPatterns = [
     'fbcdn.net',
     'cdninstagram.com',
@@ -48,12 +49,14 @@ export function MediaGrid({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxMedia, setLightboxMedia] = useState<MediaType | null>(null)
 
-  if (data.length === 0) return null
+  // Filter out items with no src (e.g. sent attachments with no URL yet)
+  const validData = data.filter(item => item.src)
+  if (validData.length === 0) return null
 
-  const displayedMedia = data.slice(0, limit - 1)
-  const remainingCount = data.length - displayedMedia.length - 1
-  const hasMoreMedia = data.length >= limit
-  const lastMedia = hasMoreMedia ? data[limit - 1] : null
+  const displayedMedia = validData.slice(0, limit - 1)
+  const remainingCount = validData.length - displayedMedia.length - 1
+  const hasMoreMedia = validData.length >= limit
+  const lastMedia = hasMoreMedia ? validData[limit - 1] : null
 
   const handleMediaClick = (item: MediaType, e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
@@ -118,19 +121,19 @@ export function MediaGrid({
   };
 
   // For single media item, use larger display
-  const isSingleMedia = data.length === 1
+  const isSingleMedia = validData.length === 1
 
   return (
     <>
       <ul
         className={cn(
           "grid gap-2 rounded-lg",
-          !isSingleMedia && data.length > 1 && "grid-cols-2",
+          !isSingleMedia && validData.length > 1 && "grid-cols-2",
           className
         )}
         {...props}
       >
-        {(isSingleMedia ? data : displayedMedia).map((item) => (
+        {(isSingleMedia ? validData : displayedMedia).map((item) => (
           <li key={`${item.alt}-${item.src}`} className={isSingleMedia ? "max-w-[280px]" : ""}>
             {item.type === "VIDEO" ? (
               // Videos are playable inline - no need for click handler
