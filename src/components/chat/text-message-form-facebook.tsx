@@ -2,8 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Send, ChevronDown, ChevronUp, X, Reply } from "lucide-react"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { Send, ChevronDown, ChevronUp, X, Reply, Paperclip, FileText } from "lucide-react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
 import type { TextMessageFormType } from "@/components/chat/types"
 
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { socialFacebookSendMessageCreate } from "@/api/generated/api"
 import axios from "@/api/axios"
 import { toast } from "sonner"
 import { QuickReplySelector } from "@/components/social/QuickReplySelector"
@@ -33,21 +32,22 @@ interface TextMessageFormFacebookProps {
   onMessageSent?: () => void;
 }
 
-interface WhatsAppSendMessagePayload {
-  to_number: string;
-  message: string;
-  waba_id: string;
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
-  const { chatState, replyingTo, setReplyingTo, reloadChatMessages, handleAddImagesMessage } = useChatContext()
+  const { chatState, replyingTo, setReplyingTo, reloadChatMessages } = useChatContext()
   const { user } = useAuth()
   const [isSending, setIsSending] = useState(false)
   const [showCcBcc, setShowCcBcc] = useState(false)
   const [ccEmails, setCcEmails] = useState("")
   const [bccEmails, setBccEmails] = useState("")
-  const [pastedImages, setPastedImages] = useState<File[]>([])
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Check if current chat is email
   const isEmailPlatform = chatState.selectedChat?.platform === 'email' ||
@@ -56,6 +56,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   // Clear reply state when chat changes
   useEffect(() => {
     setReplyingTo(null)
+    setAttachedFiles([])
   }, [chatState.selectedChat?.id, setReplyingTo])
 
   // Typing indicator WebSocket
@@ -71,152 +72,210 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   })
 
   const text = form.watch("text")
-  const { isSubmitting, isValid } = form.formState
-  const isDisabled = isSubmitting || !isValid || isSending
+  const { isSubmitting } = form.formState
+  const hasContent = text.trim().length > 0 || attachedFiles.length > 0
+  const isDisabled = isSubmitting || isSending || !hasContent
 
-  const onSubmit = async (data: TextMessageFormType) => {
+  // Generate preview URLs for image files, memoized to avoid re-creating on every render
+  const previewUrls = useMemo(() => {
+    return attachedFiles.map(file =>
+      file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+    )
+  }, [attachedFiles])
+
+  // Cleanup preview URLs on change
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => { if (url) URL.revokeObjectURL(url) })
+    }
+  }, [previewUrls])
+
+  // Helper: send files for WhatsApp (one per API call since WA supports one media per message)
+  const sendWhatsAppFiles = async (files: File[], phoneNumber: string, accountId: string, messageText: string) => {
+    // Send first file with text caption, rest without
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData()
+      formData.append('to_number', phoneNumber)
+      formData.append('waba_id', accountId)
+      formData.append('message', i === 0 ? messageText : '')
+      formData.append('media', files[i])
+      await axios.post('/api/social/whatsapp/send-message/', formData)
+    }
+    // If there were files but we still need to send text-only (no files scenario handled by caller)
+  }
+
+  // Helper: send files for Facebook
+  const sendFacebookFiles = async (files: File[], recipientId: string, pageId: string, messageText: string, replyToMid?: string) => {
+    // Send first file with text, rest without
+    for (let i = 0; i < files.length; i++) {
+      const formData = new FormData()
+      formData.append('recipient_id', recipientId)
+      formData.append('page_id', pageId)
+      formData.append('message', i === 0 ? messageText : '')
+      if (i === 0 && replyToMid) {
+        formData.append('reply_to_message_id', replyToMid)
+      }
+      formData.append('media', files[i])
+      await axios.post('/api/social/facebook/send-message/', formData)
+    }
+  }
+
+  const sendMessage = async (messageText: string) => {
     const selectedChat = chatState.selectedChat
     if (!selectedChat) return
 
-    setIsSending(true)
-    try {
-      // Extract conversation details from chat ID
-      // Format: fb_{pageId}_{senderId}, ig_{accountId}_{senderId}, wa_{wabaId}_{number}, or email_{threadId}
-      const chatIdParts = selectedChat.id.split('_')
-      if (chatIdParts.length < 2) {
-        throw new Error('Invalid chat ID format')
-      }
+    const chatIdParts = selectedChat.id.split('_')
+    if (chatIdParts.length < 2) {
+      throw new Error('Invalid chat ID format')
+    }
 
-      const platform = chatIdParts[0]
-      // For email, we only have 2 parts; for others we have 3+
-      const accountId = chatIdParts[1]
-      const recipientId = chatIdParts.slice(2).join('_') // Handle IDs with underscores
+    const platform = chatIdParts[0]
+    const accountId = chatIdParts[1]
+    const recipientId = chatIdParts.slice(2).join('_')
+    const files = attachedFiles
 
-      if (platform === 'fb') {
-        // Send via Facebook API
-        await socialFacebookSendMessageCreate({
+    if (platform === 'fb') {
+      if (files.length > 0) {
+        // If text only (no files), send text. If files, send via FormData.
+        // If text + files, first file gets the text as caption
+        await sendFacebookFiles(files, recipientId, accountId, messageText, replyingTo?.messageId)
+        // If there's text but no file sent it with, send text separately
+        if (messageText && files.length === 0) {
+          await axios.post('/api/social/facebook/send-message/', {
+            recipient_id: recipientId,
+            message: messageText,
+            page_id: accountId,
+            reply_to_message_id: replyingTo?.messageId || '',
+          })
+        }
+      } else {
+        // Text only
+        await axios.post('/api/social/facebook/send-message/', {
           recipient_id: recipientId,
-          message: data.text,
+          message: messageText,
           page_id: accountId,
           reply_to_message_id: replyingTo?.messageId || '',
         })
-      } else if (platform === 'ig') {
-        // Send via Instagram API
-        await axios.post('/api/social/instagram/send-message/', {
-          recipient_id: recipientId,
-          message: data.text,
-          instagram_account_id: accountId
-        })
-      } else if (platform === 'wa') {
-        // Send via WhatsApp API
-        // Ensure phone number has + prefix for E.164 format
-        const phoneNumber = recipientId.startsWith('+') ? recipientId : `+${recipientId}`
-        const payload: WhatsAppSendMessagePayload = {
+      }
+    } else if (platform === 'ig') {
+      await axios.post('/api/social/instagram/send-message/', {
+        recipient_id: recipientId,
+        message: messageText,
+        instagram_account_id: accountId
+      })
+    } else if (platform === 'wa') {
+      const phoneNumber = recipientId.startsWith('+') ? recipientId : `+${recipientId}`
+
+      if (files.length > 0) {
+        await sendWhatsAppFiles(files, phoneNumber, accountId, messageText)
+        // If text + no files scenario — text already sent as caption with first file
+      } else {
+        // Text only
+        await axios.post('/api/social/whatsapp/send-message/', {
           to_number: phoneNumber,
-          message: data.text,
-          waba_id: accountId
-        }
-        await axios.post('/api/social/whatsapp/send-message/', payload)
-      } else if (platform === 'email') {
-        // Email chat ID format: email_{connectionId}_{threadId}
-        // accountId = connectionId, recipientId = threadId (already parsed above)
-        const connectionId = accountId
-        const threadId = recipientId
-
-        const threadMessagesResponse = await axios.get("/api/social/email-messages/", {
-          params: { thread_id: threadId, connection_id: connectionId, page: 1 }
+          message: messageText,
+          waba_id: accountId,
         })
-        const messages = threadMessagesResponse.data?.results || []
-        const latestMessage = messages.length > 0 ? messages[0] : null
+      }
+    } else if (platform === 'email') {
+      const connectionId = accountId
+      const threadId = recipientId
 
-        if (!latestMessage) {
-          throw new Error('No message found to reply to')
-        }
+      const threadMessagesResponse = await axios.get("/api/social/email-messages/", {
+        params: { thread_id: threadId, connection_id: connectionId, page: 1 }
+      })
+      const messages = threadMessagesResponse.data?.results || []
+      const latestMessage = messages.length > 0 ? messages[0] : null
 
-        // Find customer email - look for a message NOT from business
-        // If latest is from customer, use their email; otherwise find first customer message
-        let customerEmail: string | null = null
-        if (!latestMessage.is_from_business) {
-          customerEmail = latestMessage.from_email
+      if (!latestMessage) {
+        throw new Error('No message found to reply to')
+      }
+
+      let customerEmail: string | null = null
+      if (!latestMessage.is_from_business) {
+        customerEmail = latestMessage.from_email
+      } else {
+        const customerMessage = messages.find((m: any) => !m.is_from_business)
+        if (customerMessage) {
+          customerEmail = customerMessage.from_email
         } else {
-          // Find a message from the customer in the thread
-          const customerMessage = messages.find((m: any) => !m.is_from_business)
-          if (customerMessage) {
-            customerEmail = customerMessage.from_email
-          } else {
-            // Fallback: if all messages are from business, check to_emails of our sent messages
-            const businessMessage = messages.find((m: any) => m.is_from_business && m.to_emails?.length > 0)
-            if (businessMessage?.to_emails?.[0]) {
-              customerEmail = businessMessage.to_emails[0].email || businessMessage.to_emails[0]
-            }
+          const businessMessage = messages.find((m: any) => m.is_from_business && m.to_emails?.length > 0)
+          if (businessMessage?.to_emails?.[0]) {
+            customerEmail = businessMessage.to_emails[0].email || businessMessage.to_emails[0]
           }
         }
+      }
 
-        if (!customerEmail) {
-          throw new Error('Could not determine recipient email address')
+      if (!customerEmail) {
+        throw new Error('Could not determine recipient email address')
+      }
+
+      const bodyHtml = `<p>${messageText.replace(/\n/g, '<br>')}</p>`
+
+      const parseCcBccEmails = (input: string): string[] => {
+        if (!input.trim()) return []
+        return input.split(/[,;]/).map(e => e.trim()).filter(e => e.length > 0 && e.includes('@'))
+      }
+
+      if (files.length > 0) {
+        // Use FormData for email with attachments
+        const formData = new FormData()
+        // Append each email as a separate form field (DRF ListField expects this)
+        formData.append('to_emails', customerEmail)
+        for (const cc of parseCcBccEmails(ccEmails)) {
+          formData.append('cc_emails', cc)
         }
-
-        // Send email reply - convert plain text to HTML for proper signature rendering
-        const bodyHtml = `<p>${data.text.replace(/\n/g, '<br>')}</p>`;
-
-        // Parse CC and BCC emails (comma or semicolon separated)
-        const parseCcBccEmails = (input: string): string[] => {
-          if (!input.trim()) return [];
-          return input
-            .split(/[,;]/)
-            .map(email => email.trim())
-            .filter(email => email.length > 0 && email.includes('@'));
-        };
-
+        for (const bcc of parseCcBccEmails(bccEmails)) {
+          formData.append('bcc_emails', bcc)
+        }
+        formData.append('subject', latestMessage.subject?.startsWith('Re:') ? latestMessage.subject : `Re: ${latestMessage.subject || '(No subject)'}`)
+        formData.append('body_text', messageText)
+        formData.append('body_html', bodyHtml)
+        formData.append('reply_to_message_id', String(latestMessage.id))
+        formData.append('connection_id', connectionId)
+        for (const file of files) {
+          formData.append('attachments', file)
+        }
+        await axios.post('/api/social/email/send/', formData)
+      } else {
+        // JSON for text-only email
         await axios.post('/api/social/email/send/', {
           to_emails: [customerEmail],
           cc_emails: parseCcBccEmails(ccEmails),
           bcc_emails: parseCcBccEmails(bccEmails),
           subject: latestMessage.subject?.startsWith('Re:') ? latestMessage.subject : `Re: ${latestMessage.subject || '(No subject)'}`,
-          body_text: data.text,
+          body_text: messageText,
           body_html: bodyHtml,
           reply_to_message_id: latestMessage.id,
-          connection_id: connectionId,  // Send from the same account that received the email
+          connection_id: connectionId,
         })
-
-        // Clear CC/BCC after sending
-        setCcEmails("");
-        setBccEmails("");
-        setShowCcBcc(false);
-
-        // Reload chat messages to show the sent email (no WebSocket echo for email)
-        if (reloadChatMessages) {
-          reloadChatMessages(selectedChat.id);
-        }
-      } else {
-        throw new Error('Unsupported platform: ' + platform)
       }
 
-      // Reset form and clear reply state
+      setCcEmails("")
+      setBccEmails("")
+      setShowCcBcc(false)
+
+      if (reloadChatMessages) {
+        reloadChatMessages(selectedChat.id)
+      }
+    } else {
+      throw new Error('Unsupported platform: ' + platform)
+    }
+  }
+
+  const onSubmit = async (data: TextMessageFormType) => {
+    if (!chatState.selectedChat) return
+    setIsSending(true)
+    try {
+      await sendMessage(data.text)
       form.reset()
       setReplyingTo(null)
+      setAttachedFiles([])
 
-      // Send pasted images if any
-      if (pastedImages.length > 0) {
-        const fileTypes = pastedImages.map(file => ({
-          name: file.name || 'pasted-image.png',
-          size: file.size,
-          type: file.type,
-          url: URL.createObjectURL(file),
-        }))
-        handleAddImagesMessage(fileTypes)
-        setPastedImages([])
-      }
-
-      // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto'
       }
-
-      // Stop typing indicator after sending
       sendTypingStop()
-
-      // Reload messages to show the sent message
       if (onMessageSent) {
         onMessageSent()
       }
@@ -241,6 +300,33 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     }
   }
 
+  // Handle sending files-only (no text)
+  const handleSendFilesOnly = async () => {
+    if (attachedFiles.length === 0 || !chatState.selectedChat) return
+    setIsSending(true)
+    try {
+      await sendMessage('')
+      form.reset()
+      setReplyingTo(null)
+      setAttachedFiles([])
+
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
+      sendTypingStop()
+      if (onMessageSent) {
+        onMessageSent()
+      }
+    } catch (error: any) {
+      console.error("Failed to send files:", error)
+      toast.error("Failed to send files", {
+        description: "There was an error sending your files. Please try again.",
+      })
+    } finally {
+      setIsSending(false)
+    }
+  }
+
   // Auto-resize textarea to fit content
   const autoResize = useCallback(() => {
     const el = textareaRef.current
@@ -254,45 +340,40 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     if (value.length > 0) {
       notifyTyping()
     }
-    // Auto-resize after value change
     requestAnimationFrame(autoResize)
   }
 
-  // Handle paste - detect images from clipboard
+  // Handle paste - detect images/files from clipboard
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items
     if (!items) return
 
-    const imageFiles: File[] = []
+    const files: File[] = []
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.startsWith('image/')) {
         const file = items[i].getAsFile()
-        if (file) imageFiles.push(file)
+        if (file) files.push(file)
       }
     }
 
-    if (imageFiles.length > 0) {
+    if (files.length > 0) {
       e.preventDefault()
-      setPastedImages(prev => [...prev, ...imageFiles])
+      setAttachedFiles(prev => [...prev, ...files])
     }
   }, [])
 
-  // Convert File[] to FileType[] and send
-  const sendPastedImages = useCallback(() => {
-    if (pastedImages.length === 0) return
-    const fileTypes = pastedImages.map(file => ({
-      name: file.name || 'pasted-image.png',
-      size: file.size,
-      type: file.type,
-      url: URL.createObjectURL(file),
-    }))
-    handleAddImagesMessage(fileTypes)
-    setPastedImages([])
-  }, [pastedImages, handleAddImagesMessage])
+  // Handle file input change
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+    setAttachedFiles(prev => [...prev, ...Array.from(files)])
+    // Reset input so the same file can be selected again
+    e.target.value = ''
+  }, [])
 
-  // Remove a pasted image
-  const removePastedImage = useCallback((index: number) => {
-    setPastedImages(prev => prev.filter((_, i) => i !== index))
+  // Remove an attached file
+  const removeFile = useCallback((index: number) => {
+    setAttachedFiles(prev => prev.filter((_, i) => i !== index))
   }, [])
 
   // Get platform for quick reply filtering
@@ -380,19 +461,29 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           </div>
         )}
 
-        {/* Pasted images preview */}
-        {pastedImages.length > 0 && (
+        {/* Attached files preview */}
+        {attachedFiles.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            {pastedImages.map((file, index) => (
+            {attachedFiles.map((file, index) => (
               <div key={index} className="relative group">
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt="Pasted"
-                  className="h-16 w-16 object-cover rounded-md border"
-                />
+                {file.type.startsWith('image/') ? (
+                  <img
+                    src={previewUrls[index] || ''}
+                    alt="Attached"
+                    className="h-16 w-16 object-cover rounded-md border"
+                  />
+                ) : (
+                  <div className="h-16 px-3 flex items-center gap-2 rounded-md border bg-muted/50">
+                    <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium truncate max-w-[120px]">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                    </div>
+                  </div>
+                )}
                 <button
                   type="button"
-                  onClick={() => removePastedImage(index)}
+                  onClick={() => removeFile(index)}
                   className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full h-4 w-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <X className="h-3 w-3" />
@@ -401,6 +492,15 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
             ))}
           </div>
         )}
+
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileSelect}
+        />
 
         {/* Message input */}
         <form
@@ -420,6 +520,18 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
               requestAnimationFrame(autoResize)
             }}
           />
+
+          {/* Paperclip attachment button */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 flex-shrink-0"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSending}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
 
           <FormField
             control={form.control}
@@ -447,8 +559,10 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
-                        if (!isDisabled) {
+                        if (text.trim()) {
                           form.handleSubmit(onSubmit)()
+                        } else if (attachedFiles.length > 0) {
+                          handleSendFilesOnly()
                         }
                       }
                     }}
@@ -460,14 +574,14 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
           <ButtonLoading
             isLoading={isSending}
-            disabled={isDisabled && pastedImages.length === 0}
+            disabled={isDisabled}
             size="icon"
             icon={Send}
             iconClassName="me-0"
             loadingIconClassName="me-0"
             onClick={() => {
-              if (pastedImages.length > 0 && !text.trim()) {
-                sendPastedImages()
+              if (attachedFiles.length > 0 && !text.trim()) {
+                handleSendFilesOnly()
               }
             }}
           />
