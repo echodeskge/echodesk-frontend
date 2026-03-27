@@ -38,6 +38,7 @@ export interface ChatContextType {
   loadingMessages: boolean
   loadChatMessages?: (chatId: string) => Promise<void>
   reloadChatMessages?: (chatId: string) => Promise<void>
+  prefetchChatMessages?: (chatId: string) => void
   isInitialLoading: boolean
   // Load full message history
   loadFullHistory?: (chatId: string) => Promise<void>

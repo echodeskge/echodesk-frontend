@@ -16,11 +16,11 @@ export function ChatSidebarTabs() {
   return (
     <div className="px-3 py-2 border-b border-border">
       <Tabs value={assignmentTab} onValueChange={(value) => { setSelectedChatId(null); setAssignmentTab(value as 'all' | 'assigned'); }}>
-        <TabsList className="w-full">
-          <TabsTrigger value="all" className="flex-1">
+        <TabsList className="w-full grid grid-cols-2 p-0.5">
+          <TabsTrigger value="all">
             All Chats
           </TabsTrigger>
-          <TabsTrigger value="assigned" className="flex-1">
+          <TabsTrigger value="assigned">
             Assigned to Me
             {assignedCount > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/20 px-1.5 text-xs font-medium">

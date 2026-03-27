@@ -13,7 +13,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { ChatAvatar } from "../chat-avatar"
 
 export function ChatSidebarItem({ chat }: { chat: ChatType }) {
-  const { setIsChatSidebarOpen, selectedChatId, setSelectedChatId } = useChatContext()
+  const { setIsChatSidebarOpen, selectedChatId, setSelectedChatId, prefetchChatMessages } = useChatContext()
   const pathname = usePathname()
 
   // Determine base route from current pathname (e.g., /email/messages or /messages or /social/messages)
@@ -37,10 +37,17 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
     setSelectedChatId(chat.id)
   }
 
+  const handleMouseEnter = useCallback(() => {
+    if (!chat.messagesLoaded && prefetchChatMessages) {
+      prefetchChatMessages(chat.id)
+    }
+  }, [chat.id, chat.messagesLoaded, prefetchChatMessages])
+
   return (
     <a
       href={buildHref()}
       onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
       className={cn(
         buttonVariants({ variant: "ghost" }),
         // Unread chats get muted background (lighter)

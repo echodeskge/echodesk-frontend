@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useReducer, useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 
 import type { FileType } from "@/types"
 import type { ReactNode } from "react"
@@ -65,6 +66,8 @@ export function ChatProvider({
   selectedChatId?: string | null
   setSelectedChatId?: (id: string | null) => void
 }) {
+  const queryClient = useQueryClient()
+
   // Reducer to manage Chat state
   const [chatState, dispatch] = useReducer(ChatReducer, {
     chats: chatsData,
@@ -172,7 +175,7 @@ export function ChatProvider({
     dispatch({ type: "setUnreadCount" })
   }
 
-  // Handle loading messages for a chat (lazy loading)
+  // Handle loading messages for a chat (lazy loading) - uses query cache
   const handleLoadChatMessages = useCallback(async (chatId: string) => {
     if (!loadChatMessages) return
 
@@ -180,24 +183,40 @@ export function ChatProvider({
     // where the useEffect hasn't synced chatsData to chatState yet
     const chatFromState = chatState.chats.find(c => c.id === chatId)
     const chatFromProps = chatsData.find(c => c.id === chatId)
-    const chat = chatFromState || chatFromProps
 
     // Skip if already loaded (check both sources)
     if (chatFromState?.messagesLoaded || chatFromProps?.messagesLoaded) return
 
-    // If chat doesn't exist in either source, still try to load messages
-    // This handles the case where we're loading a chat not in the list
-
     setLoadingMessages(true)
     try {
-      const messages = await loadChatMessages(chatId)
+      // Use fetchQuery to benefit from prefetch cache
+      const messages = await queryClient.fetchQuery({
+        queryKey: ['chatMessages', chatId],
+        queryFn: () => loadChatMessages(chatId),
+        staleTime: 2 * 60 * 1000, // 2 minutes
+      })
       dispatch({ type: "updateChatMessages", chatId, messages })
     } catch (error) {
       console.error("Failed to load chat messages:", error)
     } finally {
       setLoadingMessages(false)
     }
-  }, [loadChatMessages, chatState.chats, chatsData])
+  }, [loadChatMessages, chatState.chats, chatsData, queryClient])
+
+  // Prefetch messages for a chat on hover (fire-and-forget)
+  const handlePrefetchChatMessages = useCallback((chatId: string) => {
+    if (!loadChatMessages) return
+
+    // Skip if already loaded in state
+    const chatFromState = chatState.chats.find(c => c.id === chatId)
+    if (chatFromState?.messagesLoaded) return
+
+    queryClient.prefetchQuery({
+      queryKey: ['chatMessages', chatId],
+      queryFn: () => loadChatMessages(chatId),
+      staleTime: 2 * 60 * 1000,
+    })
+  }, [loadChatMessages, chatState.chats, queryClient])
 
   // Force reload messages for a chat (e.g., after sending an email where there's no WebSocket echo)
   const handleReloadChatMessages = useCallback(async (chatId: string) => {
@@ -266,6 +285,7 @@ export function ChatProvider({
         loadingMessages,
         loadChatMessages: handleLoadChatMessages,
         reloadChatMessages: handleReloadChatMessages,
+        prefetchChatMessages: handlePrefetchChatMessages,
         isInitialLoading,
         platforms,
         platformFilter,
