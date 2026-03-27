@@ -15,6 +15,8 @@ import {
 import BoardSwitcher from "@/components/BoardSwitcher";
 import { TicketCreateProvider, useTicketCreate } from "@/contexts/TicketCreateContext";
 import { TicketCreateSheet } from "@/components/TicketCreateSheet";
+import { BugReportProvider, useBugReport } from "@/contexts/BugReportContext";
+import { BugReportDialog } from "@/components/BugReportDialog";
 import { BoardProvider, useBoard } from "@/contexts/BoardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { LayoutSkeleton } from "@/components/LayoutSkeleton";
@@ -55,6 +57,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { hasFeature, subscription, loading: subscriptionLoading } = useSubscription();
   const { user, logout } = useAuth();
   const { openTicketCreate } = useTicketCreate();
+  const { openBugReport } = useBugReport();
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
@@ -527,6 +530,10 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   }, [pathname, visibleMenuItems, profileLoading, tenantLoading, userProfile]);
 
   const handleMenuClick = (viewId: string) => {
+    if (viewId === "report-bug") {
+      openBugReport();
+      return;
+    }
     // Pure subdomain routing - just navigate to /viewId
     router.push(`/${viewId}`);
   };
@@ -729,6 +736,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       </div>
 
       <TicketCreateSheet />
+      <BugReportDialog />
 
       {/* Board Create Sheet */}
       <BoardCreateSheet
@@ -770,9 +778,11 @@ export default function TenantLayout({
   return (
     <SubscriptionProvider>
       <TicketCreateProvider>
-        <BoardProvider>
-          <TenantLayoutContent>{children}</TenantLayoutContent>
-        </BoardProvider>
+        <BugReportProvider>
+          <BoardProvider>
+            <TenantLayoutContent>{children}</TenantLayoutContent>
+          </BoardProvider>
+        </BugReportProvider>
       </TicketCreateProvider>
     </SubscriptionProvider>
   );
