@@ -377,6 +377,45 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
         const filename = msg.attachments?.[0]?.filename || attachmentType;
         files = [{ name: filename, url: attachmentUrl, size: 0 }];
       }
+
+      // If no URL from attachment_url or first attachment, try all attachments for one with a url
+      if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
+        const attWithUrl = msg.attachments.find((att: any) => att.url);
+        if (attWithUrl) {
+          attachmentUrl = attWithUrl.url;
+          const attType = attWithUrl.type || '';
+          const isImg = ['image', 'sticker'].includes(attType);
+          const isVid = attType === 'video';
+          const isAud = attType === 'audio';
+          if (isImg) {
+            images = msg.attachments.filter((a: any) => a.url && ['image', 'sticker'].includes(a.type)).map((a: any) => ({
+              name: a.type || 'image', url: a.url, size: 0, type: 'image',
+            }));
+          } else if (isVid) {
+            images = [{ name: 'video', url: attWithUrl.url, size: 0, type: 'video' }];
+          } else if (isAud) {
+            voiceMessage = { name: 'audio', url: attWithUrl.url, size: 0 };
+          } else {
+            files = [{ name: attWithUrl.filename || 'file', url: attWithUrl.url, size: 0 }];
+          }
+        }
+      }
+
+      // If attachments exist but still no URL available (sent media not yet echoed),
+      // show a placeholder text so the bubble isn't empty
+      if (!attachmentUrl && !images && !files && !voiceMessage && msg.attachments && msg.attachments.length > 0 && !msg.message_text) {
+        const attType = msg.attachments[0]?.type || 'file';
+        const attName = msg.attachments[0]?.filename;
+        if (attType === 'image' || attType === 'sticker') {
+          msg.message_text = attName ? `📷 ${attName}` : '📷 Image sent';
+        } else if (attType === 'video') {
+          msg.message_text = attName ? `🎥 ${attName}` : '🎥 Video sent';
+        } else if (attType === 'audio') {
+          msg.message_text = '🎵 Audio sent';
+        } else {
+          msg.message_text = attName ? `📎 ${attName}` : '📎 Attachment sent';
+        }
+      }
     }
 
     // For outgoing messages, use recipient_name to identify who we're talking to
@@ -426,6 +465,17 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
 
   // Sort messages by date (oldest first for chat display)
   chatMessages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  // Resolve reply_to references - find the original message text for replies
+  chatMessages.forEach((msg) => {
+    if (msg.replyToId && !msg.replyToText) {
+      const originalMsg = chatMessages.find((m) => m.id === String(msg.replyToId));
+      if (originalMsg) {
+        msg.replyToText = originalMsg.text;
+        msg.replyToSenderName = originalMsg.senderName || (originalMsg.senderId === 'business' ? 'You' : undefined);
+      }
+    }
+  });
 
   return chatMessages;
 }

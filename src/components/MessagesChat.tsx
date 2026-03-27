@@ -342,6 +342,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         }]).filter((img: any) => img.url);
         if (images.length > 0) {
           newMessage.images = images;
+        } else if (!newMessage.text) {
+          // Sent media without URL — show placeholder
+          const attName = messageData.attachments?.[0]?.filename;
+          newMessage.text = attName ? `📷 ${attName}` : '📷 Image sent';
         }
       } else {
         const files = (messageData.attachments?.map((att: any) => ({
@@ -355,6 +359,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         }]).filter((f: any) => f.url);
         if (files.length > 0) {
           newMessage.files = files;
+        } else if (!newMessage.text) {
+          const attName = messageData.attachments?.[0]?.filename;
+          newMessage.text = attName ? `📎 ${attName}` : '📎 Attachment sent';
         }
       }
     }
