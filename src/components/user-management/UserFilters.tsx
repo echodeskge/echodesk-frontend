@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { UserFilters } from "../UserManagement";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,24 @@ export default function UserFilters({
   onFiltersChange,
 }: UserFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [searchInput, setSearchInput] = useState(filters.search);
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== filters.search) {
+        onFiltersChange({ search: searchInput });
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Sync input when filters are cleared externally
+  useEffect(() => {
+    if (filters.search !== searchInput) {
+      setSearchInput(filters.search);
+    }
+  }, [filters.search]);
 
   const roleOptions = [
     { value: "all", label: "All Roles" },
@@ -70,8 +88,8 @@ export default function UserFilters({
               <Input
                 type="text"
                 placeholder="Search users by name or email..."
-                value={filters.search}
-                onChange={(e) => onFiltersChange({ search: e.target.value })}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-9"
               />
             </div>

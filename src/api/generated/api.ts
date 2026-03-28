@@ -333,7 +333,6 @@ import type {
   PaginatedWhatsAppMessageList,
   WhatsAppMessage,
   WhatsAppMessageTemplate,
-  WhatsAppSendMessageRequest,
   WhatsAppTemplateCreateRequest,
   WhatsAppTemplateSendRequest,
   PaginatedTagList,
@@ -6888,6 +6887,15 @@ export async function socialWhatsappContactsRetrieve(
   return response.data;
 }
 
+export async function socialWhatsappMediaRetrieve(mediaId: string): Promise<{
+  success?: boolean;
+  message?: string;
+  whatsapp_message_id?: string;
+}> {
+  const response = await axios.get(`/api/social/whatsapp-media/${mediaId}/`);
+  return response.data;
+}
+
 export async function socialWhatsappMessagesList(
   ordering?: string,
   page?: number,
@@ -6955,14 +6963,8 @@ export async function socialWhatsappOauthStartRetrieve(): Promise<any> {
   return response.data;
 }
 
-export async function socialWhatsappSendMessageCreate(
-  data: WhatsAppSendMessageRequest,
-): Promise<{
-  success?: boolean;
-  message?: string;
-  whatsapp_message_id?: string;
-}> {
-  const response = await axios.post(`/api/social/whatsapp/send-message/`, data);
+export async function socialWhatsappSendMessageCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/whatsapp/send-message/`);
   return response.data;
 }
 

@@ -886,7 +886,7 @@ export interface FacebookPageConnectionRequest {
 
 export interface FacebookSendMessageRequest {
   recipient_id: string;
-  message: string;
+  message?: string;
   page_id: string;
   reply_to_message_id?: string;
 }
@@ -4768,12 +4768,6 @@ export interface WhatsAppMessageTemplateCategoryEnum {
 
 export interface WhatsAppMessageTemplateStatusEnum {
   [key: string]: any;
-}
-
-export interface WhatsAppSendMessageRequest {
-  to_number: string;
-  message: string;
-  waba_id: string;
 }
 
 export interface WhatsAppTemplateCreateCategoryEnum {

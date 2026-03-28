@@ -185,12 +185,13 @@ export function TicketCreateSheet() {
     const fetchData = async () => {
       try {
         setFetchingData(true);
+        // Fetch each independently so one failure doesn't block the rest
         const [boardsRes, columnsRes, usersRes, formsRes, tagsRes] = await Promise.all([
-          boardsList(),
-          columnsList(),
-          usersList(),
-          ticketFormsList(),
-          tagsList(),
+          boardsList().catch(() => ({ results: [] })),
+          columnsList().catch(() => ({ results: [] })),
+          usersList().catch(() => ({ results: [] })),
+          ticketFormsList().catch(() => ({ results: [] })),
+          tagsList().catch(() => ({ results: [] })),
         ]);
 
         setBoards(boardsRes.results || []);
@@ -202,7 +203,7 @@ export function TicketCreateSheet() {
 
         // Set default form if available and fetch full form details
         const defaultFormMinimal =
-          (formsRes.results || []).find((form) => form.is_default);
+          (formsRes.results || []).find((form: any) => form.is_default);
         if (defaultFormMinimal) {
           try {
             const fullForm = await ticketFormsRetrieve(defaultFormMinimal.id);
@@ -526,7 +527,7 @@ export function TicketCreateSheet() {
             {/* Form Selection - Moved here below title row */}
             {ticketForms.length > 0 && (
               <div className="grid gap-2">
-                <Label htmlFor="form">Ticket Form (Optional)</Label>
+                <Label htmlFor="form">{t('ticketFormOptional')}</Label>
                 <div className="flex gap-2">
                   <Select
                     value={selectedForm?.id.toString() || ""}
@@ -544,7 +545,7 @@ export function TicketCreateSheet() {
                     disabled={fetchingData}
                   >
                     <SelectTrigger id="form" className="w-full">
-                      <SelectValue placeholder="Select a form (optional)" />
+                      <SelectValue placeholder={t('selectFormPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
                       {ticketForms
@@ -614,12 +615,15 @@ export function TicketCreateSheet() {
 
             {/* User Assignment Section */}
             <div className="grid gap-2">
-              <Label>Assign to Users (Optional)</Label>
+              <Label>{t('assignUsersOptional')}</Label>
               <MultiUserAssignment
                 users={filteredUsers}
                 selectedAssignments={selectedAssignments}
                 onChange={setSelectedAssignments}
-                placeholder="Select users to assign..."
+                placeholder={t('selectUsersPlaceholder')}
+                searchPlaceholder={t('searchUsers')}
+                noUsersFoundText={t('noUsersFound')}
+                noUsersAvailableText={t('noUsersAvailable')}
               />
             </div>
 
@@ -727,13 +731,13 @@ export function TicketCreateSheet() {
 
             {/* Group Assignment Section */}
             <div className="grid gap-2">
-              <Label>Assign to Groups (Optional)</Label>
+              <Label>{t('assignGroupsOptional')}</Label>
               <MultiGroupSelection
                 groups={groups}
                 selectedGroupIds={selectedGroupIds}
                 onChange={setSelectedGroupIds}
                 disabled={fetchingData}
-                placeholder="Select groups to assign..."
+                placeholder={t('selectGroupsPlaceholder')}
               />
             </div>
 
@@ -741,7 +745,7 @@ export function TicketCreateSheet() {
             {selectedForm &&
               formListsWithItems.length > 0 && (
                 <div className="grid gap-4">
-                  <Label>Select Items from Lists (Optional)</Label>
+                  <Label>{t('selectItemsFromLists')}</Label>
                   {loadingLists ? (
                     <div className="border rounded-lg p-3 text-center text-sm text-muted-foreground">
                       {tCommon('loading')}
@@ -800,7 +804,7 @@ export function TicketCreateSheet() {
                                           )}
                                         </span>
                                       ) : (
-                                        "Select item..."
+                                        t('selectItem')
                                       )}
                                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
@@ -816,7 +820,7 @@ export function TicketCreateSheet() {
                                             value="none"
                                             onSelect={() => selectItemForList(list.id, null)}
                                           >
-                                            <span className="text-muted-foreground italic">Clear selection</span>
+                                            <span className="text-muted-foreground italic">{t('clearSelection')}</span>
                                           </CommandItem>
                                         )}
                                         {flatItems.map((item) => (
@@ -863,7 +867,7 @@ export function TicketCreateSheet() {
                             </div>
                             ) : (
                               <div className="text-sm text-muted-foreground italic border rounded-lg p-3">
-                                No items in this list
+                                {t('noItemsInList')}
                               </div>
                             )}
                           </div>
@@ -877,7 +881,7 @@ export function TicketCreateSheet() {
             {/* Custom Fields from Selected Form */}
             {selectedForm && selectedForm.custom_fields && Array.isArray(selectedForm.custom_fields) && selectedForm.custom_fields.length > 0 && (
               <div className="grid gap-4">
-                <Label>Custom Fields</Label>
+                <Label>{t('customFields')}</Label>
                 <div className="space-y-3">
                   {selectedForm.custom_fields.map((field: any, index: number) => (
                     <div key={field.name || index} className="grid gap-2">

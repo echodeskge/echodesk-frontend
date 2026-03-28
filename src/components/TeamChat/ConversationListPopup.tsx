@@ -118,7 +118,7 @@ export function ConversationListPopup({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs text-primary-foreground hover:bg-primary-foreground/10"
+              className="h-8 text-xs text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:hover:bg-primary-foreground/10 dark:hover:text-primary-foreground"
               onClick={closeAllChats}
             >
               <XCircle className="h-4 w-4 mr-1" />
@@ -128,7 +128,7 @@ export function ConversationListPopup({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10"
+            className="h-8 w-8 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:hover:bg-primary-foreground/10 dark:hover:text-primary-foreground"
             onClick={closeList}
           >
             <X className="h-5 w-5" />

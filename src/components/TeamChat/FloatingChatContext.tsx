@@ -28,6 +28,7 @@ export interface MinimizedChat {
   id: string;
   conversation: TeamChatConversation | null;
   user: TeamChatUser;
+  messages: TeamChatMessage[];
   unreadCount: number;
   lastMessage?: TeamChatMessage;
 }
@@ -79,14 +80,14 @@ function floatingChatReducer(state: FloatingChatState, action: FloatingChatActio
       const existingMinimized = state.minimizedChats.find((c) => c.id === chatId);
       if (existingMinimized) {
         const newMinimizedChats = state.minimizedChats.filter((c) => c.id !== chatId);
-        // Add to end of openChats (rightmost position)
+        // Add to end of openChats (rightmost position), preserving messages
         const newOpenChats = [
           ...state.openChats,
           {
             id: chatId,
             conversation: existingMinimized.conversation,
             user: existingMinimized.user,
-            messages: [],
+            messages: existingMinimized.messages,
             unreadCount: existingMinimized.unreadCount,
             lastMessage: existingMinimized.lastMessage,
           },
@@ -161,6 +162,7 @@ function floatingChatReducer(state: FloatingChatState, action: FloatingChatActio
             id: chatToMinimize.id,
             conversation: chatToMinimize.conversation,
             user: chatToMinimize.user,
+            messages: chatToMinimize.messages,
             unreadCount: chatToMinimize.unreadCount,
             lastMessage: chatToMinimize.messages[chatToMinimize.messages.length - 1],
           },
@@ -173,7 +175,7 @@ function floatingChatReducer(state: FloatingChatState, action: FloatingChatActio
       const chatToMaximize = state.minimizedChats.find((c) => c.id === chatId);
       if (!chatToMaximize) return state;
 
-      // Remove from minimized, add to end of open chats
+      // Remove from minimized, add to end of open chats, preserving messages
       const newMinimizedChats = state.minimizedChats.filter((c) => c.id !== chatId);
       const newOpenChats = [
         ...state.openChats,
@@ -181,7 +183,7 @@ function floatingChatReducer(state: FloatingChatState, action: FloatingChatActio
           id: chatId,
           conversation: chatToMaximize.conversation,
           user: chatToMaximize.user,
-          messages: [],
+          messages: chatToMaximize.messages,
           unreadCount: chatToMaximize.unreadCount,
           lastMessage: chatToMaximize.lastMessage,
         },
@@ -247,7 +249,15 @@ function floatingChatReducer(state: FloatingChatState, action: FloatingChatActio
             : c
         ),
         minimizedChats: state.minimizedChats.map((c) =>
-          c.id === chatId ? { ...c, lastMessage: message } : c
+          c.id === chatId
+            ? {
+                ...c,
+                messages: c.messages.some((m) => m.id === message.id)
+                  ? c.messages
+                  : [...c.messages, message],
+                lastMessage: message,
+              }
+            : c
         ),
       };
     }

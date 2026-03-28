@@ -262,7 +262,7 @@ export function FloatingChatWindow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 text-primary-foreground hover:bg-primary-foreground/10"
+                className="h-6 w-6 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:hover:bg-primary-foreground/10 dark:hover:text-primary-foreground"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
@@ -284,7 +284,7 @@ export function FloatingChatWindow({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 text-primary-foreground hover:bg-primary-foreground/10"
+          className="h-6 w-6 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:hover:bg-primary-foreground/10 dark:hover:text-primary-foreground"
           onClick={() => minimizeChat(chat.id)}
         >
           <Minus className="h-4 w-4" />
@@ -292,7 +292,7 @@ export function FloatingChatWindow({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 text-primary-foreground hover:bg-primary-foreground/10"
+          className="h-6 w-6 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:hover:bg-primary-foreground/10 dark:hover:text-primary-foreground"
           onClick={() => closeChat(chat.id)}
         >
           <X className="h-4 w-4" />

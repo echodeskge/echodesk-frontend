@@ -22,6 +22,9 @@ interface MultiUserAssignmentProps {
   onChange: (assignments: AssignmentData[]) => void;
   disabled?: boolean;
   placeholder?: string;
+  searchPlaceholder?: string;
+  noUsersFoundText?: string;
+  noUsersAvailableText?: string;
 }
 
 const roleOptions = [
@@ -37,7 +40,10 @@ export default function MultiUserAssignment({
   selectedAssignments = [],
   onChange,
   disabled = false,
-  placeholder = 'Select users to assign...'
+  placeholder = 'Select users to assign...',
+  searchPlaceholder = 'Search users...',
+  noUsersFoundText = 'No users found',
+  noUsersAvailableText = 'No users available'
 }: MultiUserAssignmentProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -141,7 +147,7 @@ export default function MultiUserAssignment({
               return (
                 <div
                   key={assignment.userId}
-                  className="flex items-center bg-white border-2 border-gray-200 rounded-full px-3 py-1.5 text-sm gap-2"
+                  className="flex items-center bg-background border-2 border-border rounded-full px-3 py-1.5 text-sm gap-2"
                 >
                   <span className="font-medium">
                     {getUserDisplay(user)}
@@ -155,9 +161,9 @@ export default function MultiUserAssignment({
                     <SelectTrigger className={`h-6 w-auto border-none text-white text-xs font-medium px-2 ${getRoleColor(assignment.role)}`}>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                    <SelectContent>
                       {roleOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100 cursor-pointer">
+                        <SelectItem key={option.value} value={option.value} className="cursor-pointer">
                           {option.label}
                         </SelectItem>
                       ))}
@@ -188,7 +194,7 @@ export default function MultiUserAssignment({
           <Button
             variant="outline"
             disabled={disabled}
-            className="w-full justify-between bg-white border-2 border-gray-200 hover:border-gray-300"
+            className="w-full justify-between"
           >
             <span className={isPlaceholderShown() ? "text-muted-foreground" : ""}>
               {getSelectedUsersDisplay()}
@@ -199,20 +205,20 @@ export default function MultiUserAssignment({
 
         {/* Dropdown Menu */}
         <DropdownMenuContent
-          className="bg-white border-2 border-gray-200 shadow-lg p-0"
+          className="p-0"
           align="start"
-          style={{ backgroundColor: 'white', width: 'var(--radix-dropdown-menu-trigger-width)', minWidth: '400px' }}
+          style={{ width: 'var(--radix-dropdown-menu-trigger-width)', minWidth: '400px' }}
         >
           {/* Search Input */}
-          <div className="p-3 border-b border-gray-200">
+          <div className="p-3 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search users..."
+                placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 bg-white border-gray-200"
+                className="pl-9"
               />
             </div>
           </div>
@@ -221,7 +227,7 @@ export default function MultiUserAssignment({
           <div className="max-h-48 overflow-y-auto">
             {filteredUsers.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground text-sm">
-                {searchTerm ? 'No users found' : 'No users available'}
+                {searchTerm ? noUsersFoundText : noUsersAvailableText}
               </div>
             ) : (
               filteredUsers.map(user => {
@@ -230,8 +236,8 @@ export default function MultiUserAssignment({
                   <div
                     key={user.id}
                     onClick={() => handleUserToggle(user.id)}
-                    className={`p-3 cursor-pointer border-b border-gray-100 flex items-center justify-between transition-colors hover:bg-gray-100 ${
-                      selected ? 'bg-blue-50 hover:bg-blue-100' : 'bg-white hover:bg-gray-50'
+                    className={`p-3 cursor-pointer border-b border-border flex items-center justify-between transition-colors ${
+                      selected ? 'bg-accent' : 'hover:bg-accent/50'
                     }`}
                   >
                     <div className="flex items-center gap-2">
