@@ -365,11 +365,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     });
   }, [filteredMenuItems, appearance?.sidebar_order]);
 
+  // IDs that are sidebar actions (open dialogs), not navigable pages
+  const actionOnlyItems = new Set(["report-bug"]);
+
   // Get the first available route from visible menu items
   const getFirstAvailableRoute = (): string | null => {
     if (visibleMenuItems.length === 0) return null;
 
-    const firstItem = visibleMenuItems[0];
+    const firstItem = visibleMenuItems.find(item => !actionOnlyItems.has(item.id));
+    if (!firstItem) return null;
     // If first item has children, use the first child's route
     if (firstItem.children && firstItem.children.length > 0) {
       return `/${firstItem.children[0].id}`;
@@ -387,9 +391,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       return true;
     }
 
-    // /help is always accessible as it has no feature requirements
-    if (pathParts[0] === 'help') {
-      console.log('[RouteAccess] ✅ /help is always accessible');
+    // /help and action-only routes are always accessible
+    if (pathParts[0] === 'help' || actionOnlyItems.has(pathParts[0])) {
+      console.log('[RouteAccess] ✅ /' + pathParts[0] + ' is always accessible');
       return true;
     }
 
