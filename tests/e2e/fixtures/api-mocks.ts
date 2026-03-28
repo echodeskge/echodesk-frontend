@@ -203,6 +203,197 @@ export async function mockTenantConfig(page: Page) {
   );
 }
 
+export async function mockUserCreate(page: Page) {
+  await page.route("**/api/users/", (route) => {
+    if (route.request().method() === "POST") {
+      route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...MOCK_USER,
+          id: 10,
+          email: "new@test.com",
+          first_name: "New",
+          last_name: "User",
+          full_name: "New User",
+        }),
+      });
+    } else {
+      route.continue();
+    }
+  });
+}
+
+export async function mockUserUpdate(page: Page) {
+  await page.route(/\/api\/users\/\d+\//, (route) => {
+    if (route.request().method() === "PATCH" || route.request().method() === "PUT") {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...MOCK_USER,
+          first_name: "Updated",
+          last_name: "User",
+          full_name: "Updated User",
+        }),
+      });
+    } else {
+      route.continue();
+    }
+  });
+}
+
+export async function mockUserDelete(page: Page) {
+  await page.route(/\/api\/users\/\d+\//, (route) => {
+    if (route.request().method() === "DELETE") {
+      route.fulfill({ status: 204 });
+    } else {
+      route.continue();
+    }
+  });
+}
+
+export async function mockUserRetrieve(page: Page) {
+  await page.route(/\/api\/users\/\d+\//, (route) => {
+    if (route.request().method() === "GET") {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ...MOCK_USER,
+          id: 1,
+          email: "admin@test.com",
+          first_name: "Test",
+          last_name: "Admin",
+          full_name: "Test Admin",
+          phone_number: "+1234567890",
+          job_title: "System Admin",
+        }),
+      });
+    } else {
+      route.continue();
+    }
+  });
+}
+
+export async function mockUsersListEmpty(page: Page) {
+  await page.route("**/api/users/*", (route) => {
+    if (route.request().method() === "GET") {
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ count: 0, results: [] }),
+      });
+    } else {
+      route.continue();
+    }
+  });
+}
+
+export async function mockSendNewPassword(page: Page) {
+  await page.route(/\/api\/users\/\d+\/send_new_password\//, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        message: "New password sent successfully",
+      }),
+    })
+  );
+}
+
+export async function mockTenantGroups(page: Page) {
+  await page.route("**/api/tenant-groups/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        count: 2,
+        results: [
+          { id: 1, name: "Support", description: "Support team" },
+          { id: 2, name: "Sales", description: "Sales team" },
+        ],
+      }),
+    })
+  );
+}
+
+/**
+ * Mock all API endpoints required by the (tenant) layout.
+ * Call this in beforeEach for any test that navigates to a tenant-scoped page.
+ */
+export async function mockLayoutAPIs(page: Page) {
+  // User profile - required by useUserProfile hook
+  await page.route("**/api/auth/profile/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...MOCK_USER,
+        id: 1,
+        email: "admin@test.com",
+        role: "admin",
+        is_staff: true,
+        is_superuser: true,
+        first_name: "Test",
+        last_name: "Admin",
+        full_name: "Test Admin",
+      }),
+    })
+  );
+
+  // Boards list - required by useBoards hook
+  await page.route("**/api/boards/*", (route) => {
+    if (route.request().url().includes("kanban_board")) {
+      route.continue();
+      return;
+    }
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ count: 0, results: [] }),
+    });
+  });
+
+  // Subscription - required by SubscriptionContext
+  await page.route("**/api/subscription/me/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        subscription: { is_active: true, plan: "pro" },
+      }),
+    })
+  );
+
+  // Dashboard appearance - required by useDashboardAppearance
+  await page.route("**/api/dashboard-appearance/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({}),
+    })
+  );
+
+  // Social settings - required by useSocialSettings
+  await page.route("**/api/social/settings/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({}),
+    })
+  );
+
+  // Facebook status - required by layout social check
+  await page.route("**/api/social/facebook/status/", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ connected: false }),
+    })
+  );
+}
+
 export async function mockForcedPasswordChange(page: Page) {
   await page.route("**/api/auth/forced-password-change/", (route) =>
     route.fulfill({

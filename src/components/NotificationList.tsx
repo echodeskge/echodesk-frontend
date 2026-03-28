@@ -78,7 +78,7 @@ export function NotificationList({
   const t = useTranslations('notificationList')
 
   const getBugReportText = (notification: Notification) => {
-    if (notification.notification_type !== 'bug_report_update') return null
+    if ((notification.notification_type as unknown as string) !== 'bug_report_update') return null
     const status = (notification.metadata as any)?.status as string | undefined
     if (!status) return null
     try {

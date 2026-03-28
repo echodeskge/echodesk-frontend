@@ -1,5 +1,12 @@
 import "@testing-library/jest-dom/vitest";
 
+// Mock ResizeObserver (required by Radix UI Select/Popover in jsdom)
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
