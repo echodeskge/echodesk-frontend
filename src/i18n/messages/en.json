@@ -2997,5 +2997,21 @@
     "igMissing": "Instagram @{name} needs publishing permission",
     "enablePublishing": "Enable Publishing",
     "oauthError": "Failed to start publishing authorization"
+  },
+  "notificationList": {
+    "bugReport": {
+      "received": {
+        "title": "Bug report received",
+        "message": "Your bug report has been received and is scheduled for development."
+      },
+      "in_progress": {
+        "title": "Bug fix in progress",
+        "message": "We are currently working on fixing your reported bug."
+      },
+      "fixed": {
+        "title": "Bug report fixed",
+        "message": "Your reported bug has been fixed. Thank you for the report!"
+      }
+    }
   }
 }

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Check, Trash2, MessageCircle, UserPlus, FileEdit, AlertCircle } from 'lucide-react'
+import { Bell, Check, Trash2, MessageCircle, UserPlus, FileEdit, AlertCircle, Bug } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
@@ -13,6 +13,7 @@ import {
   notificationsClearAllDestroy
 } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
+import { useTranslations } from 'next-intl'
 
 interface NotificationListProps {
   notifications: Notification[]
@@ -38,6 +39,8 @@ const getNotificationIcon = (type: string) => {
       return <FileEdit className="h-4 w-4" />
     case 'ticket_due_soon':
       return <AlertCircle className="h-4 w-4" />
+    case 'bug_report_update':
+      return <Bug className="h-4 w-4" />
     default:
       return <Bell className="h-4 w-4" />
   }
@@ -55,6 +58,8 @@ const getNotificationColor = (type: string) => {
       return 'text-orange-600'
     case 'ticket_due_soon':
       return 'text-red-600'
+    case 'bug_report_update':
+      return 'text-green-600'
     default:
       return 'text-gray-600'
   }
@@ -70,6 +75,21 @@ export function NotificationList({
   wsMarkAllAsRead
 }: NotificationListProps) {
   const router = useRouter()
+  const t = useTranslations('notificationList')
+
+  const getBugReportText = (notification: Notification) => {
+    if (notification.notification_type !== 'bug_report_update') return null
+    const status = (notification.metadata as any)?.status as string | undefined
+    if (!status) return null
+    try {
+      return {
+        title: t(`bugReport.${status}.title`),
+        message: t(`bugReport.${status}.message`),
+      }
+    } catch {
+      return null
+    }
+  }
 
   const handleNotificationClick = async (notification: Notification) => {
     // Mark as read - try WebSocket first, fallback to API
@@ -155,44 +175,47 @@ export function NotificationList({
           </div>
         ) : (
           <div className="divide-y">
-            {notifications.map((notification) => (
-              <button
-                key={notification.id}
-                onClick={() => handleNotificationClick(notification)}
-                className={cn(
-                  'w-full text-left p-4 hover:bg-muted/50 transition-colors',
-                  !notification.is_read && 'bg-blue-50/50 dark:bg-blue-950/20'
-                )}
-              >
-                <div className="flex gap-3">
-                  <div className={cn(
-                    'flex-shrink-0 mt-1',
-                    getNotificationColor(notification.notification_type as any)
-                  )}>
-                    {getNotificationIcon(notification.notification_type as any)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={cn(
-                      'text-sm font-medium mb-1',
-                      !notification.is_read && 'font-semibold'
-                    )}>
-                      {notification.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {notification.time_ago} ago
-                    </p>
-                  </div>
-                  {!notification.is_read && (
-                    <div className="flex-shrink-0">
-                      <div className="h-2 w-2 rounded-full bg-blue-600" />
-                    </div>
+            {notifications.map((notification) => {
+              const bugText = getBugReportText(notification)
+              return (
+                <button
+                  key={notification.id}
+                  onClick={() => handleNotificationClick(notification)}
+                  className={cn(
+                    'w-full text-left p-4 hover:bg-muted/50 transition-colors',
+                    !notification.is_read && 'bg-blue-50/50 dark:bg-blue-950/20'
                   )}
-                </div>
-              </button>
-            ))}
+                >
+                  <div className="flex gap-3">
+                    <div className={cn(
+                      'flex-shrink-0 mt-1',
+                      getNotificationColor(notification.notification_type as any)
+                    )}>
+                      {getNotificationIcon(notification.notification_type as any)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        'text-sm font-medium mb-1',
+                        !notification.is_read && 'font-semibold'
+                      )}>
+                        {bugText?.title ?? notification.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {bugText?.message ?? notification.message}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {notification.time_ago} ago
+                      </p>
+                    </div>
+                    {!notification.is_read && (
+                      <div className="flex-shrink-0">
+                        <div className="h-2 w-2 rounded-full bg-blue-600" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         )}
       </ScrollArea>

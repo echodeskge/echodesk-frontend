@@ -163,10 +163,21 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     }
   }
 
-  // Fetch notifications when popover opens
+  // Fetch notifications when popover opens + mark all as read
   useEffect(() => {
     if (isOpen) {
       fetchNotifications()
+
+      // Auto-mark all as read when popover opens
+      if (unreadCount > 0) {
+        const wsSent = wsMarkAllAsRead?.()
+        if (!wsSent) {
+          import('@/api/generated/api').then(({ notificationsMarkAllReadCreate }) => {
+            notificationsMarkAllReadCreate({} as any).catch(() => {})
+          })
+        }
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+      }
     }
   }, [isOpen])
 
