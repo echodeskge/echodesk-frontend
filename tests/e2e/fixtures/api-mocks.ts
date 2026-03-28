@@ -37,6 +37,38 @@ const MOCK_TENANT = {
   is_active: true,
 };
 
+/** Full TenantConfig shape returned by /api/tenant/config/ */
+const MOCK_TENANT_CONFIG = {
+  tenant_id: 1,
+  tenant_name: "Test Tenant",
+  schema_name: "test_tenant",
+  domain_url: "tenant.test.com",
+  api_url: "http://localhost:8000",
+  preferred_language: "en",
+  admin_email: "admin@test.com",
+  plan: "pro",
+  frontend_url: "http://tenant.test.com",
+  theme: {
+    primary_color: "#3B82F6",
+    secondary_color: "#1E40AF",
+    company_name: "Test Tenant",
+    logo_url: "",
+  },
+  features: {
+    max_users: 100,
+    max_storage: 10000,
+    analytics: true,
+    custom_branding: true,
+    api_access: true,
+    webhooks: true,
+  },
+  localization: {
+    language: "en",
+    timezone: "UTC",
+    date_format: "YYYY-MM-DD",
+  },
+};
+
 const MOCK_DASHBOARD = {
   tenant_info: JSON.stringify(MOCK_TENANT),
   user_info: JSON.stringify(MOCK_USER),
@@ -157,6 +189,16 @@ export async function mockDashboard(page: Page) {
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(MOCK_DASHBOARD),
+    })
+  );
+}
+
+export async function mockTenantConfig(page: Page) {
+  await page.route(/\/api\/tenant\/config\//, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(MOCK_TENANT_CONFIG),
     })
   );
 }

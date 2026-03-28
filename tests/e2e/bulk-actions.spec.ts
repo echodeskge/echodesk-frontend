@@ -11,17 +11,20 @@ import {
   mockBulkAction,
   mockAuthSync,
   mockDashboard,
+  mockTenantConfig,
 } from "./fixtures/api-mocks";
 
 test.describe("User Bulk Actions", () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthSync(page);
+    await mockTenantConfig(page);
     await mockDashboard(page);
     await mockUsersList(page);
     await mockBulkAction(page);
 
-    // Set auth token to simulate logged-in state
+    // Set auth token and dev_tenant to simulate logged-in state with tenant context
     await page.addInitScript(() => {
+      localStorage.setItem("dev_tenant", "test-tenant");
       localStorage.setItem("echodesk_auth_token", "test-token");
       localStorage.setItem(
         "echodesk_user_data",
