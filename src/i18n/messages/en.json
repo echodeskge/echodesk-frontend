@@ -2218,7 +2218,15 @@
           "message": "You're approaching your limit for {resource}. Consider upgrading your plan."
         }
       }
-    }
+    },
+    "paymentProvider": "Payment Method",
+    "choosePaymentProvider": "Choose how you'd like to pay for your subscription",
+    "bog": "Bank of Georgia",
+    "bogDescription": "Pay with a Georgian bank card in GEL. Card is saved for automatic monthly billing.",
+    "paddle": "International Payment",
+    "paddleDescription": "Pay with an international card in USD/EUR. Recurring billing managed by Paddle.",
+    "managedByPaddle": "Your billing is managed by Paddle. Payment methods and invoices are handled automatically.",
+    "paddleBillingInfo": "Paddle manages your recurring payments automatically. You will receive payment receipts via email from Paddle. To update your payment method or cancel, contact support."
   },
   "invoices": {
     "title": "Invoices",

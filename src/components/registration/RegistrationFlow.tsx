@@ -5,11 +5,15 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { FeatureSelection } from './FeatureSelection';
 import { RegistrationFormStep } from './RegistrationFormStep';
+import { PaymentProviderSelection, type PaymentProviderType } from './PaymentProviderSelection';
 import { Footer } from '@/components/landing/Footer';
 import { featuresList, registerTenantWithPayment } from '@/api/generated/api';
 import type { TenantRegistrationRequest } from '@/api/generated/interfaces';
 import type { Feature } from '@/types/package';
 import { PricingModel } from '@/types/package';
+import { usePaddle } from '@/hooks/usePaddle';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 
 export interface RegistrationFormData {
   company_name: string;
@@ -34,14 +38,18 @@ export function RegistrationFlow() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations('auth');
+  const tSub = useTranslations('subscription');
+  const { openCheckout, isLoaded: paddleLoaded } = usePaddle();
 
   // Required features that cannot be unchecked
   const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
 
-  const [step, setStep] = useState(1); // 1: Feature Selection, 2: Form
+  // Steps: 1 = Feature Selection, 2 = Payment Provider, 3 = Registration Form
+  const [step, setStep] = useState(1);
   const [features, setFeatures] = useState<Feature[]>([]);
   const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
-  const [agentCount, setAgentCount] = useState(5); // Default 5 agents
+  const [agentCount, setAgentCount] = useState(5);
+  const [paymentProvider, setPaymentProvider] = useState<PaymentProviderType>('bog');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
 
@@ -57,7 +65,7 @@ export function RegistrationFlow() {
     admin_first_name: '',
     admin_last_name: '',
     preferred_language: 'en',
-    is_custom: true, // Always feature-based now
+    is_custom: true,
   });
 
   // Load features on mount
@@ -71,12 +79,10 @@ export function RegistrationFlow() {
     const agentsParam = searchParams.get('agents');
 
     if (featuresParam && agentsParam) {
-      // Parse feature IDs from comma-separated string
       const featureIds = featuresParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
       const agents = parseInt(agentsParam, 10);
 
       if (featureIds.length > 0 && agents >= 5 && agents <= 200) {
-        // Ensure required features are always included
         const requiredIds = features
           .filter(f => REQUIRED_FEATURE_KEYS.includes(f.key))
           .map(f => f.id);
@@ -89,7 +95,6 @@ export function RegistrationFlow() {
           feature_ids: allFeatureIds,
           agent_count: agents,
         }));
-        // Skip to form step
         setStep(2);
       }
     }
@@ -102,7 +107,6 @@ export function RegistrationFlow() {
       const allFeatures = (data.results || []) as Feature[];
       setFeatures(allFeatures);
 
-      // Pre-select required features
       const requiredIds = allFeatures
         .filter(f => REQUIRED_FEATURE_KEYS.includes(f.key))
         .map(f => f.id);
@@ -116,7 +120,6 @@ export function RegistrationFlow() {
   };
 
   const handleFeatureToggle = (featureId: number) => {
-    // Don't allow toggling required features
     const feature = features.find(f => f.id === featureId);
     if (feature && REQUIRED_FEATURE_KEYS.includes(feature.key)) {
       return;
@@ -143,6 +146,10 @@ export function RegistrationFlow() {
     setStep(2);
   };
 
+  const handleProviderContinue = () => {
+    setStep(3);
+  };
+
   const handleFormSubmit = async (data: RegistrationFormData) => {
     try {
       setLoading(true);
@@ -159,18 +166,26 @@ export function RegistrationFlow() {
         admin_first_name: data.admin_first_name,
         admin_last_name: data.admin_last_name,
         preferred_language: data.preferred_language,
-        // Always use feature-based registration
         is_custom: true,
         feature_ids: data.feature_ids,
+        payment_provider: paymentProvider,
       };
 
       const response: any = await registerTenantWithPayment(registrationData);
 
-      // Redirect to payment URL (required for trial with card saving)
-      if (response.payment_url) {
+      if (response.requires_redirect && response.payment_url) {
+        // BOG: redirect to hosted payment page
+        window.location.href = response.payment_url;
+      } else if (response.checkout_data?.transaction_id) {
+        // Paddle: open overlay checkout
+        openCheckout({
+          transactionId: response.checkout_data.transaction_id,
+          successUrl: `${window.location.origin}/registration/success`,
+        });
+      } else if (response.payment_url) {
+        // Fallback: redirect
         window.location.href = response.payment_url;
       } else {
-        // Fallback (should not happen as payment_url is always required)
         router.push('/registration/success');
       }
     } catch (error: any) {
@@ -187,7 +202,6 @@ export function RegistrationFlow() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Main Content */}
       <div className="container py-16">
         {step === 1 && (
           <FeatureSelection
@@ -203,6 +217,32 @@ export function RegistrationFlow() {
         )}
 
         {step === 2 && (
+          <div className="max-w-2xl mx-auto space-y-8">
+            <div className="text-center space-y-4">
+              <Button variant="ghost" onClick={() => setStep(1)} className="mb-4">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                {t('backToPlans')}
+              </Button>
+              <h1 className="text-3xl font-bold">{tSub('paymentProvider')}</h1>
+              <p className="text-muted-foreground">
+                {tSub('choosePaymentProvider')}
+              </p>
+            </div>
+
+            <PaymentProviderSelection
+              selected={paymentProvider}
+              onSelect={setPaymentProvider}
+            />
+
+            <div className="flex justify-end">
+              <Button size="lg" onClick={handleProviderContinue} className="min-w-[200px]">
+                {t('continue')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
           <RegistrationFormStep
             formData={formData}
             setFormData={setFormData}
@@ -212,12 +252,11 @@ export function RegistrationFlow() {
             loading={loading}
             error={error}
             onSubmit={handleFormSubmit}
-            onBack={() => setStep(1)}
+            onBack={() => setStep(2)}
           />
         )}
       </div>
 
-      {/* Footer */}
       <Footer />
     </div>
   );

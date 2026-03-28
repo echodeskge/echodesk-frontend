@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useTenantSubscription } from '@/hooks/api/useTenant';
+import { useTenant } from '@/contexts/TenantContext';
 import {
   useInvoices,
   useAddNewCard,
@@ -16,13 +17,17 @@ import { InvoiceHistoryTable } from '@/components/subscription/InvoiceHistoryTab
 import { FeatureManagementCard } from '@/components/subscription/FeatureManagementCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Globe, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SubscriptionPage() {
   const t = useTranslations('settings.subscription');
+  const tSub = useTranslations('subscription');
 
   // Queries
   const { data: subscription, isLoading: subscriptionLoading } = useTenantSubscription();
+  const { tenant: tenantConfig } = useTenant();
   const { data: invoicesData, isLoading: invoicesLoading } = useInvoices();
   const { data: savedCardsData, isLoading: cardsLoading } = useSavedCard();
 
@@ -31,12 +36,15 @@ export default function SubscriptionPage() {
   const removeCardMutation = useRemoveSavedCard();
   const setDefaultCardMutation = useSetDefaultCard();
 
+  // Determine payment provider from tenant config
+  const paymentProvider = (tenantConfig as any)?.payment_provider || 'bog';
+  const isPaddle = paymentProvider === 'paddle';
+
   // Handlers
   const handleAddCard = async () => {
     try {
       const result = await addCardMutation.mutateAsync({ make_default: false });
       if (result.payment_url) {
-        // Redirect to BOG payment page
         window.location.href = result.payment_url;
       }
     } catch (error: any) {
@@ -130,13 +138,37 @@ export default function SubscriptionPage() {
 
         {/* Billing Tab */}
         <TabsContent value="billing" className="space-y-6">
-          <PaymentMethodCard
-            savedCards={savedCards}
-            isLoading={cardsLoading}
-            onAddCard={handleAddCard}
-            onRemoveCard={handleRemoveCard}
-            onSetDefaultCard={handleSetDefaultCard}
-          />
+          {isPaddle ? (
+            /* Paddle-managed billing */
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <CardTitle>{tSub('paymentMethods.title')}</CardTitle>
+                  <Badge variant="secondary" className="gap-1">
+                    <Globe className="h-3 w-3" />
+                    Paddle
+                  </Badge>
+                </div>
+                <CardDescription>
+                  {tSub('managedByPaddle')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  {tSub('paddleBillingInfo')}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            /* BOG saved card management */
+            <PaymentMethodCard
+              savedCards={savedCards}
+              isLoading={cardsLoading}
+              onAddCard={handleAddCard}
+              onRemoveCard={handleRemoveCard}
+              onSetDefaultCard={handleSetDefaultCard}
+            />
+          )}
 
           <InvoiceHistoryTable
             invoices={invoices}
