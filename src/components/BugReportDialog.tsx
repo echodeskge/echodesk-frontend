@@ -75,6 +75,7 @@ export function BugReportDialog() {
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("priority", priority);
+      formData.append("url", window.location.href);
       files.forEach((f) => formData.append("files", f.file));
 
       await axiosInstance.post("/api/support/report-bug/", formData, {
