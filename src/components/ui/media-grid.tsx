@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { ComponentProps, MouseEvent } from "react"
 import { X } from "lucide-react"
 
@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog"
+import axios from "@/api/axios"
 
 export interface MediaType {
   src: string
@@ -25,7 +26,7 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
   onMediaClick?: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
-// Check if URL is from an external CDN or storage that requires unoptimized images
+// Check if URL should bypass Next.js Image optimization (external CDNs, proxy URLs, blob URLs)
 function isExternalUrl(src: string | undefined | null): boolean {
   if (!src) return false;
   const externalPatterns = [
@@ -33,9 +34,67 @@ function isExternalUrl(src: string | undefined | null): boolean {
     'cdninstagram.com',
     'whatsapp.net',
     'fbsbx.com',
-    'digitaloceanspaces.com', // Email attachments storage
+    'digitaloceanspaces.com',
+    '/api/social/whatsapp-media/',
+    'blob:',
   ];
   return externalPatterns.some(pattern => src.includes(pattern));
+}
+
+// Check if URL requires authenticated fetch (e.g. WhatsApp media proxy)
+function needsAuthFetch(src: string | undefined | null): boolean {
+  if (!src) return false;
+  return src.includes('/api/social/whatsapp-media/');
+}
+
+/**
+ * Component that fetches an image via authenticated axios request
+ * and renders it using a blob URL. Used for WhatsApp media proxy.
+ */
+function AuthenticatedImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setBlobUrl(null)
+    setError(false)
+
+    axios.get(src, { responseType: 'blob' })
+      .then(res => {
+        if (!cancelled) {
+          setBlobUrl(URL.createObjectURL(res.data))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError(true)
+      })
+
+    return () => { cancelled = true }
+  }, [src])
+
+  // Cleanup blob URL on unmount or change
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+    }
+  }, [blobUrl])
+
+  if (error) {
+    return (
+      <div className={cn("bg-muted flex items-center justify-center text-xs text-muted-foreground rounded-lg", className)}
+        style={{ minHeight: 60 }}>
+        Failed to load image
+      </div>
+    )
+  }
+
+  if (!blobUrl) {
+    return <div className={cn("animate-pulse bg-muted rounded-lg", className)} style={{ minHeight: 100 }} />
+  }
+
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={blobUrl} alt={alt} className={className} />
 }
 
 export function MediaGrid({
@@ -67,6 +126,21 @@ export function MediaGrid({
   }
 
   const renderImage = (item: MediaType, inLightbox = false) => {
+    const isAuth = needsAuthFetch(item.src);
+
+    if (isAuth) {
+      return (
+        <AuthenticatedImage
+          src={item.src}
+          alt={item.alt}
+          className={inLightbox
+            ? "max-h-[80vh] max-w-full w-auto h-auto object-contain rounded-lg"
+            : "w-full h-full object-cover rounded-lg"
+          }
+        />
+      );
+    }
+
     const isExternal = isExternalUrl(item.src);
 
     if (inLightbox) {
@@ -206,12 +280,7 @@ export function MediaGrid({
               lightboxMedia.type === "VIDEO" ? (
                 renderVideo(lightboxMedia, true)
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={lightboxMedia.src}
-                  alt={lightboxMedia.alt}
-                  className="max-h-[85vh] max-w-[85vw] object-contain rounded-lg"
-                />
+                renderImage(lightboxMedia, true)
               )
             )}
           </div>

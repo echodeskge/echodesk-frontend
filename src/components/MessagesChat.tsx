@@ -12,6 +12,7 @@ import type { ChatType, MessageType, AssignmentTabType } from "@/components/chat
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { useMarkConversationRead, useUnifiedConversations } from "@/hooks/api/useSocial";
 import { consumePendingMedia } from "@/lib/pendingMedia";
+import { getApiUrl } from "@/api/axios";
 
 // Custom hook for debounced value
 function useDebounce<T>(value: T, delay: number): T {
@@ -321,7 +322,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       // For WhatsApp, use proxy URL to avoid browser ORB blocking on Meta URLs
       const resolveUrl = (att: any) => {
         if (platform === 'whatsapp' && att?.media_id && messageData.waba_id) {
-          return `/api/social/whatsapp-media/${att.media_id}/?waba_id=${messageData.waba_id}`;
+          return `${getApiUrl()}/api/social/whatsapp-media/${att.media_id}/?waba_id=${messageData.waba_id}`;
         }
         return att?.url || messageData.attachment_url;
       };
@@ -543,7 +544,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const unifiedMessages: UnifiedMessage[] = messages.map((msg: any) => {
           // Use proxy URL for WhatsApp media (direct Meta URLs are blocked by browsers)
           const mediaId = msg.attachments?.[0]?.media_id;
-          const proxyUrl = mediaId ? `/api/social/whatsapp-media/${mediaId}/?waba_id=${wabaId}` : msg.media_url;
+          const proxyUrl = mediaId ? `${getApiUrl()}/api/social/whatsapp-media/${mediaId}/?waba_id=${wabaId}` : msg.media_url;
 
           return {
             id: String(msg.id),
@@ -557,7 +558,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
             attachment_url: proxyUrl,
             attachments: msg.attachments?.map((att: any) => ({
               ...att,
-              url: att.media_id ? `/api/social/whatsapp-media/${att.media_id}/?waba_id=${wabaId}` : att.url,
+              url: att.media_id ? `${getApiUrl()}/api/social/whatsapp-media/${att.media_id}/?waba_id=${wabaId}` : att.url,
             })),
             timestamp: msg.timestamp,
             is_from_business: msg.is_from_business || false,
