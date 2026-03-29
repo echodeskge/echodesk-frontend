@@ -19,7 +19,7 @@ const MOCK_USER = {
   permissions: "{}",
   group_permissions: "{}",
   all_permissions: "{}",
-  feature_keys: "[]",
+  feature_keys: JSON.stringify(["user_management", "ticket_management", "settings"]),
   groups: [],
   tenant_groups: [],
 };

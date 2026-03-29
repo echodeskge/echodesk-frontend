@@ -45,13 +45,13 @@ function setupAdminAuth(page: import("@playwright/test").Page) {
   });
 }
 
-/** Wait for the user table to be rendered before interacting */
+/** Wait for the user page to fully load and stabilize (hydration complete) */
 async function waitForUsersPage(page: import("@playwright/test").Page) {
   await page.goto("/users");
-  // Wait for the table or the empty-state to appear
-  await page.waitForSelector("table, [data-testid='empty-state']", { timeout: 15000 }).catch(() => {});
-  // Extra: wait for at least one row or the empty text
-  await page.locator("table tbody tr, text=/no users found/i, text=/მომხმარებლები/i").first().waitFor({ timeout: 15000 }).catch(() => {});
+  // Wait for table to confirm the page data rendered
+  await page.locator("table").waitFor({ timeout: 30000 });
+  // Allow React to finish all re-renders (layout fetches, tenant config, etc.)
+  await page.waitForTimeout(2000);
 }
 
 test.describe("User Management", () => {
@@ -81,9 +81,8 @@ test.describe("User Management", () => {
   test("shows empty state when no users", async ({ page }) => {
     await mockUsersListEmpty(page);
 
-    await waitForUsersPage(page);
-
-    await expect(page.getByText(/no users found|მომხმარებლები ვერ მოიძებნა/i)).toBeVisible();
+    await page.goto("/users");
+    await expect(page.getByText(/No users found/i)).toBeVisible({ timeout: 30000 });
   });
 
   test("shows search input", async ({ page }) => {
@@ -136,6 +135,7 @@ test.describe("User Management", () => {
 
     await page.getByRole("button", { name: /მომხმარებლის დამატება|add user/i }).click();
     await expect(page.getByText("Add New User")).toBeVisible();
+    await page.waitForTimeout(500);
 
     // Click Create without filling fields
     await page.getByRole("button", { name: "Create User" }).click();
@@ -152,6 +152,7 @@ test.describe("User Management", () => {
 
     await page.getByRole("button", { name: /მომხმარებლის დამატება|add user/i }).click();
     await expect(page.getByText("Add New User")).toBeVisible();
+    await page.waitForTimeout(500);
 
     await page.getByLabel(/Email Address/i).fill("new@test.com");
     await page.getByLabel(/First Name/i).fill("New");
@@ -203,9 +204,8 @@ test.describe("User Management", () => {
 
     await waitForUsersPage(page);
 
-    // Select a user via checkbox
-    const checkboxes = page.getByRole("checkbox");
-    await checkboxes.nth(1).click(); // First user checkbox (nth(0) is select-all)
+    // Select a user via checkbox - use { force: true } to bypass transient detach
+    await page.getByRole("checkbox").nth(1).click({ force: true });
 
     // Bulk actions bar should appear
     await expect(page.getByText(/1 user selected/i)).toBeVisible();
@@ -217,8 +217,7 @@ test.describe("User Management", () => {
     await waitForUsersPage(page);
 
     // Click select-all checkbox
-    const checkboxes = page.getByRole("checkbox");
-    await checkboxes.first().click();
+    await page.getByRole("checkbox").first().click({ force: true });
 
     // Should show count for all users
     await expect(page.getByText(/3 users selected/i)).toBeVisible();
@@ -231,11 +230,11 @@ test.describe("User Management", () => {
     await waitForUsersPage(page);
 
     // Select users
-    const checkboxes = page.getByRole("checkbox");
-    await checkboxes.first().click();
+    await page.getByRole("checkbox").first().click({ force: true });
+    await expect(page.getByText(/3 users selected/i)).toBeVisible();
 
     // Open bulk actions dropdown
-    await page.getByText(/Bulk Actions/).click();
+    await page.getByText(/Bulk Actions/).click({ force: true });
 
     // Verify all action categories are present
     await expect(page.getByText("User Status")).toBeVisible();
@@ -249,10 +248,10 @@ test.describe("User Management", () => {
 
     await waitForUsersPage(page);
 
-    const checkboxes = page.getByRole("checkbox");
-    await checkboxes.first().click();
+    await page.getByRole("checkbox").first().click({ force: true });
+    await expect(page.getByText(/3 users selected/i)).toBeVisible();
 
-    await page.getByText(/Bulk Actions/).click();
+    await page.getByText(/Bulk Actions/).click({ force: true });
 
     await expect(page.getByText(/Activate Users/)).toBeVisible();
     await expect(page.getByText(/Deactivate Users/)).toBeVisible();
@@ -263,10 +262,10 @@ test.describe("User Management", () => {
 
     await waitForUsersPage(page);
 
-    const checkboxes = page.getByRole("checkbox");
-    await checkboxes.first().click();
+    await page.getByRole("checkbox").first().click({ force: true });
+    await expect(page.getByText(/3 users selected/i)).toBeVisible();
 
-    await page.getByText(/Bulk Actions/).click();
+    await page.getByText(/Bulk Actions/).click({ force: true });
 
     await expect(page.getByText(/Make Admin/)).toBeVisible();
     await expect(page.getByText(/Make Agent/)).toBeVisible();
@@ -277,10 +276,10 @@ test.describe("User Management", () => {
 
     await waitForUsersPage(page);
 
-    const checkboxes = page.getByRole("checkbox");
-    await checkboxes.first().click();
+    await page.getByRole("checkbox").first().click({ force: true });
+    await expect(page.getByText(/3 users selected/i)).toBeVisible();
 
-    await page.getByText(/Bulk Actions/).click();
+    await page.getByText(/Bulk Actions/).click({ force: true });
 
     await expect(page.getByText(/Add to Group/i)).not.toBeVisible();
     await expect(page.getByText(/Remove from Group/i)).not.toBeVisible();

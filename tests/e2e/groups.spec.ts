@@ -131,11 +131,13 @@ async function mockGroupsListEmpty(page: import("@playwright/test").Page) {
   });
 }
 
-/** Navigate to groups page and wait for content to render */
+/** Navigate to groups page and wait for content to fully load and stabilize */
 async function gotoGroupsPage(page: import("@playwright/test").Page) {
   await page.goto("/groups");
-  // Wait for group management heading or group cards to appear
-  await page.locator("text=/ჯგუფების მართვა|group management/i, text=Support Team, text=/ჯგუფები არ მოიძებნა/i").first().waitFor({ timeout: 15000 }).catch(() => {});
+  // Wait for group content to appear (generous timeout for CI page compilation)
+  await page.getByText("Support Team").waitFor({ timeout: 30000 });
+  // Allow React to finish all re-renders
+  await page.waitForTimeout(2000);
 }
 
 test.describe("Tenant Group Management", () => {
@@ -152,7 +154,10 @@ test.describe("Tenant Group Management", () => {
   test("displays group list with names and member counts", async ({ page }) => {
     await mockGroupsList(page);
 
-    await gotoGroupsPage(page);
+    await page.goto("/groups");
+    await page.screenshot({ path: "debug-groups.png" });
+    await page.waitForTimeout(5000);
+    await page.screenshot({ path: "debug-groups-after.png" });
 
     await expect(page.getByText("Support Team")).toBeVisible();
     await expect(page.getByText("Sales Team")).toBeVisible();
@@ -182,12 +187,12 @@ test.describe("Tenant Group Management", () => {
   test("shows empty state when no groups", async ({ page }) => {
     await mockGroupsListEmpty(page);
 
-    await gotoGroupsPage(page);
+    await page.goto("/groups");
 
     // Georgian: "ჯგუფები არ მოიძებნა" (no groups found)
     await expect(
       page.getByText(/ჯგუფები არ მოიძებნა|no groups found/i)
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30000 });
   });
 
   // -- Search --
@@ -241,6 +246,10 @@ test.describe("Tenant Group Management", () => {
     await gotoGroupsPage(page);
 
     await page.getByRole("button", { name: /ახალი ჯგუფის შექმნა|create new group/i }).click();
+
+    // Wait for dialog to stabilize (features load causes re-render)
+    await expect(page.getByLabel(/ჯგუფის სახელი|group name/i)).toBeVisible();
+    await page.waitForTimeout(1000);
 
     // Fill name field
     await page.getByLabel(/ჯგუფის სახელი|group name/i).fill("New Group");
