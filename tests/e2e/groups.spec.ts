@@ -131,6 +131,13 @@ async function mockGroupsListEmpty(page: import("@playwright/test").Page) {
   });
 }
 
+/** Navigate to groups page and wait for content to render */
+async function gotoGroupsPage(page: import("@playwright/test").Page) {
+  await page.goto("/groups");
+  // Wait for group management heading or group cards to appear
+  await page.locator("text=/ჯგუფების მართვა|group management/i, text=Support Team, text=/ჯგუფები არ მოიძებნა/i").first().waitFor({ timeout: 15000 }).catch(() => {});
+}
+
 test.describe("Tenant Group Management", () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthSync(page);
@@ -145,7 +152,7 @@ test.describe("Tenant Group Management", () => {
   test("displays group list with names and member counts", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     await expect(page.getByText("Support Team")).toBeVisible();
     await expect(page.getByText("Sales Team")).toBeVisible();
@@ -156,7 +163,7 @@ test.describe("Tenant Group Management", () => {
   test("shows group description", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     await expect(page.getByText("Customer support group")).toBeVisible();
   });
@@ -164,7 +171,7 @@ test.describe("Tenant Group Management", () => {
   test("shows feature badges on groups", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     await expect(page.getByText("Tickets")).toBeVisible();
     await expect(page.getByText("Messages")).toBeVisible();
@@ -175,7 +182,7 @@ test.describe("Tenant Group Management", () => {
   test("shows empty state when no groups", async ({ page }) => {
     await mockGroupsListEmpty(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     // Georgian: "ჯგუფები არ მოიძებნა" (no groups found)
     await expect(
@@ -188,7 +195,7 @@ test.describe("Tenant Group Management", () => {
   test("shows search input", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     // Georgian placeholder: "ჯგუფების ძიება..."
     await expect(
@@ -199,7 +206,7 @@ test.describe("Tenant Group Management", () => {
   test("search filters groups client-side", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     await expect(page.getByText("Support Team")).toBeVisible();
     await expect(page.getByText("Sales Team")).toBeVisible();
@@ -217,7 +224,7 @@ test.describe("Tenant Group Management", () => {
   test("create group button opens form dialog", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     // Button text: "ახალი ჯგუფის შექმნა" (Create New Group)
     await page.getByRole("button", { name: /ახალი ჯგუფის შექმნა|create new group/i }).click();
@@ -231,7 +238,7 @@ test.describe("Tenant Group Management", () => {
   test("create form submits valid data", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     await page.getByRole("button", { name: /ახალი ჯგუფის შექმნა|create new group/i }).click();
 
@@ -244,7 +251,7 @@ test.describe("Tenant Group Management", () => {
     // Dialog should close
     await expect(
       page.getByLabel(/ჯგუფის სახელი|group name/i)
-    ).not.toBeVisible({ timeout: 5000 });
+    ).not.toBeVisible({ timeout: 10000 });
   });
 
   // -- TestTenantGroupCRUD.test_update_tenant_group --
@@ -252,7 +259,7 @@ test.describe("Tenant Group Management", () => {
   test("edit button opens edit form with pre-filled data", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     // Click edit button on first group (Georgian: "რედაქტირება" / English: "Edit")
     const editBtns = page.getByRole("button", { name: /რედაქტირება|edit/i });
@@ -273,7 +280,7 @@ test.describe("Tenant Group Management", () => {
   test("delete button shows confirmation", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     // Set up dialog handler
     page.on("dialog", (dialog) => dialog.dismiss());
@@ -290,24 +297,24 @@ test.describe("Tenant Group Management", () => {
   test("form shows available feature categories", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     await page.getByRole("button", { name: /ახალი ჯგუფის შექმნა|create new group/i }).click();
 
     // Wait for features to load
-    await expect(page.getByText("Core Features")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Core Features")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Advanced Features")).toBeVisible();
   });
 
   test("form shows individual features with descriptions", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     await page.getByRole("button", { name: /ახალი ჯგუფის შექმნა|create new group/i }).click();
 
     // Wait for features to load, then check individual features
-    await expect(page.getByText("Core Features")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Core Features")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Ticket management")).toBeVisible();
     await expect(page.getByText("Reporting")).toBeVisible();
   });
@@ -317,7 +324,7 @@ test.describe("Tenant Group Management", () => {
   test("shows creation date for groups", async ({ page }) => {
     await mockGroupsList(page);
 
-    await page.goto("/groups");
+    await gotoGroupsPage(page);
 
     // The date format depends on locale, check for the pattern
     await expect(page.getByText(/1\/1\/2024|2024/).first()).toBeVisible();

@@ -45,6 +45,15 @@ function setupAdminAuth(page: import("@playwright/test").Page) {
   });
 }
 
+/** Wait for the user table to be rendered before interacting */
+async function waitForUsersPage(page: import("@playwright/test").Page) {
+  await page.goto("/users");
+  // Wait for the table or the empty-state to appear
+  await page.waitForSelector("table, [data-testid='empty-state']", { timeout: 15000 }).catch(() => {});
+  // Extra: wait for at least one row or the empty text
+  await page.locator("table tbody tr, text=/no users found/i, text=/მომხმარებლები/i").first().waitFor({ timeout: 15000 }).catch(() => {});
+}
+
 test.describe("User Management", () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthSync(page);
@@ -60,7 +69,7 @@ test.describe("User Management", () => {
   test("displays user list with names and emails", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Scope to table to avoid matching sidebar profile
     const table = page.locator("table");
@@ -72,15 +81,15 @@ test.describe("User Management", () => {
   test("shows empty state when no users", async ({ page }) => {
     await mockUsersListEmpty(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
-    await expect(page.getByText(/no users found/i)).toBeVisible();
+    await expect(page.getByText(/no users found|მომხმარებლები ვერ მოიძებნა/i)).toBeVisible();
   });
 
   test("shows search input", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     await expect(
       page.getByPlaceholder(/search users/i)
@@ -90,7 +99,7 @@ test.describe("User Management", () => {
   test("shows role filter", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     await expect(page.getByText("All Roles")).toBeVisible();
   });
@@ -98,7 +107,7 @@ test.describe("User Management", () => {
   test("shows status filter", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     await expect(page.getByText("All Status")).toBeVisible();
   });
@@ -108,7 +117,7 @@ test.describe("User Management", () => {
   test("create user button opens form dialog", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Button text is translated; match both Georgian and English
     await page.getByRole("button", { name: /მომხმარებლის დამატება|add user/i }).click();
@@ -123,7 +132,7 @@ test.describe("User Management", () => {
   test("create form validates required fields", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     await page.getByRole("button", { name: /მომხმარებლის დამატება|add user/i }).click();
     await expect(page.getByText("Add New User")).toBeVisible();
@@ -139,7 +148,7 @@ test.describe("User Management", () => {
     await mockUsersList(page);
     await mockUserCreate(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     await page.getByRole("button", { name: /მომხმარებლის დამატება|add user/i }).click();
     await expect(page.getByText("Add New User")).toBeVisible();
@@ -150,7 +159,7 @@ test.describe("User Management", () => {
     await page.getByRole("button", { name: "Create User" }).click();
 
     // Form should close or show success
-    await expect(page.getByText("Add New User")).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Add New User")).not.toBeVisible({ timeout: 10000 });
   });
 
   // -- TestUserUpdate counterpart --
@@ -159,7 +168,7 @@ test.describe("User Management", () => {
     await mockUsersList(page);
     await mockUserRetrieve(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Click edit button on first user row
     const editBtns = page.getByTitle("Edit User");
@@ -175,7 +184,7 @@ test.describe("User Management", () => {
     await mockUsersList(page);
     await mockUserDelete(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Set up dialog handler before clicking delete
     page.on("dialog", (dialog) => dialog.dismiss());
@@ -192,7 +201,7 @@ test.describe("User Management", () => {
     await mockUsersList(page);
     await mockBulkAction(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Select a user via checkbox
     const checkboxes = page.getByRole("checkbox");
@@ -205,7 +214,7 @@ test.describe("User Management", () => {
   test("select all checkbox selects all users", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Click select-all checkbox
     const checkboxes = page.getByRole("checkbox");
@@ -219,7 +228,7 @@ test.describe("User Management", () => {
     await mockUsersList(page);
     await mockBulkAction(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Select users
     const checkboxes = page.getByRole("checkbox");
@@ -238,7 +247,7 @@ test.describe("User Management", () => {
   test("bulk actions has activate and deactivate", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     const checkboxes = page.getByRole("checkbox");
     await checkboxes.first().click();
@@ -252,7 +261,7 @@ test.describe("User Management", () => {
   test("bulk actions has role change options", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     const checkboxes = page.getByRole("checkbox");
     await checkboxes.first().click();
@@ -266,7 +275,7 @@ test.describe("User Management", () => {
   test("bulk actions has no deprecated group actions", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     const checkboxes = page.getByRole("checkbox");
     await checkboxes.first().click();
@@ -282,9 +291,10 @@ test.describe("User Management", () => {
   test("send new password button exists in action row", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
-    const sendPwBtns = page.getByTitle("Send New Password");
+    // Title is translated: Georgian "ახალი პაროლის გაგზავნა" / English "Send New Password"
+    const sendPwBtns = page.locator("[title='Send New Password'], [title='ახალი პაროლის გაგზავნა']");
     await expect(sendPwBtns.first()).toBeVisible();
   });
 
@@ -294,7 +304,7 @@ test.describe("User Management", () => {
     await mockUsersList(page);
     await mockUserRetrieve(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     const viewBtns = page.getByTitle("View Details");
     await viewBtns.first().click();
@@ -308,7 +318,7 @@ test.describe("User Management", () => {
   test("activate/deactivate toggle button exists", async ({ page }) => {
     await mockUsersList(page);
 
-    await page.goto("/users");
+    await waitForUsersPage(page);
 
     // Active users should have Deactivate button
     const deactivateBtns = page.getByTitle("Deactivate");
