@@ -394,6 +394,69 @@ describe("TicketService", () => {
     });
   });
 
+  // -- bulkAssignTickets --
+  describe("bulkAssignTickets", () => {
+    it("calls updateTicket for each ticket", async () => {
+      mockTicketsPartialUpdate.mockResolvedValue(MOCK_TICKET);
+
+      await ticketService.bulkAssignTickets([1, 2], [10], { "10": "primary" }, false);
+
+      expect(mockTicketsPartialUpdate).toHaveBeenCalledTimes(2);
+    });
+
+    it("handles 404 when ticket does not exist", async () => {
+      mockTicketsPartialUpdate.mockRejectedValue({
+        response: { status: 404, data: { detail: "Not found" } },
+      });
+
+      await expect(
+        ticketService.bulkAssignTickets([99999], [10], {}, false)
+      ).rejects.toThrow("Not found");
+    });
+
+    it("handles 403 when user lacks permission", async () => {
+      mockTicketsPartialUpdate.mockRejectedValue({
+        response: { status: 403, data: { message: "Forbidden" } },
+      });
+
+      await expect(
+        ticketService.bulkAssignTickets([1], [10], {}, false)
+      ).rejects.toThrow("Forbidden");
+    });
+  });
+
+  // -- bulkUnassignTickets --
+  describe("bulkUnassignTickets", () => {
+    it("calls updateTicket for each ticket", async () => {
+      mockTicketsPartialUpdate.mockResolvedValue(MOCK_TICKET);
+
+      await ticketService.bulkUnassignTickets([1, 2]);
+
+      expect(mockTicketsPartialUpdate).toHaveBeenCalledTimes(2);
+    });
+
+    it("clears assignments with empty arrays", async () => {
+      mockTicketsPartialUpdate.mockResolvedValue(MOCK_TICKET);
+
+      await ticketService.bulkUnassignTickets([1]);
+
+      expect(mockTicketsPartialUpdate).toHaveBeenCalledWith(
+        "1",
+        expect.objectContaining({ assigned_user_ids: [] })
+      );
+    });
+
+    it("handles 404 when ticket does not exist", async () => {
+      mockTicketsPartialUpdate.mockRejectedValue({
+        response: { status: 404, data: { detail: "Not found" } },
+      });
+
+      await expect(
+        ticketService.bulkUnassignTickets([99999])
+      ).rejects.toThrow("Not found");
+    });
+  });
+
   // -- handleError --
   describe("error handling", () => {
     it("401 → 'Authentication required'", async () => {
