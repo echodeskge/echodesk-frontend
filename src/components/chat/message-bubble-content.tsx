@@ -1,12 +1,41 @@
 import type { ReactNode } from "react"
-import { useMemo } from "react"
+import { useMemo, useState, useEffect, useRef } from "react"
 import type { MessageType } from "@/components/chat/types"
+import axios from "@/api/axios"
 
 import { cn } from "@/lib/utils"
 
 import { MessageBubbleContentFiles } from "./message-bubble-content-files"
 import { MessageBubbleContentImages } from "./message-bubble-content-images"
 import { MessageBubbleContentText } from "./message-bubble-content-text"
+
+function AuthenticatedAudio({ url, className }: { url: string; className?: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const blobUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    axios.get(url, { responseType: "blob" }).then((res) => {
+      if (cancelled) return
+      const objectUrl = URL.createObjectURL(res.data)
+      blobUrlRef.current = objectUrl
+      setBlobUrl(objectUrl)
+    }).catch(() => {
+      // Fallback: try direct URL (works for non-authenticated URLs)
+      if (!cancelled) setBlobUrl(url)
+    })
+    return () => {
+      cancelled = true
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current)
+    }
+  }, [url])
+
+  if (!blobUrl) {
+    return <div className="text-xs opacity-60 py-1">Loading audio...</div>
+  }
+
+  return <audio controls src={blobUrl} className={className} />
+}
 
 // Process email HTML to ensure images respect their width/height attributes
 function processEmailHtml(html: string): string {
@@ -83,7 +112,7 @@ export function MessageBubbleContent({
   // Add voice message if present
   if (message.voiceMessage) {
     contentParts.push(
-      <audio key="voice" controls src={message.voiceMessage.url} className="max-w-full" />
+      <AuthenticatedAudio key="voice" url={message.voiceMessage.url} className="max-w-full" />
     )
   }
 

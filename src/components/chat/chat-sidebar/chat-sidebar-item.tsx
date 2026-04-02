@@ -91,8 +91,8 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
             </div>
           )}
         </div>
-        <div className="h-11 w-full grid grid-cols-3 gap-x-4">
-          <div className="col-span-2 grid">
+        <div className="h-11 w-full grid grid-cols-[1fr_auto] gap-x-2">
+          <div className="min-w-0 grid">
             <span className={cn("truncate", chat.unreadCount && chat.unreadCount > 0 && "font-semibold")}>{chat.name}</span>
             <span className={cn(
               "text-xs truncate",
@@ -104,7 +104,7 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
             </span>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span className="text-xs text-muted-foreground font-semibold">
+            <span className="text-xs text-muted-foreground font-semibold whitespace-nowrap">
               {formatDistanceToNow(chat.lastMessage?.createdAt ?? new Date(), { addSuffix: true })}
             </span>
             {/* Display unread count if available */}

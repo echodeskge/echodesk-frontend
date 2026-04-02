@@ -568,6 +568,47 @@ describe("convertUnifiedMessagesToMessageType", () => {
     expect(result.images).toBeUndefined();
   });
 
+  it("handles audio via message_type when attachment_url comes from attachments array", () => {
+    // This mirrors how loadChatMessages converts WhatsApp audio:
+    // attachment_type = msg.message_type ('audio'), attachment_url = proxyUrl
+    const msg = makeUnifiedMessage({
+      attachment_type: "audio",
+      attachment_url: "https://api.echodesk.ge/api/social/whatsapp-media/123/?waba_id=456",
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.voiceMessage).toBeDefined();
+    expect(result.voiceMessage!.url).toBe("https://api.echodesk.ge/api/social/whatsapp-media/123/?waba_id=456");
+    expect(result.files).toBeUndefined();
+    expect(result.images).toBeUndefined();
+  });
+
+  it("handles video via message_type as images with type video", () => {
+    const msg = makeUnifiedMessage({
+      attachment_type: "video",
+      attachment_url: "https://example.com/clip.mp4",
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.images).toHaveLength(1);
+    expect(result.images![0].type).toBe("video");
+    expect(result.files).toBeUndefined();
+    expect(result.voiceMessage).toBeUndefined();
+  });
+
+  it("shows placeholder text for audio without URL", () => {
+    const msg = makeUnifiedMessage({
+      message_text: "",
+      attachments: [{ type: "audio" }],
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.text).toContain("Audio sent");
+  });
+
   it("falls back to second attachments scan when first attachment has no url", () => {
     const msg = makeUnifiedMessage({
       attachment_type: undefined,

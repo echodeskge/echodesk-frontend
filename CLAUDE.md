@@ -93,6 +93,37 @@ export function MessagesPage() {
 - Maintain the visual design from full-kit for consistency
 - Document any deviations from full-kit patterns
 
+## Testing Requirements
+
+**IMPORTANT**: When fixing bugs or adding features, always add or update tests to prevent regressions.
+
+### When to write tests
+- **Bug fixes**: Add a test that reproduces the bug scenario BEFORE fixing it. The test should fail without the fix and pass with it.
+- **New features**: Add tests covering the core behavior. Focus on edge cases and state transitions.
+- **Refactors**: Verify existing tests still pass. Add tests for any behavior that wasn't previously covered.
+
+### What to test
+- **Reducers** (`tests/unit/reducers/`): Test all action types, especially state transitions and edge cases like empty arrays, missing data, and action sequencing (e.g., `removeChat` then `updateChats`).
+- **Pure functions** (`tests/unit/lib/`): Test conversion functions with all attachment types (image, video, audio, file, sticker), edge cases (empty data, missing fields), and platform-specific logic.
+- **Services** (`tests/unit/services/`): Test API call wrappers, auth flows, error handling. Type mock returns against `Awaited<ReturnType<typeof generatedFn>>`.
+- **Components** (`tests/unit/components/`): Test user interactions, form validation, conditional rendering. Mock Next.js modules (next-intl, next/link, next/navigation).
+
+### Test file locations
+- Mirror source structure: `src/components/auth/sign-in-form.tsx` → `tests/unit/components/auth/sign-in-form.test.tsx`
+- Use factory helpers (e.g., `makeChat()`, `makeMessage()`) for test data — never hardcode large objects inline
+
+### Running tests
+- `npm run test` — runs Vitest (includes `pretest` → `npm run generate` for fresh API types)
+- `npx vitest run` — quick run without regenerating types
+- `npx vitest run tests/unit/reducers/chat-reducer.test.ts` — run a specific file
+
+### Known critical test scenarios
+These tests guard against past production bugs — do NOT remove them:
+- `chat-reducer.test.ts` > "updateChats with empty array wipes all chats" — guards against state wipe during React Query transitions
+- `chat-reducer.test.ts` > "removeChat followed by updateChats re-adds it" — documents why `removedChatIdsRef` exists in MessagesChat.tsx
+- `chatAdapter.test.ts` > "handles audio as voiceMessage" — ensures audio doesn't render as file attachment
+- `chatAdapter.test.ts` > "handles audio via message_type when attachment_url comes from attachments array" — ensures WhatsApp proxy audio URL renders as voiceMessage not file
+
 ## Backend/Frontend Deployment Workflow
 
 **IMPORTANT**: On every backend change:

@@ -546,6 +546,81 @@ describe("ChatReducer", () => {
   });
 
   // -----------------------------------------------------------------------
+  // State wipe & removal edge cases
+  // -----------------------------------------------------------------------
+  describe("state wipe and removal edge cases", () => {
+    it("updateChats with empty array wipes all chats including loaded messages", () => {
+      const chat = makeChat({
+        id: "c1",
+        messages: [makeMessage()],
+        messagesLoaded: true,
+      });
+      const state = makeState({ chats: [chat], selectedChat: chat });
+
+      const result = ChatReducer(state, { type: "updateChats", chats: [] });
+
+      expect(result.chats).toHaveLength(0);
+      expect(result.selectedChat).toBeNull();
+    });
+
+    it("removeChat followed by updateChats containing the removed chat re-adds it", () => {
+      // This documents the reducer limitation: the parent component (MessagesChat)
+      // must filter removed chat IDs from the data passed to updateChats.
+      const chat = makeChat({ id: "c1", messages: [makeMessage()], messagesLoaded: true });
+      const state = makeState({ chats: [chat], selectedChat: chat });
+
+      const afterRemove = ChatReducer(state, { type: "removeChat", chatId: "c1" });
+      expect(afterRemove.chats).toHaveLength(0);
+
+      // Stale data arrives with the removed chat
+      const afterUpdate = ChatReducer(afterRemove, {
+        type: "updateChats",
+        chats: [makeChat({ id: "c1" })],
+      });
+      expect(afterUpdate.chats).toHaveLength(1);
+      expect(afterUpdate.chats[0].id).toBe("c1");
+    });
+
+    it("removeChat does not affect other chats' loaded messages", () => {
+      const chat1 = makeChat({ id: "c1", messages: [makeMessage({ id: "m1" })], messagesLoaded: true });
+      const chat2 = makeChat({ id: "c2", messages: [makeMessage({ id: "m2" })], messagesLoaded: true });
+      const state = makeState({ chats: [chat1, chat2] });
+
+      const result = ChatReducer(state, { type: "removeChat", chatId: "c1" });
+
+      expect(result.chats).toHaveLength(1);
+      expect(result.chats[0].id).toBe("c2");
+      expect(result.chats[0].messages).toHaveLength(1);
+      expect(result.chats[0].messagesLoaded).toBe(true);
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // addIncomingMessage — voice/audio message
+  // -----------------------------------------------------------------------
+  describe("addIncomingMessage with voice message", () => {
+    it("preserves voiceMessage field on incoming message", () => {
+      const chat = makeChat({ id: "c1", messages: [] });
+      const state = makeState({ chats: [chat] });
+      const audioMsg = makeMessage({
+        id: "m1",
+        text: "",
+        voiceMessage: { name: "audio", url: "https://example.com/voice.ogg", size: 0 },
+      } as any);
+
+      const result = ChatReducer(state, {
+        type: "addIncomingMessage",
+        chatId: "c1",
+        message: audioMsg,
+      });
+
+      expect(result.chats[0].messages).toHaveLength(1);
+      expect(result.chats[0].messages[0].voiceMessage).toBeDefined();
+      expect(result.chats[0].messages[0].voiceMessage!.url).toBe("https://example.com/voice.ogg");
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // Unknown action
   // -----------------------------------------------------------------------
   describe("unknown action", () => {

@@ -37,12 +37,14 @@ export function ChatProvider({
   showArchived: externalShowArchived,
   setShowArchived: externalSetShowArchived,
   onAddIncomingMessageRef,
+  onChatRemoved,
   selectedChatId: externalSelectedChatId,
   setSelectedChatId: externalSetSelectedChatId,
 }: {
   chatsData: ChatType[]
   children: ReactNode
   onChatSelected?: (chat: ChatType) => void
+  onChatRemoved?: (chatId: string) => void
   loadChatMessages?: (chatId: string, initialLoad?: boolean) => Promise<MessageType[]>
   isInitialLoading?: boolean
   platforms?: string[]
@@ -168,6 +170,7 @@ export function ChatProvider({
 
   const handleRemoveChat = (chatId: string) => {
     dispatch({ type: "removeChat", chatId })
+    onChatRemoved?.(chatId)
   }
 
   // Handlers for chat actions
@@ -258,8 +261,11 @@ export function ChatProvider({
     // Trigger lazy loading if messages not loaded
     if (!chat.messagesLoaded && loadChatMessages) {
       handleLoadChatMessages(chat.id)
+    } else if (chat.messagesLoaded && loadChatMessages) {
+      // Silently refetch in background to pick up any missed messages
+      handleReloadChatMessages(chat.id)
     }
-  }, [onChatSelected, loadChatMessages, handleLoadChatMessages])
+  }, [onChatSelected, loadChatMessages, handleLoadChatMessages, handleReloadChatMessages])
 
   return (
     <ChatContext.Provider

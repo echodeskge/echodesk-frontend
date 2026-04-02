@@ -244,6 +244,29 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     return convertedChats;
   }, [conversationsData, directLoadedChat]);
 
+  // Keep previous chats during query key transitions to prevent state wipe
+  const prevChatsRef = useRef<ChatType[]>([]);
+  const removedChatIdsRef = useRef<Set<string>>(new Set());
+  const stableChatsData = useMemo(() => {
+    if (chatsData.length === 0 && isFetching) {
+      if (removedChatIdsRef.current.size > 0) {
+        return prevChatsRef.current.filter(c => !removedChatIdsRef.current.has(c.id));
+      }
+      return prevChatsRef.current;
+    }
+    // Fresh data arrived — clear removed IDs
+    removedChatIdsRef.current.clear();
+    prevChatsRef.current = chatsData;
+    return chatsData;
+  }, [chatsData, isFetching]);
+
+  // Callback for ChatProvider to notify when a chat is removed (e.g., end session)
+  const handleChatRemoved = useCallback((chatId: string) => {
+    removedChatIdsRef.current.add(chatId);
+    // Also remove from prevChatsRef so it doesn't reappear on tab switch
+    prevChatsRef.current = prevChatsRef.current.filter(c => c.id !== chatId);
+  }, []);
+
   // Ref to hold the addIncomingMessage dispatch function (set by ChatProvider)
   const addIncomingMessageRef = useRef<((chatId: string, message: MessageType, senderName?: string) => void) | null>(null);
 
@@ -329,6 +352,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
       const attachmentType = messageData.attachments?.[0]?.type || messageData.attachment_type || messageData.message_type || '';
       const isImageType = ['image', 'sticker'].includes(attachmentType);
+      const isAudioType = attachmentType === 'audio';
+      const isVideoType = attachmentType === 'video';
 
       if (isImageType) {
         const images = (messageData.attachments?.map((att: any) => ({
@@ -361,6 +386,20 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         } else if (!newMessage.text) {
           const attName = messageData.attachments?.[0]?.filename;
           newMessage.text = attName ? `📷 ${attName}` : '📷 Image sent';
+        }
+      } else if (isAudioType) {
+        const audioUrl = resolveUrl(messageData.attachments?.[0] || null);
+        if (audioUrl) {
+          newMessage.voiceMessage = { name: 'audio', url: audioUrl, size: 0 };
+        } else if (!newMessage.text) {
+          newMessage.text = '🎵 Audio sent';
+        }
+      } else if (isVideoType) {
+        const videoUrl = resolveUrl(messageData.attachments?.[0] || null);
+        if (videoUrl) {
+          newMessage.images = [{ name: 'video', url: videoUrl, size: 0, type: 'video' }];
+        } else if (!newMessage.text) {
+          newMessage.text = '🎥 Video sent';
         }
       } else {
         const files = (messageData.attachments?.map((att: any) => ({
@@ -769,8 +808,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
   return (
     <ChatProvider
-      chatsData={chatsData}
+      chatsData={stableChatsData}
       onChatSelected={handleChatSelected}
+      onChatRemoved={handleChatRemoved}
       loadChatMessages={loadChatMessages}
       isInitialLoading={isLoadingChat}
       platforms={enabledPlatforms}
