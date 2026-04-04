@@ -15,7 +15,12 @@ import type {
   Board,
   TenantGroup,
 } from "@/api/generated/interfaces";
-import SimpleRichTextEditor from "./SimpleRichTextEditor";
+import dynamic from "next/dynamic";
+
+const SimpleRichTextEditor = dynamic(
+  () => import("./SimpleRichTextEditor"),
+  { ssr: false }
+);
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
 import MultiGroupSelection from "./MultiGroupSelection";
 import { Button } from "@/components/ui/button";

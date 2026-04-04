@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import { columnsList } from '@/api/generated/api';
 import type { User, Tag, TicketColumn } from '@/api/generated/interfaces';
-import SimpleRichTextEditor from './SimpleRichTextEditor';
+import dynamic from "next/dynamic";
+
+const SimpleRichTextEditor = dynamic(
+  () => import("./SimpleRichTextEditor"),
+  { ssr: false }
+);
 import MultiUserAssignment, { AssignmentData } from './MultiUserAssignment';
 // For now, we'll use ticket service until we create a specific order service
 import { ticketService } from '@/services/ticketService';

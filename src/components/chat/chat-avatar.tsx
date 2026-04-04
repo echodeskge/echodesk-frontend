@@ -1,6 +1,7 @@
 "use client"
 
 import { memo, useState, useCallback } from "react"
+import Image from "next/image"
 
 import { cn } from "@/lib/utils"
 
@@ -60,15 +61,16 @@ const ChatAvatar = memo(
         >
           {/* Always render img if src exists — browser cache keeps it decoded */}
           {showImage && (
-            <img
+            <Image
               src={src}
               alt="Avatar"
+              width={Math.round(size * 16)}
+              height={Math.round(size * 16)}
               className={cn(
                 "aspect-square h-full w-full rounded-lg object-cover",
                 loaded ? "opacity-100" : "opacity-0"
               )}
               loading="lazy"
-              decoding="async"
               onLoad={handleLoad}
               onError={handleError}
             />
