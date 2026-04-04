@@ -67,7 +67,7 @@ const ChatAvatar = memo(
                 "aspect-square h-full w-full rounded-lg object-cover",
                 loaded ? "opacity-100" : "opacity-0"
               )}
-              loading="eager"
+              loading="lazy"
               decoding="async"
               onLoad={handleLoad}
               onError={handleError}
