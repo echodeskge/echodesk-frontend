@@ -65,7 +65,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
   const { data: boards } = useBoards();
-  const { data: appearance } = useDashboardAppearance();
+  const { data: appearance, isLoading: appearanceLoading } = useDashboardAppearance();
   const { setAppearance, resolvedMode, setMode } = useTheme();
   const { selectedBoardId, setSelectedBoardId } = useBoard();
   const { data: socialSettings } = useSocialSettings();
@@ -174,7 +174,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     autoReconnect: true,
   });
 
-  const [facebookConnected, setFacebookConnected] = useState(false);
   const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
   const [managingBoardUsersId, setManagingBoardUsersId] = useState<
     number | null
@@ -204,7 +203,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   }, [tenantLoading, tenantConfig, router]);
 
   // Check social connections with React Query
-  const { data: facebookStatus } = useQuery({
+  const { data: facebookStatus, isLoading: facebookStatusLoading } = useQuery({
     queryKey: ['social', 'facebook', 'status'],
     queryFn: async () => {
       const axiosInstance = (await import("@/api/axios")).default;
@@ -216,12 +215,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     enabled: !!tenantInfo, // Only check when tenant is loaded
   });
 
-  // Update state when query data changes
-  useEffect(() => {
-    if (facebookStatus) {
-      setFacebookConnected(facebookStatus.connected || false);
-    }
-  }, [facebookStatus]);
+  const facebookConnected = facebookStatus?.connected || false;
 
   // Translation key mapping for navigation items
   const translationKeyMap: Record<string, string> = {
@@ -494,7 +488,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     }
 
     // Skip if still loading
-    if (profileLoading || tenantLoading) {
+    if (profileLoading || tenantLoading || appearanceLoading || facebookStatusLoading) {
       console.log('[RouteProtection] Skipping - still loading');
       return;
     }
@@ -535,7 +529,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       redirectedToRef.current = firstAvailableRoute;
       router.replace(firstAvailableRoute);
     }
-  }, [pathname, visibleMenuItems, profileLoading, tenantLoading, userProfile]);
+  }, [pathname, visibleMenuItems, profileLoading, tenantLoading, appearanceLoading, facebookStatusLoading, userProfile]);
 
   const handleMenuClick = (viewId: string) => {
     if (viewId === "report-bug") {
@@ -608,7 +602,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Check if we should show board switcher (always show on tickets page, even with no boards)
   const showBoardSwitcher = currentView === "tickets";
 
-  if (profileLoading || tenantLoading || !tenantInfo) {
+  if (profileLoading || tenantLoading || !tenantInfo || appearanceLoading || facebookStatusLoading) {
     return <LayoutSkeleton />;
   }
 
