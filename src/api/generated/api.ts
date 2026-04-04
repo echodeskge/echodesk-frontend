@@ -5408,6 +5408,11 @@ export async function manualPayment(): Promise<{
   return response.data;
 }
 
+export async function paymentsPaddleWebhookCreate(): Promise<any> {
+  const response = await axios.post(`/api/payments/paddle-webhook/`);
+  return response.data;
+}
+
 export async function paymentsPaymentSummaryRetrieve(): Promise<TicketPayment> {
   const response = await axios.get(`/api/payments/payment_summary/`);
   return response.data;
@@ -7057,6 +7062,11 @@ export async function getSubscriptionMe(): Promise<{
   usage_limits?: Record<string, any>;
 }> {
   const response = await axios.get(`/api/subscription/me/`);
+  return response.data;
+}
+
+export async function supportReportBugCreate(): Promise<any> {
+  const response = await axios.post(`/api/support/report-bug/`);
   return response.data;
 }
 

@@ -24,6 +24,27 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Immutable cache for hashed static assets (JS, CSS, media)
+        source: '/_next/static/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        // Cache optimized images for 1 hour, serve stale while revalidating
+        source: '/_next/image/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=3600, stale-while-revalidate=86400' },
+        ],
+      },
+      {
+        // Cache font files for 1 year (they're content-hashed by next/font)
+        source: '/_next/static/media/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         // Security headers for all pages
         source: '/(.*)',
         headers: [
@@ -47,8 +68,12 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Enable ETags for conditional requests (304 Not Modified)
+  generateEtags: true,
+
   // Configure domains for image optimization
   images: {
+    minimumCacheTTL: 3600,
     domains: [
       'echodesk.ge',
       'api.echodesk.ge',
@@ -119,6 +144,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      // DigitalOcean Spaces (tenant logos and media)
+      {
+        protocol: 'https',
+        hostname: 'echodesk-spaces.fra1.digitaloceanspaces.com',
+        pathname: '/**',
+      },
       // WhatsApp media domains
       {
         protocol: 'https',
@@ -156,9 +187,10 @@ const nextConfig: NextConfig = {
 
   // Environment-specific optimizations
   ...(process.env.NODE_ENV === 'production' && {
-    // Keep console logs for debugging on DigitalOcean
     compiler: {
-      removeConsole: false,
+      removeConsole: {
+        exclude: ['error', 'warn'],
+      },
     },
   }),
 };

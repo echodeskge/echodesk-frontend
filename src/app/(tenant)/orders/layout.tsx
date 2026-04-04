@@ -1,13 +1,14 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
-import HomeContent from './HomeContent';
 
-export default async function Home() {
+const NAMESPACES = ['orders'];
+
+export default async function OrdersLayout({ children }: { children: React.ReactNode }) {
   const messages = await getMessages();
   return (
-    <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, ['auth', 'landing'])}>
-      <HomeContent />
+    <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, NAMESPACES)}>
+      {children}
     </NextIntlClientProvider>
   );
 }

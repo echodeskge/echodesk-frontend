@@ -1120,7 +1120,7 @@ export interface InstagramMessageSourceEnum {
 
 export interface InstagramSendMessageRequest {
   recipient_id: string;
-  message: string;
+  message?: string;
   instagram_account_id: string;
 }
 
@@ -3776,7 +3776,7 @@ export interface SocialClientList {
   email: string;
   phone: string;
   profile_picture: string;
-  social_accounts_count: number;
+  social_accounts_count: string;
   platforms: string;
   created_at: string;
   updated_at: string;

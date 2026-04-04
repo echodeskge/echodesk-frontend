@@ -70,6 +70,7 @@ import { User } from "@/api/generated/interfaces"
 import { MenuItem } from "@/services/permissionService"
 import { LockedFeatureBadge } from "@/components/subscription/LockedFeatureBadge"
 import { Lock } from "lucide-react"
+import Image from "next/image"
 import { useUnreadMessagesCount } from "@/hooks/api/useSocial"
 
 // Icon mapping for menu items (lucide-react icon names)
@@ -155,10 +156,12 @@ export function AppSidebar({
       <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-4 py-2">
           {tenant?.theme?.logo_url && (
-            <img
+            <Image
               src={tenant.theme.logo_url}
               alt={tenant.name || "Logo"}
-              className="h-8 w-auto"
+              width={32}
+              height={32}
+              className="h-8 w-auto object-contain"
             />
           )}
           <div className="flex flex-col">

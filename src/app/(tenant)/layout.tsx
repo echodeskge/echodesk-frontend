@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/sidebar";
 import BoardSwitcher from "@/components/BoardSwitcher";
 import { TicketCreateProvider, useTicketCreate } from "@/contexts/TicketCreateContext";
-import { TicketCreateSheet } from "@/components/TicketCreateSheet";
 import { BugReportProvider, useBugReport } from "@/contexts/BugReportContext";
-import { BugReportDialog } from "@/components/BugReportDialog";
+
+const TicketCreateSheet = dynamic(() => import("@/components/TicketCreateSheet").then(m => ({ default: m.TicketCreateSheet })), { ssr: false });
+const BugReportDialog = dynamic(() => import("@/components/BugReportDialog").then(m => ({ default: m.BugReportDialog })), { ssr: false });
 import { BoardProvider, useBoard } from "@/contexts/BoardContext";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { LayoutSkeleton } from "@/components/LayoutSkeleton";
@@ -29,10 +30,12 @@ import { BoardCollaborationProvider } from "@/contexts/BoardCollaborationContext
 import { useTicketBoardWebSocket } from "@/hooks/useTicketBoardWebSocket";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
-import BoardStatusEditor from "@/components/BoardStatusEditor";
-import BoardUserManager from "@/components/BoardUserManager";
-import { BoardCreateSheet } from "@/components/BoardCreateSheet";
-import { TeamChatWidget } from "@/components/TeamChat";
+import dynamic from "next/dynamic";
+
+const BoardStatusEditor = dynamic(() => import("@/components/BoardStatusEditor"), { ssr: false });
+const BoardUserManager = dynamic(() => import("@/components/BoardUserManager"), { ssr: false });
+const BoardCreateSheet = dynamic(() => import("@/components/BoardCreateSheet").then(m => ({ default: m.BoardCreateSheet })), { ssr: false });
+const TeamChatWidget = dynamic(() => import("@/components/TeamChat").then(m => ({ default: m.TeamChatWidget })), { ssr: false });
 import {
   SubscriptionProvider,
   useSubscription,

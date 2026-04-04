@@ -10,6 +10,7 @@ import { SessionProvider } from '@/providers/SessionProvider';
 import { ClarityProvider } from '@/providers/ClarityProvider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { pickMessages, GLOBAL_NAMESPACES } from '@/lib/pick-messages';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
 import { NetworkMonitor } from '@/components/debug/NetworkMonitor';
 import { Toaster } from 'sonner';
@@ -34,7 +35,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const messages = await getMessages();
+  const allMessages = await getMessages();
+  const messages = pickMessages(allMessages as Record<string, unknown>, GLOBAL_NAMESPACES);
 
   return (
     <html lang="en">
@@ -42,6 +44,7 @@ export default async function RootLayout({
         {/* Preconnect to third-party origins for faster loading */}
         <link rel="preconnect" href="https://www.clarity.ms" />
         <link rel="preconnect" href="https://scripts.clarity.ms" />
+        <link rel="preconnect" href="https://v.clarity.ms" />
         <link rel="preconnect" href="https://echodesk-spaces.fra1.digitaloceanspaces.com" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
