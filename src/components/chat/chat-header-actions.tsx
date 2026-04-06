@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
@@ -93,10 +94,13 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const { toast } = useToast()
+  const t = useTranslations("chat")
   const deleteConversation = useDeleteConversation()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showClientPanel, setShowClientPanel] = useState(false)
   const [transferTarget, setTransferTarget] = useState<{ id: number; name: string } | null>(null)
+  const [transferSearch, setTransferSearch] = useState('')
+  const [transferOpen, setTransferOpen] = useState(false)
 
   // Archive/History functionality
   const { showArchived, setShowArchived, selectedEmailConnectionId, setAssignmentTab, setSelectedChatId, handleRemoveChat } = useChatContext()
@@ -508,9 +512,9 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
           </Button>
         )}
 
-        {/* Transfer Chat Button */}
-        {transferableUsers.length > 0 && (
-          <DropdownMenu>
+        {/* Transfer Chat Button - only shown when chat is assigned to current user */}
+        {isAssignedToMe && transferableUsers.length > 0 && (
+          <DropdownMenu open={transferOpen} onOpenChange={(open) => { setTransferOpen(open); if (!open) setTransferSearch('') }}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -521,15 +525,64 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                 <ArrowRightLeft className="size-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="max-h-60 overflow-y-auto">
-              {transferableUsers.map((u) => (
-                <DropdownMenuItem
-                  key={u.id}
-                  onClick={() => setTransferTarget({ id: u.id, name: u.full_name || u.email })}
-                >
-                  {u.full_name || u.email}
-                </DropdownMenuItem>
-              ))}
+            <DropdownMenuContent align="end" className="min-w-[280px] p-0">
+              <div className="flex items-center gap-2 px-3 py-2 border-b">
+                <Search className="size-4 text-muted-foreground flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder={t("searchMembers")}
+                  value={transferSearch}
+                  onChange={(e) => setTransferSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  autoFocus
+                />
+              </div>
+              <div className="max-h-60 overflow-y-auto p-1">
+                {transferableUsers
+                  .filter((u) => {
+                    if (!transferSearch) return true
+                    const q = transferSearch.toLowerCase()
+                    return (
+                      u.email.toLowerCase().includes(q) ||
+                      (u.first_name?.toLowerCase() || '').includes(q) ||
+                      (u.last_name?.toLowerCase() || '').includes(q)
+                    )
+                  })
+                  .map((u) => {
+                    const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ')
+                    return (
+                      <DropdownMenuItem
+                        key={u.id}
+                        onClick={() => {
+                          setTransferTarget({ id: u.id, name: displayName || u.email })
+                          setTransferOpen(false)
+                          setTransferSearch('')
+                        }}
+                        className="flex flex-col items-start gap-0.5 cursor-pointer"
+                      >
+                        {displayName && (
+                          <span className="font-medium">{displayName}</span>
+                        )}
+                        <span className={displayName ? "text-xs text-muted-foreground" : ""}>
+                          {u.email}
+                        </span>
+                      </DropdownMenuItem>
+                    )
+                  })}
+                {transferableUsers.filter((u) => {
+                  if (!transferSearch) return true
+                  const q = transferSearch.toLowerCase()
+                  return (
+                    u.email.toLowerCase().includes(q) ||
+                    (u.first_name?.toLowerCase() || '').includes(q) ||
+                    (u.last_name?.toLowerCase() || '').includes(q)
+                  )
+                }).length === 0 && (
+                  <div className="py-3 text-center text-sm text-muted-foreground">
+                    No members found
+                  </div>
+                )}
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
@@ -711,18 +764,18 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
       <AlertDialog open={!!transferTarget} onOpenChange={(open) => { if (!open) setTransferTarget(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Transfer Chat</AlertDialogTitle>
+            <AlertDialogTitle>{t("transferChat")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to transfer this chat to <span className="font-medium text-foreground">{transferTarget?.name}</span>?
+              {t.rich("transferConfirmation", { name: transferTarget?.name ?? "", })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={transferChat.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={transferChat.isPending}>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleTransfer}
               disabled={transferChat.isPending}
             >
-              {transferChat.isPending ? "Transferring..." : "Transfer"}
+              {transferChat.isPending ? t("transferring") : t("transfer")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

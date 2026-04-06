@@ -572,7 +572,13 @@
     "noArchivedChats": "No archived chats",
     "archivedChatsEmpty": "Conversations you archive will appear here",
     "sessionEnded": "Session ended",
-    "movedToHistory": "Moved to history"
+    "movedToHistory": "Moved to history",
+    "transferChat": "Transfer Chat",
+    "transferConfirmation": "Are you sure you want to transfer this chat to {name}?",
+    "transferring": "Transferring...",
+    "transfer": "Transfer",
+    "cancel": "Cancel",
+    "searchMembers": "Search members..."
   },
   "ratingStatistics": {
     "title": "Chat Rating Statistics",

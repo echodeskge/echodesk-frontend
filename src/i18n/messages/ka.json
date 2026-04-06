@@ -572,7 +572,13 @@
     "noArchivedChats": "არქივში ჩატები არ არის",
     "archivedChatsEmpty": "დაარქივებული საუბრები აქ გამოჩნდება",
     "sessionEnded": "სესია დასრულდა",
-    "movedToHistory": "გადატანილია ისტორიაში"
+    "movedToHistory": "გადატანილია ისტორიაში",
+    "transferChat": "ჩატის გადაცემა",
+    "transferConfirmation": "დარწმუნებული ხართ, რომ გსურთ ამ ჩატის გადაცემა {name}-ზე?",
+    "transferring": "გადაცემა...",
+    "transfer": "გადაცემა",
+    "cancel": "გაუქმება",
+    "searchMembers": "წევრების ძებნა..."
   },
   "ratingStatistics": {
     "title": "ჩატის შეფასების სტატისტიკა",
