@@ -704,10 +704,28 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
                 {/* Show who it's assigned to if assigned to someone else */}
                 {isAssigned && !isAssignedToMe && assignment?.assigned_user_name && (
-                  <DropdownMenuItem disabled className="text-muted-foreground">
-                    <UserPlus className="size-4 mr-2" />
-                    Assigned to {assignment.assigned_user_name}
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem disabled className="text-muted-foreground">
+                      <UserPlus className="size-4 mr-2" />
+                      Assigned to {assignment.assigned_user_name}
+                    </DropdownMenuItem>
+
+                    {/* Admin actions for chats assigned to others */}
+                    {canDelete && (
+                      <>
+                        {isInSession && (
+                          <DropdownMenuItem onClick={handleEndSession} disabled={isAssignmentLoading}>
+                            <Square className="size-4 mr-2" />
+                            {endSession.isPending ? "Ending..." : "End Session"}
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={handleUnassign} disabled={isAssignmentLoading}>
+                          <UserMinus className="size-4 mr-2" />
+                          {unassignChat.isPending ? "Unassigning..." : "Unassign"}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </>
                 )}
               </>
             )}
