@@ -2,14 +2,13 @@
 
 import { useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { UserPlus, Clock } from "lucide-react"
+import { UserPlus } from "lucide-react"
 
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useAuth } from "@/contexts/AuthContext"
 import {
   useAssignmentStatus,
   useAssignChat,
-  useMessagingWindow,
   type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
 import { CardFooter } from "@/components/ui/card"
@@ -85,15 +84,6 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
     chatInfo?.conversationId || '',
     chatInfo?.accountId || '',
     { enabled: !!chatInfo }
-  )
-
-  // Check 24-hour messaging window for Facebook and Instagram only (WhatsApp allows messaging anytime)
-  const isWindowCheckPlatform = chatInfo?.platform === 'facebook' || chatInfo?.platform === 'instagram'
-  const { data: messagingWindow } = useMessagingWindow(
-    chatInfo?.platform || 'facebook',
-    chatInfo?.conversationId || '',
-    chatInfo?.accountId || '',
-    { enabled: !!chatInfo && isWindowCheckPlatform }
   )
 
   // Assignment mutation - assigning now automatically starts session
@@ -194,25 +184,6 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
               This chat is assigned to {assignment?.assigned_user_name}
             </p>
           )}
-        </div>
-      </CardFooter>
-    )
-  }
-
-  // Show 24-hour window expired warning for messaging platforms
-  if (isWindowCheckPlatform && messagingWindow && !messagingWindow.window_open) {
-    return (
-      <CardFooter className="py-4 border-t border-border">
-        <div className="w-full flex items-center gap-3 px-3 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <Clock className="size-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-              24-hour messaging window expired
-            </p>
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
-              You can only reply within 24 hours of the customer&apos;s last message.
-            </p>
-          </div>
         </div>
       </CardFooter>
     )

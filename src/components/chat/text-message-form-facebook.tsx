@@ -339,17 +339,14 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
     } catch (error: any) {
       console.error("Failed to send message:", error)
       const errorCode = error?.response?.data?.error_code
-      if (errorCode === 'window_expired') {
-        toast.error("24-hour messaging window expired", {
-          description: error?.response?.data?.details || "You can only reply within 24 hours of the customer's last message.",
-        })
-      } else if (errorCode === 'no_conversation') {
+      const errorDetail = error?.response?.data?.details || error?.response?.data?.error || ''
+      if (errorCode === 'no_conversation') {
         toast.error("Cannot send message", {
           description: "The customer must message you first before you can reply.",
         })
       } else {
         toast.error("Failed to send message", {
-          description: "There was an error sending your message. Please try again.",
+          description: errorDetail || "There was an error sending your message. Please try again.",
         })
       }
     } finally {
