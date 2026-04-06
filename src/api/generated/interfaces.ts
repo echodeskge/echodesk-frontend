@@ -545,6 +545,10 @@ export interface ContactTypeEnum {
   [key: string]: any;
 }
 
+export interface ContentTypeEnum {
+  [key: string]: any;
+}
+
 export interface DashboardAppearanceSettings {
   primary_color?: string;
   primary_color_dark?: string;
@@ -998,6 +1002,161 @@ export interface GroupCreateRequest {
 export interface GroupRequest {
   name: string;
   permission_ids?: number[];
+}
+
+export interface HelpArticleAdmin {
+  id: number;
+  title: any;
+  slug: string;
+  summary?: any;
+  content_type?: ContentTypeEnum;
+  content?: any;
+  video_url?: string;
+  video_thumbnail?: string;
+  video_duration?: string;
+  guide_steps?: any;
+  faq_items?: any;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  meta_title?: any;
+  meta_description?: any;
+  created_at: string;
+  updated_at: string;
+  published_at?: string;
+  category: number;
+  created_by?: number;
+  updated_by?: number;
+}
+
+export interface HelpArticleAdminRequest {
+  title: any;
+  slug: string;
+  summary?: any;
+  content_type?: ContentTypeEnum;
+  content?: any;
+  video_url?: string;
+  video_thumbnail?: string;
+  video_duration?: string;
+  guide_steps?: any;
+  faq_items?: any;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  meta_title?: any;
+  meta_description?: any;
+  published_at?: string;
+  category: number;
+  created_by?: number;
+  updated_by?: number;
+}
+
+export interface HelpArticleDetail {
+  id: number;
+  title: string;
+  slug: string;
+  summary: string;
+  content_type?: ContentTypeEnum;
+  content: string;
+  video_url?: string;
+  video_thumbnail?: string;
+  video_duration?: string;
+  guide_steps: string;
+  faq_items: string;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  meta_title?: any;
+  meta_description?: any;
+  category: HelpCategoryList;
+  created_at: string;
+  updated_at: string;
+  published_at?: string;
+}
+
+export interface HelpArticleList {
+  id: number;
+  title: string;
+  slug: string;
+  summary: string;
+  content_type?: ContentTypeEnum;
+  video_thumbnail?: string;
+  video_duration?: string;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  category_name: string;
+  category_slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HelpCategoryAdmin {
+  id: number;
+  name: any;
+  slug: string;
+  description?: any;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  required_feature_key?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HelpCategoryAdminRequest {
+  name: any;
+  slug: string;
+  description?: any;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  required_feature_key?: string;
+}
+
+export interface HelpCategoryDetail {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  required_feature_key?: string;
+  article_count: string;
+  articles: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HelpCategoryList {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  required_feature_key?: string;
+  article_count: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface HomepageSection {
@@ -2037,6 +2196,34 @@ export interface PaginatedGroupList {
   results: Group[];
 }
 
+export interface PaginatedHelpArticleAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: HelpArticleAdmin[];
+}
+
+export interface PaginatedHelpArticleListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: HelpArticleList[];
+}
+
+export interface PaginatedHelpCategoryAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: HelpCategoryAdmin[];
+}
+
+export interface PaginatedHelpCategoryListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: HelpCategoryList[];
+}
+
 export interface PaginatedHomepageSectionList {
   count: number;
   next?: string;
@@ -2622,6 +2809,42 @@ export interface PatchedFavoriteProductRequest {
 export interface PatchedGroupRequest {
   name?: string;
   permission_ids?: number[];
+}
+
+export interface PatchedHelpArticleAdminRequest {
+  title?: any;
+  slug?: string;
+  summary?: any;
+  content_type?: ContentTypeEnum;
+  content?: any;
+  video_url?: string;
+  video_thumbnail?: string;
+  video_duration?: string;
+  guide_steps?: any;
+  faq_items?: any;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  meta_title?: any;
+  meta_description?: any;
+  published_at?: string;
+  category?: number;
+  created_by?: number;
+  updated_by?: number;
+}
+
+export interface PatchedHelpCategoryAdminRequest {
+  name?: any;
+  slug?: string;
+  description?: any;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  show_on_public?: boolean;
+  show_in_dashboard?: boolean;
+  required_feature_key?: string;
 }
 
 export interface PatchedHomepageSectionRequest {

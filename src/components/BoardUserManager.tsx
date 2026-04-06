@@ -13,8 +13,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Info, CheckCircle2, XCircle, Lock, BookOpen, Shield, UserCog } from "lucide-react";
+import { Users, Info, CheckCircle2, XCircle, Lock, BookOpen, Shield, UserCog, Send } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +25,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import axios from "@/api/axios";
+
+interface TelegramConnection {
+  id: number;
+  chat_id: string;
+  is_active: boolean;
+  has_token: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 interface BoardUserManagerProps {
   boardId: number | null;
@@ -48,6 +60,17 @@ export default function BoardUserManager({
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("order-users");
 
+  // Telegram state
+  const [telegramConn, setTelegramConn] = useState<TelegramConnection | null>(null);
+  const [telegramBotToken, setTelegramBotToken] = useState("");
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [telegramActive, setTelegramActive] = useState(true);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [telegramTesting, setTelegramTesting] = useState(false);
+  const [telegramSaving, setTelegramSaving] = useState(false);
+  const [telegramError, setTelegramError] = useState("");
+  const [telegramSuccess, setTelegramSuccess] = useState("");
+
   // Use React Query hook for tenant groups - only fetch when dialog is open
   const { data: groupsData } = useTenantGroups({ enabled: open && !!boardId });
   const groups = groupsData?.results || [];
@@ -57,6 +80,12 @@ export default function BoardUserManager({
       fetchData();
     }
   }, [boardId, open]);
+
+  useEffect(() => {
+    if (open && boardId && activeTab === "telegram") {
+      fetchTelegramConnection();
+    }
+  }, [activeTab, boardId, open]);
 
   const fetchData = async () => {
     if (!boardId) return;
@@ -72,7 +101,6 @@ export default function BoardUserManager({
 
       setBoard(boardResult);
       setUsers(usersResult.results || []);
-      // Groups are now loaded via React Query hook
 
       // Set current order users
       const currentOrderUserIds = (boardResult.order_users || []).map(user => user.id);
@@ -90,6 +118,104 @@ export default function BoardUserManager({
       setError(err.response?.data?.detail || "Failed to load board data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTelegramConnection = async () => {
+    if (!boardId) return;
+    setTelegramLoading(true);
+    setTelegramError("");
+    try {
+      const res = await axios.get(`/api/boards/${boardId}/telegram-connection/`);
+      const conn = res.data as TelegramConnection;
+      setTelegramConn(conn);
+      setTelegramChatId(conn.chat_id);
+      setTelegramActive(conn.is_active);
+      setTelegramBotToken("");
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        setTelegramConn(null);
+        setTelegramBotToken("");
+        setTelegramChatId("");
+        setTelegramActive(true);
+      } else {
+        setTelegramError("Failed to load Telegram connection");
+      }
+    } finally {
+      setTelegramLoading(false);
+    }
+  };
+
+  const handleTelegramTest = async () => {
+    if (!boardId) return;
+    setTelegramTesting(true);
+    setTelegramError("");
+    setTelegramSuccess("");
+    try {
+      const payload: Record<string, string> = {};
+      if (telegramBotToken) payload.bot_token_raw = telegramBotToken;
+      if (telegramChatId) payload.chat_id = telegramChatId;
+      await axios.post(`/api/boards/${boardId}/telegram-connection/test/`, payload);
+      setTelegramSuccess("Test message sent! Check your Telegram chat.");
+    } catch (err: any) {
+      setTelegramError(err.response?.data?.detail || err.response?.data?.message || "Test failed");
+    } finally {
+      setTelegramTesting(false);
+    }
+  };
+
+  const handleTelegramSave = async () => {
+    if (!boardId) return;
+    if (!telegramChatId) {
+      setTelegramError("Chat ID is required");
+      return;
+    }
+    if (!telegramConn && !telegramBotToken) {
+      setTelegramError("Bot token is required for new connections");
+      return;
+    }
+
+    setTelegramSaving(true);
+    setTelegramError("");
+    setTelegramSuccess("");
+    try {
+      const payload: Record<string, any> = {
+        chat_id: telegramChatId,
+        is_active: telegramActive,
+      };
+      if (telegramBotToken) payload.bot_token_raw = telegramBotToken;
+
+      if (telegramConn) {
+        await axios.put(`/api/boards/${boardId}/telegram-connection/`, payload);
+      } else {
+        await axios.post(`/api/boards/${boardId}/telegram-connection/`, payload);
+      }
+      setTelegramSuccess("Telegram connection saved!");
+      setTelegramBotToken("");
+      await fetchTelegramConnection();
+    } catch (err: any) {
+      setTelegramError(err.response?.data?.detail || "Failed to save");
+    } finally {
+      setTelegramSaving(false);
+    }
+  };
+
+  const handleTelegramDisconnect = async () => {
+    if (!boardId) return;
+    setTelegramSaving(true);
+    setTelegramError("");
+    setTelegramSuccess("");
+    try {
+      await axios.delete(`/api/boards/${boardId}/telegram-connection/`);
+      setTelegramConn(null);
+      setTelegramBotToken("");
+      setTelegramChatId("");
+      setTelegramActive(true);
+      setTelegramSuccess("Telegram connection removed.");
+    } catch (err: any) {
+      setTelegramError(err.response?.data?.detail || "Failed to disconnect");
+    } finally {
+      setTelegramSaving(false);
     }
   };
 
@@ -199,7 +325,7 @@ export default function BoardUserManager({
 
               {/* Tabs for different access types */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="order-users" className="flex items-center gap-2">
                     <UserCog className="h-4 w-4" />
                     <span className="hidden sm:inline">Order Users</span>
@@ -214,6 +340,11 @@ export default function BoardUserManager({
                     <Shield className="h-4 w-4" />
                     <span className="hidden sm:inline">Board Groups</span>
                     <span className="sm:hidden">Groups</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="telegram" className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    <span className="hidden sm:inline">Telegram</span>
+                    <span className="sm:hidden">TG</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -260,9 +391,9 @@ export default function BoardUserManager({
                     <AlertDescription className="text-blue-800">
                       <p className="font-medium mb-2">How This Works:</p>
                       <ul className="list-disc list-inside space-y-1 text-sm">
-                        <li>If no users are selected, any user with "Orders" permission can create orders</li>
+                        <li>If no users are selected, any user with &quot;Orders&quot; permission can create orders</li>
                         <li>If users are selected, only those users can create orders on this board</li>
-                        <li>Users still need the "Orders" permission in their group to see the Orders menu</li>
+                        <li>Users still need the &quot;Orders&quot; permission in their group to see the Orders menu</li>
                       </ul>
                     </AlertDescription>
                   </Alert>
@@ -312,7 +443,7 @@ export default function BoardUserManager({
                       <p className="font-medium mb-2">Board Visibility:</p>
                       <ul className="list-disc list-inside space-y-1 text-sm">
                         <li>These users can view and access the board</li>
-                        <li>Separate from "Order Users" who can create orders</li>
+                        <li>Separate from &quot;Order Users&quot; who can create orders</li>
                         <li>Users in assigned groups can also see the board</li>
                         <li>If no users, no groups assigned: everyone can see the board</li>
                       </ul>
@@ -365,11 +496,143 @@ export default function BoardUserManager({
                       <ul className="list-disc list-inside space-y-1 text-sm">
                         <li>If no groups AND no order users: everyone can see the board</li>
                         <li>If groups assigned: ONLY members of those groups can see the board</li>
-                        <li>Users in "Order Users" tab can also see the board</li>
+                        <li>Users in &quot;Order Users&quot; tab can also see the board</li>
                         <li>Perfect for department/team-specific boards</li>
                       </ul>
                     </AlertDescription>
                   </Alert>
+                </TabsContent>
+
+                {/* Telegram Tab */}
+                <TabsContent value="telegram" className="space-y-4 mt-4">
+                  {telegramLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Spinner className="h-6 w-6" />
+                    </div>
+                  ) : (
+                    <>
+                      {/* Connection status */}
+                      <Card className="bg-muted/50">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center gap-2">
+                            <Send className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-sm font-medium">Status:</p>
+                            {telegramConn ? (
+                              <Badge variant="default" className="bg-green-600">Connected</Badge>
+                            ) : (
+                              <Badge variant="secondary">Not Connected</Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Messages */}
+                      {telegramSuccess && (
+                        <Alert className="bg-green-50 border-green-200">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <AlertDescription className="text-green-800">{telegramSuccess}</AlertDescription>
+                        </Alert>
+                      )}
+                      {telegramError && (
+                        <Alert variant="destructive">
+                          <XCircle className="h-4 w-4" />
+                          <AlertDescription>{telegramError}</AlertDescription>
+                        </Alert>
+                      )}
+
+                      {/* Form */}
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="bot-token">Bot Token</Label>
+                          <Input
+                            id="bot-token"
+                            type="password"
+                            placeholder={telegramConn ? "Leave empty to keep current token" : "Paste bot token from @BotFather"}
+                            value={telegramBotToken}
+                            onChange={(e) => setTelegramBotToken(e.target.value)}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Get from <strong>@BotFather</strong> on Telegram. Create a bot and copy the token.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="chat-id">Chat ID</Label>
+                          <Input
+                            id="chat-id"
+                            placeholder="e.g. -1001234567890"
+                            value={telegramChatId}
+                            onChange={(e) => setTelegramChatId(e.target.value)}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Add the bot to your group, then send a message and check
+                            {" "}<code className="text-xs bg-muted px-1 rounded">https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label htmlFor="tg-active">Active</Label>
+                            <p className="text-xs text-muted-foreground">Send notifications for new tickets</p>
+                          </div>
+                          <Switch
+                            id="tg-active"
+                            checked={telegramActive}
+                            onCheckedChange={setTelegramActive}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleTelegramTest}
+                          disabled={telegramTesting || telegramSaving || (!telegramBotToken && !telegramConn)}
+                        >
+                          {telegramTesting ? <Spinner className="mr-2 h-3 w-3" /> : <Send className="mr-2 h-3 w-3" />}
+                          Test Connection
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          onClick={handleTelegramSave}
+                          disabled={telegramSaving || telegramTesting}
+                        >
+                          {telegramSaving && <Spinner className="mr-2 h-3 w-3" />}
+                          {telegramConn ? "Update" : "Save"}
+                        </Button>
+
+                        {telegramConn && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleTelegramDisconnect}
+                            disabled={telegramSaving || telegramTesting}
+                          >
+                            Disconnect
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Setup instructions */}
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-blue-800">
+                          <p className="font-medium mb-2">Setup Instructions:</p>
+                          <ol className="list-decimal list-inside space-y-1 text-sm">
+                            <li>Open Telegram and search for <strong>@BotFather</strong></li>
+                            <li>Send <code className="bg-white/50 px-1 rounded">/newbot</code> and follow the prompts</li>
+                            <li>Copy the bot token and paste it above</li>
+                            <li>Add the bot to your group/channel</li>
+                            <li>Send a message in the group, then find the Chat ID from the API</li>
+                            <li>Click &quot;Test Connection&quot; to verify, then &quot;Save&quot;</li>
+                          </ol>
+                        </AlertDescription>
+                      </Alert>
+                    </>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>

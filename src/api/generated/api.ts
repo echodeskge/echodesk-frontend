@@ -189,6 +189,19 @@ import type {
   Group,
   GroupRequest,
   PatchedGroupRequest,
+  PaginatedHelpArticleAdminList,
+  HelpArticleAdminRequest,
+  HelpArticleAdmin,
+  PatchedHelpArticleAdminRequest,
+  PaginatedHelpCategoryAdminList,
+  HelpCategoryAdminRequest,
+  HelpCategoryAdmin,
+  PatchedHelpCategoryAdminRequest,
+  PaginatedHelpArticleListList,
+  HelpArticleDetail,
+  HelpArticleList,
+  PaginatedHelpCategoryListList,
+  HelpCategoryDetail,
   PaginatedInvoiceListList,
   InvoiceCreateUpdateRequest,
   InvoiceCreateUpdate,
@@ -582,6 +595,53 @@ export async function boardsSetDefaultCreate(
   data: BoardRequest,
 ): Promise<Board> {
   const response = await axios.post(`/api/boards/${id}/set_default/`, data);
+  return response.data;
+}
+
+export async function boardsTelegramConnectionRetrieve(
+  id: string,
+): Promise<Board> {
+  const response = await axios.get(`/api/boards/${id}/telegram-connection/`);
+  return response.data;
+}
+
+export async function boardsTelegramConnectionCreate(
+  id: string,
+  data: BoardRequest,
+): Promise<Board> {
+  const response = await axios.post(
+    `/api/boards/${id}/telegram-connection/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function boardsTelegramConnectionUpdate(
+  id: string,
+  data: BoardRequest,
+): Promise<Board> {
+  const response = await axios.put(
+    `/api/boards/${id}/telegram-connection/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function boardsTelegramConnectionDestroy(
+  id: string,
+): Promise<any> {
+  const response = await axios.delete(`/api/boards/${id}/telegram-connection/`);
+  return response.data;
+}
+
+export async function boardsTelegramConnectionTestCreate(
+  id: string,
+  data: BoardRequest,
+): Promise<Board> {
+  const response = await axios.post(
+    `/api/boards/${id}/telegram-connection/test/`,
+    data,
+  );
   return response.data;
 }
 
@@ -3982,6 +4042,181 @@ export async function groupsRemoveUsersCreate(
 
 export async function groupsAvailablePermissionsRetrieve(): Promise<Group> {
   const response = await axios.get(`/api/groups/available_permissions/`);
+  return response.data;
+}
+
+export async function helpAdminArticlesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedHelpArticleAdminList> {
+  const response = await axios.get(
+    `/api/help/admin/articles/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function helpAdminArticlesCreate(
+  data: HelpArticleAdminRequest,
+): Promise<HelpArticleAdmin> {
+  const response = await axios.post(`/api/help/admin/articles/`, data);
+  return response.data;
+}
+
+export async function helpAdminArticlesRetrieve(
+  slug: string,
+): Promise<HelpArticleAdmin> {
+  const response = await axios.get(`/api/help/admin/articles/${slug}/`);
+  return response.data;
+}
+
+export async function helpAdminArticlesUpdate(
+  slug: string,
+  data: HelpArticleAdminRequest,
+): Promise<HelpArticleAdmin> {
+  const response = await axios.put(`/api/help/admin/articles/${slug}/`, data);
+  return response.data;
+}
+
+export async function helpAdminArticlesPartialUpdate(
+  slug: string,
+  data: PatchedHelpArticleAdminRequest,
+): Promise<HelpArticleAdmin> {
+  const response = await axios.patch(`/api/help/admin/articles/${slug}/`, data);
+  return response.data;
+}
+
+export async function helpAdminArticlesDestroy(slug: string): Promise<any> {
+  const response = await axios.delete(`/api/help/admin/articles/${slug}/`);
+  return response.data;
+}
+
+export async function helpAdminCategoriesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedHelpCategoryAdminList> {
+  const response = await axios.get(
+    `/api/help/admin/categories/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function helpAdminCategoriesCreate(
+  data: HelpCategoryAdminRequest,
+): Promise<HelpCategoryAdmin> {
+  const response = await axios.post(`/api/help/admin/categories/`, data);
+  return response.data;
+}
+
+export async function helpAdminCategoriesRetrieve(
+  slug: string,
+): Promise<HelpCategoryAdmin> {
+  const response = await axios.get(`/api/help/admin/categories/${slug}/`);
+  return response.data;
+}
+
+export async function helpAdminCategoriesUpdate(
+  slug: string,
+  data: HelpCategoryAdminRequest,
+): Promise<HelpCategoryAdmin> {
+  const response = await axios.put(`/api/help/admin/categories/${slug}/`, data);
+  return response.data;
+}
+
+export async function helpAdminCategoriesPartialUpdate(
+  slug: string,
+  data: PatchedHelpCategoryAdminRequest,
+): Promise<HelpCategoryAdmin> {
+  const response = await axios.patch(
+    `/api/help/admin/categories/${slug}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function helpAdminCategoriesDestroy(slug: string): Promise<any> {
+  const response = await axios.delete(`/api/help/admin/categories/${slug}/`);
+  return response.data;
+}
+
+export async function helpPublicArticlesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+): Promise<PaginatedHelpArticleListList> {
+  const response = await axios.get(
+    `/api/help/public/articles/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function helpPublicArticlesRetrieve(
+  slug: string,
+): Promise<HelpArticleDetail> {
+  const response = await axios.get(`/api/help/public/articles/${slug}/`);
+  return response.data;
+}
+
+export async function helpPublicArticlesFeaturedRetrieve(): Promise<HelpArticleList> {
+  const response = await axios.get(`/api/help/public/articles/featured/`);
+  return response.data;
+}
+
+export async function helpPublicCategoriesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedHelpCategoryListList> {
+  const response = await axios.get(
+    `/api/help/public/categories/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function helpPublicCategoriesRetrieve(
+  slug: string,
+): Promise<HelpCategoryDetail> {
+  const response = await axios.get(`/api/help/public/categories/${slug}/`);
+  return response.data;
+}
+
+export async function helpPublicSearchRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/help/public/search/`);
   return response.data;
 }
 
