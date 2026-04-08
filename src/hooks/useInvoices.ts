@@ -167,6 +167,8 @@ export function useUpdateInvoiceSettings() {
       invoiceService.updateSettings(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoice-settings"] });
+      // Invalidate clients cache since client_itemlist may have changed
+      queryClient.invalidateQueries({ queryKey: ["invoice-clients"] });
     },
   });
 }

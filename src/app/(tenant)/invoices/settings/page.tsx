@@ -2,10 +2,10 @@
 
 /**
  * Invoice Settings Page
- * Configure company information, branding, and invoice defaults
+ * Configure company information, branding, invoice defaults, bank accounts, and email
  */
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import {
@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -32,8 +33,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X, Image as ImageIcon } from "lucide-react";
+import { X, Image as ImageIcon, Plus, Pencil, Trash2, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface BankAccount {
+  bank_name: string;
+  account_number: string;
+  iban: string;
+  swift: string;
+  is_default: boolean;
+}
+
+const emptyAccount: BankAccount = {
+  bank_name: "",
+  account_number: "",
+  iban: "",
+  swift: "",
+  is_default: false,
+};
 
 export default function InvoiceSettingsPage() {
   const t = useTranslations("invoices");
@@ -52,6 +69,20 @@ export default function InvoiceSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBadge, setUploadingBadge] = useState(false);
   const [uploadingSignature, setUploadingSignature] = useState(false);
+
+  // Bank accounts state (managed separately from react-hook-form)
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [bankAccountsInitialized, setBankAccountsInitialized] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<BankAccount>(emptyAccount);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [savingBankAccounts, setSavingBankAccounts] = useState(false);
+
+  // Initialize bank accounts from settings when loaded
+  if (settings && !bankAccountsInitialized) {
+    setBankAccounts(settings.bank_accounts || []);
+    setBankAccountsInitialized(true);
+  }
 
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm({
     values: settings
@@ -160,6 +191,95 @@ export default function InvoiceSettingsPage() {
     }
   };
 
+  // Bank account handlers
+  const saveBankAccounts = useCallback(async (accounts: BankAccount[]) => {
+    setSavingBankAccounts(true);
+    try {
+      await updateMutation.mutateAsync({ bank_accounts: accounts } as any);
+      toast({
+        title: t("success.settingsSaved"),
+        description: t("success.settingsSavedDesc"),
+      });
+    } catch (error: any) {
+      toast({
+        title: t("errors.saveFailed"),
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingBankAccounts(false);
+    }
+  }, [updateMutation, toast, t]);
+
+  const handleAddAccount = () => {
+    if (!editForm.bank_name || !editForm.account_number) return;
+
+    const newAccounts = [...bankAccounts];
+    // If setting as default, clear other defaults
+    if (editForm.is_default) {
+      newAccounts.forEach((a) => (a.is_default = false));
+    }
+    // If this is the first account, make it default
+    if (newAccounts.length === 0) {
+      editForm.is_default = true;
+    }
+    newAccounts.push({ ...editForm });
+    setBankAccounts(newAccounts);
+    setEditForm(emptyAccount);
+    setShowAddForm(false);
+    saveBankAccounts(newAccounts);
+  };
+
+  const handleUpdateAccount = () => {
+    if (editingIndex === null || !editForm.bank_name || !editForm.account_number) return;
+
+    const newAccounts = [...bankAccounts];
+    // If setting as default, clear other defaults
+    if (editForm.is_default) {
+      newAccounts.forEach((a) => (a.is_default = false));
+    }
+    newAccounts[editingIndex] = { ...editForm };
+    setBankAccounts(newAccounts);
+    setEditingIndex(null);
+    setEditForm(emptyAccount);
+    saveBankAccounts(newAccounts);
+  };
+
+  const handleRemoveAccount = (index: number) => {
+    const newAccounts = bankAccounts.filter((_, i) => i !== index);
+    // If removed account was default and there are other accounts, make first one default
+    if (bankAccounts[index].is_default && newAccounts.length > 0) {
+      newAccounts[0].is_default = true;
+    }
+    setBankAccounts(newAccounts);
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setEditForm(emptyAccount);
+    }
+    saveBankAccounts(newAccounts);
+  };
+
+  const handleSetDefault = (index: number) => {
+    const newAccounts = bankAccounts.map((a, i) => ({
+      ...a,
+      is_default: i === index,
+    }));
+    setBankAccounts(newAccounts);
+    saveBankAccounts(newAccounts);
+  };
+
+  const startEditing = (index: number) => {
+    setEditingIndex(index);
+    setEditForm({ ...bankAccounts[index] });
+    setShowAddForm(false);
+  };
+
+  const cancelEditing = () => {
+    setEditingIndex(null);
+    setEditForm(emptyAccount);
+    setShowAddForm(false);
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -167,6 +287,76 @@ export default function InvoiceSettingsPage() {
       </div>
     );
   }
+
+  const renderBankAccountForm = (isEditing: boolean) => (
+    <Card className="p-4 space-y-4 border-dashed">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>{t("settings.bankName")} *</Label>
+          <Input
+            value={editForm.bank_name}
+            onChange={(e) => setEditForm({ ...editForm, bank_name: e.target.value })}
+            placeholder={t("settings.bankName")}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>{t("settings.accountNumber")} *</Label>
+          <Input
+            value={editForm.account_number}
+            onChange={(e) => setEditForm({ ...editForm, account_number: e.target.value })}
+            placeholder={t("settings.accountNumber")}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>{t("settings.iban")}</Label>
+          <Input
+            value={editForm.iban}
+            onChange={(e) => setEditForm({ ...editForm, iban: e.target.value })}
+            placeholder={t("settings.iban")}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>{t("settings.swiftCode")}</Label>
+          <Input
+            value={editForm.swift}
+            onChange={(e) => setEditForm({ ...editForm, swift: e.target.value })}
+            placeholder={t("settings.swiftCode")}
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="is_default"
+          checked={editForm.is_default}
+          onCheckedChange={(checked) => setEditForm({ ...editForm, is_default: !!checked })}
+        />
+        <Label htmlFor="is_default" className="cursor-pointer">
+          {t("settings.setAsDefault")}
+        </Label>
+      </div>
+
+      <div className="flex gap-2 justify-end">
+        <Button type="button" variant="outline" onClick={cancelEditing}>
+          {t("actions.cancel")}
+        </Button>
+        <Button
+          type="button"
+          onClick={isEditing ? handleUpdateAccount : handleAddAccount}
+          disabled={!editForm.bank_name || !editForm.account_number || savingBankAccounts}
+        >
+          {savingBankAccounts
+            ? t("settings.saving")
+            : isEditing
+            ? t("settings.saveSettings")
+            : t("settings.addBankAccount")}
+        </Button>
+      </div>
+    </Card>
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -181,6 +371,7 @@ export default function InvoiceSettingsPage() {
           <TabsTrigger value="company">{t("settings.tabs.company")}</TabsTrigger>
           <TabsTrigger value="branding">{t("settings.tabs.branding")}</TabsTrigger>
           <TabsTrigger value="defaults">{t("settings.tabs.defaults")}</TabsTrigger>
+          <TabsTrigger value="bankAccounts">{t("settings.tabs.bankAccounts")}</TabsTrigger>
           <TabsTrigger value="email">{t("settings.tabs.email")}</TabsTrigger>
         </TabsList>
 
@@ -233,6 +424,7 @@ export default function InvoiceSettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="client_itemlist">{t("settings.form.clientItemList")}</Label>
                 <Select
+                  key={`itemlist-select-${availableItemLists?.length ?? "loading"}`}
                   value={clientItemListValue?.toString() || "none"}
                   onValueChange={(value) => {
                     setValue("client_itemlist", value === "none" ? null : parseInt(value), { shouldDirty: true });
@@ -392,7 +584,7 @@ export default function InvoiceSettingsPage() {
           {/* Invoice Defaults Tab */}
           <TabsContent value="defaults" className="space-y-6">
             <Card className="p-6 space-y-4">
-              <h3 className="text-lg font-semibold">{t("settings.invoiceDefaults")}</h3>
+              <h3 className="text-lg font-semibold">{t("settings.invoiceConfig")}</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -503,13 +695,138 @@ export default function InvoiceSettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* Save Button */}
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting} size="lg">
-              {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
-            </Button>
-          </div>
+          {/* Save Button (for all tabs except bankAccounts) */}
+          <TabsContent value="company">
+            <div className="flex justify-end mt-6">
+              <Button type="submit" disabled={isSubmitting} size="lg">
+                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
+              </Button>
+            </div>
+          </TabsContent>
+          <TabsContent value="branding">
+            <div className="flex justify-end mt-6">
+              <Button type="submit" disabled={isSubmitting} size="lg">
+                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
+              </Button>
+            </div>
+          </TabsContent>
+          <TabsContent value="defaults">
+            <div className="flex justify-end mt-6">
+              <Button type="submit" disabled={isSubmitting} size="lg">
+                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
+              </Button>
+            </div>
+          </TabsContent>
+          <TabsContent value="email">
+            <div className="flex justify-end mt-6">
+              <Button type="submit" disabled={isSubmitting} size="lg">
+                {isSubmitting ? t("settings.saving") : t("settings.saveSettings")}
+              </Button>
+            </div>
+          </TabsContent>
         </form>
+
+        {/* Bank Accounts Tab (outside form - saves independently) */}
+        <TabsContent value="bankAccounts" className="space-y-6">
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">{t("settings.bankAccounts")}</h3>
+              {!showAddForm && editingIndex === null && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowAddForm(true);
+                    setEditForm(emptyAccount);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t("settings.addBankAccount")}
+                </Button>
+              )}
+            </div>
+
+            {/* Existing bank accounts list */}
+            {bankAccounts.length === 0 && !showAddForm ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building2 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="font-medium">{t("settings.noBankAccounts")}</p>
+                <p className="text-sm mt-1">{t("settings.noBankAccountsHint")}</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {bankAccounts.map((account, index) => (
+                  <div key={index}>
+                    {editingIndex === index ? (
+                      renderBankAccountForm(true)
+                    ) : (
+                      <Card className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{account.bank_name}</span>
+                              {account.is_default && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                  {t("settings.defaultAccount")}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {account.account_number}
+                            </p>
+                            {account.iban && (
+                              <p className="text-sm text-muted-foreground">
+                                IBAN: {account.iban}
+                              </p>
+                            )}
+                            {account.swift && (
+                              <p className="text-sm text-muted-foreground">
+                                SWIFT: {account.swift}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {!account.is_default && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSetDefault(index)}
+                              >
+                                {t("settings.setAsDefault")}
+                              </Button>
+                            )}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => startEditing(index)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleRemoveAccount(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add new account form */}
+            {showAddForm && renderBankAccountForm(false)}
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );

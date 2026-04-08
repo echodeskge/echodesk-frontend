@@ -196,7 +196,10 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
           {/* Client Selection */}
           <div className="space-y-2">
             <Label htmlFor="client">{t("form.client")} *</Label>
-            <Select onValueChange={(value) => setValue("client", value)}>
+            <Select
+              key={`client-select-${clients.length}`}
+              onValueChange={(value) => setValue("client", value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={t("form.selectClient")} />
               </SelectTrigger>

@@ -2252,6 +2252,7 @@
         "company": "კომპანია",
         "branding": "ბრენდინგი",
         "defaults": "ნაგულისხმევი",
+        "bankAccounts": "საბანკო ანგარიშები",
         "email": "ელ-ფოსტა"
       },
       "form": {
@@ -2317,6 +2318,11 @@
       "swiftCode": "SWIFT/BIC კოდი",
       "iban": "IBAN",
       "removeBankAccount": "წაშლა",
+      "editBankAccount": "რედაქტირება",
+      "defaultAccount": "ნაგულისხმევი",
+      "setAsDefault": "ნაგულისხმევად დაყენება",
+      "noBankAccounts": "საბანკო ანგარიშები ჯერ არ არის დამატებული",
+      "noBankAccountsHint": "დაამატეთ საბანკო ანგარიში ინვოისებზე გადახდის დეტალების საჩვენებლად",
       "emailSettings": "ელ-ფოსტის პარამეტრები",
       "fromEmail": "გამგზავნი ელ-ფოსტა",
       "ccEmail": "ასლი",

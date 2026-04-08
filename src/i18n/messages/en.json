@@ -2214,6 +2214,11 @@
       "swiftCode": "SWIFT/BIC Code",
       "iban": "IBAN",
       "removeBankAccount": "Remove",
+      "editBankAccount": "Edit",
+      "defaultAccount": "Default",
+      "setAsDefault": "Set as Default",
+      "noBankAccounts": "No bank accounts added yet",
+      "noBankAccountsHint": "Add a bank account to display payment details on your invoices",
       "emailSettings": "Email Settings",
       "fromEmail": "From Email",
       "ccEmail": "CC Email",
@@ -2226,6 +2231,7 @@
         "company": "Company",
         "branding": "Branding",
         "defaults": "Defaults",
+        "bankAccounts": "Bank Accounts",
         "email": "Email"
       },
       "form": {

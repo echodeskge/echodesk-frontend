@@ -395,9 +395,11 @@ class InvoiceService {
    * Get clients for invoice selection
    */
   async getClients(search?: string): Promise<PaginatedClientList> {
-    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    const params = new URLSearchParams();
+    params.append('page_size', '100');
+    if (search) params.append('search', search);
     const { default: axios } = await import('@/api/axios');
-    const response = await axios.get<PaginatedClientList>(`/api/invoices/clients/${params}`);
+    const response = await axios.get<PaginatedClientList>(`/api/invoices/clients/?${params.toString()}`);
     return response.data;
   }
 
