@@ -74,7 +74,7 @@ export default function InvoiceDetailPage() {
   const duplicateMutation = useDuplicateInvoice();
   const downloadPDFMutation = useDownloadInvoicePDF();
 
-  const payments = paymentsData?.results || [];
+  const payments = paymentsData?.results || (Array.isArray(paymentsData) ? paymentsData : []);
 
   const handleFinalize = async () => {
     try {
@@ -402,7 +402,7 @@ export default function InvoiceDetailPage() {
                       <TableCell className="font-medium">
                         {payment.amount} {invoice.currency}
                       </TableCell>
-                      <TableCell>{t(`paymentMethods.${payment.payment_method}`)}</TableCell>
+                      <TableCell>{t(`paymentMethods.${payment.payment_method === 'bank_transfer' ? 'bankTransfer' : payment.payment_method}`)}</TableCell>
                       <TableCell>{payment.reference_number || "-"}</TableCell>
                       <TableCell className="max-w-xs truncate">{payment.notes || "-"}</TableCell>
                     </TableRow>
