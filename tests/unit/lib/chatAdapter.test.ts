@@ -445,6 +445,26 @@ describe("convertFacebookMessagesToChatFormat", () => {
     expect(chat.messages[0].reactionEmoji).toBe("❤️");
     expect(chat.messages[0].reactedAt).toBeInstanceOf(Date);
   });
+
+  it("handles multiple image attachments (Instagram multi-image)", () => {
+    const conv = makeUnifiedConversation({ platform: "instagram" });
+    const msg = makeUnifiedMessage({
+      platform: "instagram",
+      attachment_type: "image",
+      attachment_url: "https://cdn.example.com/img1.jpg",
+      attachments: [
+        { type: "image", url: "https://cdn.example.com/img1.jpg" },
+        { type: "image", url: "https://cdn.example.com/img2.jpg" },
+      ],
+    });
+    const map = new Map([["conv_1", [msg]]]);
+
+    const [chat] = convertFacebookMessagesToChatFormat([conv], map);
+
+    expect(chat.messages[0].images).toHaveLength(2);
+    expect(chat.messages[0].images![0].url).toBe("https://cdn.example.com/img1.jpg");
+    expect(chat.messages[0].images![1].url).toBe("https://cdn.example.com/img2.jpg");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -666,6 +686,43 @@ describe("convertUnifiedMessagesToMessageType", () => {
     expect(result.subject).toBe("Re: Hello");
     expect(result.bodyHtml).toBe("<p>Content</p>");
     expect(result.platform).toBe("email");
+  });
+
+  it("handles multiple image attachments (Instagram multi-image)", () => {
+    const msg = makeUnifiedMessage({
+      platform: "instagram",
+      attachment_type: "image",
+      attachment_url: "https://cdn.example.com/img1.jpg",
+      attachments: [
+        { type: "image", url: "https://cdn.example.com/img1.jpg" },
+        { type: "image", url: "https://cdn.example.com/img2.jpg" },
+        { type: "image", url: "https://cdn.example.com/img3.jpg" },
+      ],
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.images).toHaveLength(3);
+    expect(result.images![0].url).toBe("https://cdn.example.com/img1.jpg");
+    expect(result.images![1].url).toBe("https://cdn.example.com/img2.jpg");
+    expect(result.images![2].url).toBe("https://cdn.example.com/img3.jpg");
+    expect(result.images!.every(i => i.type === "image")).toBe(true);
+  });
+
+  it("handles WhatsApp proxy URL via waba_id and media_id", () => {
+    const msg = makeUnifiedMessage({
+      platform: "whatsapp",
+      message_type: "image",
+      waba_id: "waba_123",
+      attachments: [
+        { type: "image", url: "https://lookaside.fbsbx.com/direct.jpg", media_id: "media_456" },
+      ],
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.images).toHaveLength(1);
+    expect(result.images![0].url).toBe("/api/social/whatsapp-media/media_456/?waba_id=waba_123");
   });
 });
 

@@ -153,30 +153,78 @@ export function convertFacebookMessagesToChatFormat(
 
         if (fileAttachments.length > 0) files = fileAttachments;
       } else {
-        // For other platforms, use existing logic
+        // For other platforms (Facebook, Instagram, WhatsApp)
         const attachmentType = msg.attachment_type || msg.message_type || '';
-        let attachmentUrl = msg.attachment_url;
-        if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
-          attachmentUrl = msg.attachments[0].url;
+        const imgTypes = ['image', 'sticker'];
+        const isImageType = imgTypes.includes(attachmentType);
+        const isVideoType = attachmentType === 'video';
+        const isAudioType = attachmentType === 'audio';
+
+        // Resolve URL — for WhatsApp use proxy when media_id is available
+        const resolveAttUrl = (a: Attachment) => {
+          if (msg.platform === 'whatsapp' && a.media_id && (msg as any).waba_id) {
+            return `/api/social/whatsapp-media/${a.media_id}/?waba_id=${(msg as any).waba_id}`;
+          }
+          return a.url;
+        };
+
+        // Use full attachments array when available (supports multiple images)
+        if (msg.attachments && msg.attachments.length > 0) {
+          const imageAtts = msg.attachments.filter((a) => resolveAttUrl(a) && imgTypes.includes(a.type || attachmentType));
+          const videoAtts = msg.attachments.filter((a) => resolveAttUrl(a) && (a.type === 'video' || (!a.type && isVideoType)));
+          const audioAtts = msg.attachments.filter((a) => resolveAttUrl(a) && (a.type === 'audio' || (!a.type && isAudioType)));
+
+          if (imageAtts.length > 0) {
+            images = imageAtts.map((a) => ({
+              name: a.type || 'image', url: resolveAttUrl(a), size: 0, type: 'image',
+            }));
+          }
+          if (videoAtts.length > 0) {
+            images = [...(images || []), { name: 'video', url: resolveAttUrl(videoAtts[0]), size: 0, type: 'video' }];
+          }
+          if (audioAtts.length > 0) {
+            voiceMessage = { name: 'audio', url: resolveAttUrl(audioAtts[0]), size: 0 };
+          }
+          // Everything else as files
+          const knownTypes = [...imgTypes, 'video', 'audio'];
+          const fileAtts = msg.attachments.filter((a) => resolveAttUrl(a) && !knownTypes.includes(a.type || attachmentType));
+          if (fileAtts.length > 0 && !images && !voiceMessage) {
+            files = fileAtts.map((a) => ({
+              name: a.filename || a.type || 'file', url: resolveAttUrl(a), size: 0,
+            }));
+          }
         }
 
-        const isImageType = ['image', 'sticker'].includes(attachmentType);
-        const isVideoType = ['video'].includes(attachmentType);
-        const isAudioType = ['audio'].includes(attachmentType);
+        // Fallback to attachment_url if no media resolved from attachments array
+        if (!images && !files && !voiceMessage) {
+          const attachmentUrl = msg.attachment_url || msg.attachments?.find((a) => a.url)?.url;
+          if (attachmentUrl) {
+            if (isImageType) {
+              images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'image' }];
+            } else if (isVideoType) {
+              images = [{ name: 'video', url: attachmentUrl, size: 0, type: 'video' }];
+            } else if (isAudioType) {
+              voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
+            } else {
+              const filename = msg.attachments?.[0]?.filename || attachmentType;
+              files = [{ name: filename, url: attachmentUrl, size: 0 }];
+            }
+          }
+        }
 
-        if (attachmentUrl && isImageType) {
-          images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'image' }];
-        }
-        if (attachmentUrl && isVideoType) {
-          // Videos go to images array with type 'video' for inline rendering
-          images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'video' }];
-        }
-        if (attachmentUrl && isAudioType) {
-          voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
-        }
-        if (attachmentUrl && !isImageType && !isVideoType && !isAudioType) {
-          const filename = msg.attachments?.[0]?.filename || attachmentType;
-          files = [{ name: filename, url: attachmentUrl, size: 0 }];
+        // Placeholder text for messages with attachments but no loadable URL
+        if (!images && !files && !voiceMessage && msg.attachments && msg.attachments.length > 0 && !msg.message_text) {
+          const attType = msg.attachments[0]?.type || 'file';
+          const attName = msg.attachments[0]?.filename;
+          if (attType === 'image' || attType === 'sticker') {
+            msg.message_text = attName ? `📷 ${attName}` : '📷 Image sent';
+          } else if (attType === 'video') {
+            msg.message_text = attName ? `🎥 ${attName}` : '🎥 Video sent';
+          } else if (attType === 'audio') {
+            msg.message_text = '🎵 Audio sent';
+          } else {
+            msg.message_text = attName ? `📎 ${attName}` : '📎 Attachment sent';
+          }
         }
       }
 
@@ -352,58 +400,67 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
 
       if (fileAttachments.length > 0) files = fileAttachments;
     } else {
-      // For other platforms, use existing logic
+      // For other platforms (Facebook, Instagram, WhatsApp)
       const attachmentType = msg.attachment_type || msg.message_type || '';
-      let attachmentUrl = msg.attachment_url;
-      if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
-        attachmentUrl = msg.attachments[0].url;
+      const imgTypes = ['image', 'sticker'];
+      const isImageType = imgTypes.includes(attachmentType);
+      const isVideoType = attachmentType === 'video';
+      const isAudioType = attachmentType === 'audio';
+
+      // Resolve URL — for WhatsApp use proxy when media_id is available
+      const resolveAttUrl = (a: Attachment) => {
+        if (msg.platform === 'whatsapp' && a.media_id && (msg as any).waba_id) {
+          return `/api/social/whatsapp-media/${a.media_id}/?waba_id=${(msg as any).waba_id}`;
+        }
+        return a.url;
+      };
+
+      // Use full attachments array when available (supports multiple images)
+      if (msg.attachments && msg.attachments.length > 0) {
+        const imageAtts = msg.attachments.filter((a) => resolveAttUrl(a) && imgTypes.includes(a.type || attachmentType));
+        const videoAtts = msg.attachments.filter((a) => resolveAttUrl(a) && (a.type === 'video' || (!a.type && isVideoType)));
+        const audioAtts = msg.attachments.filter((a) => resolveAttUrl(a) && (a.type === 'audio' || (!a.type && isAudioType)));
+
+        if (imageAtts.length > 0) {
+          images = imageAtts.map((a) => ({
+            name: a.type || 'image', url: resolveAttUrl(a), size: 0, type: 'image',
+          }));
+        }
+        if (videoAtts.length > 0) {
+          images = [...(images || []), { name: 'video', url: resolveAttUrl(videoAtts[0]), size: 0, type: 'video' }];
+        }
+        if (audioAtts.length > 0) {
+          voiceMessage = { name: 'audio', url: resolveAttUrl(audioAtts[0]), size: 0 };
+        }
+        // Everything else as files
+        const knownTypes = [...imgTypes, 'video', 'audio'];
+        const fileAtts = msg.attachments.filter((a) => resolveAttUrl(a) && !knownTypes.includes(a.type || attachmentType));
+        if (fileAtts.length > 0 && !images && !voiceMessage) {
+          files = fileAtts.map((a) => ({
+            name: a.filename || a.type || 'file', url: resolveAttUrl(a), size: 0,
+          }));
+        }
       }
 
-      const isImageType = ['image', 'sticker'].includes(attachmentType);
-      const isVideoType = ['video'].includes(attachmentType);
-      const isAudioType = ['audio'].includes(attachmentType);
-
-      if (attachmentUrl && isImageType) {
-        images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'image' }];
-      }
-      if (attachmentUrl && isVideoType) {
-        // Videos go to images array with type 'video' for inline rendering
-        images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'video' }];
-      }
-      if (attachmentUrl && isAudioType) {
-        voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
-      }
-      if (attachmentUrl && !isImageType && !isVideoType && !isAudioType) {
-        const filename = msg.attachments?.[0]?.filename || attachmentType;
-        files = [{ name: filename, url: attachmentUrl, size: 0 }];
-      }
-
-      // If no URL from attachment_url or first attachment, try all attachments for one with a url
-      if (!attachmentUrl && msg.attachments && msg.attachments.length > 0) {
-        const attWithUrl = msg.attachments.find((att: any) => att.url);
-        if (attWithUrl) {
-          attachmentUrl = attWithUrl.url;
-          const attType = attWithUrl.type || '';
-          const isImg = ['image', 'sticker'].includes(attType);
-          const isVid = attType === 'video';
-          const isAud = attType === 'audio';
-          if (isImg) {
-            images = msg.attachments.filter((a: any) => a.url && ['image', 'sticker'].includes(a.type)).map((a: any) => ({
-              name: a.type || 'image', url: a.url, size: 0, type: 'image',
-            }));
-          } else if (isVid) {
-            images = [{ name: 'video', url: attWithUrl.url, size: 0, type: 'video' }];
-          } else if (isAud) {
-            voiceMessage = { name: 'audio', url: attWithUrl.url, size: 0 };
+      // Fallback to attachment_url if no media resolved from attachments array
+      if (!images && !files && !voiceMessage) {
+        const attachmentUrl = msg.attachment_url || msg.attachments?.find((a) => a.url)?.url;
+        if (attachmentUrl) {
+          if (isImageType) {
+            images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'image' }];
+          } else if (isVideoType) {
+            images = [{ name: 'video', url: attachmentUrl, size: 0, type: 'video' }];
+          } else if (isAudioType) {
+            voiceMessage = { name: 'audio', url: attachmentUrl, size: 0 };
           } else {
-            files = [{ name: attWithUrl.filename || 'file', url: attWithUrl.url, size: 0 }];
+            const filename = msg.attachments?.[0]?.filename || attachmentType;
+            files = [{ name: filename, url: attachmentUrl, size: 0 }];
           }
         }
       }
 
-      // If attachments exist but still no URL available (sent media not yet echoed),
-      // show a placeholder text so the bubble isn't empty
-      if (!attachmentUrl && !images && !files && !voiceMessage && msg.attachments && msg.attachments.length > 0 && !msg.message_text) {
+      // Placeholder text for messages with attachments but no loadable URL
+      if (!images && !files && !voiceMessage && msg.attachments && msg.attachments.length > 0 && !msg.message_text) {
         const attType = msg.attachments[0]?.type || 'file';
         const attName = msg.attachments[0]?.filename;
         if (attType === 'image' || attType === 'sticker') {

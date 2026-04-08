@@ -302,14 +302,15 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       chatId = `fb_${messageData.page_id}_${conversationId}`;
     } else if (platform === 'instagram' && messageData.account_id) {
       chatId = `ig_${messageData.account_id}_${conversationId}`;
-    } else if (platform === 'whatsapp' && messageData.waba_id) {
+    } else if (platform === 'whatsapp' && (messageData.waba_id || messageData.account_id)) {
+      const wabaId = messageData.waba_id || messageData.account_id;
       // For WhatsApp, use to_number for sent messages, from_number for received
       let number = messageData.is_from_business ? messageData.to_number : messageData.from_number;
       // Strip the + prefix from phone numbers to match chat ID format
       if (number?.startsWith('+')) {
         number = number.slice(1);
       }
-      chatId = `wa_${messageData.waba_id}_${number || conversationId}`;
+      chatId = `wa_${wabaId}_${number || conversationId}`;
     } else if (platform === 'email') {
       chatId = conversationId;
     } else {
@@ -343,9 +344,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // Add attachments if present
     if (messageData.attachments?.length > 0 || messageData.attachment_url) {
       // For WhatsApp, use proxy URL to avoid browser ORB blocking on Meta URLs
+      const wabaId = messageData.waba_id || messageData.account_id;
       const resolveUrl = (att: any) => {
-        if (platform === 'whatsapp' && att?.media_id && messageData.waba_id) {
-          return `${getApiUrl()}/api/social/whatsapp-media/${att.media_id}/?waba_id=${messageData.waba_id}`;
+        if (platform === 'whatsapp' && att?.media_id && wabaId) {
+          return `${getApiUrl()}/api/social/whatsapp-media/${att.media_id}/?waba_id=${wabaId}`;
         }
         return att?.url || messageData.attachment_url;
       };
