@@ -95,6 +95,7 @@ export default function InvoiceSettingsPage() {
           email: settings.email || "",
           website: settings.website || "",
           client_itemlist: settings.client_itemlist || null,
+          materials_itemlist: (settings as any).materials_itemlist || null,
           invoice_prefix: settings.invoice_prefix || "INV",
           starting_number: settings.starting_number || 1,
           default_currency: settings.default_currency || "GEL",
@@ -112,6 +113,7 @@ export default function InvoiceSettingsPage() {
   });
 
   const clientItemListValue = watch("client_itemlist");
+  const materialsItemListValue = watch("materials_itemlist");
   const defaultCurrencyValue = watch("default_currency");
 
   const handleFileUpload = async (
@@ -444,6 +446,32 @@ export default function InvoiceSettingsPage() {
                 </Select>
                 <p className="text-xs text-muted-foreground">
                   {t("settings.form.clientItemListHint")}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="materials_itemlist">{t("settings.form.materialsItemList")}</Label>
+                <Select
+                  key={`materials-select-${availableItemLists?.length ?? "loading"}`}
+                  value={materialsItemListValue?.toString() || "none"}
+                  onValueChange={(value) => {
+                    setValue("materials_itemlist", value === "none" ? null : parseInt(value), { shouldDirty: true });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("settings.form.selectItemList")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">—</SelectItem>
+                    {availableItemLists?.map((itemList: any) => (
+                      <SelectItem key={itemList.id} value={itemList.id.toString()}>
+                        {itemList.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  {t("settings.form.materialsItemListHint")}
                 </p>
               </div>
             </Card>

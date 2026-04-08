@@ -2095,6 +2095,7 @@
       "manual": "ხელით შეყვანა",
       "selectProduct": "აირჩიეთ პროდუქტი",
       "selectMaterial": "აირჩიეთ მასალა",
+      "manualEntry": "ხელით შეყვანა",
       "description": "აღწერა",
       "quantity": "რაოდენობა",
       "unit": "ერთეული",
@@ -2283,6 +2284,8 @@
         "defaultTermsPlaceholder": "შეიყვანეთ ნაგულისხმევი პირობები და დებულებები...",
         "clientItemList": "კლიენტების სია",
         "clientItemListHint": "აირჩიეთ რომელი სია გამოიყენოთ ინვოისის კლიენტებისთვის",
+        "materialsItemList": "მასალები / პროდუქტების სია",
+        "materialsItemListHint": "აირჩიეთ რომელი სია გამოიყენოთ ინვოისის პოზიციებისთვის",
         "selectItemList": "აირჩიეთ სია"
       },
       "saving": "პარამეტრები ინახება...",

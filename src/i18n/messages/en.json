@@ -2095,6 +2095,7 @@
       "manual": "Manual Entry",
       "selectProduct": "Select product",
       "selectMaterial": "Select material",
+      "manualEntry": "Manual entry",
       "description": "Description",
       "quantity": "Quantity",
       "unit": "Unit",
@@ -2262,6 +2263,8 @@
         "emailMessageHint": "Use {invoice_number}, {client_name}, {total}, {due_date} as variables",
         "clientItemList": "Client Item List",
         "clientItemListHint": "Select which item list to use for invoice clients",
+        "materialsItemList": "Materials / Products List",
+        "materialsItemListHint": "Select which item list to use for invoice line items",
         "selectItemList": "Select an item list"
       },
       "validation": {

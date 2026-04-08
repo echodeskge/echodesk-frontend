@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
-import { X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -22,12 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateInvoice, useInvoiceClients } from "@/hooks/useInvoices";
+import { useCreateInvoice, useInvoiceClients, useInvoiceMaterials } from "@/hooks/useInvoices";
 import { useToast } from "@/hooks/use-toast";
-import type { InvoiceCreateUpdate } from "@/api/generated";
 
 interface LineItem {
   tempId: string;
+  materialId: string | null; // null = manual entry
   description: string;
   quantity: number;
   unit: string;
@@ -41,25 +41,29 @@ interface CreateInvoiceSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const defaultLineItem = (): LineItem => ({
+  tempId: Date.now().toString(),
+  materialId: null,
+  description: "",
+  quantity: 1,
+  unit: "pcs",
+  unit_price: 0,
+  tax_rate: 18,
+  discount_percent: 0,
+});
+
 export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetProps) {
   const t = useTranslations("invoices");
   const { toast } = useToast();
   const createMutation = useCreateInvoice();
   const { data: clientsData } = useInvoiceClients();
+  const { data: materialsData } = useInvoiceMaterials();
 
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    {
-      tempId: "1",
-      description: "",
-      quantity: 1,
-      unit: "pcs",
-      unit_price: 0,
-      tax_rate: 18,
-      discount_percent: 0,
-    },
+    { ...defaultLineItem(), tempId: "1" },
   ]);
 
-  const { register, handleSubmit, watch, setValue, reset, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setValue, reset, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       client: "",
       issue_date: new Date().toISOString().split("T")[0],
@@ -70,19 +74,11 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
     },
   });
 
+  const materials: any[] = (materialsData as any)?.results || (materialsData as any) || [];
+  const hasMaterials = materials.length > 0;
+
   const addLineItem = () => {
-    setLineItems([
-      ...lineItems,
-      {
-        tempId: Date.now().toString(),
-        description: "",
-        quantity: 1,
-        unit: "pcs",
-        unit_price: 0,
-        tax_rate: 18,
-        discount_percent: 0,
-      },
-    ]);
+    setLineItems([...lineItems, defaultLineItem()]);
   };
 
   const removeLineItem = (tempId: string) => {
@@ -101,6 +97,36 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
     setLineItems(
       lineItems.map((item) =>
         item.tempId === tempId ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const selectMaterial = (tempId: string, materialId: string) => {
+    if (materialId === "manual") {
+      setLineItems(
+        lineItems.map((item) =>
+          item.tempId === tempId
+            ? { ...item, materialId: null, description: "", unit_price: 0, unit: "pcs" }
+            : item
+        )
+      );
+      return;
+    }
+
+    const material = materials.find((m: any) => m.id.toString() === materialId);
+    if (!material) return;
+
+    setLineItems(
+      lineItems.map((item) =>
+        item.tempId === tempId
+          ? {
+              ...item,
+              materialId,
+              description: material.label || material.description || "",
+              unit_price: parseFloat(material.price) || 0,
+              unit: material.unit || "pcs",
+            }
+          : item
       )
     );
   };
@@ -140,7 +166,8 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
         notes: data.notes || "",
         terms_and_conditions: data.terms_conditions || "",
         line_items: lineItems.map((item, index) => ({
-          item_source: "manual",
+          item_source: item.materialId ? "list_item" : "manual",
+          ...(item.materialId ? { list_item: parseInt(item.materialId) } : {}),
           description: item.description,
           quantity: item.quantity,
           unit: item.unit,
@@ -160,17 +187,7 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
 
       // Reset form
       reset();
-      setLineItems([
-        {
-          tempId: "1",
-          description: "",
-          quantity: 1,
-          unit: "pcs",
-          unit_price: 0,
-          tax_rate: 18,
-          discount_percent: 0,
-        },
-      ]);
+      setLineItems([{ ...defaultLineItem(), tempId: "1" }]);
       onOpenChange(false);
     } catch (error: any) {
       toast({
@@ -278,6 +295,28 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
                     </Button>
                   )}
                 </div>
+
+                {/* Material selection (if materials are available) */}
+                {hasMaterials && (
+                  <div className="space-y-2">
+                    <Select
+                      value={item.materialId || "manual"}
+                      onValueChange={(value) => selectMaterial(item.tempId, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("form.selectMaterial")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">{t("form.manualEntry")}</SelectItem>
+                        {materials.map((material: any) => (
+                          <SelectItem key={material.id} value={material.id.toString()}>
+                            {material.label} {material.price ? `(${material.price})` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Input
