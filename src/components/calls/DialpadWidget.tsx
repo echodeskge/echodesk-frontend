@@ -3,10 +3,12 @@
 import { Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCall } from "@/contexts/CallContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { DialpadPopup } from "./DialpadPopup";
 import { IncomingCallNotification } from "./IncomingCallNotification";
 
 export default function DialpadWidget() {
+  const { hasFeature } = useSubscription();
   const {
     activeCall,
     sipRegistered,
@@ -16,8 +18,8 @@ export default function DialpadWidget() {
     setIsDialpadOpen,
   } = useCall();
 
-  // Don't render if no SIP config is available
-  if (!activeSipConfig) return null;
+  // Don't render if user doesn't have ip_calling feature or no SIP config
+  if (!hasFeature('ip_calling') || !activeSipConfig) return null;
 
   const hasActiveCall = !!activeCall;
   const isRinging = activeCall?.direction === "incoming" && activeCall?.status === "ringing";
