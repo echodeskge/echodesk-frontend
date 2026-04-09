@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { callLogsList } from "@/api/generated/api";
+import { useCall } from "@/contexts/CallContext";
 
 interface CallLog {
   id: number;
@@ -29,6 +30,7 @@ interface CallLog {
 
 export function CallHistory() {
   const t = useTranslations("calls");
+  const { callEndedCounter } = useCall();
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,7 +48,7 @@ export function CallHistory() {
 
   useEffect(() => {
     fetchCallLogs();
-  }, []);
+  }, [callEndedCounter]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: "default" | "destructive" | "secondary" | "outline"; label: string }> = {

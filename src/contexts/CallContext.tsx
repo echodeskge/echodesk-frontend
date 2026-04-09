@@ -61,6 +61,7 @@ export interface CallContextValue {
   setError: (err: string) => void;
   setIsDialpadOpen: (open: boolean) => void;
   toggleDialpad: () => void;
+  callEndedCounter: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -86,6 +87,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [isDialpadOpen, setIsDialpadOpen] = useState(false);
+  const [callEndedCounter, setCallEndedCounter] = useState(0);
 
   // ---- Refs ----
   const sipServiceRef = useRef<SipService | null>(null);
@@ -269,6 +271,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           setActiveCall(null);
           setCallDuration(0);
+          setCallEndedCounter(c => c + 1);
         });
 
         sipService.on('onCallFailed', async (callError) => {
@@ -288,6 +291,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           setActiveCall(null);
           setCallDuration(0);
+          setCallEndedCounter(c => c + 1);
           setError(`Call failed: ${callError || 'Unknown error'}`);
         });
 
@@ -381,6 +385,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await sipServiceRef.current.rejectCall();
         stopRingtone();
         setActiveCall(null);
+        setCallEndedCounter(c => c + 1);
 
         await callLogsUpdateStatusPartialUpdate(current.logId, {
           status: 'cancelled' as any,
@@ -499,6 +504,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setError,
     setIsDialpadOpen,
     toggleDialpad,
+    callEndedCounter,
   };
 
   return (
