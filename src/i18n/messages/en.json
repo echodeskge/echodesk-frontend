@@ -658,7 +658,8 @@
       "ended": "Ended",
       "initiated": "Initiated",
       "unknownNumber": "Unknown Number",
-      "loading": "Loading call history..."
+      "loading": "Loading call history...",
+      "ringing": "Ringing"
     },
     "dialPad": {
       "enterNumber": "Enter phone number",

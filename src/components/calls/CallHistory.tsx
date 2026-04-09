@@ -11,13 +11,20 @@ import { callLogsList } from "@/api/generated/api";
 
 interface CallLog {
   id: number;
-  call_type: "inbound" | "outbound";
-  phone_number: string;
+  call_id: string;
+  caller_number: string;
+  recipient_number: string;
+  direction: "inbound" | "outbound";
+  call_type: string;
   status: string;
   started_at: string;
+  answered_at: string | null;
   ended_at: string | null;
-  duration: number | null;
+  duration: string | null;
+  duration_display: string | null;
+  handled_by_name: string | null;
   client_name: string | null;
+  sip_config_name: string | null;
 }
 
 export function CallHistory() {
@@ -44,33 +51,33 @@ export function CallHistory() {
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: "default" | "destructive" | "secondary" | "outline"; label: string }> = {
       answered: { variant: "default", label: t("logs.answered") },
-      missed: { variant: "destructive", label: t("logs.missed") },
       ended: { variant: "secondary", label: t("logs.ended") },
+      missed: { variant: "destructive", label: t("logs.missed") },
       failed: { variant: "destructive", label: t("logs.failed") },
       busy: { variant: "outline", label: t("logs.busy") },
       no_answer: { variant: "outline", label: t("logs.noAnswer") },
+      cancelled: { variant: "outline", label: t("logs.cancelled") },
+      initiated: { variant: "secondary", label: t("logs.initiated") },
+      ringing: { variant: "secondary", label: t("logs.ringing") },
     };
 
     const config = statusConfig[status] || { variant: "outline" as const, label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const getCallIcon = (callType: string, status: string) => {
-    if (status === "missed") {
+  const getCallIcon = (direction: string, status: string) => {
+    if (status === "missed" || status === "no_answer") {
       return <PhoneMissed className="h-4 w-4 text-destructive" />;
     }
-    return callType === "inbound" ? (
+    return direction === "inbound" ? (
       <PhoneIncoming className="h-4 w-4 text-green-600" />
     ) : (
       <PhoneOutgoing className="h-4 w-4 text-blue-600" />
     );
   };
 
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return "N/A";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
+  const getPhoneNumber = (log: CallLog) => {
+    return log.direction === "inbound" ? log.caller_number : log.recipient_number;
   };
 
   if (loading) {
@@ -108,14 +115,14 @@ export function CallHistory() {
           <CardHeader className="py-3 px-4">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                {getCallIcon(log.call_type, log.status)}
+                {getCallIcon(log.direction, log.status)}
                 <div>
                   <CardTitle className="text-sm font-medium">
-                    {log.client_name || log.phone_number}
+                    {log.client_name || getPhoneNumber(log)}
                   </CardTitle>
                   {log.client_name && (
                     <CardDescription className="text-xs">
-                      {log.phone_number}
+                      {getPhoneNumber(log)}
                     </CardDescription>
                   )}
                 </div>
@@ -124,17 +131,20 @@ export function CallHistory() {
             </div>
           </CardHeader>
           <CardContent className="py-2 px-4">
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {format(new Date(log.started_at), "MMM d, h:mm a")}
               </span>
-              {log.duration !== null && (
-                <span>{t("duration")}: {formatDuration(log.duration)}</span>
+              {log.duration_display && (
+                <span>{t("duration")}: {log.duration_display}</span>
               )}
               <Badge variant="outline" className="text-xs">
-                {log.call_type === "inbound" ? t("incoming") : t("outgoing")}
+                {log.direction === "inbound" ? t("incoming") : t("outgoing")}
               </Badge>
+              {log.handled_by_name && (
+                <span>{log.handled_by_name}</span>
+              )}
             </div>
           </CardContent>
         </Card>
