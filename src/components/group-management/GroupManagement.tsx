@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from "next-intl";
 import './GroupManagement.css';
 
 interface Group {
@@ -21,6 +22,7 @@ interface GroupManagementProps {
 }
 
 const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
+  const t = useTranslations("groups");
   const [groups, setGroups] = useState<Group[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch groups');
+        throw new Error(t("management.failedToFetchGroups"));
       }
 
       const data = await response.json();
@@ -74,7 +76,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error(t("management.failedToFetchUsers"));
       }
 
       const data = await response.json();
@@ -101,7 +103,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.name?.[0] || 'Failed to create group');
+        throw new Error(errorData.name?.[0] || t("management.failedToCreateGroup"));
       }
 
       const newGroup = await response.json();
@@ -130,7 +132,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.name?.[0] || 'Failed to update group');
+        throw new Error(errorData.name?.[0] || t("management.failedToUpdateGroup"));
       }
 
       const updatedGroup = await response.json();
@@ -143,7 +145,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
   };
 
   const handleDeleteGroup = async (groupId: number) => {
-    if (!confirm('Are you sure you want to delete this group?')) return;
+    if (!confirm(t("management.confirmDelete"))) return;
 
     try {
       const token = localStorage.getItem(`authToken_${tenantSlug}`);
@@ -155,7 +157,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete group');
+        throw new Error(t("management.failedToDeleteGroup"));
       }
 
       setGroups(groups.filter(g => g.id !== groupId));
@@ -179,7 +181,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add users to group');
+        throw new Error(t("management.failedToAddUsers"));
       }
 
       const data = await response.json();
@@ -206,7 +208,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to remove users from group');
+        throw new Error(t("management.failedToRemoveUsers"));
       }
 
       const data = await response.json();
@@ -217,18 +219,18 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
   };
 
   if (loading) {
-    return <div className="loading-container">Loading groups...</div>;
+    return <div className="loading-container">{t("management.loadingGroups")}</div>;
   }
 
   return (
     <div className="group-management">
       <div className="group-management-header">
-        <h2>Group Management</h2>
+        <h2>{t("management.title")}</h2>
         <button 
           className="create-group-btn"
           onClick={() => setShowCreateForm(true)}
         >
-          Create New Group
+          {t("management.createNewGroup")}
         </button>
       </div>
 
@@ -244,26 +246,26 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>Create New Group</h3>
+              <h3>{t("management.createNewGroup")}</h3>
               <button onClick={() => setShowCreateForm(false)}>×</button>
             </div>
             <form onSubmit={handleCreateGroup} className="group-form">
               <div className="form-group">
-                <label htmlFor="groupName">Group Name</label>
+                <label htmlFor="groupName">{t("management.groupNameLabel")}</label>
                 <input
                   type="text"
                   id="groupName"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="Enter group name"
+                  placeholder={t("management.groupNamePlaceholder")}
                   required
                 />
               </div>
               <div className="form-actions">
                 <button type="button" onClick={() => setShowCreateForm(false)}>
-                  Cancel
+                  {t("management.cancel")}
                 </button>
-                <button type="submit">Create Group</button>
+                <button type="submit">{t("management.createGroup")}</button>
               </div>
             </form>
           </div>
@@ -275,26 +277,26 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3>Edit Group</h3>
+              <h3>{t("management.editGroup")}</h3>
               <button onClick={() => setEditingGroup(null)}>×</button>
             </div>
             <form onSubmit={handleUpdateGroup} className="group-form">
               <div className="form-group">
-                <label htmlFor="editGroupName">Group Name</label>
+                <label htmlFor="editGroupName">{t("management.groupNameLabel")}</label>
                 <input
                   type="text"
                   id="editGroupName"
                   value={editGroupName}
                   onChange={(e) => setEditGroupName(e.target.value)}
-                  placeholder="Enter group name"
+                  placeholder={t("management.groupNamePlaceholder")}
                   required
                 />
               </div>
               <div className="form-actions">
                 <button type="button" onClick={() => setEditingGroup(null)}>
-                  Cancel
+                  {t("management.cancel")}
                 </button>
-                <button type="submit">Update Group</button>
+                <button type="submit">{t("management.updateGroup")}</button>
               </div>
             </form>
           </div>
@@ -306,12 +308,12 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
         <div className="modal-overlay">
           <div className="modal large">
             <div className="modal-header">
-              <h3>Manage Users in {selectedGroup.name}</h3>
+              <h3>{t("management.manageUsersIn", { groupName: selectedGroup.name })}</h3>
               <button onClick={() => setShowUserManagement(false)}>×</button>
             </div>
             <div className="user-management-content">
               <div className="current-users">
-                <h4>Current Members ({selectedGroup.user_count})</h4>
+                <h4>{t("management.currentMembers", { count: selectedGroup.user_count })}</h4>
                 <div className="user-list">
                   {selectedGroup.users.map((user, index) => (
                     <div key={index} className="user-item">
@@ -326,7 +328,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
                           }
                         }}
                       >
-                        Remove
+                        {t("management.remove")}
                       </button>
                     </div>
                   ))}
@@ -334,7 +336,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
               </div>
               
               <div className="add-users">
-                <h4>Add Users</h4>
+                <h4>{t("management.addUsers")}</h4>
                 <div className="user-selection">
                   {users.filter(user => !selectedGroup.users.includes(user.email)).map(user => (
                     <label key={user.id} className="user-checkbox">
@@ -358,7 +360,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
                   onClick={handleAddUsersToGroup}
                   disabled={selectedUsers.length === 0}
                 >
-                  Add Selected Users ({selectedUsers.length})
+                  {t("management.addSelectedUsers", { count: selectedUsers.length })}
                 </button>
               </div>
             </div>
@@ -371,16 +373,16 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
         <table className="groups-table">
           <thead>
             <tr>
-              <th>Group Name</th>
-              <th>Members</th>
-              <th>Actions</th>
+              <th>{t("management.groupName")}</th>
+              <th>{t("management.members")}</th>
+              <th>{t("management.actions")}</th>
             </tr>
           </thead>
           <tbody>
             {groups.map(group => (
               <tr key={group.id}>
                 <td className="group-name">{group.name}</td>
-                <td className="member-count">{group.user_count} members</td>
+                <td className="member-count">{t("management.membersCount", { count: group.user_count })}</td>
                 <td className="actions">
                   <button
                     className="action-btn edit-btn"
@@ -389,7 +391,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
                       setEditGroupName(group.name);
                     }}
                   >
-                    Edit
+                    {t("management.edit")}
                   </button>
                   <button
                     className="action-btn manage-btn"
@@ -399,13 +401,13 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
                       setSelectedUsers([]);
                     }}
                   >
-                    Manage Users
+                    {t("management.manageUsers")}
                   </button>
                   <button
                     className="action-btn delete-btn"
                     onClick={() => handleDeleteGroup(group.id)}
                   >
-                    Delete
+                    {t("management.delete")}
                   </button>
                 </td>
               </tr>
@@ -415,7 +417,7 @@ const GroupManagement: React.FC<GroupManagementProps> = ({ tenantSlug }) => {
 
         {groups.length === 0 && (
           <div className="empty-state">
-            <p>No groups found. Create your first group to get started.</p>
+            <p>{t("management.noGroupsFound")}</p>
           </div>
         )}
       </div>

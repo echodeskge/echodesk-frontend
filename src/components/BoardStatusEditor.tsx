@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   columnsList,
   columnsCreate,
@@ -56,6 +57,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
   onClose,
   onStatusChange,
 }) => {
+  const t = useTranslations("tickets");
   const [board, setBoard] = useState<Board | null>(null);
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,7 +85,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
       const boardData = await boardsRetrieve(boardId.toString());
       setBoard(boardData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load board");
+      setError(err instanceof Error ? err.message : t("boardStatusEditor.failedToLoadBoard"));
     }
   };
 
@@ -96,7 +98,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
       const data = await columnsList(boardId);
       setColumns(data.results || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t("boardStatusEditor.errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -168,7 +170,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
           board: boardId,
         };
         await columnsUpdate(editingColumn.id, updateData);
-        setSuccess("Column updated successfully!");
+        setSuccess(t("boardStatusEditor.columnUpdated"));
       } else {
         // Create new column
         const createData: TicketColumnCreate = {
@@ -182,7 +184,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
           board: boardId,
         };
         await columnsCreate(createData);
-        setSuccess("Column created successfully!");
+        setSuccess(t("boardStatusEditor.columnCreated"));
       }
 
       // Refresh columns list
@@ -193,27 +195,27 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t("boardStatusEditor.errorOccurred"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (columnId: number) => {
-    if (!window.confirm("Are you sure you want to delete this column?")) {
+    if (!window.confirm(t("boardStatusEditor.confirmDelete"))) {
       return;
     }
 
     try {
       await columnsDestroy(columnId);
-      setSuccess("Column deleted successfully!");
+      setSuccess(t("boardStatusEditor.columnDeleted"));
       await fetchColumns();
       onStatusChange?.();
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete column");
+      setError(err instanceof Error ? err.message : t("boardStatusEditor.failedToDeleteColumn"));
     }
   };
 
@@ -227,15 +229,15 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
               <div>
                 <div className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
-                  <DialogTitle>Edit Board Statuses</DialogTitle>
+                  <DialogTitle>{t("boardStatusEditor.title")}</DialogTitle>
                 </div>
                 <DialogDescription className="mt-1">
-                  Manage ticket status columns for <strong>{board?.name}</strong>
+                  {t("boardStatusEditor.description")} <strong>{board?.name}</strong>
                 </DialogDescription>
               </div>
               <Button onClick={openCreateDialog} size="sm">
                 <Plus className="h-4 w-4 mr-1" />
-                Create Status
+                {t("boardStatusEditor.createStatus")}
               </Button>
             </div>
           </DialogHeader>
@@ -262,7 +264,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
             {loading && (
               <div className="text-center py-10">
                 <Spinner className="h-8 w-8 mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading columns...</p>
+                <p className="text-muted-foreground">{t("boardStatusEditor.loadingColumns")}</p>
               </div>
             )}
 
@@ -272,11 +274,11 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
                 {columns.length === 0 ? (
                   <div className="text-center py-10">
                     <p className="text-muted-foreground mb-4">
-                      No status columns found for this board.
+                      {t("boardStatusEditor.noColumnsFound")}
                     </p>
                     <Button onClick={openCreateDialog}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Create First Status
+                      {t("boardStatusEditor.createFirstStatus")}
                     </Button>
                   </div>
                 ) : (
@@ -300,27 +302,27 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
                                   {column.is_default && (
                                     <Badge variant="default">
                                       <Star className="h-3 w-3 mr-1" />
-                                      Default
+                                      {t("boardStatusEditor.defaultBadge")}
                                     </Badge>
                                   )}
                                   {column.is_closed_status && (
                                     <Badge variant="secondary" className="bg-green-100 text-green-800">
                                       <CheckSquare className="h-3 w-3 mr-1" />
-                                      Closed
+                                      {t("boardStatusEditor.closedBadge")}
                                     </Badge>
                                   )}
                                   {column.track_time && (
                                     <Badge variant="secondary" className="bg-orange-100 text-orange-800">
                                       <Clock className="h-3 w-3 mr-1" />
-                                      Track Time
+                                      {t("boardStatusEditor.trackTimeBadge")}
                                     </Badge>
                                   )}
                                 </div>
                                 <p className="text-sm text-muted-foreground mb-1">
-                                  {column.description || "No description"}
+                                  {column.description || t("boardStatusEditor.noDescription")}
                                 </p>
                                 <div className="text-xs text-muted-foreground">
-                                  Position: {column.position} • Color: {column.color} • {column.tickets_count} tickets
+                                  {t("boardStatusEditor.position")} {column.position} • {t("boardStatusEditor.color")} {column.color} • {column.tickets_count} {t("boardStatusEditor.tickets")}
                                 </div>
                               </div>
 
@@ -358,40 +360,40 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
         <DialogContent className="max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingColumn ? "Edit Status Column" : "Create New Status Column"}
+              {editingColumn ? t("boardStatusEditor.editStatusColumn") : t("boardStatusEditor.createNewStatusColumn")}
             </DialogTitle>
             <DialogDescription>
-              Configure the properties of this status column
+              {t("boardStatusEditor.configureProperties")}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
+                <Label htmlFor="name">{t("boardStatusEditor.nameLabel")}</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  placeholder="e.g., In Progress, Done"
+                  placeholder={t("boardStatusEditor.namePlaceholder")}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">{t("boardStatusEditor.descriptionLabel")}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  placeholder="Describe what this status means"
+                  placeholder={t("boardStatusEditor.descriptionPlaceholder")}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="color">Color</Label>
+                  <Label htmlFor="color">{t("boardStatusEditor.colorLabel")}</Label>
                   <Input
                     id="color"
                     type="color"
@@ -402,7 +404,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="position">Position</Label>
+                  <Label htmlFor="position">{t("boardStatusEditor.positionLabel")}</Label>
                   <Input
                     id="position"
                     type="number"
@@ -421,7 +423,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
                     onCheckedChange={(checked) => setFormData({ ...formData, is_default: checked as boolean })}
                   />
                   <Label htmlFor="is_default" className="font-normal cursor-pointer">
-                    Default Status (new tickets will use this)
+                    {t("boardStatusEditor.defaultStatusCheckbox")}
                   </Label>
                 </div>
 
@@ -432,7 +434,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
                     onCheckedChange={(checked) => setFormData({ ...formData, is_closed_status: checked as boolean })}
                   />
                   <Label htmlFor="is_closed_status" className="font-normal cursor-pointer">
-                    Closed Status (tickets here are considered completed)
+                    {t("boardStatusEditor.closedStatusCheckbox")}
                   </Label>
                 </div>
 
@@ -443,7 +445,7 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
                     onCheckedChange={(checked) => setFormData({ ...formData, track_time: checked as boolean })}
                   />
                   <Label htmlFor="track_time" className="font-normal cursor-pointer">
-                    Track Time (record how long tickets spend in this status)
+                    {t("boardStatusEditor.trackTimeCheckbox")}
                   </Label>
                 </div>
               </div>
@@ -451,11 +453,11 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
 
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={closeFormDialog}>
-                Cancel
+                {t("boardStatusEditor.cancel")}
               </Button>
               <Button type="submit" disabled={loading}>
                 {loading && <Spinner className="mr-2 h-4 w-4" />}
-                {loading ? "Saving..." : editingColumn ? "Update" : "Create"}
+                {loading ? t("boardStatusEditor.saving") : editingColumn ? t("boardStatusEditor.update") : t("boardStatusEditor.create")}
               </Button>
             </DialogFooter>
           </form>

@@ -381,16 +381,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Check if the current route is accessible by the user
   const isRouteAccessible = (currentPath: string): boolean => {
     const pathParts = currentPath.split("/").filter(Boolean);
-    console.log('[RouteAccess] Checking path:', currentPath, 'pathParts:', pathParts);
 
     if (pathParts.length === 0) {
-      console.log('[RouteAccess] Root path - accessible');
       return true;
     }
 
     // /help and action-only routes are always accessible
     if (pathParts[0] === 'help' || actionOnlyItems.has(pathParts[0])) {
-      console.log('[RouteAccess] ✅ /' + pathParts[0] + ' is always accessible');
       return true;
     }
 
@@ -401,9 +398,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       ? `${pathParts[0]}/${pathParts[1]}`
       : pathParts[0];
 
-    console.log('[RouteAccess] baseRouteId:', baseRouteId);
-    console.log('[RouteAccess] visibleMenuItems:', visibleMenuItems.map(i => ({ id: i.id, children: i.children?.map(c => c.id) })));
-
     // Special case: /messages route should be accessible if user has social_integrations
     // This allows WhatsApp/Instagram message detail pages to work
     if (baseRouteId === 'messages' || currentPath.startsWith('/messages')) {
@@ -412,7 +406,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         item.children?.some(child => child.id === 'social/messages')
       );
       if (hasSocialAccess) {
-        console.log('[RouteAccess] ✅ /messages accessible via social_integrations feature');
         return true;
       }
     }
@@ -422,31 +415,26 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     for (const item of visibleMenuItems) {
       // Check top-level match
       if (item.id === baseRouteId) {
-        console.log('[RouteAccess] ✅ Match found: top-level item', item.id);
         return true;
       }
       // Check if current path starts with a valid menu item (for detail pages)
       if (currentPath.startsWith(`/${item.id}`)) {
-        console.log('[RouteAccess] ✅ Match found: path starts with', item.id);
         return true;
       }
 
       if (item.children) {
         for (const child of item.children) {
           if (child.id === baseRouteId) {
-            console.log('[RouteAccess] ✅ Match found: child item', child.id);
             return true;
           }
           // Check if current path starts with a valid child route (for detail pages like /social/messages/123)
           if (currentPath.startsWith(`/${child.id}`)) {
-            console.log('[RouteAccess] ✅ Match found: path starts with child', child.id);
             return true;
           }
         }
       }
     }
 
-    console.log('[RouteAccess] ❌ No match found - route not accessible');
     return false;
   };
 
@@ -458,13 +446,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // /help is ALWAYS accessible - never redirect away from or to /help based on permissions
     if (pathname.startsWith('/help')) {
-      console.log('[RouteProtection] On /help - always accessible, skipping checks');
       return;
     }
 
     // Reset redirect tracking if user manually navigated to a new path
     if (lastPathnameRef.current !== pathname) {
-      console.log('[RouteProtection] Path changed from', lastPathnameRef.current, 'to', pathname);
       lastPathnameRef.current = pathname;
       // Only reset if this isn't the path we redirected to
       if (redirectedToRef.current !== pathname) {
@@ -472,60 +458,42 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       }
     }
 
-    console.log('[RouteProtection] useEffect triggered', {
-      profileLoading,
-      tenantLoading,
-      hasUserProfile: !!userProfile,
-      pathname,
-      visibleMenuItemsCount: visibleMenuItems.length,
-      redirectedTo: redirectedToRef.current
-    });
-
     // Skip if we already redirected to this path (prevents loops)
     if (redirectedToRef.current === pathname) {
-      console.log('[RouteProtection] Already redirected here - stopping');
       return;
     }
 
     // Skip if still loading
     if (profileLoading || tenantLoading || appearanceLoading || facebookStatusLoading) {
-      console.log('[RouteProtection] Skipping - still loading');
       return;
     }
 
     // Skip if no user profile yet
     if (!userProfile) {
-      console.log('[RouteProtection] Skipping - no user profile');
       return;
     }
 
     // Wait until we have menu items
     if (visibleMenuItems.length === 0) {
-      console.log('[RouteProtection] Skipping - no visible menu items yet');
       return;
     }
 
     const firstAvailableRoute = getFirstAvailableRoute();
-    console.log('[RouteProtection] firstAvailableRoute:', firstAvailableRoute);
 
     if (!firstAvailableRoute) {
-      console.log('[RouteProtection] No routes available - user may not have permissions');
       return;
     }
 
     // Check if current path is accessible
     const accessible = isRouteAccessible(pathname);
-    console.log('[RouteProtection] pathname:', pathname, 'accessible:', accessible);
 
     // Only redirect if not accessible AND not already on first available route
     if (!accessible) {
       // Prevent redirecting to the same path we're on
       if (pathname === firstAvailableRoute) {
-        console.log('[RouteProtection] Already on first available route - stopping');
         return;
       }
 
-      console.log('[RouteProtection] 🔄 REDIRECTING to:', firstAvailableRoute);
       redirectedToRef.current = firstAvailableRoute;
       router.replace(firstAvailableRoute);
     }

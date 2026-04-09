@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { CreditCard, Store, Settings, Eye, EyeOff, CheckCircle2, AlertCircle, Link2, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check } from "lucide-react"
-import * as api from "@/api/generated/api"
+import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate } from "@/api/generated/api"
 import type { EcommerceSettings as EcommerceSettingsType, DeploymentResponse } from "@/api/generated/interfaces"
 import { Badge } from "@/components/ui/badge"
 import axios from "@/api/axios"
@@ -86,7 +86,7 @@ export default function EcommerceSettingsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true)
-      const response = await api.ecommerceAdminSettingsList()
+      const response = await ecommerceAdminSettingsList()
 
       if (response.results && response.results.length > 0) {
         const settingsData = response.results[0] as any
@@ -131,7 +131,7 @@ export default function EcommerceSettingsPage() {
 
       // Call the deploy-frontend endpoint using generated API function
       // The generated function expects a body but our endpoint doesn't need one
-      const result = await api.ecommerceAdminSettingsDeployFrontendCreate({} as any)
+      const result = await ecommerceAdminSettingsDeployFrontendCreate({} as any)
 
       if (result.success) {
         setDeploymentInfo({
@@ -324,10 +324,10 @@ export default function EcommerceSettingsPage() {
 
       if (settings.id) {
         // Update existing settings
-        await api.ecommerceAdminSettingsPartialUpdate(String(settings.id), payload)
+        await ecommerceAdminSettingsPartialUpdate(String(settings.id), payload)
       } else {
         // Create new settings
-        await api.ecommerceAdminSettingsCreate(payload)
+        await ecommerceAdminSettingsCreate(payload)
       }
 
       alert("Settings saved successfully!")

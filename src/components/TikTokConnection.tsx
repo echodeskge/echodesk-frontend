@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useTikTokStatus,
   useConnectTikTok,
@@ -35,6 +36,8 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 );
 
 export function TikTokConnection() {
+  const t = useTranslations('social');
+
   // React Query hooks
   const { data: statusData, isLoading: loading, refetch } = useTikTokStatus();
   const connectTikTok = useConnectTikTok();
@@ -51,12 +54,12 @@ export function TikTokConnection() {
     const message = urlParams.get('message');
 
     if (tiktokStatus === 'connected') {
-      toast.success(message || 'TikTok Shop account connected successfully!');
+      toast.success(message || t('tiktok.connectedSuccess'));
       refetch();
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (tiktokStatus === 'error') {
-      toast.error(message || 'Failed to connect TikTok Shop account');
+      toast.error(message || t('tiktok.connectedError'));
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }
@@ -72,21 +75,21 @@ export function TikTokConnection() {
       }
     } catch (error: any) {
       console.error('Failed to start TikTok Shop OAuth:', error);
-      toast.error(error.response?.data?.error || error.message || 'Failed to start TikTok Shop connection');
+      toast.error(error.response?.data?.error || error.message || t('tiktok.oauthError'));
     }
   };
 
   const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect this TikTok Shop account?')) {
+    if (!confirm(t('tiktok.confirmDisconnect'))) {
       return;
     }
 
     try {
       await disconnectTikTok.mutateAsync(undefined);
-      toast.success('TikTok Shop account disconnected successfully');
+      toast.success(t('tiktok.disconnectedSuccess'));
     } catch (error: any) {
       console.error('Failed to disconnect TikTok Shop:', error);
-      toast.error(error.response?.data?.error || 'Failed to disconnect TikTok Shop account');
+      toast.error(error.response?.data?.error || t('tiktok.disconnectedError'));
     }
   };
 
@@ -117,17 +120,17 @@ export function TikTokConnection() {
               <TikTokIcon className="h-6 w-6" />
             </div>
             <div>
-              <CardTitle className="text-xl">TikTok Shop</CardTitle>
+              <CardTitle className="text-xl">{t('tiktok.title')}</CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
                 {isConnected && account ? (
                   <>
                     <Check className="h-4 w-4 text-green-600" />
-                    <span>Connected</span>
+                    <span>{t('tiktok.connected')}</span>
                   </>
                 ) : (
                   <>
                     <X className="h-4 w-4 text-muted-foreground" />
-                    <span>Not connected</span>
+                    <span>{t('tiktok.notConnected')}</span>
                   </>
                 )}
               </CardDescription>
@@ -140,7 +143,7 @@ export function TikTokConnection() {
               isConnected && 'bg-black hover:bg-gray-800'
             )}
           >
-            {isConnected ? 'Connected' : 'Not Connected'}
+            {isConnected ? t('tiktok.badgeConnected') : t('tiktok.badgeNotConnected')}
           </Badge>
         </div>
       </CardHeader>
@@ -156,12 +159,12 @@ export function TikTokConnection() {
               {loading || connectTikTok.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
+                  {t('tiktok.connecting')}
                 </>
               ) : (
                 <>
                   <TikTokIcon className="mr-2 h-4 w-4" />
-                  Connect TikTok Shop
+                  {t('tiktok.connectTikTokShop')}
                 </>
               )}
             </Button>
@@ -175,12 +178,12 @@ export function TikTokConnection() {
               {disconnectTikTok.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Disconnecting...
+                  {t('tiktok.disconnecting')}
                 </>
               ) : (
                 <>
                   <X className="mr-2 h-4 w-4" />
-                  Disconnect
+                  {t('tiktok.disconnect')}
                 </>
               )}
             </Button>
@@ -189,14 +192,14 @@ export function TikTokConnection() {
             <RefreshCw
               className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
             />
-            Refresh Status
+            {t('tiktok.refreshStatus')}
           </Button>
         </div>
 
         {/* Connected Account Details */}
         {isConnected && account && (
           <div className="space-y-3 pt-4">
-            <h4 className="font-semibold text-sm">Connected Shop</h4>
+            <h4 className="font-semibold text-sm">{t('tiktok.connectedShop')}</h4>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-white">
@@ -204,7 +207,7 @@ export function TikTokConnection() {
                 </div>
                 <div>
                   <p className="font-medium">
-                    {account.seller_name || 'TikTok Shop Seller'}
+                    {account.seller_name || t('tiktok.defaultSellerName')}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                     {account.seller_base_region && (
@@ -225,7 +228,7 @@ export function TikTokConnection() {
                   variant={account.is_active ? 'default' : 'secondary'}
                   className={account.is_active ? 'bg-black' : ''}
                 >
-                  {account.is_active ? 'Active' : 'Inactive'}
+                  {account.is_active ? t('tiktok.active') : t('tiktok.inactive')}
                 </Badge>
               </div>
             </div>
@@ -237,7 +240,7 @@ export function TikTokConnection() {
           <Alert className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
-              <strong>Token expired.</strong> Please reconnect your TikTok Shop account to continue receiving messages.
+              <strong>{t('tiktok.tokenExpired')}</strong> {t('tiktok.tokenExpiredDescription')}
             </AlertDescription>
           </Alert>
         )}
@@ -247,8 +250,7 @@ export function TikTokConnection() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Requirements:</strong> You need a TikTok Shop seller account to connect.
-              Your shop must be authorized through the TikTok Shop Partner Center.
+              <strong>{t('tiktok.requirements')}</strong> {t('tiktok.requirementsDescription')}
             </AlertDescription>
           </Alert>
         )}

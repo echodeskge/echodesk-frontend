@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -35,6 +36,7 @@ interface PublicHoliday {
 }
 
 export default function PublicHolidaysPage() {
+  const t = useTranslations("leave")
   const [holidays, setHolidays] = useState<PublicHoliday[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -101,7 +103,7 @@ export default function PublicHolidaysPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this holiday?")) return
+    if (!confirm(t("publicHolidays.confirmDelete"))) return
 
     try {
       // await leaveAdminPublicHolidaysDelete(id)
@@ -133,9 +135,9 @@ export default function PublicHolidaysPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Public Holidays</h1>
+          <h1 className="text-3xl font-bold">{t("publicHolidays.title")}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage company-wide public holidays
+            {t("publicHolidays.description")}
           </p>
         </div>
         <Dialog
@@ -151,23 +153,23 @@ export default function PublicHolidaysPage() {
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              New Holiday
+              {t("publicHolidays.newHoliday")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
                 <DialogTitle>
-                  {editingHoliday ? "Edit Holiday" : "Create Holiday"}
+                  {editingHoliday ? t("publicHolidays.editHoliday") : t("publicHolidays.createHoliday")}
                 </DialogTitle>
                 <DialogDescription>
-                  Add a public holiday that will be excluded from leave calculations
+                  {t("publicHolidays.dialogDescription")}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="name_en">Name (English)</Label>
+                    <Label htmlFor="name_en">{t("publicHolidays.nameEnglish")}</Label>
                     <Input
                       id="name_en"
                       value={formData.name_en}
@@ -178,7 +180,7 @@ export default function PublicHolidaysPage() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="name_ka">Name (Georgian)</Label>
+                    <Label htmlFor="name_ka">{t("publicHolidays.nameGeorgian")}</Label>
                     <Input
                       id="name_ka"
                       value={formData.name_ka}
@@ -191,7 +193,7 @@ export default function PublicHolidaysPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="date">Date</Label>
+                  <Label htmlFor="date">{t("publicHolidays.date")}</Label>
                   <Input
                     id="date"
                     type="date"
@@ -212,7 +214,7 @@ export default function PublicHolidaysPage() {
                         setFormData({ ...formData, is_recurring: checked })
                       }
                     />
-                    <Label htmlFor="is_recurring">Recurring Annually</Label>
+                    <Label htmlFor="is_recurring">{t("publicHolidays.recurringAnnually")}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -222,7 +224,7 @@ export default function PublicHolidaysPage() {
                         setFormData({ ...formData, applies_to_all: checked })
                       }
                     />
-                    <Label htmlFor="applies_to_all">Applies to All</Label>
+                    <Label htmlFor="applies_to_all">{t("publicHolidays.appliesToAll")}</Label>
                   </div>
                 </div>
               </div>
@@ -236,10 +238,10 @@ export default function PublicHolidaysPage() {
                     resetForm()
                   }}
                 >
-                  Cancel
+                  {t("publicHolidays.cancel")}
                 </Button>
                 <Button type="submit">
-                  {editingHoliday ? "Update" : "Create"} Holiday
+                  {editingHoliday ? t("publicHolidays.update") : t("publicHolidays.create")} {t("publicHolidays.holiday")}
                 </Button>
               </DialogFooter>
             </form>
@@ -249,33 +251,33 @@ export default function PublicHolidaysPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Public Holidays</CardTitle>
+          <CardTitle>{t("publicHolidays.cardTitle")}</CardTitle>
           <CardDescription>
-            Holidays that are excluded from working day calculations
+            {t("publicHolidays.cardDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {holidays.length === 0 ? (
             <div className="text-center py-12">
               <CalendarRange className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No holidays</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("publicHolidays.noHolidays")}</h3>
               <p className="text-muted-foreground mb-4">
-                Add your first public holiday
+                {t("publicHolidays.addFirstHoliday")}
               </p>
               <Button onClick={() => setIsDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Holiday
+                {t("publicHolidays.createHoliday")}
               </Button>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Recurring</TableHead>
-                  <TableHead>Applies To</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t("publicHolidays.tableName")}</TableHead>
+                  <TableHead>{t("publicHolidays.tableDate")}</TableHead>
+                  <TableHead>{t("publicHolidays.tableRecurring")}</TableHead>
+                  <TableHead>{t("publicHolidays.tableAppliesTo")}</TableHead>
+                  <TableHead>{t("publicHolidays.tableActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -287,13 +289,13 @@ export default function PublicHolidaysPage() {
                     </TableCell>
                     <TableCell>
                       {holiday.is_recurring ? (
-                        <Badge variant="default">Annual</Badge>
+                        <Badge variant="default">{t("publicHolidays.annual")}</Badge>
                       ) : (
-                        <Badge variant="outline">One-time</Badge>
+                        <Badge variant="outline">{t("publicHolidays.oneTime")}</Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      {holiday.applies_to_all ? "All Employees" : "Specific Departments"}
+                      {holiday.applies_to_all ? t("publicHolidays.allEmployees") : t("publicHolidays.specificDepartments")}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">

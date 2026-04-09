@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from "next-intl";
 import {
   sipConfigurationsList,
   sipConfigurationsCreate,
@@ -21,6 +22,7 @@ interface SipConfigManagerProps {
 }
 
 export default function SipConfigManager({ onConfigChange }: SipConfigManagerProps) {
+  const t = useTranslations("calls");
   const [sipConfigs, setSipConfigs] = useState<SipConfigurationList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,7 +58,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
       setError('');
     } catch (err: unknown) {
       console.error('Failed to fetch SIP configs:', err);
-      setError('Failed to load SIP configurations');
+      setError(t("sipConfig.failedToLoadConfigs"));
     } finally {
       setLoading(false);
     }
@@ -158,14 +160,14 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
       
     } catch (err: unknown) {
       console.error('Failed to save SIP config:', err);
-      setError('Failed to save SIP configuration');
+      setError(t("sipConfig.failedToSaveConfig"));
     } finally {
       setActionLoading(null);
     }
   };
 
   const deleteConfig = async (configId: number) => {
-    if (!confirm('Are you sure you want to delete this SIP configuration?')) {
+    if (!confirm(t("sipConfig.confirmDelete"))) {
       return;
     }
 
@@ -178,7 +180,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
       
     } catch (err: unknown) {
       console.error('Failed to delete SIP config:', err);
-      setError('Failed to delete SIP configuration');
+      setError(t("sipConfig.failedToDeleteConfig"));
     } finally {
       setActionLoading(null);
     }
@@ -195,7 +197,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
       
     } catch (err: unknown) {
       console.error('Failed to set default SIP config:', err);
-      setError('Failed to set default SIP configuration');
+      setError(t("sipConfig.failedToSetDefault"));
     } finally {
       setActionLoading(null);
     }
@@ -206,10 +208,10 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
       setActionLoading(config.id);
       const fullConfig = await sipConfigurationsRetrieve(config.id);
       const result = await sipConfigurationsTestConnectionCreate(config.id, fullConfig as any);
-      alert(`Connection test ${result.success ? 'successful' : 'failed'}: ${result.message || ''}`);
+      alert(t("sipConfig.connectionTestSuccess", { result: result.success ? 'successful' : 'failed', message: result.message || '' }));
     } catch (err: unknown) {
       console.error('Failed to test SIP config:', err);
-      alert('Connection test failed');
+      alert(t("sipConfig.failedToTestConnection"));
     } finally {
       setActionLoading(null);
     }
@@ -285,7 +287,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
           color: '#333',
           margin: 0
         }}>
-          SIP Configurations
+          {t("sipConfig.title")}
         </h2>
         
         <div style={{ display: 'flex', gap: '10px' }}>
@@ -302,7 +304,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
               cursor: 'pointer'
             }}
           >
-            🚀 Quick Setup (Asterisk)
+            {t("sipConfig.quickSetupAsterisk")}
           </button>
           
           <button
@@ -318,7 +320,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
               cursor: 'pointer'
             }}
           >
-            ➕ Add Configuration
+            {t("sipConfig.addConfiguration")}
           </button>
         </div>
       </div>
@@ -337,8 +339,8 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
             color: '#6c757d'
           }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚙️</div>
-            <h3 style={{ margin: '0 0 8px 0', color: '#495057' }}>No SIP Configurations</h3>
-            <p style={{ margin: 0, fontSize: '14px' }}>Add your first SIP configuration to start making calls</p>
+            <h3 style={{ margin: '0 0 8px 0', color: '#495057' }}>{t("sipConfig.noConfigurations")}</h3>
+            <p style={{ margin: 0, fontSize: '14px' }}>{t("sipConfig.noConfigurationsDesc")}</p>
           </div>
         ) : (
           <div>
@@ -378,7 +380,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                         fontSize: '12px',
                         fontWeight: '500'
                       }}>
-                        Default
+                        {t("sipConfig.default")}
                       </span>
                     )}
                     
@@ -390,7 +392,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       fontSize: '12px',
                       fontWeight: '500'
                     }}>
-                      {config.is_active ? 'Active' : 'Inactive'}
+                      {config.is_active ? t("sipConfig.active") : t("sipConfig.inactive")}
                     </span>
                   </div>
                   
@@ -423,7 +425,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       opacity: actionLoading === config.id ? 0.6 : 1
                     }}
                   >
-                    {actionLoading === config.id ? '⏳' : '🔧'} Test
+                    {actionLoading === config.id ? '⏳' : '🔧'} {t("sipConfig.test")}
                   </button>
                   
                   {!config.is_default && (
@@ -441,7 +443,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                         opacity: actionLoading === config.id ? 0.6 : 1
                       }}
                     >
-                      Set Default
+                      {t("sipConfig.setDefault")}
                     </button>
                   )}
                   
@@ -459,7 +461,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       opacity: actionLoading === config.id ? 0.6 : 1
                     }}
                   >
-                    ✏️ Edit
+                    ✏️ {t("sipConfig.edit")}
                   </button>
                   
                   <button
@@ -475,9 +477,9 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       cursor: (actionLoading === config.id || config.is_default) ? 'not-allowed' : 'pointer',
                       opacity: (actionLoading === config.id || config.is_default) ? 0.6 : 1
                     }}
-                    title={config.is_default ? "Cannot delete default configuration" : "Delete configuration"}
+                    title={config.is_default ? t("sipConfig.cannotDeleteDefault") : t("sipConfig.deleteConfiguration")}
                   >
-                    🗑️ Delete
+                    🗑️ {t("sipConfig.delete")}
                   </button>
                 </div>
               </div>
@@ -514,7 +516,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
               fontWeight: '600',
               color: '#333'
             }}>
-              {editingConfig ? 'Edit SIP Configuration' : 'Add SIP Configuration'}
+              {editingConfig ? t("sipConfig.editConfiguration") : t("sipConfig.addConfigurationTitle")}
             </h3>
 
             <div style={{ display: 'grid', gap: '16px' }}>
@@ -527,7 +529,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                   marginBottom: '4px',
                   color: '#333'
                 }}>
-                  Configuration Name *
+                  {t("sipConfig.configurationNameLabel")}
                 </label>
                 <input
                   type="text"
@@ -540,7 +542,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     borderRadius: '6px',
                     fontSize: '14px'
                   }}
-                  placeholder="My SIP Server"
+                  placeholder={t("sipConfig.configurationNamePlaceholder")}
                 />
               </div>
 
@@ -553,7 +555,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     marginBottom: '4px',
                     color: '#333'
                   }}>
-                    SIP Server *
+                    {t("sipConfig.sipServerLabel")}
                   </label>
                   <input
                     type="text"
@@ -566,7 +568,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       borderRadius: '6px',
                       fontSize: '14px'
                     }}
-                    placeholder="sip.example.com"
+                    placeholder={t("sipConfig.sipServerPlaceholder")}
                   />
                 </div>
 
@@ -578,7 +580,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     marginBottom: '4px',
                     color: '#333'
                   }}>
-                    Port
+                    {t("sipConfig.portLabel")}
                   </label>
                   <input
                     type="number"
@@ -604,7 +606,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                   marginBottom: '4px',
                   color: '#333'
                 }}>
-                  Username *
+                  {t("sipConfig.usernameLabel")}
                 </label>
                 <input
                   type="text"
@@ -617,7 +619,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     borderRadius: '6px',
                     fontSize: '14px'
                   }}
-                  placeholder="user123"
+                  placeholder={t("sipConfig.usernamePlaceholder")}
                 />
               </div>
 
@@ -630,7 +632,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     marginBottom: '4px',
                     color: '#333'
                   }}>
-                    Realm
+                    {t("sipConfig.realmLabel")}
                   </label>
                   <input
                     type="text"
@@ -643,7 +645,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       borderRadius: '6px',
                       fontSize: '14px'
                     }}
-                    placeholder="example.com"
+                    placeholder={t("sipConfig.realmPlaceholder")}
                   />
                 </div>
 
@@ -655,7 +657,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     marginBottom: '4px',
                     color: '#333'
                   }}>
-                    Proxy
+                    {t("sipConfig.proxyLabel")}
                   </label>
                   <input
                     type="text"
@@ -668,7 +670,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       borderRadius: '6px',
                       fontSize: '14px'
                     }}
-                    placeholder="proxy.example.com"
+                    placeholder={t("sipConfig.proxyPlaceholder")}
                   />
                 </div>
               </div>
@@ -686,7 +688,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                   fontWeight: '600',
                   color: '#333'
                 }}>
-                  WebRTC Settings
+                  {t("sipConfig.webrtcSettings")}
                 </h4>
 
                 <div style={{ display: 'grid', gap: '12px' }}>
@@ -698,7 +700,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                       marginBottom: '4px',
                       color: '#333'
                     }}>
-                      STUN Server
+                      {t("sipConfig.stunServerLabel")}
                     </label>
                     <input
                       type="text"
@@ -711,7 +713,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                         borderRadius: '6px',
                         fontSize: '14px'
                       }}
-                      placeholder="stun:stun.l.google.com:19302"
+                      placeholder={t("sipConfig.stunServerPlaceholder")}
                     />
                   </div>
 
@@ -724,7 +726,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                         marginBottom: '4px',
                         color: '#333'
                       }}>
-                        TURN Server
+                        {t("sipConfig.turnServerLabel")}
                       </label>
                       <input
                         type="text"
@@ -737,7 +739,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                           borderRadius: '6px',
                           fontSize: '14px'
                         }}
-                        placeholder="turn:turn.example.com:3478"
+                        placeholder={t("sipConfig.turnServerPlaceholder")}
                       />
                     </div>
 
@@ -749,7 +751,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                         marginBottom: '4px',
                         color: '#333'
                       }}>
-                        TURN Username
+                        {t("sipConfig.turnUsernameLabel")}
                       </label>
                       <input
                         type="text"
@@ -762,7 +764,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                           borderRadius: '6px',
                           fontSize: '14px'
                         }}
-                        placeholder="turnuser"
+                        placeholder={t("sipConfig.turnUsernamePlaceholder")}
                       />
                     </div>
 
@@ -774,7 +776,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                         marginBottom: '4px',
                         color: '#333'
                       }}>
-                        Max Calls
+                        {t("sipConfig.maxCallsLabel")}
                       </label>
                       <input
                         type="number"
@@ -812,7 +814,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     checked={configForm.is_active}
                     onChange={(e) => updateFormField('is_active', e.target.checked)}
                   />
-                  Active Configuration
+                  {t("sipConfig.activeConfiguration")}
                 </label>
 
                 <label style={{
@@ -829,7 +831,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                     checked={configForm.is_default}
                     onChange={(e) => updateFormField('is_default', e.target.checked)}
                   />
-                  Set as Default
+                  {t("sipConfig.setAsDefault")}
                 </label>
               </div>
             </div>
@@ -857,9 +859,9 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                   opacity: actionLoading === -1 ? 0.6 : 1
                 }}
               >
-                Cancel
+                {t("sipConfig.cancel")}
               </button>
-              
+
               <button
                 onClick={saveConfig}
                 disabled={actionLoading === -1 || !configForm.name || !configForm.sip_server || !configForm.username}
@@ -873,7 +875,7 @@ export default function SipConfigManager({ onConfigChange }: SipConfigManagerPro
                   cursor: (actionLoading === -1 || !configForm.name || !configForm.sip_server || !configForm.username) ? 'not-allowed' : 'pointer'
                 }}
               >
-                {actionLoading === -1 ? '⏳ Saving...' : (editingConfig ? 'Update Configuration' : 'Create Configuration')}
+                {actionLoading === -1 ? t("sipConfig.saving") : (editingConfig ? t("sipConfig.updateConfiguration") : t("sipConfig.createConfiguration"))}
               </button>
             </div>
           </div>

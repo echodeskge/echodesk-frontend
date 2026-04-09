@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useTenant } from '@/contexts/TenantContext';
 import {
   useWhatsAppStatus,
@@ -95,6 +96,7 @@ function formatRemainingTime(seconds: number): string {
 
 // Coexistence Status Section Component
 function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
+  const t = useTranslations('social');
   const [historyPhase, setHistoryPhase] = useState('0-1');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -114,20 +116,20 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
   const handleSyncContacts = async () => {
     try {
       await syncContacts.mutateAsync(account.id);
-      toast.success('Contacts sync initiated. Contacts will be delivered via webhook.');
+      toast.success(t('whatsapp.coexistence.contactsSyncInitiated'));
       refetchCoex();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to sync contacts');
+      toast.error(error.response?.data?.error || t('whatsapp.coexistence.contactsSyncError'));
     }
   };
 
   const handleSyncHistory = async () => {
     try {
       await syncHistory.mutateAsync({ accountId: account.id, phase: historyPhase });
-      toast.success(`History sync initiated for phase ${historyPhase}. Messages will be delivered via webhook.`);
+      toast.success(t('whatsapp.coexistence.historySyncInitiated', { phase: historyPhase }));
       refetchCoex();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to sync history');
+      toast.error(error.response?.data?.error || t('whatsapp.coexistence.historySyncError'));
     }
   };
 
@@ -137,10 +139,10 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
         <Button variant="ghost" size="sm" className="w-full justify-between p-2 h-auto">
           <div className="flex items-center gap-2">
             <Smartphone className="h-4 w-4 text-green-600" />
-            <span className="text-sm font-medium">Business App Coexistence</span>
+            <span className="text-sm font-medium">{t('whatsapp.coexistence.title')}</span>
             {isCoexEnabled && (
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                Enabled
+                {t('whatsapp.coexistence.enabled')}
               </Badge>
             )}
           </div>
@@ -152,30 +154,30 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
           <div className="flex items-center gap-2">
             <Cloud className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">Platform:</span>
-            <span className="font-medium">{localStatus?.platform_type || account.platform_type || 'Cloud API'}</span>
+            <span className="text-muted-foreground">{t('whatsapp.coexistence.platform')}:</span>
+            <span className="font-medium">{localStatus?.platform_type || account.platform_type || t('whatsapp.coexistence.cloudApi')}</span>
           </div>
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">Throughput:</span>
-            <span className="font-medium">{localStatus?.throughput_limit || account.throughput_limit || 80} mps</span>
+            <span className="text-muted-foreground">{t('whatsapp.coexistence.throughput')}:</span>
+            <span className="font-medium">{localStatus?.throughput_limit || account.throughput_limit || 80} {t('whatsapp.coexistence.mps')}</span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">Contacts Synced:</span>
+            <span className="text-muted-foreground">{t('whatsapp.coexistence.contactsSynced')}:</span>
             <span className="font-medium">
               {localStatus?.contacts_synced_at
                 ? new Date(localStatus.contacts_synced_at).toLocaleDateString()
-                : 'Never'}
+                : t('whatsapp.coexistence.never')}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-muted-foreground">History Synced:</span>
+            <span className="text-muted-foreground">{t('whatsapp.coexistence.historySynced')}:</span>
             <span className="font-medium">
               {localStatus?.history_synced_at
                 ? new Date(localStatus.history_synced_at).toLocaleDateString()
-                : 'Never'}
+                : t('whatsapp.coexistence.never')}
             </span>
           </div>
         </div>
@@ -185,7 +187,7 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
           <Alert className="bg-amber-50 border-amber-200">
             <Timer className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
-              <strong>Sync Window Open!</strong> You have {formatRemainingTime(syncWindowRemaining)} remaining to sync contacts and history from your Business App.
+              <strong>{t('whatsapp.coexistence.syncWindowOpen')}</strong> {t('whatsapp.coexistence.syncWindowDescription', { remaining: formatRemainingTime(syncWindowRemaining) })}
             </AlertDescription>
           </Alert>
         )}
@@ -194,7 +196,7 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
           <Alert className="bg-gray-50 border-gray-200">
             <AlertCircle className="h-4 w-4 text-gray-500" />
             <AlertDescription className="text-gray-600">
-              Sync window has expired. Contacts and history can only be synced within 24 hours of onboarding.
+              {t('whatsapp.coexistence.syncWindowExpired')}
             </AlertDescription>
           </Alert>
         )}
@@ -214,7 +216,7 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
               ) : (
                 <Users className="mr-2 h-4 w-4" />
               )}
-              Sync Contacts
+              {t('whatsapp.coexistence.syncContacts')}
             </Button>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -223,9 +225,9 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0-1">Last 24h</SelectItem>
-                  <SelectItem value="1-90">1-90 days</SelectItem>
-                  <SelectItem value="90-180">90-180 days</SelectItem>
+                  <SelectItem value="0-1">{t('whatsapp.coexistence.last24h')}</SelectItem>
+                  <SelectItem value="1-90">{t('whatsapp.coexistence.days1to90')}</SelectItem>
+                  <SelectItem value="90-180">{t('whatsapp.coexistence.days90to180')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -240,7 +242,7 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
                 ) : (
                   <History className="mr-2 h-4 w-4" />
                 )}
-                Sync History
+                {t('whatsapp.coexistence.syncHistory')}
               </Button>
             </div>
           </div>
@@ -251,6 +253,7 @@ function CoexistenceSection({ account }: { account: WhatsAppAccount }) {
 }
 
 export function WhatsAppConnection() {
+  const t = useTranslations('social');
   const { tenant } = useTenant();
 
   // React Query hooks
@@ -269,12 +272,12 @@ export function WhatsAppConnection() {
     const message = urlParams.get('message');
 
     if (whatsappStatus === 'connected') {
-      toast.success(message || 'WhatsApp Business Account connected successfully!');
+      toast.success(message || t('whatsapp.connectedSuccess'));
       refetch();
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (whatsappStatus === 'error') {
-      toast.error(message || 'Failed to connect WhatsApp Business Account');
+      toast.error(message || t('whatsapp.connectedError'));
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     }
@@ -290,21 +293,21 @@ export function WhatsAppConnection() {
       }
     } catch (error: any) {
       console.error('Failed to start WhatsApp OAuth:', error);
-      toast.error(error.response?.data?.error || error.message || 'Failed to start WhatsApp connection');
+      toast.error(error.response?.data?.error || error.message || t('whatsapp.oauthError'));
     }
   };
 
   const handleDisconnect = async (wabaId?: string) => {
-    if (!confirm('Are you sure you want to disconnect this WhatsApp Business Account?')) {
+    if (!confirm(t('whatsapp.confirmDisconnect'))) {
       return;
     }
 
     try {
       await disconnectWhatsApp.mutateAsync(wabaId);
-      toast.success('WhatsApp Business Account disconnected successfully');
+      toast.success(t('whatsapp.disconnectedSuccess'));
     } catch (error: any) {
       console.error('Failed to disconnect WhatsApp:', error);
-      toast.error(error.response?.data?.error || 'Failed to disconnect WhatsApp Business Account');
+      toast.error(error.response?.data?.error || t('whatsapp.disconnectedError'));
     }
   };
 
@@ -334,17 +337,17 @@ export function WhatsAppConnection() {
               <WhatsAppIcon className="h-6 w-6" />
             </div>
             <div>
-              <CardTitle className="text-xl">WhatsApp Business</CardTitle>
+              <CardTitle className="text-xl">{t('whatsapp.title')}</CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
                 {isConnected && status ? (
                   <>
                     <Check className="h-4 w-4 text-green-600" />
-                    <span>{status.accounts_count} account(s) connected</span>
+                    <span>{t('whatsapp.accountsConnected', { count: status.accounts_count })}</span>
                   </>
                 ) : (
                   <>
                     <X className="h-4 w-4 text-muted-foreground" />
-                    <span>Not connected</span>
+                    <span>{t('whatsapp.notConnected')}</span>
                   </>
                 )}
               </CardDescription>
@@ -357,7 +360,7 @@ export function WhatsAppConnection() {
               isConnected && 'bg-green-600 hover:bg-green-700'
             )}
           >
-            {isConnected ? 'Connected' : 'Not Connected'}
+            {isConnected ? t('whatsapp.badgeConnected') : t('whatsapp.badgeNotConnected')}
           </Badge>
         </div>
       </CardHeader>
@@ -373,12 +376,12 @@ export function WhatsAppConnection() {
               {loading || connectWhatsApp.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Connecting...
+                  {t('whatsapp.connecting')}
                 </>
               ) : (
                 <>
                   <WhatsAppIcon className="mr-2 h-4 w-4" />
-                  Connect WhatsApp Business
+                  {t('whatsapp.connectWhatsAppBusiness')}
                 </>
               )}
             </Button>
@@ -392,12 +395,12 @@ export function WhatsAppConnection() {
               {disconnectWhatsApp.isPending ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Disconnecting...
+                  {t('whatsapp.disconnecting')}
                 </>
               ) : (
                 <>
                   <X className="mr-2 h-4 w-4" />
-                  Disconnect All
+                  {t('whatsapp.disconnectAll')}
                 </>
               )}
             </Button>
@@ -406,14 +409,14 @@ export function WhatsAppConnection() {
             <RefreshCw
               className={cn('mr-2 h-4 w-4', loading && 'animate-spin')}
             />
-            Refresh Status
+            {t('whatsapp.refreshStatus')}
           </Button>
         </div>
 
         {/* Connected Accounts List */}
         {status && status.accounts.length > 0 && (
           <div className="space-y-3 pt-4">
-            <h4 className="font-semibold text-sm">Connected Accounts</h4>
+            <h4 className="font-semibold text-sm">{t('whatsapp.connectedAccounts')}</h4>
             {status.accounts.map((account, index) => (
               <div key={account.id}>
                 {index > 0 && <Separator className="my-3" />}
@@ -431,7 +434,7 @@ export function WhatsAppConnection() {
                         {account.quality_rating && (
                           <>
                             <span className="hidden sm:inline">•</span>
-                            <span>Quality: {account.quality_rating}</span>
+                            <span>{t('whatsapp.quality')}: {account.quality_rating}</span>
                           </>
                         )}
                         <span className="hidden sm:inline">•</span>
@@ -445,14 +448,14 @@ export function WhatsAppConnection() {
                   <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
                     {account.coex_enabled && (
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        Coex
+                        {t('whatsapp.coex')}
                       </Badge>
                     )}
                     <Badge
                       variant={account.is_active ? 'default' : 'secondary'}
                       className={account.is_active ? 'bg-green-600' : ''}
                     >
-                      {account.is_active ? 'Active' : 'Inactive'}
+                      {account.is_active ? t('whatsapp.active') : t('whatsapp.inactive')}
                     </Badge>
                     {account.is_active && (
                       <Button
@@ -460,7 +463,7 @@ export function WhatsAppConnection() {
                         size="sm"
                         onClick={() => handleDisconnect(account.waba_id)}
                       >
-                        Disconnect
+                        {t('whatsapp.disconnect')}
                       </Button>
                     )}
                   </div>
@@ -477,9 +480,7 @@ export function WhatsAppConnection() {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Note:</strong> You need to have a WhatsApp Business Account to
-              use this integration. The connection will use Facebook Embedded Signup
-              for a seamless setup experience.
+              <strong>{t('whatsapp.setupNote')}</strong> {t('whatsapp.setupDescription')}
             </AlertDescription>
           </Alert>
         )}

@@ -45,8 +45,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileText, Plus, Download, Send, Eye, Copy, Trash2 } from "lucide-react";
 import { InvoiceStatusBadge } from "@/components/invoices/InvoiceStatusBadge";
-import { CreateInvoiceSheet } from "@/components/invoices/CreateInvoiceSheet";
-import { SendInvoiceDialog } from "@/components/invoices/SendInvoiceDialog";
+import dynamic from "next/dynamic";
+const CreateInvoiceSheet = dynamic(
+  () => import("@/components/invoices/CreateInvoiceSheet").then(m => ({ default: m.CreateInvoiceSheet })),
+  { ssr: false }
+);
+const SendInvoiceDialog = dynamic(
+  () => import("@/components/invoices/SendInvoiceDialog").then(m => ({ default: m.SendInvoiceDialog })),
+  { ssr: false }
+);
 import { useToast } from "@/hooks/use-toast";
 import type { InvoiceFilters } from "@/services/invoiceService";
 

@@ -199,7 +199,7 @@ export function useFacebookMessages(filters?: {
       );
       return response.data;
     },
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 30000, // Auto-refresh every 30 seconds (WebSocket handles real-time)
     enabled: options?.enabled ?? true,
   });
 }
@@ -230,7 +230,7 @@ export function useInfiniteFacebookMessages(filters?: {
       return undefined;
     },
     initialPageParam: 1,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 30000, // Auto-refresh every 30 seconds (WebSocket handles real-time)
   });
 }
 
@@ -338,7 +338,7 @@ export function useInstagramMessages(filters?: {
       );
       return response.data;
     },
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 30000, // Auto-refresh every 30 seconds (WebSocket handles real-time)
     enabled: options?.enabled ?? true,
   });
 }
@@ -369,7 +369,7 @@ export function useInfiniteInstagramMessages(filters?: {
       return undefined;
     },
     initialPageParam: 1,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 30000, // Auto-refresh every 30 seconds (WebSocket handles real-time)
   });
 }
 
@@ -438,7 +438,7 @@ export function useWhatsAppMessages(filters?: {
       );
       return response.data;
     },
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 30000, // Auto-refresh every 30 seconds (WebSocket handles real-time)
     enabled: options?.enabled ?? true,
   });
 }
@@ -469,7 +469,7 @@ export function useInfiniteWhatsAppMessages(filters?: {
       return undefined;
     },
     initialPageParam: 1,
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
+    refetchInterval: 30000, // Auto-refresh every 30 seconds (WebSocket handles real-time)
   });
 }
 
@@ -1744,7 +1744,7 @@ export function useTikTokMessages(filters?: {
       return response.data;
     },
     enabled: false, // Disabled until messaging is available
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 }
 

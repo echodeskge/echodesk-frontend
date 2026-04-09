@@ -8,7 +8,7 @@ import {
   PaginatedUserList,
   UserUpdate,
 } from "@/api/generated/interfaces";
-import * as api from "@/api/generated/api";
+import { usersPartialUpdate, usersSendNewPasswordCreate, bookingsAdminStaffCreate, usersBulkActionCreate } from "@/api/generated/api";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/api/useUsers";
 
@@ -116,7 +116,7 @@ export default function UserManagement() {
 
   const handleChangeUserStatus = async (userId: number, status: string) => {
     try {
-      await api.usersPartialUpdate(userId, { status: status as any });
+      await usersPartialUpdate(userId, { status: status as any });
       // React Query will auto-invalidate and refetch
     } catch (err: any) {
       alert(
@@ -137,7 +137,7 @@ export default function UserManagement() {
 
     setSendPasswordLoading(true);
     try {
-      await api.usersSendNewPasswordCreate(selectedUserForPassword.id, {} as any);
+      await usersSendNewPasswordCreate(selectedUserForPassword.id, {} as any);
       alert(t("sendNewPasswordSuccess"));
       setShowSendPasswordModal(false);
       setSelectedUserForPassword(null);
@@ -153,12 +153,12 @@ export default function UserManagement() {
   const handleToggleStaff = async (userId: number, isStaff: boolean) => {
     try {
       // Update user's is_staff field
-      await api.usersPartialUpdate(userId, { is_staff: isStaff } as any);
+      await usersPartialUpdate(userId, { is_staff: isStaff } as any);
 
       if (isStaff) {
         // Create BookingStaff record when enabling staff
         try {
-          await api.bookingsAdminStaffCreate({
+          await bookingsAdminStaffCreate({
             user_id: userId,
             is_active_for_bookings: true,
           } as any);
@@ -192,7 +192,7 @@ export default function UserManagement() {
         ...additionalData,
       };
 
-      await api.usersBulkActionCreate(bulkActionData);
+      await usersBulkActionCreate(bulkActionData);
       setSelectedUsers([]);
       // React Query will auto-invalidate and refetch
     } catch (err: any) {

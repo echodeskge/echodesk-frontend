@@ -14,6 +14,7 @@ import {
   Board,
 } from "../api/generated/interfaces";
 import { Spinner } from "@/components/ui/spinner";
+import { useTranslations } from "next-intl";
 
 interface StatusManagementProps {
   onStatusChange?: () => void;
@@ -22,6 +23,7 @@ interface StatusManagementProps {
 const StatusManagement: React.FC<StatusManagementProps> = ({
   onStatusChange,
 }) => {
+  const t = useTranslations("tickets");
   const [columns, setColumns] = useState<TicketColumn[]>([]);
   const [boards, setBoards] = useState<Board[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
@@ -55,7 +57,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
         setSelectedBoard(defaultBoard);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load boards");
+      setError(err instanceof Error ? err.message : t("statusManagement.failedToLoadBoards"));
     }
   };
 
@@ -70,7 +72,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
       const data = await columnsList(selectedBoard.id);
       setColumns(data.results || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t("statusManagement.errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -146,7 +148,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           board: selectedBoard?.id!,
         };
         await columnsUpdate(editingColumn.id, updateData);
-        setSuccess("Column updated successfully!");
+        setSuccess(t("statusManagement.columnUpdated"));
       } else {
         // Create new column - include board reference
         const createData: TicketColumnCreate = {
@@ -160,7 +162,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           board: selectedBoard?.id!,
         };
         await columnsCreate(createData);
-        setSuccess("Column created successfully!");
+        setSuccess(t("statusManagement.columnCreated"));
       }
 
       // Refresh columns list
@@ -176,14 +178,14 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
         closeDialog();
       }, 1000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t("statusManagement.errorOccurred"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (column: TicketColumn) => {
-    if (!confirm(`Are you sure you want to delete the "${column.name}" column?`)) {
+    if (!confirm(t("statusManagement.confirmDelete", { columnName: column.name }))) {
       return;
     }
 
@@ -192,7 +194,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
 
     try {
       await columnsDestroy(column.id);
-      setSuccess("Column deleted successfully!");
+      setSuccess(t("statusManagement.columnDeleted"));
 
       // Refresh columns list
       await fetchColumns();
@@ -202,7 +204,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
         onStatusChange();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : t("statusManagement.errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -226,7 +228,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           marginBottom: "20px",
         }}
       >
-        <h2 style={{ margin: 0, color: "#333" }}>Ticket Status Management</h2>
+        <h2 style={{ margin: 0, color: "#333" }}>{t("statusManagement.title")}</h2>
         <button
           onClick={openCreateDialog}
           style={{
@@ -241,7 +243,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           }}
           disabled={!selectedBoard}
         >
-          + Create Status
+          {t("statusManagement.createStatus")}
         </button>
       </div>
 
@@ -256,7 +258,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
             color: "#333",
           }}
         >
-          Select Board:
+          {t("statusManagement.selectBoard")}
         </label>
         <select
           value={selectedBoard?.id || ""}
@@ -273,16 +275,16 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
             backgroundColor: "white",
           }}
         >
-          <option value="">Select a board...</option>
+          <option value="">{t("statusManagement.selectBoardPlaceholder")}</option>
           {boards.map((board) => (
             <option key={board.id} value={board.id}>
-              {board.name} {board.is_default ? "(Default)" : ""}
+              {board.name} {board.is_default ? `(${t("statusManagement.default")})` : ""}
             </option>
           ))}
         </select>
         {selectedBoard && (
           <p style={{ marginTop: "4px", fontSize: "12px", color: "#666" }}>
-            Managing statuses for "{selectedBoard.name}" board
+            {t("statusManagement.managingStatusesFor", { boardName: selectedBoard.name })}
           </p>
         )}
       </div>
@@ -322,11 +324,11 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px", color: "#6c757d" }}>
-            Loading columns...
+            {t("statusManagement.loadingColumns")}
           </div>
         ) : columns.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px", color: "#6c757d" }}>
-            No ticket columns found. Create your first status column!
+            {t("statusManagement.noColumnsFound")}
           </div>
         ) : (
           columns.map((column) => (
@@ -385,7 +387,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      DEFAULT
+                      {t("statusManagement.defaultBadge")}
                     </span>
                   )}
                   {column.is_closed_status && (
@@ -399,7 +401,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      CLOSED
+                      {t("statusManagement.closedBadge")}
                     </span>
                   )}
                   {column.track_time && (
@@ -413,7 +415,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                         fontWeight: "600",
                       }}
                     >
-                      ⏱️ TIME TRACK
+                      {t("statusManagement.timeTrackBadge")}
                     </span>
                   )}
                 </div>
@@ -424,7 +426,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     color: "#6c757d",
                   }}
                 >
-                  {column.description || "No description"}
+                  {column.description || t("statusManagement.noDescription")}
                 </p>
                 <div
                   style={{
@@ -433,10 +435,10 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     marginTop: "4px",
                   }}
                 >
-                  Position: {column.position} | Color: {column.color}
+                  {t("statusManagement.position")} {column.position} | {t("statusManagement.color")} {column.color}
                   {column.board && (
                     <span style={{ marginLeft: "8px" }}>
-                      | Board ID: {column.board}
+                      | {t("statusManagement.boardId")} {column.board}
                     </span>
                   )}
                 </div>
@@ -456,7 +458,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     fontSize: "12px",
                   }}
                 >
-                  Edit
+                  {t("statusManagement.edit")}
                 </button>
                 <button
                   onClick={() => handleDelete(column)}
@@ -470,7 +472,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     fontSize: "12px",
                   }}
                 >
-                  Delete
+                  {t("statusManagement.delete")}
                 </button>
               </div>
             </div>
@@ -515,7 +517,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
               }}
             >
               <h3 style={{ margin: 0, color: "#333" }}>
-                {editingColumn ? "Edit Status Column" : "Create Status Column"}
+                {editingColumn ? t("statusManagement.editStatusColumn") : t("statusManagement.createStatusColumn")}
               </h3>
               <button
                 onClick={closeDialog}
@@ -543,7 +545,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     color: "#333",
                   }}
                 >
-                  Name *
+                  {t("statusManagement.nameLabel")}
                 </label>
                 <input
                   type="text"
@@ -558,7 +560,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     fontSize: "14px",
                     boxSizing: "border-box",
                   }}
-                  placeholder="Enter status name (e.g., 'In Progress')"
+                  placeholder={t("statusManagement.namePlaceholder")}
                 />
               </div>
 
@@ -573,7 +575,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     color: "#333",
                   }}
                 >
-                  Description
+                  {t("statusManagement.descriptionLabel")}
                 </label>
                 <textarea
                   value={formData.description}
@@ -588,7 +590,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     resize: "vertical",
                     boxSizing: "border-box",
                   }}
-                  placeholder="Optional description for this status"
+                  placeholder={t("statusManagement.descriptionPlaceholder")}
                 />
               </div>
 
@@ -603,7 +605,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     color: "#333",
                   }}
                 >
-                  Position
+                  {t("statusManagement.positionLabel")}
                 </label>
                 <input
                   type="number"
@@ -632,7 +634,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     color: "#333",
                   }}
                 >
-                  Color
+                  {t("statusManagement.colorLabel")}
                 </label>
                 <div
                   style={{
@@ -678,7 +680,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                       style={{ cursor: "pointer" }}
                     />
                     <span style={{ fontSize: "14px", color: "#333" }}>
-                      Default status for new tickets
+                      {t("statusManagement.defaultStatusCheckbox")}
                     </span>
                   </label>
                 </div>
@@ -699,7 +701,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                       style={{ cursor: "pointer" }}
                     />
                     <span style={{ fontSize: "14px", color: "#333" }}>
-                      This is a closed/completed status
+                      {t("statusManagement.closedStatusCheckbox")}
                     </span>
                   </label>
                 </div>
@@ -720,7 +722,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                       style={{ cursor: "pointer" }}
                     />
                     <span style={{ fontSize: "14px", color: "#333" }}>
-                      Track time spent in this column
+                      {t("statusManagement.trackTimeCheckbox")}
                     </span>
                   </label>
                 </div>
@@ -747,7 +749,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                     fontSize: "14px",
                   }}
                 >
-                  Cancel
+                  {t("statusManagement.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -763,7 +765,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
                   }}
                 >
                   {loading && <Spinner className="mr-2 size-4" />}
-                  {loading ? "Saving..." : editingColumn ? "Update" : "Create"}
+                  {loading ? t("statusManagement.saving") : editingColumn ? t("statusManagement.update") : t("statusManagement.create")}
                 </button>
               </div>
             </form>

@@ -14,7 +14,12 @@ import { ChatSidebarActionButtons } from "./chat-sidebar-action-buttons"
 import { ChatSidebarSearchInput } from "./chat-sidebar-search-input"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useEmailFolders, useEmailStatus } from "@/hooks/api/useSocial"
-import { ComposeEmailDialog } from "@/components/email/ComposeEmailDialog"
+import dynamic from "next/dynamic"
+
+const ComposeEmailDialog = dynamic(
+  () => import("@/components/email/ComposeEmailDialog").then(m => ({ default: m.ComposeEmailDialog })),
+  { ssr: false }
+)
 
 export function ChatSidebarHeader() {
   const {
