@@ -30,6 +30,7 @@ export default function CallsPage() {
     handleEndCall,
     handleToggleHold,
     handleToggleMute,
+    sendDTMF,
     error,
     loading,
   } = useCall();
@@ -88,6 +89,7 @@ export default function CallsPage() {
                 </CardContent>
               </Card>
             ) : activeCall ? (
+              <>
               <ActiveCallDisplay
                 phoneNumber={activeCall.number}
                 direction={activeCall.direction}
@@ -101,6 +103,17 @@ export default function CallsPage() {
                 onToggleHold={handleToggleHold}
                 onToggleMute={handleToggleMute}
               />
+              {activeCall.status === "active" && (
+                <DialPad
+                  value={dialNumber}
+                  onChange={setDialNumber}
+                  onCall={() => {}}
+                  disabled={false}
+                  dtmfMode
+                  onDTMF={sendDTMF}
+                />
+              )}
+            </>
             ) : (
               <DialPad
                 value={dialNumber}

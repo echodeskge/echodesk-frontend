@@ -11,6 +11,8 @@ interface DialPadProps {
   onChange: (value: string) => void;
   onCall: () => void;
   disabled?: boolean;
+  dtmfMode?: boolean;
+  onDTMF?: (tone: string) => void;
 }
 
 const DIAL_PAD_KEYS = [
@@ -20,11 +22,16 @@ const DIAL_PAD_KEYS = [
   ["*", "0", "#"],
 ];
 
-export function DialPad({ value, onChange, onCall, disabled }: DialPadProps) {
+export function DialPad({ value, onChange, onCall, disabled, dtmfMode, onDTMF }: DialPadProps) {
   const t = useTranslations("calls");
 
   const handleKeyPress = (key: string) => {
-    onChange(value + key);
+    if (dtmfMode && onDTMF) {
+      onDTMF(key);
+      onChange(value + key);
+    } else {
+      onChange(value + key);
+    }
   };
 
   const handleDelete = () => {

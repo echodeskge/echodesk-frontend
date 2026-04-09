@@ -209,7 +209,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
   }
 
   // Register with SIP server
-  private async register(): Promise<void> {
+  async register(): Promise<void> {
     if (!this.userAgent) {
       throw new Error('UserAgent not initialized');
     }
@@ -449,6 +449,89 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     } catch (error) {
       console.error('Failed to reject call:', error);
       throw error;
+    }
+  }
+
+  // Toggle mute (local audio track)
+  toggleMute(): boolean {
+    if (!this.currentSession) return false;
+
+    const sdh = this.currentSession.sessionDescriptionHandler;
+    if (!sdh) return false;
+
+    const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+    if (!pc) return false;
+
+    const senders = pc.getSenders();
+    const audioSender = senders.find(s => s.track?.kind === 'audio');
+    if (audioSender?.track) {
+      audioSender.track.enabled = !audioSender.track.enabled;
+      return !audioSender.track.enabled; // true = muted
+    }
+    return false;
+  }
+
+  // Toggle hold (re-INVITE with sendonly/sendrecv)
+  async toggleHold(hold: boolean): Promise<void> {
+    if (!this.currentSession || this.currentSession.state !== SessionState.Established) {
+      throw new Error('No active call to hold/resume');
+    }
+
+    try {
+      const options = {
+        sessionDescriptionHandlerModifiers: hold
+          ? [(sdp: any) => {
+              // Change audio direction to sendonly (hold)
+              sdp.body = sdp.body?.replace(/a=sendrecv/g, 'a=sendonly') || sdp.body;
+              return sdp;
+            }]
+          : [] // Empty modifiers = sendrecv (resume)
+      };
+
+      await (this.currentSession as any).invite(options);
+    } catch (error) {
+      console.error('Failed to toggle hold:', error);
+      throw error;
+    }
+  }
+
+  // Send DTMF tone
+  sendDTMF(tone: string): boolean {
+    if (!this.currentSession || this.currentSession.state !== SessionState.Established) {
+      return false;
+    }
+
+    try {
+      const sdh = this.currentSession.sessionDescriptionHandler;
+      if (!sdh) return false;
+
+      const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+      if (!pc) return false;
+
+      const senders = pc.getSenders();
+      const audioSender = senders.find(s => s.track?.kind === 'audio');
+      if (audioSender && audioSender.dtmf) {
+        audioSender.dtmf.insertDTMF(tone, 100, 70);
+        return true;
+      }
+
+      // Fallback: send via SIP INFO
+      if (this.currentSession.state === SessionState.Established) {
+        (this.currentSession as any).info({
+          requestOptions: {
+            body: {
+              contentType: 'application/dtmf-relay',
+              body: `Signal=${tone}\r\nDuration=100`,
+            },
+          },
+        });
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Failed to send DTMF:', error);
+      return false;
     }
   }
 

@@ -62,6 +62,7 @@ export interface CallContextValue {
   setIsDialpadOpen: (open: boolean) => void;
   toggleDialpad: () => void;
   callEndedCounter: number;
+  sendDTMF: (tone: string) => boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,6 +95,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
   const audioContextRef = useRef<AudioContext | null>(null);
   const ringtoneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isRingtonePlayingRef = useRef<boolean>(false);
@@ -190,11 +192,27 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setSipRegistered(true);
           setSipConnecting(false);
           setError('');
+          reconnectAttemptsRef.current = 0;
         });
 
         sipService.on('onUnregistered', () => {
           setSipRegistered(false);
           setSipConnecting(false);
+
+          // Auto-reconnect with backoff (only if no active call)
+          if (!activeCallRef.current) {
+            const retryCount = (reconnectAttemptsRef.current || 0) + 1;
+            reconnectAttemptsRef.current = retryCount;
+            if (retryCount <= 3) {
+              const delay = retryCount * 5000; // 5s, 10s, 15s
+              console.log(`SIP disconnected, retrying in ${delay / 1000}s (attempt ${retryCount}/3)`);
+              setTimeout(() => {
+                if (activeSipConfigRef.current && sipServiceRef.current) {
+                  sipServiceRef.current.register?.().catch(() => {});
+                }
+              }, delay);
+            }
+          }
         });
 
         sipService.on('onRegistrationFailed', (err) => {
@@ -407,16 +425,31 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [stopRingtone]);
 
-  const handleToggleHold = useCallback(() => {
-    // TODO: Implement hold functionality
+  const handleToggleHold = useCallback(async () => {
+    if (!sipServiceRef.current || !activeCallRef.current) return;
+    const current = activeCallRef.current;
+    const newHoldState = !current.isOnHold;
+    try {
+      await sipServiceRef.current.toggleHold(newHoldState);
+      setActiveCall(prev => prev ? { ...prev, isOnHold: newHoldState } : null);
+    } catch (err) {
+      console.error('Failed to toggle hold:', err);
+    }
   }, []);
 
   const handleToggleMute = useCallback(() => {
-    // TODO: Implement mute functionality
+    if (!sipServiceRef.current) return;
+    const isMuted = sipServiceRef.current.toggleMute();
+    setActiveCall(prev => prev ? { ...prev, isMuted } : null);
   }, []);
 
   const toggleDialpad = useCallback(() => {
     setIsDialpadOpen((prev) => !prev);
+  }, []);
+
+  const sendDTMF = useCallback((tone: string): boolean => {
+    if (!sipServiceRef.current) return false;
+    return sipServiceRef.current.sendDTMF(tone);
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -505,6 +538,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsDialpadOpen,
     toggleDialpad,
     callEndedCounter,
+    sendDTMF,
   };
 
   return (

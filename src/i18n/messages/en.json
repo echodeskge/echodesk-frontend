@@ -659,7 +659,11 @@
       "initiated": "Initiated",
       "unknownNumber": "Unknown Number",
       "loading": "Loading call history...",
-      "ringing": "Ringing"
+      "ringing": "Ringing",
+      "searchPlaceholder": "Search by phone number...",
+      "allDirections": "All Directions",
+      "callBack": "Call back",
+      "loadMore": "Load More"
     },
     "dialPad": {
       "enterNumber": "Enter phone number",

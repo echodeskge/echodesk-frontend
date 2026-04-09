@@ -28,6 +28,7 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
     handleEndCall,
     handleToggleHold,
     handleToggleMute,
+    sendDTMF,
     error,
   } = useCall();
 
@@ -80,19 +81,33 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
           )}
 
           {activeCall ? (
-            <ActiveCallDisplay
-              phoneNumber={activeCall.number}
-              direction={activeCall.direction}
-              status={activeCall.status as "ringing" | "connecting" | "active" | "ending"}
-              duration={callDuration}
-              isOnHold={activeCall.isOnHold}
-              isMuted={activeCall.isMuted}
-              onAccept={handleAcceptCall}
-              onReject={handleRejectCall}
-              onEndCall={handleEndCall}
-              onToggleHold={handleToggleHold}
-              onToggleMute={handleToggleMute}
-            />
+            <>
+              <ActiveCallDisplay
+                phoneNumber={activeCall.number}
+                direction={activeCall.direction}
+                status={activeCall.status as "ringing" | "connecting" | "active" | "ending"}
+                duration={callDuration}
+                isOnHold={activeCall.isOnHold}
+                isMuted={activeCall.isMuted}
+                onAccept={handleAcceptCall}
+                onReject={handleRejectCall}
+                onEndCall={handleEndCall}
+                onToggleHold={handleToggleHold}
+                onToggleMute={handleToggleMute}
+              />
+              {activeCall.status === "active" && (
+                <div className="mt-3 border-t pt-3">
+                  <DialPad
+                    value={dialNumber}
+                    onChange={setDialNumber}
+                    onCall={() => {}}
+                    disabled={false}
+                    dtmfMode
+                    onDTMF={sendDTMF}
+                  />
+                </div>
+              )}
+            </>
           ) : (
             <DialPad
               value={dialNumber}

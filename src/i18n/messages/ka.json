@@ -659,7 +659,11 @@
       "initiated": "დაწყებული",
       "unknownNumber": "უცნობი ნომერი",
       "loading": "ზარების ისტორიის ჩატვირთვა...",
-      "ringing": "რეკავს"
+      "ringing": "რეკავს",
+      "searchPlaceholder": "მოძებნეთ ტელეფონის ნომრით...",
+      "allDirections": "ყველა მიმართულება",
+      "callBack": "გადარეკვა",
+      "loadMore": "მეტის ჩატვირთვა"
     },
     "dialPad": {
       "enterNumber": "შეიყვანეთ ტელეფონის ნომერი",
