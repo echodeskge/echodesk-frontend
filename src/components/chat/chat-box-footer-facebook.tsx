@@ -9,8 +9,8 @@ import { useAuth } from "@/contexts/AuthContext"
 import {
   useAssignmentStatus,
   useAssignChat,
-  type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
+import { parseChatId } from "@/lib/chatUtils"
 import { CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { TextMessageFormFacebook } from "./text-message-form-facebook"
@@ -19,42 +19,7 @@ interface ChatBoxFooterFacebookProps {
   onMessageSent?: () => void;
 }
 
-// Helper to parse chat ID into platform, account_id, and conversation_id
-function parseChatId(chatId: string, platform?: string) {
-  const parts = chatId.split('_')
-  const prefix = parts[0]
-
-  // Handle email platform: email_{connection_id}_{thread_id}
-  if (prefix === 'email' || platform === 'email') {
-    if (parts.length < 3) return null
-    return {
-      platform: 'email' as ChatAssignmentPlatform,
-      accountId: parts[1], // connection_id
-      conversationId: parts.slice(2).join('_'), // thread_id
-    }
-  }
-
-  // Other platforms require at least 3 parts
-  if (parts.length < 3) return null
-
-  const accountId = parts[1]
-  const conversationId = parts.slice(2).join('_')
-
-  let parsedPlatform: ChatAssignmentPlatform
-  if (platform) {
-    parsedPlatform = platform as ChatAssignmentPlatform
-  } else if (prefix === 'fb') {
-    parsedPlatform = 'facebook'
-  } else if (prefix === 'ig') {
-    parsedPlatform = 'instagram'
-  } else if (prefix === 'wa') {
-    parsedPlatform = 'whatsapp'
-  } else {
-    return null
-  }
-
-  return { platform: parsedPlatform, accountId, conversationId }
-}
+// parseChatId imported from shared utility
 
 export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookProps) {
   const { chatState, setAssignmentTab, showArchived, selectedChatId } = useChatContext()

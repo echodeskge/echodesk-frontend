@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { useMemo, useState, useEffect, useRef } from "react"
+import DOMPurify from "dompurify"
 import type { MessageType } from "@/components/chat/types"
 import axios from "@/api/axios"
 
@@ -131,9 +132,16 @@ export function MessageBubbleContent({
   // For emails with HTML body, render as HTML to preserve signatures and formatting
   const isEmail = message.platform === 'email' || platform === 'email'
 
-  // Process email HTML to ensure images respect their width/height attributes
+  // Process email HTML: sanitize for XSS and ensure images respect their width/height attributes
   const processedBodyHtml = useMemo(
-    () => isEmail && message.bodyHtml ? processEmailHtml(message.bodyHtml) : message.bodyHtml,
+    () => {
+      if (!isEmail || !message.bodyHtml) return message.bodyHtml
+      const sanitized = DOMPurify.sanitize(processEmailHtml(message.bodyHtml), {
+        ADD_TAGS: ['style'],
+        ADD_ATTR: ['target', 'style'],
+      })
+      return sanitized
+    },
     [isEmail, message.bodyHtml]
   )
 

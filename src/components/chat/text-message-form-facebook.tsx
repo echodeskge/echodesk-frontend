@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Send, ChevronDown, ChevronUp, X, Reply, Paperclip, FileText, Mic } from "lucide-react"
+import { Send, ChevronDown, ChevronUp, X, Reply, Paperclip, FileText } from "lucide-react"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
 import type { TextMessageFormType } from "@/components/chat/types"
@@ -43,7 +43,7 @@ function formatFileSize(bytes: number): string {
 }
 
 export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebookProps) {
-  const { chatState, replyingTo, setReplyingTo, reloadChatMessages } = useChatContext()
+  const { chatState, replyingTo, setReplyingTo, reloadChatMessages, selectedChatId } = useChatContext()
   const { user } = useAuth()
   const [isSending, setIsSending] = useState(false)
   const [showCcBcc, setShowCcBcc] = useState(false)
@@ -53,19 +53,24 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Derive current chat from selectedChatId to avoid drift with selectedChat
+  const selectedChat = useMemo(() => {
+    if (!selectedChatId) return null
+    return chatState.chats.find((c) => c.id === selectedChatId) ?? null
+  }, [chatState.chats, selectedChatId])
+
   // Check if current chat is email
-  const isEmailPlatform = chatState.selectedChat?.platform === 'email' ||
-    chatState.selectedChat?.id?.startsWith('email_')
+  const isEmailPlatform = selectedChat?.platform === 'email' ||
+    selectedChat?.id?.startsWith('email_')
 
   // WhatsApp template support
-  const isWhatsApp = chatState.selectedChat?.platform === 'whatsapp'
+  const isWhatsApp = selectedChat?.platform === 'whatsapp'
   const sendTemplate = useSendWhatsAppTemplateMessage()
 
   const handleTemplateSelect = async (
     template: WhatsAppMessageTemplate,
     parameters: Record<string, string>
   ) => {
-    const selectedChat = chatState.selectedChat
     if (!selectedChat) return
 
     try {
@@ -90,11 +95,11 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   useEffect(() => {
     setReplyingTo(null)
     setAttachedFiles([])
-  }, [chatState.selectedChat?.id, setReplyingTo])
+  }, [selectedChatId, setReplyingTo])
 
   // Typing indicator WebSocket
   const { notifyTyping, sendTypingStop } = useTypingWebSocket({
-    conversationId: chatState.selectedChat?.id,
+    conversationId: selectedChat?.id,
   })
 
   const form = useForm<TextMessageFormType>({
@@ -166,7 +171,6 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   }
 
   const sendMessage = async (messageText: string) => {
-    const selectedChat = chatState.selectedChat
     if (!selectedChat) return
 
     const chatIdParts = selectedChat.id.split('_')
@@ -321,7 +325,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   }
 
   const onSubmit = async (data: TextMessageFormType) => {
-    if (!chatState.selectedChat) return
+    if (!selectedChat) return
     setIsSending(true)
     try {
       await sendMessage(data.text)
@@ -356,7 +360,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
   // Handle sending files-only (no text)
   const handleSendFilesOnly = async () => {
-    if (attachedFiles.length === 0 || !chatState.selectedChat) return
+    if (attachedFiles.length === 0 || !selectedChat) return
     setIsSending(true)
     try {
       await sendMessage('')
@@ -432,7 +436,6 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
 
   // Get platform for quick reply filtering
   const getPlatform = (): QuickReplyPlatform => {
-    const selectedChat = chatState.selectedChat
     if (!selectedChat) return 'all'
     return (selectedChat.platform as QuickReplyPlatform) || 'all'
   }
@@ -564,7 +567,7 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
           <QuickReplySelector
             platform={getPlatform()}
             onSelect={handleQuickReplySelect}
-            customerName={chatState.selectedChat?.name}
+            customerName={selectedChat?.name}
             agentName={user?.first_name || user?.email}
           />
           <EmojiPicker
@@ -604,17 +607,6 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
               }
             />
           )}
-
-          {/* Mic button */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 flex-shrink-0"
-            aria-label="Send a voice message"
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
 
           <FormField
             control={form.control}

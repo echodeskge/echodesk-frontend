@@ -22,8 +22,8 @@ import {
   useArchiveConversation,
   useUnarchiveConversation,
   socialKeys,
-  type ChatAssignmentPlatform,
 } from "@/hooks/api/useSocial"
+import { parseChatId } from "@/lib/chatUtils"
 import { useUsers } from "@/hooks/api/useUsers"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
 import { useSocialClientByAccount } from "@/hooks/api/useSocialClients"
@@ -58,36 +58,7 @@ interface ChatHeaderActionsProps {
   onSearchClick?: () => void
 }
 
-// Helper to parse chat ID into platform, account_id, and conversation_id
-function parseChatId(chatId: string, platform?: string) {
-  // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{from_number}, email_{conn_id}_{thread_id}
-  const parts = chatId.split('_')
-
-  const prefix = parts[0]
-
-  // All platforms now have the same format: prefix_{account_id}_{conversation_id}
-  if (parts.length < 3) return null
-
-  const accountId = parts[1]
-  const conversationId = parts.slice(2).join('_')
-
-  let parsedPlatform: ChatAssignmentPlatform
-  if (platform) {
-    parsedPlatform = platform as ChatAssignmentPlatform
-  } else if (prefix === 'fb') {
-    parsedPlatform = 'facebook'
-  } else if (prefix === 'ig') {
-    parsedPlatform = 'instagram'
-  } else if (prefix === 'wa') {
-    parsedPlatform = 'whatsapp'
-  } else if (prefix === 'email') {
-    parsedPlatform = 'email'
-  } else {
-    return null
-  }
-
-  return { platform: parsedPlatform, accountId, conversationId }
-}
+// parseChatId imported from shared utility
 
 export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: ChatHeaderActionsProps) {
   const pathname = usePathname()
