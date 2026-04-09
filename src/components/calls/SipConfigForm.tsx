@@ -43,7 +43,7 @@ export function SipConfigForm({
   };
 
   const isValid =
-    configForm.name && configForm.sip_server && configForm.username;
+    configForm.name && configForm.sip_server && configForm.username && (configForm as any).password;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -94,14 +94,27 @@ export function SipConfigForm({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="username">{t("settings.username")} *</Label>
-            <Input
-              id="username"
-              value={configForm.username || ""}
-              onChange={(e) => updateFormField("username", e.target.value)}
-              placeholder="user123"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">{t("settings.username")} *</Label>
+              <Input
+                id="username"
+                value={configForm.username || ""}
+                onChange={(e) => updateFormField("username", e.target.value)}
+                placeholder="user123"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">{t("settings.password")} *</Label>
+              <Input
+                id="password"
+                type="password"
+                value={(configForm as any).password || ""}
+                onChange={(e) => updateFormField("password", e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -124,6 +137,19 @@ export function SipConfigForm({
                 placeholder="proxy.example.com"
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="websocket_path">{t("settings.websocketPath")}</Label>
+            <Input
+              id="websocket_path"
+              value={(configForm as any).websocket_path || "/ws"}
+              onChange={(e) => updateFormField("websocket_path", e.target.value)}
+              placeholder="/ws"
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("settings.websocketPathHint")}
+            </p>
           </div>
 
           {/* WebRTC Configuration */}

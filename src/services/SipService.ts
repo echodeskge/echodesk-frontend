@@ -110,44 +110,8 @@ export class SipService {
   private getWebSocketUrl(sipConfig: SipConfigurationDetail): string {
     const isSecure = window.location.protocol === 'https:';
     const wsProtocol = isSecure ? 'wss' : 'ws';
-
-    // VitalPBX specific configuration (SSL domain)
-    if (sipConfig.sip_server === 'pbx.echodesk.ge') {
-      // VitalPBX with SSL uses standard HTTPS port with /ws path
-      return `wss://pbx.echodesk.ge:8089/ws`;
-    }
-
-    // VitalPBX specific configuration (IP address - fallback)
-    if (sipConfig.sip_server === '165.227.166.42') {
-      // VitalPBX uses /ws path on WebSocket port
-      return `wss://165.227.166.42:8089/ws`;
-    }
-
-    // Default WebSocket path for different servers
-    let wsPath = '';
-    let port = sipConfig.sip_port;
-    const server = sipConfig.sip_server.toLowerCase();
-
-    if (server.includes('vitalpbx') || server.includes('echodesk.ge')) {
-      wsPath = '/ws';
-      port = port || (isSecure ? 8089 : 8088);
-    } else if (server.includes('asterisk') || server.includes('freepbx') || server.includes('issabel')) {
-      wsPath = '/ws';
-      port = port || (isSecure ? 8089 : 8088);
-    } else if (server.includes('freeswitch')) {
-      wsPath = '/';
-      port = port || (isSecure ? 7443 : 5066);
-    } else if (server.includes('opensips') || server.includes('kamailio')) {
-      wsPath = '/ws';
-      port = port || (isSecure ? 443 : 80);
-    } else if (server.includes('3cx')) {
-      wsPath = '/webclient';
-      port = port || (isSecure ? 5001 : 5000);
-    } else {
-      // Default path for unknown WebRTC servers
-      wsPath = '/ws';
-      port = port || (isSecure ? 8089 : 8088);
-    }
+    const port = sipConfig.sip_port || (isSecure ? 8089 : 8088);
+    const wsPath = (sipConfig as any).websocket_path || '/ws';
 
     return `${wsProtocol}://${sipConfig.sip_server}:${port}${wsPath}`;
   }

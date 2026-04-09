@@ -633,7 +633,9 @@
         "delete": "SIP კონფიგურაციის წაშლა ვერ მოხერხდა",
         "setDefault": "ნაგულისხმევი SIP კონფიგურაციის დაყენება ვერ მოხერხდა",
         "testFailed": "კავშირის ტესტი ვერ მოხერხდა"
-      }
+      },
+      "websocketPath": "WebSocket-ის გზა",
+      "websocketPathHint": "SIP სერვერზე WebSocket კავშირის გზა (მაგ., /ws)"
     },
     "logs": {
       "title": "ზარების ჟურნალი",

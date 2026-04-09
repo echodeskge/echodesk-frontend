@@ -633,7 +633,9 @@
         "delete": "Failed to delete SIP configuration",
         "setDefault": "Failed to set default SIP configuration",
         "testFailed": "Connection test failed"
-      }
+      },
+      "websocketPath": "WebSocket Path",
+      "websocketPathHint": "The path on the SIP server for WebSocket connections (e.g., /ws)"
     },
     "logs": {
       "title": "Call Logs",
