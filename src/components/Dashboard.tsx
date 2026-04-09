@@ -15,7 +15,7 @@ import { useBoards } from "@/hooks/useBoards";
 import BoardSwitcher from "./BoardSwitcher";
 import { TicketCreateProvider } from "@/contexts/TicketCreateContext";
 import { TicketCreateSheet } from "./TicketCreateSheet";
-import CallManager from "./CallManager";
+// CallManager removed — calls now use global CallProvider + /calls page
 import UserManagement from "./UserManagement";
 import TenantGroupManagement from "./TenantGroupManagement";
 import SocialIntegrations from "./SocialIntegrations";
@@ -286,13 +286,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
               />
             )}
 
-            {currentView === "calls" && (
-              <CallManager
-                onCallStatusChange={(isActive) => {
-                  // Call status changed
-                }}
-              />
-            )}
+            {/* Calls now use /calls page with global CallProvider */}
 
             {currentView === "orders" && <OrderManagement />}
 

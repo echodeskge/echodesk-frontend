@@ -1,7 +1,9 @@
 "use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-import UserManagement from "@/components/UserManagement";
-
-export default function UsersPage() {
-  return <UserManagement />;
+export default function UsersRedirect() {
+  const router = useRouter();
+  useEffect(() => { router.replace("/settings/users"); }, [router]);
+  return null;
 }

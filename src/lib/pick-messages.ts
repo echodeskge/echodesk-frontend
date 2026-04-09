@@ -13,6 +13,7 @@ export const GLOBAL_NAMESPACES = [
   'notifications',
   'notFound',
   'subscription',
+  'calls',
 ];
 
 /**

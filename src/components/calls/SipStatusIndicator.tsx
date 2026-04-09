@@ -10,6 +10,7 @@ interface SipStatusIndicatorProps {
   isConnecting?: boolean;
   sipServer?: string;
   extension?: string;
+  compact?: boolean;
 }
 
 export function SipStatusIndicator({
@@ -17,8 +18,33 @@ export function SipStatusIndicator({
   isConnecting,
   sipServer,
   extension,
+  compact,
 }: SipStatusIndicatorProps) {
   const t = useTranslations("calls");
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2">
+        {isConnecting ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+        ) : isRegistered ? (
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+        ) : (
+          <XCircle className="h-3.5 w-3.5 text-destructive" />
+        )}
+        <Badge
+          variant={isConnecting ? "secondary" : isRegistered ? "default" : "destructive"}
+          className="text-xs"
+        >
+          {isConnecting
+            ? t("dashboard.connecting")
+            : isRegistered
+            ? `${t("dashboard.registered")}${extension ? ` (${extension})` : ""}`
+            : t("dashboard.disconnected")}
+        </Badge>
+      </div>
+    );
+  }
 
   return (
     <Card>

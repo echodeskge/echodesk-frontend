@@ -32,26 +32,6 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     icon: "Phone",
     requiredFeatureKey: "ip_calling",
     isPremium: true,
-    children: [
-      {
-        id: "calls/dashboard",
-        icon: "LayoutDashboard",
-        requiredFeatureKey: "ip_calling",
-        isPremium: true,
-      },
-      {
-        id: "calls/logs",
-        icon: "History",
-        requiredFeatureKey: "ip_calling",
-        isPremium: true,
-      },
-      {
-        id: "calls/settings",
-        icon: "Settings",
-        requiredFeatureKey: "ip_calling",
-        isPremium: true,
-      },
-    ],
   },
   {
     id: "ecommerce",
@@ -95,12 +75,6 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,
       },
-      {
-        id: "ecommerce/settings",
-        icon: "Settings",
-        requiredFeatureKey: "ecommerce_crm",
-        isPremium: true,
-      },
     ],
   },
   {
@@ -136,12 +110,6 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
       {
         id: "bookings/staff",
         icon: "UserCheck",
-        requiredFeatureKey: "booking_management",
-        isPremium: true,
-      },
-      {
-        id: "bookings/settings",
-        icon: "Settings",
         requiredFeatureKey: "booking_management",
         isPremium: true,
       },
@@ -189,33 +157,13 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         requiredFeatureKey: "leave_management",
         isPremium: true,
       },
-      {
-        id: "leave/settings",
-        icon: "Settings",
-        requiredFeatureKey: "leave_management",
-        isPremium: true,
-      },
     ],
   },
   {
-    id: "invoices",
+    id: "invoices/invoices",
     icon: "FileText",
     requiredFeatureKey: "invoice_management",
     isPremium: true,
-    children: [
-      {
-        id: "invoices/invoices",
-        icon: "FileText",
-        requiredFeatureKey: "invoice_management",
-        isPremium: true,
-      },
-      {
-        id: "invoices/settings",
-        icon: "Settings",
-        requiredFeatureKey: "invoice_management",
-        isPremium: true,
-      },
-    ],
   },
   {
     id: "social/messages",
@@ -229,56 +177,14 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     requiredFeatureKey: "social_integrations",
     isPremium: true,
   },
-  {
-    id: "users",
-    icon: "Users",
-    requiredFeatureKey: "user_management",
-  },
-  {
-    id: "groups",
-    icon: "UsersRound",
-    requiredFeatureKey: "user_management",
-  },
+  // users and groups moved to /settings/users and /settings/groups
   {
     id: "social/clients",
     icon: "UserRound",
     requiredFeatureKey: "social_integrations",
     isPremium: true,
   },
-  {
-    id: "social",
-    icon: "Share2",
-    requiredFeatureKey: "social_integrations",
-    isPremium: true,
-    staffOnly: true, // Only admin/staff can see social media settings
-    children: [
-      {
-        id: "social/connections",
-        icon: "Link",
-        requiredFeatureKey: "social_integrations",
-        isPremium: true,
-      },
-      {
-        id: "social/settings",
-        icon: "Settings",
-        requiredFeatureKey: "social_integrations",
-        isPremium: true,
-      },
-      {
-        id: "social/auto-posting",
-        icon: "Sparkles",
-        requiredFeatureKey: "social_integrations",
-        isPremium: true,
-      },
-      {
-        id: "social/rating-statistics",
-        icon: "BarChart3",
-        requiredFeatureKey: "social_integrations",
-        isPremium: true,
-        staffOnly: true,
-      },
-    ],
-  },
+  // social/connections, auto-posting, rating-statistics moved to /settings/social
   {
     id: "settings",
     icon: "Settings",
@@ -315,6 +221,46 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         icon: "Shield",
         requiredFeatureKey: "settings",
         staffOnly: true,
+      },
+      {
+        id: "settings/social",
+        icon: "MessageSquare",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/calls",
+        icon: "Phone",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/ecommerce",
+        icon: "ShoppingBag",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/invoices",
+        icon: "Receipt",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/bookings",
+        icon: "Calendar",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/leave",
+        icon: "CalendarDays",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/users",
+        icon: "Users",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/groups",
+        icon: "UsersRound",
+        requiredFeatureKey: "settings",
       },
     ],
   },

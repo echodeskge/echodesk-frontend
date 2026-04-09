@@ -72,6 +72,7 @@ import { LockedFeatureBadge } from "@/components/subscription/LockedFeatureBadge
 import { Lock } from "lucide-react"
 import Image from "next/image"
 import { useUnreadMessagesCount } from "@/hooks/api/useSocial"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 // Icon mapping for menu items (lucide-react icon names)
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -145,6 +146,7 @@ export function AppSidebar({
   onMenuClick,
   onLogout
 }: AppSidebarProps) {
+  const isMobile = useIsMobile()
   // Get unread counts for sidebar badges
   const { data: unreadCount } = useUnreadMessagesCount()
   const emailUnread = unreadCount?.email ?? 0
@@ -187,9 +189,10 @@ export function AppSidebar({
             <SidebarMenu>
               {visibleMenuItems.map((item) => {
                 const IconComponent = iconMap[item.icon as keyof typeof iconMap]
-                const isActive = currentView === item.id
+                const isActive = currentView === item.id || (item.id === 'settings' && currentView.startsWith('settings/'))
                 const isLocked = item.isLocked || false
-                const hasChildren = item.children && item.children.length > 0
+                // On desktop, settings uses its own internal sidebar — don't expand children here
+                const hasChildren = item.children && item.children.length > 0 && !(item.id === 'settings' && !isMobile)
 
                 // Check if any child is active
                 const isChildActive = hasChildren && item.children!.some(child => currentView === child.id)

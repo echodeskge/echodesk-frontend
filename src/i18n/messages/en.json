@@ -143,8 +143,24 @@
       "timeTracking": "View your time tracking data",
       "userStatistics": "View time tracking statistics for all users",
       "reportBug": "Report a bug to the EchoDesk team",
-      "help": "Access tutorials, guides and documentation"
-    }
+      "help": "Access tutorials, guides and documentation",
+      "settingsSocial": "Social media integration settings",
+      "settingsCalls": "SIP calling configuration",
+      "settingsEcommerce": "E-commerce store settings",
+      "settingsInvoices": "Invoice configuration",
+      "settingsBookings": "Booking system settings",
+      "settingsLeave": "Leave management settings",
+      "settingsUsers": "Manage users and permissions",
+      "settingsGroups": "Manage user groups"
+    },
+    "settingsSocial": "Social Settings",
+    "settingsCalls": "Calls Settings",
+    "settingsEcommerce": "E-Commerce Settings",
+    "settingsInvoices": "Invoice Settings",
+    "settingsBookings": "Booking Settings",
+    "settingsLeave": "Leave Settings",
+    "settingsUsers": "Users",
+    "settingsGroups": "Groups"
   },
   "bugReport": {
     "title": "Report a Bug",
@@ -565,7 +581,10 @@
       "active": "Active",
       "ending": "Ending",
       "mute": "Mute",
-      "unmute": "Unmute"
+      "unmute": "Unmute",
+      "loadingConfig": "Loading SIP configuration...",
+      "noConfig": "No SIP configuration found. Please configure SIP settings.",
+      "configureSip": "Configure SIP"
     },
     "settings": {
       "title": "SIP Settings",
@@ -636,7 +655,8 @@
       "transferred": "Transferred",
       "ended": "Ended",
       "initiated": "Initiated",
-      "unknownNumber": "Unknown Number"
+      "unknownNumber": "Unknown Number",
+      "loading": "Loading call history..."
     },
     "dialPad": {
       "enterNumber": "Enter phone number",
@@ -1058,6 +1078,25 @@
           "storageUsed": "Storage Used"
         }
       }
+    },
+    "nav": {
+      "general": "General",
+      "appearance": "Appearance",
+      "social": "Social & Messaging",
+      "calls": "Calls & SIP",
+      "ecommerce": "E-Commerce",
+      "invoices": "Invoices",
+      "bookings": "Bookings",
+      "leave": "Leave Management",
+      "itemLists": "Item Lists",
+      "ticketForms": "Ticket Forms",
+      "subscription": "Subscription",
+      "security": "Security",
+      "socialConnections": "Connections",
+      "autoPosting": "Auto-Posting",
+      "ratingStatistics": "Rating Statistics",
+      "users": "Users",
+      "groups": "Groups"
     }
   },
   "users": {
@@ -3129,6 +3168,38 @@
       "days": "days",
       "none": "None",
       "confirmDelete": "Are you sure you want to delete this leave type?"
+    },
+    "settings": {
+      "title": "Leave Settings",
+      "subtitle": "Configure leave management system settings",
+      "approvalWorkflow": "Approval Workflow",
+      "approvalWorkflowDesc": "Configure the approval process for leave requests",
+      "requireManagerApproval": "Require Manager Approval",
+      "requireManagerApprovalDesc": "Leave requests must be approved by the employee's manager",
+      "requireHrApproval": "Require HR Approval",
+      "requireHrApprovalDesc": "Leave requests must be approved by HR after manager approval",
+      "leaveBalance": "Leave Balance",
+      "leaveBalanceDesc": "Configure how leave balances are managed",
+      "allowNegativeBalance": "Allow Negative Balance",
+      "allowNegativeBalanceDesc": "Allow employees to take leave in advance",
+      "maxNegativeDays": "Maximum Negative Balance (Days)",
+      "maxNegativeDaysDesc": "Maximum days an employee can go into negative balance",
+      "workingDays": "Working Days",
+      "workingDaysDesc": "Configure working days for leave calculations",
+      "workingDaysPerWeek": "Working Days Per Week",
+      "weekendDays": "Weekend Days",
+      "weekendDaysDesc": "Select which days are considered weekends (non-working days)",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "saving": "Saving...",
+      "saveSettings": "Save Settings",
+      "savedSuccess": "Settings saved successfully!",
+      "savedError": "Failed to save settings"
     }
   }
 }

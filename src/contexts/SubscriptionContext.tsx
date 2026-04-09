@@ -13,6 +13,7 @@ export type SubscriptionFeature =
   | 'facebook_integration'
   | 'instagram_integration'
   | 'whatsapp_integration'
+  | 'social_integrations'
   | 'advanced_analytics'
   | 'api_access'
   | 'custom_integrations'
@@ -20,6 +21,9 @@ export type SubscriptionFeature =
   | 'dedicated_account_manager'
   | 'ecommerce_crm'
   | 'order_management'
+  | 'booking_management'
+  | 'leave_management'
+  | 'invoice_management'
   | 'user_management'
   | 'settings';
 
@@ -44,6 +48,7 @@ export interface SubscriptionFeatures {
   facebook_integration: boolean;
   instagram_integration: boolean;
   whatsapp_integration: boolean;
+  social_integrations: boolean;
   advanced_analytics: boolean;
   api_access: boolean;
   custom_integrations: boolean;
@@ -51,6 +56,9 @@ export interface SubscriptionFeatures {
   dedicated_account_manager: boolean;
   ecommerce_crm: boolean;
   order_management: boolean;
+  booking_management: boolean;
+  leave_management: boolean;
+  invoice_management: boolean;
   user_management: boolean;
   settings: boolean;
 }

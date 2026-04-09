@@ -36,10 +36,12 @@ const BoardStatusEditor = dynamic(() => import("@/components/BoardStatusEditor")
 const BoardUserManager = dynamic(() => import("@/components/BoardUserManager"), { ssr: false });
 const BoardCreateSheet = dynamic(() => import("@/components/BoardCreateSheet").then(m => ({ default: m.BoardCreateSheet })), { ssr: false });
 const TeamChatWidget = dynamic(() => import("@/components/TeamChat").then(m => ({ default: m.TeamChatWidget })), { ssr: false });
+const DialpadWidget = dynamic(() => import("@/components/calls/DialpadWidget"), { ssr: false });
 import {
   SubscriptionProvider,
   useSubscription,
 } from "@/contexts/SubscriptionContext";
+import { CallProvider } from "@/contexts/CallContext";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { getNotificationSound } from "@/utils/notificationSound";
 import { useSocialSettings } from "@/hooks/api/useSocial";
@@ -277,6 +279,14 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "settings/ticket-forms": "settingsTicketForms",
     "settings/subscription": "settingsSubscription",
     "settings/security": "settingsSecurity",
+    "settings/social": "settingsSocial",
+    "settings/calls": "settingsCalls",
+    "settings/ecommerce": "settingsEcommerce",
+    "settings/invoices": "settingsInvoices",
+    "settings/bookings": "settingsBookings",
+    "settings/leave": "settingsLeave",
+    "settings/users": "settingsUsers",
+    "settings/groups": "settingsGroups",
     "report-bug": "reportBug",
     help: "help",
   };
@@ -393,7 +403,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
     // Build the base route ID to check (e.g., "ecommerce/orders" or "tickets")
     // For nested parents, use first two segments; for others, use first segment
-    const nestedParents = ["ecommerce", "calls", "bookings", "leave", "invoices", "social"];
+    const nestedParents = ["ecommerce", "bookings", "leave", "invoices", "social"];
     const baseRouteId = pathParts.length > 1 && nestedParents.includes(pathParts[0])
       ? `${pathParts[0]}/${pathParts[1]}`
       : pathParts[0];
@@ -542,7 +552,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const pathParts = pathname.split("/").filter(Boolean);
   // For nested routes like /ecommerce/orders or /calls/logs, use the full path
   // For top-level routes like /tickets, use just the first segment
-  const nestedRouteParents = ["ecommerce", "calls", "bookings", "leave", "invoices", "social", "email"];
+  const nestedRouteParents = ["ecommerce", "bookings", "leave", "invoices", "social", "email"];
   const currentView = pathParts.length > 1 && nestedRouteParents.includes(pathParts[0])
     ? `${pathParts[0]}/${pathParts[1]}`  // ecommerce/orders, calls/logs, etc.
     : pathParts[0] || "tickets";         // tickets
@@ -745,6 +755,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
         onClose={handleCloseUserManager}
       />
 
+      {/* Floating Dialpad Widget (above Team Chat) */}
+      {userProfile?.id && <DialpadWidget />}
+
       {/* Team Chat Widget */}
       {userProfile?.id && (
         <TeamChatWidget currentUserId={userProfile.id} />
@@ -760,13 +773,15 @@ export default function TenantLayout({
 }) {
   return (
     <SubscriptionProvider>
-      <TicketCreateProvider>
-        <BugReportProvider>
-          <BoardProvider>
-            <TenantLayoutContent>{children}</TenantLayoutContent>
-          </BoardProvider>
-        </BugReportProvider>
-      </TicketCreateProvider>
+      <CallProvider>
+        <TicketCreateProvider>
+          <BugReportProvider>
+            <BoardProvider>
+              <TenantLayoutContent>{children}</TenantLayoutContent>
+            </BoardProvider>
+          </BugReportProvider>
+        </TicketCreateProvider>
+      </CallProvider>
     </SubscriptionProvider>
   );
 }
