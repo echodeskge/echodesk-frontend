@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { SipConfigForm } from "@/components/calls/SipConfigForm";
 import { SipConfigList } from "@/components/calls/SipConfigList";
+import { UserPhoneAssignments } from "@/components/calls/UserPhoneAssignments";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
@@ -316,6 +317,15 @@ export default function CallSettingsPage() {
             actionLoading={actionLoading}
           />
         )}
+
+        {/* User Phone Assignments per SIP Config */}
+        {sipConfigs.map((config) => (
+          <UserPhoneAssignments
+            key={config.id}
+            sipConfigId={config.id}
+            sipConfigName={config.name}
+          />
+        ))}
 
         {/* Configuration Modal */}
         <SipConfigForm

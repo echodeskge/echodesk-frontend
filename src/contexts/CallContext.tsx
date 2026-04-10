@@ -328,9 +328,29 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loadSipConfiguration = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await sipConfigurationsList();
 
-      const defaultConfig = response.results.find((c) => c.is_default);
+      // Try user's personal phone assignment first
+      try {
+        const { default: axios } = await import('@/api/axios');
+        const myConfigRes = await axios.get('/api/sip-configurations/my_config/');
+        const myConfig = myConfigRes.data;
+
+        if (myConfig && myConfig.sip_configuration) {
+          // User has a personal assignment — use their extension credentials
+          const sipConfig = myConfig.sip_configuration;
+          // Override username/password with the user's extension credentials
+          sipConfig.username = myConfig.extension;
+          sipConfig.password = myConfig.extension_password;
+          setActiveSipConfig(sipConfig);
+          return;
+        }
+      } catch {
+        // No personal assignment, fall back to default config
+      }
+
+      // Fallback: use default SIP config
+      const response = await sipConfigurationsList();
+      const defaultConfig = response.results.find((c: any) => c.is_default);
       if (!defaultConfig) {
         setError('No default SIP configuration found. Please configure SIP settings.');
         setLoading(false);
