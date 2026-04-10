@@ -85,6 +85,7 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
             <>
               <ActiveCallDisplay
                 phoneNumber={activeCall.number}
+                callerName={activeCall.callerName}
                 direction={activeCall.direction}
                 status={activeCall.status as "ringing" | "connecting" | "active" | "ending"}
                 duration={callDuration}

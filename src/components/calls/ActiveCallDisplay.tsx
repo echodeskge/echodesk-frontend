@@ -33,6 +33,7 @@ interface ActiveCallDisplayProps {
   direction: "incoming" | "outgoing";
   status: "ringing" | "connecting" | "active" | "ending";
   duration: number;
+  callerName?: string;
   isOnHold?: boolean;
   isMuted?: boolean;
   onEndCall: () => void;
@@ -45,6 +46,7 @@ interface ActiveCallDisplayProps {
 
 export function ActiveCallDisplay({
   phoneNumber,
+  callerName,
   direction,
   status,
   duration,
@@ -133,7 +135,8 @@ export function ActiveCallDisplay({
             </AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <p className="text-2xl font-semibold">{phoneNumber}</p>
+            {callerName && <p className="text-lg font-semibold">{callerName}</p>}
+            <p className={callerName ? "text-sm text-muted-foreground" : "text-2xl font-semibold"}>{phoneNumber}</p>
             {status === "active" && (
               <p className="text-lg text-muted-foreground mt-2">
                 {formatDuration(duration)}

@@ -35,6 +35,7 @@ export interface ActiveCall {
   id: string;
   logId: number;
   number: string;
+  callerName?: string;
   direction: 'incoming' | 'outgoing';
   status: CallStatus;
   startTime?: Date;
@@ -247,6 +248,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               id: invitation.id,
               logId: logResponse.id,
               number: phoneNumber,
+              callerName: (logResponse as any).client_name || undefined,
               direction: 'incoming',
               status: 'ringing',
               duration: 0,

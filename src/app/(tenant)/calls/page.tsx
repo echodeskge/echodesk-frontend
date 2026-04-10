@@ -103,6 +103,7 @@ export default function CallsPage() {
               <>
               <ActiveCallDisplay
                 phoneNumber={activeCall.number}
+                callerName={activeCall.callerName}
                 direction={activeCall.direction}
                 status={activeCall.status as "ringing" | "connecting" | "active" | "ending"}
                 duration={callDuration}

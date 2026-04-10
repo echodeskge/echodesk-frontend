@@ -19,7 +19,9 @@ export function IncomingCallNotification() {
             <Phone className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold">Incoming Call</p>
+            <p className="text-sm font-semibold">
+              {activeCall.callerName || "Incoming Call"}
+            </p>
             <p className="text-sm text-muted-foreground">{activeCall.number}</p>
           </div>
         </div>
