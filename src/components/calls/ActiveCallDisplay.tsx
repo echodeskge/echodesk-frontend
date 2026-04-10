@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import axios from "@/api/axios";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import {
   Phone,
@@ -57,24 +58,28 @@ export function ActiveCallDisplay({
   onTransfer,
 }: ActiveCallDisplayProps) {
   const t = useTranslations("calls");
+  const { user } = useAuth();
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferNumber, setTransferNumber] = useState("");
   const [transferMode, setTransferMode] = useState<"agent" | "external">("agent");
-  const [agents, setAgents] = useState<Array<{ id: number; name: string; extension: string; phone: string }>>([]);
+  const [agents, setAgents] = useState<Array<{ id: number; userId: number; name: string; extension: string; phone: string }>>([]);
 
   useEffect(() => {
     if (showTransfer && agents.length === 0) {
-      axios.get("/api/phone-assignments/").then(res => {
+      axios.get("/api/phone-assignments/?is_active=true").then(res => {
         const data = res.data.results || res.data || [];
-        setAgents(data.map((a: any) => ({
+        // Exclude current user's own extension
+        const filtered = data.filter((a: any) => a.user !== user?.id);
+        setAgents(filtered.map((a: any) => ({
           id: a.id,
+          userId: a.user,
           name: a.user_name || `Ext ${a.extension}`,
           extension: a.extension,
           phone: a.phone_number,
         })));
       }).catch(() => {});
     }
-  }, [showTransfer]);
+  }, [showTransfer, user?.id]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

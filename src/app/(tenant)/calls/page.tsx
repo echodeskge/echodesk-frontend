@@ -8,6 +8,7 @@ import { ActiveCallDisplay } from "@/components/calls/ActiveCallDisplay";
 import { SipStatusIndicator } from "@/components/calls/SipStatusIndicator";
 import { CallHistory } from "@/components/calls/CallHistory";
 import { useCall } from "@/contexts/CallContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,8 @@ import { AlertCircle, Settings } from "lucide-react";
 export default function CallsPage() {
   const t = useTranslations("calls");
   const router = useRouter();
+  const { user } = useAuth();
+  const isAdmin = user?.is_staff || user?.is_superuser;
   const {
     activeCall,
     callDuration,
@@ -45,14 +48,16 @@ export default function CallsPage() {
             <h1 className="text-2xl font-bold tracking-tight">{t("dashboard.title")}</h1>
             <p className="text-sm text-muted-foreground">{t("dashboard.subtitle")}</p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/settings/calls")}
-          >
-            <Settings className="h-4 w-4 mr-1" />
-            {t("settings.title")}
-          </Button>
+          {isAdmin && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/settings/calls")}
+            >
+              <Settings className="h-4 w-4 mr-1" />
+              {t("settings.title")}
+            </Button>
+          )}
         </div>
 
         {/* Error */}
@@ -67,12 +72,14 @@ export default function CallsPage() {
         <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
           {/* Left: Dialpad area — fixed width, self-aligned to top */}
           <div className="w-full md:w-[340px] md:min-w-[340px] md:max-w-[340px] space-y-4 flex-shrink-0">
-            <SipStatusIndicator
-              isRegistered={sipRegistered}
-              isConnecting={sipConnecting}
-              sipServer={activeSipConfig?.sip_server}
-              extension={activeSipConfig?.username}
-            />
+            {isAdmin && (
+              <SipStatusIndicator
+                isRegistered={sipRegistered}
+                isConnecting={sipConnecting}
+                sipServer={activeSipConfig?.sip_server}
+                extension={activeSipConfig?.username}
+              />
+            )}
 
             {loading ? (
               <Card>
@@ -84,10 +91,12 @@ export default function CallsPage() {
               <Card>
                 <CardContent className="p-8 text-center space-y-4">
                   <p className="text-muted-foreground">{t("dashboard.noConfig")}</p>
-                  <Button onClick={() => router.push("/settings/calls")}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    {t("dashboard.configureSip")}
-                  </Button>
+                  {isAdmin && (
+                    <Button onClick={() => router.push("/settings/calls")}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      {t("dashboard.configureSip")}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ) : activeCall ? (
