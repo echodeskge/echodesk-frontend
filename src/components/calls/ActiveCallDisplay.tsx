@@ -62,13 +62,22 @@ export function ActiveCallDisplay({
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferNumber, setTransferNumber] = useState("");
   const [transferMode, setTransferMode] = useState<"agent" | "external">("agent");
-  const [agents, setAgents] = useState<Array<{ id: number; userId: number; name: string; extension: string; phone: string }>>([]);
+  const [agents, setAgents] = useState<Array<{ id: number; userId: number; name: string; extension: string; phone: string; online: boolean }>>([]);
 
   useEffect(() => {
     if (showTransfer && agents.length === 0) {
-      axios.get("/api/phone-assignments/?is_active=true").then(res => {
-        const data = res.data.results || res.data || [];
-        // Exclude current user's own extension
+      // Fetch assignments and online status in parallel
+      Promise.all([
+        axios.get("/api/phone-assignments/?is_active=true"),
+        axios.get("/api/extensions/status/").catch(() => ({ data: { extensions: [] } })),
+      ]).then(([assignRes, statusRes]) => {
+        const data = assignRes.data.results || assignRes.data || [];
+        const onlineExts = new Set(
+          (statusRes.data.extensions || [])
+            .filter((e: any) => e.status === "online")
+            .map((e: any) => e.extension)
+        );
+
         const filtered = data.filter((a: any) => a.user !== user?.id);
         setAgents(filtered.map((a: any) => ({
           id: a.id,
@@ -76,6 +85,7 @@ export function ActiveCallDisplay({
           name: a.user_name || `Ext ${a.extension}`,
           extension: a.extension,
           phone: a.phone_number,
+          online: onlineExts.has(a.extension),
         })));
       }).catch(() => {});
     }
@@ -216,13 +226,15 @@ export function ActiveCallDisplay({
                           variant="outline"
                           size="sm"
                           className="w-full justify-start text-xs"
+                          disabled={!agent.online}
                           onClick={() => {
                             onTransfer(agent.extension);
                             setShowTransfer(false);
                           }}
                         >
-                          <PhoneForwarded className="h-3 w-3 mr-2" />
+                          <span className={`h-2 w-2 rounded-full mr-2 flex-shrink-0 ${agent.online ? "bg-green-500" : "bg-gray-300"}`} />
                           {agent.name} (ext {agent.extension})
+                          {!agent.online && <span className="ml-auto text-muted-foreground">{t("dashboard.offline")}</span>}
                         </Button>
                       ))}
                     </div>

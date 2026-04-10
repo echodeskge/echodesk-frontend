@@ -67,6 +67,8 @@ export interface CallContextValue {
   callEndedCounter: number;
   sendDTMF: (tone: string) => boolean;
   transferCall: (targetNumber: string) => Promise<void>;
+  missedCall: { number: string; time: Date } | null;
+  clearMissedCall: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +97,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const [isDialpadOpen, setIsDialpadOpen] = useState(false);
   const [callEndedCounter, setCallEndedCounter] = useState(0);
+  const [missedCall, setMissedCall] = useState<{ number: string; time: Date } | null>(null);
 
   // ---- Refs ----
   const sipServiceRef = useRef<SipService | null>(null);
@@ -283,6 +286,12 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           stopRingtone();
 
           const current = activeCallRef.current;
+
+          // Detect missed call: incoming + never answered (still ringing)
+          if (current && current.direction === 'incoming' && current.status === 'ringing') {
+            setMissedCall({ number: current.number, time: new Date() });
+          }
+
           if (current) {
             try {
               await callLogsEndCallCreate(current.logId, {
@@ -478,6 +487,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return sipServiceRef.current.sendDTMF(tone);
   }, []);
 
+  const clearMissedCall = useCallback(() => setMissedCall(null), []);
+
   const transferCall = useCallback(async (targetNumber: string) => {
     if (!sipServiceRef.current) throw new Error('No SIP service');
     await sipServiceRef.current.transferCall(targetNumber);
@@ -585,6 +596,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     callEndedCounter,
     sendDTMF,
     transferCall,
+    missedCall,
+    clearMissedCall,
   };
 
   return (

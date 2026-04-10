@@ -588,7 +588,8 @@
       "transferTo": "Transfer to...",
       "noAgents": "No agents with phone assignments",
       "transferToNumber": "Transfer to external number",
-      "transferToAgent": "Transfer to agent"
+      "transferToAgent": "Transfer to agent",
+      "offline": "offline"
     },
     "settings": {
       "title": "SIP Settings",

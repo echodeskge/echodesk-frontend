@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { Phone } from "lucide-react";
+import { Phone, PhoneMissed, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { useCall } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -19,6 +20,9 @@ export default function DialpadWidget() {
     isDialpadOpen,
     toggleDialpad,
     setIsDialpadOpen,
+    missedCall,
+    clearMissedCall,
+    setDialNumber,
   } = useCall();
 
   // Check user's group-level feature keys (same as sidebar uses userProfile)
@@ -45,6 +49,36 @@ export default function DialpadWidget() {
     <>
       {/* Incoming call notification (renders at top-right on any page) */}
       <IncomingCallNotification />
+
+      {/* Missed call notification */}
+      {missedCall && (
+        <div className="fixed top-4 right-4 z-[60] animate-in slide-in-from-top-2 duration-300">
+          <div className="bg-background border-2 border-red-500 rounded-lg shadow-2xl p-4 w-72">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <PhoneMissed className="h-5 w-5 text-red-500" />
+                <p className="text-sm font-semibold">Missed Call</p>
+              </div>
+              <button onClick={clearMissedCall} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-2">{missedCall.number}</p>
+            <Button
+              size="sm"
+              className="w-full bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                setDialNumber(missedCall.number);
+                setIsDialpadOpen(true);
+                clearMissedCall();
+              }}
+            >
+              <Phone className="h-4 w-4 mr-1" />
+              Call Back
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Floating phone icon button — positioned above TeamChat (bottom: 24 + 56 + 12 = 92px) */}
       <div
