@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, RefreshCw, Search, Star } from "lucide-react";
 import { format } from "date-fns";
-import { callLogsList } from "@/api/generated/api";
+import axios from "@/api/axios";
 import { useCall } from "@/contexts/CallContext";
 
 interface CallLog {
@@ -52,12 +52,17 @@ export function CallHistory() {
   const fetchCallLogs = useCallback(async (pageNum = 1, append = false) => {
     try {
       if (!append) setLoading(true);
-      const params: Record<string, string> = { page: String(pageNum), page_size: "5" };
-      if (search) params.search = search;
-      if (statusFilter !== "all") params.status = statusFilter;
-      if (directionFilter !== "all") params.direction = directionFilter;
+      // Use axios directly for full filter support
+      const params = new URLSearchParams();
+      params.set("ordering", "-started_at");
+      params.set("page", String(pageNum));
+      params.set("page_size", "5");
+      if (search) params.set("search", search);
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (directionFilter !== "all") params.set("direction", directionFilter);
 
-      const data = await callLogsList(params as any);
+      const response = await axios.get(`/api/call-logs/?${params.toString()}`);
+      const data = response.data;
       const results = (data as any).results || (data as any) || [];
       const next = (data as any).next;
       const count = (data as any).count || results.length;
