@@ -690,7 +690,10 @@
       "searchPlaceholder": "მოძებნეთ ტელეფონის ნომრით...",
       "allDirections": "ყველა მიმართულება",
       "callBack": "გადარეკვა",
-      "loadMore": "მეტის ჩატვირთვა"
+      "loadMore": "მეტის ჩატვირთვა",
+      "addNote": "შენიშვნა",
+      "viewNotes": "შენიშვნები",
+      "notesPlaceholder": "დაამატეთ ზარის შენიშვნები..."
     },
     "dialPad": {
       "enterNumber": "შეიყვანეთ ტელეფონის ნომერი",

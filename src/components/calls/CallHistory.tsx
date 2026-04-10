@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, RefreshCw, Search, Star } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, Search, Star, MessageSquare, Check } from "lucide-react";
 import { format } from "date-fns";
 import axios from "@/api/axios";
 import { useCall } from "@/contexts/CallContext";
@@ -33,6 +34,7 @@ interface CallLog {
   duration_display: string | null;
   handled_by_name: string | null;
   call_quality_score: number | null;
+  notes: string;
   client_name: string | null;
   sip_config_name: string | null;
 }
@@ -48,6 +50,8 @@ export function CallHistory() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [editingNotesId, setEditingNotesId] = useState<number | null>(null);
+  const [notesText, setNotesText] = useState("");
 
   const fetchCallLogs = useCallback(async (pageNum = 1, append = false) => {
     try {
@@ -85,6 +89,16 @@ export function CallHistory() {
   useEffect(() => {
     fetchCallLogs(1);
   }, [callEndedCounter, search, statusFilter, directionFilter, fetchCallLogs]);
+
+  const handleSaveNotes = async (logId: number) => {
+    try {
+      await axios.patch(`/api/call-logs/${logId}/`, { notes: notesText });
+      setCallLogs(prev => prev.map(l => l.id === logId ? { ...l, notes: notesText } : l));
+      setEditingNotesId(null);
+    } catch (err) {
+      console.error("Failed to save notes:", err);
+    }
+  };
 
   const handleClickToCall = (phoneNumber: string) => {
     setDialNumber(phoneNumber);
@@ -236,7 +250,44 @@ export function CallHistory() {
                         ))}
                       </span>
                     )}
+                    {/* Notes toggle */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 px-1.5 text-xs"
+                      onClick={() => {
+                        if (editingNotesId === log.id) {
+                          setEditingNotesId(null);
+                        } else {
+                          setEditingNotesId(log.id);
+                          setNotesText(log.notes || "");
+                        }
+                      }}
+                    >
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      {log.notes ? t("logs.viewNotes") : t("logs.addNote")}
+                    </Button>
                   </div>
+
+                  {/* Notes editor */}
+                  {editingNotesId === log.id && (
+                    <div className="mt-2 flex gap-2">
+                      <Textarea
+                        value={notesText}
+                        onChange={(e) => setNotesText(e.target.value)}
+                        placeholder={t("logs.notesPlaceholder")}
+                        className="text-xs min-h-[60px]"
+                        rows={2}
+                      />
+                      <Button
+                        size="icon"
+                        className="h-8 w-8 flex-shrink-0"
+                        onClick={() => handleSaveNotes(log.id)}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

@@ -690,7 +690,10 @@
       "searchPlaceholder": "Search by phone number...",
       "allDirections": "All Directions",
       "callBack": "Call back",
-      "loadMore": "Load More"
+      "loadMore": "Load More",
+      "addNote": "Note",
+      "viewNotes": "Notes",
+      "notesPlaceholder": "Add call notes..."
     },
     "dialPad": {
       "enterNumber": "Enter phone number",
