@@ -585,7 +585,10 @@
       "loadingConfig": "Loading SIP configuration...",
       "noConfig": "No SIP configuration found. Please configure SIP settings.",
       "configureSip": "Configure SIP",
-      "transferTo": "Transfer to..."
+      "transferTo": "Transfer to...",
+      "noAgents": "No agents with phone assignments",
+      "transferToNumber": "Transfer to external number",
+      "transferToAgent": "Transfer to agent"
     },
     "settings": {
       "title": "SIP Settings",

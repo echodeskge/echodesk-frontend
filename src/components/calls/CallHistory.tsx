@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, Search, Star, MessageSquare, Check, Play } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, PhoneForwarded, Clock, Search, Star, MessageSquare, Check, Play } from "lucide-react";
 import { format } from "date-fns";
 import axios from "@/api/axios";
 import { useCall } from "@/contexts/CallContext";
@@ -36,6 +36,9 @@ interface CallLog {
   call_quality_score: number | null;
   notes: string;
   recording_url: string;
+  transferred_to: string;
+  transferred_to_user_name: string | null;
+  transferred_at: string | null;
   client_name: string | null;
   sip_config_name: string | null;
 }
@@ -241,6 +244,12 @@ export function CallHistory() {
                     </Badge>
                     {log.handled_by_name && (
                       <span>{log.handled_by_name}</span>
+                    )}
+                    {log.transferred_to && (
+                      <span className="flex items-center gap-1 text-orange-600">
+                        <PhoneForwarded className="h-3 w-3" />
+                        {log.transferred_to_user_name || log.transferred_to}
+                      </span>
                     )}
                     {log.call_quality_score != null && (
                       <span className="flex items-center gap-0.5">

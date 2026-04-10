@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import axios from "@/api/axios";
 import { Badge } from "@/components/ui/badge";
 import {
   Phone,
@@ -51,6 +59,22 @@ export function ActiveCallDisplay({
   const t = useTranslations("calls");
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferNumber, setTransferNumber] = useState("");
+  const [transferMode, setTransferMode] = useState<"agent" | "external">("agent");
+  const [agents, setAgents] = useState<Array<{ id: number; name: string; extension: string; phone: string }>>([]);
+
+  useEffect(() => {
+    if (showTransfer && agents.length === 0) {
+      axios.get("/api/phone-assignments/").then(res => {
+        const data = res.data.results || res.data || [];
+        setAgents(data.map((a: any) => ({
+          id: a.id,
+          name: a.user_name || `Ext ${a.extension}`,
+          extension: a.extension,
+          phone: a.phone_number,
+        })));
+      }).catch(() => {});
+    }
+  }, [showTransfer]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -174,34 +198,81 @@ export function ActiveCallDisplay({
             </Button>
           </div>
 
-          {/* Transfer input */}
+          {/* Transfer panel */}
           {showTransfer && onTransfer && (
-            <div className="flex gap-2 mt-3">
-              <Input
-                type="tel"
-                placeholder={t("dashboard.transferTo")}
-                value={transferNumber}
-                onChange={(e) => setTransferNumber(e.target.value)}
-                className="text-sm"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && transferNumber) {
-                    onTransfer(transferNumber);
-                    setShowTransfer(false);
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                onClick={() => {
-                  if (transferNumber) {
-                    onTransfer(transferNumber);
-                    setShowTransfer(false);
-                  }
-                }}
-                disabled={!transferNumber}
-              >
-                <PhoneForwarded className="h-4 w-4" />
-              </Button>
+            <div className="mt-3 space-y-2">
+              {transferMode === "agent" ? (
+                <div className="space-y-2">
+                  {agents.length > 0 ? (
+                    <div className="space-y-1">
+                      {agents.map((agent) => (
+                        <Button
+                          key={agent.id}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-xs"
+                          onClick={() => {
+                            onTransfer(agent.extension);
+                            setShowTransfer(false);
+                          }}
+                        >
+                          <PhoneForwarded className="h-3 w-3 mr-2" />
+                          {agent.name} (ext {agent.extension})
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t("dashboard.noAgents")}</p>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => setTransferMode("external")}
+                  >
+                    {t("dashboard.transferToNumber")}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      type="tel"
+                      placeholder={t("dashboard.transferTo")}
+                      value={transferNumber}
+                      onChange={(e) => setTransferNumber(e.target.value)}
+                      className="text-sm"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && transferNumber) {
+                          onTransfer(transferNumber);
+                          setShowTransfer(false);
+                        }
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (transferNumber) {
+                          onTransfer(transferNumber);
+                          setShowTransfer(false);
+                        }
+                      }}
+                      disabled={!transferNumber}
+                    >
+                      <PhoneForwarded className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => setTransferMode("agent")}
+                  >
+                    {t("dashboard.transferToAgent")}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </>
