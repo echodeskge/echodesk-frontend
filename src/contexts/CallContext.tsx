@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   type ReactNode,
 } from 'react';
 import { SipService } from '@/services/SipService';
@@ -21,6 +22,7 @@ import {
 } from '@/api/generated/api';
 import type { SipConfigurationDetail } from '@/api/generated/interfaces';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,6 +79,7 @@ const CallContext = createContext<CallContextValue | undefined>(undefined);
 
 export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { hasFeature } = useSubscription();
+  const { user } = useAuth();
 
   // ---- State ----
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
@@ -476,9 +479,23 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Effects
   // ---------------------------------------------------------------------------
 
+  // Check user's group-level feature keys (same logic as sidebar)
+  const userHasIpCalling = useMemo(() => {
+    if (user?.is_staff || user?.is_superuser) return true;
+    const profile = user as any;
+    if (!profile?.feature_keys) return false;
+    let keys: string[] = [];
+    if (typeof profile.feature_keys === 'string') {
+      try { keys = JSON.parse(profile.feature_keys); } catch { return false; }
+    } else if (Array.isArray(profile.feature_keys)) {
+      keys = profile.feature_keys;
+    }
+    return keys.includes('ip_calling');
+  }, [user]);
+
   // On mount: check feature & load SIP config
   useEffect(() => {
-    if (!hasFeature('ip_calling')) {
+    if (!userHasIpCalling) {
       setLoading(false);
       return;
     }
@@ -497,7 +514,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasFeature]);
+  }, [userHasIpCalling]);
 
   // When activeSipConfig changes and audio refs are ready, initialise SIP
   useEffect(() => {
