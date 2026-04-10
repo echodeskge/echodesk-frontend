@@ -52,7 +52,7 @@ export function CallHistory() {
   const fetchCallLogs = useCallback(async (pageNum = 1, append = false) => {
     try {
       if (!append) setLoading(true);
-      const params: Record<string, string> = { page: String(pageNum) };
+      const params: Record<string, string> = { page: String(pageNum), page_size: "5" };
       if (search) params.search = search;
       if (statusFilter !== "all") params.status = statusFilter;
       if (directionFilter !== "all") params.direction = directionFilter;
@@ -119,16 +119,9 @@ export function CallHistory() {
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{t("logs.title")}</h2>
-        <Button onClick={() => fetchCallLogs(1)} variant="ghost" size="sm">
-          <RefreshCw className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Search & Filters */}
-      <div className="flex gap-2 flex-wrap">
+    <div className="flex flex-col h-full">
+      {/* Search & Filters — sticky top */}
+      <div className="flex gap-2 flex-wrap pb-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -162,7 +155,8 @@ export function CallHistory() {
         </Select>
       </div>
 
-      {/* Content */}
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto space-y-3">
       {loading ? (
         <Card>
           <CardContent className="p-8 text-center">
@@ -255,6 +249,7 @@ export function CallHistory() {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

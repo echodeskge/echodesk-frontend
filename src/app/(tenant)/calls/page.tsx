@@ -37,18 +37,19 @@ export default function CallsPage() {
 
   return (
     <FeatureGate feature="ip_calling" showUpgrade={true}>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-4 flex flex-col h-[calc(100vh-64px)]">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pb-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("dashboard.title")}</h1>
-            <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("dashboard.title")}</h1>
+            <p className="text-sm text-muted-foreground">{t("dashboard.subtitle")}</p>
           </div>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => router.push("/settings/calls")}
           >
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="h-4 w-4 mr-1" />
             {t("settings.title")}
           </Button>
         </div>
@@ -61,9 +62,9 @@ export default function CallsPage() {
           </Alert>
         )}
 
-        {/* Two-column layout: dialpad left, history right */}
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Left: Dialpad area — fixed width */}
+        {/* Two-column layout: dialpad left, history right — fills remaining height */}
+        <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
+          {/* Left: Dialpad area — fixed width, self-aligned to top */}
           <div className="w-full md:w-[340px] md:min-w-[340px] md:max-w-[340px] space-y-4 flex-shrink-0">
             <SipStatusIndicator
               isRegistered={sipRegistered}
@@ -124,8 +125,8 @@ export default function CallsPage() {
             )}
           </div>
 
-          {/* Right: Call History — fills remaining space */}
-          <div className="flex-1 min-w-0">
+          {/* Right: Call History — scrollable, fills remaining space */}
+          <div className="flex-1 min-w-0 min-h-0 flex flex-col">
             <CallHistory />
           </div>
         </div>
