@@ -1,14 +1,16 @@
-"use client"
-
 import Image from "next/image"
 import Link from "next/link"
-import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
 
-export function NotFound404() {
-  const t = useTranslations("notFound")
+type NotFoundCopy = {
+  title: string
+  subtitle: string
+  description: string
+  homeButton: string
+}
 
+export function NotFound404({ copy }: { copy: NotFoundCopy }) {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center gap-y-6 text-center text-foreground bg-background p-4">
       <div className="flex flex-col-reverse justify-center items-center gap-y-6 md:flex-row md:text-start">
@@ -21,14 +23,12 @@ export function NotFound404() {
         />
 
         <h1 className="inline-grid text-6xl font-black">
-          {t("title")} <span className="text-3xl font-semibold">{t("subtitle")}</span>
+          {copy.title} <span className="text-3xl font-semibold">{copy.subtitle}</span>
         </h1>
       </div>
-      <p className="max-w-prose text-xl text-muted-foreground">
-        {t("description")}
-      </p>
+      <p className="max-w-prose text-xl text-muted-foreground">{copy.description}</p>
       <Button size="lg" asChild>
-        <Link href="/">{t("homeButton")}</Link>
+        <Link href="/">{copy.homeButton}</Link>
       </Button>
     </div>
   )
