@@ -59,14 +59,26 @@ export function SipConfigForm({
 
         <div className="space-y-4">
           {/* Basic Configuration */}
-          <div className="space-y-2">
-            <Label htmlFor="name">{t("settings.configurationName")} *</Label>
-            <Input
-              id="name"
-              value={configForm.name || ""}
-              onChange={(e) => updateFormField("name", e.target.value)}
-              placeholder="My SIP Server"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("settings.configurationName")} *</Label>
+              <Input
+                id="name"
+                value={configForm.name || ""}
+                onChange={(e) => updateFormField("name", e.target.value)}
+                placeholder="My SIP Server"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone_number">{t("settings.trunkPhoneNumber")}</Label>
+              <Input
+                id="phone_number"
+                value={(configForm as any).phone_number || ""}
+                onChange={(e) => updateFormField("phone_number", e.target.value)}
+                placeholder="+995322421219"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -76,7 +88,7 @@ export function SipConfigForm({
                 id="sip_server"
                 value={configForm.sip_server || ""}
                 onChange={(e) => updateFormField("sip_server", e.target.value)}
-                placeholder="sip.example.com"
+                placeholder="pbx.example.com"
               />
             </div>
 
@@ -89,55 +101,64 @@ export function SipConfigForm({
                 onChange={(e) =>
                   updateFormField("sip_port", parseInt(e.target.value) || 5060)
                 }
-                placeholder="5060"
+                placeholder="8089"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">{t("settings.username")} *</Label>
-              <Input
-                id="username"
-                value={configForm.username || ""}
-                onChange={(e) => updateFormField("username", e.target.value)}
-                placeholder="user123"
-              />
-            </div>
+          {/* Trunk Credentials */}
+          <Card>
+            <CardHeader className="py-3 px-4">
+              <CardTitle className="text-sm">{t("settings.trunkCredentials")}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-4">
+              <p className="text-xs text-muted-foreground">{t("settings.trunkCredentialsDesc")}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">{t("settings.trunkUsername")} *</Label>
+                  <Input
+                    id="username"
+                    value={configForm.username || ""}
+                    onChange={(e) => updateFormField("username", e.target.value)}
+                    placeholder="sip_user_id"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">{t("settings.password")} *</Label>
-              <Input
-                id="password"
-                type="password"
-                value={(configForm as any).password || ""}
-                onChange={(e) => updateFormField("password", e.target.value)}
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t("settings.trunkPassword")} *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={(configForm as any).password || ""}
+                    onChange={(e) => updateFormField("password", e.target.value)}
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="realm">{t("settings.realm")}</Label>
-              <Input
-                id="realm"
-                value={configForm.realm || ""}
-                onChange={(e) => updateFormField("realm", e.target.value)}
-                placeholder="example.com"
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="realm">{t("settings.realm")}</Label>
+                  <Input
+                    id="realm"
+                    value={configForm.realm || ""}
+                    onChange={(e) => updateFormField("realm", e.target.value)}
+                    placeholder="example.com"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="proxy">{t("settings.proxy")}</Label>
-              <Input
-                id="proxy"
-                value={configForm.proxy || ""}
-                onChange={(e) => updateFormField("proxy", e.target.value)}
-                placeholder="proxy.example.com"
-              />
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proxy">{t("settings.proxy")}</Label>
+                  <Input
+                    id="proxy"
+                    value={configForm.proxy || ""}
+                    onChange={(e) => updateFormField("proxy", e.target.value)}
+                    placeholder="proxy.example.com"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="space-y-2">
             <Label htmlFor="websocket_path">{t("settings.websocketPath")}</Label>

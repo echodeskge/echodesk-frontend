@@ -657,7 +657,12 @@
       "cancel": "Cancel",
       "update": "Update",
       "assign": "Assign",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "trunkPhoneNumber": "Trunk Phone Number",
+      "trunkCredentials": "Trunk Credentials",
+      "trunkCredentialsDesc": "Server-level SIP credentials for the provider connection. Users connect with their own extension credentials assigned below.",
+      "trunkUsername": "SIP Username",
+      "trunkPassword": "SIP Password"
     },
     "logs": {
       "title": "Call Logs",
