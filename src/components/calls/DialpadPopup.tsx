@@ -29,6 +29,7 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
     handleToggleHold,
     handleToggleMute,
     sendDTMF,
+    transferCall,
     error,
   } = useCall();
 
@@ -94,6 +95,7 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
                 onEndCall={handleEndCall}
                 onToggleHold={handleToggleHold}
                 onToggleMute={handleToggleMute}
+                onTransfer={async (num) => { try { await transferCall(num); } catch {} }}
               />
               {activeCall.status === "active" && (
                 <div className="mt-3 border-t pt-3">

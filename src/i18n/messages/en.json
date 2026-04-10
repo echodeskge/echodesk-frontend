@@ -584,7 +584,8 @@
       "unmute": "Unmute",
       "loadingConfig": "Loading SIP configuration...",
       "noConfig": "No SIP configuration found. Please configure SIP settings.",
-      "configureSip": "Configure SIP"
+      "configureSip": "Configure SIP",
+      "transferTo": "Transfer to..."
     },
     "settings": {
       "title": "SIP Settings",
@@ -693,7 +694,8 @@
       "loadMore": "Load More",
       "addNote": "Note",
       "viewNotes": "Notes",
-      "notesPlaceholder": "Add call notes..."
+      "notesPlaceholder": "Add call notes...",
+      "recording": "Recording"
     },
     "dialPad": {
       "enterNumber": "Enter phone number",

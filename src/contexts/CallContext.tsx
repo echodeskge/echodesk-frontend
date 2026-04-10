@@ -66,6 +66,7 @@ export interface CallContextValue {
   toggleDialpad: () => void;
   callEndedCounter: number;
   sendDTMF: (tone: string) => boolean;
+  transferCall: (targetNumber: string) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -477,6 +478,11 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return sipServiceRef.current.sendDTMF(tone);
   }, []);
 
+  const transferCall = useCallback(async (targetNumber: string) => {
+    if (!sipServiceRef.current) throw new Error('No SIP service');
+    await sipServiceRef.current.transferCall(targetNumber);
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Effects
   // ---------------------------------------------------------------------------
@@ -578,6 +584,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     toggleDialpad,
     callEndedCounter,
     sendDTMF,
+    transferCall,
   };
 
   return (

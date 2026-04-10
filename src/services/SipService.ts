@@ -573,6 +573,21 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     return this.noiseSuppressionEnabled;
   }
 
+  // Blind transfer current call to another number
+  async transferCall(targetNumber: string): Promise<void> {
+    if (!this.currentSession || this.currentSession.state !== SessionState.Established) {
+      throw new Error('No active call to transfer');
+    }
+
+    try {
+      const targetUri = new URI('sip', targetNumber, this.userAgent?.configuration.uri?.host || '');
+      await (this.currentSession as any).refer(targetUri);
+    } catch (error) {
+      console.error('Failed to transfer call:', error);
+      throw error;
+    }
+  }
+
   // End current call
   async endCall(): Promise<void> {
     if (!this.currentSession) {

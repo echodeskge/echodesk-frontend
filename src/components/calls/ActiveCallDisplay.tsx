@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   Phone,
@@ -29,6 +31,7 @@ interface ActiveCallDisplayProps {
   onToggleMute?: () => void;
   onAccept?: () => void;
   onReject?: () => void;
+  onTransfer?: (targetNumber: string) => void;
 }
 
 export function ActiveCallDisplay({
@@ -43,8 +46,11 @@ export function ActiveCallDisplay({
   onToggleMute,
   onAccept,
   onReject,
+  onTransfer,
 }: ActiveCallDisplayProps) {
   const t = useTranslations("calls");
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferNumber, setTransferNumber] = useState("");
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -124,6 +130,7 @@ export function ActiveCallDisplay({
           </div>
         ) : (
           // Active call controls
+          <>
           <div className="grid grid-cols-4 gap-2">
             <Button
               variant={isMuted ? "default" : "outline"}
@@ -149,8 +156,13 @@ export function ActiveCallDisplay({
                 <Pause className="h-5 w-5" />
               )}
             </Button>
-            <Button variant="outline" size="lg" disabled>
-              <Volume2 className="h-5 w-5" />
+            <Button
+              variant={showTransfer ? "default" : "outline"}
+              size="lg"
+              onClick={() => setShowTransfer(!showTransfer)}
+              disabled={status !== "active" || !onTransfer}
+            >
+              <PhoneForwarded className="h-5 w-5" />
             </Button>
             <Button
               variant="destructive"
@@ -161,6 +173,38 @@ export function ActiveCallDisplay({
               <PhoneOff className="h-5 w-5" />
             </Button>
           </div>
+
+          {/* Transfer input */}
+          {showTransfer && onTransfer && (
+            <div className="flex gap-2 mt-3">
+              <Input
+                type="tel"
+                placeholder={t("dashboard.transferTo")}
+                value={transferNumber}
+                onChange={(e) => setTransferNumber(e.target.value)}
+                className="text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && transferNumber) {
+                    onTransfer(transferNumber);
+                    setShowTransfer(false);
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (transferNumber) {
+                    onTransfer(transferNumber);
+                    setShowTransfer(false);
+                  }
+                }}
+                disabled={!transferNumber}
+              >
+                <PhoneForwarded className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </>
         )}
       </CardContent>
     </Card>

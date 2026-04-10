@@ -31,6 +31,7 @@ export default function CallsPage() {
     handleToggleHold,
     handleToggleMute,
     sendDTMF,
+    transferCall,
     error,
     loading,
   } = useCall();
@@ -103,6 +104,7 @@ export default function CallsPage() {
                 onEndCall={handleEndCall}
                 onToggleHold={handleToggleHold}
                 onToggleMute={handleToggleMute}
+                onTransfer={async (num) => { try { await transferCall(num); } catch {} }}
               />
               {activeCall.status === "active" && (
                 <DialPad

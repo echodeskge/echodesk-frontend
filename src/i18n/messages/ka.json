@@ -584,7 +584,8 @@
       "unmute": "ხმის ჩართვა",
       "loadingConfig": "SIP კონფიგურაციის ჩატვირთვა...",
       "noConfig": "SIP კონფიგურაცია ვერ მოიძებნა. გთხოვთ დააკონფიგურიროთ SIP პარამეტრები.",
-      "configureSip": "SIP-ის კონფიგურაცია"
+      "configureSip": "SIP-ის კონფიგურაცია",
+      "transferTo": "გადამისამართება..."
     },
     "settings": {
       "title": "SIP პარამეტრები",
@@ -693,7 +694,8 @@
       "loadMore": "მეტის ჩატვირთვა",
       "addNote": "შენიშვნა",
       "viewNotes": "შენიშვნები",
-      "notesPlaceholder": "დაამატეთ ზარის შენიშვნები..."
+      "notesPlaceholder": "დაამატეთ ზარის შენიშვნები...",
+      "recording": "ჩანაწერი"
     },
     "dialPad": {
       "enterNumber": "შეიყვანეთ ტელეფონის ნომერი",

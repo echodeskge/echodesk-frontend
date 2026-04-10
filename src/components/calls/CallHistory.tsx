@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, Search, Star, MessageSquare, Check } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, Search, Star, MessageSquare, Check, Play } from "lucide-react";
 import { format } from "date-fns";
 import axios from "@/api/axios";
 import { useCall } from "@/contexts/CallContext";
@@ -35,6 +35,7 @@ interface CallLog {
   handled_by_name: string | null;
   call_quality_score: number | null;
   notes: string;
+  recording_url: string;
   client_name: string | null;
   sip_config_name: string | null;
 }
@@ -52,6 +53,7 @@ export function CallHistory() {
   const [totalCount, setTotalCount] = useState(0);
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null);
   const [notesText, setNotesText] = useState("");
+  const [playingRecordingId, setPlayingRecordingId] = useState<number | null>(null);
 
   const fetchCallLogs = useCallback(async (pageNum = 1, append = false) => {
     try {
@@ -250,6 +252,18 @@ export function CallHistory() {
                         ))}
                       </span>
                     )}
+                    {/* Recording playback */}
+                    {log.recording_url && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1.5 text-xs"
+                        onClick={() => setPlayingRecordingId(playingRecordingId === log.id ? null : log.id)}
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        {t("logs.recording")}
+                      </Button>
+                    )}
                     {/* Notes toggle */}
                     <Button
                       variant="ghost"
@@ -286,6 +300,13 @@ export function CallHistory() {
                       >
                         <Check className="h-3.5 w-3.5" />
                       </Button>
+                    </div>
+                  )}
+
+                  {/* Recording player */}
+                  {playingRecordingId === log.id && log.recording_url && (
+                    <div className="mt-2">
+                      <audio controls className="w-full h-8" src={log.recording_url} />
                     </div>
                   )}
                 </CardContent>
