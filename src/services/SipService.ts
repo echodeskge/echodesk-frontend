@@ -29,6 +29,8 @@ export class SipService {
   private remoteAudioElement: HTMLAudioElement | null = null;
   private events: Partial<SipCallEvents> = {};
   private isRegistered = false;
+  private noiseSuppression: import('./NoiseSuppression').NoiseSuppression | null = null;
+  private noiseSuppressionEnabled = true;
 
   constructor(
     localAudio: HTMLAudioElement,
@@ -179,7 +181,9 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
             audio: {
               echoCancellation: true,
               noiseSuppression: true,
-              autoGainControl: true
+              autoGainControl: true,
+              sampleRate: 48000,
+              channelCount: 1,
             },
             video: false
           }
@@ -535,6 +539,40 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     }
   }
 
+  // Apply RNNoise noise suppression to outgoing audio
+  private async applyNoiseSuppression(audioSender: RTCRtpSender, peerConnection: RTCPeerConnection): Promise<void> {
+    try {
+      const { NoiseSuppression } = await import('./NoiseSuppression');
+      this.noiseSuppression = new NoiseSuppression();
+
+      const originalTrack = audioSender.track;
+      if (!originalTrack) return;
+
+      const originalStream = new MediaStream([originalTrack]);
+      const cleanStream = await this.noiseSuppression.process(originalStream);
+      const cleanTrack = cleanStream.getAudioTracks()[0];
+
+      if (cleanTrack) {
+        await audioSender.replaceTrack(cleanTrack);
+      }
+    } catch (error) {
+      console.warn('Failed to apply noise suppression:', error);
+    }
+  }
+
+  // Toggle noise suppression on/off
+  setNoiseSuppression(enabled: boolean) {
+    this.noiseSuppressionEnabled = enabled;
+    if (this.noiseSuppression) {
+      this.noiseSuppression.setEnabled(enabled);
+    }
+  }
+
+  // Check if noise suppression is enabled
+  isNoiseSuppressionEnabled(): boolean {
+    return this.noiseSuppressionEnabled;
+  }
+
   // End current call
   async endCall(): Promise<void> {
     if (!this.currentSession) {
@@ -551,9 +589,17 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       }
 
       this.currentSession = null;
+      if (this.noiseSuppression) {
+        this.noiseSuppression.destroy();
+        this.noiseSuppression = null;
+      }
     } catch (error) {
       console.error('Failed to end call:', error);
       this.currentSession = null;
+      if (this.noiseSuppression) {
+        this.noiseSuppression.destroy();
+        this.noiseSuppression = null;
+      }
     }
   }
 
@@ -628,6 +674,13 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       );
 
       if (audioSender && audioSender.track && this.localAudioElement) {
+        // Apply noise suppression to outgoing audio
+        if (this.noiseSuppressionEnabled) {
+          this.applyNoiseSuppression(audioSender, peerConnection).catch(err => {
+            console.warn('Noise suppression failed, using raw audio:', err);
+          });
+        }
+
         const localStream = new MediaStream([audioSender.track]);
         this.localAudioElement.srcObject = localStream;
         // Note: Local audio should be muted to prevent feedback
