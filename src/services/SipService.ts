@@ -625,11 +625,61 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         return;
       }
 
-      // Handle remote stream
+      // Handle remote stream — apply audio enhancement for narrowband calls
       peerConnection.ontrack = (event) => {
         const [remoteStream] = event.streams;
         if (this.remoteAudioElement && remoteStream) {
-          this.remoteAudioElement.srcObject = remoteStream;
+          // Apply audio enhancement pipeline for incoming audio
+          try {
+            const ctx = new AudioContext();
+            const source = ctx.createMediaStreamSource(remoteStream);
+
+            // Compressor: even out volume levels
+            const compressor = ctx.createDynamicsCompressor();
+            compressor.threshold.value = -24;
+            compressor.knee.value = 12;
+            compressor.ratio.value = 4;
+            compressor.attack.value = 0.003;
+            compressor.release.value = 0.15;
+
+            // EQ: boost clarity for 8kHz narrowband audio
+            // Boost presence (2-4kHz) for voice clarity
+            const presenceBoost = ctx.createBiquadFilter();
+            presenceBoost.type = 'peaking';
+            presenceBoost.frequency.value = 3000;
+            presenceBoost.Q.value = 1.0;
+            presenceBoost.gain.value = 4;
+
+            // Boost warmth (200-500Hz) to reduce "tinny" sound
+            const warmthBoost = ctx.createBiquadFilter();
+            warmthBoost.type = 'peaking';
+            warmthBoost.frequency.value = 350;
+            warmthBoost.Q.value = 1.0;
+            warmthBoost.gain.value = 2;
+
+            // High-pass filter to remove low-frequency rumble
+            const highPass = ctx.createBiquadFilter();
+            highPass.type = 'highpass';
+            highPass.frequency.value = 80;
+
+            // Gain: slight boost
+            const gain = ctx.createGain();
+            gain.gain.value = 1.3;
+
+            // Connect: source → highpass → warmth → presence → compressor → gain → destination
+            const dest = ctx.createMediaStreamDestination();
+            source.connect(highPass);
+            highPass.connect(warmthBoost);
+            warmthBoost.connect(presenceBoost);
+            presenceBoost.connect(compressor);
+            compressor.connect(gain);
+            gain.connect(dest);
+
+            this.remoteAudioElement.srcObject = dest.stream;
+          } catch {
+            // Fallback: use raw stream
+            this.remoteAudioElement.srcObject = remoteStream;
+          }
 
           // Ensure audio element properties are set correctly
           this.remoteAudioElement.autoplay = true;
