@@ -30,7 +30,7 @@ export class SipService {
   private events: Partial<SipCallEvents> = {};
   private isRegistered = false;
   private noiseSuppression: import('./NoiseSuppression').NoiseSuppression | null = null;
-  private noiseSuppressionEnabled = true;
+  private noiseSuppressionEnabled = false; // Disabled by default — adds ~43ms latency
 
   constructor(
     localAudio: HTMLAudioElement,
