@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/select";
 import { Plus, Trash2, Edit, Phone, User } from "lucide-react";
 import axios from "@/api/axios";
-import { usersList } from "@/api/generated/api";
 
 interface PhoneAssignment {
   id: number;
@@ -83,10 +82,12 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
 
   const fetchUsers = async () => {
     try {
-      const data = await usersList();
-      const userList = ((data as any).results || data || []).map((u: any) => ({
+      // Fetch all users without pagination limit
+      const res = await axios.get('/api/users/?page_size=200');
+      const data = res.data.results || res.data || [];
+      const userList = data.map((u: any) => ({
         id: u.id,
-        name: u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : u.email,
+        name: [u.first_name, u.last_name].filter(Boolean).join(' ') || u.email,
         email: u.email,
       }));
       setUsers(userList);
