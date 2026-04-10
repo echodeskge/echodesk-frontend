@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, RefreshCw, Search } from "lucide-react";
+import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, RefreshCw, Search, Star } from "lucide-react";
 import { format } from "date-fns";
 import { callLogsList } from "@/api/generated/api";
 import { useCall } from "@/contexts/CallContext";
@@ -32,6 +32,7 @@ interface CallLog {
   duration: string | null;
   duration_display: string | null;
   handled_by_name: string | null;
+  call_quality_score: number | null;
   client_name: string | null;
   sip_config_name: string | null;
 }
@@ -225,6 +226,16 @@ export function CallHistory() {
                     </Badge>
                     {log.handled_by_name && (
                       <span>{log.handled_by_name}</span>
+                    )}
+                    {log.call_quality_score != null && (
+                      <span className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-3 w-3 ${star <= log.call_quality_score! ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"}`}
+                          />
+                        ))}
+                      </span>
                     )}
                   </div>
                 </CardContent>
