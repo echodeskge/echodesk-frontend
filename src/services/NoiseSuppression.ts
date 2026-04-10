@@ -41,8 +41,8 @@ export class NoiseSuppression {
       this.destinationNode = this.audioContext.createMediaStreamDestination();
 
       // ScriptProcessorNode for real-time processing
-      // Buffer size must be power of 2; 4096 works well for 480-sample frames
-      this.processorNode = this.audioContext.createScriptProcessor(4096, 1, 1);
+      // 2048 buffer = ~43ms latency at 48kHz (lower = less delay but more CPU)
+      this.processorNode = this.audioContext.createScriptProcessor(2048, 1, 1);
 
       // Accumulator for RNNoise frame processing
       let inputBuffer = new Float32Array(0);
