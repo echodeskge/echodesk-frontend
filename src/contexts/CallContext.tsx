@@ -23,6 +23,7 @@ import {
 import type { SipConfigurationDetail } from '@/api/generated/interfaces';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,6 +81,7 @@ const CallContext = createContext<CallContextValue | undefined>(undefined);
 export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { hasFeature } = useSubscription();
   const { user } = useAuth();
+  const { data: userProfile } = useUserProfile();
 
   // ---- State ----
   const [activeCall, setActiveCall] = useState<ActiveCall | null>(null);
@@ -482,7 +484,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Check user's group-level feature keys (same logic as sidebar)
   const userHasIpCalling = useMemo(() => {
     if (user?.is_staff || user?.is_superuser) return true;
-    const profile = user as any;
+    const profile = userProfile as any;
     if (!profile?.feature_keys) return false;
     let keys: string[] = [];
     if (typeof profile.feature_keys === 'string') {
@@ -491,7 +493,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       keys = profile.feature_keys;
     }
     return keys.includes('ip_calling');
-  }, [user]);
+  }, [user, userProfile]);
 
   // On mount: check feature & load SIP config
   useEffect(() => {

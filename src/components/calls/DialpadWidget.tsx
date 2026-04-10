@@ -5,11 +5,13 @@ import { Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCall } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { DialpadPopup } from "./DialpadPopup";
 import { IncomingCallNotification } from "./IncomingCallNotification";
 
 export default function DialpadWidget() {
   const { user } = useAuth();
+  const { data: userProfile } = useUserProfile();
   const {
     activeCall,
     sipRegistered,
@@ -19,18 +21,19 @@ export default function DialpadWidget() {
     setIsDialpadOpen,
   } = useCall();
 
-  // Check user's group-level feature keys (same as sidebar)
-  const userFeatureKeys = useMemo(() => {
-    const profile = user as any;
-    if (!profile?.feature_keys) return [];
+  // Check user's group-level feature keys (same as sidebar uses userProfile)
+  const hasIpCalling = useMemo(() => {
+    if (user?.is_staff || user?.is_superuser) return true;
+    const profile = userProfile as any;
+    if (!profile?.feature_keys) return false;
+    let keys: string[] = [];
     if (typeof profile.feature_keys === "string") {
-      try { return JSON.parse(profile.feature_keys); } catch { return []; }
+      try { keys = JSON.parse(profile.feature_keys); } catch { return false; }
+    } else if (Array.isArray(profile.feature_keys)) {
+      keys = profile.feature_keys;
     }
-    return Array.isArray(profile.feature_keys) ? profile.feature_keys : [];
-  }, [user]);
-
-  const isStaffOrAdmin = user?.is_staff || user?.is_superuser;
-  const hasIpCalling = isStaffOrAdmin || userFeatureKeys.includes("ip_calling");
+    return keys.includes("ip_calling");
+  }, [user, userProfile]);
 
   // Don't render if user doesn't have ip_calling permission or no SIP config
   if (!hasIpCalling || !activeSipConfig) return null;
