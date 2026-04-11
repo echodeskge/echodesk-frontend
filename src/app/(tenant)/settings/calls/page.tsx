@@ -128,18 +128,20 @@ function WorkingHoursGrid({
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'select' | 'deselect'>('select');
 
+  const safeSchedule = schedule || {};
+
   const isSelected = (day: string, hour: number) => {
-    const daySchedule = schedule[day] || [];
+    const daySchedule = safeSchedule[day] || [];
     return daySchedule.includes(hour);
   };
 
   const toggleCell = (day: string, hour: number) => {
     if (disabled) return;
-    const daySchedule = schedule[day] || [];
+    const daySchedule = safeSchedule[day] || [];
     const newDaySchedule = isSelected(day, hour)
       ? daySchedule.filter(h => h !== hour)
       : [...daySchedule, hour].sort((a, b) => a - b);
-    onChange({ ...schedule, [day]: newDaySchedule });
+    onChange({ ...safeSchedule, [day]: newDaySchedule });
   };
 
   const handleMouseDown = (day: string, hour: number) => {
@@ -586,7 +588,12 @@ export default function CallSettingsPage() {
     if (!sipConfigId) return;
     try {
       const response = await axiosInstance.get(`/api/pbx-settings/${sipConfigId}/`);
-      return response.data as PbxSettings;
+      const data = response.data;
+      // Map backend field names to frontend
+      return {
+        ...data,
+        working_hours: data.working_hours_schedule || {},
+      } as PbxSettings;
     } catch (err: unknown) {
       console.error("Failed to fetch PBX settings:", err);
       return null;
@@ -634,7 +641,7 @@ export default function CallSettingsPage() {
       await axiosInstance.patch(`/api/pbx-settings/${selectedSipConfigId}/`, {
         working_hours_enabled: pbxSettings.working_hours_enabled,
         timezone: pbxSettings.timezone,
-        working_hours: pbxSettings.working_hours,
+        working_hours_schedule: pbxSettings.working_hours,
         after_hours_action: pbxSettings.after_hours_action,
         forward_number: pbxSettings.forward_number,
       });
