@@ -86,6 +86,9 @@ interface PbxSettings {
   sound_voicemail_prompt_url: string | null;
   sound_thank_you_url: string | null;
   sound_transfer_hold_url: string | null;
+  sound_review_prompt_url: string | null;
+  sound_review_invalid_url: string | null;
+  sound_review_thanks_url: string | null;
 }
 
 const DEFAULT_PBX_SETTINGS: PbxSettings = {
@@ -109,6 +112,9 @@ const DEFAULT_PBX_SETTINGS: PbxSettings = {
   sound_voicemail_prompt_url: null,
   sound_thank_you_url: null,
   sound_transfer_hold_url: null,
+  sound_review_prompt_url: null,
+  sound_review_invalid_url: null,
+  sound_review_thanks_url: null,
 };
 
 const SOUND_TYPES = [
@@ -118,6 +124,9 @@ const SOUND_TYPES = [
   { key: 'voicemail_prompt', urlField: 'sound_voicemail_prompt_url', titleKey: 'soundVoicemailPrompt', descKey: 'soundVoicemailPromptDesc' },
   { key: 'thank_you', urlField: 'sound_thank_you_url', titleKey: 'soundThankYou', descKey: 'soundThankYouDesc' },
   { key: 'transfer_hold', urlField: 'sound_transfer_hold_url', titleKey: 'soundTransferHold', descKey: 'soundTransferHoldDesc' },
+  { key: 'review_prompt', urlField: 'sound_review_prompt_url', titleKey: 'soundReviewPrompt', descKey: 'soundReviewPromptDesc' },
+  { key: 'review_invalid', urlField: 'sound_review_invalid_url', titleKey: 'soundReviewInvalid', descKey: 'soundReviewInvalidDesc' },
+  { key: 'review_thanks', urlField: 'sound_review_thanks_url', titleKey: 'soundReviewThanks', descKey: 'soundReviewThanksDesc' },
 ] as const;
 
 // ─── Working Hours Grid ──────────────────────────────────────────────────────

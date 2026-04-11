@@ -808,7 +808,13 @@
     "holidayDate": "თარიღი",
     "noHolidays": "უქმე დღეები არ არის კონფიგურირ��ბული",
     "holidayNamePlaceholder": "მაგ., ახალი წელი, შობა",
-    "deleteHoliday": "წაშალოთ ეს ���ქმე?"
+    "deleteHoliday": "წაშალოთ ეს ���ქმე?",
+    "soundReviewPrompt": "შეფასების მოთხოვნა",
+    "soundReviewPromptDesc": "უკრავს როცა აბონენტს შეფასებას ეთხოვებით (1-5)",
+    "soundReviewInvalid": "არასწორი შეყვანა",
+    "soundReviewInvalidDesc": "უკრავს როცა აბონენტი არასწორ ღილაკს აჭერს",
+    "soundReviewThanks": "მადლობის შეტყობინება (შეფასება)",
+    "soundReviewThanksDesc": "უკრავს შეფასების დასრულების შემდეგ"
   },
   "chat": {
     "history": "ისტორია",

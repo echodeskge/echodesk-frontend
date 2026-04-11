@@ -808,7 +808,13 @@
     "holidayDate": "Date",
     "noHolidays": "No holidays configured",
     "holidayNamePlaceholder": "e.g., New Year, Christmas",
-    "deleteHoliday": "Remove this holiday?"
+    "deleteHoliday": "Remove this holiday?",
+    "soundReviewPrompt": "Review Prompt",
+    "soundReviewPromptDesc": "Played when asking the caller to rate (1-5)",
+    "soundReviewInvalid": "Review Invalid Input",
+    "soundReviewInvalidDesc": "Played when the caller presses an invalid key",
+    "soundReviewThanks": "Review Thank You",
+    "soundReviewThanksDesc": "Played after the caller submits their rating"
   },
   "chat": {
     "history": "History",
