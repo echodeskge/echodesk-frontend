@@ -67,11 +67,17 @@ const DAY_LABELS: Record<string, string> = {
 
 type WorkingHoursSchedule = Record<string, number[]>;
 
+interface Holiday {
+  date: string;
+  name: string;
+}
+
 interface PbxSettings {
   id?: number;
   working_hours_enabled: boolean;
   timezone: string;
   working_hours: WorkingHoursSchedule;
+  holidays: Holiday[];
   after_hours_action: 'announcement' | 'voicemail' | 'forward';
   forward_number: string;
   sound_greeting_url: string | null;
@@ -94,6 +100,7 @@ const DEFAULT_PBX_SETTINGS: PbxSettings = {
     saturday: [],
     sunday: [],
   },
+  holidays: [],
   after_hours_action: 'announcement',
   forward_number: '',
   sound_greeting_url: null,
@@ -593,6 +600,7 @@ export default function CallSettingsPage() {
       return {
         ...data,
         working_hours: data.working_hours_schedule || {},
+        holidays: data.holidays || [],
       } as PbxSettings;
     } catch (err: unknown) {
       console.error("Failed to fetch PBX settings:", err);
@@ -642,6 +650,7 @@ export default function CallSettingsPage() {
         working_hours_enabled: pbxSettings.working_hours_enabled,
         timezone: pbxSettings.timezone,
         working_hours_schedule: pbxSettings.working_hours,
+        holidays: pbxSettings.holidays,
         after_hours_action: pbxSettings.after_hours_action,
         forward_number: pbxSettings.forward_number,
       });
@@ -947,6 +956,64 @@ export default function CallSettingsPage() {
                             />
                           </div>
                         )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Holidays */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">{ts("holidays")}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{ts("holidaysDescription")}</p>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {(pbxSettings.holidays || []).map((holiday, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <Input
+                              type="date"
+                              value={holiday.date}
+                              onChange={(e) => {
+                                const updated = [...pbxSettings.holidays];
+                                updated[index] = { ...updated[index], date: e.target.value };
+                                setPbxSettings((prev) => ({ ...prev, holidays: updated }));
+                              }}
+                              className="w-44"
+                            />
+                            <Input
+                              value={holiday.name}
+                              placeholder={ts("holidayNamePlaceholder")}
+                              onChange={(e) => {
+                                const updated = [...pbxSettings.holidays];
+                                updated[index] = { ...updated[index], name: e.target.value };
+                                setPbxSettings((prev) => ({ ...prev, holidays: updated }));
+                              }}
+                              className="flex-1"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const updated = pbxSettings.holidays.filter((_, i) => i !== index);
+                                setPbxSettings((prev) => ({ ...prev, holidays: updated }));
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                        {(!pbxSettings.holidays || pbxSettings.holidays.length === 0) && (
+                          <p className="text-sm text-muted-foreground py-4 text-center">{ts("noHolidays")}</p>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const updated = [...(pbxSettings.holidays || []), { date: '', name: '' }];
+                            setPbxSettings((prev) => ({ ...prev, holidays: updated }));
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          {ts("addHoliday")}
+                        </Button>
                       </CardContent>
                     </Card>
 

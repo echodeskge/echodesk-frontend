@@ -800,7 +800,15 @@
     "selectSipConfig": "აირჩიეთ SIP კონფიგურაცია",
     "noSipConfigs": "SIP კონფიგურაცია არ მოიძებნა. ჯერ დაამატეთ.",
     "success": "წარმატება",
-    "error": "შეცდომა"
+    "error": "შეცდომა",
+    "holidays": "უქმე დღეები",
+    "holidaysDescription": "ოფიციალური უქმე დღეები გადაფარავს სამუშა�� საათებს",
+    "addHoliday": "უქმის დამატება",
+    "holidayName": "უქმი�� სახელი",
+    "holidayDate": "თარიღი",
+    "noHolidays": "უქმე დღეები არ არის კონფიგურირ��ბული",
+    "holidayNamePlaceholder": "მაგ., ახალი წელი, შობა",
+    "deleteHoliday": "წაშალოთ ეს ���ქმე?"
   },
   "chat": {
     "history": "ისტორია",

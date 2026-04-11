@@ -800,7 +800,15 @@
     "selectSipConfig": "Select SIP Configuration",
     "noSipConfigs": "No SIP configurations found. Add one first.",
     "success": "Success",
-    "error": "Error"
+    "error": "Error",
+    "holidays": "Holidays",
+    "holidaysDescription": "Official holidays override working hours as closed days",
+    "addHoliday": "Add Holiday",
+    "holidayName": "Holiday Name",
+    "holidayDate": "Date",
+    "noHolidays": "No holidays configured",
+    "holidayNamePlaceholder": "e.g., New Year, Christmas",
+    "deleteHoliday": "Remove this holiday?"
   },
   "chat": {
     "history": "History",
