@@ -28,6 +28,7 @@ export default function CategoriesPage() {
     description: "",
     is_active: true,
   })
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchCategories()
@@ -65,7 +66,15 @@ export default function CategoriesPage() {
     setIsDialogOpen(true)
   }
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+    if (!formData.name.trim()) errors.name = t("nameRequired")
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleSave = async () => {
+    if (!validateForm()) return
     try {
       if (editingCategory) {
         await bookingsAdminCategoriesPartialUpdate(editingCategory.id, formData as any)
@@ -211,9 +220,11 @@ export default function CategoriesPage() {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setFormErrors(prev => ({ ...prev, name: "" })) }}
                 placeholder={t("categoryNamePlaceholder")}
+                className={formErrors.name ? "border-destructive" : ""}
               />
+              {formErrors.name && <p className="text-sm text-destructive">{formErrors.name}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">{t("description")}</Label>

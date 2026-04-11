@@ -50,6 +50,7 @@ export default function StaffPage() {
     is_active_for_bookings: true,
     service_ids: [] as number[],
   })
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchStaff()
@@ -110,7 +111,16 @@ export default function StaffPage() {
     setIsDialogOpen(true)
   }
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+    if (!editingStaff && !formData.user_id) errors.user_id = t("userRequired")
+    if (formData.service_ids.length === 0) errors.service_ids = t("servicesRequired")
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleSave = async () => {
+    if (!validateForm()) return
     try {
       setSaving(true)
       if (editingStaff) {
@@ -121,10 +131,6 @@ export default function StaffPage() {
         })
         toast({ title: t("success"), description: t("staffUpdated") })
       } else {
-        if (!formData.user_id) {
-          toast({ title: t("error"), description: t("selectUser"), variant: "destructive" })
-          return
-        }
         await bookingsAdminStaffCreate({
           user_id: parseInt(formData.user_id),
           bio: formData.bio,
@@ -320,9 +326,9 @@ export default function StaffPage() {
                 <Label>{t("selectUserLabel")}</Label>
                 <Select
                   value={formData.user_id}
-                  onValueChange={(value) => setFormData({ ...formData, user_id: value })}
+                  onValueChange={(value) => { setFormData({ ...formData, user_id: value }); setFormErrors(prev => ({ ...prev, user_id: "" })) }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={formErrors.user_id ? "border-destructive" : ""}>
                     <SelectValue placeholder={t("selectUserPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -333,7 +339,8 @@ export default function StaffPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {availableUsers.length === 0 && (
+                {formErrors.user_id && <p className="text-sm text-destructive">{formErrors.user_id}</p>}
+                {!formErrors.user_id && availableUsers.length === 0 && (
                   <p className="text-sm text-muted-foreground">{t("noAvailableUsers")}</p>
                 )}
               </div>
@@ -397,9 +404,13 @@ export default function StaffPage() {
                   ))
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
-                {t("servicesSelected", { count: formData.service_ids.length })}
-              </p>
+              {formErrors.service_ids ? (
+                <p className="text-sm text-destructive">{formErrors.service_ids}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {t("servicesSelected", { count: formData.service_ids.length })}
+                </p>
+              )}
             </div>
           </div>
 

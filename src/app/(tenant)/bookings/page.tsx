@@ -58,6 +58,13 @@ export default function BookingsDashboard() {
       color: "text-green-600",
     },
     {
+      title: t("staffAvailability"),
+      description: t("manageSchedules"),
+      href: "/bookings/staff/availability",
+      icon: Clock,
+      color: "text-teal-600",
+    },
+    {
       title: t("clients"),
       description: t("viewClientInfo"),
       href: "/bookings/clients",

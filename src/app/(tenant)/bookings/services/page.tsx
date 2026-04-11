@@ -32,6 +32,7 @@ export default function ServicesPage() {
     booking_type: "duration_based" as "duration_based" | "fixed_slots",
     status: "active" as "active" | "inactive",
   })
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchServices()
@@ -75,7 +76,25 @@ export default function ServicesPage() {
     setIsDialogOpen(true)
   }
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {}
+    if (!formData.name.trim()) errors.name = t("nameRequired")
+    if (!formData.base_price) {
+      errors.base_price = t("priceRequired")
+    } else if (parseFloat(formData.base_price) <= 0) {
+      errors.base_price = t("pricePositive")
+    }
+    if (!formData.duration_minutes) {
+      errors.duration_minutes = t("durationRequired")
+    } else if (parseInt(formData.duration_minutes) <= 0) {
+      errors.duration_minutes = t("durationPositive")
+    }
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleSave = async () => {
+    if (!validateForm()) return
     try {
       if (editingService) {
         await bookingsAdminServicesPartialUpdate(editingService.id, formData as any)
@@ -239,9 +258,11 @@ export default function ServicesPage() {
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setFormErrors(prev => ({ ...prev, name: "" })) }}
                 placeholder={t("serviceNamePlaceholder")}
+                className={formErrors.name ? "border-destructive" : ""}
               />
+              {formErrors.name && <p className="text-sm text-destructive">{formErrors.name}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description">{t("description")}</Label>
@@ -259,8 +280,10 @@ export default function ServicesPage() {
                   id="duration"
                   type="number"
                   value={formData.duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
+                  onChange={(e) => { setFormData({ ...formData, duration_minutes: e.target.value }); setFormErrors(prev => ({ ...prev, duration_minutes: "" })) }}
+                  className={formErrors.duration_minutes ? "border-destructive" : ""}
                 />
+                {formErrors.duration_minutes && <p className="text-sm text-destructive">{formErrors.duration_minutes}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="base_price">{t("priceLabel")}</Label>
@@ -269,8 +292,10 @@ export default function ServicesPage() {
                   type="number"
                   step="0.01"
                   value={formData.base_price}
-                  onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
+                  onChange={(e) => { setFormData({ ...formData, base_price: e.target.value }); setFormErrors(prev => ({ ...prev, base_price: "" })) }}
+                  className={formErrors.base_price ? "border-destructive" : ""}
                 />
+                {formErrors.base_price && <p className="text-sm text-destructive">{formErrors.base_price}</p>}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
