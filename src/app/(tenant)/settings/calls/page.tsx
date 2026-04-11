@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { SipConfigForm } from "@/components/calls/SipConfigForm";
@@ -8,8 +8,14 @@ import { SipConfigList } from "@/components/calls/SipConfigList";
 import { UserPhoneAssignments } from "@/components/calls/UserPhoneAssignments";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Plus, Zap } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, Plus, Zap, Upload, Trash2, Loader2 } from "lucide-react";
 import {
   sipConfigurationsList,
   sipConfigurationsCreate,
@@ -25,11 +31,305 @@ import type {
   SipConfiguration,
 } from "@/api/generated/interfaces";
 import { useToast } from "@/hooks/use-toast";
+import axiosInstance from "@/api/axios";
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const TIMEZONES = [
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+  { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
+  { value: 'America/Chicago', label: 'Central Time (US & Canada)' },
+  { value: 'America/Denver', label: 'Mountain Time (US & Canada)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (US & Canada)' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
+  { value: 'Asia/Tbilisi', label: 'Tbilisi (Georgia)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Asia/Kolkata', label: 'Mumbai/New Delhi (IST)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai/Beijing (CST)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+];
+
+const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+const DAY_LABELS: Record<string, string> = {
+  monday: 'Mon',
+  tuesday: 'Tue',
+  wednesday: 'Wed',
+  thursday: 'Thu',
+  friday: 'Fri',
+  saturday: 'Sat',
+  sunday: 'Sun',
+};
+
+type WorkingHoursSchedule = Record<string, number[]>;
+
+interface PbxSettings {
+  id?: number;
+  working_hours_enabled: boolean;
+  timezone: string;
+  working_hours: WorkingHoursSchedule;
+  after_hours_action: 'announcement' | 'voicemail' | 'forward';
+  forward_number: string;
+  sound_greeting_url: string | null;
+  sound_after_hours_url: string | null;
+  sound_queue_hold_url: string | null;
+  sound_voicemail_prompt_url: string | null;
+  sound_thank_you_url: string | null;
+  sound_transfer_hold_url: string | null;
+}
+
+const DEFAULT_PBX_SETTINGS: PbxSettings = {
+  working_hours_enabled: false,
+  timezone: 'UTC',
+  working_hours: {
+    monday: [9, 10, 11, 12, 13, 14, 15, 16, 17],
+    tuesday: [9, 10, 11, 12, 13, 14, 15, 16, 17],
+    wednesday: [9, 10, 11, 12, 13, 14, 15, 16, 17],
+    thursday: [9, 10, 11, 12, 13, 14, 15, 16, 17],
+    friday: [9, 10, 11, 12, 13, 14, 15, 16, 17],
+    saturday: [],
+    sunday: [],
+  },
+  after_hours_action: 'announcement',
+  forward_number: '',
+  sound_greeting_url: null,
+  sound_after_hours_url: null,
+  sound_queue_hold_url: null,
+  sound_voicemail_prompt_url: null,
+  sound_thank_you_url: null,
+  sound_transfer_hold_url: null,
+};
+
+const SOUND_TYPES = [
+  { key: 'greeting', urlField: 'sound_greeting_url', titleKey: 'soundGreeting', descKey: 'soundGreetingDesc' },
+  { key: 'after_hours', urlField: 'sound_after_hours_url', titleKey: 'soundAfterHours', descKey: 'soundAfterHoursDesc' },
+  { key: 'queue_hold', urlField: 'sound_queue_hold_url', titleKey: 'soundQueueHold', descKey: 'soundQueueHoldDesc' },
+  { key: 'voicemail_prompt', urlField: 'sound_voicemail_prompt_url', titleKey: 'soundVoicemailPrompt', descKey: 'soundVoicemailPromptDesc' },
+  { key: 'thank_you', urlField: 'sound_thank_you_url', titleKey: 'soundThankYou', descKey: 'soundThankYouDesc' },
+  { key: 'transfer_hold', urlField: 'sound_transfer_hold_url', titleKey: 'soundTransferHold', descKey: 'soundTransferHoldDesc' },
+] as const;
+
+// ─── Working Hours Grid ──────────────────────────────────────────────────────
+
+function WorkingHoursGrid({
+  schedule,
+  onChange,
+  disabled,
+}: {
+  schedule: WorkingHoursSchedule;
+  onChange: (schedule: WorkingHoursSchedule) => void;
+  disabled?: boolean;
+}) {
+  const ts = useTranslations("callsSettings");
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'select' | 'deselect'>('select');
+
+  const isSelected = (day: string, hour: number) => {
+    const daySchedule = schedule[day] || [];
+    return daySchedule.includes(hour);
+  };
+
+  const toggleCell = (day: string, hour: number) => {
+    if (disabled) return;
+    const daySchedule = schedule[day] || [];
+    const newDaySchedule = isSelected(day, hour)
+      ? daySchedule.filter(h => h !== hour)
+      : [...daySchedule, hour].sort((a, b) => a - b);
+    onChange({ ...schedule, [day]: newDaySchedule });
+  };
+
+  const handleMouseDown = (day: string, hour: number) => {
+    if (disabled) return;
+    setIsSelecting(true);
+    setSelectionMode(isSelected(day, hour) ? 'deselect' : 'select');
+    toggleCell(day, hour);
+  };
+
+  const handleMouseEnter = (day: string, hour: number) => {
+    if (!isSelecting || disabled) return;
+    const shouldSelect = selectionMode === 'select';
+    const currentlySelected = isSelected(day, hour);
+    if (shouldSelect !== currentlySelected) {
+      toggleCell(day, hour);
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsSelecting(false);
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
+  return (
+    <div className="overflow-x-auto">
+      <div className="min-w-[800px]">
+        {/* Hour headers */}
+        <div className="flex mb-1">
+          <div className="w-20 shrink-0" />
+          <div className="flex flex-1 gap-px">
+            {HOURS.map(hour => (
+              <div key={hour} className="flex-1 text-center text-xs text-muted-foreground">
+                {hour.toString().padStart(2, '0')}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Day rows */}
+        {DAYS.map(day => (
+          <div key={day} className="flex mb-px">
+            <div className="w-20 shrink-0 text-sm font-medium capitalize py-1">
+              {DAY_LABELS[day]}
+            </div>
+            <div className="flex flex-1 gap-px">
+              {HOURS.map(hour => (
+                <div
+                  key={`${day}-${hour}`}
+                  className={`
+                    flex-1 h-6 rounded-sm cursor-pointer transition-colors select-none
+                    ${isSelected(day, hour)
+                      ? 'bg-primary hover:bg-primary/80'
+                      : 'bg-muted hover:bg-muted-foreground/20'
+                    }
+                    ${disabled ? 'cursor-not-allowed opacity-50' : ''}
+                  `}
+                  onMouseDown={() => handleMouseDown(day, hour)}
+                  onMouseEnter={() => handleMouseEnter(day, hour)}
+                  title={`${day.charAt(0).toUpperCase() + day.slice(1)} ${hour}:00 - ${hour + 1}:00`}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 rounded-sm bg-primary" />
+            <span>{ts("working")}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-4 h-4 rounded-sm bg-muted" />
+            <span>{ts("closed")}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Sound Card ──────────────────────────────────────────────────────────────
+
+function SoundCard({
+  title,
+  description,
+  soundUrl,
+  onUpload,
+  onRemove,
+  uploading,
+}: {
+  title: string;
+  description: string;
+  soundUrl: string | null;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+  uploading: boolean;
+}) {
+  const ts = useTranslations("callsSettings");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fileName = soundUrl ? soundUrl.split('/').pop() || 'custom sound' : null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      return; // 10MB limit
+    }
+    onUpload(file);
+    // Reset the input so the same file can be re-selected
+    e.target.value = '';
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-base">{title}</CardTitle>
+            <CardDescription className="text-sm">{description}</CardDescription>
+          </div>
+          {soundUrl && (
+            <Badge variant="secondary" className="shrink-0">
+              {fileName}
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center gap-3">
+          {soundUrl ? (
+            <>
+              <audio controls preload="none" className="h-8 flex-1">
+                <source src={soundUrl} />
+              </audio>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={onRemove}
+                disabled={uploading}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                {ts("removeSound")}
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground flex-1">
+              {ts("noCustomSound")}
+            </p>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".wav,.mp3,.ogg"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4 mr-1" />
+            )}
+            {ts("uploadSound")}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">{ts("soundRequirements")}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Page Component ─────────────────────────────────────────────────────
 
 export default function CallSettingsPage() {
   const t = useTranslations("calls");
+  const ts = useTranslations("callsSettings");
   const tCommon = useTranslations("common");
   const { toast } = useToast();
+
+  // ── SIP Config State (Tab 1 - existing) ──
   const [sipConfigs, setSipConfigs] = useState<SipConfigurationList[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -57,6 +357,19 @@ export default function CallSettingsPage() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // ── Working Hours State (Tab 2) ──
+  const [selectedSipConfigId, setSelectedSipConfigId] = useState<string>("");
+  const [pbxSettings, setPbxSettings] = useState<PbxSettings>(DEFAULT_PBX_SETTINGS);
+  const [pbxLoading, setPbxLoading] = useState(false);
+  const [pbxSaving, setPbxSaving] = useState(false);
+
+  // ── Sound Management State (Tab 3) ──
+  const [soundSipConfigId, setSoundSipConfigId] = useState<string>("");
+  const [soundSettings, setSoundSettings] = useState<PbxSettings>(DEFAULT_PBX_SETTINGS);
+  const [soundLoading, setSoundLoading] = useState(false);
+  const [uploadingSoundType, setUploadingSoundType] = useState<string | null>(null);
+
+  // ── Fetch SIP Configs ──
   useEffect(() => {
     fetchSipConfigs();
   }, []);
@@ -75,6 +388,7 @@ export default function CallSettingsPage() {
     }
   };
 
+  // ── SIP Config CRUD (Tab 1 - existing logic) ──
   const openModal = (config?: SipConfigurationList) => {
     if (config) {
       loadConfigForEdit(config.id);
@@ -267,76 +581,445 @@ export default function CallSettingsPage() {
     }));
   };
 
+  // ── PBX Settings API (Working Hours + Sounds) ──
+  const fetchPbxSettings = useCallback(async (sipConfigId: string) => {
+    if (!sipConfigId) return;
+    try {
+      const response = await axiosInstance.get(`/api/crm/api/pbx-settings/${sipConfigId}/`);
+      return response.data as PbxSettings;
+    } catch (err: unknown) {
+      console.error("Failed to fetch PBX settings:", err);
+      return null;
+    }
+  }, []);
+
+  // Load PBX settings when working hours SIP config changes
+  useEffect(() => {
+    if (!selectedSipConfigId) return;
+    let cancelled = false;
+    setPbxLoading(true);
+    fetchPbxSettings(selectedSipConfigId).then((data) => {
+      if (cancelled) return;
+      if (data) {
+        setPbxSettings(data);
+      } else {
+        setPbxSettings(DEFAULT_PBX_SETTINGS);
+      }
+      setPbxLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [selectedSipConfigId, fetchPbxSettings]);
+
+  // Load PBX settings when sounds SIP config changes
+  useEffect(() => {
+    if (!soundSipConfigId) return;
+    let cancelled = false;
+    setSoundLoading(true);
+    fetchPbxSettings(soundSipConfigId).then((data) => {
+      if (cancelled) return;
+      if (data) {
+        setSoundSettings(data);
+      } else {
+        setSoundSettings(DEFAULT_PBX_SETTINGS);
+      }
+      setSoundLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [soundSipConfigId, fetchPbxSettings]);
+
+  const saveWorkingHours = async () => {
+    if (!selectedSipConfigId) return;
+    try {
+      setPbxSaving(true);
+      await axiosInstance.patch(`/api/crm/api/pbx-settings/${selectedSipConfigId}/update/`, {
+        working_hours_enabled: pbxSettings.working_hours_enabled,
+        timezone: pbxSettings.timezone,
+        working_hours: pbxSettings.working_hours,
+        after_hours_action: pbxSettings.after_hours_action,
+        forward_number: pbxSettings.forward_number,
+      });
+      toast({
+        title: ts("success"),
+        description: ts("saved"),
+      });
+    } catch (err: unknown) {
+      console.error("Failed to save working hours:", err);
+      toast({
+        title: ts("error"),
+        description: ts("saveFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setPbxSaving(false);
+    }
+  };
+
+  const uploadSound = async (sipConfigId: string, soundType: string, file: File) => {
+    try {
+      setUploadingSoundType(soundType);
+      const formData = new FormData();
+      formData.append('sound_type', soundType);
+      formData.append('file', file);
+      const response = await axiosInstance.post(
+        `/api/crm/api/pbx-settings/${sipConfigId}/upload-sound/`,
+        formData
+      );
+      // Refresh settings to get updated URLs
+      const data = await fetchPbxSettings(sipConfigId);
+      if (data) {
+        setSoundSettings(data);
+        // Also update working hours settings if same config
+        if (sipConfigId === selectedSipConfigId) {
+          setPbxSettings(data);
+        }
+      }
+      toast({
+        title: ts("success"),
+        description: ts("saved"),
+      });
+    } catch (err: unknown) {
+      console.error("Failed to upload sound:", err);
+      toast({
+        title: ts("error"),
+        description: ts("uploadFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingSoundType(null);
+    }
+  };
+
+  const removeSound = async (sipConfigId: string, soundType: string) => {
+    try {
+      setUploadingSoundType(soundType);
+      await axiosInstance.post(
+        `/api/crm/api/pbx-settings/${sipConfigId}/remove-sound/`,
+        { sound_type: soundType }
+      );
+      // Refresh settings to get updated URLs
+      const data = await fetchPbxSettings(sipConfigId);
+      if (data) {
+        setSoundSettings(data);
+        if (sipConfigId === selectedSipConfigId) {
+          setPbxSettings(data);
+        }
+      }
+      toast({
+        title: ts("success"),
+        description: ts("saved"),
+      });
+    } catch (err: unknown) {
+      console.error("Failed to remove sound:", err);
+      toast({
+        title: ts("error"),
+        description: ts("removeFailed"),
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingSoundType(null);
+    }
+  };
+
+  // ── Render ──
   return (
     <FeatureGate feature="ip_calling" showUpgrade={true}>
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
-            <p className="text-muted-foreground">
-              {t("settings.subtitle")}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={setupAsteriskServer}>
-              <Zap className="h-4 w-4 mr-2" />
-              {t("settings.quickSetup")}
-            </Button>
-            <Button onClick={() => openModal()}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t("settings.addConfiguration")}
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
+          <p className="text-muted-foreground">
+            {t("settings.subtitle")}
+          </p>
         </div>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <Tabs defaultValue="sip" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="sip">{ts("sipTab")}</TabsTrigger>
+            <TabsTrigger value="working-hours">{ts("workingHoursTab")}</TabsTrigger>
+            <TabsTrigger value="sounds">{ts("soundsTab")}</TabsTrigger>
+          </TabsList>
 
-        {/* Loading State */}
-        {loading ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">
-                {tCommon("loading")}
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <SipConfigList
-            configs={sipConfigs}
-            onEdit={openModal}
-            onDelete={deleteConfig}
-            onSetDefault={setDefaultConfig}
-            onTest={testConnection}
-            actionLoading={actionLoading}
-          />
-        )}
+          {/* ── Tab 1: SIP Configurations ── */}
+          <TabsContent value="sip" className="space-y-6">
+            {/* Action buttons */}
+            <div className="flex items-center justify-end gap-2">
+              <Button variant="outline" onClick={setupAsteriskServer}>
+                <Zap className="h-4 w-4 mr-2" />
+                {t("settings.quickSetup")}
+              </Button>
+              <Button onClick={() => openModal()}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t("settings.addConfiguration")}
+              </Button>
+            </div>
 
-        {/* User Phone Assignments per SIP Config */}
-        {sipConfigs.map((config) => (
-          <UserPhoneAssignments
-            key={config.id}
-            sipConfigId={config.id}
-            sipConfigName={config.name}
-          />
-        ))}
+            {/* Error Alert */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-        {/* Configuration Modal */}
-        <SipConfigForm
-          open={showModal}
-          onClose={() => setShowModal(false)}
-          onSave={saveConfig}
-          configForm={configForm}
-          updateFormField={updateFormField}
-          editingConfig={editingConfig}
-          saving={saving}
-        />
+            {/* Loading State */}
+            {loading ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    {tCommon("loading")}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <SipConfigList
+                configs={sipConfigs}
+                onEdit={openModal}
+                onDelete={deleteConfig}
+                onSetDefault={setDefaultConfig}
+                onTest={testConnection}
+                actionLoading={actionLoading}
+              />
+            )}
+
+            {/* User Phone Assignments per SIP Config */}
+            {sipConfigs.map((config) => (
+              <UserPhoneAssignments
+                key={config.id}
+                sipConfigId={config.id}
+                sipConfigName={config.name}
+              />
+            ))}
+
+            {/* Configuration Modal */}
+            <SipConfigForm
+              open={showModal}
+              onClose={() => setShowModal(false)}
+              onSave={saveConfig}
+              configForm={configForm}
+              updateFormField={updateFormField}
+              editingConfig={editingConfig}
+              saving={saving}
+            />
+          </TabsContent>
+
+          {/* ── Tab 2: Working Hours ── */}
+          <TabsContent value="working-hours" className="space-y-6">
+            {/* SIP Config Selector */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{ts("selectSipConfig")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {sipConfigs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{ts("noSipConfigs")}</p>
+                ) : (
+                  <Select
+                    value={selectedSipConfigId}
+                    onValueChange={setSelectedSipConfigId}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder={ts("selectSipConfig")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sipConfigs.map((config) => (
+                        <SelectItem key={config.id} value={String(config.id)}>
+                          {config.name} {config.is_default ? "(Default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </CardContent>
+            </Card>
+
+            {selectedSipConfigId && (
+              <>
+                {pbxLoading ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      <p className="text-muted-foreground">{tCommon("loading")}</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <>
+                    {/* Enable/Disable Switch */}
+                    <Card>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label className="text-base font-medium">{ts("workingHoursEnabled")}</Label>
+                            <p className="text-sm text-muted-foreground">
+                              {ts("workingHoursDescription")}
+                            </p>
+                          </div>
+                          <Switch
+                            checked={pbxSettings.working_hours_enabled}
+                            onCheckedChange={(checked) =>
+                              setPbxSettings((prev) => ({ ...prev, working_hours_enabled: checked }))
+                            }
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Timezone Selector */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">{ts("timezone")}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Select
+                          value={pbxSettings.timezone}
+                          onValueChange={(value) =>
+                            setPbxSettings((prev) => ({ ...prev, timezone: value }))
+                          }
+                        >
+                          <SelectTrigger className="w-full max-w-sm">
+                            <SelectValue placeholder={ts("selectTimezone")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TIMEZONES.map((tz) => (
+                              <SelectItem key={tz.value} value={tz.value}>
+                                {tz.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </CardContent>
+                    </Card>
+
+                    {/* Working Hours Grid */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">{ts("workingHoursTab")}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <WorkingHoursGrid
+                          schedule={pbxSettings.working_hours}
+                          onChange={(schedule) =>
+                            setPbxSettings((prev) => ({ ...prev, working_hours: schedule }))
+                          }
+                        />
+                      </CardContent>
+                    </Card>
+
+                    {/* After-Hours Action */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">{ts("afterHoursAction")}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <Select
+                          value={pbxSettings.after_hours_action}
+                          onValueChange={(value: 'announcement' | 'voicemail' | 'forward') =>
+                            setPbxSettings((prev) => ({ ...prev, after_hours_action: value }))
+                          }
+                        >
+                          <SelectTrigger className="w-full max-w-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="announcement">{ts("playAnnouncement")}</SelectItem>
+                            <SelectItem value="voicemail">{ts("voicemail")}</SelectItem>
+                            <SelectItem value="forward">{ts("forwardCall")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        {pbxSettings.after_hours_action === 'forward' && (
+                          <div className="space-y-2">
+                            <Label>{ts("forwardNumber")}</Label>
+                            <Input
+                              type="tel"
+                              placeholder="+1234567890"
+                              className="max-w-sm"
+                              value={pbxSettings.forward_number}
+                              onChange={(e) =>
+                                setPbxSettings((prev) => ({ ...prev, forward_number: e.target.value }))
+                              }
+                            />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Save Button */}
+                    <div className="flex justify-end">
+                      <Button onClick={saveWorkingHours} disabled={pbxSaving}>
+                        {pbxSaving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            {ts("saving")}
+                          </>
+                        ) : (
+                          ts("save")
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </TabsContent>
+
+          {/* ── Tab 3: Sound Management ── */}
+          <TabsContent value="sounds" className="space-y-6">
+            {/* SIP Config Selector */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{ts("selectSipConfig")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {sipConfigs.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{ts("noSipConfigs")}</p>
+                ) : (
+                  <Select
+                    value={soundSipConfigId}
+                    onValueChange={setSoundSipConfigId}
+                  >
+                    <SelectTrigger className="w-full max-w-sm">
+                      <SelectValue placeholder={ts("selectSipConfig")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sipConfigs.map((config) => (
+                        <SelectItem key={config.id} value={String(config.id)}>
+                          {config.name} {config.is_default ? "(Default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </CardContent>
+            </Card>
+
+            {soundSipConfigId && (
+              <>
+                {soundLoading ? (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      <p className="text-muted-foreground">{tCommon("loading")}</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4">
+                    {SOUND_TYPES.map((sound) => (
+                      <SoundCard
+                        key={sound.key}
+                        title={ts(sound.titleKey)}
+                        description={ts(sound.descKey)}
+                        soundUrl={soundSettings[sound.urlField as keyof PbxSettings] as string | null}
+                        onUpload={(file) => uploadSound(soundSipConfigId, sound.key, file)}
+                        onRemove={() => removeSound(soundSipConfigId, sound.key)}
+                        uploading={uploadingSoundType === sound.key}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </FeatureGate>
   );
