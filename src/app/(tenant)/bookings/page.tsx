@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, CalendarCheck, Clock, CheckCircle2, Users, Briefcase, DollarSign } from "lucide-react"
+import { bookingsAdminDashboardRetrieve } from "@/api/generated/api"
 
 export default function BookingsDashboard() {
   const t = useTranslations("bookingsDashboard")
@@ -20,17 +21,18 @@ export default function BookingsDashboard() {
   })
 
   useEffect(() => {
-    // TODO: Fetch dashboard stats from API
-    setStats({
-      todayBookings: 0,
-      upcomingBookings: 0,
-      completedThisMonth: 0,
-      totalRevenue: "0.00",
-      activeServices: 0,
-      activeStaff: 0,
-      totalClients: 0,
-      pendingBookings: 0,
-    })
+    bookingsAdminDashboardRetrieve().then((data: any) => {
+      setStats({
+        todayBookings: data.today_count || 0,
+        upcomingBookings: data.week_count || 0,
+        completedThisMonth: data.status_breakdown?.completed || 0,
+        totalRevenue: data.total_revenue?.toFixed(2) || "0.00",
+        activeServices: data.popular_services?.length || 0,
+        activeStaff: data.active_staff_count || 0,
+        totalClients: data.total_clients || 0,
+        pendingBookings: data.status_breakdown?.pending || 0,
+      })
+    }).catch(() => {})
   }, [])
 
   const quickLinks = [
