@@ -47,28 +47,29 @@ const defaultPlatformSettings: PlatformAutoReplySettings = {
 };
 
 interface AwayHoursGridProps {
-  schedule: AwayHoursSchedule;
+  schedule?: AwayHoursSchedule;
   onChange: (schedule: AwayHoursSchedule) => void;
   disabled?: boolean;
 }
 
 function AwayHoursGrid({ schedule, onChange, disabled }: AwayHoursGridProps) {
+  const normalizedSchedule = schedule ?? {};
   const t = useTranslations("social");
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'select' | 'deselect'>('select');
 
   const isSelected = (day: string, hour: number) => {
-    const daySchedule = schedule[day as keyof AwayHoursSchedule] || [];
+    const daySchedule = normalizedSchedule[day as keyof AwayHoursSchedule] || [];
     return daySchedule.includes(hour);
   };
 
   const toggleCell = (day: string, hour: number) => {
     if (disabled) return;
-    const daySchedule = schedule[day as keyof AwayHoursSchedule] || [];
+    const daySchedule = normalizedSchedule[day as keyof AwayHoursSchedule] || [];
     const newDaySchedule = isSelected(day, hour)
       ? daySchedule.filter(h => h !== hour)
       : [...daySchedule, hour].sort((a, b) => a - b);
-    onChange({ ...schedule, [day]: newDaySchedule });
+    onChange({ ...normalizedSchedule, [day]: newDaySchedule });
   };
 
   const handleMouseDown = (day: string, hour: number) => {
