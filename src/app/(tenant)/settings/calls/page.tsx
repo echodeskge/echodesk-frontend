@@ -585,7 +585,7 @@ export default function CallSettingsPage() {
   const fetchPbxSettings = useCallback(async (sipConfigId: string) => {
     if (!sipConfigId) return;
     try {
-      const response = await axiosInstance.get(`/api/crm/api/pbx-settings/${sipConfigId}/`);
+      const response = await axiosInstance.get(`/api/pbx-settings/${sipConfigId}/`);
       return response.data as PbxSettings;
     } catch (err: unknown) {
       console.error("Failed to fetch PBX settings:", err);
@@ -631,7 +631,7 @@ export default function CallSettingsPage() {
     if (!selectedSipConfigId) return;
     try {
       setPbxSaving(true);
-      await axiosInstance.patch(`/api/crm/api/pbx-settings/${selectedSipConfigId}/update/`, {
+      await axiosInstance.patch(`/api/pbx-settings/${selectedSipConfigId}/`, {
         working_hours_enabled: pbxSettings.working_hours_enabled,
         timezone: pbxSettings.timezone,
         working_hours: pbxSettings.working_hours,
@@ -661,7 +661,7 @@ export default function CallSettingsPage() {
       formData.append('sound_type', soundType);
       formData.append('file', file);
       const response = await axiosInstance.post(
-        `/api/crm/api/pbx-settings/${sipConfigId}/upload-sound/`,
+        `/api/pbx-settings/${sipConfigId}/upload-sound/`,
         formData
       );
       // Refresh settings to get updated URLs
@@ -693,7 +693,7 @@ export default function CallSettingsPage() {
     try {
       setUploadingSoundType(soundType);
       await axiosInstance.post(
-        `/api/crm/api/pbx-settings/${sipConfigId}/remove-sound/`,
+        `/api/pbx-settings/${sipConfigId}/remove-sound/`,
         { sound_type: soundType }
       );
       // Refresh settings to get updated URLs
