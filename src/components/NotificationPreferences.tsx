@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Bell, MessageCircle, Receipt, CalendarDays, Calendar, Phone } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+import axiosInstance from '@/api/axios'
 
 // -------------------------------------------------------------------
 // Types
@@ -118,6 +119,58 @@ export function getNotificationPreference(
 }
 
 // -------------------------------------------------------------------
+// Map notification_type strings (e.g. "ticket_assigned") to category + subType
+// -------------------------------------------------------------------
+
+const NOTIFICATION_TYPE_MAP: Record<string, { category: keyof NotificationPreferences; subType: string }> = {
+  // Tickets
+  ticket_assigned: { category: 'tickets', subType: 'assigned' },
+  ticket_commented: { category: 'tickets', subType: 'commented' },
+  ticket_mentioned: { category: 'tickets', subType: 'mentioned' },
+  ticket_status_changed: { category: 'tickets', subType: 'status_changed' },
+  ticket_updated: { category: 'tickets', subType: 'status_changed' },
+  ticket_due_soon: { category: 'tickets', subType: 'status_changed' },
+
+  // Messages
+  message_received: { category: 'messages', subType: 'new_message' },
+  message_assigned: { category: 'messages', subType: 'message_assigned' },
+
+  // Invoices
+  invoice_created: { category: 'invoices', subType: 'created' },
+  invoice_paid: { category: 'invoices', subType: 'paid' },
+  invoice_overdue: { category: 'invoices', subType: 'overdue' },
+
+  // Leave
+  leave_request_submitted: { category: 'leave', subType: 'submitted' },
+  leave_request_approved: { category: 'leave', subType: 'approved' },
+  leave_request_rejected: { category: 'leave', subType: 'rejected' },
+
+  // Bookings
+  booking_confirmed: { category: 'bookings', subType: 'confirmed' },
+  booking_cancelled: { category: 'bookings', subType: 'cancelled' },
+  booking_reminder: { category: 'bookings', subType: 'reminder' },
+
+  // Calls
+  call_missed: { category: 'calls', subType: 'missed' },
+  call_voicemail: { category: 'calls', subType: 'voicemail' },
+}
+
+/**
+ * Get all channel preferences for a notification_type string (e.g. "ticket_assigned").
+ * Returns { inApp, sound, push } — defaults to all true for unknown types.
+ */
+export function getNotificationPreferenceByType(notificationType: string): ChannelPreference {
+  const mapping = NOTIFICATION_TYPE_MAP[notificationType]
+  if (!mapping) {
+    return { inApp: true, sound: true, push: true }
+  }
+
+  const prefs = loadPreferences()
+  const catPref = prefs[mapping.category]?.[mapping.subType]
+  return catPref ?? { inApp: true, sound: true, push: true }
+}
+
+// -------------------------------------------------------------------
 // Category metadata
 // -------------------------------------------------------------------
 
@@ -197,16 +250,118 @@ const CHANNELS: { key: keyof ChannelPreference; labelKey: string }[] = [
 ]
 
 // -------------------------------------------------------------------
+// API sync helpers
+// -------------------------------------------------------------------
+
+interface ApiNotificationPreference {
+  notification_type: string
+  in_app: boolean
+  sound: boolean
+  push: boolean
+}
+
+/** Fetch preferences from the backend API */
+async function fetchPreferencesFromApi(): Promise<ApiNotificationPreference[] | null> {
+  try {
+    const response = await axiosInstance.get('/api/notification-preferences/')
+    return response.data
+  } catch {
+    return null
+  }
+}
+
+/** Save preferences to the backend API */
+async function savePreferencesToApi(prefs: ApiNotificationPreference[]): Promise<void> {
+  try {
+    await axiosInstance.put('/api/notification-preferences/bulk/', prefs)
+  } catch {
+    // Silently fail — localStorage still has the data
+  }
+}
+
+/** Convert our internal structure into the flat API format */
+function prefsToApiFormat(prefs: NotificationPreferences): ApiNotificationPreference[] {
+  const result: ApiNotificationPreference[] = []
+  for (const [notificationType, mapping] of Object.entries(NOTIFICATION_TYPE_MAP)) {
+    const catPref = prefs[mapping.category]?.[mapping.subType]
+    if (catPref) {
+      result.push({
+        notification_type: notificationType,
+        in_app: catPref.inApp,
+        sound: catPref.sound,
+        push: catPref.push,
+      })
+    }
+  }
+  return result
+}
+
+/** Merge API preferences into local preferences (API takes priority) */
+function mergeApiPreferences(
+  local: NotificationPreferences,
+  apiPrefs: ApiNotificationPreference[],
+): NotificationPreferences {
+  const merged = { ...local }
+  for (const apiPref of apiPrefs) {
+    const mapping = NOTIFICATION_TYPE_MAP[apiPref.notification_type]
+    if (!mapping) continue
+
+    if (!merged[mapping.category]) continue
+    if (!merged[mapping.category][mapping.subType]) continue
+
+    merged[mapping.category] = {
+      ...merged[mapping.category],
+      [mapping.subType]: {
+        inApp: apiPref.in_app,
+        sound: apiPref.sound,
+        push: apiPref.push,
+      },
+    }
+  }
+  return merged
+}
+
+// -------------------------------------------------------------------
 // Component
 // -------------------------------------------------------------------
 
 export function NotificationPreferences() {
   const t = useTranslations('notificationPreferences')
   const [prefs, setPrefs] = useState<NotificationPreferences>(defaultPreferences)
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Load from localStorage on mount
+  // Debounced API save (500ms after last change)
+  const debouncedApiSave = useCallback((nextPrefs: NotificationPreferences) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current)
+    }
+    saveTimerRef.current = setTimeout(() => {
+      savePreferencesToApi(prefsToApiFormat(nextPrefs))
+    }, 500)
+  }, [])
+
+  // Cleanup debounce timer
   useEffect(() => {
-    setPrefs(loadPreferences())
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current)
+      }
+    }
+  }, [])
+
+  // Load from localStorage on mount, then merge with API data
+  useEffect(() => {
+    const localPrefs = loadPreferences()
+    setPrefs(localPrefs)
+
+    // Fetch from API and merge (API takes priority)
+    fetchPreferencesFromApi().then((apiPrefs) => {
+      if (apiPrefs && apiPrefs.length > 0) {
+        const merged = mergeApiPreferences(localPrefs, apiPrefs)
+        setPrefs(merged)
+        savePreferences(merged) // Update localStorage with merged result
+      }
+    })
   }, [])
 
   const toggle = useCallback(
@@ -227,10 +382,11 @@ export function NotificationPreferences() {
           },
         }
         savePreferences(next)
+        debouncedApiSave(next)
         return next
       })
     },
-    [],
+    [debouncedApiSave],
   )
 
   // Toggle an entire channel column for a category
@@ -246,10 +402,11 @@ export function NotificationPreferences() {
         }
         const next = { ...prev, [category]: updated }
         savePreferences(next)
+        debouncedApiSave(next)
         return next
       })
     },
-    [],
+    [debouncedApiSave],
   )
 
   return (

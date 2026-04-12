@@ -59,6 +59,41 @@ interface NotificationSoundSettings {
   notification_sound_system: string;
 }
 
+// Sound files mapped to notification types
+// Only references files that exist in /public/notifications/
+const NOTIFICATION_TYPE_SOUNDS: Record<string, string> = {
+  // Tickets
+  ticket_assigned: 'mixkit-confirmation-tone-2867.wav',
+  ticket_commented: 'mixkit-message-pop-alert-2354.mp3',
+  ticket_mentioned: 'mixkit-bell-notification-933.wav',
+  ticket_status_changed: 'mixkit-positive-notification-951.wav',
+  ticket_updated: 'mixkit-confirmation-tone-2867.wav',
+  ticket_due_soon: 'mixkit-urgent-simple-tone-loop-2976.wav',
+
+  // Messages
+  message_received: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
+  message_assigned: 'mixkit-magic-notification-ring-2344.wav',
+
+  // Invoices
+  invoice_created: 'mixkit-correct-answer-tone-2870.wav',
+  invoice_paid: 'mixkit-happy-bells-notification-937.wav',
+  invoice_overdue: 'mixkit-urgent-simple-tone-loop-2976.wav',
+
+  // Leave
+  leave_request_submitted: 'mixkit-message-pop-alert-2354.mp3',
+  leave_request_approved: 'mixkit-happy-bells-notification-937.wav',
+  leave_request_rejected: 'mixkit-guitar-notification-alert-2320.wav',
+
+  // Bookings
+  booking_confirmed: 'mixkit-happy-bells-notification-937.wav',
+  booking_cancelled: 'mixkit-guitar-notification-alert-2320.wav',
+  booking_reminder: 'mixkit-bell-notification-933.wav',
+
+  // Calls
+  call_missed: 'mixkit-game-notification-wave-alarm-987.wav',
+  call_voicemail: 'mixkit-happy-bells-notification-937.wav',
+};
+
 class NotificationSoundManager {
   private audioCache: Map<string, HTMLAudioElement> = new Map();
   private settings: Record<NotificationPlatform, string> = { ...DEFAULT_SOUNDS };
@@ -161,6 +196,28 @@ class NotificationSoundManager {
   }
 
   /**
+   * Play notification sound based on notification type.
+   * Falls back to the system default sound if type is unknown.
+   */
+  public playForNotificationType(type: string): void {
+    if (!this.enabled) return;
+    if (typeof window === 'undefined') return;
+
+    const soundFile = NOTIFICATION_TYPE_SOUNDS[type] || this.settings.system;
+    if (!soundFile) return;
+
+    try {
+      const audio = this.getAudio(soundFile);
+      audio.currentTime = 0;
+      audio.play().catch((error) => {
+        console.error('[NotificationSound] Failed to play sound for type:', type, error);
+      });
+    } catch (error) {
+      console.error('[NotificationSound] Failed to play sound for type:', type, error);
+    }
+  }
+
+  /**
    * Preview a specific sound file (for settings UI)
    */
   public preview(soundFile: string): void {
@@ -245,6 +302,9 @@ export function getNotificationSound(): NotificationSoundManager {
   }
   return soundManager;
 }
+
+// Export notification type sound mapping for external use
+export { NOTIFICATION_TYPE_SOUNDS };
 
 // Also export the manager class for typing
 export { NotificationSoundManager };

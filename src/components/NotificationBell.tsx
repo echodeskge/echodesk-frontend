@@ -18,6 +18,7 @@ import { useNotificationsUnreadCount } from '@/hooks/useNotifications'
 import { useNotificationsWebSocket } from '@/hooks/useNotificationsWebSocket'
 import { useWebPush } from '@/hooks/useWebPush'
 import { getNotificationSound } from '@/utils/notificationSound'
+import { getNotificationPreferenceByType } from '@/components/NotificationPreferences'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
@@ -70,27 +71,34 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     markAllAsRead: wsMarkAllAsRead,
   } = useNotificationsWebSocket({
     onNotificationCreated: (notification, count) => {
-      // Play notification sound
-      notificationSound.current.play()
+      // Get user preferences for this notification type
+      const pref = getNotificationPreferenceByType(notification.notification_type)
+
+      // Play notification sound based on type and preference
+      if (pref.sound) {
+        notificationSound.current.playForNotificationType(notification.notification_type)
+      }
 
       // Trigger badge pulse animation
       setShouldPulse(true)
       setTimeout(() => setShouldPulse(false), 1000)
 
-      // Add to notifications list if popover is open
+      // Add to notifications list
       setNotifications(prev => [notification as unknown as NotificationData, ...prev])
 
-      // Show toast notification (in-app popup)
-      setToasts(prev => [...prev, {
-        id: notification.id,
-        title: notification.title,
-        message: notification.message,
-        type: notification.notification_type,
-        ticketId: notification.ticket_id
-      }])
+      // Show toast notification (in-app popup) based on preference
+      if (pref.inApp) {
+        setToasts(prev => [...prev, {
+          id: notification.id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.notification_type,
+          ticketId: notification.ticket_id
+        }])
+      }
 
-      // Show browser notification
-      if (canShowNotifications) {
+      // Show browser notification based on preference
+      if (pref.push && canShowNotifications) {
         try {
           const browserNotification = new window.Notification(notification.title, {
             body: notification.message,
