@@ -132,7 +132,6 @@ export default function ProductsPage() {
       setSelectedProductIds(new Set());
       refetch();
     } catch (error) {
-      console.error("Bulk status change failed:", error);
       toast.error("Failed to update products. Please try again.");
     } finally {
       setBulkActionLoading(false);

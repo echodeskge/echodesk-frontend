@@ -103,7 +103,6 @@ export default function ProductAttributesPage() {
         setIsSidebarSheetOpen(false);
       }
     } catch (error) {
-      console.error("Failed to delete attribute:", error);
       toast.error("Failed to delete attribute");
     } finally {
       setDeletingAttribute(null);

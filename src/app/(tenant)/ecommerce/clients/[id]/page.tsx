@@ -69,7 +69,6 @@ export default function ClientDetailPage() {
       const response = await ecommerceAdminClientsRetrieve(id);
       setClient(response);
     } catch (error) {
-      console.error("Failed to fetch client:", error);
       toast.error(t("errors.loadFailed"));
     } finally {
       setLoading(false);
@@ -83,7 +82,7 @@ export default function ClientDetailPage() {
         await ecommerceAdminOrdersList(clientId);
       setOrders(response.results || []);
     } catch (error) {
-      console.error("Failed to fetch client orders:", error);
+      // Error shown via toast in fetchClient
     } finally {
       setOrdersLoading(false);
     }

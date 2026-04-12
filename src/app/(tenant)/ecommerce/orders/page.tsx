@@ -116,7 +116,6 @@ export default function EcommerceOrdersPage() {
       const response = await ecommerceAdminOrdersList();
       setOrders((response.results || response) as unknown as Order[]);
     } catch (error) {
-      console.error("Failed to fetch orders:", error);
       toast.error("Failed to load orders");
     } finally {
       setLoading(false);
@@ -149,7 +148,6 @@ export default function EcommerceOrdersPage() {
         await fetchOrders();
       }
     } catch (error) {
-      console.error("Failed to initiate payment:", error);
       toast.error("Failed to initiate payment. Please try again.");
     } finally {
       setInitiatingPayment(null);
@@ -190,7 +188,6 @@ export default function EcommerceOrdersPage() {
       await fetchOrders();
       setSelectedOrderIds(new Set());
     } catch (error) {
-      console.error("Bulk update failed:", error);
       toast.error("Failed to update orders. Please try again.");
     } finally {
       setBulkActionLoading(false);
@@ -229,7 +226,6 @@ export default function EcommerceOrdersPage() {
       URL.revokeObjectURL(url);
       toast.success(`Exported ${selected.length} orders`);
     } catch (error) {
-      console.error("Export failed:", error);
       toast.error("Failed to export orders");
     }
   };
@@ -250,7 +246,6 @@ export default function EcommerceOrdersPage() {
       URL.revokeObjectURL(url);
       toast.success("Orders exported successfully");
     } catch (error) {
-      console.error("Export failed:", error);
       toast.error("Failed to export orders");
     }
   };

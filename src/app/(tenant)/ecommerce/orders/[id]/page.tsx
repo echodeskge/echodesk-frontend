@@ -90,7 +90,6 @@ export default function OrderDetailPage() {
       const response = await ecommerceAdminOrdersRetrieve(id)
       setOrder(response as unknown as Order)
     } catch (error) {
-      console.error("Failed to fetch order:", error)
       toast.error("Failed to load order details")
     } finally {
       setLoading(false)
@@ -135,7 +134,6 @@ export default function OrderDetailPage() {
       toast.success(`Order status updated to ${pendingStatus}`)
       setPendingStatus(null)
     } catch (error) {
-      console.error('Error updating status:', error)
       toast.error('Failed to update order status')
     } finally {
       setUpdatingStatus(false)
@@ -154,7 +152,6 @@ export default function OrderDetailPage() {
       setOrder(response as unknown as Order)
       toast.success(t("refund.success"))
     } catch (error) {
-      console.error("Error refunding order:", error)
       toast.error(t("refund.error"))
     } finally {
       setRefunding(false)

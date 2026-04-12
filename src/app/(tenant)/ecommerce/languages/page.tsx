@@ -73,7 +73,7 @@ export default function LanguagesPage() {
       await deleteLanguage.mutateAsync(deletingLanguage.id);
       setDeletingLanguage(null);
     } catch (error) {
-      console.error("Failed to delete language:", error);
+      // Error handled by mutation's onError callback
     }
   };
 
