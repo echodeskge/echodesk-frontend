@@ -2083,7 +2083,11 @@
       "noProviderWarning": "At least one payment method must be enabled",
       "cardPayments": "Card Payments (BOG)",
       "cardPaymentsDesc": "Accept card payments through Bank of Georgia",
-      "atLeastOneRequired": "At least one payment method should be enabled"
+      "atLeastOneRequired": "At least one payment method should be enabled",
+      "paddleApiKey": "Paddle API Key",
+      "paddleClientToken": "Paddle Client Token (Frontend)",
+      "paddleWebhookSecret": "Paddle Webhook Secret",
+      "paddleProductionMode": "Production Mode"
     },
     "deployment": {
       "title": "Frontend Deployment",

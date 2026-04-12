@@ -2083,7 +2083,11 @@
       "noProviderWarning": "მინიმუმ ერთი გადახდის მეთოდი უნდა იყოს ჩართული",
       "cardPayments": "ბარათით გადახდა (BOG)",
       "cardPaymentsDesc": "მიიღეთ ბარათით გადახდები საქართველოს ბანკის მეშვეობით",
-      "atLeastOneRequired": "მინიმუმ ერთი გადახდის მეთოდი უნდა იყოს ჩართული"
+      "atLeastOneRequired": "მინიმუმ ერთი გადახდის მეთოდი უნდა იყოს ჩართული",
+      "paddleApiKey": "Paddle API გასაღები",
+      "paddleClientToken": "Paddle კლიენტის ტოკენი (ფრონტენდი)",
+      "paddleWebhookSecret": "Paddle Webhook საიდუმლო",
+      "paddleProductionMode": "წარმოების რეჟიმი"
     },
     "deployment": {
       "title": "ფრონტენდის დეპლოი",

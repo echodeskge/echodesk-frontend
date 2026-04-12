@@ -46,6 +46,10 @@ interface EcommerceSettings {
   tbc_use_production: boolean
   flitt_merchant_id: string
   flitt_password: string
+  paddle_api_key: string
+  paddle_client_token: string
+  paddle_webhook_secret: string
+  paddle_use_production: boolean
   store_name: string
   store_email: string
   store_phone: string
@@ -120,6 +124,10 @@ export default function EcommerceSettingsPage() {
     tbc_use_production: false,
     flitt_merchant_id: "",
     flitt_password: "",
+    paddle_api_key: "",
+    paddle_client_token: "",
+    paddle_webhook_secret: "",
+    paddle_use_production: false,
     store_name: "",
     store_email: "",
     store_phone: "",
@@ -167,6 +175,10 @@ export default function EcommerceSettingsPage() {
           tbc_use_production: settingsData.tbc_use_production || false,
           flitt_merchant_id: settingsData.flitt_merchant_id || "",
           flitt_password: "",
+          paddle_api_key: "",
+          paddle_client_token: settingsData.paddle_client_token || "",
+          paddle_webhook_secret: settingsData.paddle_webhook_secret || "",
+          paddle_use_production: settingsData.paddle_use_production || false,
           store_name: settingsData.store_name || "",
           store_email: settingsData.store_email || "",
           store_phone: settingsData.store_phone || "",
@@ -409,12 +421,16 @@ export default function EcommerceSettingsPage() {
         tbc_api_key: settings.tbc_api_key,
         tbc_use_production: settings.tbc_use_production,
         flitt_merchant_id: settings.flitt_merchant_id,
+        paddle_client_token: settings.paddle_client_token,
+        paddle_webhook_secret: settings.paddle_webhook_secret,
+        paddle_use_production: settings.paddle_use_production,
         store_name: settings.store_name,
         store_email: settings.store_email,
         store_phone: settings.store_phone,
         ...(bogSecret && { bog_client_secret: bogSecret }),
         ...(settings.tbc_client_secret && { tbc_client_secret: settings.tbc_client_secret }),
         ...(settings.flitt_password && { flitt_password: settings.flitt_password }),
+        ...(settings.paddle_api_key && { paddle_api_key: settings.paddle_api_key }),
       }
 
       if (settings.id) {
@@ -798,12 +814,39 @@ export default function EcommerceSettingsPage() {
             </div>
             <Collapsible open={isProviderActive("paddle")}>
               <CollapsibleContent>
-                <div className="px-4 pb-4 border-t pt-4">
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <AlertCircle className="h-5 w-5 text-blue-600" />
-                    <p className="text-sm text-blue-800">
-                      {t("paymentMethods.paddleNote")}
-                    </p>
+                <div className="px-4 pb-4 border-t pt-4 space-y-3">
+                  <div>
+                    <Label>{t("paymentMethods.paddleApiKey")}</Label>
+                    <PasswordInput
+                      id="paddle_api_key"
+                      value={settings.paddle_api_key || ""}
+                      onChange={(v) => setSettings((prev) => ({ ...prev, paddle_api_key: v }))}
+                      placeholder="pdl_..."
+                    />
+                  </div>
+                  <div>
+                    <Label>{t("paymentMethods.paddleClientToken")}</Label>
+                    <Input
+                      value={settings.paddle_client_token || ""}
+                      onChange={(e) => setSettings((prev) => ({ ...prev, paddle_client_token: e.target.value }))}
+                      placeholder="test_..."
+                    />
+                  </div>
+                  <div>
+                    <Label>{t("paymentMethods.paddleWebhookSecret")}</Label>
+                    <PasswordInput
+                      id="paddle_webhook_secret"
+                      value={settings.paddle_webhook_secret || ""}
+                      onChange={(v) => setSettings((prev) => ({ ...prev, paddle_webhook_secret: v }))}
+                      placeholder="pdl_ntfset_..."
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label>{t("paymentMethods.paddleProductionMode")}</Label>
+                    <Switch
+                      checked={settings.paddle_use_production || false}
+                      onCheckedChange={(v) => setSettings((prev) => ({ ...prev, paddle_use_production: v }))}
+                    />
                   </div>
                 </div>
               </CollapsibleContent>
