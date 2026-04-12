@@ -151,7 +151,11 @@
       "settingsBookings": "Booking system settings",
       "settingsLeave": "Leave management settings",
       "settingsUsers": "Manage users and permissions",
-      "settingsGroups": "Manage user groups"
+      "settingsGroups": "Manage user groups",
+      "settingsSocialConnections": "Manage social media connections",
+      "settingsSocialAutoPosting": "Configure automatic posting",
+      "settingsSocialRatingStatistics": "View rating statistics",
+      "settingsNotifications": "Configure notification preferences"
     },
     "settingsSocial": "Social Settings",
     "settingsCalls": "Calls Settings",
@@ -163,7 +167,8 @@
     "settingsGroups": "Groups",
     "settingsSocialConnections": "Social Connections",
     "settingsSocialAutoPosting": "Auto-Posting",
-    "settingsSocialRatingStatistics": "Rating Statistics"
+    "settingsSocialRatingStatistics": "Rating Statistics",
+    "searchTickets": "Search tickets..."
   },
   "bugReport": {
     "title": "Report a Bug",
@@ -397,6 +402,36 @@
       "childForms": "Child Forms",
       "view": "View",
       "fillForm": "Fill Form"
+    },
+    "ticketDetail": {
+      "activity": "Activity",
+      "checklist": "Checklist",
+      "files": "Files",
+      "forms": "Forms",
+      "addComment": "Add a comment...",
+      "send": "Send",
+      "clickToEdit": "Click to edit",
+      "copyLink": "Copy Link",
+      "linkCopied": "Link copied",
+      "transferBoard": "Transfer to Board",
+      "deleteTicket": "Delete Ticket",
+      "confirmDelete": "Are you sure? This action cannot be undone.",
+      "backToBoard": "Back to Board",
+      "status": "Status",
+      "priority": "Priority",
+      "assignees": "Assignees",
+      "department": "Department",
+      "tags": "Tags",
+      "dueDate": "Due Date",
+      "groups": "Groups",
+      "created": "Created",
+      "updated": "Updated",
+      "noDescription": "No description. Click to add one.",
+      "noActivity": "No activity yet",
+      "statusChanged": "{user} changed status from {from} to {to}",
+      "priorityChanged": "{user} changed priority from {from} to {to}",
+      "assigned": "{user} was assigned",
+      "fieldUpdated": "{user} updated {field}"
     },
     "columns": {
       "addNewColumn": "Add New Column",

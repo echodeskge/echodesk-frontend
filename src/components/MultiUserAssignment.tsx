@@ -1,14 +1,31 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { ChevronDown, X, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import { Plus, X, Check } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { User, TicketAssignment } from '@/api/generated/interfaces';
+import { cn } from '@/lib/utils';
 
 export interface AssignmentData {
   userId: number;
@@ -27,12 +44,24 @@ interface MultiUserAssignmentProps {
   noUsersAvailableText?: string;
 }
 
-const roleOptions = [
-  { value: 'primary', label: 'Primary Assignee', color: 'bg-red-500' },
-  { value: 'collaborator', label: 'Collaborator', color: 'bg-blue-500' },
-  { value: 'reviewer', label: 'Reviewer', color: 'bg-orange-500' },
-  { value: 'observer', label: 'Observer', color: 'bg-gray-500' }
-];
+const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  primary: { label: 'Primary', color: 'text-red-700 dark:text-red-300', bg: 'bg-red-100 dark:bg-red-900/30' },
+  collaborator: { label: 'Collaborator', color: 'text-blue-700 dark:text-blue-300', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  reviewer: { label: 'Reviewer', color: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-100 dark:bg-amber-900/30' },
+  observer: { label: 'Observer', color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-800' },
+};
+
+function getInitials(firstName?: string, lastName?: string, email?: string): string {
+  if (firstName || lastName) {
+    return `${(firstName || '')[0] || ''}${(lastName || '')[0] || ''}`.toUpperCase();
+  }
+  return (email || '?')[0].toUpperCase();
+}
+
+function getUserName(user: User): string {
+  const name = `${user.first_name || ''} ${user.last_name || ''}`.trim();
+  return name || user.email?.split('@')[0] || 'Unknown';
+}
 
 export default function MultiUserAssignment({
   users = [],
@@ -40,228 +69,143 @@ export default function MultiUserAssignment({
   selectedAssignments = [],
   onChange,
   disabled = false,
-  placeholder = 'Select users to assign...',
+  placeholder = 'Assign...',
   searchPlaceholder = 'Search users...',
   noUsersFoundText = 'No users found',
   noUsersAvailableText = 'No users available'
 }: MultiUserAssignmentProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
+  const isUserSelected = (userId: number) =>
+    selectedAssignments.some(a => a.userId === userId);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const getUserRole = (userId: number) =>
+    selectedAssignments.find(a => a.userId === userId)?.role || 'collaborator';
 
-  const filteredUsers = (users || []).filter(user => 
-    !searchTerm || 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${user.first_name} ${user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const isUserSelected = (userId: number) => 
-    (selectedAssignments || []).some(assignment => assignment.userId === userId);
-
-  const getUserRole = (userId: number) => 
-    (selectedAssignments || []).find(assignment => assignment.userId === userId)?.role || 'collaborator';
-
-  const handleUserToggle = (userId: number) => {
+  const handleToggleUser = (userId: number) => {
     if (disabled) return;
-
-    const isSelected = isUserSelected(userId);
-    
-    if (isSelected) {
-      // Remove user
-      onChange((selectedAssignments || []).filter(assignment => assignment.userId !== userId));
+    if (isUserSelected(userId)) {
+      onChange(selectedAssignments.filter(a => a.userId !== userId));
     } else {
-      // Add user with default role
-      onChange([...(selectedAssignments || []), { userId, role: 'collaborator' }]);
+      onChange([...selectedAssignments, { userId, role: 'collaborator' }]);
     }
   };
 
-  const handleRoleChange = (userId: number, role: 'primary' | 'collaborator' | 'reviewer' | 'observer') => {
+  const handleRoleChange = (userId: number, role: AssignmentData['role']) => {
     if (disabled) return;
-
-    onChange((selectedAssignments || []).map(assignment => 
-      assignment.userId === userId 
-        ? { ...assignment, role }
-        : assignment
+    onChange(selectedAssignments.map(a =>
+      a.userId === userId ? { ...a, role } : a
     ));
   };
 
-  const removeAssignment = (userId: number) => {
+  const handleRemove = (userId: number) => {
     if (disabled) return;
-    onChange((selectedAssignments || []).filter(assignment => assignment.userId !== userId));
+    onChange(selectedAssignments.filter(a => a.userId !== userId));
   };
 
-  const getSelectedUsersDisplay = () => {
-    const assignments = selectedAssignments || [];
-    if (assignments.length === 0) {
-      return placeholder;
-    }
-
-    if (assignments.length === 1) {
-      const userId = assignments[0].userId;
-      const user = (users || []).find(u => u.id === userId);
-      return user ? `${user.first_name} ${user.last_name}` : 'Unknown User';
-    }
-
-    return `${assignments.length} users selected`;
-  };
-
-  const isPlaceholderShown = () => {
-    return (selectedAssignments || []).length === 0;
-  };
-
-  const getUserDisplay = (user: User) => {
-    const name = `${user.first_name} ${user.last_name}`.trim() || user.email;
-    return `${name} (${user.email})`;
-  };
-
-  const getRoleColor = (role: string) => {
-    return roleOptions.find(opt => opt.value === role)?.color || 'bg-gray-500';
-  };
-
-  const getRoleLabel = (role: string) => {
-    return roleOptions.find(opt => opt.value === role)?.label || role;
-  };
+  const unselectedUsers = users.filter(u => !isUserSelected(u.id));
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      {/* Selected Assignments Display */}
-      {(selectedAssignments || []).length > 0 && (
-        <div className="mb-3">
-          <div className="flex flex-wrap gap-2">
-            {(selectedAssignments || []).map(assignment => {
-              const user = (users || []).find(u => u.id === assignment.userId);
-              if (!user) return null;
+    <div className="space-y-2">
+      {/* Assigned users as chips */}
+      {selectedAssignments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedAssignments.map(assignment => {
+            const user = users.find(u => u.id === assignment.userId);
+            if (!user) return null;
+            const role = ROLE_CONFIG[assignment.role] || ROLE_CONFIG.collaborator;
 
-              return (
-                <div
-                  key={assignment.userId}
-                  className="flex items-center bg-background border-2 border-border rounded-full px-3 py-1.5 text-sm gap-2"
+            return (
+              <div
+                key={assignment.userId}
+                className="inline-flex items-center gap-1 rounded-lg border bg-card px-2 py-1 group/user"
+              >
+                <Avatar className="h-5 w-5 shrink-0">
+                  <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-semibold">
+                    {getInitials(user.first_name, user.last_name, user.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-xs font-medium truncate max-w-[100px]">
+                  {getUserName(user)}
+                </span>
+
+                {/* Role selector */}
+                <Select
+                  value={assignment.role}
+                  onValueChange={(val) => handleRoleChange(assignment.userId, val as AssignmentData['role'])}
+                  disabled={disabled}
                 >
-                  <span className="font-medium">
-                    {getUserDisplay(user)}
-                  </span>
-
-                  <Select
-                    value={assignment.role}
-                    onValueChange={(value) => handleRoleChange(assignment.userId, value as any)}
-                    disabled={disabled}
+                  <SelectTrigger
+                    className={cn(
+                      "h-5 w-auto border-none shadow-none text-[10px] font-medium px-1.5 py-0 rounded-md focus:ring-0",
+                      role.bg, role.color
+                    )}
                   >
-                    <SelectTrigger className={`h-6 w-auto border-none text-white text-xs font-medium px-2 ${getRoleColor(assignment.role)}`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roleOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value} className="cursor-pointer">
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ROLE_CONFIG).map(([key, cfg]) => (
+                      <SelectItem key={key} value={key} className="text-xs">
+                        <span className={cn("font-medium", cfg.color)}>{cfg.label}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                  <Button
-                    type="button"
-                    onClick={() => removeAssignment(assignment.userId)}
-                    disabled={disabled}
-                    variant="ghost"
-                    size="icon-sm"
-                    className="h-4 w-4 p-0 text-red-500 hover:text-red-700"
-                    title="Remove assignment"
+                {/* Remove button */}
+                {!disabled && (
+                  <button
+                    onClick={() => handleRemove(assignment.userId)}
+                    className="opacity-0 group-hover/user:opacity-100 transition-opacity h-4 w-4 rounded-full hover:bg-destructive/10 flex items-center justify-center shrink-0"
                   >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
+                    <X className="h-2.5 w-2.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Dropdown Trigger */}
-      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            disabled={disabled}
-            className="w-full justify-between"
-          >
-            <span className={isPlaceholderShown() ? "text-muted-foreground" : ""}>
-              {getSelectedUsersDisplay()}
-            </span>
-            <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-          </Button>
-        </DropdownMenuTrigger>
-
-        {/* Dropdown Menu */}
-        <DropdownMenuContent
-          className="p-0"
-          align="start"
-          style={{ width: 'var(--radix-dropdown-menu-trigger-width)', minWidth: '400px' }}
-        >
-          {/* Search Input */}
-          <div className="p-3 border-b border-border">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-          </div>
-
-          {/* User List */}
-          <div className="max-h-48 overflow-y-auto">
-            {filteredUsers.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground text-sm">
-                {searchTerm ? noUsersFoundText : noUsersAvailableText}
-              </div>
-            ) : (
-              filteredUsers.map(user => {
-                const selected = isUserSelected(user.id);
-                return (
-                  <div
-                    key={user.id}
-                    onClick={() => handleUserToggle(user.id)}
-                    className={`p-3 cursor-pointer border-b border-border flex items-center justify-between transition-colors ${
-                      selected ? 'bg-accent' : 'hover:bg-accent/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={selected}
-                        onCheckedChange={() => {}} // Handled by parent div click
-                      />
-                      <span className="text-sm">
-                        {getUserDisplay(user)}
-                      </span>
-                    </div>
-
-                    {selected && (
-                      <Badge className={`text-white text-xs font-medium ${getRoleColor(getUserRole(user.id))}`}>
-                        {getRoleLabel(getUserRole(user.id))}
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Add user button */}
+      {!disabled && (
+        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+          <PopoverTrigger asChild>
+            <button className="inline-flex items-center gap-1 rounded-md border border-dashed border-muted-foreground/30 px-2 py-1 text-xs text-muted-foreground hover:bg-muted/60 hover:border-muted-foreground/50 transition-colors">
+              <Plus className="h-3 w-3" />
+              {selectedAssignments.length === 0 ? placeholder : 'Add'}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-0" align="start">
+            <Command>
+              <CommandInput placeholder={searchPlaceholder} className="h-8" />
+              <CommandList>
+                <CommandEmpty>{noUsersFoundText}</CommandEmpty>
+                <CommandGroup>
+                  {users.map(user => {
+                    const selected = isUserSelected(user.id);
+                    return (
+                      <CommandItem
+                        key={user.id}
+                        onSelect={() => handleToggleUser(user.id)}
+                        className="text-xs"
+                      >
+                        <Check className={cn("mr-2 h-3 w-3", selected ? "opacity-100" : "opacity-0")} />
+                        <Avatar className="h-5 w-5 mr-2 shrink-0">
+                          <AvatarFallback className="text-[9px]">
+                            {getInitials(user.first_name, user.last_name, user.email)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate">{getUserName(user)}</span>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 }

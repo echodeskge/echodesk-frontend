@@ -50,7 +50,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
 import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
-import { Plus, Volume2, VolumeX, Sun, Moon } from "lucide-react";
+import { Plus, Volume2, VolumeX, Sun, Moon, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 
@@ -69,7 +69,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const { data: boards } = useBoards();
   const { data: appearance, isLoading: appearanceLoading } = useDashboardAppearance();
   const { setAppearance, resolvedMode, setMode } = useTheme();
-  const { selectedBoardId, setSelectedBoardId } = useBoard();
+  const { selectedBoardId, setSelectedBoardId, ticketSearchQuery, setTicketSearchQuery } = useBoard();
   const { data: socialSettings } = useSocialSettings();
 
   // Update notification sound manager with backend settings
@@ -652,17 +652,37 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
             <SidebarTrigger className="-ml-1" />
             <h1 className="text-lg font-semibold">{pageTitle}</h1>
             {showBoardSwitcher && (
-              <div className="ml-4">
-                <BoardSwitcher
-                  selectedBoardId={selectedBoardId}
-                  boards={boards}
-                  userProfile={userProfile}
-                  onBoardChange={setSelectedBoardId}
-                  onCreateBoard={() => setIsBoardCreateOpen(true)}
-                  onEditBoardStatuses={handleEditBoardStatuses}
-                  onManageBoardUsers={handleManageBoardUsers}
-                />
-              </div>
+              <>
+                <div className="ml-4">
+                  <BoardSwitcher
+                    selectedBoardId={selectedBoardId}
+                    boards={boards}
+                    userProfile={userProfile}
+                    onBoardChange={setSelectedBoardId}
+                    onCreateBoard={() => setIsBoardCreateOpen(true)}
+                    onEditBoardStatuses={handleEditBoardStatuses}
+                    onManageBoardUsers={handleManageBoardUsers}
+                  />
+                </div>
+                <div className="relative ml-2 hidden sm:block">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder={t("searchTickets")}
+                    value={ticketSearchQuery}
+                    onChange={(e) => setTicketSearchQuery(e.target.value)}
+                    className="h-8 w-48 rounded-md border border-input bg-background pl-8 pr-8 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                  {ticketSearchQuery && (
+                    <button
+                      onClick={() => setTicketSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                    >
+                      <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                    </button>
+                  )}
+                </div>
+              </>
             )}
             <div className="ml-auto flex items-center gap-2">
               {/* Active Users Indicator - Only show on tickets page */}

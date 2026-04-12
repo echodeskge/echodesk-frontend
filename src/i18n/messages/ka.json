@@ -151,7 +151,11 @@
       "settingsBookings": "ჯავშნების სისტემის პარამეტრები",
       "settingsLeave": "შვებულების მართვის პარამეტრები",
       "settingsUsers": "მომხმარებლების და უფლებების მართვა",
-      "settingsGroups": "მომხმარებელთა ჯგუფების მართვა"
+      "settingsGroups": "მომხმარებელთა ჯგუფების მართვა",
+      "settingsSocialConnections": "სოციალური კავშირების მართვა",
+      "settingsSocialAutoPosting": "ავტომატური გამოქვეყნების კონფიგურაცია",
+      "settingsSocialRatingStatistics": "შეფასების სტატისტიკის ნახვა",
+      "settingsNotifications": "შეტყობინებების პარამეტრების კონფიგურაცია"
     },
     "settingsSocial": "სოციალური პარამეტრები",
     "settingsCalls": "ზარების პარამეტრები",
@@ -163,7 +167,8 @@
     "settingsGroups": "ჯგუფები",
     "settingsSocialConnections": "სოციალური კავშირები",
     "settingsSocialAutoPosting": "ავტო-გამოქვეყნება",
-    "settingsSocialRatingStatistics": "შეფასების სტატისტიკა"
+    "settingsSocialRatingStatistics": "შეფასების სტატისტიკა",
+    "searchTickets": "ტიკეტების ძიება..."
   },
   "bugReport": {
     "title": "ბაგის რეპორტი",
@@ -397,6 +402,36 @@
       "childForms": "შვილობილი ფორმები",
       "view": "ნახვა",
       "fillForm": "ფორმის შევსება"
+    },
+    "ticketDetail": {
+      "activity": "აქტივობა",
+      "checklist": "ჩეკლისტი",
+      "files": "ფაილები",
+      "forms": "ფორმები",
+      "addComment": "დაამატეთ კომენტარი...",
+      "send": "გაგზავნა",
+      "clickToEdit": "დააწკაპუნეთ რედაქტირებისთვის",
+      "copyLink": "ბმულის კოპირება",
+      "linkCopied": "ბმული კოპირებულია",
+      "transferBoard": "დაფაზე გადატანა",
+      "deleteTicket": "ტიკეტის წაშლა",
+      "confirmDelete": "დარწმუნებული ხართ? ეს მოქმედება შეუქცევადია.",
+      "backToBoard": "დაფაზე დაბრუნება",
+      "status": "სტატუსი",
+      "priority": "პრიორიტეტი",
+      "assignees": "მინიჭებული",
+      "department": "დეპარტამენტი",
+      "tags": "ტეგები",
+      "dueDate": "ვადა",
+      "groups": "ჯგუფები",
+      "created": "შექმნილი",
+      "updated": "განახლებული",
+      "noDescription": "აღწერა არ არის. დააწკაპუნეთ დასამატებლად.",
+      "noActivity": "აქტივობა ჯერ არ არის",
+      "statusChanged": "{user}-მ შეცვალა სტატუსი {from}-დან {to}-ზე",
+      "priorityChanged": "{user}-მ შეცვალა პრიორიტეტი {from}-დან {to}-ზე",
+      "assigned": "{user} მინიჭებულია",
+      "fieldUpdated": "{user}-მ განაახლა {field}"
     },
     "columns": {
       "addNewColumn": "ახალი სვეტის დამატება",

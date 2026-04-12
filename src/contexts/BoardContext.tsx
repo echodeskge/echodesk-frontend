@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 interface BoardContextType {
   selectedBoardId: number | null;
   setSelectedBoardId: (id: number | null) => void;
+  ticketSearchQuery: string;
+  setTicketSearchQuery: (query: string) => void;
 }
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
@@ -12,6 +14,7 @@ const BoardContext = createContext<BoardContextType | undefined>(undefined);
 const STORAGE_KEY = 'echodesk_selected_board_id';
 
 export function BoardProvider({ children }: { children: React.ReactNode }) {
+  const [ticketSearchQuery, setTicketSearchQuery] = useState("");
   const [selectedBoardId, setSelectedBoardId] = useState<number | null>(() => {
     // Initialize from localStorage on mount
     if (typeof window !== 'undefined') {
@@ -33,7 +36,7 @@ export function BoardProvider({ children }: { children: React.ReactNode }) {
   }, [selectedBoardId]);
 
   return (
-    <BoardContext.Provider value={{ selectedBoardId, setSelectedBoardId }}>
+    <BoardContext.Provider value={{ selectedBoardId, setSelectedBoardId, ticketSearchQuery, setTicketSearchQuery }}>
       {children}
     </BoardContext.Provider>
   );

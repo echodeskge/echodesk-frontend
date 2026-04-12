@@ -6,6 +6,7 @@ import { useBoards } from "@/hooks/useBoards";
 import { useKanbanBoard } from "@/hooks/useKanbanBoard";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBoard } from "@/contexts/BoardContext";
 import { KanbanProvider } from "./kanban-new/kanban-context";
 import { Kanban } from "./kanban-new/components/kanban";
 import { Spinner } from "@/components/ui/spinner";
@@ -92,9 +93,9 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
   const { data: boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const { data: kanbanBoardData, isLoading: kanbanLoading, error: kanbanError } = useKanbanBoard(selectedBoardId);
   const { user } = useAuth();
+  const { ticketSearchQuery } = useBoard();
   const [showCreateBoardSheet, setShowCreateBoardSheet] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const debouncedSearch = useDebounce(ticketSearchQuery, 300);
 
   const selectedBoard = boards?.find(b => b.id === selectedBoardId);
   const isStaff = user?.is_staff || false;
@@ -225,18 +226,6 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-2">
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder={t('searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
       <KanbanProvider
         kanbanData={filteredKanbanData}
         selectedBoard={selectedBoard || null}
