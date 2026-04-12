@@ -160,7 +160,26 @@ export default function PromoCodesPage() {
     setSheetOpen(true);
   };
 
+  const validateForm = (): boolean => {
+    if (!form.code.trim()) {
+      toast.error(t("validation.codeRequired"));
+      return false;
+    }
+    if (!form.discount_value || parseFloat(form.discount_value) <= 0) {
+      toast.error(t("validation.discountValuePositive"));
+      return false;
+    }
+    if (form.valid_from && form.valid_until) {
+      if (new Date(form.valid_from) >= new Date(form.valid_until)) {
+        toast.error(t("validation.validFromBeforeUntil"));
+        return false;
+      }
+    }
+    return true;
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) return;
     try {
       setSaving(true);
       const payload = {
@@ -397,8 +416,9 @@ export default function PromoCodesPage() {
           </SheetHeader>
           <div className="space-y-4 px-4 flex-1 overflow-y-auto">
             <div className="space-y-2">
-              <Label>{t("form.code")}</Label>
+              <Label htmlFor="promo-code">{t("form.code")}</Label>
               <Input
+                id="promo-code"
                 value={form.code}
                 onChange={(e) =>
                   setForm({ ...form, code: e.target.value.toUpperCase() })
@@ -407,7 +427,7 @@ export default function PromoCodesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.discountType")}</Label>
+              <Label htmlFor="promo-discount-type">{t("form.discountType")}</Label>
               <Select
                 value={String(form.discount_type)}
                 onValueChange={(val) =>
@@ -427,8 +447,9 @@ export default function PromoCodesPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{t("form.discountValue")}</Label>
+              <Label htmlFor="promo-discount-value">{t("form.discountValue")}</Label>
               <Input
+                id="promo-discount-value"
                 type="number"
                 step="0.01"
                 min="0"
@@ -439,8 +460,9 @@ export default function PromoCodesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.minOrderAmount")}</Label>
+              <Label htmlFor="promo-min-order">{t("form.minOrderAmount")}</Label>
               <Input
+                id="promo-min-order"
                 type="number"
                 step="0.01"
                 min="0"
@@ -452,8 +474,9 @@ export default function PromoCodesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.maxUses")}</Label>
+              <Label htmlFor="promo-max-uses">{t("form.maxUses")}</Label>
               <Input
+                id="promo-max-uses"
                 type="number"
                 min="0"
                 value={form.max_uses ?? ""}
@@ -467,8 +490,9 @@ export default function PromoCodesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.validFrom")}</Label>
+              <Label htmlFor="promo-valid-from">{t("form.validFrom")}</Label>
               <Input
+                id="promo-valid-from"
                 type="datetime-local"
                 value={form.valid_from ? form.valid_from.slice(0, 16) : ""}
                 onChange={(e) =>
@@ -477,8 +501,9 @@ export default function PromoCodesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.validUntil")}</Label>
+              <Label htmlFor="promo-valid-until">{t("form.validUntil")}</Label>
               <Input
+                id="promo-valid-until"
                 type="datetime-local"
                 value={form.valid_until ? form.valid_until.slice(0, 16) : ""}
                 onChange={(e) =>
@@ -488,12 +513,13 @@ export default function PromoCodesPage() {
             </div>
             <div className="flex items-center gap-2">
               <Switch
+                id="promo-is-active"
                 checked={form.is_active ?? true}
                 onCheckedChange={(checked) =>
                   setForm({ ...form, is_active: checked })
                 }
               />
-              <Label>{t("form.isActive")}</Label>
+              <Label htmlFor="promo-is-active">{t("form.isActive")}</Label>
             </div>
           </div>
           <SheetFooter>

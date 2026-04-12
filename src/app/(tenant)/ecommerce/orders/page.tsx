@@ -45,6 +45,7 @@ import {
   Banknote,
   AlertCircle,
   Download,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -92,12 +93,16 @@ const PAYMENT_STATUS_ICONS: Record<string, typeof Clock> = {
   partially_refunded: AlertCircle,
 };
 
+const PAGE_SIZE = 20;
+
 export default function EcommerceOrdersPage() {
   const t = useTranslations("ecommerceOrders");
   const [orders, setOrders] = useState<Order[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
   const [initiatingPayment, setInitiatingPayment] = useState<number | null>(
     null
   );
@@ -108,19 +113,42 @@ export default function EcommerceOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [searchQuery, statusFilter, page]);
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await ecommerceAdminOrdersList();
-      setOrders((response.results || response) as unknown as Order[]);
+      const statusParam = statusFilter === "all" ? undefined : statusFilter as 'cancelled' | 'confirmed' | 'delivered' | 'pending' | 'processing' | 'refunded' | 'shipped';
+      const response = await ecommerceAdminOrdersList(
+        undefined,
+        undefined,
+        page,
+        PAGE_SIZE,
+        searchQuery || undefined,
+        statusParam,
+      );
+      setOrders((response.results || []) as unknown as Order[]);
+      setTotalCount(response.count || 0);
     } catch (error) {
       toast.error("Failed to load orders");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+    setSelectedOrderIds(new Set());
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+    setSelectedOrderIds(new Set());
+  };
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const handleInitiatePayment = async (
     orderId: number,
@@ -168,10 +196,10 @@ export default function EcommerceOrdersPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedOrderIds.size === filteredOrders.length) {
+    if (selectedOrderIds.size === orders.length) {
       setSelectedOrderIds(new Set());
     } else {
-      setSelectedOrderIds(new Set(filteredOrders.map((o) => o.id)));
+      setSelectedOrderIds(new Set(orders.map((o) => o.id)));
     }
   };
 
@@ -197,7 +225,9 @@ export default function EcommerceOrdersPage() {
   // Export selected orders as CSV
   const handleExportSelected = () => {
     try {
-      const selected = filteredOrders.filter((o) => selectedOrderIds.has(o.id));
+      const selected = orders.filter((o) => selectedOrderIds.has(o.id));
+      const csvQuote = (value: string) =>
+        `"${value.replace(/"/g, '""')}"`;
       const headers = [
         "Order Number",
         "Customer",
@@ -208,15 +238,15 @@ export default function EcommerceOrdersPage() {
         "Date",
       ];
       const rows = selected.map((order) => [
-        order.order_number,
-        order.client_details?.full_name || "Unknown",
-        order.client_details?.email || "",
-        String(order.total_items),
-        parseFloat(order.total_amount).toFixed(2),
-        String(order.status),
-        new Date(order.created_at).toISOString(),
+        csvQuote(order.order_number),
+        csvQuote(order.client_details?.full_name || "Unknown"),
+        csvQuote(order.client_details?.email || ""),
+        csvQuote(String(order.total_items)),
+        csvQuote(parseFloat(order.total_amount).toFixed(2)),
+        csvQuote(String(order.status)),
+        csvQuote(new Date(order.created_at).toISOString()),
       ]);
-      const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+      const csv = [headers.map(csvQuote), ...rows].map((r) => r.join(",")).join("\n");
       const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -250,24 +280,8 @@ export default function EcommerceOrdersPage() {
     }
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.client_details?.full_name
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      order.client_details?.email
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase());
-
-    const matchesStatus =
-      statusFilter === "all" || String(order.status) === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
   const stats = {
-    total: orders.length,
+    total: totalCount,
     pending: orders.filter((o) => String(o.status) === "pending").length,
     processing: orders.filter(
       (o) =>
@@ -405,7 +419,7 @@ export default function EcommerceOrdersPage() {
             <div>
               <CardTitle>{t("ordersTitle")}</CardTitle>
               <CardDescription>
-                {t("ordersFound", { count: filteredOrders.length })}
+                {t("ordersFound", { count: totalCount })}
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -414,11 +428,11 @@ export default function EcommerceOrdersPage() {
                 <Input
                   placeholder={t("searchPlaceholder")}
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-8"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder={t("filterByStatus")} />
                 </SelectTrigger>
@@ -444,7 +458,7 @@ export default function EcommerceOrdersPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {filteredOrders.length === 0 ? (
+          {orders.length === 0 ? (
             <div className="text-center py-12">
               <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-semibold">{t("noOrders")}</h3>
@@ -462,8 +476,8 @@ export default function EcommerceOrdersPage() {
                     <TableHead className="w-10">
                       <Checkbox
                         checked={
-                          filteredOrders.length > 0 &&
-                          selectedOrderIds.size === filteredOrders.length
+                          orders.length > 0 &&
+                          selectedOrderIds.size === orders.length
                         }
                         onCheckedChange={toggleSelectAll}
                         aria-label="Select all orders"
@@ -481,7 +495,7 @@ export default function EcommerceOrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOrders.map((order) => {
+                  {orders.map((order) => {
                     const StatusIcon =
                       STATUS_ICONS[String(order.status)] || Clock;
                     return (
@@ -550,9 +564,36 @@ export default function EcommerceOrdersPage() {
         </CardContent>
       </Card>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Page {page} of {totalPages} ({totalCount} orders)
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => { setPage((p) => p - 1); setSelectedOrderIds(new Set()); }}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => { setPage((p) => p + 1); setSelectedOrderIds(new Set()); }}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Floating Action Bar */}
       {selectedOrderIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform" role="region" aria-live="polite" aria-label="Selection actions">
           <div className="flex items-center gap-3 rounded-lg border bg-background px-6 py-3 shadow-lg">
             <span className="text-sm font-medium">
               {selectedOrderIds.size} orders selected
@@ -563,7 +604,7 @@ export default function EcommerceOrdersPage() {
               disabled={bulkActionLoading}
               onClick={() => handleBulkStatusUpdate("shipped")}
             >
-              <Truck className="mr-2 h-4 w-4" />
+              {bulkActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
               Mark as Shipped
             </Button>
             <Button
@@ -572,7 +613,7 @@ export default function EcommerceOrdersPage() {
               disabled={bulkActionLoading}
               onClick={() => handleBulkStatusUpdate("delivered")}
             >
-              <CheckCircle2 className="mr-2 h-4 w-4" />
+              {bulkActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
               Mark as Delivered
             </Button>
             <Button

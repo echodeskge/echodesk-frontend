@@ -464,7 +464,7 @@ export default function OrderDetailPage() {
                     try {
                       await axiosInstance.post(`/api/ecommerce/admin/orders/${order.id}/mark-paid/`);
                       toast.success("Order marked as paid");
-                      window.location.reload();
+                      fetchOrder(order.id);
                     } catch {
                       toast.error("Failed to mark as paid");
                     }

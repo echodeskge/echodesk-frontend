@@ -13,6 +13,7 @@ export function useProducts(filters?: ProductFilters) {
   return useQuery({
     queryKey: ["products", filters],
     queryFn: () => productService.getProducts(filters),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -21,6 +22,7 @@ export function useProduct(id: number) {
     queryKey: ["product", id],
     queryFn: () => productService.getProduct(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 

@@ -53,15 +53,25 @@ export default function ClientDetailPage() {
 
   const [client, setClient] = useState<EcommerceClient | null>(null);
   const [orders, setOrders] = useState<OrderList[]>([]);
+  const [ordersTotalCount, setOrdersTotalCount] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
+
+  const ORDERS_PAGE_SIZE = 10;
+  const ordersTotalPages = Math.ceil(ordersTotalCount / ORDERS_PAGE_SIZE);
 
   useEffect(() => {
     if (params.id) {
       fetchClient(Number(params.id));
-      fetchOrders(Number(params.id));
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchOrders(Number(params.id));
+    }
+  }, [params.id, ordersPage]);
 
   const fetchClient = async (id: number) => {
     try {
@@ -79,8 +89,9 @@ export default function ClientDetailPage() {
     try {
       setOrdersLoading(true);
       const response: PaginatedOrderListList =
-        await ecommerceAdminOrdersList(clientId);
+        await ecommerceAdminOrdersList(clientId, undefined, ordersPage, ORDERS_PAGE_SIZE);
       setOrders(response.results || []);
+      setOrdersTotalCount(response.count || 0);
     } catch (error) {
       // Error shown via toast in fetchClient
     } finally {
@@ -336,6 +347,7 @@ export default function ClientDetailPage() {
                   {t("noOrders")}
                 </div>
               ) : (
+                <>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -398,6 +410,32 @@ export default function ClientDetailPage() {
                     ))}
                   </TableBody>
                 </Table>
+                {ordersTotalPages > 1 && (
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="text-sm text-muted-foreground">
+                      {t("ordersTable.page", { page: ordersPage, total: ordersTotalPages })}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={ordersPage <= 1 || ordersLoading}
+                        onClick={() => setOrdersPage((p) => p - 1)}
+                      >
+                        {t("ordersTable.previous")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={ordersPage >= ordersTotalPages || ordersLoading}
+                        onClick={() => setOrdersPage((p) => p + 1)}
+                      >
+                        {t("ordersTable.next")}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </CardContent>
           </Card>

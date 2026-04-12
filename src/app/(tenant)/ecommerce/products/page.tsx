@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -57,16 +58,19 @@ export default function ProductsPage() {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setCurrentPage(1);
+    setSelectedProductIds(new Set());
   };
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
     setCurrentPage(1);
+    setSelectedProductIds(new Set());
   };
 
   const handleLowStockToggle = () => {
     setLowStockOnly((prev) => !prev);
     setCurrentPage(1);
+    setSelectedProductIds(new Set());
   };
 
   // Fetch selected product details
@@ -311,10 +315,12 @@ export default function ProductsPage() {
                 onClick={() => handleEditProduct(product.id)}
               >
                 {product.image ? (
-                  <img
+                  <Image
                     src={product.image}
                     alt={getProductName(product)}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -436,7 +442,7 @@ export default function ProductsPage() {
 
       {/* Floating Action Bar for Bulk Operations */}
       {selectedProductIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform" role="region" aria-live="polite" aria-label="Selection actions">
           <div className="flex items-center gap-3 rounded-lg border bg-background px-6 py-3 shadow-lg">
             <span className="text-sm font-medium">
               {selectedProductIds.size} products selected

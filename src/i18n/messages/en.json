@@ -1905,7 +1905,10 @@
       "status": "Status",
       "paymentStatus": "Payment",
       "date": "Date",
-      "actions": "Actions"
+      "actions": "Actions",
+      "page": "Page {page} of {total}",
+      "previous": "Previous",
+      "next": "Next"
     },
     "viewOrder": "View",
     "clientInfo": "Client Info",
@@ -3708,6 +3711,11 @@
     "updateError": "Failed to update promo code",
     "deleteSuccess": "Promo code deleted successfully",
     "deleteError": "Failed to delete promo code",
+    "validation": {
+      "codeRequired": "Promo code is required",
+      "discountValuePositive": "Discount value must be greater than 0",
+      "validFromBeforeUntil": "Valid from date must be before valid until date"
+    },
     "cancel": "Cancel",
     "save": "Save",
     "saving": "Saving..."

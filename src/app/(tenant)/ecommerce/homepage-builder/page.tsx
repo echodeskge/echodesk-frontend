@@ -201,18 +201,21 @@ export default function HomepageBuilderPage() {
   const { data: sectionsData, isLoading } = useQuery({
     queryKey: ["homepage-sections"],
     queryFn: () => ecommerceAdminHomepageSectionsList(),
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch choices using generated function
   const { data: choices } = useQuery<SectionChoices>({
     queryKey: ["homepage-section-choices"],
     queryFn: () => ecommerceAdminHomepageSectionsChoicesRetrieve() as unknown as Promise<SectionChoices>,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch item lists using generated function
   const { data: itemListsData } = useQuery({
     queryKey: ["item-lists"],
     queryFn: () => itemListsList(),
+    staleTime: 5 * 60 * 1000,
   });
 
   // Fetch homepage variants
@@ -224,6 +227,7 @@ export default function HomepageBuilderPage() {
       );
       return response.data;
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   // Apply variant mutation

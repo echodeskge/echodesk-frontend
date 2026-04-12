@@ -291,8 +291,9 @@ export default function ShippingMethodsPage() {
           </SheetHeader>
           <div className="space-y-4 px-4 flex-1 overflow-y-auto">
             <div className="space-y-2">
-              <Label>{t("form.nameEn")}</Label>
+              <Label htmlFor="shipping-name-en">{t("form.nameEn")}</Label>
               <Input
+                id="shipping-name-en"
                 value={typeof form.name === "object" ? form.name?.en || "" : form.name || ""}
                 onChange={(e) =>
                   setForm({
@@ -306,8 +307,9 @@ export default function ShippingMethodsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.nameKa")}</Label>
+              <Label htmlFor="shipping-name-ka">{t("form.nameKa")}</Label>
               <Input
+                id="shipping-name-ka"
                 value={typeof form.name === "object" ? form.name?.ka || "" : ""}
                 onChange={(e) =>
                   setForm({
@@ -321,8 +323,9 @@ export default function ShippingMethodsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.descriptionEn")}</Label>
+              <Label htmlFor="shipping-desc-en">{t("form.descriptionEn")}</Label>
               <Input
+                id="shipping-desc-en"
                 value={
                   typeof form.description === "object"
                     ? form.description?.en || ""
@@ -340,8 +343,9 @@ export default function ShippingMethodsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.descriptionKa")}</Label>
+              <Label htmlFor="shipping-desc-ka">{t("form.descriptionKa")}</Label>
               <Input
+                id="shipping-desc-ka"
                 value={
                   typeof form.description === "object"
                     ? form.description?.ka || ""
@@ -359,8 +363,9 @@ export default function ShippingMethodsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.price")}</Label>
+              <Label htmlFor="shipping-price">{t("form.price")}</Label>
               <Input
+                id="shipping-price"
                 type="number"
                 step="0.01"
                 min="0"
@@ -369,8 +374,9 @@ export default function ShippingMethodsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.freeShippingThreshold")}</Label>
+              <Label htmlFor="shipping-free-threshold">{t("form.freeShippingThreshold")}</Label>
               <Input
+                id="shipping-free-threshold"
                 type="number"
                 step="0.01"
                 min="0"
@@ -382,8 +388,9 @@ export default function ShippingMethodsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.estimatedDays")}</Label>
+              <Label htmlFor="shipping-estimated-days">{t("form.estimatedDays")}</Label>
               <Input
+                id="shipping-estimated-days"
                 type="number"
                 min="0"
                 value={form.estimated_days ?? ""}
@@ -393,8 +400,9 @@ export default function ShippingMethodsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>{t("form.position")}</Label>
+              <Label htmlFor="shipping-position">{t("form.position")}</Label>
               <Input
+                id="shipping-position"
                 type="number"
                 min="0"
                 value={form.position ?? ""}
@@ -405,12 +413,13 @@ export default function ShippingMethodsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Switch
+                id="shipping-is-active"
                 checked={form.is_active ?? true}
                 onCheckedChange={(checked) =>
                   setForm({ ...form, is_active: checked })
                 }
               />
-              <Label>{t("form.isActive")}</Label>
+              <Label htmlFor="shipping-is-active">{t("form.isActive")}</Label>
             </div>
           </div>
           <SheetFooter>
