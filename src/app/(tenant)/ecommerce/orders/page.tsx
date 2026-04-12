@@ -347,7 +347,7 @@ export default function EcommerceOrdersPage() {
                               {order.client_details?.full_name || "Unknown"}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {order.client_details.email}
+                              {order.client_details?.email || ""}
                             </div>
                             {order.delivery_address && (
                               <div className="text-sm text-muted-foreground">
