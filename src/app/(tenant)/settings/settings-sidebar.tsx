@@ -4,8 +4,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
-import { useSubscription, type SubscriptionFeature } from "@/contexts/SubscriptionContext"
 import { useAuth } from "@/contexts/AuthContext"
+import { useUserProfile } from "@/hooks/useUserProfile"
 import {
   Settings,
   Palette,
@@ -32,7 +32,7 @@ interface SettingsNavItem {
   href: string
   icon: React.ElementType
   labelKey: string
-  featureKey?: SubscriptionFeature
+  featureKey?: string
   staffOnly?: boolean
 }
 
@@ -165,14 +165,23 @@ const settingsNav: SettingsNavItem[] = [
 export function SettingsSidebar() {
   const pathname = usePathname()
   const t = useTranslations("settings")
-  const { hasFeature } = useSubscription()
   const { user } = useAuth()
+  const { data: userProfile } = useUserProfile()
 
   const isStaffOrAdmin = user?.is_staff || user?.is_superuser
 
+  // Use feature_keys from user profile (same as main sidebar)
+  const userFeatureKeys: string[] = userProfile?.feature_keys
+    ? typeof userProfile.feature_keys === "string"
+      ? JSON.parse(userProfile.feature_keys)
+      : userProfile.feature_keys
+    : []
+
+  const hasFeatureKey = (key: string): boolean => userFeatureKeys.includes(key)
+
   const visibleItems = settingsNav.filter((item) => {
     if (item.staffOnly && !isStaffOrAdmin) return false
-    if (item.featureKey && !hasFeature(item.featureKey)) return false
+    if (item.featureKey && !hasFeatureKey(item.featureKey)) return false
     return true
   })
 
