@@ -341,9 +341,9 @@ export default function OrderDetailPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <div>
-                <p className="font-medium">{order.client_details.full_name}</p>
-                <p className="text-sm text-muted-foreground">{order.client_details.email}</p>
-                {order.client_details.phone_number && (
+                <p className="font-medium">{order.client_details?.full_name || "Unknown"}</p>
+                <p className="text-sm text-muted-foreground">{order.client_details?.email || ""}</p>
+                {order.client_details?.phone_number && (
                   <p className="text-sm text-muted-foreground">{order.client_details.phone_number}</p>
                 )}
               </div>

@@ -147,10 +147,10 @@ export default function EcommerceOrdersPage() {
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.client_details.full_name
+      order.client_details?.full_name
         ?.toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      order.client_details.email
+      order.client_details?.email
         ?.toLowerCase()
         .includes(searchQuery.toLowerCase());
 
@@ -344,7 +344,7 @@ export default function EcommerceOrdersPage() {
                         <TableCell>
                           <div>
                             <div className="font-medium">
-                              {order.client_details.full_name}
+                              {order.client_details?.full_name || "Unknown"}
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {order.client_details.email}
