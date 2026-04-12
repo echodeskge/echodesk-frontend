@@ -218,6 +218,11 @@ export function AppSidebar({
                       >
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
+                            onMouseEnter={() => {
+                              if (!isLocked && item.children?.length) {
+                                onPrefetch?.(item.children[0].id)
+                              }
+                            }}
                             tooltip={isLocked ? `🔒 Premium Feature - ${item.description}` : item.description}
                             className="w-full justify-between [&[data-state=open]>svg]:rotate-180"
                           >
@@ -243,6 +248,7 @@ export function AppSidebar({
                               return (
                                 <SidebarMenuSubItem key={child.id}>
                                   <SidebarMenuSubButton
+                                    onMouseEnter={() => !isChildLocked && onPrefetch?.(child.id)}
                                     asChild={!isChildLocked}
                                     isActive={isChildItemActive}
                                     className="cursor-pointer hover:bg-sidebar-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground"
@@ -309,6 +315,7 @@ export function AppSidebar({
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
+                      onMouseEnter={() => !isLocked && item.id !== 'report-bug' && item.id !== 'help' && onPrefetch?.(item.id)}
                       asChild={!isLocked && item.id !== 'report-bug' && item.id !== 'help'}
                       isActive={isActive}
                       tooltip={isLocked ? `🔒 Premium Feature - ${item.description}` : item.description}
