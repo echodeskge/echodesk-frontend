@@ -287,7 +287,7 @@ export default function TicketFormsPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                     {!form.is_default && (
                       <Button
                         variant="outline"
