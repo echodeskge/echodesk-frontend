@@ -66,7 +66,7 @@ export default async function RootLayout({
             </QueryProvider>
           </SessionProvider>
         </NextIntlClientProvider>
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-right" richColors />
         <NetworkMonitor />
       </body>
     </html>

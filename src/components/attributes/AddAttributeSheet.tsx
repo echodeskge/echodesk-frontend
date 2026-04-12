@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { useCreateAttribute } from "@/hooks/useAttributes";
 import { useLanguages } from "@/hooks/useLanguages";
 import type { AttributeDefinition, Language } from "@/api/generated";
@@ -153,14 +154,14 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
   // Add new option
   const handleAddOption = () => {
     if (!newOptionValue.trim()) {
-      alert("Please enter a value for the option");
+      toast.error("Please enter a value for the option");
       return;
     }
 
     // Check if at least one language label is filled
     const hasAnyLabel = Object.values(newOptionLabels).some((label) => label.trim());
     if (!hasAnyLabel) {
-      alert("Please enter at least one language label");
+      toast.error("Please enter at least one language label");
       return;
     }
 
@@ -219,7 +220,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
         }
 
         if (!firstFilledValue) {
-          alert("Please fill at least one language for the attribute name");
+          toast.error("Please fill at least one language for the attribute name");
           return;
         }
 
@@ -246,14 +247,14 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
 
       // Validate key is required
       if (!data.key?.trim()) {
-        alert("Please provide a key for the attribute");
+        toast.error("Please provide a key for the attribute");
         return;
       }
 
       // Handle options for multiselect type
       if (String(attributeType) === "multiselect") {
         if (options.length === 0) {
-          alert("Please add at least one option for multiselect type");
+          toast.error("Please add at least one option for multiselect type");
           return;
         }
         data.options = options as any;
@@ -268,7 +269,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to create attribute:", error);
-      alert(error.message || "Failed to create attribute");
+      toast.error(error.message || "Failed to create attribute");
     }
   };
 

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Language } from "@/api/generated";
@@ -43,14 +44,14 @@ export function OptionsManager({
 
   const addOption = () => {
     if (!newOptionValue.trim()) {
-      alert("Please enter a value for the option");
+      toast.error("Please enter a value for the option");
       return;
     }
 
     // Check if at least one language label is filled
     const hasAnyLabel = Object.values(newOptionLabels).some((label) => label.trim());
     if (!hasAnyLabel) {
-      alert("Please enter at least one language label");
+      toast.error("Please enter at least one language label");
       return;
     }
 

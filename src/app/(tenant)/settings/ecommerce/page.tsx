@@ -11,9 +11,11 @@ import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
 import { CreditCard, Store, Eye, EyeOff, CheckCircle2, AlertCircle, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check } from "lucide-react"
-import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate } from "@/api/generated/api"
-import type { EcommerceSettings as EcommerceSettingsType, DeploymentResponse } from "@/api/generated/interfaces"
+import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate, ecommerceAdminSettingsDeleteDeploymentDestroy } from "@/api/generated/api"
+import type { EcommerceSettings as EcommerceSettingsType, EcommerceSettingsRequest, DeploymentResponse } from "@/api/generated/interfaces"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import axios from "@/api/axios"
 
 interface DomainInfo {
@@ -150,7 +152,8 @@ export default function EcommerceSettingsPage() {
       const response = await ecommerceAdminSettingsList()
 
       if (response.results && response.results.length > 0) {
-        const settingsData = response.results[0] as any
+        // TODO: bog_use_production is not in the generated EcommerceSettings type — fix backend serializer and regenerate
+        const settingsData = response.results[0] as EcommerceSettingsType & { bog_use_production?: boolean }
 
         // Build active_payment_providers from data or derive from legacy fields
         let activeProviders: PaymentProvider[] = settingsData.active_payment_providers || []
@@ -189,7 +192,7 @@ export default function EcommerceSettingsPage() {
         if (settingsData.ecommerce_frontend_url !== undefined || settingsData.deployment_status !== undefined) {
           setDeploymentInfo({
             frontend_url: settingsData.ecommerce_frontend_url || null,
-            deployment_status: settingsData.deployment_status || "pending",
+            deployment_status: (String(settingsData.deployment_status) as DeploymentInfo["deployment_status"]) || "pending",
             vercel_project_id: settingsData.vercel_project_id || null,
           })
         }
@@ -197,7 +200,7 @@ export default function EcommerceSettingsPage() {
       setLoading(false)
     } catch (error) {
       console.error("Failed to fetch settings:", error)
-      alert("Failed to load ecommerce settings")
+      toast.error("Failed to load ecommerce settings")
       setLoading(false)
     }
   }
@@ -229,21 +232,21 @@ export default function EcommerceSettingsPage() {
 
       // Call the deploy-frontend endpoint using generated API function
       // The generated function expects a body but our endpoint doesn't need one
-      const result = await ecommerceAdminSettingsDeployFrontendCreate({} as any)
+      const result = await ecommerceAdminSettingsDeployFrontendCreate({})
 
       if (result.success) {
         setDeploymentInfo({
-          frontend_url: result.url || (result as any).frontend_url,
+          frontend_url: result.url,
           deployment_status: "deployed",
           vercel_project_id: result.project_id,
         })
-        alert(`Frontend deployed successfully!\nURL: ${result.url || (result as any).frontend_url}`)
+        toast.success(`Frontend deployed successfully! URL: ${result.url}`)
       } else {
         setDeploymentInfo(prev => ({
           ...prev,
           deployment_status: "failed",
         }))
-        alert(`Deployment failed: ${(result as any).error || "Unknown error"}`)
+        toast.error(`Deployment failed: ${result.message || "Unknown error"}`)
       }
     } catch (error: any) {
       console.error("Failed to deploy frontend:", error)
@@ -252,23 +255,21 @@ export default function EcommerceSettingsPage() {
         deployment_status: "failed",
       }))
       const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      alert(`Failed to deploy frontend: ${errorMessage}`)
+      toast.error(`Failed to deploy frontend: ${errorMessage}`)
     } finally {
       setDeploying(false)
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete the frontend deployment? This will remove the Vercel project.")) {
-      return
-    }
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
+  const handleDelete = async () => {
     try {
       setDeleting(true)
+      setShowDeleteConfirm(false)
 
-      // Call the delete-deployment endpoint
-      const response = await axios.delete("/api/ecommerce/admin/settings/delete-deployment/")
-      const result = response.data
+      // Call the delete-deployment endpoint using generated API function
+      const result = await ecommerceAdminSettingsDeleteDeploymentDestroy()
 
       if (result.success) {
         setDeploymentInfo({
@@ -278,14 +279,14 @@ export default function EcommerceSettingsPage() {
         })
         setDomains([])
         setDnsInstructions([])
-        alert("Deployment deleted successfully")
+        toast.success("Deployment deleted successfully")
       } else {
-        alert(`Failed to delete deployment: ${result.error || "Unknown error"}`)
+        toast.error(`Failed to delete deployment: ${result.error || "Unknown error"}`)
       }
     } catch (error: any) {
       console.error("Failed to delete deployment:", error)
       const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      alert(`Failed to delete deployment: ${errorMessage}`)
+      toast.error(`Failed to delete deployment: ${errorMessage}`)
     } finally {
       setDeleting(false)
     }
@@ -304,7 +305,7 @@ export default function EcommerceSettingsPage() {
 
   const handleAddDomain = async () => {
     if (!newDomain.trim()) {
-      alert("Please enter a domain name")
+      toast.error("Please enter a domain name")
       return
     }
 
@@ -327,40 +328,39 @@ export default function EcommerceSettingsPage() {
         }
 
         setNewDomain("")
-        alert(`Domain ${response.data.domain} added successfully! Please configure DNS records as shown below.`)
+        toast.success(`Domain ${response.data.domain} added successfully! Please configure DNS records as shown below.`)
       } else {
-        alert(`Failed to add domain: ${response.data.error || "Unknown error"}`)
+        toast.error(`Failed to add domain: ${response.data.error || "Unknown error"}`)
       }
     } catch (error: any) {
       console.error("Failed to add domain:", error)
       const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      alert(`Failed to add domain: ${errorMessage}`)
+      toast.error(`Failed to add domain: ${errorMessage}`)
     } finally {
       setAddingDomain(false)
     }
   }
 
-  const handleRemoveDomain = async (domain: string) => {
-    if (!confirm(`Are you sure you want to remove ${domain}?`)) {
-      return
-    }
+  const [domainToRemove, setDomainToRemove] = useState<string | null>(null)
 
+  const handleRemoveDomain = async (domain: string) => {
     try {
       setRemovingDomain(domain)
+      setDomainToRemove(null)
       const response = await axios.post("/api/ecommerce/admin/settings/remove-domain/", {
         domain
       })
 
       if (response.data.success) {
         setDomains(prev => prev.filter(d => d.name !== domain))
-        alert(`Domain ${domain} removed successfully`)
+        toast.success(`Domain ${domain} removed successfully`)
       } else {
-        alert(`Failed to remove domain: ${response.data.error || "Unknown error"}`)
+        toast.error(`Failed to remove domain: ${response.data.error || "Unknown error"}`)
       }
     } catch (error: any) {
       console.error("Failed to remove domain:", error)
       const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      alert(`Failed to remove domain: ${errorMessage}`)
+      toast.error(`Failed to remove domain: ${errorMessage}`)
     } finally {
       setRemovingDomain(null)
     }
@@ -377,14 +377,14 @@ export default function EcommerceSettingsPage() {
         setDomains(prev => prev.map(d =>
           d.name === domain ? { ...d, verified: true } : d
         ))
-        alert(`Domain ${domain} is now verified!`)
+        toast.success(`Domain ${domain} is now verified!`)
       } else {
-        alert(`Domain ${domain} is not yet verified. Please ensure DNS records are configured correctly and try again in a few minutes.`)
+        toast.error(`Domain ${domain} is not yet verified. Please ensure DNS records are configured correctly and try again in a few minutes.`)
       }
     } catch (error: any) {
       console.error("Failed to verify domain:", error)
       const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      alert(`Failed to verify domain: ${errorMessage}`)
+      toast.error(`Failed to verify domain: ${errorMessage}`)
     } finally {
       setVerifyingDomain(null)
     }
@@ -407,7 +407,8 @@ export default function EcommerceSettingsPage() {
     try {
       setSaving(true)
 
-      const payload: any = {
+      // TODO: bog_use_production is not in the generated EcommerceSettingsRequest — fix backend serializer and regenerate
+      const payload: EcommerceSettingsRequest & { bog_use_production?: boolean } = {
         bog_client_id: settings.bog_client_id,
         bog_use_production: settings.bog_use_production,
         bog_return_url_success: settings.bog_return_url_success,
@@ -441,7 +442,7 @@ export default function EcommerceSettingsPage() {
         await ecommerceAdminSettingsCreate(payload)
       }
 
-      alert("Settings saved successfully!")
+      toast.success("Settings saved successfully!")
 
       // If secret was provided, mark as having credentials
       if (bogSecret) {
@@ -456,7 +457,7 @@ export default function EcommerceSettingsPage() {
       await fetchSettings()
     } catch (error) {
       console.error("Failed to save settings:", error)
-      alert("Failed to save settings. Please try again.")
+      toast.error("Failed to save settings. Please try again.")
     } finally {
       setSaving(false)
     }
@@ -997,18 +998,32 @@ export default function EcommerceSettingsPage() {
                     </>
                   )}
                 </Button>
-                <Button
-                  onClick={handleDelete}
-                  disabled={deploying || deleting}
-                  variant="destructive"
-                  size="lg"
-                >
-                  {deleting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
+                <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                  <Button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={deploying || deleting}
+                    variant="destructive"
+                    size="lg"
+                  >
+                    {deleting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Deployment</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete the frontend deployment? This will remove the Vercel project.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             )}
           </div>
@@ -1178,19 +1193,33 @@ export default function EcommerceSettingsPage() {
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveDomain(domain.name)}
-                          disabled={removingDomain === domain.name}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          {removingDomain === domain.name ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <X className="h-4 w-4" />
-                          )}
-                        </Button>
+                        <AlertDialog open={domainToRemove === domain.name} onOpenChange={(open) => !open && setDomainToRemove(null)}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDomainToRemove(domain.name)}
+                            disabled={removingDomain === domain.name}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            {removingDomain === domain.name ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <X className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Domain</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to remove {domain.name}?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleRemoveDomain(domain.name)}>Remove</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
                   ))}

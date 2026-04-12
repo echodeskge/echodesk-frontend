@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 import { useUpdateAttribute } from "@/hooks/useAttributes";
 import { useLanguages } from "@/hooks/useLanguages";
 import { OptionsManager, type AttributeOption } from "./OptionsManager";
@@ -130,7 +131,7 @@ export function EditAttributeSheet({
 
         // Validate: At least one language must be filled for name
         if (!firstFilledValue) {
-          alert("Please fill at least one language for the attribute name");
+          toast.error("Please fill at least one language for the attribute name");
           return;
         }
 
@@ -151,7 +152,7 @@ export function EditAttributeSheet({
         });
 
         if (invalidOptions.length > 0) {
-          alert(
+          toast.error(
             "Please ensure all options have a value and at least one language label"
           );
           return;
@@ -160,7 +161,7 @@ export function EditAttributeSheet({
         data.options = options as any;
       } else if (String(attributeType) === "multiselect") {
         // Require at least one option for multiselect type
-        alert("Please add at least one option for multiselect type");
+        toast.error("Please add at least one option for multiselect type");
         return;
       } else {
         // For non-multiselect types, ensure options is empty array
@@ -175,7 +176,7 @@ export function EditAttributeSheet({
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to update attribute:", error);
-      alert(error.message || "Failed to update attribute");
+      toast.error(error.message || "Failed to update attribute");
     }
   };
 
