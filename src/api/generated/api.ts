@@ -147,6 +147,14 @@ import type {
   ProductDetail,
   PatchedProductCreateUpdateRequest,
   ProductDetailRequest,
+  PaginatedPromoCodeList,
+  PromoCodeRequest,
+  PromoCode,
+  PatchedPromoCodeRequest,
+  PaginatedProductReviewList,
+  ProductReviewRequest,
+  ProductReview,
+  PatchedProductReviewRequest,
   PaginatedEcommerceSettingsList,
   EcommerceSettingsRequest,
   EcommerceSettings,
@@ -158,6 +166,10 @@ import type {
   RemoveDomainRequestRequest,
   VerifyDomainRequestRequest,
   VerifyDomainResponse,
+  PaginatedShippingMethodList,
+  ShippingMethodRequest,
+  ShippingMethod,
+  PatchedShippingMethodRequest,
   PaginatedProductVariantList,
   ProductVariantRequest,
   ProductVariant,
@@ -168,6 +180,8 @@ import type {
   ItemListDetail,
   ListItem,
   PaginatedOrderList,
+  ProductReviewCreateRequest,
+  ProductReviewCreate,
   ClientLoginRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequestRequest,
@@ -2825,12 +2839,29 @@ export async function ecommerceAdminHomepageSectionsChoicesRetrieve(): Promise<H
   return response.data;
 }
 
+export async function ecommerceAdminHomepageSectionsGenerateFromVariantCreate(
+  data: HomepageSectionRequest,
+): Promise<HomepageSection> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/homepage-sections/generate-from-variant/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function ecommerceAdminHomepageSectionsReorderCreate(
   data: HomepageSectionReorderRequest,
 ): Promise<HomepageSection[]> {
   const response = await axios.post(
     `/api/ecommerce/admin/homepage-sections/reorder/`,
     data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminHomepageSectionsVariantsRetrieve(): Promise<HomepageSection> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/homepage-sections/variants/`,
   );
   return response.data;
 }
@@ -3041,6 +3072,11 @@ export async function ecommerceAdminOrdersUpdateStatusCreate(
   return response.data;
 }
 
+export async function ecommerceAdminOrdersAnalyticsRetrieve(): Promise<Order> {
+  const response = await axios.get(`/api/ecommerce/admin/orders/analytics/`);
+  return response.data;
+}
+
 export async function ecommerceAdminProductsList(
   attributes?: string,
   inStock?: boolean,
@@ -3158,6 +3194,165 @@ export async function ecommerceAdminProductsLowStockRetrieve(): Promise<ProductD
   return response.data;
 }
 
+export async function ecommerceAdminPromoCodesList(
+  discountType?: 'fixed' | 'percentage',
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedPromoCodeList> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/promo-codes/${(() => {
+      const parts = [
+        discountType
+          ? 'discount_type=' + encodeURIComponent(discountType)
+          : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminPromoCodesCreate(
+  data: PromoCodeRequest,
+): Promise<PromoCode> {
+  const response = await axios.post(`/api/ecommerce/admin/promo-codes/`, data);
+  return response.data;
+}
+
+export async function ecommerceAdminPromoCodesRetrieve(
+  id: number,
+): Promise<PromoCode> {
+  const response = await axios.get(`/api/ecommerce/admin/promo-codes/${id}/`);
+  return response.data;
+}
+
+export async function ecommerceAdminPromoCodesUpdate(
+  id: number,
+  data: PromoCodeRequest,
+): Promise<PromoCode> {
+  const response = await axios.put(
+    `/api/ecommerce/admin/promo-codes/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminPromoCodesPartialUpdate(
+  id: number,
+  data: PatchedPromoCodeRequest,
+): Promise<PromoCode> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/promo-codes/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminPromoCodesDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/ecommerce/admin/promo-codes/${id}/`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsList(
+  isApproved?: boolean,
+  isVerifiedPurchase?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  product?: number,
+  rating?: number,
+): Promise<PaginatedProductReviewList> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/reviews/${(() => {
+      const parts = [
+        isApproved ? 'is_approved=' + encodeURIComponent(isApproved) : null,
+        isVerifiedPurchase
+          ? 'is_verified_purchase=' + encodeURIComponent(isVerifiedPurchase)
+          : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        product ? 'product=' + encodeURIComponent(product) : null,
+        rating ? 'rating=' + encodeURIComponent(rating) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsCreate(
+  data: ProductReviewRequest,
+): Promise<ProductReview> {
+  const response = await axios.post(`/api/ecommerce/admin/reviews/`, data);
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsRetrieve(
+  id: number,
+): Promise<ProductReview> {
+  const response = await axios.get(`/api/ecommerce/admin/reviews/${id}/`);
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsUpdate(
+  id: number,
+  data: ProductReviewRequest,
+): Promise<ProductReview> {
+  const response = await axios.put(`/api/ecommerce/admin/reviews/${id}/`, data);
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsPartialUpdate(
+  id: number,
+  data: PatchedProductReviewRequest,
+): Promise<ProductReview> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/reviews/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/ecommerce/admin/reviews/${id}/`);
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsApproveCreate(
+  id: number,
+  data: ProductReviewRequest,
+): Promise<ProductReview> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/reviews/${id}/approve/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminReviewsRejectCreate(
+  id: number,
+  data: ProductReviewRequest,
+): Promise<ProductReview> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/reviews/${id}/reject/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function ecommerceAdminSettingsList(
   ordering?: string,
   page?: number,
@@ -3267,6 +3462,76 @@ export async function ecommerceAdminSettingsVerifyDomainCreate(
   const response = await axios.post(
     `/api/ecommerce/admin/settings/verify-domain/`,
     data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminShippingMethodsList(
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+): Promise<PaginatedShippingMethodList> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/shipping-methods/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminShippingMethodsCreate(
+  data: ShippingMethodRequest,
+): Promise<ShippingMethod> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/shipping-methods/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminShippingMethodsRetrieve(
+  id: number,
+): Promise<ShippingMethod> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/shipping-methods/${id}/`,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminShippingMethodsUpdate(
+  id: number,
+  data: ShippingMethodRequest,
+): Promise<ShippingMethod> {
+  const response = await axios.put(
+    `/api/ecommerce/admin/shipping-methods/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminShippingMethodsPartialUpdate(
+  id: number,
+  data: PatchedShippingMethodRequest,
+): Promise<ShippingMethod> {
+  const response = await axios.patch(
+    `/api/ecommerce/admin/shipping-methods/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceAdminShippingMethodsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/ecommerce/admin/shipping-methods/${id}/`,
   );
   return response.data;
 }
@@ -3773,6 +4038,17 @@ export async function ecommerceClientOrdersDestroy(id: string): Promise<any> {
   return response.data;
 }
 
+export async function ecommerceClientOrdersCancelCreate(
+  id: string,
+  data: OrderRequest,
+): Promise<Order> {
+  const response = await axios.post(
+    `/api/ecommerce/client/orders/${id}/cancel/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function ecommerceClientProductsList(
   attr_Furniture?: string,
   attrColor?: string,
@@ -3828,6 +4104,36 @@ export async function ecommerceClientProductsRetrieve(
   return response.data;
 }
 
+export async function ecommerceClientProductsReviewsList(
+  productPk: number,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+): Promise<PaginatedProductReviewList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/products/${productPk}/reviews/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceClientProductsReviewsCreate(
+  productPk: number,
+  data: ProductReviewCreateRequest,
+): Promise<ProductReviewCreate> {
+  const response = await axios.post(
+    `/api/ecommerce/client/products/${productPk}/reviews/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function ecommerceClientProfileMeRetrieve(): Promise<EcommerceClient> {
   const response = await axios.get(`/api/ecommerce/client/profile/me/`);
   return response.data;
@@ -3839,6 +4145,38 @@ export async function ecommerceClientProfileUpdateProfilePartialUpdate(
   const response = await axios.patch(
     `/api/ecommerce/client/profile/update_profile/`,
     data,
+  );
+  return response.data;
+}
+
+export async function ecommerceClientPromoValidateCreate(): Promise<any> {
+  const response = await axios.post(`/api/ecommerce/client/promo/validate/`);
+  return response.data;
+}
+
+export async function ecommerceClientShippingMethodsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+): Promise<PaginatedShippingMethodList> {
+  const response = await axios.get(
+    `/api/ecommerce/client/shipping-methods/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function ecommerceClientShippingMethodsRetrieve(
+  id: number,
+): Promise<ShippingMethod> {
+  const response = await axios.get(
+    `/api/ecommerce/client/shipping-methods/${id}/`,
   );
   return response.data;
 }

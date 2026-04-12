@@ -628,6 +628,10 @@ export interface DirectionEnum {
   [key: string]: any;
 }
 
+export interface DiscountTypeEnum {
+  [key: string]: any;
+}
+
 export interface DisplayModeEnum {
   [key: string]: any;
 }
@@ -696,6 +700,10 @@ export interface EcommerceSettings {
   has_tbc_credentials: boolean;
   flitt_merchant_id?: string;
   has_flitt_credentials: boolean;
+  paddle_webhook_secret?: string;
+  paddle_client_token?: string;
+  paddle_use_production?: boolean;
+  has_paddle_credentials: boolean;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -718,6 +726,10 @@ export interface EcommerceSettings {
   theme_border_radius?: string;
   theme_card_color?: string;
   theme_card_foreground_color?: string;
+  tax_rate?: string;
+  tax_inclusive?: boolean;
+  tax_label?: string;
+  homepage_variant?: HomepageVariantEnum | BlankEnum;
   created_at: string;
   updated_at: string;
 }
@@ -735,6 +747,10 @@ export interface EcommerceSettingsRequest {
   tbc_use_production?: boolean;
   flitt_merchant_id?: string;
   flitt_password?: string;
+  paddle_api_key?: string;
+  paddle_webhook_secret?: string;
+  paddle_client_token?: string;
+  paddle_use_production?: boolean;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -753,6 +769,10 @@ export interface EcommerceSettingsRequest {
   theme_border_radius?: string;
   theme_card_color?: string;
   theme_card_foreground_color?: string;
+  tax_rate?: string;
+  tax_inclusive?: boolean;
+  tax_label?: string;
+  homepage_variant?: HomepageVariantEnum | BlankEnum;
 }
 
 export interface EmailDraft {
@@ -1246,6 +1266,10 @@ export interface HomepageSectionRequest {
   background_color?: string;
   background_image_url?: string;
   text_color?: string;
+}
+
+export interface HomepageVariantEnum {
+  [key: string]: any;
 }
 
 export interface InitializeUserRequestRequest {
@@ -2005,6 +2029,16 @@ export interface Order {
   admin_notes?: string;
   items: OrderItem[];
   total_items: number;
+  tracking_number?: string;
+  courier_provider?: string;
+  shipping_cost?: string;
+  estimated_delivery_date?: string;
+  shipping_method?: number;
+  shipping_method_details: ShippingMethod;
+  tax_amount?: string;
+  subtotal?: string;
+  discount_amount?: string;
+  promo_code?: number;
   payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   bog_order_id: string;
@@ -2023,6 +2057,8 @@ export interface OrderCreate {
   delivery_address_id: number;
   card_id?: number;
   notes?: string;
+  promo_code?: string;
+  shipping_method_id?: number;
 }
 
 export interface OrderCreateRequest {
@@ -2030,6 +2066,8 @@ export interface OrderCreateRequest {
   delivery_address_id: number;
   card_id?: number;
   notes?: string;
+  promo_code?: string;
+  shipping_method_id?: number;
 }
 
 export interface OrderItem {
@@ -2061,6 +2099,11 @@ export interface OrderList {
   status?: Status0faEnum;
   payment_status?: PaymentStatus2d4enum;
   total_amount: string;
+  tracking_number?: string;
+  shipping_cost?: string;
+  tax_amount?: string;
+  subtotal?: string;
+  discount_amount?: string;
   created_at: string;
 }
 
@@ -2070,6 +2113,15 @@ export interface OrderRequest {
   total_amount: string;
   notes?: string;
   admin_notes?: string;
+  tracking_number?: string;
+  courier_provider?: string;
+  shipping_cost?: string;
+  estimated_delivery_date?: string;
+  shipping_method?: number;
+  tax_amount?: string;
+  subtotal?: string;
+  discount_amount?: string;
+  promo_code?: number;
   payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   confirmed_at?: string;
@@ -2420,11 +2472,25 @@ export interface PaginatedProductListList {
   results: ProductList[];
 }
 
+export interface PaginatedProductReviewList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ProductReview[];
+}
+
 export interface PaginatedProductVariantList {
   count: number;
   next?: string;
   previous?: string;
   results: ProductVariant[];
+}
+
+export interface PaginatedPromoCodeList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: PromoCode[];
 }
 
 export interface PaginatedPublicHolidayListList {
@@ -2460,6 +2526,13 @@ export interface PaginatedServiceListList {
   next?: string;
   previous?: string;
   results: ServiceList[];
+}
+
+export interface PaginatedShippingMethodList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ShippingMethod[];
 }
 
 export interface PaginatedSipConfigurationListList {
@@ -2815,6 +2888,10 @@ export interface PatchedEcommerceSettingsRequest {
   tbc_use_production?: boolean;
   flitt_merchant_id?: string;
   flitt_password?: string;
+  paddle_api_key?: string;
+  paddle_webhook_secret?: string;
+  paddle_client_token?: string;
+  paddle_use_production?: boolean;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -2833,6 +2910,10 @@ export interface PatchedEcommerceSettingsRequest {
   theme_border_radius?: string;
   theme_card_color?: string;
   theme_card_foreground_color?: string;
+  tax_rate?: string;
+  tax_inclusive?: boolean;
+  tax_label?: string;
+  homepage_variant?: HomepageVariantEnum | BlankEnum;
 }
 
 export interface PatchedEmailDraftRequest {
@@ -3083,6 +3164,15 @@ export interface PatchedOrderRequest {
   total_amount?: string;
   notes?: string;
   admin_notes?: string;
+  tracking_number?: string;
+  courier_provider?: string;
+  shipping_cost?: string;
+  estimated_delivery_date?: string;
+  shipping_method?: number;
+  tax_amount?: string;
+  subtotal?: string;
+  discount_amount?: string;
+  promo_code?: number;
   payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   confirmed_at?: string;
@@ -3119,6 +3209,13 @@ export interface PatchedProductImageRequest {
   sort_order?: number;
 }
 
+export interface PatchedProductReviewRequest {
+  product?: number;
+  rating?: number;
+  title?: string;
+  content?: string;
+}
+
 export interface PatchedProductVariantRequest {
   sku?: string;
   name?: any;
@@ -3127,6 +3224,17 @@ export interface PatchedProductVariantRequest {
   image?: string;
   is_active?: boolean;
   sort_order?: number;
+}
+
+export interface PatchedPromoCodeRequest {
+  code?: string;
+  discount_type?: DiscountTypeEnum;
+  discount_value?: string;
+  min_order_amount?: string;
+  max_uses?: number;
+  valid_from?: string;
+  valid_until?: string;
+  is_active?: boolean;
 }
 
 export interface PatchedPublicHolidayCreateUpdateRequest {
@@ -3174,6 +3282,16 @@ export interface PatchedServiceDetailRequest {
   available_time_slots?: any;
   status?: Status711enum;
   image?: string;
+}
+
+export interface PatchedShippingMethodRequest {
+  name?: any;
+  description?: any;
+  price?: string;
+  free_shipping_threshold?: string;
+  is_active?: boolean;
+  estimated_days?: number;
+  position?: number;
 }
 
 export interface PatchedSipConfigurationRequest {
@@ -3638,6 +3756,40 @@ export interface ProductListRequest {
   is_featured?: boolean;
 }
 
+export interface ProductReview {
+  id: number;
+  product: number;
+  client: number;
+  client_name: string;
+  rating: number;
+  title?: string;
+  content?: string;
+  is_verified_purchase: boolean;
+  is_approved: boolean;
+  created_at: string;
+}
+
+export interface ProductReviewCreate {
+  id: number;
+  rating: number;
+  title?: string;
+  content?: string;
+  created_at: string;
+}
+
+export interface ProductReviewCreateRequest {
+  rating: number;
+  title?: string;
+  content?: string;
+}
+
+export interface ProductReviewRequest {
+  product: number;
+  rating: number;
+  title?: string;
+  content?: string;
+}
+
 export interface ProductVariant {
   id: number;
   sku: string;
@@ -3672,6 +3824,31 @@ export interface ProductVariantRequest {
   image?: string;
   is_active?: boolean;
   sort_order?: number;
+}
+
+export interface PromoCode {
+  id: number;
+  code: string;
+  discount_type: DiscountTypeEnum;
+  discount_value: string;
+  min_order_amount?: string;
+  max_uses?: number;
+  times_used: number;
+  valid_from: string;
+  valid_until: string;
+  is_active?: boolean;
+  created_at: string;
+}
+
+export interface PromoCodeRequest {
+  code: string;
+  discount_type: DiscountTypeEnum;
+  discount_value: string;
+  min_order_amount?: string;
+  max_uses?: number;
+  valid_from: string;
+  valid_until: string;
+  is_active?: boolean;
 }
 
 export interface PublicHolidayCreateUpdate {
@@ -3899,6 +4076,28 @@ export interface ServiceMinimal {
 
 export interface SetDefaultCardRequestRequest {
   card_id: number;
+}
+
+export interface ShippingMethod {
+  id: number;
+  name?: any;
+  description?: any;
+  price?: string;
+  free_shipping_threshold?: string;
+  is_active?: boolean;
+  estimated_days?: number;
+  position?: number;
+  created_at: string;
+}
+
+export interface ShippingMethodRequest {
+  name?: any;
+  description?: any;
+  price?: string;
+  free_shipping_threshold?: string;
+  is_active?: boolean;
+  estimated_days?: number;
+  position?: number;
 }
 
 export interface SipConfiguration {
