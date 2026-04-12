@@ -758,10 +758,10 @@ export default function CallSettingsPage() {
         </div>
 
         <Tabs defaultValue="sip" className="space-y-6">
-          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex">
-            <TabsTrigger value="sip" className="text-xs sm:text-sm">{ts("sipTab")}</TabsTrigger>
-            <TabsTrigger value="working-hours" className="text-xs sm:text-sm">{ts("workingHoursTab")}</TabsTrigger>
-            <TabsTrigger value="sounds" className="text-xs sm:text-sm">{ts("soundsTab")}</TabsTrigger>
+          <TabsList className="w-full sm:w-auto flex flex-col sm:flex-row h-auto sm:h-10 gap-1 sm:gap-0">
+            <TabsTrigger value="sip" className="w-full sm:w-auto">{ts("sipTab")}</TabsTrigger>
+            <TabsTrigger value="working-hours" className="w-full sm:w-auto">{ts("workingHoursTab")}</TabsTrigger>
+            <TabsTrigger value="sounds" className="w-full sm:w-auto">{ts("soundsTab")}</TabsTrigger>
           </TabsList>
 
           {/* ── Tab 1: SIP Configurations ── */}
