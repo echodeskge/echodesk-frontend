@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
+import { useSubscription } from "@/contexts/SubscriptionContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUserProfile } from "@/hooks/useUserProfile"
 import {
@@ -165,6 +166,7 @@ const settingsNav: SettingsNavItem[] = [
 export function SettingsSidebar() {
   const pathname = usePathname()
   const t = useTranslations("settings")
+  const { hasFeature } = useSubscription()
   const { user } = useAuth()
   const { data: userProfile } = useUserProfile()
 
@@ -177,11 +179,17 @@ export function SettingsSidebar() {
       : userProfile.feature_keys
     : []
 
-  const hasFeatureKey = (key: string): boolean => userFeatureKeys.includes(key)
+  const hasFeatureAccess = (key: string): boolean => {
+    // Staff/superadmin see everything
+    if (isStaffOrAdmin && userFeatureKeys.length === 0) return true
+    // Check user's feature_keys first (from group), then fall back to subscription
+    if (userFeatureKeys.length > 0) return userFeatureKeys.includes(key)
+    return hasFeature(key)
+  }
 
   const visibleItems = settingsNav.filter((item) => {
     if (item.staffOnly && !isStaffOrAdmin) return false
-    if (item.featureKey && !hasFeatureKey(item.featureKey)) return false
+    if (item.featureKey && !hasFeatureAccess(item.featureKey)) return false
     return true
   })
 
