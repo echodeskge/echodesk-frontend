@@ -1,5 +1,6 @@
 'use client';
 
+import DOMPurify from 'dompurify';
 import {
   Accordion,
   AccordionContent,
@@ -29,7 +30,7 @@ export function FAQAccordion({ items, className }: FAQAccordionProps) {
           <AccordionContent>
             <div
               className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground pt-2"
-              dangerouslySetInnerHTML={{ __html: item.answer }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.answer) }}
             />
           </AccordionContent>
         </AccordionItem>

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import DOMPurify from "dompurify";
 import { Mail, Loader2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmailSignature, useUpdateEmailSignature } from "@/hooks/api/useSocial";
@@ -243,7 +244,7 @@ Marketing Manager<br/>
                   lineHeight: "1.5",
                   color: "#666666",
                 }}
-                dangerouslySetInnerHTML={{ __html: processedSignatureHtml }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedSignatureHtml) }}
               />
             </div>
             <p className="text-xs text-muted-foreground">

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import DOMPurify from "dompurify";
 import { Send, Loader2, ChevronDown, ChevronUp, X } from "lucide-react";
 import {
   Dialog,
@@ -380,7 +381,7 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
                 <span className="font-medium">Signature will be added:</span>
                 <div
                   className="mt-1 p-2 bg-muted rounded text-foreground"
-                  dangerouslySetInnerHTML={{ __html: signature.signature_html }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(signature.signature_html) }}
                 />
               </div>
             )}

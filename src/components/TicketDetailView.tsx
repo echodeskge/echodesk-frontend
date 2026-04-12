@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations } from 'next-intl';
 import type { Ticket, TicketColumn, User, Tag as TagType, TenantGroup, Board } from "@/api/generated/interfaces";
 import { ticketService } from "@/services/ticketService";
-import { columnsList, tagsList, tenantGroupsList, boardsList } from "@/api/generated/api";
+import { columnsList, tagsList, tenantGroupsList, boardsList, ticketsPartialUpdate } from "@/api/generated/api";
 import axios from "@/api/axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -69,6 +69,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 
 interface TicketDetailViewProps {
   ticket: Ticket;
@@ -311,8 +312,21 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
   };
 
   const handleSave = async () => {
-    // TODO: Implement update API call
-    setIsEditing(false);
+    try {
+      const updatedTicket = await ticketsPartialUpdate(ticket.id.toString(), {
+        title: formData.title,
+        description: formData.description,
+        rich_description: formData.rich_description,
+        priority: formData.priority as any,
+      });
+      setTicket(updatedTicket);
+      onUpdate(updatedTicket);
+      setIsEditing(false);
+      toast.success(t('ticketUpdatedSuccess'));
+    } catch (error) {
+      console.error('Error updating ticket:', error);
+      toast.error(t('ticketUpdatedError'));
+    }
   };
 
   const handleStartEditing = () => {
@@ -564,7 +578,7 @@ export function TicketDetailView({ ticket: initialTicket, onUpdate }: TicketDeta
                     {(ticket.rich_description || ticket.description) ? (
                       <div
                         className="prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: ticket.rich_description || ticket.description || '' }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(ticket.rich_description || ticket.description || '') }}
                       />
                     ) : (
                       <p className="text-sm text-muted-foreground">

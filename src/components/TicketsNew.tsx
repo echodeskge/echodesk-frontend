@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useBoards } from "@/hooks/useBoards";
 import { useKanbanBoard } from "@/hooks/useKanbanBoard";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
 import { KanbanProvider } from "./kanban-new/kanban-context";
 import { Kanban } from "./kanban-new/components/kanban";
 import { Spinner } from "@/components/ui/spinner";
 import { KanbanSkeleton } from "@/components/KanbanSkeleton";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Search } from "lucide-react";
 import { BoardCreateSheet } from "./BoardCreateSheet";
 import type { ColumnType, TaskType, UserType } from "./kanban-new/types";
 import type { KanbanBoard, TicketList, TicketColumn, Board } from "@/api/generated/interfaces";
@@ -85,10 +88,13 @@ interface TicketsNewProps {
 }
 
 export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNewProps) {
+  const t = useTranslations('tickets');
   const { data: boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const { data: kanbanBoardData, isLoading: kanbanLoading, error: kanbanError } = useKanbanBoard(selectedBoardId);
   const { user } = useAuth();
   const [showCreateBoardSheet, setShowCreateBoardSheet] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const selectedBoard = boards?.find(b => b.id === selectedBoardId);
   const isStaff = user?.is_staff || false;
@@ -123,6 +129,19 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
     return convertApiDataToKanbanFormat(kanbanBoardData);
   }, [kanbanBoardData]);
 
+  // Filter kanban data based on search query
+  const filteredKanbanData = useMemo(() => {
+    if (!debouncedSearch) return kanbanData;
+    const query = debouncedSearch.toLowerCase();
+    return kanbanData.map(col => ({
+      ...col,
+      tasks: col.tasks.filter(task =>
+        task.title.toLowerCase().includes(query) ||
+        task.description?.toLowerCase().includes(query)
+      ),
+    }));
+  }, [kanbanData, debouncedSearch]);
+
   if (boardsLoading || (selectedBoardId && kanbanLoading)) {
     return <KanbanSkeleton />;
   }
@@ -144,7 +163,7 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
               className="gap-2 mt-2"
             >
               <Plus className="h-4 w-4" />
-              შექმენი დაფა
+              {t('createBoard')}
             </Button>
           )}
         </div>
@@ -174,9 +193,9 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
               <Plus className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold mb-1">დაფები ვერ მოიძებნა</p>
+              <p className="text-lg font-semibold mb-1">{t('noBoardsFound')}</p>
               <p className="text-sm text-muted-foreground">
-                {isStaff ? "შექმენი პირველი დაფა დასაწყებად" : "დაფებზე წვდომა არ გაქვთ"}
+                {isStaff ? t('createFirstBoardToStart') : t('noAccessToBoards')}
               </p>
             </div>
             {isStaff && (
@@ -186,7 +205,7 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
                 className="gap-2 mt-2"
               >
                 <Plus className="h-5 w-5" />
-                შექმენი დაფა
+                {t('createBoard')}
               </Button>
             )}
           </div>
@@ -206,8 +225,20 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2">
+        <div className="relative w-full max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder={t('searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
       <KanbanProvider
-        kanbanData={kanbanData}
+        kanbanData={filteredKanbanData}
         selectedBoard={selectedBoard || null}
         columns={kanbanBoardData?.columns || []}
       >

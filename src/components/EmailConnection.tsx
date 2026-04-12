@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import {
   useEmailStatus,
   useConnectEmail,
@@ -1064,7 +1065,7 @@ Marketing Manager<br/>
                       lineHeight: "1.5",
                       color: "#666666",
                     }}
-                    dangerouslySetInnerHTML={{ __html: signatureHtml }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(signatureHtml) }}
                   />
                 </div>
               </div>

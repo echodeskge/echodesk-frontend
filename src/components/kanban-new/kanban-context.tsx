@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useReducer, useState, useEffect } from "react"
+import { toast } from "sonner"
 
 import type { ReactNode } from "react"
 import type {
@@ -178,6 +179,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, columns = [],
           sourceIndex: destinationIndex,
           destinationIndex: sourceIndex,
         })
+        toast.error('Failed to reorder column. Please try again.')
       }
     }
   }
@@ -233,6 +235,7 @@ export function KanbanProvider({ kanbanData, selectedBoard = null, columns = [],
         source: { columnId: destinationColumnId, index: destinationIndex },
         destination: { columnId: sourceColumnId, index: sourceIndex },
       })
+      toast.error('Failed to move ticket. Please try again.')
     }
   }
 

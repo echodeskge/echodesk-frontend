@@ -1,5 +1,6 @@
 'use client';
 
+import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 import type { GuideStep } from '@/hooks/useHelpCenter';
 
@@ -32,7 +33,7 @@ export function StepByStepGuide({ steps, className }: StepByStepGuideProps) {
 
             <div
               className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground"
-              dangerouslySetInnerHTML={{ __html: step.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(step.content) }}
             />
 
             {step.image && (

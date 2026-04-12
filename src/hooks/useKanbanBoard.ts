@@ -11,7 +11,7 @@ export const useKanbanBoard = (boardId: number | null) => {
       return response as unknown as KanbanBoard;
     },
     enabled: !!boardId, // Only run query if boardId exists
-    staleTime: 0, // Always consider data stale - refetch every time
+    staleTime: 30000, // Consider data fresh for 30 seconds to avoid excessive refetches
     gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
     refetchOnWindowFocus: true, // Refetch when user returns to the tab or navigates back
     refetchOnMount: true, // Refetch when component mounts

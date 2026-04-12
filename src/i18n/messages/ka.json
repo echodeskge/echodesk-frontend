@@ -337,6 +337,14 @@
       "urgent": "სასწრაფო",
       "critical": "კრიტიკული"
     },
+    "ticketUpdatedSuccess": "დავალება წარმატებით განახლდა!",
+    "ticketUpdatedError": "დავალების განახლება ვერ მოხერხდა. გთხოვთ სცადოთ ხელახლა.",
+    "createBoard": "დაფის შექმნა",
+    "noBoardsFound": "დაფები ვერ მოიძებნა",
+    "createFirstBoardToStart": "შექმენით პირველი დაფა დასაწყებად",
+    "noAccessToBoards": "დაფებზე წვდომა არ გაქვთ",
+    "searchPlaceholder": "დავალებების ძიება...",
+    "emptyColumn": "ამ სვეტში დავალებები არ არის",
     "viewHistory": "ისტორიის ნახვა",
     "history": {
       "title": "დავალების ისტორია",

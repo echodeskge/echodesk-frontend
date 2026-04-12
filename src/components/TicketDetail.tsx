@@ -9,6 +9,7 @@ import type {
   TicketColumn,
 } from "@/api/generated/interfaces";
 import { columnsList } from "@/api/generated/api";
+import DOMPurify from "dompurify";
 import axios from "@/api/axios";
 import ChecklistItemList from "./ChecklistItemList";
 import AssigneeList from "./AssigneeList";
@@ -463,7 +464,7 @@ export default function TicketDetail({
               {(ticket.description_format as any) === "html" &&
               ticket.rich_description ? (
                 <div
-                  dangerouslySetInnerHTML={{ __html: ticket.rich_description }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(ticket.rich_description) }}
                 />
               ) : (
                 <div style={{ whiteSpace: "pre-wrap" }}>

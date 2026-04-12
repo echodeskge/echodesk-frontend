@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import DOMPurify from "dompurify";
 import { Plus, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -349,7 +350,7 @@ export default function ItemListDetailPage() {
                                   <div className="max-w-xs">
                                     <div
                                       className="prose prose-sm line-clamp-2 text-sm"
-                                      dangerouslySetInnerHTML={{ __html: value }}
+                                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(value) }}
                                     />
                                   </div>
                                 ) : (
