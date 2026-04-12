@@ -369,12 +369,12 @@ export default function InvoiceSettingsPage() {
       </div>
 
       <Tabs defaultValue="company" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="company">{t("settings.tabs.company")}</TabsTrigger>
-          <TabsTrigger value="branding">{t("settings.tabs.branding")}</TabsTrigger>
-          <TabsTrigger value="defaults">{t("settings.tabs.defaults")}</TabsTrigger>
-          <TabsTrigger value="bankAccounts">{t("settings.tabs.bankAccounts")}</TabsTrigger>
-          <TabsTrigger value="email">{t("settings.tabs.email")}</TabsTrigger>
+        <TabsList className="w-full flex flex-wrap h-auto gap-1 sm:inline-flex sm:flex-nowrap sm:h-10">
+          <TabsTrigger value="company" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.company")}</TabsTrigger>
+          <TabsTrigger value="branding" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.branding")}</TabsTrigger>
+          <TabsTrigger value="defaults" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.defaults")}</TabsTrigger>
+          <TabsTrigger value="bankAccounts" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.bankAccounts")}</TabsTrigger>
+          <TabsTrigger value="email" className="text-xs sm:text-sm flex-1 sm:flex-none">{t("settings.tabs.email")}</TabsTrigger>
         </TabsList>
 
         <form onSubmit={handleSubmit(onSubmit)}>
