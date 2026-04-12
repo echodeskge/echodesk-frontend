@@ -152,6 +152,8 @@ export interface BookingDetail {
   payment_url?: string;
   client_notes?: string;
   staff_notes?: string;
+  rating?: number;
+  review?: string;
   cancelled_at?: string;
   cancelled_by?: CancelledByEnum | BlankEnum;
   cancellation_reason?: string;
@@ -268,6 +270,7 @@ export interface CallLog {
   notes?: string;
   sip_call_id?: string;
   client: number;
+  social_client: number;
   client_name: string;
   handled_by?: number;
   handled_by_name: string;
@@ -275,6 +278,10 @@ export interface CallLog {
   sip_config_name: string;
   recording_url?: string;
   call_quality_score?: number;
+  transferred_to?: string;
+  transferred_to_user?: number;
+  transferred_to_user_name: string;
+  transferred_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -343,6 +350,9 @@ export interface CallLogRequest {
   sip_configuration?: number;
   recording_url?: string;
   call_quality_score?: number;
+  transferred_to?: string;
+  transferred_to_user?: number;
+  transferred_at?: string;
 }
 
 export interface CallRecording {
@@ -667,12 +677,25 @@ export interface EcommerceClientRequest {
   is_active?: boolean;
 }
 
+export interface EcommercePaymentProviderEnum {
+  [key: string]: any;
+}
+
 export interface EcommerceSettings {
   id: number;
   tenant: number;
+  ecommerce_payment_provider?: EcommercePaymentProviderEnum;
+  active_payment_providers?: any;
   bog_client_id?: string;
+  has_bog_credentials: boolean;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
+  tbc_client_id?: string;
+  tbc_api_key?: string;
+  tbc_use_production?: boolean;
+  has_tbc_credentials: boolean;
+  flitt_merchant_id?: string;
+  has_flitt_credentials: boolean;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -700,10 +723,18 @@ export interface EcommerceSettings {
 }
 
 export interface EcommerceSettingsRequest {
+  ecommerce_payment_provider?: EcommercePaymentProviderEnum;
+  active_payment_providers?: any;
   bog_client_id?: string;
   bog_client_secret?: string;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
+  tbc_client_id?: string;
+  tbc_client_secret?: string;
+  tbc_api_key?: string;
+  tbc_use_production?: boolean;
+  flitt_merchant_id?: string;
+  flitt_password?: string;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -1473,6 +1504,7 @@ export interface InvoiceSettings {
   created_at: string;
   updated_at: string;
   client_itemlist?: number;
+  materials_itemlist?: number;
 }
 
 export interface InvoiceSettingsRequest {
@@ -1500,6 +1532,7 @@ export interface InvoiceSettingsRequest {
   footer_text?: string;
   default_terms?: string;
   client_itemlist?: number;
+  materials_itemlist?: number;
 }
 
 export interface InvoiceTemplate {
@@ -1934,6 +1967,7 @@ export interface Notification {
   title: string;
   message: string;
   ticket_id?: number;
+  link_url?: string;
   metadata?: any;
   is_read?: boolean;
   read_at: string;
@@ -1946,6 +1980,7 @@ export interface NotificationRequest {
   title: string;
   message: string;
   ticket_id?: number;
+  link_url?: string;
   metadata?: any;
   is_read?: boolean;
 }
@@ -2595,6 +2630,13 @@ export interface PaginatedUserList {
   results: User[];
 }
 
+export interface PaginatedUserPhoneAssignmentList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: UserPhoneAssignment[];
+}
+
 export interface PaginatedWhatsAppBusinessAccountList {
   count: number;
   next?: string;
@@ -2683,6 +2725,9 @@ export interface PatchedCallLogRequest {
   sip_configuration?: number;
   recording_url?: string;
   call_quality_score?: number;
+  transferred_to?: string;
+  transferred_to_user?: number;
+  transferred_at?: string;
 }
 
 export interface PatchedCallStatusUpdateRequest {
@@ -2758,10 +2803,18 @@ export interface PatchedEcommerceClientRequest {
 }
 
 export interface PatchedEcommerceSettingsRequest {
+  ecommerce_payment_provider?: EcommercePaymentProviderEnum;
+  active_payment_providers?: any;
   bog_client_id?: string;
   bog_client_secret?: string;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
+  tbc_client_id?: string;
+  tbc_client_secret?: string;
+  tbc_api_key?: string;
+  tbc_use_production?: boolean;
+  flitt_merchant_id?: string;
+  flitt_password?: string;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -2929,6 +2982,7 @@ export interface PatchedInvoiceSettingsRequest {
   footer_text?: string;
   default_terms?: string;
   client_itemlist?: number;
+  materials_itemlist?: number;
 }
 
 export interface PatchedInvoiceTemplateRequest {
@@ -3018,6 +3072,7 @@ export interface PatchedNotificationRequest {
   title?: string;
   message?: string;
   ticket_id?: number;
+  link_url?: string;
   metadata?: any;
   is_read?: boolean;
 }
@@ -3126,11 +3181,15 @@ export interface PatchedSipConfigurationRequest {
   sip_server?: string;
   sip_port?: number;
   username?: string;
+  password?: string;
   realm?: string;
   proxy?: string;
+  phone_number?: string;
+  websocket_path?: string;
   stun_server?: string;
   turn_server?: string;
   turn_username?: string;
+  turn_password?: string;
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
@@ -3324,6 +3383,17 @@ export interface PatchedTicketRequest {
   is_paid?: boolean;
   amount_paid?: string;
   payment_due_date?: string;
+}
+
+export interface PatchedUserPhoneAssignmentRequest {
+  user?: number;
+  sip_configuration?: number;
+  extension?: string;
+  extension_password?: string;
+  phone_number?: string;
+  display_name?: string;
+  is_primary?: boolean;
+  is_active?: boolean;
 }
 
 export interface PatchedUserUpdateRequest {
@@ -3837,16 +3907,21 @@ export interface SipConfiguration {
   sip_server: string;
   sip_port?: number;
   username: string;
+  password: string;
   realm?: string;
   proxy?: string;
+  phone_number?: string;
+  websocket_path?: string;
   stun_server?: string;
   turn_server?: string;
   turn_username?: string;
+  turn_password?: string;
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
   created_at: string;
   updated_at: string;
+  user_assignments: UserPhoneAssignment[];
 }
 
 export interface SipConfigurationDetail {
@@ -3858,6 +3933,8 @@ export interface SipConfigurationDetail {
   password: string;
   realm?: string;
   proxy?: string;
+  phone_number?: string;
+  websocket_path?: string;
   stun_server?: string;
   turn_server?: string;
   turn_username?: string;
@@ -3865,14 +3942,17 @@ export interface SipConfigurationDetail {
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
+  user_assignments: UserPhoneAssignment[];
 }
 
 export interface SipConfigurationList {
   id: number;
   name: string;
   sip_server: string;
+  phone_number?: string;
   is_active?: boolean;
   is_default?: boolean;
+  assignment_count: number;
 }
 
 export interface SipConfigurationRequest {
@@ -3880,11 +3960,15 @@ export interface SipConfigurationRequest {
   sip_server: string;
   sip_port?: number;
   username: string;
+  password: string;
   realm?: string;
   proxy?: string;
+  phone_number?: string;
+  websocket_path?: string;
   stun_server?: string;
   turn_server?: string;
   turn_username?: string;
+  turn_password?: string;
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
@@ -4428,10 +4512,10 @@ export interface Ticket {
   assigned_department: DepartmentMinimal;
   tags: Tag[];
   comments: TicketComment[];
-  comments_count: string;
+  comments_count: number;
   checklist_items: ChecklistItem[];
-  checklist_items_count: string;
-  completed_checklist_items_count: string;
+  checklist_items_count: number;
+  completed_checklist_items_count: number;
   price?: string;
   currency?: string;
   is_paid?: boolean;
@@ -4819,6 +4903,45 @@ export interface UserMinimal {
   email: string;
   first_name: string;
   last_name: string;
+}
+
+export interface UserPhoneAssignment {
+  id: number;
+  user: number;
+  user_name: string;
+  user_email: string;
+  sip_configuration: number;
+  extension: string;
+  extension_password: string;
+  phone_number: string;
+  display_name?: string;
+  is_primary?: boolean;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserPhoneAssignmentDetail {
+  id: number;
+  user: number;
+  sip_configuration: string;
+  extension: string;
+  extension_password: string;
+  phone_number: string;
+  display_name?: string;
+  is_primary?: boolean;
+  is_active?: boolean;
+}
+
+export interface UserPhoneAssignmentRequest {
+  user: number;
+  sip_configuration: number;
+  extension: string;
+  extension_password: string;
+  phone_number: string;
+  display_name?: string;
+  is_primary?: boolean;
+  is_active?: boolean;
 }
 
 export interface UserRequest {

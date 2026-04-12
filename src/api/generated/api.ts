@@ -286,6 +286,11 @@ import type {
   SetDefaultCardRequestRequest,
   PaginatedPermissionList,
   Permission,
+  PaginatedUserPhoneAssignmentList,
+  UserPhoneAssignmentRequest,
+  UserPhoneAssignment,
+  UserPhoneAssignmentDetail,
+  PatchedUserPhoneAssignmentRequest,
   TenantRegistrationRequest,
   Tenant,
   TenantIpwhitelistRequest,
@@ -1427,6 +1432,28 @@ export async function bookingsClientBookingsCancelCreate(
   return response.data;
 }
 
+export async function bookingsClientBookingsRateCreate(
+  id: string,
+  data: BookingListRequest,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/client/bookings/${id}/rate/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function bookingsClientBookingsRescheduleCreate(
+  id: string,
+  data: BookingListRequest,
+): Promise<BookingList> {
+  const response = await axios.post(
+    `/api/bookings/client/bookings/${id}/reschedule/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function bookingsClientCategoriesList(
   ordering?: string,
   page?: number,
@@ -1652,19 +1679,42 @@ export async function bookingsClientsVerifyEmailCreate(): Promise<any> {
   return response.data;
 }
 
+export async function bookingsPaymentWebhookCreate(): Promise<any> {
+  const response = await axios.post(`/api/bookings/payment-webhook/`);
+  return response.data;
+}
+
 export async function callLogsList(
+  callType?: 'conference' | 'video' | 'voice',
+  direction?: 'inbound' | 'outbound',
   ordering?: string,
   page?: number,
   pageSize?: number,
   search?: string,
+  status?:
+    | 'answered'
+    | 'busy'
+    | 'cancelled'
+    | 'ended'
+    | 'failed'
+    | 'initiated'
+    | 'missed'
+    | 'no_answer'
+    | 'on_hold'
+    | 'recording'
+    | 'ringing'
+    | 'transferred',
 ): Promise<PaginatedCallLogList> {
   const response = await axios.get(
     `/api/call-logs/${(() => {
       const parts = [
+        callType ? 'call_type=' + encodeURIComponent(callType) : null,
+        direction ? 'direction=' + encodeURIComponent(direction) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3877,6 +3927,21 @@ export async function ecommercePaymentWebhook(): Promise<any> {
   return response.data;
 }
 
+export async function flittPaymentWebhook(): Promise<any> {
+  const response = await axios.post(`/api/ecommerce/payment-webhook/flitt/`);
+  return response.data;
+}
+
+export async function tbcPaymentWebhook(): Promise<any> {
+  const response = await axios.post(`/api/ecommerce/payment-webhook/tbc/`);
+  return response.data;
+}
+
+export async function extensionsStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/extensions/status/`);
+  return response.data;
+}
+
 export async function featuresList(
   ordering?: string,
   page?: number,
@@ -5467,6 +5532,16 @@ export async function listItemsReorderPartialUpdate(
   return response.data;
 }
 
+export async function notificationPreferencesRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/notification-preferences/`);
+  return response.data;
+}
+
+export async function notificationPreferencesBulkUpdate(): Promise<any> {
+  const response = await axios.put(`/api/notification-preferences/bulk/`);
+  return response.data;
+}
+
 export async function notificationsList(
   ordering?: string,
   page?: number,
@@ -5675,11 +5750,6 @@ export async function getSavedCard(): Promise<any> {
   return response.data;
 }
 
-export async function removeSavedCard(): Promise<any> {
-  const response = await axios.delete(`/api/payments/saved-card/`);
-  return response.data;
-}
-
 export async function addNewCard(
   data: AddNewCardRequestRequest,
 ): Promise<AddNewCardResponse> {
@@ -5689,6 +5759,11 @@ export async function addNewCard(
 
 export async function addEcommerceCard(): Promise<AddEcommerceCardResponse> {
   const response = await axios.post(`/api/payments/saved-card/add-ecommerce/`);
+  return response.data;
+}
+
+export async function removeSavedCard(): Promise<any> {
+  const response = await axios.delete(`/api/payments/saved-card/remove/`);
   return response.data;
 }
 
@@ -5717,6 +5792,41 @@ export async function paymentsWebhookCreate(): Promise<any> {
   return response.data;
 }
 
+export async function pbxSettingsRetrieve(sipConfigId: number): Promise<any> {
+  const response = await axios.get(`/api/pbx-settings/${sipConfigId}/`);
+  return response.data;
+}
+
+export async function pbxSettingsPartialUpdate(
+  sipConfigId: number,
+): Promise<any> {
+  const response = await axios.patch(`/api/pbx-settings/${sipConfigId}/`);
+  return response.data;
+}
+
+export async function pbxSettingsRemoveSoundCreate(
+  sipConfigId: number,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/pbx-settings/${sipConfigId}/remove-sound/`,
+  );
+  return response.data;
+}
+
+export async function pbxSettingsUploadSoundCreate(
+  sipConfigId: number,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/pbx-settings/${sipConfigId}/upload-sound/`,
+  );
+  return response.data;
+}
+
+export async function pbxCallRoutingRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/pbx/call-routing/`);
+  return response.data;
+}
+
 export async function permissionsList(
   ordering?: string,
   page?: number,
@@ -5739,6 +5849,61 @@ export async function permissionsList(
 
 export async function permissionsRetrieve(id: number): Promise<Permission> {
   const response = await axios.get(`/api/permissions/${id}/`);
+  return response.data;
+}
+
+export async function phoneAssignmentsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedUserPhoneAssignmentList> {
+  const response = await axios.get(
+    `/api/phone-assignments/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function phoneAssignmentsCreate(
+  data: UserPhoneAssignmentRequest,
+): Promise<UserPhoneAssignment> {
+  const response = await axios.post(`/api/phone-assignments/`, data);
+  return response.data;
+}
+
+export async function phoneAssignmentsRetrieve(
+  id: number,
+): Promise<UserPhoneAssignmentDetail> {
+  const response = await axios.get(`/api/phone-assignments/${id}/`);
+  return response.data;
+}
+
+export async function phoneAssignmentsUpdate(
+  id: number,
+  data: UserPhoneAssignmentRequest,
+): Promise<UserPhoneAssignment> {
+  const response = await axios.put(`/api/phone-assignments/${id}/`, data);
+  return response.data;
+}
+
+export async function phoneAssignmentsPartialUpdate(
+  id: number,
+  data: PatchedUserPhoneAssignmentRequest,
+): Promise<UserPhoneAssignment> {
+  const response = await axios.patch(`/api/phone-assignments/${id}/`, data);
+  return response.data;
+}
+
+export async function phoneAssignmentsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/phone-assignments/${id}/`);
   return response.data;
 }
 
@@ -5991,6 +6156,11 @@ export async function sipConfigurationsWebrtcConfigRetrieve(
   const response = await axios.get(
     `/api/sip-configurations/${id}/webrtc_config/`,
   );
+  return response.data;
+}
+
+export async function sipConfigurationsMyConfigRetrieve(): Promise<SipConfiguration> {
+  const response = await axios.get(`/api/sip-configurations/my_config/`);
   return response.data;
 }
 
@@ -7936,6 +8106,11 @@ export async function ticketsDestroy(id: string): Promise<any> {
   return response.data;
 }
 
+export async function ticketsActivityRetrieve(id: string): Promise<Ticket> {
+  const response = await axios.get(`/api/tickets/${id}/activity/`);
+  return response.data;
+}
+
 export async function ticketsAddCommentCreate(
   id: string,
   data: TicketRequest,
@@ -8198,6 +8373,16 @@ export async function usersSendNewPasswordCreate(
 
 export async function usersBulkActionCreate(data: UserRequest): Promise<User> {
   const response = await axios.post(`/api/users/bulk_action/`, data);
+  return response.data;
+}
+
+export async function webhooksCallRatingCreate(): Promise<any> {
+  const response = await axios.post(`/api/webhooks/call-rating/`);
+  return response.data;
+}
+
+export async function webhooksCallRecordingUrlCreate(): Promise<any> {
+  const response = await axios.post(`/api/webhooks/call-recording-url/`);
   return response.data;
 }
 
