@@ -25,9 +25,11 @@ import { useClients } from "@/hooks/useClients";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ClientsPage() {
   const t = useTranslations("clients");
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
@@ -204,7 +206,11 @@ export default function ClientsPage() {
                 </TableRow>
               ) : (
                 clients.map((client) => (
-                  <TableRow key={client.id}>
+                  <TableRow
+                    key={client.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => router.push(`/ecommerce/clients/${client.id}`)}
+                  >
                     <TableCell className="font-medium">
                       {client.full_name}
                     </TableCell>

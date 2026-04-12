@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText } from "lucide-react"
+import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText, RotateCcw } from "lucide-react"
 import { toast } from "sonner"
 import axiosInstance from "@/api/axios"
 
@@ -75,6 +75,8 @@ export default function OrderDetailPage() {
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [pendingStatus, setPendingStatus] = useState<string | null>(null)
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false)
+  const [refunding, setRefunding] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -139,6 +141,32 @@ export default function OrderDetailPage() {
       setUpdatingStatus(false)
     }
   }
+
+  const handleRefundOrder = async () => {
+    if (!order) return
+
+    try {
+      setRefunding(true)
+      setRefundDialogOpen(false)
+
+      const response = await axiosInstance.post(
+        `/api/ecommerce/admin/orders/${order.id}/refund/`
+      )
+
+      setOrder(response.data as unknown as Order)
+      toast.success(t("refund.success"))
+    } catch (error) {
+      console.error("Error refunding order:", error)
+      toast.error(t("refund.error"))
+    } finally {
+      setRefunding(false)
+    }
+  }
+
+  const canRefund =
+    order &&
+    String(order.status) !== "refunded" &&
+    String(order.status) !== "cancelled"
 
   if (loading) {
     return (
@@ -451,6 +479,18 @@ export default function OrderDetailPage() {
                   Mark as Paid
                 </Button>
               )}
+              {canRefund && (
+                <Button
+                  className="w-full mt-2"
+                  variant="destructive"
+                  size="sm"
+                  disabled={refunding}
+                  onClick={() => setRefundDialogOpen(true)}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  {refunding ? t("refund.processing") : t("refund.button")}
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -512,6 +552,27 @@ export default function OrderDetailPage() {
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmStatusChange}>
               Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Refund Confirmation Dialog */}
+      <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("refund.confirmTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("refund.confirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("refund.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRefundOrder}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("refund.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

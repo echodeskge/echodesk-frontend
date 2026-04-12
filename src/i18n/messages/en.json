@@ -1327,7 +1327,17 @@
     "noOrders": "No orders found",
     "noOrdersFiltered": "Try adjusting your filters",
     "noOrdersYet": "Orders will appear here once customers place them",
-    "viewDetails": "View Details"
+    "viewDetails": "View Details",
+    "refund": {
+      "button": "Refund Order",
+      "processing": "Refunding...",
+      "confirmTitle": "Confirm Refund",
+      "confirmDescription": "Are you sure? This will restore stock and mark the order as refunded.",
+      "confirm": "Refund Order",
+      "cancel": "Cancel",
+      "success": "Order has been refunded successfully",
+      "error": "Failed to refund order"
+    }
   },
   "ecommerceAnalytics": {
     "title": "Ecommerce Dashboard",
@@ -1869,6 +1879,49 @@
     "status": {
       "active": "Active",
       "inactive": "Inactive"
+    }
+  },
+  "clientDetail": {
+    "back": "Back",
+    "backToClients": "Back to Clients",
+    "notFound": "Client not found",
+    "notFoundDescription": "The client you're looking for doesn't exist or has been deleted.",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "active": "Active",
+    "inactive": "Inactive",
+    "joinedOn": "Joined {date}",
+    "stats": {
+      "totalOrders": "Total Orders",
+      "totalSpent": "Total Spent",
+      "lastOrder": "Last Order",
+      "noOrders": "No orders yet"
+    },
+    "orderHistory": "Order History",
+    "noOrders": "This client has no orders yet",
+    "ordersTable": {
+      "orderNumber": "Order #",
+      "total": "Total",
+      "status": "Status",
+      "paymentStatus": "Payment",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "viewOrder": "View",
+    "clientInfo": "Client Info",
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phone": "Phone",
+      "dateOfBirth": "Date of Birth",
+      "lastLogin": "Last Login"
+    },
+    "addresses": "Addresses",
+    "noAddresses": "No addresses on file",
+    "defaultAddress": "Default",
+    "errors": {
+      "loadFailed": "Failed to load client details"
     }
   },
   "socialClients": {
