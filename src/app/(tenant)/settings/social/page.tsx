@@ -172,7 +172,7 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
     <div className="space-y-6">
       {/* Welcome Message */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-green-500" />
@@ -201,7 +201,7 @@ function PlatformAutoReplyForm({ platform, settings, onChange }: PlatformAutoRep
 
       {/* Away Message */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <Label className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-orange-500" />
@@ -293,7 +293,7 @@ function NotificationsTab({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="notifications">{t("settingsPage.notifications.enable") || "Enable notifications"}</Label>
               <p className="text-sm text-muted-foreground">
@@ -310,7 +310,7 @@ function NotificationsTab({
           {notifications && (
             <>
               <Separator />
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-0.5">
                   <Label htmlFor="notification-sound">{t("settingsPage.notifications.sound") || "Notification sound"}</Label>
                   <p className="text-sm text-muted-foreground">
@@ -952,7 +952,7 @@ function ClearHistoryCard() {
       </CardHeader>
       <CardContent className="space-y-3">
         {platforms.map(({ key, label }) => (
-          <div key={key} className="flex items-center justify-between">
+          <div key={key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="text-sm">{t("settingsPage.clearHistory.platformMessages", { platform: label })}</span>
             {confirmPlatform === key ? (
               <div className="flex items-center gap-2">
@@ -1199,7 +1199,7 @@ export default function SocialSettingsPage() {
   ];
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto p-4 sm:p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">
           {t("settingsPage.title")}
@@ -1299,7 +1299,7 @@ export default function SocialSettingsPage() {
       </Tabs>
 
       {/* Save Button - Fixed at bottom */}
-      <div className="flex justify-end gap-3 mt-6 pt-6 border-t">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 mt-6 pt-6 border-t">
         <Button variant="outline" onClick={() => window.history.back()} disabled={saving}>
           {t("settingsPage.cancel")}
         </Button>

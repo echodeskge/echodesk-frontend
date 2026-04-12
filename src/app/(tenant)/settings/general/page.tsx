@@ -140,7 +140,7 @@ export default function GeneralSettingsPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto px-4 sm:px-6 py-6 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{t('title')}</CardTitle>
@@ -156,7 +156,7 @@ export default function GeneralSettingsPage() {
               </p>
             </div>
 
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-6">
               {/* Logo Preview */}
               <div className="flex-shrink-0">
                 {logoPreview ? (

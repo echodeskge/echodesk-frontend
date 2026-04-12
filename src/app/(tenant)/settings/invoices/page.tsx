@@ -361,7 +361,7 @@ export default function InvoiceSettingsPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
@@ -485,7 +485,7 @@ export default function InvoiceSettingsPage() {
               {/* Logo */}
               <div className="space-y-3">
                 <Label>{t("settings.form.logo")}</Label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   {settings?.logo ? (
                     <div className="relative">
                       <img
@@ -526,7 +526,7 @@ export default function InvoiceSettingsPage() {
               {/* Badge */}
               <div className="space-y-3">
                 <Label>{t("settings.form.badge")}</Label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   {settings?.badge ? (
                     <div className="relative">
                       <img
@@ -567,7 +567,7 @@ export default function InvoiceSettingsPage() {
               {/* Signature */}
               <div className="space-y-3">
                 <Label>{t("settings.form.signature")}</Label>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                   {settings?.signature ? (
                     <div className="relative">
                       <img
@@ -757,7 +757,7 @@ export default function InvoiceSettingsPage() {
         {/* Bank Accounts Tab (outside form - saves independently) */}
         <TabsContent value="bankAccounts" className="space-y-6">
           <Card className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <h3 className="text-lg font-semibold">{t("settings.bankAccounts")}</h3>
               {!showAddForm && editingIndex === null && (
                 <Button
@@ -790,7 +790,7 @@ export default function InvoiceSettingsPage() {
                       renderBankAccountForm(true)
                     ) : (
                       <Card className="p-4">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-2">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{account.bank_name}</span>

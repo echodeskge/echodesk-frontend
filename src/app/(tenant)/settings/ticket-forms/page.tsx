@@ -221,7 +221,7 @@ export default function TicketFormsPage() {
   return (
     <div className="container mx-auto py-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
           <CardTitle>{t('title')}</CardTitle>
           <Button onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" />
@@ -240,7 +240,7 @@ export default function TicketFormsPage() {
               {forms.map((form) => (
                 <div
                   key={form.id}
-                  className="flex items-center justify-between border rounded-lg p-4"
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border rounded-lg p-4"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -450,7 +450,7 @@ export default function TicketFormsPage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 space-y-2">
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                               <Label className="text-xs">Field Name (ID)</Label>
                               <Input
@@ -474,7 +474,7 @@ export default function TicketFormsPage() {
                               />
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                               <Label className="text-xs">Type</Label>
                               <Select

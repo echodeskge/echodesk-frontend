@@ -176,9 +176,9 @@ export default function ItemListsPage() {
   };
 
   return (
-    <div className="w-full py-6 px-6">
+    <div className="w-full py-4 sm:py-6 px-4 sm:px-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
           <CardTitle>{t('title')}</CardTitle>
           <Button onClick={handleCreate}>
             <Plus className="mr-2 h-4 w-4" />
@@ -197,7 +197,7 @@ export default function ItemListsPage() {
               {itemLists.map((list) => (
                 <div
                   key={list.id}
-                  className="flex items-center justify-between border rounded-lg p-4"
+                  className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border rounded-lg p-4"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -375,7 +375,7 @@ export default function ItemListsPage() {
                       key={index}
                       className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50"
                     >
-                      <div className="flex-1 grid grid-cols-3 gap-2 text-sm">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
                         <div>
                           <span className="font-medium">{field.label}</span>
                           <p className="text-xs text-muted-foreground">
@@ -406,7 +406,7 @@ export default function ItemListsPage() {
               {/* Add New Field Form */}
               <div className="border rounded-lg p-4 space-y-3">
                 <p className="text-sm font-medium">{t('customFieldsSection.addNewField')}</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <div>
                     <Label htmlFor="field_name" className="text-xs">
                       {t('customFieldsSection.fieldNameLabel')}

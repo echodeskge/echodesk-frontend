@@ -355,9 +355,9 @@ const TenantGroupManagement: React.FC = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">{t("groupManagement")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -402,7 +402,7 @@ const TenantGroupManagement: React.FC = () => {
               {filteredGroups.map((group) => (
                 <div
                   key={group.id}
-                  className="p-4 flex justify-between items-start hover:bg-muted/50 transition-colors"
+                  className="p-4 flex flex-col sm:flex-row items-start sm:justify-between gap-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -441,7 +441,7 @@ const TenantGroupManagement: React.FC = () => {
                       {t("created")} {new Date(group.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
                     <Button
                       variant="outline"
                       size="sm"

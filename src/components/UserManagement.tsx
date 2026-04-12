@@ -229,7 +229,7 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
+    <div className="p-4 sm:p-6 space-y-6 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>

@@ -350,7 +350,7 @@ export default function EcommerceSettingsPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
           <div className="h-64 bg-gray-200 rounded"></div>
@@ -360,7 +360,7 @@ export default function EcommerceSettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="p-4 sm:p-6 space-y-6 max-w-4xl">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">{t("title")}</h1>
@@ -571,7 +571,7 @@ export default function EcommerceSettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-0.5">
                 <Label htmlFor="bog_use_production">{t("environment.productionMode")}</Label>
                 <p className="text-sm text-muted-foreground">
@@ -620,7 +620,7 @@ export default function EcommerceSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="card_payment">{t("paymentMethods.cardPayments")}</Label>
               <p className="text-sm text-muted-foreground">
@@ -638,7 +638,7 @@ export default function EcommerceSettingsPage() {
 
           <Separator />
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
               <Label htmlFor="cash_on_delivery">{t("paymentMethods.cashOnDelivery")}</Label>
               <p className="text-sm text-muted-foreground">
@@ -678,7 +678,7 @@ export default function EcommerceSettingsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Deployment Status */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-0.5">
               <Label>{t("deployment.status")}</Label>
               <div className="flex items-center gap-2 mt-1">
@@ -885,7 +885,7 @@ export default function EcommerceSettingsPage() {
                   </div>
                   {dnsInstructions.map((instruction, index) => (
                     <div key={index} className="bg-white p-3 rounded border space-y-2">
-                      <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
                         <div>
                           <span className="text-muted-foreground">{t("customDomain.dnsType")}</span>
                           <p className="font-mono font-medium">{instruction.type}</p>
@@ -931,11 +931,11 @@ export default function EcommerceSettingsPage() {
                   {domains.map((domain) => (
                     <div
                       key={domain.name}
-                      className="flex items-center justify-between p-3 border rounded-lg"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <Globe className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-mono">{domain.name}</span>
+                        <span className="font-mono break-all">{domain.name}</span>
                         <Badge
                           variant={domain.verified ? "default" : "secondary"}
                           className={domain.verified ? "bg-green-500" : "bg-yellow-500"}

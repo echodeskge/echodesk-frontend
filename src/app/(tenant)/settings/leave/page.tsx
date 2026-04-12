@@ -91,7 +91,7 @@ export default function LeaveSettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
         <p className="text-muted-foreground mt-1">{t("settings.subtitle")}</p>
@@ -104,7 +104,7 @@ export default function LeaveSettingsPage() {
             <CardDescription>{t("settings.approvalWorkflowDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label htmlFor="require_manager_approval">{t("settings.requireManagerApproval")}</Label>
                 <p className="text-sm text-muted-foreground">{t("settings.requireManagerApprovalDesc")}</p>
@@ -116,7 +116,7 @@ export default function LeaveSettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label htmlFor="require_hr_approval">{t("settings.requireHrApproval")}</Label>
                 <p className="text-sm text-muted-foreground">{t("settings.requireHrApprovalDesc")}</p>
@@ -136,7 +136,7 @@ export default function LeaveSettingsPage() {
             <CardDescription>{t("settings.leaveBalanceDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label htmlFor="allow_negative_balance">{t("settings.allowNegativeBalance")}</Label>
                 <p className="text-sm text-muted-foreground">{t("settings.allowNegativeBalanceDesc")}</p>
@@ -185,7 +185,7 @@ export default function LeaveSettingsPage() {
             <div className="space-y-3">
               <Label>{t("settings.weekendDays")}</Label>
               <p className="text-sm text-muted-foreground">{t("settings.weekendDaysDesc")}</p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {weekDays.map((day) => (
                   <div key={day.value} className="flex items-center space-x-2">
                     <Checkbox

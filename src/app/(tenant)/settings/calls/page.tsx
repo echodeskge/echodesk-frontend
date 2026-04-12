@@ -278,7 +278,7 @@ function SoundCard({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
           <div>
             <CardTitle className="text-base">{title}</CardTitle>
             <CardDescription className="text-sm">{description}</CardDescription>
@@ -291,7 +291,7 @@ function SoundCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           {soundUrl ? (
             <>
               <audio controls preload="none" className="h-8 flex-1">
@@ -748,7 +748,7 @@ export default function CallSettingsPage() {
   // ── Render ──
   return (
     <FeatureGate feature="ip_calling" showUpgrade={true}>
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="container mx-auto p-4 sm:p-6 space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("settings.title")}</h1>
@@ -767,7 +767,7 @@ export default function CallSettingsPage() {
           {/* ── Tab 1: SIP Configurations ── */}
           <TabsContent value="sip" className="space-y-6">
             {/* Action buttons */}
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
               <Button variant="outline" onClick={setupAsteriskServer}>
                 <Zap className="h-4 w-4 mr-2" />
                 {t("settings.quickSetup")}
@@ -871,7 +871,7 @@ export default function CallSettingsPage() {
                     {/* Enable/Disable Switch */}
                     <Card>
                       <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div className="space-y-0.5">
                             <Label className="text-base font-medium">{ts("workingHoursEnabled")}</Label>
                             <p className="text-sm text-muted-foreground">
@@ -976,7 +976,7 @@ export default function CallSettingsPage() {
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {(pbxSettings.holidays || []).map((holiday, index) => (
-                          <div key={index} className="flex items-center gap-3">
+                          <div key={index} className="flex flex-col sm:flex-row sm:items-center gap-3">
                             <Input
                               type="date"
                               value={holiday.date}
@@ -985,7 +985,7 @@ export default function CallSettingsPage() {
                                 updated[index] = { ...updated[index], date: e.target.value };
                                 setPbxSettings((prev) => ({ ...prev, holidays: updated }));
                               }}
-                              className="w-44"
+                              className="sm:w-44"
                             />
                             <Input
                               value={holiday.name}

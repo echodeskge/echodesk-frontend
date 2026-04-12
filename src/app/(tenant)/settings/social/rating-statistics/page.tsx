@@ -231,7 +231,7 @@ export default function RatingStatisticsPage() {
   // Check access
   if (!isSuperAdmin) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl">
+      <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
@@ -245,7 +245,7 @@ export default function RatingStatisticsPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl">
+      <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
         <div className="flex items-center justify-center h-64">
           <div className="flex items-center space-x-2">
             <Spinner className="h-6 w-6" />
@@ -258,7 +258,7 @@ export default function RatingStatisticsPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6 max-w-6xl">
+      <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center p-4 bg-destructive/10 text-destructive rounded-lg">
@@ -271,7 +271,7 @@ export default function RatingStatisticsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-4 sm:p-6 max-w-6xl">
       {/* Header */}
       <Card className="mb-6 shadow-none border border-gray-200">
         <CardHeader>
@@ -346,7 +346,7 @@ export default function RatingStatisticsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
             <Users className="h-8 w-8 text-blue-500 mb-2" />
             <div className="text-2xl font-bold text-blue-600">
               {data?.users?.length || 0}
@@ -358,7 +358,7 @@ export default function RatingStatisticsPage() {
         </Card>
 
         <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
             <BarChart3 className="h-8 w-8 text-green-500 mb-2" />
             <div className="text-2xl font-bold text-green-600">
               {data?.overall?.total_ratings || 0}
@@ -370,7 +370,7 @@ export default function RatingStatisticsPage() {
         </Card>
 
         <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
             <Star className="h-8 w-8 text-yellow-500 mb-2" />
             <div className="text-2xl font-bold text-yellow-600">
               {data?.overall?.average_rating?.toFixed(1) || '0.0'}
@@ -382,7 +382,7 @@ export default function RatingStatisticsPage() {
         </Card>
 
         <Card className="shadow-none border border-gray-200">
-          <CardContent className="flex flex-col items-center justify-center p-6 text-center">
+          <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center">
             <TrendingUp className="h-8 w-8 text-purple-500 mb-2" />
             <div className="text-2xl font-bold text-purple-600">
               {data?.users && data.users.length > 0
@@ -399,6 +399,7 @@ export default function RatingStatisticsPage() {
       {/* Statistics Table */}
       <Card className="shadow-none border border-gray-200">
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader className="[&_tr]:border-b [&_tr]:border-gray-100">
               <TableRow className="border-b border-gray-100 hover:bg-transparent">
@@ -473,6 +474,7 @@ export default function RatingStatisticsPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
 
           {sortedUsers.length === 0 && (
             <div className="text-center py-10 text-muted-foreground">

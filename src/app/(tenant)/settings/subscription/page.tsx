@@ -77,7 +77,7 @@ export default function SubscriptionPage() {
   const invoices = invoicesData?.invoices || [];
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
+    <div className="container mx-auto p-4 sm:p-6 max-w-7xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{t('page.title')}</h1>
         <p className="text-muted-foreground">

@@ -101,7 +101,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">{t("title")}</h1>
         <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
@@ -114,7 +114,7 @@ export default function SettingsPage() {
             <CardDescription>{t("paymentSettings.description")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label>{t("paymentSettings.requireDeposit")}</Label>
                 <p className="text-sm text-muted-foreground">{t("paymentSettings.requireDepositDesc")}</p>
@@ -126,7 +126,7 @@ export default function SettingsPage() {
                 }
               />
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label>{t("paymentSettings.allowCash")}</Label>
                 <p className="text-sm text-muted-foreground">{t("paymentSettings.allowCashDesc")}</p>
@@ -138,7 +138,7 @@ export default function SettingsPage() {
                 }
               />
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label>{t("paymentSettings.allowCard")}</Label>
                 <p className="text-sm text-muted-foreground">{t("paymentSettings.allowCardDesc")}</p>
@@ -195,7 +195,7 @@ export default function SettingsPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">{t("bogSettings.clientSecretHelp")}</p>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
                 <div className="space-y-0.5">
                   <Label>{t("bogSettings.productionMode")}</Label>
                   <p className="text-sm text-muted-foreground">{t("bogSettings.productionModeDesc")}</p>
@@ -294,7 +294,7 @@ export default function SettingsPage() {
             <CardDescription>{t("autoConfirm.description")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label>{t("autoConfirm.onDeposit")}</Label>
                 <p className="text-sm text-muted-foreground">{t("autoConfirm.onDepositDesc")}</p>
@@ -306,7 +306,7 @@ export default function SettingsPage() {
                 }
               />
             </div>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
               <div className="space-y-0.5">
                 <Label>{t("autoConfirm.onFullPayment")}</Label>
                 <p className="text-sm text-muted-foreground">{t("autoConfirm.onFullPaymentDesc")}</p>

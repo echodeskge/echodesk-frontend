@@ -76,7 +76,7 @@ export default function AutoPostingPage() {
 
   if (settingsLoading) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="p-4 sm:p-6 space-y-4">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-64 w-full" />
       </div>
@@ -84,8 +84,8 @@ export default function AutoPostingPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground">{t("subtitle")}</p>
@@ -156,7 +156,7 @@ export default function AutoPostingPage() {
               </div>
 
               {/* Posting Time & Timezone */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>{t("postingTime")}</Label>
                   <Input
@@ -182,7 +182,7 @@ export default function AutoPostingPage() {
               </div>
 
               {/* Tone & Content Source */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>{t("tone")}</Label>
                   <Select
@@ -214,7 +214,7 @@ export default function AutoPostingPage() {
               </div>
 
               {/* Language & Max Posts */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <Label>{t("contentLanguage")}</Label>
                   <Select
