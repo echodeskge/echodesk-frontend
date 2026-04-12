@@ -1356,7 +1356,16 @@
       "update": "Failed to update section",
       "delete": "Failed to delete section",
       "reorder": "Failed to reorder"
-    }
+    },
+    "homepageVariants": "Homepage Templates",
+    "homepageVariantsDescription": "Choose a pre-designed layout to get started quickly",
+    "applyVariant": "Apply",
+    "replaceHomepageTitle": "Replace Homepage Layout?",
+    "replaceHomepageDescription": "Applying \"{name}\" will delete all your current homepage sections and generate new ones from the template.",
+    "replaceAndGenerate": "Replace & Generate",
+    "variantApplied": "Homepage layout generated successfully",
+    "variantApplyFailed": "Failed to generate homepage layout",
+    "sectionCount": "{count} sections"
   },
   "groups": {
     "title": "Groups",

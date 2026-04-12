@@ -21,6 +21,7 @@ import type {
   SectionTypeEnum,
   DisplayModeEnum,
 } from "@/api/generated";
+import axiosInstance from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -74,6 +75,85 @@ interface SectionChoices {
   display_modes: { value: string; label: string }[];
 }
 
+interface HomepageVariant {
+  key: string;
+  name: string;
+  description: string;
+  section_count: number;
+  section_types: string[];
+}
+
+function getBlockStyle(type: string): string {
+  switch (type) {
+    case "hero_banner":
+      return "h-16 bg-primary/20";
+    case "featured_products":
+      return "h-8 bg-primary/15 grid grid-cols-4 gap-0.5";
+    case "category_grid":
+      return "h-10 bg-blue-500/15 grid grid-cols-3 gap-0.5";
+    case "statistics":
+      return "h-6 bg-green-500/15 grid grid-cols-4 gap-0.5";
+    case "branches":
+      return "h-4 bg-orange-500/15";
+    case "custom_content":
+      return "h-8 bg-muted";
+    case "product_by_attribute":
+      return "h-8 bg-purple-500/15 grid grid-cols-4 gap-0.5";
+    default:
+      return "h-6 bg-muted";
+  }
+}
+
+function MiniWireframeBlock({ type }: { type: string }) {
+  const gridTypes = [
+    "featured_products",
+    "category_grid",
+    "statistics",
+    "product_by_attribute",
+  ];
+
+  if (gridTypes.includes(type)) {
+    const cols =
+      type === "category_grid" ? 3 : 4;
+    const height =
+      type === "statistics"
+        ? "h-6"
+        : type === "category_grid"
+          ? "h-10"
+          : "h-8";
+    const bg =
+      type === "category_grid"
+        ? "bg-blue-500/15"
+        : type === "statistics"
+          ? "bg-green-500/15"
+          : type === "product_by_attribute"
+            ? "bg-purple-500/15"
+            : "bg-primary/15";
+
+    return (
+      <div
+        className={`${height} grid gap-0.5 rounded`}
+        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
+      >
+        {Array.from({ length: cols }).map((_, i) => (
+          <div key={i} className={`${bg} rounded`} />
+        ))}
+      </div>
+    );
+  }
+
+  if (type === "branches") {
+    return (
+      <div className="flex flex-col gap-0.5">
+        <div className="h-4 bg-orange-500/15 rounded" />
+        <div className="h-4 bg-orange-500/15 rounded" />
+      </div>
+    );
+  }
+
+  return <div className={`rounded ${getBlockStyle(type)}`} />;
+}
+
 export default function HomepageBuilderPage() {
   const t = useTranslations("homepageBuilder");
   const tCommon = useTranslations("common");
@@ -81,6 +161,7 @@ export default function HomepageBuilderPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<HomepageSection | null>(null);
   const [deletingSection, setDeletingSection] = useState<HomepageSection | null>(null);
+  const [confirmingVariant, setConfirmingVariant] = useState<HomepageVariant | null>(null);
 
   // Fetch sections using generated function
   const { data: sectionsData, isLoading } = useQuery({
@@ -98,6 +179,37 @@ export default function HomepageBuilderPage() {
   const { data: itemListsData } = useQuery({
     queryKey: ["item-lists"],
     queryFn: () => itemListsList(),
+  });
+
+  // Fetch homepage variants
+  const { data: variants = [] } = useQuery<HomepageVariant[]>({
+    queryKey: ["homepage-variants"],
+    queryFn: async () => {
+      const response = await axiosInstance.get(
+        "/api/ecommerce/admin/homepage-sections/variants/"
+      );
+      return response.data;
+    },
+  });
+
+  // Apply variant mutation
+  const applyVariant = useMutation({
+    mutationFn: async (variantKey: string) => {
+      const response = await axiosInstance.post(
+        "/api/ecommerce/admin/homepage-sections/generate-from-variant/",
+        { variant: variantKey }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["homepage-sections"] });
+      toast.success(t("variantApplied"));
+      setConfirmingVariant(null);
+    },
+    onError: () => {
+      toast.error(t("variantApplyFailed"));
+      setConfirmingVariant(null);
+    },
   });
 
   // Create section mutation
@@ -223,6 +335,46 @@ export default function HomepageBuilderPage() {
         </Button>
       </div>
 
+      {/* Variant Picker */}
+      {variants.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>{t("homepageVariants")}</CardTitle>
+            <CardDescription>{t("homepageVariantsDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {variants.map((variant) => (
+                <div
+                  key={variant.key}
+                  className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors"
+                >
+                  <div className="aspect-[3/4] bg-muted rounded mb-3 flex flex-col gap-1 p-2">
+                    {variant.section_types.map((type, i) => (
+                      <MiniWireframeBlock key={i} type={type} />
+                    ))}
+                  </div>
+                  <h3 className="font-medium text-sm">{variant.name}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {variant.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("sectionCount", { count: variant.section_count })}
+                  </p>
+                  <Button
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={() => setConfirmingVariant(variant)}
+                  >
+                    {t("applyVariant")}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Sections List */}
       <Card>
         <CardHeader>
@@ -346,6 +498,38 @@ export default function HomepageBuilderPage() {
               className="bg-destructive text-destructive-foreground"
             >
               {tCommon("delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Variant Apply Confirmation */}
+      <AlertDialog
+        open={!!confirmingVariant}
+        onOpenChange={() => setConfirmingVariant(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("replaceHomepageTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("replaceHomepageDescription", {
+                name: confirmingVariant?.name ?? "",
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                confirmingVariant && applyVariant.mutate(confirmingVariant.key)
+              }
+              disabled={applyVariant.isPending}
+            >
+              {applyVariant.isPending ? (
+                <LoadingSpinner />
+              ) : (
+                t("replaceAndGenerate")
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

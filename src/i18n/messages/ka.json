@@ -1356,7 +1356,16 @@
       "update": "სექციის განახლება ვერ მოხერხდა",
       "delete": "სექციის წაშლა ვერ მოხერხდა",
       "reorder": "გადალაგება ვერ მოხერხდა"
-    }
+    },
+    "homepageVariants": "მთავარი გვერდის შაბლონები",
+    "homepageVariantsDescription": "აირჩიეთ წინასწარ შექმნილი განლაგება სწრაფად დასაწყებად",
+    "applyVariant": "გამოყენება",
+    "replaceHomepageTitle": "მთავარი გვერდის შეცვლა?",
+    "replaceHomepageDescription": "\"{name}\"-ის გამოყენება წაშლის ყველა არსებულ სექციას და შექმნის ახლებს შაბლონიდან.",
+    "replaceAndGenerate": "შეცვლა და გენერაცია",
+    "variantApplied": "მთავარი გვერდის განლაგება წარმატებით შეიქმნა",
+    "variantApplyFailed": "მთავარი გვერდის გენერაცია ვერ მოხერხდა",
+    "sectionCount": "{count} სექცია"
   },
   "groups": {
     "title": "ჯგუფები",
