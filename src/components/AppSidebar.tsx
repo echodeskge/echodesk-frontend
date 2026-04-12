@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import NextLink from "next/link"
 import {
   Ticket,
   Phone,
@@ -242,24 +243,30 @@ export function AppSidebar({
                               return (
                                 <SidebarMenuSubItem key={child.id}>
                                   <SidebarMenuSubButton
-                                    onMouseEnter={() => !isChildLocked && onPrefetch?.(child.id)}
-                                    onClick={() => {
-                                      if (isChildLocked) {
-                                        alert(`This feature requires a premium subscription. Please upgrade your plan to access ${child.label}.`)
-                                      } else {
-                                        handleMenuClick(child.id)
-                                      }
-                                    }}
+                                    asChild={!isChildLocked}
                                     isActive={isChildItemActive}
                                     className="cursor-pointer hover:bg-sidebar-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground"
                                   >
-                                    {ChildIconComponent ? (
-                                      <ChildIconComponent className={`h-4 w-4 ${isChildLocked ? 'text-gray-400' : ''}`} />
+                                    {isChildLocked ? (
+                                      <span onClick={() => alert(`This feature requires a premium subscription. Please upgrade your plan to access ${child.label}.`)}>
+                                        {ChildIconComponent ? (
+                                          <ChildIconComponent className="h-4 w-4 text-gray-400" />
+                                        ) : (
+                                          <span className="text-sm text-gray-400">{child.icon}</span>
+                                        )}
+                                        <span className="text-gray-500">{child.label}</span>
+                                        <LockedFeatureBadge className="ms-auto" size="sm" />
+                                      </span>
                                     ) : (
-                                      <span className={`text-sm ${isChildLocked ? 'text-gray-400' : ''}`}>{child.icon}</span>
+                                      <NextLink href={`/${child.id}`} onClick={() => { if (isMobile) setOpenMobile(false) }}>
+                                        {ChildIconComponent ? (
+                                          <ChildIconComponent className="h-4 w-4" />
+                                        ) : (
+                                          <span className="text-sm">{child.icon}</span>
+                                        )}
+                                        <span>{child.label}</span>
+                                      </NextLink>
                                     )}
-                                    <span className={isChildLocked ? 'text-gray-500' : ''}>{child.label}</span>
-                                    {isChildLocked && <LockedFeatureBadge className="ms-auto" size="sm" />}
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
                               )
@@ -271,17 +278,38 @@ export function AppSidebar({
                   )
                 }
 
+                const menuContent = (
+                  <>
+                    {IconComponent ? (
+                      <IconComponent className={`h-4 w-4 ${isLocked ? 'text-gray-400' : ''}`} />
+                    ) : (
+                      <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
+                    )}
+                    <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
+                    {item.id === 'social/messages' && socialUnread > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"
+                      >
+                        {socialUnread > 99 ? '99+' : socialUnread}
+                      </Badge>
+                    )}
+                    {item.id === 'email/messages' && emailUnread > 0 && (
+                      <Badge
+                        variant="destructive"
+                        className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"
+                      >
+                        {emailUnread > 99 ? '99+' : emailUnread}
+                      </Badge>
+                    )}
+                    {isLocked && <LockedFeatureBadge className="ml-auto" size="sm" />}
+                  </>
+                )
+
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
-                      onMouseEnter={() => !isLocked && onPrefetch?.(item.id)}
-                      onClick={() => {
-                        if (isLocked) {
-                          alert(`This feature requires a premium subscription. Please upgrade your plan to access ${item.label}.`)
-                        } else {
-                          handleMenuClick(item.id)
-                        }
-                      }}
+                      asChild={!isLocked && item.id !== 'report-bug' && item.id !== 'help'}
                       isActive={isActive}
                       tooltip={isLocked ? `🔒 Premium Feature - ${item.description}` : item.description}
                       className={`cursor-pointer transition-all duration-200 ${
@@ -291,31 +319,19 @@ export function AppSidebar({
                       }`}
                       disabled={isLocked}
                     >
-                      {IconComponent ? (
-                        <IconComponent className={`h-4 w-4 ${isLocked ? 'text-gray-400' : ''}`} />
+                      {isLocked ? (
+                        <span onClick={() => alert(`This feature requires a premium subscription. Please upgrade your plan to access ${item.label}.`)}>
+                          {menuContent}
+                        </span>
+                      ) : item.id === 'report-bug' || item.id === 'help' ? (
+                        <span onClick={() => handleMenuClick(item.id)}>
+                          {menuContent}
+                        </span>
                       ) : (
-                        <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
+                        <NextLink href={`/${item.id}`} onClick={() => { if (isMobile) setOpenMobile(false) }}>
+                          {menuContent}
+                        </NextLink>
                       )}
-                      <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
-                      {/* Social messages unread badge for Messages menu item */}
-                      {item.id === 'social/messages' && socialUnread > 0 && (
-                        <Badge
-                          variant="destructive"
-                          className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"
-                        >
-                          {socialUnread > 99 ? '99+' : socialUnread}
-                        </Badge>
-                      )}
-                      {/* Email unread badge for Email Messages menu item */}
-                      {item.id === 'email/messages' && emailUnread > 0 && (
-                        <Badge
-                          variant="destructive"
-                          className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"
-                        >
-                          {emailUnread > 99 ? '99+' : emailUnread}
-                        </Badge>
-                      )}
-                      {isLocked && <LockedFeatureBadge className="ml-auto" size="sm" />}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
