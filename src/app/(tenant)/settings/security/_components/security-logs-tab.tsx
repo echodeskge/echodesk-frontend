@@ -145,7 +145,7 @@ export function SecurityLogsTab() {
               value={filters.event_type || "all"}
               onValueChange={(value) => handleFilterChange("event_type", value)}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder={t('logs.filterByType')} />
               </SelectTrigger>
               <SelectContent>
@@ -162,8 +162,8 @@ export function SecurityLogsTab() {
             </Button>
           </div>
 
-          {/* Logs Table */}
-          <div className="border rounded-lg">
+          {/* Logs Table - desktop */}
+          <div className="border rounded-lg hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -251,9 +251,50 @@ export function SecurityLogsTab() {
             </Table>
           </div>
 
+          {/* Logs Cards - mobile */}
+          <div className="md:hidden space-y-3">
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i}><CardContent className="p-4"><Skeleton className="h-20 w-full" /></CardContent></Card>
+              ))
+            ) : logsData?.results?.length ? (
+              logsData.results.map((log: SecurityLog) => (
+                <Card key={log.id}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {EVENT_TYPE_ICONS[log.event_type]}
+                        <Badge className={EVENT_TYPE_COLORS[log.event_type]}>
+                          {log.event_type_display}
+                        </Badge>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(log.created_at), "MMM d, HH:mm")}
+                      </span>
+                    </div>
+                    <div className="text-sm font-medium">{log.user_email || log.attempted_email || "-"}</div>
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      <code className="bg-muted px-1 py-0.5 rounded">{log.ip_address}</code>
+                      {log.country && <span>{log.city ? `${log.city}, ${log.country}` : log.country}</span>}
+                      <span className="flex items-center gap-1">
+                        {DEVICE_ICONS[log.device_type]}
+                        {log.device_type_display}
+                      </span>
+                    </div>
+                    {log.failure_reason && (
+                      <p className="text-xs text-red-600">{log.failure_reason}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <p className="text-center py-8 text-muted-foreground">{t('logs.noLogs')}</p>
+            )}
+          </div>
+
           {/* Pagination */}
           {logsData && logsData.count > 0 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-4">
               <p className="text-sm text-muted-foreground">
                 {t('logs.showing', {
                   from: ((filters.page || 1) - 1) * (filters.page_size || 20) + 1,

@@ -284,7 +284,7 @@ function SoundCard({
             <CardDescription className="text-sm">{description}</CardDescription>
           </div>
           {soundUrl && (
-            <Badge variant="secondary" className="shrink-0">
+            <Badge variant="secondary" className="shrink-0 max-w-[150px] sm:max-w-[200px] truncate">
               {fileName}
             </Badge>
           )}
@@ -758,10 +758,10 @@ export default function CallSettingsPage() {
         </div>
 
         <Tabs defaultValue="sip" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="sip">{ts("sipTab")}</TabsTrigger>
-            <TabsTrigger value="working-hours">{ts("workingHoursTab")}</TabsTrigger>
-            <TabsTrigger value="sounds">{ts("soundsTab")}</TabsTrigger>
+          <TabsList className="w-full sm:w-auto grid grid-cols-3 sm:inline-flex">
+            <TabsTrigger value="sip" className="text-xs sm:text-sm">{ts("sipTab")}</TabsTrigger>
+            <TabsTrigger value="working-hours" className="text-xs sm:text-sm">{ts("workingHoursTab")}</TabsTrigger>
+            <TabsTrigger value="sounds" className="text-xs sm:text-sm">{ts("soundsTab")}</TabsTrigger>
           </TabsList>
 
           {/* ── Tab 1: SIP Configurations ── */}

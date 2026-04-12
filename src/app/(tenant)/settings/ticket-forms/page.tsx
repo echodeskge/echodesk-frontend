@@ -243,7 +243,7 @@ export default function TicketFormsPage() {
                   className="flex flex-col sm:flex-row items-start sm:items-center gap-3 border rounded-lg p-4"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h3 className="font-semibold">{form.title}</h3>
                       {form.is_default && (
                         <Badge variant="default">
@@ -270,7 +270,7 @@ export default function TicketFormsPage() {
                         {form.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       {form.item_lists && form.item_lists.length > 0 && (
                         <span>{form.item_lists.length} {t('attachedLists')}</span>
                       )}
