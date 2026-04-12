@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText } from "lucide-react"
 import { toast } from "sonner"
+import axiosInstance from "@/api/axios"
 
 // Extend Order type to properly type client_details
 interface Order extends Omit<GeneratedOrder, 'client_details'> {
@@ -401,6 +402,25 @@ export default function OrderDetailPage() {
                   <span className="text-sm text-muted-foreground">BOG Order ID</span>
                   <span className="text-sm font-mono">{order.bog_order_id.slice(0, 8)}...</span>
                 </div>
+              )}
+              {String(order.payment_status) !== 'paid' && (
+                <Button
+                  className="w-full mt-2"
+                  variant="default"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await axiosInstance.post(`/api/ecommerce/admin/orders/${order.id}/mark-paid/`);
+                      toast.success("Order marked as paid");
+                      window.location.reload();
+                    } catch {
+                      toast.error("Failed to mark as paid");
+                    }
+                  }}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Mark as Paid
+                </Button>
               )}
             </CardContent>
           </Card>
