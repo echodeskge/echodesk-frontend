@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ecommerceAdminOrdersRetrieve } from "@/api/generated"
+import { ecommerceAdminOrdersRetrieve, ecommerceAdminOrdersRefundCreate } from "@/api/generated"
 import { Order as GeneratedOrder } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -149,11 +149,9 @@ export default function OrderDetailPage() {
       setRefunding(true)
       setRefundDialogOpen(false)
 
-      const response = await axiosInstance.post(
-        `/api/ecommerce/admin/orders/${order.id}/refund/`
-      )
+      const response = await ecommerceAdminOrdersRefundCreate(order.id)
 
-      setOrder(response.data as unknown as Order)
+      setOrder(response as unknown as Order)
       toast.success(t("refund.success"))
     } catch (error) {
       console.error("Error refunding order:", error)
