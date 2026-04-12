@@ -40,6 +40,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     isPremium: true,
     children: [
       {
+        id: "ecommerce/dashboard",
+        icon: "BarChart3",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+      {
         id: "ecommerce/orders",
         icon: "ShoppingCart",
         requiredFeatureKey: "ecommerce_crm",

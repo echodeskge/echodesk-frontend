@@ -184,7 +184,7 @@ export function SettingsSidebar() {
     if (isStaffOrAdmin && userFeatureKeys.length === 0) return true
     // Check user's feature_keys first (from group), then fall back to subscription
     if (userFeatureKeys.length > 0) return userFeatureKeys.includes(key)
-    return hasFeature(key)
+    return hasFeature(key as any)
   }
 
   const visibleItems = settingsNav.filter((item) => {

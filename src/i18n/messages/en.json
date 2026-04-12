@@ -40,6 +40,7 @@
     "emailMessages": "Email",
     "orders": "Orders",
     "ecommerce": "E-commerce",
+    "ecommerceDashboard": "Dashboard",
     "ecommerceOrders": "Orders",
     "ecommerceSettings": "Settings",
     "bookings": "Bookings",
@@ -99,6 +100,7 @@
       "emailMessages": "View and respond to email messages",
       "orders": "Create and manage orders",
       "ecommerce": "Manage your online store",
+      "ecommerceDashboard": "View store analytics and performance metrics",
       "ecommerceOrders": "Manage customer orders and order processing",
       "ecommerceSettings": "Configure your online store settings",
       "bookings": "Manage your booking system for appointments and services",
@@ -1320,6 +1322,46 @@
     "noOrdersFiltered": "Try adjusting your filters",
     "noOrdersYet": "Orders will appear here once customers place them",
     "viewDetails": "View Details"
+  },
+  "ecommerceAnalytics": {
+    "title": "Ecommerce Dashboard",
+    "subtitle": "Overview of your store performance and analytics",
+    "errorLoading": "Failed to load analytics data. Please try again later.",
+    "revenue": {
+      "title": "Revenue",
+      "today": "Today's Revenue",
+      "week": "This Week",
+      "month": "This Month",
+      "total": "Total Revenue"
+    },
+    "orderCounts": {
+      "title": "Orders",
+      "today": "Today's Orders",
+      "week": "This Week",
+      "month": "This Month",
+      "total": "Total Orders"
+    },
+    "topProducts": {
+      "title": "Top Selling Products",
+      "subtitle": "Products with the highest sales",
+      "product": "Product",
+      "sold": "Sold",
+      "revenue": "Revenue",
+      "empty": "No product sales data yet"
+    },
+    "statusBreakdown": {
+      "title": "Order Status Breakdown",
+      "subtitle": "Current distribution of order statuses",
+      "empty": "No order status data yet"
+    },
+    "statusLabels": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
   },
   "homepageBuilder": {
     "title": "Homepage Builder",
