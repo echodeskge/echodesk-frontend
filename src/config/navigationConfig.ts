@@ -255,7 +255,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
       },
       {
         id: "settings/invoices",
-        icon: "Receipt",
+        icon: "FileText",
         requiredFeatureKey: "settings",
       },
       {

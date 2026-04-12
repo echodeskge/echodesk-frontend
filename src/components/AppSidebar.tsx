@@ -75,7 +75,7 @@ import Image from "next/image"
 import { useUnreadMessagesCount } from "@/hooks/api/useSocial"
 import { useIsMobile } from "@/hooks/use-mobile"
 
-// Icon mapping for menu items (lucide-react icon names)
+// Icon mapping for menu items (lucide-react icon names) — includes Receipt for invoices
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   // Lucide icon names (from navigationConfig)
   "Ticket": Ticket,
