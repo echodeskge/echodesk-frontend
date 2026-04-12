@@ -755,6 +755,22 @@
       "notesPlaceholder": "დაამატეთ ზარის შენიშვნები...",
       "recording": "ჩანაწერი"
     },
+    "callDetail": {
+      "clientInfo": "კლიენტის ინფორმაცია",
+      "unknownCaller": "უცნობი აბონენტი",
+      "viewProfile": "პროფილის ნახვა",
+      "recentTickets": "ბოლო ტიკეტები",
+      "noTickets": "ტიკეტები არ მოიძებნა",
+      "recentCalls": "ზარების ისტორია",
+      "noRecentCalls": "წინა ზარები ამ ნომრით არ არის",
+      "notes": "ზარის შენიშვნები",
+      "saveNotes": "შენახვა",
+      "savedNotes": "შენიშვნები შენახულია",
+      "saveNotesFailed": "შენიშვნების შენახვა ვერ მოხერხდა",
+      "loadFailed": "ზარის დეტალების ჩატვირთვა ვერ მოხერხდა",
+      "createTicket": "ტიკეტის შექმნა",
+      "close": "დახურვა"
+    },
     "dialPad": {
       "enterNumber": "შეიყვანეთ ტელეფონის ნომერი",
       "delete": "წაშლა"

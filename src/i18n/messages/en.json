@@ -755,6 +755,22 @@
       "notesPlaceholder": "Add call notes...",
       "recording": "Recording"
     },
+    "callDetail": {
+      "clientInfo": "Client Information",
+      "unknownCaller": "Unknown Caller",
+      "viewProfile": "View Full Profile",
+      "recentTickets": "Recent Tickets",
+      "noTickets": "No tickets found for this client",
+      "recentCalls": "Call History",
+      "noRecentCalls": "No previous calls with this number",
+      "notes": "Call Notes",
+      "saveNotes": "Save Notes",
+      "savedNotes": "Notes saved",
+      "saveNotesFailed": "Failed to save notes",
+      "loadFailed": "Failed to load call details",
+      "createTicket": "Create Ticket",
+      "close": "Close"
+    },
     "dialPad": {
       "enterNumber": "Enter phone number",
       "delete": "Delete"

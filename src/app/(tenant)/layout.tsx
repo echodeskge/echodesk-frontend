@@ -37,11 +37,13 @@ const BoardUserManager = dynamic(() => import("@/components/BoardUserManager"), 
 const BoardCreateSheet = dynamic(() => import("@/components/BoardCreateSheet").then(m => ({ default: m.BoardCreateSheet })), { ssr: false });
 const TeamChatWidget = dynamic(() => import("@/components/TeamChat").then(m => ({ default: m.TeamChatWidget })), { ssr: false });
 const DialpadWidget = dynamic(() => import("@/components/calls/DialpadWidget"), { ssr: false });
+const IncomingCallSidebar = dynamic(() => import("@/components/calls/IncomingCallSidebar").then(m => ({ default: m.IncomingCallSidebar })), { ssr: false });
 import {
   SubscriptionProvider,
   useSubscription,
 } from "@/contexts/SubscriptionContext";
 import { CallProvider } from "@/contexts/CallContext";
+import { IncomingCallSidebarProvider } from "@/contexts/IncomingCallSidebarContext";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { getNotificationSound } from "@/utils/notificationSound";
 import { useSocialSettings } from "@/hooks/api/useSocial";
@@ -789,6 +791,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       {/* Floating Dialpad Widget (above Team Chat) */}
       {userProfile?.id && <DialpadWidget />}
 
+      {/* Global Incoming Call Sidebar */}
+      <IncomingCallSidebar />
+
       {/* Team Chat Widget */}
       {userProfile?.id && (
         <TeamChatWidget currentUserId={userProfile.id} />
@@ -805,13 +810,15 @@ export default function TenantLayout({
   return (
     <SubscriptionProvider>
       <CallProvider>
-        <TicketCreateProvider>
-          <BugReportProvider>
-            <BoardProvider>
-              <TenantLayoutContent>{children}</TenantLayoutContent>
-            </BoardProvider>
-          </BugReportProvider>
-        </TicketCreateProvider>
+        <IncomingCallSidebarProvider>
+          <TicketCreateProvider>
+            <BugReportProvider>
+              <BoardProvider>
+                <TenantLayoutContent>{children}</TenantLayoutContent>
+              </BoardProvider>
+            </BugReportProvider>
+          </TicketCreateProvider>
+        </IncomingCallSidebarProvider>
       </CallProvider>
     </SubscriptionProvider>
   );

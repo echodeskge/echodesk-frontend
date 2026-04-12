@@ -1,15 +1,23 @@
 "use client";
 
-import { Phone, PhoneOff } from "lucide-react";
+import { Phone, PhoneOff, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCall } from "@/contexts/CallContext";
+import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 
 export function IncomingCallNotification() {
   const { activeCall, handleAcceptCall, handleRejectCall } = useCall();
+  const { openSidebar } = useIncomingCallSidebar();
 
   if (!activeCall || activeCall.direction !== "incoming" || activeCall.status !== "ringing") {
     return null;
   }
+
+  const handleViewDetails = () => {
+    if (activeCall.logId) {
+      openSidebar(activeCall.logId, activeCall.number, activeCall.callerName);
+    }
+  };
 
   return (
     <div className="fixed top-4 right-4 z-[60] animate-in slide-in-from-top-2 duration-300">
@@ -18,12 +26,21 @@ export function IncomingCallNotification() {
           <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center animate-pulse">
             <Phone className="h-5 w-5 text-green-600" />
           </div>
-          <div>
-            <p className="text-sm font-semibold">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold truncate">
               {activeCall.callerName || "Incoming Call"}
             </p>
             <p className="text-sm text-muted-foreground">{activeCall.number}</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 flex-shrink-0"
+            onClick={handleViewDetails}
+            title="View caller details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
         </div>
         <div className="flex gap-2">
           <Button
