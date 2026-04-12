@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
-import { CreditCard, Store, Settings, Eye, EyeOff, CheckCircle2, AlertCircle, Link2, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
+import { CreditCard, Store, Eye, EyeOff, CheckCircle2, AlertCircle, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check } from "lucide-react"
 import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate } from "@/api/generated/api"
 import type { EcommerceSettings as EcommerceSettingsType, DeploymentResponse } from "@/api/generated/interfaces"
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +29,8 @@ interface DnsInstruction {
   description: string
 }
 
+type PaymentProvider = "bog" | "tbc" | "flitt" | "paddle" | "cash"
+
 interface EcommerceSettings {
   id?: number
   bog_client_id: string
@@ -35,6 +39,13 @@ interface EcommerceSettings {
   bog_return_url_fail: string
   enable_cash_on_delivery: boolean
   enable_card_payment: boolean
+  active_payment_providers: PaymentProvider[]
+  tbc_client_id: string
+  tbc_client_secret: string
+  tbc_api_key: string
+  tbc_use_production: boolean
+  flitt_merchant_id: string
+  flitt_password: string
   store_name: string
   store_email: string
   store_phone: string
@@ -44,6 +55,41 @@ interface DeploymentInfo {
   frontend_url: string | null
   deployment_status: "pending" | "deploying" | "deployed" | "failed"
   vercel_project_id: string | null
+}
+
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}) {
+  const [show, setShow] = useState(false)
+
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || "••••••••••••••••"}
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="absolute right-0 top-0 h-full px-3"
+        onClick={() => setShow(!show)}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </Button>
+    </div>
+  )
 }
 
 export default function EcommerceSettingsPage() {
@@ -67,6 +113,13 @@ export default function EcommerceSettingsPage() {
     bog_return_url_fail: "",
     enable_cash_on_delivery: true,
     enable_card_payment: true,
+    active_payment_providers: ["bog", "cash"],
+    tbc_client_id: "",
+    tbc_client_secret: "",
+    tbc_api_key: "",
+    tbc_use_production: false,
+    flitt_merchant_id: "",
+    flitt_password: "",
     store_name: "",
     store_email: "",
     store_phone: "",
@@ -90,6 +143,15 @@ export default function EcommerceSettingsPage() {
 
       if (response.results && response.results.length > 0) {
         const settingsData = response.results[0] as any
+
+        // Build active_payment_providers from data or derive from legacy fields
+        let activeProviders: PaymentProvider[] = settingsData.active_payment_providers || []
+        if (activeProviders.length === 0) {
+          // Derive from legacy fields for backward compatibility
+          if (settingsData.enable_card_payment) activeProviders.push("bog")
+          if (settingsData.enable_cash_on_delivery) activeProviders.push("cash")
+        }
+
         setSettings({
           id: settingsData.id,
           bog_client_id: settingsData.bog_client_id || "",
@@ -98,6 +160,13 @@ export default function EcommerceSettingsPage() {
           bog_return_url_fail: settingsData.bog_return_url_fail || "",
           enable_cash_on_delivery: settingsData.enable_cash_on_delivery ?? true,
           enable_card_payment: settingsData.enable_card_payment ?? true,
+          active_payment_providers: activeProviders,
+          tbc_client_id: settingsData.tbc_client_id || "",
+          tbc_client_secret: "",
+          tbc_api_key: settingsData.tbc_api_key || "",
+          tbc_use_production: settingsData.tbc_use_production || false,
+          flitt_merchant_id: settingsData.flitt_merchant_id || "",
+          flitt_password: "",
           store_name: settingsData.store_name || "",
           store_email: settingsData.store_email || "",
           store_phone: settingsData.store_phone || "",
@@ -119,6 +188,23 @@ export default function EcommerceSettingsPage() {
       alert("Failed to load ecommerce settings")
       setLoading(false)
     }
+  }
+
+  const isProviderActive = (provider: PaymentProvider) =>
+    settings.active_payment_providers.includes(provider)
+
+  const toggleProvider = (provider: PaymentProvider) => {
+    setSettings((prev) => {
+      const active = prev.active_payment_providers.includes(provider)
+        ? prev.active_payment_providers.filter((p) => p !== provider)
+        : [...prev.active_payment_providers, provider]
+
+      // Sync legacy fields
+      const enable_card_payment = active.some((p) => p === "bog" || p === "tbc" || p === "flitt" || p === "paddle")
+      const enable_cash_on_delivery = active.includes("cash")
+
+      return { ...prev, active_payment_providers: active, enable_card_payment, enable_cash_on_delivery }
+    })
   }
 
   const handleDeploy = async () => {
@@ -314,12 +400,21 @@ export default function EcommerceSettingsPage() {
         bog_use_production: settings.bog_use_production,
         bog_return_url_success: settings.bog_return_url_success,
         bog_return_url_fail: settings.bog_return_url_fail,
-        enable_cash_on_delivery: settings.enable_cash_on_delivery,
-        enable_card_payment: settings.enable_card_payment,
+        enable_cash_on_delivery: settings.active_payment_providers.includes("cash"),
+        enable_card_payment: settings.active_payment_providers.some(
+          (p) => p === "bog" || p === "tbc" || p === "flitt" || p === "paddle"
+        ),
+        active_payment_providers: settings.active_payment_providers,
+        tbc_client_id: settings.tbc_client_id,
+        tbc_api_key: settings.tbc_api_key,
+        tbc_use_production: settings.tbc_use_production,
+        flitt_merchant_id: settings.flitt_merchant_id,
         store_name: settings.store_name,
         store_email: settings.store_email,
         store_phone: settings.store_phone,
         ...(bogSecret && { bog_client_secret: bogSecret }),
+        ...(settings.tbc_client_secret && { tbc_client_secret: settings.tbc_client_secret }),
+        ...(settings.flitt_password && { flitt_password: settings.flitt_password }),
       }
 
       if (settings.id) {
@@ -338,6 +433,9 @@ export default function EcommerceSettingsPage() {
         setBogSecret("") // Clear the input after saving
       }
 
+      // Clear secret fields after save
+      setSettings((prev) => ({ ...prev, tbc_client_secret: "", flitt_password: "" }))
+
       // Refresh settings
       await fetchSettings()
     } catch (error) {
@@ -347,6 +445,8 @@ export default function EcommerceSettingsPage() {
       setSaving(false)
     }
   }
+
+  const hasAnyProvider = settings.active_payment_providers.length > 0
 
   if (loading) {
     return (
@@ -414,205 +514,11 @@ export default function EcommerceSettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Payment Gateway Configuration */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            <CardTitle>{t("bog.title")}</CardTitle>
-          </div>
-          <CardDescription>
-            {t("bog.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Credentials Status */}
-          {hasExistingCredentials && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <p className="text-sm text-green-800">
-                {t("bog.credentialsConfigured")}
-              </p>
-            </div>
-          )}
-
-          {!hasExistingCredentials && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <p className="text-sm text-yellow-800">
-                {t("bog.noCredentials")}
-              </p>
-            </div>
-          )}
-
-          {/* Client ID */}
-          <div className="space-y-2">
-            <Label htmlFor="bog_client_id">
-              {t("bog.clientId")}
-              <span className="text-muted-foreground text-sm ml-2">{t("bog.clientIdRequired")}</span>
-            </Label>
-            <Input
-              id="bog_client_id"
-              value={settings.bog_client_id}
-              onChange={(e) => setSettings({ ...settings, bog_client_id: e.target.value })}
-              placeholder="your-bog-client-id"
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("bog.clientIdHelp")}
-            </p>
-          </div>
-
-          {/* Client Secret */}
-          <div className="space-y-2">
-            <Label htmlFor="bog_client_secret">
-              {t("bog.clientSecret")}
-              <span className="text-muted-foreground text-sm ml-2">{t("bog.clientSecretEncrypted")}</span>
-            </Label>
-            <div className="relative">
-              <Input
-                id="bog_client_secret"
-                type={showSecret ? "text" : "password"}
-                value={bogSecret}
-                onChange={(e) => setBogSecret(e.target.value)}
-                placeholder={hasExistingCredentials ? "••••••••••••••••" : "your-bog-client-secret"}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3"
-                onClick={() => setShowSecret(!showSecret)}
-              >
-                {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {hasExistingCredentials
-                ? t("bog.clientSecretKeep")
-                : t("bog.clientSecretNew")}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payment Return URLs */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Link2 className="h-5 w-5" />
-            <CardTitle>{t("returnUrls.title")}</CardTitle>
-          </div>
-          <CardDescription>
-            {t("returnUrls.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="bog_return_url_success">
-              {t("returnUrls.successUrl")}
-              {settings.enable_card_payment && <span className="text-red-500 ml-1">*</span>}
-              <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.successUrlAfter")}</span>
-            </Label>
-            <Input
-              id="bog_return_url_success"
-              type="url"
-              value={settings.bog_return_url_success}
-              onChange={(e) => setSettings({ ...settings, bog_return_url_success: e.target.value })}
-              placeholder={t("returnUrls.successUrlPlaceholder")}
-              required={settings.enable_card_payment}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("returnUrls.successUrlHelp")}
-              {settings.enable_card_payment && ` ${t("returnUrls.requiredWhenCard")}`}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bog_return_url_fail">
-              {t("returnUrls.failUrl")}
-              {settings.enable_card_payment && <span className="text-red-500 ml-1">*</span>}
-              <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.failUrlAfter")}</span>
-            </Label>
-            <Input
-              id="bog_return_url_fail"
-              type="url"
-              value={settings.bog_return_url_fail}
-              onChange={(e) => setSettings({ ...settings, bog_return_url_fail: e.target.value })}
-              placeholder={t("returnUrls.failUrlPlaceholder")}
-              required={settings.enable_card_payment}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t("returnUrls.failUrlHelp")}
-              {settings.enable_card_payment && ` ${t("returnUrls.requiredWhenCard")}`}
-            </p>
-          </div>
-
-          {(!settings.bog_return_url_success || !settings.bog_return_url_fail) && settings.enable_card_payment && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-sm text-red-800">
-                {t("returnUrls.urlsRequired")}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Production Mode Toggle - Only shown when tenant has custom credentials */}
-      {hasExistingCredentials && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              <CardTitle>{t("environment.title")}</CardTitle>
-            </div>
-            <CardDescription>
-              {t("environment.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-0.5">
-                <Label htmlFor="bog_use_production">{t("environment.productionMode")}</Label>
-                <p className="text-sm text-muted-foreground">
-                  {t("environment.productionModeDesc")}
-                </p>
-              </div>
-              <Switch
-                id="bog_use_production"
-                checked={settings.bog_use_production}
-                onCheckedChange={(checked) =>
-                  setSettings({ ...settings, bog_use_production: checked })
-                }
-              />
-            </div>
-
-            {settings.bog_use_production && (
-              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-blue-600" />
-                <p className="text-sm text-blue-800">
-                  {t("environment.productionEnabled")}
-                </p>
-              </div>
-            )}
-
-            {!settings.bog_use_production && (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                <p className="text-sm text-yellow-800">
-                  {t("environment.testEnabled")}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {/* Payment Methods */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <CreditCard className="h-5 w-5" />
             <CardTitle>{t("paymentMethods.title")}</CardTitle>
           </div>
           <CardDescription>
@@ -620,48 +526,309 @@ export default function EcommerceSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="card_payment">{t("paymentMethods.cardPayments")}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t("paymentMethods.cardPaymentsDesc")}
-              </p>
-            </div>
-            <Switch
-              id="card_payment"
-              checked={settings.enable_card_payment}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, enable_card_payment: checked })
-              }
-            />
-          </div>
-
-          <Separator />
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="cash_on_delivery">{t("paymentMethods.cashOnDelivery")}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t("paymentMethods.cashOnDeliveryDesc")}
-              </p>
-            </div>
-            <Switch
-              id="cash_on_delivery"
-              checked={settings.enable_cash_on_delivery}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, enable_cash_on_delivery: checked })
-              }
-            />
-          </div>
-
-          {!settings.enable_card_payment && !settings.enable_cash_on_delivery && (
+          {/* Warning if no providers */}
+          {!hasAnyProvider && (
             <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <p className="text-sm text-yellow-800">
-                {t("paymentMethods.atLeastOneRequired")}
+                {t("paymentMethods.noProviderWarning")}
               </p>
             </div>
           )}
+
+          {/* BOG Provider */}
+          <div className="border rounded-lg">
+            <div
+              className="flex items-center gap-3 p-4 cursor-pointer"
+              onClick={() => toggleProvider("bog")}
+            >
+              <Checkbox
+                checked={isProviderActive("bog")}
+                onCheckedChange={() => toggleProvider("bog")}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="flex-1">
+                <span className="font-medium">{t("paymentMethods.providerBog")}</span>
+              </div>
+            </div>
+            <Collapsible open={isProviderActive("bog")}>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-4 border-t pt-4">
+                  {/* Credentials Status */}
+                  {hasExistingCredentials && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      <p className="text-sm text-green-800">
+                        {t("bog.credentialsConfigured")}
+                      </p>
+                    </div>
+                  )}
+
+                  {!hasExistingCredentials && (
+                    <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <AlertCircle className="h-5 w-5 text-yellow-600" />
+                      <p className="text-sm text-yellow-800">
+                        {t("bog.noCredentials")}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Client ID */}
+                  <div className="space-y-2">
+                    <Label htmlFor="bog_client_id">
+                      {t("bog.clientId")}
+                      <span className="text-muted-foreground text-sm ml-2">{t("bog.clientIdRequired")}</span>
+                    </Label>
+                    <Input
+                      id="bog_client_id"
+                      value={settings.bog_client_id}
+                      onChange={(e) => setSettings({ ...settings, bog_client_id: e.target.value })}
+                      placeholder="your-bog-client-id"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t("bog.clientIdHelp")}
+                    </p>
+                  </div>
+
+                  {/* Client Secret */}
+                  <div className="space-y-2">
+                    <Label htmlFor="bog_client_secret">
+                      {t("bog.clientSecret")}
+                      <span className="text-muted-foreground text-sm ml-2">{t("bog.clientSecretEncrypted")}</span>
+                    </Label>
+                    <PasswordInput
+                      id="bog_client_secret"
+                      value={bogSecret}
+                      onChange={setBogSecret}
+                      placeholder={hasExistingCredentials ? "••••••••••••••••" : "your-bog-client-secret"}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {hasExistingCredentials
+                        ? t("bog.clientSecretKeep")
+                        : t("bog.clientSecretNew")}
+                    </p>
+                  </div>
+
+                  {/* Production Mode */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="bog_use_production">{t("environment.productionMode")}</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {t("environment.productionModeDesc")}
+                      </p>
+                    </div>
+                    <Switch
+                      id="bog_use_production"
+                      checked={settings.bog_use_production}
+                      onCheckedChange={(checked) =>
+                        setSettings({ ...settings, bog_use_production: checked })
+                      }
+                    />
+                  </div>
+
+                  {/* Return URLs */}
+                  <Separator />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bog_return_url_success">
+                        {t("returnUrls.successUrl")}
+                        <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.successUrlAfter")}</span>
+                      </Label>
+                      <Input
+                        id="bog_return_url_success"
+                        type="url"
+                        value={settings.bog_return_url_success}
+                        onChange={(e) => setSettings({ ...settings, bog_return_url_success: e.target.value })}
+                        placeholder={t("returnUrls.successUrlPlaceholder")}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("returnUrls.successUrlHelp")}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bog_return_url_fail">
+                        {t("returnUrls.failUrl")}
+                        <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.failUrlAfter")}</span>
+                      </Label>
+                      <Input
+                        id="bog_return_url_fail"
+                        type="url"
+                        value={settings.bog_return_url_fail}
+                        onChange={(e) => setSettings({ ...settings, bog_return_url_fail: e.target.value })}
+                        placeholder={t("returnUrls.failUrlPlaceholder")}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {t("returnUrls.failUrlHelp")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+          {/* TBC Provider */}
+          <div className="border rounded-lg">
+            <div
+              className="flex items-center gap-3 p-4 cursor-pointer"
+              onClick={() => toggleProvider("tbc")}
+            >
+              <Checkbox
+                checked={isProviderActive("tbc")}
+                onCheckedChange={() => toggleProvider("tbc")}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="flex-1">
+                <span className="font-medium">{t("paymentMethods.providerTbc")}</span>
+              </div>
+            </div>
+            <Collapsible open={isProviderActive("tbc")}>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-4 border-t pt-4">
+                  {/* TBC Client ID */}
+                  <div className="space-y-2">
+                    <Label htmlFor="tbc_client_id">{t("paymentMethods.tbcClientId")}</Label>
+                    <Input
+                      id="tbc_client_id"
+                      value={settings.tbc_client_id}
+                      onChange={(e) => setSettings({ ...settings, tbc_client_id: e.target.value })}
+                      placeholder="your-tbc-client-id"
+                    />
+                  </div>
+
+                  {/* TBC Client Secret */}
+                  <div className="space-y-2">
+                    <Label htmlFor="tbc_client_secret">{t("paymentMethods.tbcClientSecret")}</Label>
+                    <PasswordInput
+                      id="tbc_client_secret"
+                      value={settings.tbc_client_secret}
+                      onChange={(value) => setSettings({ ...settings, tbc_client_secret: value })}
+                      placeholder="your-tbc-client-secret"
+                    />
+                  </div>
+
+                  {/* TBC API Key */}
+                  <div className="space-y-2">
+                    <Label htmlFor="tbc_api_key">{t("paymentMethods.tbcApiKey")}</Label>
+                    <Input
+                      id="tbc_api_key"
+                      value={settings.tbc_api_key}
+                      onChange={(e) => setSettings({ ...settings, tbc_api_key: e.target.value })}
+                      placeholder="your-tbc-api-key"
+                    />
+                  </div>
+
+                  {/* TBC Production Mode */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="tbc_use_production">{t("paymentMethods.tbcProductionMode")}</Label>
+                    </div>
+                    <Switch
+                      id="tbc_use_production"
+                      checked={settings.tbc_use_production}
+                      onCheckedChange={(checked) =>
+                        setSettings({ ...settings, tbc_use_production: checked })
+                      }
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+          {/* Flitt Provider */}
+          <div className="border rounded-lg">
+            <div
+              className="flex items-center gap-3 p-4 cursor-pointer"
+              onClick={() => toggleProvider("flitt")}
+            >
+              <Checkbox
+                checked={isProviderActive("flitt")}
+                onCheckedChange={() => toggleProvider("flitt")}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="flex-1">
+                <span className="font-medium">{t("paymentMethods.providerFlitt")}</span>
+              </div>
+            </div>
+            <Collapsible open={isProviderActive("flitt")}>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 space-y-4 border-t pt-4">
+                  {/* Flitt Merchant ID */}
+                  <div className="space-y-2">
+                    <Label htmlFor="flitt_merchant_id">{t("paymentMethods.flittMerchantId")}</Label>
+                    <Input
+                      id="flitt_merchant_id"
+                      value={settings.flitt_merchant_id}
+                      onChange={(e) => setSettings({ ...settings, flitt_merchant_id: e.target.value })}
+                      placeholder="your-flitt-merchant-id"
+                    />
+                  </div>
+
+                  {/* Flitt Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="flitt_password">{t("paymentMethods.flittPassword")}</Label>
+                    <PasswordInput
+                      id="flitt_password"
+                      value={settings.flitt_password}
+                      onChange={(value) => setSettings({ ...settings, flitt_password: value })}
+                      placeholder="your-flitt-password"
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+          {/* Paddle Provider */}
+          <div className="border rounded-lg">
+            <div
+              className="flex items-center gap-3 p-4 cursor-pointer"
+              onClick={() => toggleProvider("paddle")}
+            >
+              <Checkbox
+                checked={isProviderActive("paddle")}
+                onCheckedChange={() => toggleProvider("paddle")}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="flex-1">
+                <span className="font-medium">{t("paymentMethods.providerPaddle")}</span>
+              </div>
+            </div>
+            <Collapsible open={isProviderActive("paddle")}>
+              <CollapsibleContent>
+                <div className="px-4 pb-4 border-t pt-4">
+                  <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-blue-600" />
+                    <p className="text-sm text-blue-800">
+                      {t("paymentMethods.paddleNote")}
+                    </p>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+          {/* Cash on Delivery */}
+          <div className="border rounded-lg">
+            <div
+              className="flex items-center gap-3 p-4 cursor-pointer"
+              onClick={() => toggleProvider("cash")}
+            >
+              <Checkbox
+                checked={isProviderActive("cash")}
+                onCheckedChange={() => toggleProvider("cash")}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="flex-1">
+                <span className="font-medium">{t("paymentMethods.cashOnDelivery")}</span>
+                <p className="text-sm text-muted-foreground">
+                  {t("paymentMethods.cashOnDeliveryDesc")}
+                </p>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -1009,7 +1176,7 @@ export default function EcommerceSettingsPage() {
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
-          disabled={saving || (!settings.enable_card_payment && !settings.enable_cash_on_delivery)}
+          disabled={saving || !hasAnyProvider}
           size="lg"
         >
           {saving ? t("saving") : t("save")}
