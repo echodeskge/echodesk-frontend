@@ -83,75 +83,96 @@ interface HomepageVariant {
   section_types: string[];
 }
 
-function getBlockStyle(type: string): string {
-  switch (type) {
-    case "hero_banner":
-      return "h-16 bg-primary/20";
-    case "featured_products":
-      return "h-8 bg-primary/15 grid grid-cols-4 gap-0.5";
-    case "category_grid":
-      return "h-10 bg-blue-500/15 grid grid-cols-3 gap-0.5";
-    case "statistics":
-      return "h-6 bg-green-500/15 grid grid-cols-4 gap-0.5";
-    case "branches":
-      return "h-4 bg-orange-500/15";
-    case "custom_content":
-      return "h-8 bg-muted";
-    case "product_by_attribute":
-      return "h-8 bg-purple-500/15 grid grid-cols-4 gap-0.5";
-    default:
-      return "h-6 bg-muted";
-  }
-}
+const SECTION_LABELS: Record<string, { label: string; icon: string; color: string; bgColor: string }> = {
+  hero_banner: { label: "Hero", icon: "🖼", color: "text-blue-700", bgColor: "bg-blue-100 dark:bg-blue-900/40" },
+  featured_products: { label: "Products", icon: "🛍", color: "text-violet-700", bgColor: "bg-violet-100 dark:bg-violet-900/40" },
+  category_grid: { label: "Categories", icon: "📂", color: "text-emerald-700", bgColor: "bg-emerald-100 dark:bg-emerald-900/40" },
+  statistics: { label: "Stats", icon: "📊", color: "text-amber-700", bgColor: "bg-amber-100 dark:bg-amber-900/40" },
+  branches: { label: "Branches", icon: "📍", color: "text-red-700", bgColor: "bg-red-100 dark:bg-red-900/40" },
+  custom_content: { label: "Content", icon: "📝", color: "text-gray-700", bgColor: "bg-gray-100 dark:bg-gray-800" },
+  product_by_attribute: { label: "New Items", icon: "✨", color: "text-pink-700", bgColor: "bg-pink-100 dark:bg-pink-900/40" },
+};
 
 function MiniWireframeBlock({ type }: { type: string }) {
-  const gridTypes = [
-    "featured_products",
-    "category_grid",
-    "statistics",
-    "product_by_attribute",
-  ];
+  const info = SECTION_LABELS[type] || { label: type, icon: "📄", color: "text-gray-600", bgColor: "bg-gray-100" };
 
-  if (gridTypes.includes(type)) {
-    const cols =
-      type === "category_grid" ? 3 : 4;
-    const height =
-      type === "statistics"
-        ? "h-6"
-        : type === "category_grid"
-          ? "h-10"
-          : "h-8";
-    const bg =
-      type === "category_grid"
-        ? "bg-blue-500/15"
-        : type === "statistics"
-          ? "bg-green-500/15"
-          : type === "product_by_attribute"
-            ? "bg-purple-500/15"
-            : "bg-primary/15";
-
+  if (type === "hero_banner") {
     return (
-      <div
-        className={`${height} grid gap-0.5 rounded`}
-        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
-      >
-        {Array.from({ length: cols }).map((_, i) => (
-          <div key={i} className={`${bg} rounded`} />
-        ))}
+      <div className={`${info.bgColor} rounded-md p-1.5 flex-1 min-h-[40px] flex flex-col items-center justify-center relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-200/50 to-blue-300/30 dark:from-blue-800/30 dark:to-blue-700/20" />
+        <span className="text-[10px] font-semibold z-10 opacity-80">{info.icon} {info.label}</span>
+        <div className="flex gap-0.5 mt-1 z-10">
+          <div className="w-1 h-1 rounded-full bg-current opacity-60" />
+          <div className="w-1 h-1 rounded-full bg-current opacity-30" />
+          <div className="w-1 h-1 rounded-full bg-current opacity-30" />
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "featured_products" || type === "product_by_attribute") {
+    return (
+      <div className={`${info.bgColor} rounded-md p-1.5`}>
+        <span className="text-[8px] font-medium opacity-70 block mb-1">{info.icon} {info.label}</span>
+        <div className="grid grid-cols-4 gap-0.5">
+          {[0,1,2,3].map(i => (
+            <div key={i} className="aspect-square rounded-sm bg-white/60 dark:bg-white/10" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "category_grid") {
+    return (
+      <div className={`${info.bgColor} rounded-md p-1.5`}>
+        <span className="text-[8px] font-medium opacity-70 block mb-1">{info.icon} {info.label}</span>
+        <div className="grid grid-cols-3 gap-0.5">
+          {[0,1,2].map(i => (
+            <div key={i} className="aspect-[4/3] rounded-sm bg-white/60 dark:bg-white/10" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "statistics") {
+    return (
+      <div className={`${info.bgColor} rounded-md p-1.5`}>
+        <span className="text-[8px] font-medium opacity-70 block mb-1">{info.icon} {info.label}</span>
+        <div className="grid grid-cols-4 gap-1">
+          {["99+", "50", "200", "4.8"].map((n, i) => (
+            <div key={i} className="text-center">
+              <div className="text-[8px] font-bold opacity-60">{n}</div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (type === "branches") {
     return (
-      <div className="flex flex-col gap-0.5">
-        <div className="h-4 bg-orange-500/15 rounded" />
-        <div className="h-4 bg-orange-500/15 rounded" />
+      <div className={`${info.bgColor} rounded-md p-1.5`}>
+        <span className="text-[8px] font-medium opacity-70 block mb-0.5">{info.icon} {info.label}</span>
+        <div className="space-y-0.5">
+          <div className="h-2 bg-white/60 dark:bg-white/10 rounded-sm w-3/4" />
+          <div className="h-2 bg-white/60 dark:bg-white/10 rounded-sm w-2/3" />
+        </div>
       </div>
     );
   }
 
-  return <div className={`rounded ${getBlockStyle(type)}`} />;
+  // custom_content and fallback
+  return (
+    <div className={`${info.bgColor} rounded-md p-1.5`}>
+      <span className="text-[8px] font-medium opacity-70 block mb-0.5">{info.icon} {info.label}</span>
+      <div className="space-y-0.5">
+        <div className="h-1.5 bg-white/60 dark:bg-white/10 rounded-sm w-full" />
+        <div className="h-1.5 bg-white/60 dark:bg-white/10 rounded-sm w-4/5" />
+      </div>
+    </div>
+  );
 }
 
 export default function HomepageBuilderPage() {
@@ -347,27 +368,40 @@ export default function HomepageBuilderPage() {
               {variants.map((variant) => (
                 <div
                   key={variant.key}
-                  className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors"
+                  className="group border rounded-xl overflow-hidden hover:border-primary hover:shadow-md cursor-pointer transition-all"
+                  onClick={() => setConfirmingVariant(variant)}
                 >
-                  <div className="aspect-[3/4] bg-muted rounded mb-3 flex flex-col gap-1 p-2">
-                    {variant.section_types.map((type, i) => (
-                      <MiniWireframeBlock key={i} type={type} />
-                    ))}
+                  {/* Page preview */}
+                  <div className="bg-muted/50 p-2.5 border-b">
+                    {/* Browser chrome */}
+                    <div className="flex items-center gap-1 mb-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                      <div className="flex-1 h-2.5 bg-white/80 dark:bg-white/10 rounded-full ml-2" />
+                    </div>
+                    {/* Page sections */}
+                    <div className="bg-white dark:bg-gray-900 rounded-md p-1.5 space-y-1 min-h-[140px]">
+                      {variant.section_types.map((type: string, i: number) => (
+                        <MiniWireframeBlock key={i} type={type} />
+                      ))}
+                    </div>
                   </div>
-                  <h3 className="font-medium text-sm">{variant.name}</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {variant.description}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("sectionCount", { count: variant.section_count })}
-                  </p>
-                  <Button
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={() => setConfirmingVariant(variant)}
-                  >
-                    {t("applyVariant")}
-                  </Button>
+                  {/* Info */}
+                  <div className="p-3">
+                    <h3 className="font-semibold text-sm">{variant.name}</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+                      {variant.description}
+                    </p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-[10px] text-muted-foreground">
+                        {t("sectionCount", { count: variant.section_count })}
+                      </span>
+                      <span className="text-[10px] font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                        {t("applyVariant")} →
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
