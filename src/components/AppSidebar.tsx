@@ -254,7 +254,7 @@ export function AppSidebar({
                                     className="cursor-pointer hover:bg-sidebar-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground"
                                   >
                                     {isChildLocked ? (
-                                      <span onClick={() => alert(`This feature requires a premium subscription. Please upgrade your plan to access ${child.label}.`)}>
+                                      <span className="flex items-center gap-2 w-full" onClick={() => alert(`This feature requires a premium subscription. Please upgrade your plan to access ${child.label}.`)}>
                                         {ChildIconComponent ? (
                                           <ChildIconComponent className="h-4 w-4 text-gray-400" />
                                         ) : (
@@ -264,7 +264,7 @@ export function AppSidebar({
                                         <LockedFeatureBadge className="ms-auto" size="sm" />
                                       </span>
                                     ) : (
-                                      <NextLink href={`/${child.id}`} onClick={() => { if (isMobile) setOpenMobile(false) }}>
+                                      <NextLink href={`/${child.id}`} className="flex items-center gap-2 w-full" onClick={() => { if (isMobile) setOpenMobile(false) }}>
                                         {ChildIconComponent ? (
                                           <ChildIconComponent className="h-4 w-4" />
                                         ) : (
@@ -327,15 +327,15 @@ export function AppSidebar({
                       disabled={isLocked}
                     >
                       {isLocked ? (
-                        <span onClick={() => alert(`This feature requires a premium subscription. Please upgrade your plan to access ${item.label}.`)}>
+                        <span className="flex items-center gap-2 w-full" onClick={() => alert(`This feature requires a premium subscription. Please upgrade your plan to access ${item.label}.`)}>
                           {menuContent}
                         </span>
                       ) : item.id === 'report-bug' || item.id === 'help' ? (
-                        <span onClick={() => handleMenuClick(item.id)}>
+                        <span className="flex items-center gap-2 w-full" onClick={() => handleMenuClick(item.id)}>
                           {menuContent}
                         </span>
                       ) : (
-                        <NextLink href={`/${item.id}`} onClick={() => { if (isMobile) setOpenMobile(false) }}>
+                        <NextLink href={`/${item.id}`} className="flex items-center gap-2 w-full" onClick={() => { if (isMobile) setOpenMobile(false) }}>
                           {menuContent}
                         </NextLink>
                       )}
