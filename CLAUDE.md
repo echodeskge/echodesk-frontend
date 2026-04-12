@@ -93,6 +93,23 @@ export function MessagesPage() {
 - Maintain the visual design from full-kit for consistency
 - Document any deviations from full-kit patterns
 
+## API Usage — Generated Functions ONLY
+
+**ALWAYS use generated API functions** from `src/api/generated/api.ts` and types from `src/api/generated/interfaces.ts`.
+
+### Rules:
+1. **Check generated API first** for any API call — never write manual axios calls if a generated function exists
+2. **If the function is missing**, the backend schema needs fixing — add `@extend_schema` decorators on the backend, deploy, then run `npm run generate`
+3. **Never use `as any`** to work around type mismatches — fix the backend serializer or generator config instead
+4. **Mock return types** against `Awaited<ReturnType<typeof generatedFn>>` in tests
+5. **Run `npm run generate`** after any backend model/serializer/view changes to keep types in sync
+
+### When to regenerate:
+- After backend model field changes
+- After new backend endpoints are added
+- After serializer field changes
+- Before starting work on a feature that uses API data
+
 ## Testing Requirements
 
 **IMPORTANT**: When fixing bugs or adding features, always add or update tests to prevent regressions.
