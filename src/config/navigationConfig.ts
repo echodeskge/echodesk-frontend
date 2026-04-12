@@ -228,6 +228,22 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         requiredFeatureKey: "settings",
       },
       {
+        id: "settings/social/connections",
+        icon: "Link",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/social/auto-posting",
+        icon: "Sparkles",
+        requiredFeatureKey: "settings",
+      },
+      {
+        id: "settings/social/rating-statistics",
+        icon: "BarChart3",
+        requiredFeatureKey: "settings",
+        staffOnly: true,
+      },
+      {
         id: "settings/calls",
         icon: "Phone",
         requiredFeatureKey: "settings",
