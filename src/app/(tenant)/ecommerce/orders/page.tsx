@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ecommerceAdminOrdersList } from "@/api/generated";
 import { Order as GeneratedOrder } from "@/api/generated/interfaces";
+import axiosInstance from "@/api/axios";
 import {
   Card,
   CardContent,
@@ -15,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -41,6 +43,7 @@ import {
   CreditCard,
   Banknote,
   AlertCircle,
+  Download,
 } from "lucide-react";
 
 // Extend Order type to properly type client_details
@@ -96,6 +99,10 @@ export default function EcommerceOrdersPage() {
   const [initiatingPayment, setInitiatingPayment] = useState<number | null>(
     null
   );
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(
+    new Set()
+  );
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -141,6 +148,95 @@ export default function EcommerceOrdersPage() {
       console.error("Failed to initiate payment:", error);
       alert("Failed to initiate payment. Please try again.");
       setInitiatingPayment(null);
+    }
+  };
+
+  // Selection helpers
+  const toggleOrderSelection = (orderId: number) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+      } else {
+        next.add(orderId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrderIds.size === filteredOrders.length) {
+      setSelectedOrderIds(new Set());
+    } else {
+      setSelectedOrderIds(new Set(filteredOrders.map((o) => o.id)));
+    }
+  };
+
+  // Bulk status update
+  const handleBulkStatusUpdate = async (status: string) => {
+    if (selectedOrderIds.size === 0) return;
+    setBulkActionLoading(true);
+    try {
+      await axiosInstance.post("/api/ecommerce/admin/orders/bulk-update/", {
+        order_ids: Array.from(selectedOrderIds),
+        status,
+      });
+      await fetchOrders();
+      setSelectedOrderIds(new Set());
+    } catch (error) {
+      console.error("Bulk update failed:", error);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Export selected orders as CSV
+  const handleExportSelected = () => {
+    const selected = filteredOrders.filter((o) => selectedOrderIds.has(o.id));
+    const headers = [
+      "Order Number",
+      "Customer",
+      "Email",
+      "Items",
+      "Total",
+      "Status",
+      "Date",
+    ];
+    const rows = selected.map((order) => [
+      order.order_number,
+      order.client_details?.full_name || "Unknown",
+      order.client_details?.email || "",
+      String(order.total_items),
+      parseFloat(order.total_amount).toFixed(2),
+      String(order.status),
+      new Date(order.created_at).toISOString(),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export all orders CSV via API
+  const handleExportAllCSV = async () => {
+    try {
+      const response = await axiosInstance.get(
+        "/api/ecommerce/admin/orders/export/",
+        { responseType: "blob" }
+      );
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `all-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed:", error);
     }
   };
 
@@ -203,9 +299,15 @@ export default function EcommerceOrdersPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
+        </div>
+        <Button variant="outline" onClick={handleExportAllCSV}>
+          <Download className="mr-2 h-4 w-4" />
+          Export CSV
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -319,6 +421,16 @@ export default function EcommerceOrdersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={
+                          filteredOrders.length > 0 &&
+                          selectedOrderIds.size === filteredOrders.length
+                        }
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all orders"
+                      />
+                    </TableHead>
                     <TableHead>{t("table.orderNumber")}</TableHead>
                     <TableHead>{t("table.customer")}</TableHead>
                     <TableHead>{t("table.items")}</TableHead>
@@ -338,6 +450,15 @@ export default function EcommerceOrdersPage() {
                       ] || Clock;
                     return (
                       <TableRow key={order.id}>
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedOrderIds.has(order.id)}
+                            onCheckedChange={() =>
+                              toggleOrderSelection(order.id)
+                            }
+                            aria-label={`Select order ${order.order_number}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {order.order_number}
                         </TableCell>
@@ -396,6 +517,43 @@ export default function EcommerceOrdersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Floating Action Bar */}
+      {selectedOrderIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
+          <div className="flex items-center gap-3 rounded-lg border bg-background px-6 py-3 shadow-lg">
+            <span className="text-sm font-medium">
+              {selectedOrderIds.size} orders selected
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={bulkActionLoading}
+              onClick={() => handleBulkStatusUpdate("shipped")}
+            >
+              <Truck className="mr-2 h-4 w-4" />
+              Mark as Shipped
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={bulkActionLoading}
+              onClick={() => handleBulkStatusUpdate("delivered")}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Mark as Delivered
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportSelected}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export Selected
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

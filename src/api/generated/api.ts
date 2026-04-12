@@ -182,6 +182,9 @@ import type {
   PaginatedOrderList,
   ProductReviewCreateRequest,
   ProductReviewCreate,
+  PromoValidateRequestRequest,
+  PromoValidateResponse,
+  StoreThemeResponse,
   ClientLoginRequest,
   PasswordResetConfirmRequest,
   PasswordResetRequestRequest,
@@ -4149,8 +4152,13 @@ export async function ecommerceClientProfileUpdateProfilePartialUpdate(
   return response.data;
 }
 
-export async function ecommerceClientPromoValidateCreate(): Promise<any> {
-  const response = await axios.post(`/api/ecommerce/client/promo/validate/`);
+export async function ecommerceClientPromoValidateCreate(
+  data: PromoValidateRequestRequest,
+): Promise<PromoValidateResponse> {
+  const response = await axios.post(
+    `/api/ecommerce/client/promo/validate/`,
+    data,
+  );
   return response.data;
 }
 
@@ -4181,7 +4189,7 @@ export async function ecommerceClientShippingMethodsRetrieve(
   return response.data;
 }
 
-export async function getStoreTheme(): Promise<any> {
+export async function getStoreTheme(): Promise<StoreThemeResponse> {
   const response = await axios.get(`/api/ecommerce/client/theme/`);
   return response.data;
 }

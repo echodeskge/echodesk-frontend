@@ -3537,6 +3537,16 @@ export interface PatchedWhatsAppBusinessAccountRequest {
   is_active?: boolean;
 }
 
+export interface PaymentConfigResponse {
+  active_providers: string[];
+  enable_cash_on_delivery: boolean;
+  enable_card_payment: boolean;
+  currency: string;
+  tax_rate?: string;
+  tax_label?: string;
+  tax_inclusive?: boolean;
+}
+
 export interface PaymentStatus2d4enum {
   [key: string]: any;
 }
@@ -3849,6 +3859,19 @@ export interface PromoCodeRequest {
   valid_from: string;
   valid_until: string;
   is_active?: boolean;
+}
+
+export interface PromoValidateRequestRequest {
+  code: string;
+  subtotal: string;
+}
+
+export interface PromoValidateResponse {
+  valid: boolean;
+  discount_amount?: string;
+  discount_type?: string;
+  discount_value?: string;
+  message: string;
 }
 
 export interface PublicHolidayCreateUpdate {
@@ -4429,6 +4452,14 @@ export interface StatusF43enum {
 
 export interface StatusF46enum {
   [key: string]: any;
+}
+
+export interface StoreThemeResponse {
+  preset: string;
+  colors: Record<string, any>;
+  radius: string;
+  store_name: string;
+  payment: PaymentConfigResponse;
 }
 
 export interface SyncStatusEnum {
