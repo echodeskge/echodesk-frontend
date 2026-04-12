@@ -203,12 +203,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
       {
         id: "settings/item-lists",
         icon: "List",
-        requiredFeatureKey: "settings",
+        requiredFeatureKey: "ticket_management",
       },
       {
         id: "settings/ticket-forms",
         icon: "FileText",
-        requiredFeatureKey: "settings",
+        requiredFeatureKey: "ticket_management",
       },
       {
         id: "settings/subscription",

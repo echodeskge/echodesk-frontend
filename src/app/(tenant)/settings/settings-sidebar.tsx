@@ -124,12 +124,14 @@ const settingsNav: SettingsNavItem[] = [
     href: "/settings/item-lists",
     icon: List,
     labelKey: "nav.itemLists",
+    featureKey: "ticket_management",
   },
   {
     id: "ticket-forms",
     href: "/settings/ticket-forms",
     icon: FileText,
     labelKey: "nav.ticketForms",
+    featureKey: "ticket_management",
   },
   {
     id: "users",
