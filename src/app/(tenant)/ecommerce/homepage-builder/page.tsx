@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus,
   GripVertical,
@@ -41,7 +42,6 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,6 +69,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+
+/**
+ * Helper to cast string values to the opaque generated enum types.
+ * The generated SectionTypeEnum and DisplayModeEnum are `{ [key: string]: any }`,
+ * so string values are compatible at runtime but TypeScript requires an explicit cast.
+ */
+function asSectionType(value: string): SectionTypeEnum {
+  return value as unknown as SectionTypeEnum;
+}
+
+function asDisplayMode(value: string): DisplayModeEnum {
+  return value as unknown as DisplayModeEnum;
+}
 
 interface SectionChoices {
   section_types: { value: string; label: string }[];
@@ -324,18 +337,75 @@ export default function HomepageBuilderPage() {
   };
 
   const getSectionTypeLabel = (type: SectionTypeEnum): string => {
-    return choices?.section_types.find((t) => t.value === (type as unknown as string))?.label || String(type);
+    return choices?.section_types.find((t) => t.value === String(type))?.label || String(type);
   };
 
   const getDisplayModeLabel = (mode: DisplayModeEnum | undefined): string => {
     if (!mode) return "N/A";
-    return choices?.display_modes.find((m) => m.value === (mode as unknown as string))?.label || String(mode);
+    return choices?.display_modes.find((m) => m.value === String(mode))?.label || String(mode);
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
+      <div className="p-6 space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-9 w-56" />
+            <Skeleton className="h-4 w-72 mt-2" />
+          </div>
+          <Skeleton className="h-10 w-36" />
+        </div>
+
+        {/* Variant picker skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-4 w-64 mt-1" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="border rounded-xl overflow-hidden">
+                  <div className="bg-muted/50 p-2.5 border-b">
+                    <Skeleton className="h-[140px] w-full" />
+                  </div>
+                  <div className="p-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-full mt-1" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section list skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-4 w-48 mt-1" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <Skeleton className="h-16 w-8" />
+                  <Skeleton className="h-5 w-5" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-4 w-64" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-10" />
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-8" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -559,11 +629,7 @@ export default function HomepageBuilderPage() {
               }
               disabled={applyVariant.isPending}
             >
-              {applyVariant.isPending ? (
-                <LoadingSpinner />
-              ) : (
-                t("replaceAndGenerate")
-              )}
+              {applyVariant.isPending ? "Applying..." : t("replaceAndGenerate")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -595,8 +661,8 @@ function SectionFormSheet({
   const [formData, setFormData] = useState<{
     title: { en: string; ka: string };
     subtitle: { en: string; ka: string };
-    section_type: SectionTypeEnum;
-    display_mode: DisplayModeEnum;
+    section_type: string;
+    display_mode: string;
     item_list: number | null;
     attribute_key: string;
     attribute_value: string;
@@ -607,8 +673,8 @@ function SectionFormSheet({
   }>({
     title: { en: "", ka: "" },
     subtitle: { en: "", ka: "" },
-    section_type: "hero_banner" as unknown as SectionTypeEnum,
-    display_mode: "slider" as unknown as DisplayModeEnum,
+    section_type: "hero_banner",
+    display_mode: "slider",
     item_list: null,
     attribute_key: "",
     attribute_value: "",
@@ -624,8 +690,8 @@ function SectionFormSheet({
       setFormData({
         title: typeof section.title === "object" ? section.title : { en: section.title as string, ka: "" },
         subtitle: typeof section.subtitle === "object" ? section.subtitle : { en: "", ka: "" },
-        section_type: section.section_type,
-        display_mode: section.display_mode || ("grid" as unknown as DisplayModeEnum),
+        section_type: String(section.section_type),
+        display_mode: String(section.display_mode || "grid"),
         item_list: section.item_list || null,
         attribute_key: section.attribute_key || "",
         attribute_value: section.attribute_value || "",
@@ -638,8 +704,8 @@ function SectionFormSheet({
       setFormData({
         title: { en: "", ka: "" },
         subtitle: { en: "", ka: "" },
-        section_type: "hero_banner" as unknown as SectionTypeEnum,
-        display_mode: "slider" as unknown as DisplayModeEnum,
+        section_type: "hero_banner",
+        display_mode: "slider",
         item_list: null,
         attribute_key: "",
         attribute_value: "",
@@ -656,8 +722,8 @@ function SectionFormSheet({
     const requestData: HomepageSectionRequest = {
       title: formData.title,
       subtitle: formData.subtitle,
-      section_type: formData.section_type,
-      display_mode: formData.display_mode,
+      section_type: asSectionType(formData.section_type),
+      display_mode: asDisplayMode(formData.display_mode),
       item_list: formData.item_list || undefined,
       attribute_key: formData.attribute_key || undefined,
       attribute_value: formData.attribute_value || undefined,
@@ -671,7 +737,7 @@ function SectionFormSheet({
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto px-6">
+      <SheetContent className="w-full sm:max-w-[500px] overflow-y-auto px-6">
         <SheetHeader>
           <SheetTitle>{section ? t("editSection") : t("addNewSection")}</SheetTitle>
           <SheetDescription>
@@ -712,9 +778,9 @@ function SectionFormSheet({
           <div className="space-y-2">
             <Label>{t("sectionType")}</Label>
             <Select
-              value={formData.section_type as unknown as string}
+              value={formData.section_type}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, section_type: value as unknown as SectionTypeEnum }))
+                setFormData((prev) => ({ ...prev, section_type: value }))
               }
             >
               <SelectTrigger>
@@ -733,9 +799,9 @@ function SectionFormSheet({
           <div className="space-y-2">
             <Label>{t("displayMode")}</Label>
             <Select
-              value={formData.display_mode as unknown as string}
+              value={formData.display_mode}
               onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, display_mode: value as unknown as DisplayModeEnum }))
+                setFormData((prev) => ({ ...prev, display_mode: value }))
               }
             >
               <SelectTrigger>

@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -39,6 +40,15 @@ import type { Locale } from "@/lib/i18n";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
+
+/**
+ * The generated StatusF43enum is typed as `{ [key: string]: any }` (an object)
+ * instead of a proper string union, because the OpenAPI generator cannot resolve
+ * the Django enum. We cast status string literals through `StatusF43enum` using
+ * this helper to avoid bare `as any`.
+ */
+import type { StatusF43enum } from "@/api/generated/interfaces";
+const asStatus = (v: string) => v as unknown as StatusF43enum;
 
 interface AddProductSheetProps {
   open: boolean;
@@ -91,7 +101,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       image: "",
       quantity: 0,
       low_stock_threshold: 10,
-      status: "draft" as any,
+      status: asStatus("draft"),
       is_featured: false,
       track_inventory: true,
     };
@@ -114,6 +124,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   }, [open, activeLanguages.length]);
 
   // Watch the selected language's name field to auto-generate SKU and slug
+  // `as any`: RHF Path<T> cannot resolve dynamic object keys on Record fields
   const selectedLangName = form.watch(`name.${selectedLanguage}` as any);
 
   // Auto-generate SKU from selected language name
@@ -160,7 +171,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
         // Validate: At least one language must be filled for name
         if (fieldName === 'name' && !firstFilledValue) {
-          alert("Please fill at least one language for the product name");
+          toast.error("Please fill at least one language for the product name");
           return;
         }
 
@@ -175,19 +186,22 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       });
 
       // Prepare product data with attributes
-      const productData: any = {
+      const productData: Partial<ProductCreateUpdateRequest> & Pick<ProductCreateUpdate, never> = {
         ...data,
         attributes: attributes.length > 0 ? attributes : undefined,
       };
 
-      await createProduct.mutateAsync(productData);
+      await createProduct.mutateAsync(productData as ProductCreateUpdate);
 
+      toast.success("Product created successfully");
       form.reset(buildDefaultValues());
       setAttributes([]);
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create product";
       console.error("Failed to create product:", error);
-      alert(error.message || "Failed to create product");
+      toast.error(message);
     }
   };
 
@@ -239,6 +253,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                 </div>
 
                 {/* Product Name - Selected Language */}
+                {/* `as any` below: react-hook-form Path<T> cannot resolve dynamic
+                    object keys like `name.${lang}` on a `Record<string, string>` field.
+                    This is a known RHF limitation with JSON/i18n fields. */}
                 <FormField
                   key={`name-${selectedLanguage}`}
                   control={form.control}
@@ -280,6 +297,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                 />
 
                 {/* Short Description - Selected Language */}
+                {/* `as any`: same RHF Path<T> limitation as above for i18n keys */}
                 <FormField
                   key={`short_description-${selectedLanguage}`}
                   control={form.control}

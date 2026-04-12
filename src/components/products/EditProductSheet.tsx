@@ -3,6 +3,7 @@
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   Sheet,
   SheetContent,
@@ -32,6 +33,17 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useLanguages } from "@/hooks/useLanguages";
 import type { ProductDetail, ProductCreateUpdateRequest, Language } from "@/api/generated";
@@ -39,7 +51,17 @@ import type { Locale } from "@/lib/i18n";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
+import { VariantManager } from "./VariantManager";
 import { Trash2 } from "lucide-react";
+
+/**
+ * The generated StatusF43enum is typed as `{ [key: string]: any }` (an object)
+ * instead of a proper string union, because the OpenAPI generator cannot resolve
+ * the Django enum. We cast status string literals through `StatusF43enum` using
+ * this helper to avoid bare `as any`.
+ */
+import type { StatusF43enum } from "@/api/generated/interfaces";
+const asStatus = (v: string) => v as unknown as StatusF43enum;
 
 interface EditProductSheetProps {
   open: boolean;
@@ -74,6 +96,9 @@ export function EditProductSheet({
   // Product attributes
   const [attributes, setAttributes] = useState<AttributeValue[]>([]);
 
+  // Delete confirmation dialog state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
   const form = useForm<Partial<ProductCreateUpdateRequest>>({
     defaultValues: {
       name: {},
@@ -87,7 +112,7 @@ export function EditProductSheet({
       image: "",
       quantity: 0,
       low_stock_threshold: 10,
-      status: "draft" as any,
+      status: asStatus("draft"),
       is_featured: false,
       track_inventory: true,
     },
@@ -182,7 +207,7 @@ export function EditProductSheet({
 
         // Validate: At least one language must be filled for name
         if (fieldName === "name" && !firstFilledValue) {
-          alert("Please fill at least one language for the product name");
+          toast.error("Please fill at least one language for the product name");
           return;
         }
 
@@ -197,7 +222,7 @@ export function EditProductSheet({
       });
 
       // Prepare product data with attributes
-      const productData: any = {
+      const productData: Partial<ProductCreateUpdateRequest> = {
         ...data,
         attributes: attributes.length > 0 ? attributes : undefined,
       };
@@ -207,26 +232,28 @@ export function EditProductSheet({
         data: productData as ProductCreateUpdateRequest,
       });
 
+      toast.success("Product updated successfully");
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to update product";
       console.error("Failed to update product:", error);
-      alert(error.message || "Failed to update product");
+      toast.error(message);
     }
   };
 
   const handleDelete = async () => {
     if (!product?.id) return;
 
-    if (!confirm(t("deleteConfirm"))) {
-      return;
-    }
-
     try {
       await deleteProduct.mutateAsync(product.id);
+      toast.success("Product deleted successfully");
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete product";
       console.error("Failed to delete product:", error);
-      alert(error.message || "Failed to delete product");
+      toast.error(message);
     }
   };
 
@@ -277,6 +304,9 @@ export function EditProductSheet({
                 </div>
 
                 {/* Product Name - Selected Language */}
+                {/* `as any` below: react-hook-form Path<T> cannot resolve dynamic
+                    object keys like `name.${lang}` on a `Record<string, string>` field.
+                    This is a known RHF limitation with JSON/i18n fields. */}
                 <FormField
                   key={`name-${selectedLanguage}`}
                   control={form.control}
@@ -315,6 +345,7 @@ export function EditProductSheet({
                 />
 
                 {/* Short Description - Selected Language */}
+                {/* `as any`: same RHF Path<T> limitation as above for i18n keys */}
                 <FormField
                   key={`short_description-${selectedLanguage}`}
                   control={form.control}
@@ -446,6 +477,10 @@ export function EditProductSheet({
                   <AttributeSelector value={attributes} onChange={setAttributes} />
                 </div>
 
+                {/* Variants */}
+                <Separator className="my-2" />
+                <VariantManager productId={product.id} />
+
                 {/* Status */}
                 <FormField
                   control={form.control}
@@ -497,7 +532,7 @@ export function EditProductSheet({
                   <Button
                     type="button"
                     variant="destructive"
-                    onClick={handleDelete}
+                    onClick={() => setDeleteConfirmOpen(true)}
                     disabled={deleteProduct.isPending}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -520,6 +555,27 @@ export function EditProductSheet({
             </Form>
           </div>
         </ScrollArea>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("deleteProduct")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("deleteConfirm")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{tCommon("cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteProduct.isPending ? t("deleting") : t("deleteProduct")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   );

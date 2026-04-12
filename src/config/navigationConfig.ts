@@ -81,6 +81,24 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         requiredFeatureKey: "ecommerce_crm",
         isPremium: true,
       },
+      {
+        id: "ecommerce/shipping-methods",
+        icon: "Truck",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+      {
+        id: "ecommerce/promo-codes",
+        icon: "Tag",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
+      {
+        id: "ecommerce/reviews",
+        icon: "Star",
+        requiredFeatureKey: "ecommerce_crm",
+        isPremium: true,
+      },
     ],
   },
   {

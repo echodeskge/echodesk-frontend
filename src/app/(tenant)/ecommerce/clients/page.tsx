@@ -19,10 +19,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Search, UserPlus, Mail, Phone, Calendar, CheckCircle, XCircle } from "lucide-react";
 import { useClients } from "@/hooks/useClients";
-import LoadingSpinner from "@/components/LoadingSpinner";
+import { toast } from "sonner";
 import { format } from "date-fns";
+import { useEffect } from "react";
 
 export default function ClientsPage() {
   const t = useTranslations("clients");
@@ -30,12 +32,19 @@ export default function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Fetch clients with filters
-  const { data: clientsData, isLoading } = useClients({
+  const { data: clientsData, isLoading, error } = useClients({
     search: searchQuery || undefined,
     is_active: statusFilter === "active" ? true : statusFilter === "inactive" ? false : undefined,
     page: 1,
     page_size: 50,
   });
+
+  // Show toast on error
+  useEffect(() => {
+    if (error) {
+      toast.error("Failed to load clients");
+    }
+  }, [error]);
 
   const clients = clientsData?.results || [];
   const totalCount = clientsData?.count || 0;
@@ -46,8 +55,51 @@ export default function ClientsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
+      <div className="p-6 space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </div>
+        </div>
+
+        {/* Stats skeleton */}
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Search skeleton */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              <Skeleton className="h-10 flex-1" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Table skeleton */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-14 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -45,6 +46,7 @@ import {
   AlertCircle,
   Download,
 } from "lucide-react";
+import { toast } from "sonner";
 
 // Extend Order type to properly type client_details
 interface Order extends Omit<GeneratedOrder, "client_details"> {
@@ -56,7 +58,7 @@ interface Order extends Omit<GeneratedOrder, "client_details"> {
   };
 }
 
-const STATUS_COLORS = {
+const STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
   confirmed: "bg-blue-100 text-blue-800 hover:bg-blue-100",
   processing: "bg-purple-100 text-purple-800 hover:bg-purple-100",
@@ -65,7 +67,7 @@ const STATUS_COLORS = {
   cancelled: "bg-red-100 text-red-800 hover:bg-red-100",
 };
 
-const STATUS_ICONS = {
+const STATUS_ICONS: Record<string, typeof Clock> = {
   pending: Clock,
   confirmed: CheckCircle2,
   processing: Package,
@@ -74,7 +76,7 @@ const STATUS_ICONS = {
   cancelled: XCircle,
 };
 
-const PAYMENT_STATUS_COLORS = {
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
   pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
   paid: "bg-green-50 text-green-700 border-green-200",
   failed: "bg-red-50 text-red-700 border-red-200",
@@ -82,7 +84,7 @@ const PAYMENT_STATUS_COLORS = {
   partially_refunded: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
-const PAYMENT_STATUS_ICONS = {
+const PAYMENT_STATUS_ICONS: Record<string, typeof Clock> = {
   pending: Clock,
   paid: CheckCircle2,
   failed: XCircle,
@@ -115,6 +117,7 @@ export default function EcommerceOrdersPage() {
       setOrders((response.results || response) as unknown as Order[]);
     } catch (error) {
       console.error("Failed to fetch orders:", error);
+      toast.error("Failed to load orders");
     } finally {
       setLoading(false);
     }
@@ -127,26 +130,28 @@ export default function EcommerceOrdersPage() {
     try {
       setInitiatingPayment(orderId);
 
-      // TODO: Replace with actual API call
-      // const response = await apiEcommerceOrdersInitiatePaymentCreate(orderId, {
-      //   payment_method: paymentMethod,
-      //   return_url_success: `${window.location.origin}/ecommerce/orders/payment/success`,
-      //   return_url_fail: `${window.location.origin}/ecommerce/orders/payment/failed`
-      // })
-
-      // if (response.payment_url) {
-      //   // Redirect to BOG payment page
-      //   window.location.href = response.payment_url
-      // }
-
-      // Simulated for now - alert user
-      alert(
-        "Payment API integration pending. This will redirect to BOG payment page when connected."
+      // The generated function expects OrderRequest which doesn't match the backend's
+      // actual payload for this endpoint, so we use axiosInstance directly.
+      const response = await axiosInstance.post(
+        `/api/ecommerce/admin/orders/${orderId}/initiate_payment/`,
+        {
+          payment_method: paymentMethod,
+          return_url_success: `${window.location.origin}/ecommerce/orders/payment/success`,
+          return_url_fail: `${window.location.origin}/ecommerce/orders/payment/failed`,
+        }
       );
-      setInitiatingPayment(null);
+
+      if (response.data?.payment_url) {
+        toast.success("Redirecting to payment page...");
+        window.location.href = response.data.payment_url;
+      } else {
+        toast.success("Payment initiated successfully");
+        await fetchOrders();
+      }
     } catch (error) {
       console.error("Failed to initiate payment:", error);
-      alert("Failed to initiate payment. Please try again.");
+      toast.error("Failed to initiate payment. Please try again.");
+    } finally {
       setInitiatingPayment(null);
     }
   };
@@ -181,10 +186,12 @@ export default function EcommerceOrdersPage() {
         order_ids: Array.from(selectedOrderIds),
         status,
       });
+      toast.success(`${selectedOrderIds.size} orders updated to ${status}`);
       await fetchOrders();
       setSelectedOrderIds(new Set());
     } catch (error) {
       console.error("Bulk update failed:", error);
+      toast.error("Failed to update orders. Please try again.");
     } finally {
       setBulkActionLoading(false);
     }
@@ -192,33 +199,39 @@ export default function EcommerceOrdersPage() {
 
   // Export selected orders as CSV
   const handleExportSelected = () => {
-    const selected = filteredOrders.filter((o) => selectedOrderIds.has(o.id));
-    const headers = [
-      "Order Number",
-      "Customer",
-      "Email",
-      "Items",
-      "Total",
-      "Status",
-      "Date",
-    ];
-    const rows = selected.map((order) => [
-      order.order_number,
-      order.client_details?.full_name || "Unknown",
-      order.client_details?.email || "",
-      String(order.total_items),
-      parseFloat(order.total_amount).toFixed(2),
-      String(order.status),
-      new Date(order.created_at).toISOString(),
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const selected = filteredOrders.filter((o) => selectedOrderIds.has(o.id));
+      const headers = [
+        "Order Number",
+        "Customer",
+        "Email",
+        "Items",
+        "Total",
+        "Status",
+        "Date",
+      ];
+      const rows = selected.map((order) => [
+        order.order_number,
+        order.client_details?.full_name || "Unknown",
+        order.client_details?.email || "",
+        String(order.total_items),
+        parseFloat(order.total_amount).toFixed(2),
+        String(order.status),
+        new Date(order.created_at).toISOString(),
+      ]);
+      const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${selected.length} orders`);
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Failed to export orders");
+    }
   };
 
   // Export all orders CSV via API
@@ -235,8 +248,10 @@ export default function EcommerceOrdersPage() {
       a.download = `all-orders-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+      toast.success("Orders exported successfully");
     } catch (error) {
       console.error("Export failed:", error);
+      toast.error("Failed to export orders");
     }
   };
 
@@ -282,16 +297,44 @@ export default function EcommerceOrdersPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded"></div>
-            ))}
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
           </div>
-          <div className="h-96 bg-gray-200 rounded"></div>
+          <Skeleton className="h-10 w-32" />
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-24" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between">
+              <Skeleton className="h-6 w-32" />
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-40" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-14 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -445,9 +488,7 @@ export default function EcommerceOrdersPage() {
                 <TableBody>
                   {filteredOrders.map((order) => {
                     const StatusIcon =
-                      STATUS_ICONS[
-                        String(order.status) as keyof typeof STATUS_ICONS
-                      ] || Clock;
+                      STATUS_ICONS[String(order.status)] || Clock;
                     return (
                       <TableRow key={order.id}>
                         <TableCell>
@@ -487,11 +528,7 @@ export default function EcommerceOrdersPage() {
                           <Badge
                             variant="secondary"
                             className={
-                              STATUS_COLORS[
-                                String(
-                                  order.status
-                                ) as keyof typeof STATUS_COLORS
-                              ] || ""
+                              STATUS_COLORS[String(order.status)] || ""
                             }
                           >
                             <StatusIcon className="mr-1 h-3 w-3" />

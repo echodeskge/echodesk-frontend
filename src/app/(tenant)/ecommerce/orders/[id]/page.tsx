@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ecommerceAdminOrdersRetrieve, ecommerceAdminOrdersUpdateStatusCreate } from "@/api/generated"
+import { ecommerceAdminOrdersRetrieve } from "@/api/generated"
 import { Order as GeneratedOrder } from "@/api/generated/interfaces"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -34,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText } from "lucide-react"
 import { toast } from "sonner"
 import axiosInstance from "@/api/axios"
@@ -88,6 +89,7 @@ export default function OrderDetailPage() {
       setOrder(response as unknown as Order)
     } catch (error) {
       console.error("Failed to fetch order:", error)
+      toast.error("Failed to load order details")
     } finally {
       setLoading(false)
     }
@@ -119,9 +121,13 @@ export default function OrderDetailPage() {
       setUpdatingStatus(true)
       setConfirmDialogOpen(false)
 
-      const updatedOrder = await ecommerceAdminOrdersUpdateStatusCreate(order.id, {
-        status: pendingStatus
-      } as any)
+      // The generated function expects OrderRequest (with required `client` and `total_amount`),
+      // but the backend endpoint only needs `status`. Use axiosInstance as a fallback.
+      const response = await axiosInstance.post(
+        `/api/ecommerce/admin/orders/${order.id}/update_status/`,
+        { status: pendingStatus }
+      );
+      const updatedOrder = response.data;
 
       setOrder(updatedOrder as unknown as Order)
       toast.success(`Order status updated to ${pendingStatus}`)
@@ -136,10 +142,33 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-9 w-20" />
+          <div>
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+              <CardContent className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardHeader><Skeleton className="h-5 w-24" /></CardHeader>
+                <CardContent><Skeleton className="h-16 w-full" /></CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     )
