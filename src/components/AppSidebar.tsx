@@ -58,6 +58,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import {
   Collapsible,
@@ -149,6 +150,12 @@ export function AppSidebar({
   onLogout
 }: AppSidebarProps) {
   const isMobile = useIsMobile()
+  const { setOpenMobile } = useSidebar()
+
+  const handleMenuClick = (viewId: string) => {
+    onMenuClick(viewId)
+    if (isMobile) setOpenMobile(false)
+  }
   // Get unread counts for sidebar badges
   const { data: unreadCount } = useUnreadMessagesCount()
   const emailUnread = unreadCount?.email ?? 0
@@ -237,7 +244,7 @@ export function AppSidebar({
                                       if (isChildLocked) {
                                         alert(`This feature requires a premium subscription. Please upgrade your plan to access ${child.label}.`)
                                       } else {
-                                        onMenuClick(child.id)
+                                        handleMenuClick(child.id)
                                       }
                                     }}
                                     isActive={isChildItemActive}
@@ -269,7 +276,7 @@ export function AppSidebar({
                           // TODO: Show upgrade dialog
                           alert(`This feature requires a premium subscription. Please upgrade your plan to access ${item.label}.`)
                         } else {
-                          onMenuClick(item.id)
+                          handleMenuClick(item.id)
                         }
                       }}
                       isActive={isActive}
