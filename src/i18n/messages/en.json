@@ -160,7 +160,10 @@
     "settingsBookings": "Booking Settings",
     "settingsLeave": "Leave Settings",
     "settingsUsers": "Users",
-    "settingsGroups": "Groups"
+    "settingsGroups": "Groups",
+    "settingsSocialConnections": "Social Connections",
+    "settingsSocialAutoPosting": "Auto-Posting",
+    "settingsSocialRatingStatistics": "Rating Statistics"
   },
   "bugReport": {
     "title": "Report a Bug",

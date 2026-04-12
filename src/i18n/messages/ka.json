@@ -160,7 +160,10 @@
     "settingsBookings": "ჯავშნების პარამეტრები",
     "settingsLeave": "შვებულების პარამეტრები",
     "settingsUsers": "მომხმარებლები",
-    "settingsGroups": "ჯგუფები"
+    "settingsGroups": "ჯგუფები",
+    "settingsSocialConnections": "სოციალური კავშირები",
+    "settingsSocialAutoPosting": "ავტო-გამოქვეყნება",
+    "settingsSocialRatingStatistics": "შეფასების სტატისტიკა"
   },
   "bugReport": {
     "title": "ბაგის რეპორტი",
