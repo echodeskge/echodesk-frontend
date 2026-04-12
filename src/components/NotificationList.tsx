@@ -1,9 +1,10 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Bell, Check, Trash2, MessageCircle, UserPlus, FileEdit, AlertCircle, Bug } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
@@ -14,6 +15,42 @@ import {
 } from '@/api/generated/api'
 import type { Notification } from '@/api/generated/interfaces'
 import { useTranslations } from 'next-intl'
+
+// -------------------------------------------------------------------
+// Grouping logic
+// -------------------------------------------------------------------
+
+interface GroupedNotification extends Notification {
+  _groupCount?: number
+  _groupItems?: Notification[]
+}
+
+function groupNotifications(notifications: Notification[]): GroupedNotification[] {
+  const groups: Map<string, Notification[]> = new Map()
+
+  for (const notif of notifications) {
+    // Group by ticket_id if present, otherwise by notification_type + 1-hour time bucket
+    const key = notif.ticket_id
+      ? `ticket-${notif.ticket_id}`
+      : `${notif.notification_type}-${Math.floor(new Date(notif.created_at).getTime() / 3600000)}`
+
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(notif)
+  }
+
+  return Array.from(groups.values()).map((group) => {
+    if (group.length === 1) return group[0]
+    // Return the most recent notification but with count
+    const sorted = [...group].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    )
+    return { ...sorted[0], _groupCount: group.length, _groupItems: sorted }
+  })
+}
+
+// -------------------------------------------------------------------
+// Component types
+// -------------------------------------------------------------------
 
 interface NotificationListProps {
   notifications: Notification[]
@@ -76,6 +113,13 @@ export function NotificationList({
 }: NotificationListProps) {
   const router = useRouter()
   const t = useTranslations('notificationList')
+  const tPrefs = useTranslations('notificationPreferences')
+
+  // Memoize grouped notifications
+  const groupedNotifications = useMemo(
+    () => groupNotifications(notifications),
+    [notifications],
+  )
 
   const getBugReportText = (notification: Notification) => {
     if ((notification.notification_type as unknown as string) !== 'bug_report_update') return null
@@ -168,15 +212,17 @@ export function NotificationList({
           <div className="p-8 text-center text-sm text-muted-foreground">
             Loading notifications...
           </div>
-        ) : notifications.length === 0 ? (
+        ) : groupedNotifications.length === 0 ? (
           <div className="p-8 text-center">
             <Bell className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
             <p className="text-sm text-muted-foreground">No notifications</p>
           </div>
         ) : (
           <div className="divide-y">
-            {notifications.map((notification) => {
+            {groupedNotifications.map((notification) => {
+              const grouped = notification as GroupedNotification
               const bugText = getBugReportText(notification)
+              const groupCount = grouped._groupCount
               return (
                 <button
                   key={notification.id}
@@ -194,12 +240,19 @@ export function NotificationList({
                       {getNotificationIcon(notification.notification_type as any)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        'text-sm font-medium mb-1',
-                        !notification.is_read && 'font-semibold'
-                      )}>
-                        {bugText?.title ?? notification.title}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className={cn(
+                          'text-sm font-medium',
+                          !notification.is_read && 'font-semibold'
+                        )}>
+                          {bugText?.title ?? notification.title}
+                        </p>
+                        {groupCount && groupCount > 1 && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                            {tPrefs('groupedUpdates', { count: groupCount })}
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {bugText?.message ?? notification.message}
                       </p>

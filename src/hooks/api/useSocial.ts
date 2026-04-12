@@ -95,9 +95,9 @@ export function useUnreadMessagesCount(options?: { refetchInterval?: number | fa
       const response = await axios.get('/api/social/unread-count/');
       return response.data;
     },
-    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+    staleTime: 15 * 1000, // Consider data fresh for 15 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchInterval: options?.refetchInterval ?? 30000, // Poll every 30 seconds by default
+    refetchInterval: options?.refetchInterval ?? 15000, // Poll every 15 seconds by default
     enabled: options?.enabled ?? true,
   });
 }

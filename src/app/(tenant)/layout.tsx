@@ -146,6 +146,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Global WebSocket for message notifications (plays sound and updates sidebar)
   useMessagesWebSocket({
     onNewMessage: (data) => {
+      // Instantly invalidate unread messages count so MessengerBell updates without waiting for poll
+      queryClient.invalidateQueries({ queryKey: ['social', 'unreadCount'] });
+
       const messageData = data?.message;
 
       // Don't play sound for messages we sent (from page/business)

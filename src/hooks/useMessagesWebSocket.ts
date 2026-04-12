@@ -176,7 +176,9 @@ export function useMessagesWebSocket({
         if (autoReconnect && shouldConnectRef.current) {
           reconnectAttemptsRef.current += 1;
           // Exponential backoff: 3s, 6s, 12s, 24s, max 30s
-          const delay = Math.min(reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+          const baseDelay = Math.min(reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+          // Add jitter: 50%-150% of calculated delay to avoid thundering herd
+          const delay = baseDelay * (0.5 + Math.random());
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, delay);

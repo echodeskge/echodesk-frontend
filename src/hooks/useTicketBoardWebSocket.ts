@@ -258,7 +258,9 @@ export function useTicketBoardWebSocket({
         if (autoReconnect && event.code !== 1000) {
           setReconnectAttempts(prev => {
             const currentAttempt = prev + 1
-            const delay = Math.min(reconnectInterval * Math.pow(2, currentAttempt - 1), maxReconnectInterval)
+            const baseDelay = Math.min(reconnectInterval * Math.pow(2, currentAttempt - 1), maxReconnectInterval)
+            // Add jitter: 50%-150% of calculated delay to avoid thundering herd
+            const delay = baseDelay * (0.5 + Math.random())
 
             reconnectTimeoutRef.current = setTimeout(() => {
               connect()

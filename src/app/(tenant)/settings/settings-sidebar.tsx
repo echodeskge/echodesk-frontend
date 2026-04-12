@@ -24,6 +24,7 @@ import {
   BarChart3,
   Users,
   UsersRound,
+  Bell,
 } from "lucide-react"
 
 interface SettingsNavItem {
@@ -47,6 +48,12 @@ const settingsNav: SettingsNavItem[] = [
     href: "/settings/appearance",
     icon: Palette,
     labelKey: "nav.appearance",
+  },
+  {
+    id: "notifications",
+    href: "/settings/notifications",
+    icon: Bell,
+    labelKey: "nav.notifications",
   },
   {
     id: "social",

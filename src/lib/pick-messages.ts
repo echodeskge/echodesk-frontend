@@ -10,6 +10,7 @@ export const GLOBAL_NAMESPACES = [
   'labels',
   'bugReport',
   'notificationList',
+  'notificationPreferences',
   'notifications',
   'notFound',
   'subscription',

@@ -1198,7 +1198,8 @@
       "autoPosting": "Auto-Posting",
       "ratingStatistics": "Rating Statistics",
       "users": "Users",
-      "groups": "Groups"
+      "groups": "Groups",
+      "notifications": "Notifications"
     }
   },
   "users": {
@@ -3244,6 +3245,22 @@
         "message": "Your reported bug has been fixed. Thank you for the report!"
       }
     }
+  },
+  "notificationPreferences": {
+    "title": "Notification Preferences",
+    "subtitle": "Choose how you want to be notified",
+    "tickets": "Tickets",
+    "messages": "Messages",
+    "invoices": "Invoices",
+    "leave": "Leave",
+    "bookings": "Bookings",
+    "calls": "Calls",
+    "inApp": "In-App",
+    "sound": "Sound",
+    "push": "Push",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "groupedUpdates": "{count} updates"
   },
   "leave": {
     "publicHolidays": {

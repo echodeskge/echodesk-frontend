@@ -1198,7 +1198,8 @@
       "autoPosting": "ავტო-პოსტინგი",
       "ratingStatistics": "რეიტინგის სტატისტიკა",
       "users": "მომხმარებლები",
-      "groups": "ჯგუფები"
+      "groups": "ჯგუფები",
+      "notifications": "შეტყობინებები"
     }
   },
   "users": {
@@ -3244,6 +3245,22 @@
         "message": "თქვენი ბაგი გამოსწორებულია. მადლობა რეპორტისთვის!"
       }
     }
+  },
+  "notificationPreferences": {
+    "title": "შეტყობინებების პარამეტრები",
+    "subtitle": "აირჩიეთ როგორ გსურთ შეტყობინებების მიღება",
+    "tickets": "ტიკეტები",
+    "messages": "შეტყობინებები",
+    "invoices": "ინვოისები",
+    "leave": "შვებულება",
+    "bookings": "ჯავშნები",
+    "calls": "ზარები",
+    "inApp": "აპში",
+    "sound": "ხმა",
+    "push": "Push",
+    "enabled": "ჩართული",
+    "disabled": "გამორთული",
+    "groupedUpdates": "{count} განახლება"
   },
   "leave": {
     "publicHolidays": {
