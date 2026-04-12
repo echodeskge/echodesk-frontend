@@ -71,6 +71,12 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     markAllAsRead: wsMarkAllAsRead,
   } = useNotificationsWebSocket({
     onNotificationCreated: (notification, count) => {
+      // Skip message notifications — those are handled in the Messages section
+      const MESSAGE_TYPES = ['message_received', 'social_message', 'email_received']
+      if (MESSAGE_TYPES.includes(notification.notification_type)) {
+        return
+      }
+
       // Get user preferences for this notification type
       const pref = getNotificationPreferenceByType(notification.notification_type)
 
@@ -158,12 +164,21 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     }
   }, [])
 
-  // Fetch notifications
+  // Notification types that belong in the Messages section, not here
+  const MESSAGE_NOTIFICATION_TYPES = ['message_received', 'social_message', 'email_received']
+
+  const isMessageNotification = (type: string) =>
+    MESSAGE_NOTIFICATION_TYPES.includes(type)
+
+  // Fetch notifications (excluding message notifications)
   const fetchNotifications = async () => {
     setLoading(true)
     try {
       const response = await notificationsList()
-      setNotifications(response.results || [])
+      const filtered = (response.results || []).filter(
+        (n) => !isMessageNotification(n.notification_type as unknown as string)
+      )
+      setNotifications(filtered)
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
     } finally {
