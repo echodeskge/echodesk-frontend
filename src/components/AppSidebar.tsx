@@ -138,6 +138,7 @@ interface AppSidebarProps {
   visibleMenuItems: MenuItem[]
   currentView: string
   onMenuClick: (viewId: string) => void
+  onPrefetch?: (viewId: string) => void
   onLogout: () => void
 }
 
@@ -147,6 +148,7 @@ export function AppSidebar({
   visibleMenuItems,
   currentView,
   onMenuClick,
+  onPrefetch,
   onLogout
 }: AppSidebarProps) {
   const isMobile = useIsMobile()
@@ -240,6 +242,7 @@ export function AppSidebar({
                               return (
                                 <SidebarMenuSubItem key={child.id}>
                                   <SidebarMenuSubButton
+                                    onMouseEnter={() => !isChildLocked && onPrefetch?.(child.id)}
                                     onClick={() => {
                                       if (isChildLocked) {
                                         alert(`This feature requires a premium subscription. Please upgrade your plan to access ${child.label}.`)
@@ -271,9 +274,9 @@ export function AppSidebar({
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
+                      onMouseEnter={() => !isLocked && onPrefetch?.(item.id)}
                       onClick={() => {
                         if (isLocked) {
-                          // TODO: Show upgrade dialog
                           alert(`This feature requires a premium subscription. Please upgrade your plan to access ${item.label}.`)
                         } else {
                           handleMenuClick(item.id)

@@ -640,6 +640,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
           visibleMenuItems={visibleMenuItems}
           currentView={currentView}
           onMenuClick={handleMenuClick}
+          onPrefetch={(viewId) => router.prefetch(`/${viewId}`)}
           onLogout={handleLogout}
         />
 
