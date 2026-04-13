@@ -2127,6 +2127,12 @@
     "key": "Key",
     "unit": "Unit",
     "options": "Options",
+    "tableTitle": "Product Attributes",
+    "table": {
+      "name": "Name",
+      "type": "Type",
+      "status": "Status"
+    },
     "types": {
       "multiselect": "Multi-select",
       "number": "Number"
