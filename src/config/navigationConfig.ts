@@ -311,11 +311,11 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     excludeFeatureKey: "settings", // Only visible to users who DON'T have full settings access
     children: [
       {
-        id: "settings/notifications",
+        id: "preferences/notifications",
         icon: "Bell",
       },
       {
-        id: "settings/social",
+        id: "preferences/social",
         icon: "MessageSquare",
       },
     ],

@@ -301,7 +301,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "settings/users": "settingsUsers",
     "settings/groups": "settingsGroups",
     preferences: "preferences",
-    "settings/notifications": "settingsNotifications",
+    "preferences/notifications": "settingsNotifications",
+    "preferences/social": "settingsSocial",
     "report-bug": "reportBug",
     help: "help",
   };
