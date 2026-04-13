@@ -18,7 +18,8 @@ interface ColumnOptions {
 
 function getProductName(product: ProductList, locale: string): string {
   const name = product.name
-  if (typeof name === "object" && name !== null) {
+  if (!name) return "Unnamed Product"
+  if (typeof name === "object") {
     const nameObj = name as Record<string, string>
     return nameObj[locale] || nameObj.en || "Unnamed Product"
   }
