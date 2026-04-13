@@ -44,6 +44,9 @@ import {
   Receipt,
   SlidersHorizontal,
   Bell,
+  Truck,
+  Tag,
+  Star,
 } from "lucide-react"
 
 import {
@@ -120,6 +123,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Sparkles": Sparkles,
   "Bug": Bug,
   "Receipt": Receipt,
+  "Truck": Truck,
+  "Tag": Tag,
+  "Star": Star,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,
