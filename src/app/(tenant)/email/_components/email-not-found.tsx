@@ -1,4 +1,7 @@
+"use client";
+
 import { MailX } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { EmailMenuButton } from "./email-menu-button";
@@ -8,12 +11,12 @@ interface EmailNotFoundProps {
 }
 
 export function EmailNotFound({ inline }: EmailNotFoundProps) {
+  const t = useTranslations("email.list");
+
   const content = (
     <div className="size-full flex flex-col justify-center items-center gap-2 p-6">
       <MailX className="size-24 text-primary/50" />
-      <p className="text-muted-foreground text-center">
-        No emails found. Try a different filter or compose a new email.
-      </p>
+      <p className="text-muted-foreground text-center">{t("notFound")}</p>
       <EmailMenuButton />
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { MoreVertical, Star, Trash2 } from "lucide-react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
@@ -23,6 +24,7 @@ export function EmailViewContentActions({
 }: EmailViewContentActionsProps) {
   const emailAction = useEmailAction();
   const router = useRouter();
+  const t = useTranslations("email.view");
 
   function handleDelete() {
     emailAction.mutate(
@@ -51,7 +53,7 @@ export function EmailViewContentActions({
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Delete email"
+          aria-label={t("deleteEmail")}
           onClick={handleDelete}
         >
           <Trash2 className="h-4 w-4" />
@@ -61,7 +63,7 @@ export function EmailViewContentActions({
         <Button
           variant="ghost"
           size="icon"
-          aria-label={email.is_starred ? "Unstar email" : "Star email"}
+          aria-label={email.is_starred ? t("unstarEmail") : t("starEmail")}
           onClick={handleToggleStar}
         >
           <Star
@@ -75,13 +77,13 @@ export function EmailViewContentActions({
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="More actions">
+            <Button variant="ghost" size="icon" aria-label={t("moreActions")}>
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleMarkUnread}>
-              Mark as unread
+              {t("markAsUnread")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

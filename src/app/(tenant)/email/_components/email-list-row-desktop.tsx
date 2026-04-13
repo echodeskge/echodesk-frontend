@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import { EllipsisVertical, Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { KeyboardEvent } from "react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
@@ -34,6 +35,7 @@ export function EmailListRowDesktop({
   const { handleToggleSelectEmail } = useEmailContext();
   const emailAction = useEmailAction();
   const router = useRouter();
+  const t = useTranslations("email.list");
 
   function handleNavigate() {
     if (!email.is_read) {
@@ -72,7 +74,7 @@ export function EmailListRowDesktop({
           checked={isSelected}
           onCheckedChange={() => handleToggleSelectEmail(email.id)}
           onClick={(e) => e.stopPropagation()}
-          aria-label="Select email"
+          aria-label={t("selectEmail")}
         />
       </TableCell>
       <TableCell className="w-10 text-center">
@@ -81,7 +83,7 @@ export function EmailListRowDesktop({
           size="icon"
           className="h-4 w-4"
           onClick={handleToggleStar}
-          aria-label={email.is_starred ? "Unstar email" : "Star email"}
+          aria-label={email.is_starred ? t("unstarEmail") : t("starEmail")}
         >
           <Star
             className={cn(
@@ -107,7 +109,7 @@ export function EmailListRowDesktop({
       </TableCell>
       <TableCell>
         <span className="text-muted-foreground line-clamp-1 break-all">
-          {email.subject || "(No subject)"}
+          {email.subject || t("noSubject")}
         </span>
       </TableCell>
       <TableCell className="w-28">
@@ -122,7 +124,7 @@ export function EmailListRowDesktop({
               variant="ghost"
               size="icon"
               onClick={(e) => e.stopPropagation()}
-              aria-label="More actions"
+              aria-label={t("moreActions")}
             >
               <EllipsisVertical className="h-4 w-4" />
             </Button>
@@ -133,10 +135,10 @@ export function EmailListRowDesktop({
                 handleAction(email.is_read ? "mark_unread" : "mark_read")
               }
             >
-              {email.is_read ? "Mark as unread" : "Mark as read"}
+              {email.is_read ? t("markAsUnread") : t("markAsRead")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleAction("delete")}>
-              Delete
+              {t("delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

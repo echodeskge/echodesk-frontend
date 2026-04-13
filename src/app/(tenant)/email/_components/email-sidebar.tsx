@@ -1,6 +1,7 @@
 "use client";
 
 import { useMedia } from "react-use";
+import { useTranslations } from "next-intl";
 
 import { useEmailContext } from "../_hooks/use-email-context";
 import { Card } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import { EmailSidebarList } from "./email-sidebar-list";
 export function EmailSidebar() {
   const { isEmailSidebarOpen, setIsEmailSidebarOpen } = useEmailContext();
   const isMediumOrSmaller = useMedia("(max-width: 767px)");
+  const t = useTranslations("email.sidebar");
 
   const sidebarContent = (
     <>
@@ -43,11 +45,8 @@ export function EmailSidebar() {
     <Sheet open={isEmailSidebarOpen} onOpenChange={setIsEmailSidebarOpen}>
       <SheetContent side="left" className="p-0 flex flex-col">
         <SheetHeader className="sr-only">
-          <SheetTitle>Email Sidebar</SheetTitle>
-          <SheetDescription>
-            Navigate your emails with ease. Access your inbox, sent items, and
-            custom folders.
-          </SheetDescription>
+          <SheetTitle>{t("title")}</SheetTitle>
+          <SheetDescription>{t("description")}</SheetDescription>
         </SheetHeader>
         {sidebarContent}
       </SheetContent>

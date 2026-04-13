@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 
 import { useEmailMessages, useSyncEmail } from "@/hooks/api/useSocial";
@@ -26,6 +27,7 @@ export function EmailListHeader({ filter }: EmailListHeaderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const syncEmail = useSyncEmail();
+  const t = useTranslations("email.list");
 
   const page = parseInt(searchParams.get("page") ?? "1");
 
@@ -48,7 +50,7 @@ export function EmailListHeader({ filter }: EmailListHeaderProps) {
         className="ms-auto"
         onClick={handleSync}
         disabled={syncEmail.isPending}
-        aria-label="Sync emails"
+        aria-label={t("syncEmails")}
       >
         <RefreshCw
           className={`h-4 w-4 ${syncEmail.isPending ? "animate-spin" : ""}`}
@@ -61,7 +63,7 @@ export function EmailListHeader({ filter }: EmailListHeaderProps) {
               variant="ghost"
               size="icon"
               onClick={() => router.push(`${pathname}?page=${page - 1}`)}
-              aria-label="Go to previous page"
+              aria-label={t("previousPage")}
               disabled={page <= 1}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -72,7 +74,7 @@ export function EmailListHeader({ filter }: EmailListHeaderProps) {
               variant="ghost"
               size="icon"
               onClick={() => router.push(`${pathname}?page=${page + 1}`)}
-              aria-label="Go to next page"
+              aria-label={t("nextPage")}
               disabled={page >= totalPages}
             >
               <ChevronRight className="h-4 w-4" />

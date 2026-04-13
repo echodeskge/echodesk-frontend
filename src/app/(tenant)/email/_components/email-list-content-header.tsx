@@ -1,6 +1,7 @@
 "use client";
 
 import { EllipsisVertical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { CheckedState } from "@radix-ui/react-checkbox";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
@@ -25,6 +26,7 @@ export function EmailListContentHeader({
   const { selectedEmailIds, handleToggleSelectAllEmails, handleClearSelection } =
     useEmailContext();
   const emailAction = useEmailAction();
+  const t = useTranslations("email.list");
 
   const pageEmailIds = emails.map((e) => e.id);
   const selectedOnPage = pageEmailIds.filter((id) =>
@@ -54,7 +56,7 @@ export function EmailListContentHeader({
       <Checkbox
         checked={isCheckboxChecked}
         onCheckedChange={() => handleToggleSelectAllEmails(pageEmailIds)}
-        aria-label="Select all emails"
+        aria-label={t("selectAll")}
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -62,7 +64,7 @@ export function EmailListContentHeader({
             variant="ghost"
             size="icon"
             onClick={(e) => e.stopPropagation()}
-            aria-label="Email actions"
+            aria-label={t("emailActions")}
             disabled={!hasSelection}
           >
             <EllipsisVertical className="h-4 w-4" />
@@ -70,13 +72,13 @@ export function EmailListContentHeader({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => handleBulkAction("mark_read")}>
-            Mark as read
+            {t("markAsRead")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleBulkAction("mark_unread")}>
-            Mark as unread
+            {t("markAsUnread")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleBulkAction("delete")}>
-            Delete
+            {t("delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

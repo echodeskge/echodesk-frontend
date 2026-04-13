@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import DOMPurify from "dompurify";
+import { useTranslations } from "next-intl";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
 import { CardContent } from "@/components/ui/card";
@@ -82,6 +83,7 @@ function wrapHtmlQuotedSections(html: string): string {
 export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
   const hasHtml = email.body_html && email.body_html.trim().length > 0;
   const [showQuoted, setShowQuoted] = useState(true);
+  const t = useTranslations("email.view");
 
   const { body, quoted } = useMemo(
     () => (hasHtml ? { body: "", quoted: "" } : splitQuotedText(email.body_text)),
@@ -136,7 +138,7 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setShowQuoted(!showQuoted)}
               >
-                {showQuoted ? "Hide quoted text" : "Show quoted text (...)"}
+                {showQuoted ? t("hideQuoted") : t("showQuoted")}
               </button>
               {showQuoted && (
                 <div className="rounded-md border border-border bg-muted p-3">
@@ -153,7 +155,7 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
       {email.attachments && email.attachments.length > 0 && (
         <div className="px-6 py-3 border-t border-border">
           <p className="text-sm font-medium text-muted-foreground mb-2">
-            Attachments ({email.attachments.length})
+            {t("attachments", { count: email.attachments.length })}
           </p>
           <div className="flex flex-wrap gap-2">
             {email.attachments.map((attachment, index) => (

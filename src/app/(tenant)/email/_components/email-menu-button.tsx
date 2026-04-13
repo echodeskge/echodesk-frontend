@@ -1,6 +1,7 @@
 "use client";
 
 import { Menu } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ComponentProps } from "react";
 
 import { useEmailContext } from "../_hooks/use-email-context";
@@ -15,6 +16,7 @@ export function EmailMenuButton({
   ...props
 }: EmailMenuButtonProps) {
   const { setIsEmailSidebarOpen } = useEmailContext();
+  const t = useTranslations("email.sidebar");
 
   if (isIcon) {
     return (
@@ -23,7 +25,7 @@ export function EmailMenuButton({
         size="icon"
         className="md:hidden"
         onClick={() => setIsEmailSidebarOpen(true)}
-        aria-label="Menu"
+        aria-label={t("menu")}
         {...props}
       >
         <Menu className="h-4 w-4" />
@@ -38,7 +40,7 @@ export function EmailMenuButton({
       onClick={() => setIsEmailSidebarOpen(true)}
       {...props}
     >
-      Menu
+      {t("menu")}
     </Button>
   );
 }

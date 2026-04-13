@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 
 import { useDebounce } from "@/hooks/useDebounce";
@@ -13,6 +14,7 @@ export function EmailListSearchForm() {
   const searchParams = useSearchParams();
   const [term, setTerm] = useState(searchParams.get("search") ?? "");
   const debouncedTerm = useDebounce(term, 300);
+  const t = useTranslations("email.list");
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -30,7 +32,7 @@ export function EmailListSearchForm() {
       <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         className="w-full bg-muted ps-9"
-        placeholder="Search..."
+        placeholder={t("search")}
         type="search"
         value={term}
         onChange={(e) => setTerm(e.target.value)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft } from "lucide-react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
@@ -15,6 +16,7 @@ interface EmailViewHeaderProps {
 
 export function EmailViewHeader({ email, filter }: EmailViewHeaderProps) {
   const router = useRouter();
+  const t = useTranslations("email");
 
   return (
     <CardHeader className="flex-row items-center gap-x-1.5 space-y-0 border-b">
@@ -25,12 +27,12 @@ export function EmailViewHeader({ email, filter }: EmailViewHeaderProps) {
           size="icon"
           className="hidden md:flex"
           onClick={() => router.push(`/email/${encodeURIComponent(filter)}`)}
-          aria-label="Back to list"
+          aria-label={t("view.backToList")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <CardTitle className="line-clamp-2 break-all">
-          {email.subject || "(No subject)"}
+          {email.subject || t("list.noSubject")}
         </CardTitle>
       </div>
     </CardHeader>

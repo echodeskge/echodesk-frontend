@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import DOMPurify from "dompurify";
 import { Send, Loader2, ChevronDown, ChevronUp, X, ListRestart } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import axios from "@/api/axios";
 
@@ -57,6 +58,7 @@ export function EmailComposerForm() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const { currentConnectionId } = useEmailContext();
+  const t = useTranslations("email.compose");
   const { data: emailStatus } = useEmailStatus();
   const { data: signature } = useEmailSignature();
   const sendEmail = useSendEmail();
@@ -171,8 +173,8 @@ export function EmailComposerForm() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
       toast({
-        title: "Invalid email",
-        description: `"${trimmedEmail}" is not a valid email address`,
+        title: t("invalidEmail"),
+        description: t("invalidEmailDescription", { email: trimmedEmail }),
         variant: "destructive",
       });
       return false;
@@ -247,18 +249,17 @@ export function EmailComposerForm() {
       });
 
       toast({
-        title: "Email sent",
-        description: "Your email has been sent successfully.",
+        title: t("sent"),
+        description: t("sentDescription"),
       });
 
       router.push("/email/INBOX");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
       toast({
-        title: "Failed to send email",
+        title: t("sendFailed"),
         description:
-          err.response?.data?.error ||
-          "An error occurred while sending the email.",
+          err.response?.data?.error || t("sendError"),
         variant: "destructive",
       });
     }
@@ -282,7 +283,7 @@ export function EmailComposerForm() {
               name="connection_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>From</FormLabel>
+                  <FormLabel>{t("from")}</FormLabel>
                   <Select
                     value={field.value?.toString()}
                     onValueChange={(value) =>
@@ -291,7 +292,7 @@ export function EmailComposerForm() {
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select email account" />
+                        <SelectValue placeholder={t("selectAccount")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -315,7 +316,7 @@ export function EmailComposerForm() {
             render={() => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel>To</FormLabel>
+                  <FormLabel>{t("to")}</FormLabel>
                   <Button
                     type="button"
                     variant="ghost"
@@ -328,7 +329,7 @@ export function EmailComposerForm() {
                     ) : (
                       <ChevronDown className="h-3 w-3 mr-1" />
                     )}
-                    {showCcBcc ? "Hide CC/BCC" : "CC/BCC"}
+                    {showCcBcc ? t("hideCcBcc") : t("showCcBcc")}
                   </Button>
                 </div>
                 <FormControl>
@@ -346,7 +347,7 @@ export function EmailComposerForm() {
                       type="text"
                       className="flex-1 min-w-[200px] outline-none bg-transparent text-sm"
                       placeholder={
-                        toEmails.length === 0 ? "Enter recipient email..." : ""
+                        toEmails.length === 0 ? t("recipientPlaceholder") : ""
                       }
                       value={toInput}
                       onChange={(e) => setToInput(e.target.value)}
@@ -372,7 +373,7 @@ export function EmailComposerForm() {
                 name="cc_emails"
                 render={() => (
                   <FormItem>
-                    <FormLabel>CC</FormLabel>
+                    <FormLabel>{t("cc")}</FormLabel>
                     <FormControl>
                       <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[40px] focus-within:ring-2 focus-within:ring-ring">
                         {ccEmails.map((email) => (
@@ -392,7 +393,7 @@ export function EmailComposerForm() {
                           type="text"
                           className="flex-1 min-w-[200px] outline-none bg-transparent text-sm"
                           placeholder={
-                            ccEmails.length === 0 ? "Enter CC email..." : ""
+                            ccEmails.length === 0 ? t("ccPlaceholder") : ""
                           }
                           value={ccInput}
                           onChange={(e) => setCcInput(e.target.value)}
@@ -416,7 +417,7 @@ export function EmailComposerForm() {
                 name="bcc_emails"
                 render={() => (
                   <FormItem>
-                    <FormLabel>BCC</FormLabel>
+                    <FormLabel>{t("bcc")}</FormLabel>
                     <FormControl>
                       <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[40px] focus-within:ring-2 focus-within:ring-ring">
                         {bccEmails.map((email) => (
@@ -436,7 +437,7 @@ export function EmailComposerForm() {
                           type="text"
                           className="flex-1 min-w-[200px] outline-none bg-transparent text-sm"
                           placeholder={
-                            bccEmails.length === 0 ? "Enter BCC email..." : ""
+                            bccEmails.length === 0 ? t("bccPlaceholder") : ""
                           }
                           value={bccInput}
                           onChange={(e) => setBccInput(e.target.value)}
@@ -468,7 +469,7 @@ export function EmailComposerForm() {
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input type="text" placeholder="Subject" {...field} />
+                  <Input type="text" placeholder={t("subject")} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -483,7 +484,7 @@ export function EmailComposerForm() {
               <FormItem>
                 <FormControl>
                   <Textarea
-                    placeholder="Write your message..."
+                    placeholder={t("messagePlaceholder")}
                     className={quotedText ? "min-h-[120px] resize-y" : "min-h-[200px] resize-y"}
                     {...field}
                   />
@@ -501,7 +502,7 @@ export function EmailComposerForm() {
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setShowQuoted(!showQuoted)}
               >
-                {showQuoted ? "Hide quoted text" : "Show quoted text (...)"}
+                {showQuoted ? t("hideQuoted") : t("showQuoted")}
               </button>
               {showQuoted && (
                 <div className="rounded-md border border-border bg-muted p-3">
@@ -516,7 +517,7 @@ export function EmailComposerForm() {
           {/* Signature Preview */}
           {signature?.is_enabled && signature.signature_html && (
             <div className="text-xs text-muted-foreground">
-              <span className="font-medium">Signature will be added:</span>
+              <span className="font-medium">{t("signatureNote")}</span>
               <div
                 className="mt-1 p-2 bg-muted rounded text-foreground"
                 dangerouslySetInnerHTML={{
@@ -546,12 +547,12 @@ export function EmailComposerForm() {
             {sendEmail.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sending...
+                {t("sending")}
               </>
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                Send
+                {t("send")}
               </>
             )}
           </Button>

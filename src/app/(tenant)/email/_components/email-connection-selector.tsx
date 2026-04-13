@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useEmailStatus } from "@/hooks/api/useSocial";
 import { useEmailContext } from "../_hooks/use-email-context";
 import {
@@ -14,6 +16,7 @@ import { Mail } from "lucide-react";
 export function EmailConnectionSelector() {
   const { currentConnectionId, setCurrentConnectionId } = useEmailContext();
   const { data: emailStatus, isLoading } = useEmailStatus();
+  const t = useTranslations("email.sidebar");
 
   if (isLoading) {
     return (
@@ -29,7 +32,7 @@ export function EmailConnectionSelector() {
     return (
       <div className="px-3 pb-2">
         <p className="text-sm text-muted-foreground text-center py-2">
-          No email accounts connected
+          {t("noAccounts")}
         </p>
       </div>
     );
@@ -55,14 +58,14 @@ export function EmailConnectionSelector() {
         }
       >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="All accounts" />
+          <SelectValue placeholder={t("allAccounts")} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem
             value="all"
             className="focus:bg-primary/10 focus:text-primary"
           >
-            All accounts
+            {t("allAccounts")}
           </SelectItem>
           {connections.map((conn) => (
             <SelectItem

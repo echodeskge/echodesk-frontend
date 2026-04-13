@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { EllipsisVertical, Star } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { KeyboardEvent } from "react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
@@ -31,6 +32,7 @@ export function EmailListContentItemMobile({
   const { handleToggleSelectEmail } = useEmailContext();
   const emailAction = useEmailAction();
   const router = useRouter();
+  const t = useTranslations("email.list");
 
   function handleNavigate() {
     if (!email.is_read) {
@@ -67,14 +69,14 @@ export function EmailListContentItemMobile({
         checked={isSelected}
         onCheckedChange={() => handleToggleSelectEmail(email.id)}
         onClick={(e) => e.stopPropagation()}
-        aria-label="Select email"
+        aria-label={t("selectEmail")}
       />
       <div className="flex-1 px-2">
         <span className="font-bold line-clamp-1 break-all">
-          {email.subject || "(No subject)"}
+          {email.subject || t("noSubject")}
         </span>
         <span className="text-muted-foreground line-clamp-1 break-all">
-          From {email.from_name || email.from_email}
+          {t("from")} {email.from_name || email.from_email}
         </span>
         <span className="text-sm text-muted-foreground">
           {formatDate(email.timestamp)}
@@ -85,7 +87,7 @@ export function EmailListContentItemMobile({
         size="icon"
         className="h-4 w-4"
         onClick={handleToggleStar}
-        aria-label={email.is_starred ? "Unstar email" : "Star email"}
+        aria-label={email.is_starred ? t("unstarEmail") : t("starEmail")}
       >
         <Star
           className={cn(
@@ -102,7 +104,7 @@ export function EmailListContentItemMobile({
             variant="ghost"
             size="icon"
             onClick={(e) => e.stopPropagation()}
-            aria-label="More actions"
+            aria-label={t("moreActions")}
           >
             <EllipsisVertical className="h-4 w-4" />
           </Button>
@@ -116,7 +118,7 @@ export function EmailListContentItemMobile({
               })
             }
           >
-            {email.is_read ? "Mark as unread" : "Mark as read"}
+            {email.is_read ? t("markAsUnread") : t("markAsRead")}
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() =>
@@ -126,7 +128,7 @@ export function EmailListContentItemMobile({
               })
             }
           >
-            Delete
+            {t("delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

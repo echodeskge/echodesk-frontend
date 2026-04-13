@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Star, Pencil } from "lucide-react";
 
 import { useEmailFolders, useEmailMessages } from "@/hooks/api/useSocial";
@@ -11,8 +12,8 @@ import { EmailSidebarItem } from "./email-sidebar-item";
 import type { EmailFolder } from "@/hooks/api/useSocial";
 
 /** Clean up IMAP folder names for display */
-function getDisplayName(name: string): string {
-  if (name === "INBOX") return "Inbox";
+function getDisplayName(name: string, inboxLabel: string): string {
+  if (name === "INBOX") return inboxLabel;
   let display = name
     .replace(/^\[Gmail\]\//i, "")
     .replace(/^INBOX\//i, "")
@@ -26,9 +27,9 @@ export function EmailSidebarList() {
   const params = useParams();
   const rawFilter = params.filter as string | undefined;
   const filterParam = rawFilter ? decodeURIComponent(rawFilter) : undefined;
+  const t = useTranslations("email.sidebar");
 
   const { data: folders, isLoading } = useEmailFolders(currentConnectionId);
-  // Also fetch first page of emails to discover folders not in IMAP list
   const { data: emailsData } = useEmailMessages({
     page: 1,
     connection_id: currentConnectionId ?? undefined,
@@ -38,7 +39,6 @@ export function EmailSidebarList() {
     const imapFolders = folders ?? [];
     const folderNames = new Set(imapFolders.map((f) => f.name));
 
-    // Add folders found in actual emails that aren't in IMAP list
     const emailFolders: EmailFolder[] = [];
     if (emailsData?.results) {
       for (const email of emailsData.results) {
@@ -55,8 +55,6 @@ export function EmailSidebarList() {
     const allFolders = [...imapFolders, ...emailFolders];
     return allFolders
       .filter((folder) => {
-        // Filter out namespace-only folders (e.g. "[Gmail]" parent)
-        // But always keep INBOX even if subfolders like INBOX/Invoices exist
         if (folder.name === "INBOX") return true;
         const isNamespaceOnly = allFolders.some(
           (other) =>
@@ -88,7 +86,7 @@ export function EmailSidebarList() {
               <EmailSidebarItem
                 key={folder.name}
                 name={folder.name}
-                displayName={getDisplayName(folder.name)}
+                displayName={getDisplayName(folder.name, t("inbox"))}
                 iconName={getFolderIcon(folder.name)}
                 isActive={filterParam === folder.name}
               />
@@ -96,18 +94,18 @@ export function EmailSidebarList() {
 
             <div>
               <h4 className="mt-4 mb-1 ms-4 text-sm font-medium text-muted-foreground">
-                Virtual
+                {t("virtual")}
               </h4>
               <EmailSidebarItem
                 name="starred"
-                displayName="Starred"
+                displayName={t("starred")}
                 iconName="Star"
                 isActive={filterParam === "starred"}
                 lucideIcon={Star}
               />
               <EmailSidebarItem
                 name="drafts"
-                displayName="Drafts"
+                displayName={t("drafts")}
                 iconName="Pencil"
                 isActive={filterParam === "drafts"}
                 lucideIcon={Pencil}

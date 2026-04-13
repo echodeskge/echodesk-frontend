@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
 import { formatDate, getInitials } from "@/lib/utils";
@@ -17,8 +18,9 @@ interface EmailViewContentHeaderProps {
 
 export function EmailViewContentHeader({ email }: EmailViewContentHeaderProps) {
   const senderName = email.from_name || email.from_email;
+  const t = useTranslations("email.view");
   const toList = email.to_emails
-    .map((t) => t.name || t.email)
+    .map((t: { name?: string; email: string }) => t.name || t.email)
     .join(", ");
 
   return (
@@ -34,7 +36,7 @@ export function EmailViewContentHeader({ email }: EmailViewContentHeaderProps) {
           </CardDescription>
           {toList && (
             <CardDescription className="truncate text-xs">
-              To: {toList}
+              {t("to")}: {toList}
             </CardDescription>
           )}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { useEmailMessages } from "@/hooks/api/useSocial";
 import { useEmailContext } from "../_hooks/use-email-context";
@@ -15,6 +16,7 @@ interface EmailListFooterProps {
 export function EmailListFooter({ filter }: EmailListFooterProps) {
   const { currentConnectionId } = useEmailContext();
   const searchParams = useSearchParams();
+  const t = useTranslations("email.list");
 
   const page = parseInt(searchParams.get("page") ?? "1");
   const search = searchParams.get("search") ?? undefined;
@@ -30,7 +32,7 @@ export function EmailListFooter({ filter }: EmailListFooterProps) {
       <p className="text-muted-foreground" role="status" aria-live="polite">
         {total > 0
           ? `${start}-${end} of ${total.toLocaleString()}`
-          : "No emails available"}
+          : t("noEmails")}
       </p>
     </CardFooter>
   );
