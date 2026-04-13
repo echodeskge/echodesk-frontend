@@ -42,6 +42,7 @@ import {
   Sparkles,
   Bug,
   Receipt,
+  SlidersHorizontal,
 } from "lucide-react"
 
 import {
@@ -97,6 +98,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "UserCheck": UserCheck,
   "Share2": Share2,
   "Settings": Settings,
+  "SlidersHorizontal": SlidersHorizontal,
   "Globe": Globe,
   "Calendar": Calendar,
   "CalendarCheck": CalendarCheck,

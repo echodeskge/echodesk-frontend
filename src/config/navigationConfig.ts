@@ -9,6 +9,7 @@ export interface NavigationItem {
   label: string;
   icon: string;
   requiredFeatureKey?: string; // Feature key from user's feature_keys array (optional - items without this are always visible)
+  excludeFeatureKey?: string; // Hide this item when user HAS this feature key (inverse of requiredFeatureKey)
   description: string;
   isPremium?: boolean; // Visual indicator for premium features
   staffOnly?: boolean; // Only visible to staff/superadmin users
@@ -301,6 +302,21 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         id: "settings/groups",
         icon: "UsersRound",
         requiredFeatureKey: "settings",
+      },
+    ],
+  },
+  {
+    id: "preferences",
+    icon: "SlidersHorizontal",
+    excludeFeatureKey: "settings", // Only visible to users who DON'T have full settings access
+    children: [
+      {
+        id: "settings/notifications",
+        icon: "Bell",
+      },
+      {
+        id: "settings/social",
+        icon: "MessageSquare",
       },
     ],
   },

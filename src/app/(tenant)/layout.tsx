@@ -300,6 +300,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "settings/leave": "settingsLeave",
     "settings/users": "settingsUsers",
     "settings/groups": "settingsGroups",
+    preferences: "preferences",
+    "settings/notifications": "settingsNotifications",
     "report-bug": "reportBug",
     help: "help",
   };
@@ -361,6 +363,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       // Check if user has required feature key (applies to all users including staff)
       if (item.requiredFeatureKey) {
         return hasFeatureKey(item.requiredFeatureKey);
+      }
+
+      // Hide items when user HAS the excluded feature key (inverse visibility)
+      const configForExclude = navigationConfig.find(c => c.id === item.id);
+      if (configForExclude?.excludeFeatureKey) {
+        return !hasFeatureKey(configForExclude.excludeFeatureKey);
       }
 
       // Items without required features are always visible
