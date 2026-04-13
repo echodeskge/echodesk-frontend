@@ -3,10 +3,12 @@
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 
-import { useEmailMessages } from "@/hooks/api/useSocial";
+import {
+  useInfiniteEmailMessages,
+} from "@/hooks/api/useSocial";
+import type { PaginatedEmailMessageList } from "@/api/generated/interfaces";
 import { useEmailContext } from "../_hooks/use-email-context";
-import { buildQueryParams } from "./email-list-header";
-import { PAGE_SIZE } from "../constants";
+import { buildInfiniteQueryParams } from "./email-list-content";
 import { CardFooter } from "@/components/ui/card";
 
 interface EmailListFooterProps {
@@ -18,20 +20,30 @@ export function EmailListFooter({ filter }: EmailListFooterProps) {
   const searchParams = useSearchParams();
   const t = useTranslations("email.list");
 
-  const page = parseInt(searchParams.get("page") ?? "1");
   const search = searchParams.get("search") ?? undefined;
-  const queryParams = buildQueryParams(filter, currentConnectionId, page, search);
-  const { data } = useEmailMessages(filter === "drafts" ? undefined : queryParams);
+  const isDrafts = filter === "drafts";
 
-  const total = data?.count ?? 0;
-  const start = total > 0 ? (page - 1) * PAGE_SIZE + 1 : 0;
-  const end = Math.min(page * PAGE_SIZE, total);
+  const queryParams = buildInfiniteQueryParams(
+    filter,
+    currentConnectionId,
+    search
+  );
+  const { data } = useInfiniteEmailMessages(isDrafts ? undefined : queryParams);
+
+  const firstPage = data?.pages?.[0] as PaginatedEmailMessageList | undefined;
+  const total = firstPage?.count ?? 0;
+  const loaded =
+    data?.pages?.reduce(
+      (sum, page) =>
+        sum + ((page as PaginatedEmailMessageList).results?.length ?? 0),
+      0
+    ) ?? 0;
 
   return (
     <CardFooter className="justify-center py-3 border-t border-border">
       <p className="text-muted-foreground" role="status" aria-live="polite">
         {total > 0
-          ? `${start}-${end} of ${total.toLocaleString()}`
+          ? `${loaded} / ${total.toLocaleString()}`
           : t("noEmails")}
       </p>
     </CardFooter>

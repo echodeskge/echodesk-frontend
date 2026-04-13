@@ -1,16 +1,18 @@
 "use client";
 
+import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useMedia } from "react-use";
 
 import {
-  useEmailMessages,
+  useInfiniteEmailMessages,
   useEmailDrafts,
   type EmailMessage,
 } from "@/hooks/api/useSocial";
 import type { EmailDraft } from "@/api/generated/interfaces";
+import type { PaginatedEmailMessageList } from "@/api/generated/interfaces";
 import { useEmailContext } from "../_hooks/use-email-context";
-import { buildQueryParams } from "./email-list-header";
+import { isVirtualFolder } from "../constants";
 import { CardContent } from "@/components/ui/card";
 import { EmailListContentHeader } from "./email-list-content-header";
 import { EmailListContentDesktop } from "./email-list-content-desktop";
@@ -22,27 +24,57 @@ interface EmailListContentProps {
   filter: string;
 }
 
+function buildInfiniteQueryParams(
+  filter: string,
+  connectionId: number | null,
+  search?: string
+) {
+  const params: {
+    folder?: string;
+    starred?: boolean;
+    connection_id?: number;
+    search?: string;
+  } = {};
+
+  if (filter === "starred") {
+    params.starred = true;
+  } else if (!isVirtualFolder(filter)) {
+    params.folder = filter;
+  }
+
+  if (connectionId) {
+    params.connection_id = connectionId;
+  }
+
+  if (search) {
+    params.search = search;
+  }
+
+  return params;
+}
+
 export function EmailListContent({ filter }: EmailListContentProps) {
   const { currentConnectionId } = useEmailContext();
   const searchParams = useSearchParams();
   const isMediumOrSmaller = useMedia("(max-width: 767px)");
 
-  const page = parseInt(searchParams.get("page") ?? "1");
   const search = searchParams.get("search") ?? undefined;
-
   const isDrafts = filter === "drafts";
 
-  const queryParams = buildQueryParams(
+  const queryParams = buildInfiniteQueryParams(
     filter,
     currentConnectionId,
-    page,
     search
   );
+
   const {
     data: messagesData,
     isLoading: messagesLoading,
     error: messagesError,
-  } = useEmailMessages(isDrafts ? undefined : queryParams);
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteEmailMessages(isDrafts ? undefined : queryParams);
 
   const {
     data: draftsData,
@@ -53,10 +85,19 @@ export function EmailListContent({ filter }: EmailListContentProps) {
   const isLoading = isDrafts ? draftsLoading : messagesLoading;
   const error = isDrafts ? draftsError : messagesError;
 
-  // For drafts, transform to EmailMessage-like shape
-  const drafts = (draftsData?.results ?? []) as EmailDraft[];
-  const emails: EmailMessage[] = isDrafts
-    ? (drafts.map((draft) => ({
+  // Flatten infinite query pages into a single array
+  const totalCount = useMemo(() => {
+    if (isDrafts) return draftsData?.count ?? 0;
+    const firstPage = messagesData?.pages?.[0] as
+      | PaginatedEmailMessageList
+      | undefined;
+    return firstPage?.count ?? 0;
+  }, [isDrafts, draftsData, messagesData]);
+
+  const emails: EmailMessage[] = useMemo(() => {
+    if (isDrafts) {
+      const drafts = (draftsData?.results ?? []) as EmailDraft[];
+      return drafts.map((draft) => ({
         id: draft.id,
         message_id: "",
         thread_id: "",
@@ -90,8 +131,15 @@ export function EmailListContent({ filter }: EmailListContentProps) {
         connection_display_name: "",
         created_at: draft.created_at,
         updated_at: draft.updated_at,
-      })) as EmailMessage[])
-    : (messagesData?.results ?? []) as EmailMessage[];
+      })) as EmailMessage[];
+    }
+
+    return (
+      messagesData?.pages?.flatMap(
+        (page) => (page as PaginatedEmailMessageList).results ?? []
+      ) ?? []
+    ) as EmailMessage[];
+  }, [isDrafts, draftsData, messagesData]);
 
   if (isLoading) {
     return (
@@ -122,10 +170,26 @@ export function EmailListContent({ filter }: EmailListContentProps) {
     <CardContent className="flex-1 h-full flex flex-col p-0">
       <EmailListContentHeader emails={emails} />
       {isMediumOrSmaller ? (
-        <EmailListContentMobile emails={emails} filter={filter} />
+        <EmailListContentMobile
+          emails={emails}
+          filter={filter}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={!!hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+        />
       ) : (
-        <EmailListContentDesktop emails={emails} filter={filter} />
+        <EmailListContentDesktop
+          emails={emails}
+          filter={filter}
+          fetchNextPage={fetchNextPage}
+          hasNextPage={!!hasNextPage}
+          isFetchingNextPage={isFetchingNextPage}
+        />
       )}
     </CardContent>
   );
 }
+
+// Re-export for footer
+export { buildInfiniteQueryParams };
+export type { EmailListContentProps };
