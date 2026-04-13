@@ -1488,6 +1488,41 @@
       "shipped": "Shipped",
       "delivered": "Delivered",
       "cancelled": "Cancelled"
+    },
+    "salesTrend": {
+      "title": "Sales Trend",
+      "last7Days": "Last 7 days",
+      "highest": "Highest Sales",
+      "lowest": "Lowest Sales",
+      "total": "Total Sales",
+      "average": "Avg. Sales/Day",
+      "noData": "No sales data for this period"
+    },
+    "customerInsights": {
+      "title": "Customer Insights",
+      "total": "Total Customers",
+      "new": "New This Month",
+      "returning": "Returning"
+    },
+    "revenueByMethod": {
+      "title": "Revenue by Payment Method",
+      "totalRevenue": "Total paid revenue",
+      "noData": "No revenue data yet"
+    },
+    "paymentMethods": {
+      "card": "Card",
+      "cash_on_delivery": "Cash on Delivery",
+      "saved_card": "Saved Card",
+      "unknown": "Other"
+    },
+    "recentOrders": {
+      "title": "Recent Orders",
+      "order": "Order",
+      "customer": "Customer",
+      "date": "Date",
+      "amount": "Amount",
+      "status": "Status",
+      "empty": "No recent orders"
     }
   },
   "homepageBuilder": {
