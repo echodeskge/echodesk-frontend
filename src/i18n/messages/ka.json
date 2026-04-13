@@ -1916,6 +1916,17 @@
     "status": "სტატუსი",
     "stock": "მარაგი",
     "units": "ერთეული",
+    "tableTitle": "პროდუქტები",
+    "columns": {
+      "product": "პროდუქტი",
+      "stock": "მარაგი",
+      "status": "სტატუსი"
+    },
+    "bulkActions": {
+      "selected": "{count} პროდუქტი არჩეულია",
+      "changeStatus": "სტატუსის შეცვლა...",
+      "clear": "გასუფთავება"
+    },
     "addProductSheet": {
       "title": "ახალი პროდუქტის დამატება",
       "description": "შექმენით ახალი პროდუქტი მრავალენოვანი მხარდაჭერით",

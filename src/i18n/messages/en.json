@@ -1916,6 +1916,17 @@
     "status": "Status",
     "stock": "Stock",
     "units": "units",
+    "tableTitle": "Products",
+    "columns": {
+      "product": "Product",
+      "stock": "Stock",
+      "status": "Status"
+    },
+    "bulkActions": {
+      "selected": "{count} products selected",
+      "changeStatus": "Change status...",
+      "clear": "Clear"
+    },
     "addProductSheet": {
       "title": "Add New Product",
       "description": "Create a new product with multilanguage support",
