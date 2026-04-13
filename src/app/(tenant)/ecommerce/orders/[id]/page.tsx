@@ -1,182 +1,103 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect, useCallback } from "react"
+import { useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ecommerceAdminOrdersRetrieve, ecommerceAdminOrdersRefundCreate } from "@/api/generated"
-import { Order as GeneratedOrder } from "@/api/generated/interfaces"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Separator } from "@/components/ui/separator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ArrowLeft, Package, User, MapPin, CreditCard, Calendar, FileText, RotateCcw } from "lucide-react"
-import { toast } from "sonner"
+  ecommerceAdminOrdersRetrieve,
+  ecommerceAdminOrdersRefundCreate,
+} from "@/api/generated"
 import axiosInstance from "@/api/axios"
-
-// Extend Order type to properly type client_details
-interface Order extends Omit<GeneratedOrder, 'client_details'> {
-  client_details: {
-    id: number
-    full_name: string
-    email: string
-    phone_number?: string
-  }
-}
-
-const STATUS_COLORS = {
-  pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-  confirmed: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-  processing: "bg-purple-100 text-purple-800 hover:bg-purple-100",
-  shipped: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100",
-  delivered: "bg-green-100 text-green-800 hover:bg-green-100",
-  cancelled: "bg-red-100 text-red-800 hover:bg-red-100",
-}
-
-const PAYMENT_STATUS_COLORS = {
-  pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  paid: "bg-green-50 text-green-700 border-green-200",
-  failed: "bg-red-50 text-red-700 border-red-200",
-  refunded: "bg-gray-50 text-gray-700 border-gray-200",
-  partially_refunded: "bg-orange-50 text-orange-700 border-orange-200",
-}
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
+import { OrderDetail } from "../_types"
+import { OrderDetails } from "./_components/order-details"
+import { OrderNotFound } from "./_components/order-not-found"
 
 export default function OrderDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const t = useTranslations("ecommerceOrders")
-  const [order, setOrder] = useState<Order | null>(null)
+  const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [updatingStatus, setUpdatingStatus] = useState(false)
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
-  const [pendingStatus, setPendingStatus] = useState<string | null>(null)
-  const [refundDialogOpen, setRefundDialogOpen] = useState(false)
   const [refunding, setRefunding] = useState(false)
+
+  const fetchOrder = useCallback(async (id: number) => {
+    try {
+      setLoading(true)
+      const response = await ecommerceAdminOrdersRetrieve(id)
+      setOrder(response as unknown as OrderDetail)
+    } catch {
+      toast.error("Failed to load order details")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (params.id) {
       fetchOrder(Number(params.id))
     }
-  }, [params.id])
+  }, [params.id, fetchOrder])
 
-  const fetchOrder = async (id: number) => {
-    try {
-      setLoading(true)
-      const response = await ecommerceAdminOrdersRetrieve(id)
-      setOrder(response as unknown as Order)
-    } catch (error) {
-      toast.error("Failed to load order details")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const handleStatusChange = useCallback(
+    async (newStatus: string) => {
+      if (!order) return
+      try {
+        setUpdatingStatus(true)
+        const response = await axiosInstance.post(
+          `/api/ecommerce/admin/orders/${order.id}/update_status/`,
+          { status: newStatus }
+        )
+        setOrder(response.data as unknown as OrderDetail)
+        toast.success(`Order status updated to ${newStatus}`)
+      } catch {
+        toast.error("Failed to update order status")
+      } finally {
+        setUpdatingStatus(false)
+      }
+    },
+    [order]
+  )
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
-
-  const formatCurrency = (amount: string) => {
-    return `₾${parseFloat(amount).toFixed(2)}`
-  }
-
-  const handleStatusChangeRequest = (newStatus: string) => {
-    setPendingStatus(newStatus)
-    setConfirmDialogOpen(true)
-  }
-
-  const handleConfirmStatusChange = async () => {
-    if (!order || !pendingStatus) return
-
-    try {
-      setUpdatingStatus(true)
-      setConfirmDialogOpen(false)
-
-      // The generated function expects OrderRequest (with required `client` and `total_amount`),
-      // but the backend endpoint only needs `status`. Use axiosInstance as a fallback.
-      const response = await axiosInstance.post(
-        `/api/ecommerce/admin/orders/${order.id}/update_status/`,
-        { status: pendingStatus }
-      );
-      const updatedOrder = response.data;
-
-      setOrder(updatedOrder as unknown as Order)
-      toast.success(`Order status updated to ${pendingStatus}`)
-      setPendingStatus(null)
-    } catch (error) {
-      toast.error('Failed to update order status')
-    } finally {
-      setUpdatingStatus(false)
-    }
-  }
-
-  const handleRefundOrder = async () => {
+  const handleMarkPaid = useCallback(async () => {
     if (!order) return
+    try {
+      await axiosInstance.post(
+        `/api/ecommerce/admin/orders/${order.id}/mark-paid/`
+      )
+      toast.success("Order marked as paid")
+      fetchOrder(order.id)
+    } catch {
+      toast.error("Failed to mark as paid")
+    }
+  }, [order, fetchOrder])
 
+  const handleRefund = useCallback(async () => {
+    if (!order) return
     try {
       setRefunding(true)
-      setRefundDialogOpen(false)
-
       const response = await ecommerceAdminOrdersRefundCreate(order.id)
-
-      setOrder(response as unknown as Order)
+      setOrder(response as unknown as OrderDetail)
       toast.success(t("refund.success"))
-    } catch (error) {
+    } catch {
       toast.error(t("refund.error"))
     } finally {
       setRefunding(false)
     }
-  }
-
-  const canRefund =
-    order &&
-    String(order.status) !== "refunded" &&
-    String(order.status) !== "cancelled"
+  }, [order, t])
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-9 w-20" />
-          <div>
-            <Skeleton className="h-9 w-48" />
-            <Skeleton className="h-4 w-64 mt-2" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+      <section className="container space-y-4 p-4">
+        <Skeleton className="h-8 w-32" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-4 md:col-span-2">
             <Card>
-              <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+              <CardHeader>
+                <Skeleton className="h-6 w-48" />
+              </CardHeader>
               <CardContent className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-12 w-full" />
@@ -184,394 +105,38 @@ export default function OrderDetailPage() {
               </CardContent>
             </Card>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <Card key={i}>
-                <CardHeader><Skeleton className="h-5 w-24" /></CardHeader>
-                <CardContent><Skeleton className="h-16 w-full" /></CardContent>
+                <CardHeader>
+                  <Skeleton className="h-5 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-16 w-full" />
+                </CardContent>
               </Card>
             ))}
           </div>
         </div>
-      </div>
+      </section>
     )
   }
 
   if (!order) {
-    return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold">Order not found</h3>
-            <p className="text-muted-foreground mt-2">
-              The order you're looking for doesn't exist or has been deleted.
-            </p>
-            <Button onClick={() => router.push("/ecommerce/orders")} className="mt-4">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Orders
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
+    return <OrderNotFound t={t} />
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push("/ecommerce/orders")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{order.order_number}</h1>
-            <p className="text-muted-foreground mt-1">
-              Placed on {formatDate(order.created_at)}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2 items-center">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">Order Status</label>
-            <Select
-              value={String(order.status)}
-              onValueChange={handleStatusChangeRequest}
-              disabled={updatingStatus}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-yellow-500"></span>
-                    {t("status.pending")}
-                  </div>
-                </SelectItem>
-                <SelectItem value="confirmed">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-blue-500"></span>
-                    {t("status.confirmed")}
-                  </div>
-                </SelectItem>
-                <SelectItem value="processing">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-purple-500"></span>
-                    {t("status.processing")}
-                  </div>
-                </SelectItem>
-                <SelectItem value="shipped">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-indigo-500"></span>
-                    {t("status.shipped")}
-                  </div>
-                </SelectItem>
-                <SelectItem value="delivered">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                    {t("status.delivered")}
-                  </div>
-                </SelectItem>
-                <SelectItem value="cancelled">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                    {t("status.cancelled")}
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">Payment Status</label>
-            <Badge
-              variant="outline"
-              className={PAYMENT_STATUS_COLORS[String(order.payment_status) as keyof typeof PAYMENT_STATUS_COLORS] || ""}
-            >
-              {String(order.payment_status).replace("_", " ").toUpperCase()}
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Order Items */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Order Items
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-center">Quantity</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {order.items?.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">
-                            {typeof item.product_name === "object"
-                              ? item.product_name.en || item.product_name.ka || "Product"
-                              : item.product_name}
-                          </div>
-                          {item.variant && (
-                            <div className="text-sm text-muted-foreground">
-                              Variant ID: {item.variant}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.price)}</TableCell>
-                      <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(item.subtotal)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Separator className="my-4" />
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold">Total</span>
-                <span className="text-2xl font-bold">{formatCurrency(order.total_amount)}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Notes */}
-          {(order.notes || order.admin_notes) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {order.notes && (
-                  <div>
-                    <h4 className="font-medium mb-2">Customer Notes</h4>
-                    <p className="text-muted-foreground">{order.notes}</p>
-                  </div>
-                )}
-                {order.admin_notes && (
-                  <div>
-                    <h4 className="font-medium mb-2">Admin Notes</h4>
-                    <p className="text-muted-foreground">{order.admin_notes}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Customer Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Customer
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div>
-                <p className="font-medium">{order.client_details?.full_name || "Unknown"}</p>
-                <p className="text-sm text-muted-foreground">{order.client_details?.email || ""}</p>
-                {order.client_details?.phone_number && (
-                  <p className="text-sm text-muted-foreground">{order.client_details.phone_number}</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Delivery Address */}
-          {order.delivery_address && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Delivery Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                {order.delivery_address.label && (
-                  <p className="font-medium">{order.delivery_address.label}</p>
-                )}
-                <p className="text-sm">{order.delivery_address.address}</p>
-                <p className="text-sm">{order.delivery_address.city}</p>
-                {order.delivery_address.extra_instructions && (
-                  <p className="text-sm text-muted-foreground italic mt-2">
-                    {order.delivery_address.extra_instructions}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Payment Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Payment
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Method</span>
-                <span className="text-sm font-medium capitalize">{order.payment_method || "N/A"}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Status</span>
-                <Badge
-                  variant="outline"
-                  className={PAYMENT_STATUS_COLORS[String(order.payment_status) as keyof typeof PAYMENT_STATUS_COLORS] || ""}
-                >
-                  {String(order.payment_status).replace("_", " ")}
-                </Badge>
-              </div>
-              {order.bog_order_id && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">BOG Order ID</span>
-                  <span className="text-sm font-mono">{order.bog_order_id.slice(0, 8)}...</span>
-                </div>
-              )}
-              {String(order.payment_status) !== 'paid' && (
-                <Button
-                  className="w-full mt-2"
-                  variant="default"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      await axiosInstance.post(`/api/ecommerce/admin/orders/${order.id}/mark-paid/`);
-                      toast.success("Order marked as paid");
-                      fetchOrder(order.id);
-                    } catch {
-                      toast.error("Failed to mark as paid");
-                    }
-                  }}
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Mark as Paid
-                </Button>
-              )}
-              {canRefund && (
-                <Button
-                  className="w-full mt-2"
-                  variant="destructive"
-                  size="sm"
-                  disabled={refunding}
-                  onClick={() => setRefundDialogOpen(true)}
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  {refunding ? t("refund.processing") : t("refund.button")}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Timeline
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <p className="text-sm font-medium">Created</p>
-                <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
-              </div>
-              {order.confirmed_at && (
-                <div>
-                  <p className="text-sm font-medium">Confirmed</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(order.confirmed_at)}</p>
-                </div>
-              )}
-              {order.paid_at && (
-                <div>
-                  <p className="text-sm font-medium">Paid</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(order.paid_at)}</p>
-                </div>
-              )}
-              {order.shipped_at && (
-                <div>
-                  <p className="text-sm font-medium">Shipped</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(order.shipped_at)}</p>
-                </div>
-              )}
-              {order.delivered_at && (
-                <div>
-                  <p className="text-sm font-medium">Delivered</p>
-                  <p className="text-sm text-muted-foreground">{formatDate(order.delivered_at)}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Confirmation Dialog */}
-      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to change the order status to <strong>{pendingStatus}</strong>?
-              This action will update the order and may trigger notifications to the customer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPendingStatus(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmStatusChange}>
-              Confirm
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Refund Confirmation Dialog */}
-      <AlertDialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("refund.confirmTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("refund.confirmDescription")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("refund.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleRefundOrder}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t("refund.confirm")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    <section className="container p-4">
+      <OrderDetails
+        order={order}
+        updatingStatus={updatingStatus}
+        refunding={refunding}
+        onStatusChange={handleStatusChange}
+        onMarkPaid={handleMarkPaid}
+        onRefund={handleRefund}
+        t={t}
+      />
+    </section>
   )
 }

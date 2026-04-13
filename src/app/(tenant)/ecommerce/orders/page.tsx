@@ -1,233 +1,144 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { ecommerceAdminOrdersList } from "@/api/generated";
-import { Order as GeneratedOrder } from "@/api/generated/interfaces";
-import axiosInstance from "@/api/axios";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Search,
-  Package,
-  ShoppingCart,
-  Clock,
-  CheckCircle2,
-  Truck,
-  XCircle,
-  CreditCard,
-  Banknote,
-  AlertCircle,
-  Download,
-  Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState, useEffect, useCallback } from "react"
+import { useTranslations } from "next-intl"
+import { ecommerceAdminOrdersList } from "@/api/generated"
+import axiosInstance from "@/api/axios"
+import { toast } from "sonner"
+import { OrderListItem } from "./_types"
+import { OrdersTable } from "./_components/orders-table"
+import { OrdersBulkActionsBar } from "./_components/orders-bulk-actions-bar"
 
-// Extend Order type to properly type client_details
-interface Order extends Omit<GeneratedOrder, "client_details"> {
-  client_details: {
-    id: number;
-    full_name: string;
-    email: string;
-    phone_number?: string;
-  };
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-  confirmed: "bg-blue-100 text-blue-800 hover:bg-blue-100",
-  processing: "bg-purple-100 text-purple-800 hover:bg-purple-100",
-  shipped: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100",
-  delivered: "bg-green-100 text-green-800 hover:bg-green-100",
-  cancelled: "bg-red-100 text-red-800 hover:bg-red-100",
-};
-
-const STATUS_ICONS: Record<string, typeof Clock> = {
-  pending: Clock,
-  confirmed: CheckCircle2,
-  processing: Package,
-  shipped: Truck,
-  delivered: CheckCircle2,
-  cancelled: XCircle,
-};
-
-const PAYMENT_STATUS_COLORS: Record<string, string> = {
-  pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  paid: "bg-green-50 text-green-700 border-green-200",
-  failed: "bg-red-50 text-red-700 border-red-200",
-  refunded: "bg-gray-50 text-gray-700 border-gray-200",
-  partially_refunded: "bg-orange-50 text-orange-700 border-orange-200",
-};
-
-const PAYMENT_STATUS_ICONS: Record<string, typeof Clock> = {
-  pending: Clock,
-  paid: CheckCircle2,
-  failed: XCircle,
-  refunded: AlertCircle,
-  partially_refunded: AlertCircle,
-};
-
-const PAGE_SIZE = 20;
+const DEFAULT_PAGE_SIZE = 20
 
 export default function EcommerceOrdersPage() {
-  const t = useTranslations("ecommerceOrders");
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [page, setPage] = useState(1);
-  const [initiatingPayment, setInitiatingPayment] = useState<number | null>(
-    null
-  );
+  const t = useTranslations("ecommerceOrders")
+  const [orders, setOrders] = useState<OrderListItem[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<number>>(
     new Set()
-  );
-  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  )
+  const [bulkActionLoading, setBulkActionLoading] = useState(false)
 
-  useEffect(() => {
-    fetchOrders();
-  }, [searchQuery, statusFilter, page]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
-      setLoading(true);
-      const statusParam = statusFilter === "all" ? undefined : statusFilter as 'cancelled' | 'confirmed' | 'delivered' | 'pending' | 'processing' | 'refunded' | 'shipped';
+      setLoading(true)
+      const statusParam =
+        statusFilter === "all"
+          ? undefined
+          : (statusFilter as
+              | "cancelled"
+              | "confirmed"
+              | "delivered"
+              | "pending"
+              | "processing"
+              | "refunded"
+              | "shipped")
       const response = await ecommerceAdminOrdersList(
         undefined,
         undefined,
         page,
-        PAGE_SIZE,
+        pageSize,
         searchQuery || undefined,
-        statusParam,
-      );
-      setOrders((response.results || []) as unknown as Order[]);
-      setTotalCount(response.count || 0);
-    } catch (error) {
-      toast.error("Failed to load orders");
+        statusParam
+      )
+      setOrders((response.results || []) as unknown as OrderListItem[])
+      setTotalCount(response.count || 0)
+    } catch {
+      toast.error("Failed to load orders")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }, [searchQuery, statusFilter, page, pageSize])
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setPage(1);
-    setSelectedOrderIds(new Set());
-  };
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
 
-  const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value);
-    setPage(1);
-    setSelectedOrderIds(new Set());
-  };
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value)
+    setPage(1)
+    setSelectedOrderIds(new Set())
+  }, [])
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value)
+    setPage(1)
+    setSelectedOrderIds(new Set())
+  }, [])
 
-  const handleInitiatePayment = async (
-    orderId: number,
-    paymentMethod: string = "card"
-  ) => {
-    try {
-      setInitiatingPayment(orderId);
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage)
+    setSelectedOrderIds(new Set())
+  }, [])
 
-      // The generated function expects OrderRequest which doesn't match the backend's
-      // actual payload for this endpoint, so we use axiosInstance directly.
-      const response = await axiosInstance.post(
-        `/api/ecommerce/admin/orders/${orderId}/initiate_payment/`,
-        {
-          payment_method: paymentMethod,
-          return_url_success: `${window.location.origin}/ecommerce/orders/payment/success`,
-          return_url_fail: `${window.location.origin}/ecommerce/orders/payment/failed`,
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setPageSize(newSize)
+    setPage(1)
+    setSelectedOrderIds(new Set())
+  }, [])
+
+  const handleSelectionChange = useCallback((ids: Set<number>) => {
+    setSelectedOrderIds(ids)
+  }, [])
+
+  const handleInitiatePayment = useCallback(
+    async (orderId: number) => {
+      try {
+        const response = await axiosInstance.post(
+          `/api/ecommerce/admin/orders/${orderId}/initiate_payment/`,
+          {
+            payment_method: "card",
+            return_url_success: `${window.location.origin}/ecommerce/orders/payment/success`,
+            return_url_fail: `${window.location.origin}/ecommerce/orders/payment/failed`,
+          }
+        )
+        if (response.data?.payment_url) {
+          toast.success("Redirecting to payment page...")
+          window.location.href = response.data.payment_url
+        } else {
+          toast.success("Payment initiated successfully")
+          await fetchOrders()
         }
-      );
-
-      if (response.data?.payment_url) {
-        toast.success("Redirecting to payment page...");
-        window.location.href = response.data.payment_url;
-      } else {
-        toast.success("Payment initiated successfully");
-        await fetchOrders();
+      } catch {
+        toast.error("Failed to initiate payment. Please try again.")
       }
-    } catch (error) {
-      toast.error("Failed to initiate payment. Please try again.");
-    } finally {
-      setInitiatingPayment(null);
-    }
-  };
+    },
+    [fetchOrders]
+  )
 
-  // Selection helpers
-  const toggleOrderSelection = (orderId: number) => {
-    setSelectedOrderIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-      } else {
-        next.add(orderId);
+  const handleBulkStatusUpdate = useCallback(
+    async (status: string) => {
+      if (selectedOrderIds.size === 0) return
+      setBulkActionLoading(true)
+      try {
+        await axiosInstance.post("/api/ecommerce/admin/orders/bulk-update/", {
+          order_ids: Array.from(selectedOrderIds),
+          status,
+        })
+        toast.success(
+          `${selectedOrderIds.size} orders updated to ${status}`
+        )
+        await fetchOrders()
+        setSelectedOrderIds(new Set())
+      } catch {
+        toast.error("Failed to update orders. Please try again.")
+      } finally {
+        setBulkActionLoading(false)
       }
-      return next;
-    });
-  };
+    },
+    [selectedOrderIds, fetchOrders]
+  )
 
-  const toggleSelectAll = () => {
-    if (selectedOrderIds.size === orders.length) {
-      setSelectedOrderIds(new Set());
-    } else {
-      setSelectedOrderIds(new Set(orders.map((o) => o.id)));
-    }
-  };
-
-  // Bulk status update
-  const handleBulkStatusUpdate = async (status: string) => {
-    if (selectedOrderIds.size === 0) return;
-    setBulkActionLoading(true);
+  const handleExportSelected = useCallback(() => {
     try {
-      await axiosInstance.post("/api/ecommerce/admin/orders/bulk-update/", {
-        order_ids: Array.from(selectedOrderIds),
-        status,
-      });
-      toast.success(`${selectedOrderIds.size} orders updated to ${status}`);
-      await fetchOrders();
-      setSelectedOrderIds(new Set());
-    } catch (error) {
-      toast.error("Failed to update orders. Please try again.");
-    } finally {
-      setBulkActionLoading(false);
-    }
-  };
-
-  // Export selected orders as CSV
-  const handleExportSelected = () => {
-    try {
-      const selected = orders.filter((o) => selectedOrderIds.has(o.id));
-      const csvQuote = (value: string) =>
-        `"${value.replace(/"/g, '""')}"`;
+      const selected = orders.filter((o) => selectedOrderIds.has(o.id))
+      const csvQuote = (value: string) => `"${value.replace(/"/g, '""')}"`
       const headers = [
         "Order Number",
         "Customer",
@@ -236,397 +147,80 @@ export default function EcommerceOrdersPage() {
         "Total",
         "Status",
         "Date",
-      ];
+      ]
       const rows = selected.map((order) => [
         csvQuote(order.order_number),
-        csvQuote(order.client_details?.full_name || "Unknown"),
-        csvQuote(order.client_details?.email || ""),
-        csvQuote(String(order.total_items)),
+        csvQuote(order.client_name || "Unknown"),
+        csvQuote(order.client_email || ""),
+        csvQuote(String(order.total_items ?? "")),
         csvQuote(parseFloat(order.total_amount).toFixed(2)),
         csvQuote(String(order.status)),
         csvQuote(new Date(order.created_at).toISOString()),
-      ]);
-      const csv = [headers.map(csvQuote), ...rows].map((r) => r.join(",")).join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(`Exported ${selected.length} orders`);
-    } catch (error) {
-      toast.error("Failed to export orders");
+      ])
+      const csv = [headers.map(csvQuote), ...rows]
+        .map((r) => r.join(","))
+        .join("\n")
+      const blob = new Blob([csv], { type: "text/csv" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(`Exported ${selected.length} orders`)
+    } catch {
+      toast.error("Failed to export orders")
     }
-  };
+  }, [orders, selectedOrderIds])
 
-  // Export all orders CSV via API
-  const handleExportAllCSV = async () => {
+  const handleExportAllCSV = useCallback(async () => {
     try {
       const response = await axiosInstance.get(
         "/api/ecommerce/admin/orders/export/",
         { responseType: "blob" }
-      );
-      const blob = new Blob([response.data], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `all-orders-${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Orders exported successfully");
-    } catch (error) {
-      toast.error("Failed to export orders");
+      )
+      const blob = new Blob([response.data], { type: "text/csv" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `all-orders-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success("Orders exported successfully")
+    } catch {
+      toast.error("Failed to export orders")
     }
-  };
-
-  const stats = {
-    total: totalCount,
-    pending: orders.filter((o) => String(o.status) === "pending").length,
-    processing: orders.filter(
-      (o) =>
-        String(o.status) === "processing" || String(o.status) === "confirmed"
-    ).length,
-    completed: orders.filter((o) => String(o.status) === "delivered").length,
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatCurrency = (amount: string) => {
-    return `₾${parseFloat(amount).toFixed(2)}`;
-  };
-
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-9 w-48" />
-            <Skeleton className="h-4 w-64 mt-2" />
-          </div>
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between">
-              <Skeleton className="h-6 w-32" />
-              <div className="flex gap-2">
-                <Skeleton className="h-10 w-64" />
-                <Skeleton className="h-10 w-40" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="h-14 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  }, [])
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
-        </div>
-        <Button variant="outline" onClick={handleExportAllCSV}>
-          <Download className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
-      </div>
+    <section className="container p-4">
+      {/* Orders Table */}
+      <OrdersTable
+        data={orders}
+        totalCount={totalCount}
+        page={page}
+        pageSize={pageSize}
+        loading={loading}
+        searchQuery={searchQuery}
+        statusFilter={statusFilter}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        onSearchChange={handleSearchChange}
+        onStatusFilterChange={handleStatusFilterChange}
+        onSelectionChange={handleSelectionChange}
+        onExportAll={handleExportAllCSV}
+        t={t}
+      />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t("stats.total")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t("stats.pending")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {stats.pending}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t("stats.processing")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {stats.processing}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t("stats.completed")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {stats.completed}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div>
-              <CardTitle>{t("ordersTitle")}</CardTitle>
-              <CardDescription>
-                {t("ordersFound", { count: totalCount })}
-              </CardDescription>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t("searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder={t("filterByStatus")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("status.all")}</SelectItem>
-                  <SelectItem value="pending">{t("status.pending")}</SelectItem>
-                  <SelectItem value="confirmed">
-                    {t("status.confirmed")}
-                  </SelectItem>
-                  <SelectItem value="processing">
-                    {t("status.processing")}
-                  </SelectItem>
-                  <SelectItem value="shipped">{t("status.shipped")}</SelectItem>
-                  <SelectItem value="delivered">
-                    {t("status.delivered")}
-                  </SelectItem>
-                  <SelectItem value="cancelled">
-                    {t("status.cancelled")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {orders.length === 0 ? (
-            <div className="text-center py-12">
-              <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">{t("noOrders")}</h3>
-              <p className="text-muted-foreground mt-2">
-                {searchQuery || statusFilter !== "all"
-                  ? t("noOrdersFiltered")
-                  : t("noOrdersYet")}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-10">
-                      <Checkbox
-                        checked={
-                          orders.length > 0 &&
-                          selectedOrderIds.size === orders.length
-                        }
-                        onCheckedChange={toggleSelectAll}
-                        aria-label="Select all orders"
-                      />
-                    </TableHead>
-                    <TableHead>{t("table.orderNumber")}</TableHead>
-                    <TableHead>{t("table.customer")}</TableHead>
-                    <TableHead>{t("table.items")}</TableHead>
-                    <TableHead>{t("table.total")}</TableHead>
-                    <TableHead>{t("table.status")}</TableHead>
-                    <TableHead>{t("table.date")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("table.actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orders.map((order) => {
-                    const StatusIcon =
-                      STATUS_ICONS[String(order.status)] || Clock;
-                    return (
-                      <TableRow key={order.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedOrderIds.has(order.id)}
-                            onCheckedChange={() =>
-                              toggleOrderSelection(order.id)
-                            }
-                            aria-label={`Select order ${order.order_number}`}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {order.order_number}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {order.client_details?.full_name || "Unknown"}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {order.client_details?.email || ""}
-                            </div>
-                            {order.delivery_address && (
-                              <div className="text-sm text-muted-foreground">
-                                {order.delivery_address.city}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {t("table.itemsCount", { count: order.total_items })}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {formatCurrency(order.total_amount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="secondary"
-                            className={
-                              STATUS_COLORS[String(order.status)] || ""
-                            }
-                          >
-                            <StatusIcon className="mr-1 h-3 w-3" />
-                            {t(`status.${String(order.status)}`)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {formatDate(order.created_at)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Link href={`/ecommerce/orders/${order.id}`}>
-                            <Button variant="ghost" size="sm">
-                              {t("viewDetails")}
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Page {page} of {totalPages} ({totalCount} orders)
-          </p>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page <= 1}
-              onClick={() => { setPage((p) => p - 1); setSelectedOrderIds(new Set()); }}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page >= totalPages}
-              onClick={() => { setPage((p) => p + 1); setSelectedOrderIds(new Set()); }}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Action Bar */}
-      {selectedOrderIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform" role="region" aria-live="polite" aria-label="Selection actions">
-          <div className="flex items-center gap-3 rounded-lg border bg-background px-6 py-3 shadow-lg">
-            <span className="text-sm font-medium">
-              {selectedOrderIds.size} orders selected
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={bulkActionLoading}
-              onClick={() => handleBulkStatusUpdate("shipped")}
-            >
-              {bulkActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
-              Mark as Shipped
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={bulkActionLoading}
-              onClick={() => handleBulkStatusUpdate("delivered")}
-            >
-              {bulkActionLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-              Mark as Delivered
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleExportSelected}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Export Selected
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+      {/* Floating Bulk Actions Bar */}
+      <OrdersBulkActionsBar
+        selectedCount={selectedOrderIds.size}
+        loading={bulkActionLoading}
+        onMarkShipped={() => handleBulkStatusUpdate("shipped")}
+        onMarkDelivered={() => handleBulkStatusUpdate("delivered")}
+        onExportSelected={handleExportSelected}
+        t={t}
+      />
+    </section>
+  )
 }
