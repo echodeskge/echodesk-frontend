@@ -1444,12 +1444,22 @@
     "title": "Ecommerce Dashboard",
     "subtitle": "Overview of your store performance and analytics",
     "errorLoading": "Failed to load analytics data. Please try again later.",
+    "overview": {
+      "totalRevenue": "Total Revenue",
+      "totalOrders": "Total Orders",
+      "avgOrderValue": "Avg. Order Value",
+      "monthRevenue": "This Month"
+    },
     "revenue": {
       "title": "Revenue",
-      "today": "Today's Revenue",
+      "today": "Today",
       "week": "This Week",
       "month": "This Month",
-      "total": "Total Revenue"
+      "total": "Total"
+    },
+    "revenuePeriod": {
+      "title": "Revenue Summary",
+      "orders": "orders"
     },
     "orderCounts": {
       "title": "Orders",
