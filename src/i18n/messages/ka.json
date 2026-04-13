@@ -1977,9 +1977,12 @@
       "lastLogin": "ბოლო შესვლა",
       "registered": "რეგისტრირებული"
     },
+    "tableTitle": "კლიენტები",
     "status": {
       "active": "აქტიური",
-      "inactive": "არააქტიური"
+      "inactive": "არააქტიური",
+      "verified": "ვერიფიცირებული",
+      "unverified": "არავერიფიცირებული"
     }
   },
   "clientDetail": {
@@ -1992,14 +1995,16 @@
     "active": "აქტიური",
     "inactive": "არააქტიური",
     "joinedOn": "შემოუერთდა {date}",
+    "information": "ინფორმაცია",
     "stats": {
       "totalOrders": "სულ შეკვეთები",
       "totalSpent": "სულ დახარჯული",
+      "avgOrderValue": "საშ. შეკვეთის ღირებულება",
       "lastOrder": "ბოლო შეკვეთა",
       "noOrders": "შეკვეთები არ არის"
     },
-    "orderHistory": "შეკვეთების ისტორია",
-    "noOrders": "ამ კლიენტს ჯერ არ აქვს შეკვეთები",
+    "orderHistory": "ბოლო შეკვეთები",
+    "noOrders": "ბოლო შეკვეთები არ არის.",
     "ordersTable": {
       "orderNumber": "შეკვეთის №",
       "total": "სულ",
@@ -2018,6 +2023,7 @@
       "lastName": "გვარი",
       "email": "ელ-ფოსტა",
       "phone": "ტელეფონი",
+      "address": "მისამართი",
       "dateOfBirth": "დაბადების თარიღი",
       "lastLogin": "ბოლო შესვლა"
     },

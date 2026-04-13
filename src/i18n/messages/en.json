@@ -1977,9 +1977,12 @@
       "lastLogin": "Last Login",
       "registered": "Registered"
     },
+    "tableTitle": "Clients",
     "status": {
       "active": "Active",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "verified": "Verified",
+      "unverified": "Unverified"
     }
   },
   "clientDetail": {
@@ -1992,14 +1995,16 @@
     "active": "Active",
     "inactive": "Inactive",
     "joinedOn": "Joined {date}",
+    "information": "Information",
     "stats": {
       "totalOrders": "Total Orders",
       "totalSpent": "Total Spent",
+      "avgOrderValue": "Avg. Order Value",
       "lastOrder": "Last Order",
       "noOrders": "No orders yet"
     },
-    "orderHistory": "Order History",
-    "noOrders": "This client has no orders yet",
+    "orderHistory": "Recent Orders",
+    "noOrders": "No recent orders.",
     "ordersTable": {
       "orderNumber": "Order #",
       "total": "Total",
@@ -2018,6 +2023,7 @@
       "lastName": "Last Name",
       "email": "Email",
       "phone": "Phone",
+      "address": "Address",
       "dateOfBirth": "Date of Birth",
       "lastLogin": "Last Login"
     },
