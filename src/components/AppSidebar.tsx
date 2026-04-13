@@ -310,7 +310,7 @@ export function AppSidebar({
                         {socialUnread > 99 ? '99+' : socialUnread}
                       </Badge>
                     )}
-                    {item.id === 'email/messages' && emailUnread > 0 && (
+                    {item.id === 'email' && emailUnread > 0 && (
                       <Badge
                         variant="destructive"
                         className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"

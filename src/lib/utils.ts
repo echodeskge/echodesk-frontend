@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx"
+import { format } from "date-fns"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -15,6 +16,22 @@ export function getInitials(name: string): string {
 
 export function wait(ms: number = 250) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export function formatDate(value: string | number | Date) {
+  return format(value, "PP")
+}
+
+export function formatDateShort(value: string | number | Date) {
+  return format(value, "MMM dd")
+}
+
+export function ensureWithSuffix(value: string, suffix: string) {
+  return value.endsWith(suffix) ? value : `${value}${suffix}`
+}
+
+export function formatUnreadCount(unreadCount: number) {
+  return unreadCount >= 100 ? "+99" : unreadCount
 }
 
 export function formatFileSize(bytes: number, decimals: number = 2) {

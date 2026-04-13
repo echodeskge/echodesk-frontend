@@ -272,7 +272,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     languages: "languages",
     messages: "messages",
     "social/messages": "messages",
-    "email/messages": "emailMessages",
+    email: "email",
     users: "users",
     groups: "groups",
     social: "social",

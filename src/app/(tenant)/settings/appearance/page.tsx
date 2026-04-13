@@ -149,7 +149,7 @@ export default function AppearanceSettingsPage() {
     leave: "leave",
     invoices: "invoices",
     "social/messages": "messages",
-    "email/messages": "emailMessages",
+    email: "email",
     users: "users",
     groups: "groups",
     social: "social",

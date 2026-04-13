@@ -197,7 +197,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     isPremium: true,
   },
   {
-    id: "email/messages",
+    id: "email",
     icon: "Mail",
     requiredFeatureKey: "social_integrations",
     isPremium: true,
