@@ -3459,7 +3459,31 @@
     "push": "Push",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "groupedUpdates": "{count} updates"
+    "groupedUpdates": "{count} updates",
+    "settings": {
+      "title": "Notification Settings",
+      "description": "Customize how you receive notifications",
+      "sound": "Notification Sound",
+      "soundDesc": "Play a sound when new notifications arrive",
+      "volume": "Volume",
+      "testSound": "Test Sound",
+      "browserNotifications": "Browser Notifications",
+      "browserNotificationsDesc": "You'll receive desktop notifications even when this tab is not active. You can manage browser permissions in your browser settings.",
+      "pushNotifications": "Push Notifications",
+      "pushDesc": "Receive notifications even when the app is closed",
+      "active": "Active",
+      "blocked": "Blocked",
+      "pushEnabled": "Push notifications are enabled",
+      "pushAvailable": "Push notifications are available",
+      "pushBlocked": "Push notifications are blocked",
+      "pushRequiresPermission": "Push notifications require permission",
+      "pushEnabledDesc": "You will receive notifications even when the browser is closed",
+      "pushAvailableDesc": "Enable to receive notifications when the browser is closed",
+      "pushBlockedDesc": "Please enable notifications in your browser settings",
+      "pushDefaultDesc": "Click the toggle to enable push notifications",
+      "sending": "Sending...",
+      "testPush": "Send Test Push Notification"
+    }
   },
   "leave": {
     "publicHolidays": {

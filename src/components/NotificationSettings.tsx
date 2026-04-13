@@ -10,8 +10,10 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getNotificationSound } from '@/utils/notificationSound'
 import { useWebPush } from '@/hooks/useWebPush'
+import { useTranslations } from 'next-intl'
 
 export function NotificationSettings() {
+  const t = useTranslations('notificationPreferences')
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [volume, setVolume] = useState(50)
   const soundManager = getNotificationSound()
@@ -70,10 +72,10 @@ export function NotificationSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Bell className="h-5 w-5" />
-          Notification Settings
+          {t('settings.title')}
         </CardTitle>
         <CardDescription>
-          Customize how you receive notifications
+          {t('settings.description')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -81,10 +83,10 @@ export function NotificationSettings() {
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="sound-enabled" className="text-base font-medium">
-              Notification Sound
+              {t('settings.sound')}
             </Label>
             <p className="text-sm text-muted-foreground">
-              Play a sound when new notifications arrive
+              {t('settings.soundDesc')}
             </p>
           </div>
           <Switch
@@ -98,7 +100,7 @@ export function NotificationSettings() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label htmlFor="volume" className="text-base font-medium">
-              Volume
+              {t('settings.volume')}
             </Label>
             <span className="text-sm text-muted-foreground">{volume}%</span>
           </div>
@@ -126,7 +128,7 @@ export function NotificationSettings() {
             disabled={!soundEnabled}
             className="w-full"
           >
-            Test Sound
+            {t('settings.testSound')}
           </Button>
         </div>
 
@@ -136,10 +138,10 @@ export function NotificationSettings() {
             <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Browser Notifications
+                {t('settings.browserNotifications')}
               </p>
               <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                You'll receive desktop notifications even when this tab is not active. You can manage browser permissions in your browser settings.
+                {t('settings.browserNotificationsDesc')}
               </p>
             </div>
           </div>
@@ -152,23 +154,23 @@ export function NotificationSettings() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="push-enabled" className="text-base font-medium">
-                    Push Notifications
+                    {t('settings.pushNotifications')}
                   </Label>
                   {isPushSubscribed && (
                     <Badge variant="default" className="text-xs">
                       <Check className="h-3 w-3 mr-1" />
-                      Active
+                      {t('settings.active')}
                     </Badge>
                   )}
                   {pushPermission === 'denied' && (
                     <Badge variant="destructive" className="text-xs">
                       <X className="h-3 w-3 mr-1" />
-                      Blocked
+                      {t('settings.blocked')}
                     </Badge>
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Receive notifications even when the app is closed
+                  {t('settings.pushDesc')}
                 </p>
               </div>
               <Switch
@@ -184,16 +186,16 @@ export function NotificationSettings() {
               <Smartphone className="h-5 w-5 text-muted-foreground mt-0.5" />
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium">
-                  {pushPermission === 'granted' && isPushSubscribed && 'Push notifications are enabled'}
-                  {pushPermission === 'granted' && !isPushSubscribed && 'Push notifications are available'}
-                  {pushPermission === 'denied' && 'Push notifications are blocked'}
-                  {pushPermission === 'default' && 'Push notifications require permission'}
+                  {pushPermission === 'granted' && isPushSubscribed && t('settings.pushEnabled')}
+                  {pushPermission === 'granted' && !isPushSubscribed && t('settings.pushAvailable')}
+                  {pushPermission === 'denied' && t('settings.pushBlocked')}
+                  {pushPermission === 'default' && t('settings.pushRequiresPermission')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {pushPermission === 'granted' && isPushSubscribed && 'You will receive notifications even when the browser is closed'}
-                  {pushPermission === 'granted' && !isPushSubscribed && 'Enable to receive notifications when the browser is closed'}
-                  {pushPermission === 'denied' && 'Please enable notifications in your browser settings'}
-                  {pushPermission === 'default' && 'Click the toggle to enable push notifications'}
+                  {pushPermission === 'granted' && isPushSubscribed && t('settings.pushEnabledDesc')}
+                  {pushPermission === 'granted' && !isPushSubscribed && t('settings.pushAvailableDesc')}
+                  {pushPermission === 'denied' && t('settings.pushBlockedDesc')}
+                  {pushPermission === 'default' && t('settings.pushDefaultDesc')}
                 </p>
               </div>
             </div>
@@ -210,12 +212,12 @@ export function NotificationSettings() {
                 {isPushLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Sending...
+                    {t('settings.sending')}
                   </>
                 ) : (
                   <>
                     <Bell className="h-4 w-4 mr-2" />
-                    Send Test Push Notification
+                    {t('settings.testPush')}
                   </>
                 )}
               </Button>
