@@ -1353,6 +1353,13 @@
     "columns": {
       "payment": "Payment"
     },
+    "paymentStatus": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded",
+      "partially_refunded": "Partially Refunded"
+    },
     "bulkActions": {
       "selected": "{count} orders selected",
       "markShipped": "Mark as Shipped",

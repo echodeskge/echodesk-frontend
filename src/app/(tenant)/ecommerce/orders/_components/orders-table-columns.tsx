@@ -9,6 +9,7 @@ import {
   STATUS_COLORS,
   STATUS_ICONS,
   PAYMENT_BADGE_VARIANTS,
+  PAYMENT_STATUS_ICONS,
 } from "../_data/constants"
 import { formatCurrency, formatDate } from "../_lib/utils"
 
@@ -102,9 +103,11 @@ export function getOrderColumns({
       cell: ({ row }) => {
         const status = String(row.original.payment_status || "pending")
         const variant = PAYMENT_BADGE_VARIANTS[status] || "secondary"
+        const PaymentIcon = PAYMENT_STATUS_ICONS[status] || PAYMENT_STATUS_ICONS.pending
         return (
           <Badge variant={variant}>
-            {status.replace("_", " ")}
+            <PaymentIcon className="mr-1 h-3 w-3" />
+            {t(`paymentStatus.${status}`)}
           </Badge>
         )
       },

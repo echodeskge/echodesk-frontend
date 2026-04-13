@@ -1353,6 +1353,13 @@
     "columns": {
       "payment": "გადახდა"
     },
+    "paymentStatus": {
+      "pending": "მოლოდინში",
+      "paid": "გადახდილი",
+      "failed": "წარუმატებელი",
+      "refunded": "დაბრუნებული",
+      "partially_refunded": "ნაწილობრივ დაბრუნებული"
+    },
     "bulkActions": {
       "selected": "{count} შეკვეთა არჩეულია",
       "markShipped": "მონიშნე გაგზავნილად",

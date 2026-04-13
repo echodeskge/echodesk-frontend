@@ -13,6 +13,7 @@ import {
   STATUS_COLORS,
   STATUS_ICONS,
   PAYMENT_BADGE_VARIANTS,
+  PAYMENT_STATUS_ICONS,
 } from "../../_data/constants"
 import { formatDate } from "../../_lib/utils"
 import { OrderDetail } from "../../_types"
@@ -34,6 +35,7 @@ export function OrderHeaderCard({
   const paymentStatus = String(order.payment_status || "pending")
   const StatusIcon = STATUS_ICONS[status] || STATUS_ICONS.pending
   const paymentVariant = PAYMENT_BADGE_VARIANTS[paymentStatus] || "secondary"
+  const PaymentIcon = PAYMENT_STATUS_ICONS[paymentStatus] || PAYMENT_STATUS_ICONS.pending
 
   return (
     <Card>
@@ -47,7 +49,8 @@ export function OrderHeaderCard({
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-2">
         <Badge variant={paymentVariant}>
-          {paymentStatus.replace("_", " ")}
+          <PaymentIcon className="me-1.5 h-3.5 w-3.5" />
+          {t(`paymentStatus.${paymentStatus}`)}
         </Badge>
         <Badge variant="secondary" className={STATUS_COLORS[status] || ""}>
           <StatusIcon className="me-1.5 h-3.5 w-3.5" />

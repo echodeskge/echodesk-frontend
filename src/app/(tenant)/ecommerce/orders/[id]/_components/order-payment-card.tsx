@@ -4,7 +4,7 @@ import { CreditCard, RotateCcw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PAYMENT_STATUS_COLORS } from "../../_data/constants"
+import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_ICONS } from "../../_data/constants"
 import { OrderDetail } from "../../_types"
 
 interface OrderPaymentCardProps {
@@ -23,6 +23,7 @@ export function OrderPaymentCard({
   t,
 }: OrderPaymentCardProps) {
   const paymentStatus = String(order.payment_status || "pending")
+  const PaymentIcon = PAYMENT_STATUS_ICONS[paymentStatus] || PAYMENT_STATUS_ICONS.pending
   const canMarkPaid = paymentStatus !== "paid"
   const canRefund =
     String(order.status) !== "refunded" && String(order.status) !== "cancelled"
@@ -52,7 +53,8 @@ export function OrderPaymentCard({
             variant="outline"
             className={PAYMENT_STATUS_COLORS[paymentStatus] || ""}
           >
-            {paymentStatus.replace("_", " ")}
+            <PaymentIcon className="mr-1 h-3 w-3" />
+            {t(`paymentStatus.${paymentStatus}`)}
           </Badge>
         </div>
         {order.bog_order_id && (
