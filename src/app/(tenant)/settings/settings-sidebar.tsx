@@ -187,9 +187,15 @@ export function SettingsSidebar() {
     return hasFeature(key as any)
   }
 
+  const hasFullSettingsAccess = hasFeatureAccess("settings")
+
   const visibleItems = settingsNav.filter((item) => {
     if (item.staffOnly && !isStaffOrAdmin) return false
     if (item.featureKey && !hasFeatureAccess(item.featureKey)) return false
+    // Users without full settings access only see notifications and social
+    if (!hasFullSettingsAccess && !isStaffOrAdmin) {
+      return ["notifications", "social", "social-connections", "social-auto-posting"].includes(item.id)
+    }
     return true
   })
 
