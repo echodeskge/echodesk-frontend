@@ -1,7 +1,13 @@
 "use client"
 
-import { ShoppingCart, DollarSign, TrendingUp } from "lucide-react"
+import { ShoppingCart, TrendingUp } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+
+function LariIcon({ className }: { className?: string }) {
+  return (
+    <span className={className} aria-label="GEL">₾</span>
+  )
+}
 
 interface CustomerStatsCardProps {
   totalOrders: number
@@ -28,7 +34,7 @@ export function CustomerStatsCard({
     {
       label: t("stats.totalSpent"),
       value: formatCurrency(totalSpent),
-      icon: DollarSign,
+      icon: LariIcon,
     },
     {
       label: t("stats.avgOrderValue"),

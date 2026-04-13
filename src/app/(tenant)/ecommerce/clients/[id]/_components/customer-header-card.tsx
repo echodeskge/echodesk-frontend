@@ -7,7 +7,7 @@ import { format } from "date-fns"
 
 interface CustomerHeaderCardProps {
   client: EcommerceClient
-  t: (key: string) => string
+  t: (key: string, values?: Record<string, string>) => string
 }
 
 export function CustomerHeaderCard({ client, t }: CustomerHeaderCardProps) {
@@ -29,10 +29,9 @@ export function CustomerHeaderCard({ client, t }: CustomerHeaderCardProps) {
           )}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          {t("joinedOn").replace(
-            "{date}",
-            format(new Date(client.created_at), "PP")
-          )}
+          {t("joinedOn", {
+            date: format(new Date(client.created_at), "PP"),
+          })}
         </p>
       </CardContent>
     </Card>
