@@ -2,7 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
 
-const NAMESPACES = ['products', 'productAttributes', 'ecommerceOrders', 'ecommerceSettings', 'ecommerceAnalytics', 'clients', 'homepageBuilder', 'languages', 'orders', 'shippingMethods', 'promoCodes', 'reviews'];
+const NAMESPACES = ['products', 'productAttributes', 'ecommerceOrders', 'ecommerceSettings', 'ecommerceAnalytics', 'clients', 'clientDetail', 'homepageBuilder', 'languages', 'orders', 'shippingMethods', 'promoCodes', 'reviews'];
 
 export default async function EcommerceLayout({ children }: { children: React.ReactNode }) {
   const messages = await getMessages();
