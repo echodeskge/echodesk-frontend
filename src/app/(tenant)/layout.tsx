@@ -38,6 +38,7 @@ const BoardCreateSheet = dynamic(() => import("@/components/BoardCreateSheet").t
 const TeamChatWidget = dynamic(() => import("@/components/TeamChat").then(m => ({ default: m.TeamChatWidget })), { ssr: false });
 const DialpadWidget = dynamic(() => import("@/components/calls/DialpadWidget"), { ssr: false });
 const IncomingCallSidebar = dynamic(() => import("@/components/calls/IncomingCallSidebar").then(m => ({ default: m.IncomingCallSidebar })), { ssr: false });
+const PushNotificationPrompt = dynamic(() => import("@/components/PushNotificationPrompt").then(m => ({ default: m.PushNotificationPrompt })), { ssr: false });
 import {
   SubscriptionProvider,
   useSubscription,
@@ -793,6 +794,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Global Incoming Call Sidebar */}
       <IncomingCallSidebar />
+
+      {/* Push notification permission prompt */}
+      <PushNotificationPrompt />
 
       {/* Team Chat Widget */}
       {userProfile?.id && (

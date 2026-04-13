@@ -18,6 +18,12 @@
     "close": "Close",
     "back": "Back",
     "next": "Next",
+    "pushPrompt": {
+      "title": "Enable Notifications",
+      "description": "Get notified about new tickets, updates and important events even when you're not on this page.",
+      "enable": "Enable",
+      "notNow": "Not now"
+    },
     "previous": "Previous",
     "search": "Search",
     "filter": "Filter",
