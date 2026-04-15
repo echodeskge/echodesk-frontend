@@ -7,11 +7,16 @@
  * - Hides badge when count is 0
  * - Displays "99+" for counts over 99
  * - Popover opens on click
+ * - Empty state in popover
+ * - Shows notification list when notifications exist
+ * - Falls back to polling when WS disconnected
+ * - Boundary count values (1, 99, 100)
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { Notification as NotificationData } from "@/api/generated/interfaces";
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -19,7 +24,13 @@ import userEvent from "@testing-library/user-event";
 
 // Mock next-intl
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => {
+    const t = (key: string, params?: Record<string, any>) => {
+      if (params) return `${key}:${JSON.stringify(params)}`;
+      return key;
+    };
+    return t;
+  },
 }));
 
 // Mock next/navigation
@@ -30,31 +41,36 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock useBrowserNotifications
+const mockRequestPermission = vi.fn();
 vi.mock("@/hooks/useBrowserNotifications", () => ({
   useBrowserNotifications: () => ({
     showNotification: vi.fn(),
     canShowNotifications: false,
-    requestPermission: vi.fn(),
+    requestPermission: mockRequestPermission,
   }),
 }));
 
 // Mock useNotificationsUnreadCount
 const mockUnreadCount = vi.fn().mockReturnValue(0);
+const mockRefetch = vi.fn();
 vi.mock("@/hooks/useNotifications", () => ({
   useNotificationsUnreadCount: () => ({
     data: mockUnreadCount(),
-    refetch: vi.fn(),
+    refetch: mockRefetch,
   }),
 }));
 
 // Mock useNotificationsWebSocket
 const mockWsUnreadCount = vi.fn().mockReturnValue(0);
+const mockWsConnected = vi.fn().mockReturnValue(true);
+const mockWsMarkAsRead = vi.fn();
+const mockWsMarkAllAsRead = vi.fn();
 vi.mock("@/hooks/useNotificationsWebSocket", () => ({
-  useNotificationsWebSocket: () => ({
-    isConnected: true,
+  useNotificationsWebSocket: (opts?: any) => ({
+    isConnected: mockWsConnected(),
     unreadCount: mockWsUnreadCount(),
-    markAsRead: vi.fn(),
-    markAllAsRead: vi.fn(),
+    markAsRead: mockWsMarkAsRead,
+    markAllAsRead: mockWsMarkAllAsRead,
   }),
 }));
 
@@ -68,8 +84,9 @@ vi.mock("@/hooks/useWebPush", () => ({
 }));
 
 // Mock notificationsList API
+const mockNotificationsList = vi.fn().mockResolvedValue({ results: [] });
 vi.mock("@/api/generated/api", () => ({
-  notificationsList: vi.fn().mockResolvedValue({ results: [] }),
+  notificationsList: (...args: any[]) => mockNotificationsList(...args),
   notificationsMarkAllReadCreate: vi.fn().mockResolvedValue({}),
   notificationsMarkReadCreate: vi.fn().mockResolvedValue({}),
   notificationsClearAllDestroy: vi.fn().mockResolvedValue({}),
@@ -107,6 +124,8 @@ describe("NotificationBell", () => {
     vi.clearAllMocks();
     mockWsUnreadCount.mockReturnValue(0);
     mockUnreadCount.mockReturnValue(0);
+    mockWsConnected.mockReturnValue(true);
+    mockNotificationsList.mockResolvedValue({ results: [] });
   });
 
   it("renders bell icon button", () => {
@@ -141,6 +160,18 @@ describe("NotificationBell", () => {
     expect(screen.getByText("99")).toBeInTheDocument();
   });
 
+  it("shows badge with count of 1", () => {
+    mockWsUnreadCount.mockReturnValue(1);
+    render(<NotificationBell />);
+    expect(screen.getByText("1")).toBeInTheDocument();
+  });
+
+  it("shows '99+' at exactly 100", () => {
+    mockWsUnreadCount.mockReturnValue(100);
+    render(<NotificationBell />);
+    expect(screen.getByText("99+")).toBeInTheDocument();
+  });
+
   it("opens popover on click", async () => {
     const user = userEvent.setup();
     render(<NotificationBell />);
@@ -154,6 +185,76 @@ describe("NotificationBell", () => {
     });
   });
 
+  it("shows empty state when no notifications", async () => {
+    const user = userEvent.setup();
+    mockNotificationsList.mockResolvedValue({ results: [] });
+
+    render(<NotificationBell />);
+
+    const button = screen.getByRole("button", { name: "Notifications" });
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText("No notifications")).toBeInTheDocument();
+    });
+  });
+
+  it("shows notification items in popover when notifications exist", async () => {
+    const user = userEvent.setup();
+    const mockNotifications: Partial<NotificationData>[] = [
+      {
+        id: 1,
+        notification_type: "ticket_assigned" as any,
+        title: "New Ticket Assigned",
+        message: "You have been assigned ticket #42",
+        is_read: false,
+        created_at: "2024-01-01T00:00:00Z",
+        time_ago: "5 minutes",
+      },
+    ];
+    mockNotificationsList.mockResolvedValue({ results: mockNotifications });
+
+    render(<NotificationBell />);
+
+    const button = screen.getByRole("button", { name: "Notifications" });
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText("New Ticket Assigned")).toBeInTheDocument();
+    });
+  });
+
+  it("fetches notifications when popover opens", async () => {
+    const user = userEvent.setup();
+    render(<NotificationBell />);
+
+    const button = screen.getByRole("button", { name: "Notifications" });
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(mockNotificationsList).toHaveBeenCalled();
+    });
+  });
+
+  it("uses polling count when WS is disconnected", () => {
+    mockWsConnected.mockReturnValue(false);
+    mockWsUnreadCount.mockReturnValue(0);
+    mockUnreadCount.mockReturnValue(7);
+
+    render(<NotificationBell />);
+    expect(screen.getByText("7")).toBeInTheDocument();
+  });
+
+  it("prefers WS count when connected", () => {
+    mockWsConnected.mockReturnValue(true);
+    mockWsUnreadCount.mockReturnValue(3);
+    mockUnreadCount.mockReturnValue(10);
+
+    render(<NotificationBell />);
+    // Should show WS count (3), not polling count (10)
+    expect(screen.getByText("3")).toBeInTheDocument();
+  });
+
   it("calls onNotificationClick when provided and notification is clicked", async () => {
     const onNotificationClick = vi.fn();
     render(<NotificationBell onNotificationClick={onNotificationClick} />);
@@ -161,5 +262,48 @@ describe("NotificationBell", () => {
     // Just verify the component renders without error when callback is provided
     const button = screen.getByRole("button", { name: "Notifications" });
     expect(button).toBeInTheDocument();
+  });
+
+  it("requests notification permission on mount", () => {
+    render(<NotificationBell />);
+    // canShowNotifications is false in the mock, so requestPermission should be called
+    expect(mockRequestPermission).toHaveBeenCalled();
+  });
+
+  it("filters out message notifications from the list", async () => {
+    const user = userEvent.setup();
+    const mockNotifications: Partial<NotificationData>[] = [
+      {
+        id: 1,
+        notification_type: "message_received" as any,
+        title: "New Message",
+        message: "You have a new message",
+        is_read: false,
+        created_at: "2024-01-01T00:00:00Z",
+        time_ago: "1 minute",
+      },
+      {
+        id: 2,
+        notification_type: "ticket_assigned" as any,
+        title: "Ticket Assigned",
+        message: "A ticket was assigned to you",
+        is_read: false,
+        created_at: "2024-01-01T00:00:00Z",
+        time_ago: "2 minutes",
+      },
+    ];
+    mockNotificationsList.mockResolvedValue({ results: mockNotifications });
+
+    render(<NotificationBell />);
+
+    const button = screen.getByRole("button", { name: "Notifications" });
+    await user.click(button);
+
+    await waitFor(() => {
+      // message_received should be filtered out
+      expect(screen.queryByText("New Message")).not.toBeInTheDocument();
+      // ticket_assigned should remain
+      expect(screen.getByText("Ticket Assigned")).toBeInTheDocument();
+    });
   });
 });

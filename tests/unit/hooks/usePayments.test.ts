@@ -490,4 +490,235 @@ describe("usePayments & useTenantSubscription hooks", () => {
       await waitFor(() => expect(result.current.isError).toBe(true));
     });
   });
+
+  // -- Additional error handling tests --
+
+  describe("useManualPayment error handling", () => {
+    it("handles payment failure", async () => {
+      mockAxiosPost.mockRejectedValue(new Error("Insufficient funds"));
+
+      const { result } = renderHook(() => useManualPayment(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({ amount: 100 });
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("useUpgradeSubscription error handling", () => {
+    it("handles upgrade failure", async () => {
+      mockAxiosPost.mockRejectedValue(new Error("Package not available"));
+
+      const { result } = renderHook(() => useUpgradeSubscription(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({ package_id: "enterprise" });
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("useImmediateUpgrade error handling", () => {
+    it("handles upgrade failure", async () => {
+      mockAxiosPost.mockRejectedValue(new Error("Payment required"));
+
+      const { result } = renderHook(() => useImmediateUpgrade(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({ package_id: 5 });
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("useScheduleUpgrade error handling", () => {
+    it("handles scheduling error", async () => {
+      mockAxiosPost.mockRejectedValue(new Error("Invalid date"));
+
+      const { result } = renderHook(() => useScheduleUpgrade(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          package_id: 3,
+          effective_date: "invalid-date",
+        });
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+
+    it("posts without effective_date", async () => {
+      mockAxiosPost.mockResolvedValue({ data: { success: true } });
+
+      const { result } = renderHook(() => useScheduleUpgrade(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({ package_id: 3 });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockAxiosPost).toHaveBeenCalledWith("/api/upgrade/scheduled/", {
+        package_id: 3,
+      });
+    });
+  });
+
+  describe("useCancelScheduledUpgrade error handling", () => {
+    it("handles cancel error", async () => {
+      mockAxiosPost.mockRejectedValue(
+        new Error("No scheduled upgrade to cancel")
+      );
+
+      const { result } = renderHook(() => useCancelScheduledUpgrade(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate();
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("useAddNewCard error handling", () => {
+    it("handles card addition failure", async () => {
+      mockAxiosPost.mockRejectedValue(new Error("Card declined"));
+
+      const { result } = renderHook(() => useAddNewCard(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({});
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+
+    it("adds card without make_default", async () => {
+      mockAxiosPost.mockResolvedValue({
+        data: { payment_url: "https://card.example.com" },
+      });
+
+      const { result } = renderHook(() => useAddNewCard(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({});
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+      expect(mockAxiosPost).toHaveBeenCalledWith(
+        "/api/payments/saved-card/add/",
+        {}
+      );
+    });
+  });
+
+  describe("useDeleteSavedCard error handling", () => {
+    it("handles delete failure", async () => {
+      mockAxiosDelete.mockRejectedValue(new Error("Card not found"));
+
+      const { result } = renderHook(() => useDeleteSavedCard(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate();
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("useSetDefaultCard error handling", () => {
+    it("handles set default failure", async () => {
+      mockAxiosPost.mockRejectedValue(new Error("Card not found"));
+
+      const { result } = renderHook(() => useSetDefaultCard(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({ card_id: 999 });
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("useRemoveSavedCard error handling", () => {
+    it("handles remove failure", async () => {
+      mockAxiosDelete.mockRejectedValue(new Error("Cannot remove last card"));
+
+      const { result } = renderHook(() => useRemoveSavedCard(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({ card_id: 1 });
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("usePackages error handling", () => {
+    it("handles packages fetch error", async () => {
+      mockAxiosGet.mockRejectedValue(new Error("Server error"));
+
+      const { result } = renderHook(() => usePackages(), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("useUpgradePreview error handling", () => {
+    it("handles preview fetch error", async () => {
+      mockAxiosGet.mockRejectedValue(new Error("Package not found"));
+
+      const { result } = renderHook(() => useUpgradePreview(999, true), {
+        wrapper: createWrapper(),
+      });
+
+      await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  // -- Query key completeness --
+  describe("paymentKeys completeness", () => {
+    it("builds all key", () => {
+      expect(paymentKeys.all).toEqual(["payments"]);
+    });
+
+    it("builds packages key", () => {
+      expect(paymentKeys.packages()).toEqual(["payments", "packages"]);
+    });
+
+    it("builds upgrade preview key without packageId", () => {
+      expect(paymentKeys.upgradePreview(undefined)).toEqual([
+        "payments",
+        "upgrade-preview",
+        undefined,
+      ]);
+    });
+  });
 });

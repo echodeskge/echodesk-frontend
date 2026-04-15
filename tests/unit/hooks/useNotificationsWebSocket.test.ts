@@ -652,4 +652,165 @@ describe("useNotificationsWebSocket", () => {
       expect(onConnectionChange).toHaveBeenCalledWith(false);
     });
   });
+
+  describe("sendMessage", () => {
+    it("returns true when message is sent successfully", () => {
+      const { result } = renderHook(() => useNotificationsWebSocket());
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      let sent = false;
+      act(() => {
+        sent = result.current.sendMessage({ type: "custom_event" });
+      });
+
+      expect(sent).toBe(true);
+      const messages = MockWebSocket.lastInstance!.getSentMessages();
+      const custom = messages.find((m) => m.type === "custom_event");
+      expect(custom).toBeDefined();
+    });
+
+    it("returns false when WebSocket is not open", () => {
+      const { result } = renderHook(() => useNotificationsWebSocket());
+
+      // Don't open the connection
+      let sent = false;
+      act(() => {
+        sent = result.current.sendMessage({ type: "test" });
+      });
+
+      expect(sent).toBe(false);
+    });
+  });
+
+  describe("message handling edge cases", () => {
+    it("handles unknown message type silently", () => {
+      renderHook(() => useNotificationsWebSocket());
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      // Should not throw for unknown type
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "unknown_type_xyz",
+          data: "some data",
+        });
+      });
+    });
+
+    it("handles notification_created without notification field", () => {
+      const onNotificationCreated = vi.fn();
+
+      renderHook(() =>
+        useNotificationsWebSocket({ onNotificationCreated })
+      );
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      // notification field is missing
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "notification_created",
+          unread_count: 1,
+        });
+      });
+
+      // Should not call the callback when notification is missing
+      expect(onNotificationCreated).not.toHaveBeenCalled();
+    });
+
+    it("handles notification_read without notification_id field", () => {
+      const onNotificationRead = vi.fn();
+
+      renderHook(() =>
+        useNotificationsWebSocket({ onNotificationRead })
+      );
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "notification_read",
+          unread_count: 0,
+        });
+      });
+
+      // Should not call the callback when notification_id is missing
+      expect(onNotificationRead).not.toHaveBeenCalled();
+    });
+
+    it("defaults unread_count to 0 in notification_created", () => {
+      const onNotificationCreated = vi.fn();
+
+      const { result } = renderHook(() =>
+        useNotificationsWebSocket({ onNotificationCreated })
+      );
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "notification_created",
+          notification: { id: 1, title: "Test" },
+          // unread_count is missing, should default to 0
+        });
+      });
+
+      expect(onNotificationCreated).toHaveBeenCalledWith(
+        { id: 1, title: "Test" },
+        0
+      );
+      expect(result.current.unreadCount).toBe(0);
+    });
+  });
+
+  describe("multiple rapid messages", () => {
+    it("handles rapid successive unread count updates", () => {
+      const onUnreadCountUpdate = vi.fn();
+
+      const { result } = renderHook(() =>
+        useNotificationsWebSocket({ onUnreadCountUpdate })
+      );
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "unread_count_update",
+          count: 1,
+        });
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "unread_count_update",
+          count: 5,
+        });
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "unread_count_update",
+          count: 3,
+        });
+      });
+
+      // Should end on the last value
+      expect(result.current.unreadCount).toBe(3);
+    });
+  });
+
+  describe("isOnline state", () => {
+    it("exposes isOnline from useOnlineStatus", () => {
+      const { result } = renderHook(() => useNotificationsWebSocket());
+
+      expect(result.current.isOnline).toBe(true);
+    });
+  });
 });

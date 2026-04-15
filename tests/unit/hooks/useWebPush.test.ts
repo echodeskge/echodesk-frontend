@@ -254,4 +254,183 @@ describe("useWebPush", () => {
 
     spy.mockRestore();
   });
+
+  // -- Expanded tests --
+
+  it("subscribe succeeds when permission is already granted", async () => {
+    Object.defineProperty(window, "Notification", {
+      value: {
+        permission: "granted",
+        requestPermission: vi.fn().mockResolvedValue("granted"),
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    mockAxiosGet.mockResolvedValue({
+      data: { public_key: "BEtest-vapid-key-base64" },
+    });
+    mockAxiosPost.mockResolvedValue({ data: { success: true } });
+
+    const { result } = renderHook(() => useWebPush());
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.subscribe();
+    });
+
+    expect(success).toBe(true);
+    expect(result.current.isSubscribed).toBe(true);
+  });
+
+  it("subscribe fails when permission is denied", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    Object.defineProperty(window, "Notification", {
+      value: {
+        permission: "default",
+        requestPermission: vi.fn().mockResolvedValue("denied"),
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    const { result } = renderHook(() => useWebPush());
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.subscribe();
+    });
+
+    expect(success).toBe(false);
+    expect(result.current.isSubscribed).toBe(false);
+    spy.mockRestore();
+  });
+
+  it("unsubscribe returns false when not subscribed", async () => {
+    const { result } = renderHook(() => useWebPush());
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.unsubscribe();
+    });
+
+    expect(success).toBe(false);
+  });
+
+  it("subscribe returns true when already subscribed", async () => {
+    mockPushManager.getSubscription.mockResolvedValue(mockPushSubscription);
+
+    const { result } = renderHook(() => useWebPush());
+
+    // Wait for effect to detect existing subscription
+    await waitFor(() => expect(result.current.isSubscribed).toBe(true));
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.subscribe();
+    });
+
+    expect(success).toBe(true);
+  });
+
+  it("sendTestNotification succeeds when subscribed", async () => {
+    mockPushManager.getSubscription.mockResolvedValue(mockPushSubscription);
+    mockAxiosPost.mockResolvedValue({ data: { success: true } });
+
+    const { result } = renderHook(() => useWebPush());
+
+    // Wait for existing subscription detection
+    await waitFor(() => expect(result.current.isSubscribed).toBe(true));
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.sendTestNotification();
+    });
+
+    expect(success).toBe(true);
+    expect(mockAxiosPost).toHaveBeenCalledWith("/notifications/test/");
+  });
+
+  it("sendTestNotification fails on API error", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockPushManager.getSubscription.mockResolvedValue(mockPushSubscription);
+    mockAxiosPost.mockRejectedValue(new Error("Server error"));
+
+    const { result } = renderHook(() => useWebPush());
+
+    await waitFor(() => expect(result.current.isSubscribed).toBe(true));
+
+    let success = false;
+    await act(async () => {
+      success = await result.current.sendTestNotification();
+    });
+
+    expect(success).toBe(false);
+    expect(result.current.error).not.toBeNull();
+    spy.mockRestore();
+  });
+
+  it("calls onSubscriptionChange callback on successful subscribe", async () => {
+    const onSubscriptionChange = vi.fn();
+
+    Object.defineProperty(window, "Notification", {
+      value: {
+        permission: "granted",
+        requestPermission: vi.fn().mockResolvedValue("granted"),
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    mockAxiosGet.mockResolvedValue({
+      data: { public_key: "BEtest-vapid-key-base64" },
+    });
+    mockAxiosPost.mockResolvedValue({ data: { success: true } });
+
+    const { result } = renderHook(() =>
+      useWebPush({ onSubscriptionChange })
+    );
+
+    await act(async () => {
+      await result.current.subscribe();
+    });
+
+    expect(onSubscriptionChange).toHaveBeenCalledWith(true);
+  });
+
+  it("clears error when subscribing again", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // First: force not-subscribed so sendTestNotification sets an error
+    const { result } = renderHook(() => useWebPush());
+
+    await act(async () => {
+      await result.current.sendTestNotification();
+    });
+
+    expect(result.current.error).not.toBeNull();
+
+    // Now try subscribing (which clears error via setError(null))
+    Object.defineProperty(window, "Notification", {
+      value: {
+        permission: "granted",
+        requestPermission: vi.fn().mockResolvedValue("granted"),
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    mockAxiosGet.mockResolvedValue({
+      data: { public_key: "BEtest-vapid-key-base64" },
+    });
+    mockAxiosPost.mockResolvedValue({ data: { success: true } });
+
+    await act(async () => {
+      await result.current.subscribe();
+    });
+
+    expect(result.current.error).toBeNull();
+    spy.mockRestore();
+  });
 });
