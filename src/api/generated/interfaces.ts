@@ -296,6 +296,8 @@ export interface CallLog {
   transferred_to_user?: number;
   transferred_to_user_name: string;
   transferred_at?: string;
+  parent_call: number;
+  transfer_type?: TransferTypeEnum | BlankEnum;
   created_at: string;
   updated_at: string;
 }
@@ -367,6 +369,7 @@ export interface CallLogRequest {
   transferred_to?: string;
   transferred_to_user?: number;
   transferred_at?: string;
+  transfer_type?: TransferTypeEnum | BlankEnum;
 }
 
 export interface CallRecording {
@@ -576,6 +579,11 @@ export interface ClientRequest {
   phone?: string;
   company?: string;
   is_active?: boolean;
+}
+
+export interface ConsultationInitiateRequest {
+  target_number: string;
+  target_user_id?: number;
 }
 
 export interface ContactTypeEnum {
@@ -2100,8 +2108,10 @@ export interface Order {
   updated_at: string;
   paid_at: string;
   confirmed_at?: string;
+  processing_at?: string;
   shipped_at?: string;
   delivered_at?: string;
+  cancelled_at?: string;
 }
 
 export interface OrderCreate {
@@ -2128,6 +2138,7 @@ export interface OrderItem {
   product: number;
   variant?: number;
   product_name: any;
+  product_image: string;
   quantity: number;
   price: string;
   subtotal: string;
@@ -2148,6 +2159,8 @@ export interface OrderList {
   order_number: string;
   client: number;
   client_name: string;
+  client_email: string;
+  total_items: string;
   status?: Status0faEnum;
   payment_status?: PaymentStatus2d4enum;
   total_amount: string;
@@ -2181,8 +2194,10 @@ export interface OrderRequest {
   payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   confirmed_at?: string;
+  processing_at?: string;
   shipped_at?: string;
   delivered_at?: string;
+  cancelled_at?: string;
 }
 
 export interface PaginatedAttributeDefinitionList {
@@ -2857,6 +2872,7 @@ export interface PatchedCallLogRequest {
   transferred_to?: string;
   transferred_to_user?: number;
   transferred_at?: string;
+  transfer_type?: TransferTypeEnum | BlankEnum;
 }
 
 export interface PatchedCallStatusUpdateRequest {
@@ -3234,8 +3250,10 @@ export interface PatchedOrderRequest {
   payment_status?: PaymentStatus2d4enum;
   payment_method?: string;
   confirmed_at?: string;
+  processing_at?: string;
   shipped_at?: string;
   delivered_at?: string;
+  cancelled_at?: string;
 }
 
 export interface PatchedProductCreateUpdateRequest {
@@ -5120,6 +5138,10 @@ export interface TimeTrackingSummary {
   daily_breakdown: any[];
   recent_activity: TicketTimeLog[];
   active_sessions: TicketTimeLog[];
+}
+
+export interface TransferTypeEnum {
+  [key: string]: any;
 }
 
 export interface UnifiedConversation {

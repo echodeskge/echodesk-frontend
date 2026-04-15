@@ -64,6 +64,7 @@ import type {
   CallEventRequest,
   CallEvent,
   CallStatusUpdateRequest,
+  ConsultationInitiateRequest,
   CallRecording,
   PatchedCallStatusUpdateRequest,
   CallInitiateRequest,
@@ -1787,11 +1788,49 @@ export async function callLogsAddEventCreate(
   return response.data;
 }
 
+export async function callLogsCancelConsultationCreate(
+  id: number,
+  data: {
+    consultation_log_id: number;
+  },
+): Promise<CallLog> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/cancel_consultation/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function callLogsCompleteAttendedTransferCreate(
+  id: number,
+  data: {
+    consultation_log_id: number;
+    target_number: string;
+  },
+): Promise<CallLog> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/complete_attended_transfer/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function callLogsEndCallCreate(
   id: number,
   data: CallStatusUpdateRequest,
 ): Promise<CallLog> {
   const response = await axios.post(`/api/call-logs/${id}/end_call/`, data);
+  return response.data;
+}
+
+export async function callLogsInitiateConsultationCreate(
+  id: number,
+  data: ConsultationInitiateRequest,
+): Promise<Record<string, any>> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/initiate_consultation/`,
+    data,
+  );
   return response.data;
 }
 
