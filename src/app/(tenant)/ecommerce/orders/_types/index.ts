@@ -1,11 +1,7 @@
 import { Order as GeneratedOrder, OrderList as GeneratedOrderList } from "@/api/generated/interfaces"
 
-// Extend OrderList to include fields added to the backend serializer
-// (client_email, total_items) that haven't been regenerated yet
-export interface OrderListItem extends GeneratedOrderList {
-  client_email?: string
-  total_items?: number
-}
+// Re-export OrderList as OrderListItem for backward compatibility
+export type OrderListItem = GeneratedOrderList
 
 // Extend Order for detail page — client_details is typed as string in generated
 // types but the API actually returns an object
