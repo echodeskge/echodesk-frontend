@@ -50,6 +50,7 @@ interface ActiveCallDisplayProps {
   onStartAttendedTransfer?: (targetNumber: string, targetName?: string) => void;
   onCompleteTransfer?: () => void;
   onCancelTransfer?: () => void;
+  onMergeConference?: () => void;
 }
 
 export function ActiveCallDisplay({
@@ -71,6 +72,7 @@ export function ActiveCallDisplay({
   onStartAttendedTransfer,
   onCompleteTransfer,
   onCancelTransfer,
+  onMergeConference,
 }: ActiveCallDisplayProps) {
   const t = useTranslations("calls");
   const { user } = useAuth();
@@ -275,9 +277,9 @@ export function ActiveCallDisplay({
                 <Button
                   variant="secondary"
                   size="sm"
-                  disabled
+                  disabled={consultationCall.status !== "active"}
                   className="text-xs"
-                  title="Coming soon"
+                  onClick={onMergeConference}
                 >
                   <Users className="h-4 w-4 mr-1" />
                   {t("dashboard.merge")}

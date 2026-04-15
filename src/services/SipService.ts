@@ -696,6 +696,13 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     }
   }
 
+  // Resume original call from hold (used during merge to reconnect audio)
+  async resumeOriginalFromHold(): Promise<void> {
+    if (this.currentSession && this.currentSession.state === SessionState.Established) {
+      await this.toggleHold(false);
+    }
+  }
+
   // Check if consultation session is active
   hasConsultationSession(): boolean {
     return this.consultationSession !== null && this.consultationSession.state === SessionState.Established;

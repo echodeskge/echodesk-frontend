@@ -83,6 +83,7 @@ export interface CallContextValue {
   startAttendedTransfer: (targetNumber: string, targetName?: string) => Promise<void>;
   completeTransfer: () => Promise<void>;
   cancelTransfer: () => Promise<void>;
+  mergeConference: () => Promise<void>;
   missedCall: { number: string; time: Date } | null;
   clearMissedCall: () => void;
 }
@@ -628,6 +629,31 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
+  const mergeConference = useCallback(async () => {
+    if (!sipServiceRef.current || !activeCallRef.current) return;
+
+    const current = activeCallRef.current;
+    try {
+      // Tell backend to merge channels via AMI into ConfBridge
+      const { default: axios } = await import('@/api/axios');
+      await axios.post(`/api/call-logs/${current.logId}/merge_conference/`, {
+        consultation_log_id: current.consultationCall?.logId,
+      });
+
+      // Take original call off hold so audio flows through ConfBridge
+      await sipServiceRef.current.resumeOriginalFromHold();
+
+      setActiveCall(prev => prev ? {
+        ...prev,
+        isOnHold: false,
+        transferPhase: 'conferenced',
+      } : null);
+    } catch (err) {
+      console.error('Failed to merge conference:', err);
+      setError('Failed to merge calls into conference');
+    }
+  }, []);
+
   const cancelTransfer = useCallback(async () => {
     if (!sipServiceRef.current || !activeCallRef.current) return;
 
@@ -759,6 +785,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     startAttendedTransfer,
     completeTransfer,
     cancelTransfer,
+    mergeConference,
     missedCall,
     clearMissedCall,
   };

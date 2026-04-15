@@ -33,6 +33,7 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
     startAttendedTransfer,
     completeTransfer,
     cancelTransfer,
+    mergeConference,
     error,
   } = useCall();
 
@@ -105,6 +106,7 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
                 onStartAttendedTransfer={async (num, name) => { try { await startAttendedTransfer(num, name); } catch {} }}
                 onCompleteTransfer={async () => { try { await completeTransfer(); } catch {} }}
                 onCancelTransfer={async () => { try { await cancelTransfer(); } catch {} }}
+                onMergeConference={async () => { try { await mergeConference(); } catch {} }}
               />
               {activeCall.status === "active" && (
                 <div className="mt-3 border-t pt-3">

@@ -38,6 +38,7 @@ export default function CallsPage() {
     startAttendedTransfer,
     completeTransfer,
     cancelTransfer,
+    mergeConference,
     error,
     loading,
   } = useCall();
@@ -123,6 +124,7 @@ export default function CallsPage() {
                 onStartAttendedTransfer={async (num, name) => { try { await startAttendedTransfer(num, name); } catch {} }}
                 onCompleteTransfer={async () => { try { await completeTransfer(); } catch {} }}
                 onCancelTransfer={async () => { try { await cancelTransfer(); } catch {} }}
+                onMergeConference={async () => { try { await mergeConference(); } catch {} }}
               />
               {activeCall.status === "active" && (
                 <DialPad
