@@ -435,8 +435,8 @@ export function IncomingCallSidebar() {
                   {recentCalls.length > 0 ? (
                     <div className="space-y-1">
                       {recentCalls.map((call) => {
-                        const dir = call.direction as unknown as string;
-                        const st = call.status as unknown as string;
+                        const dir = String(call.direction ?? '');
+                        const st = String(call.status ?? '');
                         const isMissed = st === "missed" || st === "no_answer";
                         return (
                           <div

@@ -71,10 +71,10 @@ export function CallHistory() {
       if (directionFilter !== "all") params.set("direction", directionFilter);
 
       const response = await axios.get(`/api/call-logs/?${params.toString()}`);
-      const data = response.data;
-      const results = (data as any).results || (data as any) || [];
-      const next = (data as any).next;
-      const count = (data as any).count || results.length;
+      const data = response.data as { results?: CallLog[]; next?: string; count?: number };
+      const results = data.results || [];
+      const next = data.next;
+      const count = data.count || results.length;
 
       if (append) {
         setCallLogs(prev => [...prev, ...results]);

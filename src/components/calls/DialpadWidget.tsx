@@ -31,7 +31,7 @@ export default function DialpadWidget() {
   // Check user's group-level feature keys (same as sidebar uses userProfile)
   const hasIpCalling = useMemo(() => {
     if (user?.is_staff || user?.is_superuser) return true;
-    const profile = userProfile as any;
+    const profile = userProfile as Record<string, unknown> | undefined;
     if (!profile?.feature_keys) return false;
     let keys: string[] = [];
     if (typeof profile.feature_keys === "string") {

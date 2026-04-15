@@ -7,7 +7,33 @@ import {
   Registerer,
   URI
 } from 'sip.js';
+import type { Session, SessionDescriptionHandler } from 'sip.js';
 import type { SipConfigurationDetail } from '@/api/generated/interfaces';
+
+// sip.js type extensions — the library's types don't expose these properties
+// but they exist at runtime on the session description handler
+interface PeerConnectionAccessor {
+  peerConnection: RTCPeerConnection;
+}
+
+// Session methods that sip.js types don't fully expose
+interface SessionWithExtras {
+  invite(options?: Record<string, unknown>): Promise<unknown>;
+  refer(target: URI | Session): Promise<unknown>;
+  info(options: Record<string, unknown>): Promise<unknown>;
+}
+
+// SipConfigurationDetail with websocket_path (exists in API but not in generated types)
+interface SipConfigWithWebSocket extends SipConfigurationDetail {
+  websocket_path?: string;
+}
+
+// Safari AudioContext compat
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
 
 // [Issue #6] Extracted audio constraints constant — previously duplicated in 3 places
 const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
@@ -83,7 +109,7 @@ export class SipService {
   private emit<K extends keyof SipCallEvents>(event: K, ...args: Parameters<SipCallEvents[K]>) {
     const callback = this.events[event];
     if (callback) {
-      (callback as any)(...args);
+      (callback as (...a: Parameters<SipCallEvents[K]>) => void)(...args);
     }
   }
 
@@ -148,7 +174,7 @@ export class SipService {
     const isSecure = window.location.protocol === 'https:';
     const wsProtocol = isSecure ? 'wss' : 'ws';
     const port = sipConfig.sip_port || (isSecure ? 8089 : 8088);
-    const wsPath = (sipConfig as any).websocket_path || '/ws';
+    const wsPath = (sipConfig as SipConfigWithWebSocket).websocket_path || '/ws';
 
     return `${wsProtocol}://${sipConfig.sip_server}:${port}${wsPath}`;
   }
@@ -529,7 +555,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     const sdh = this.currentSession.sessionDescriptionHandler;
     if (!sdh) return false;
 
-    const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+    const pc = (sdh as unknown as PeerConnectionAccessor).peerConnection;
     if (!pc) return false;
 
     const senders = pc.getSenders();
@@ -558,7 +584,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
           : [] // Empty modifiers = sendrecv (resume)
       };
 
-      await (this.currentSession as any).invite(options);
+      await (this.currentSession as unknown as SessionWithExtras).invite(options);
     } catch (error) {
       console.error('[SipService] Failed to toggle hold:', error);
       throw error;
@@ -575,7 +601,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       const sdh = this.currentSession.sessionDescriptionHandler;
       if (!sdh) return false;
 
-      const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+      const pc = (sdh as unknown as PeerConnectionAccessor).peerConnection;
       if (!pc) return false;
 
       const senders = pc.getSenders();
@@ -588,7 +614,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       // [Issue #4] Fallback: send via SIP INFO — wrap in try-catch with proper error handling
       if (this.currentSession.state === SessionState.Established) {
         try {
-          (this.currentSession as any).info({
+          (this.currentSession as unknown as SessionWithExtras).info({
             requestOptions: {
               body: {
                 contentType: 'application/dtmf-relay',
@@ -652,7 +678,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
 
     try {
       const targetUri = new URI('sip', targetNumber, this.userAgent?.configuration.uri?.host || '');
-      await (this.currentSession as any).refer(targetUri);
+      await (this.currentSession as unknown as SessionWithExtras).refer(targetUri);
     } catch (error) {
       console.error('[SipService] Failed to transfer call:', error);
       throw error;
@@ -724,7 +750,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
 
     try {
       // REFER with Replaces: tells Asterisk to bridge customer to consultation target
-      await (this.currentSession as any).refer(this.consultationSession);
+      await (this.currentSession as unknown as SessionWithExtras).refer(this.consultationSession as unknown as Session);
 
       // Clean up both local sessions
       try { await this.consultationSession.bye(); } catch {}
@@ -782,7 +808,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       const sdh = session.sessionDescriptionHandler;
       if (!sdh) return;
 
-      const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+      const pc = (sdh as unknown as PeerConnectionAccessor).peerConnection;
       if (!pc) return;
 
       const receivers = pc.getReceivers();
@@ -870,7 +896,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       }
 
       // Access the peer connection
-      const peerConnection = (sessionDescriptionHandler as any).peerConnection as RTCPeerConnection;
+      const peerConnection = (sessionDescriptionHandler as unknown as PeerConnectionAccessor).peerConnection;
       if (!peerConnection) {
         console.warn('[SipService] No peer connection available');
         return;

@@ -20,7 +20,12 @@ import {
   callLogsEndCallCreate,
   callLogsUpdateStatusPartialUpdate,
 } from '@/api/generated/api';
-import type { SipConfigurationDetail } from '@/api/generated/interfaces';
+import type {
+  SipConfigurationDetail,
+  DirectionEnum,
+  Status6efEnum,
+  CallLogCreate,
+} from '@/api/generated/interfaces';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -169,7 +174,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new (window.AudioContext ||
-          (window as any).webkitAudioContext)();
+          window.webkitAudioContext)();
       }
 
       const audioContext = audioContextRef.current;
@@ -295,14 +300,14 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const logResponse = await callLogsLogIncomingCallCreate({
               caller_number: phoneNumber,
               recipient_number: activeSipConfigRef.current?.username || '',
-              direction: 'inbound' as any,
+              direction: 'inbound' as unknown as DirectionEnum,
             });
 
             setActiveCall({
               id: invitation.id,
               logId: logResponse.id,
               number: phoneNumber,
-              callerName: (logResponse as any).client_name || undefined,
+              callerName: (logResponse as CallLogCreate & { client_name?: string }).client_name || undefined,
               direction: 'incoming',
               status: 'ringing',
               duration: 0,
@@ -333,7 +338,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             try {
               await callLogsUpdateStatusPartialUpdate(current.logId, {
-                status: 'answered' as any,
+                status: 'answered' as unknown as Status6efEnum,
               });
             } catch (err) {
               console.error('Failed to update call status:', err);
@@ -355,7 +360,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (current) {
             try {
               await callLogsEndCallCreate(current.logId, {
-                status: 'ended' as any,
+                status: 'ended' as unknown as Status6efEnum,
               });
             } catch (err) {
               console.error('Failed to end call log:', err);
@@ -376,7 +381,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (current) {
             try {
               await callLogsUpdateStatusPartialUpdate(current.logId, {
-                status: 'failed' as any,
+                status: 'failed' as unknown as Status6efEnum,
               });
             } catch (err) {
               console.error('Failed to update call status:', err);
@@ -432,10 +437,10 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await sipService.initialize(config);
 
         sipServiceRef.current = sipService;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to initialize SIP service:', err);
         setSipConnecting(false);
-        setError(`Failed to initialize SIP: ${err.message || 'Unknown error'}`);
+        setError(`Failed to initialize SIP: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     },
     [playRingtone, stopRingtone]
@@ -475,7 +480,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultConfig.id);
       setActiveSipConfig(webrtcConfig);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to load SIP configuration:', err);
       setError('Failed to load SIP configuration');
     } finally {
@@ -515,9 +520,9 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setActiveCall((prev) => (prev ? { ...prev, status: 'ringing' } : null));
 
       setDialNumber('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to make call:', err);
-      setError(`Failed to make call: ${err.message || 'Unknown error'}`);
+      setError(`Failed to make call: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setActiveCall(null);
     }
   }, [dialNumber, isDialpadOpen]);
@@ -527,9 +532,9 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         await sipServiceRef.current.acceptCall();
         stopRingtone();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to accept call:', err);
-        setError(`Failed to accept call: ${err.message}`);
+        setError(`Failed to accept call: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     }
   }, [stopRingtone]);
@@ -544,9 +549,9 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCallEndedCounter(c => c + 1);
 
         await callLogsUpdateStatusPartialUpdate(current.logId, {
-          status: 'cancelled' as any,
+          status: 'cancelled' as unknown as Status6efEnum,
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to reject call:', err);
       }
     }
@@ -557,7 +562,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         await sipServiceRef.current.endCall();
         stopRingtone();
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Failed to end call:', err);
       }
     }
@@ -733,7 +738,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Check user's group-level feature keys (same logic as sidebar)
   const userHasIpCalling = useMemo(() => {
     if (user?.is_staff || user?.is_superuser) return true;
-    const profile = userProfile as any;
+    const profile = userProfile as Record<string, unknown> | undefined;
     if (!profile?.feature_keys) return false;
     let keys: string[] = [];
     if (typeof profile.feature_keys === 'string') {
