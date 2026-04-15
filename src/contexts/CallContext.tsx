@@ -640,14 +640,13 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         consultation_log_id: current.consultationCall?.logId,
       });
 
-      // Take original call off hold so audio flows through ConfBridge
-      await sipServiceRef.current.resumeOriginalFromHold();
+      // End both local SIP sessions — the ConfBridge handles audio now
+      // Agent disconnects, customer and transfer target stay in conference
+      await sipServiceRef.current.endCall();
 
-      setActiveCall(prev => prev ? {
-        ...prev,
-        isOnHold: false,
-        transferPhase: 'conferenced',
-      } : null);
+      setActiveCall(null);
+      setCallDuration(0);
+      setCallEndedCounter(c => c + 1);
     } catch (err) {
       console.error('Failed to merge conference:', err);
       setError('Failed to merge calls into conference');

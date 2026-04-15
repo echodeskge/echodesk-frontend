@@ -17,11 +17,13 @@ import {
   PhoneIncoming,
   PhoneOutgoing,
   PhoneMissed,
+  PhoneForwarded,
   Mic,
   MicOff,
   Pause,
   Play,
   User,
+  Users,
   Mail,
   Building2,
   Clock,
@@ -30,6 +32,7 @@ import {
   ExternalLink,
   Save,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 import { useCall } from "@/contexts/CallContext";
@@ -54,8 +57,10 @@ export function IncomingCallSidebar() {
   const router = useRouter();
   const { isOpen, callLogId, phoneNumber, clientName, closeSidebar } =
     useIncomingCallSidebar();
-  const { activeCall, callDuration, handleEndCall, handleToggleMute, handleToggleHold } =
-    useCall();
+  const {
+    activeCall, callDuration, handleEndCall, handleToggleMute, handleToggleHold,
+    transferCall, startAttendedTransfer, completeTransfer, cancelTransfer, mergeConference,
+  } = useCall();
   const { openTicketCreate } = useTicketCreate();
 
   const [client, setClient] = useState<Client | null>(null);
@@ -64,6 +69,8 @@ export function IncomingCallSidebar() {
   const [loading, setLoading] = useState(true);
   const [notesText, setNotesText] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferNumber, setTransferNumber] = useState("");
 
   // Fetch client + related data when sidebar opens
   const fetchData = useCallback(async () => {
@@ -182,51 +189,123 @@ export function IncomingCallSidebar() {
 
           {/* Active Call Controls */}
           {isCallActive && (
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={activeCall.status === "ringing" ? "secondary" : "default"}
-                className="animate-pulse"
-              >
-                {activeCall.status === "ringing"
-                  ? t("logs.ringing")
-                  : formatDuration(callDuration)}
-              </Badge>
-              <div className="flex-1" />
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleToggleMute}
-                title={activeCall.isMuted ? t("unmute") : t("mute")}
-              >
-                {activeCall.isMuted ? (
-                  <MicOff className="h-4 w-4 text-destructive" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleToggleHold}
-                title={activeCall.isOnHold ? t("resume") : t("hold")}
-              >
-                {activeCall.isOnHold ? (
-                  <Play className="h-4 w-4 text-orange-500" />
-                ) : (
-                  <Pause className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant="destructive"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleEndCall}
-                title={t("endCall")}
-              >
-                <PhoneOff className="h-4 w-4" />
-              </Button>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={activeCall.status === "ringing" ? "secondary" : "default"}
+                  className="animate-pulse"
+                >
+                  {activeCall.status === "ringing"
+                    ? t("logs.ringing")
+                    : formatDuration(callDuration)}
+                </Badge>
+                <div className="flex-1" />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleToggleMute}
+                  title={activeCall.isMuted ? t("unmute") : t("mute")}
+                >
+                  {activeCall.isMuted ? (
+                    <MicOff className="h-4 w-4 text-destructive" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleToggleHold}
+                  title={activeCall.isOnHold ? t("resume") : t("hold")}
+                >
+                  {activeCall.isOnHold ? (
+                    <Play className="h-4 w-4 text-orange-500" />
+                  ) : (
+                    <Pause className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant={showTransfer ? "default" : "outline"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowTransfer(!showTransfer)}
+                  disabled={activeCall.status !== "active" || activeCall.transferPhase === "consulting"}
+                  title={t("dashboard.attendedTransfer")}
+                >
+                  <PhoneForwarded className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleEndCall}
+                  title={t("endCall")}
+                >
+                  <PhoneOff className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Transfer input */}
+              {showTransfer && activeCall.status === "active" && activeCall.transferPhase === "idle" && (
+                <div className="flex gap-2">
+                  <Input
+                    type="tel"
+                    placeholder={t("dashboard.transferTo")}
+                    value={transferNumber}
+                    onChange={(e) => setTransferNumber(e.target.value)}
+                    className="text-sm h-8"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && transferNumber) {
+                        startAttendedTransfer(transferNumber).catch(() => {});
+                        setShowTransfer(false);
+                        setTransferNumber("");
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8"
+                    disabled={!transferNumber}
+                    onClick={() => {
+                      startAttendedTransfer(transferNumber).catch(() => {});
+                      setShowTransfer(false);
+                      setTransferNumber("");
+                    }}
+                  >
+                    <PhoneForwarded className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Consultation state */}
+              {activeCall.transferPhase === "consulting" && activeCall.consultationCall && (
+                <div className="space-y-2">
+                  <div className="rounded-md border bg-muted p-2 text-xs">
+                    <span className="text-muted-foreground">{t("dashboard.consultingWith")}: </span>
+                    <span className="font-medium">
+                      {activeCall.consultationCall.targetName || activeCall.consultationCall.targetNumber}
+                    </span>
+                    <Badge variant="secondary" className="ml-2 text-[10px]">
+                      {activeCall.consultationCall.status}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <Button variant="outline" size="sm" className="flex-1 h-7 text-xs" onClick={() => cancelTransfer().catch(() => {})}>
+                      <X className="h-3 w-3 mr-1" />
+                      {t("dashboard.cancelTransfer")}
+                    </Button>
+                    <Button size="sm" className="flex-1 h-7 text-xs" disabled={activeCall.consultationCall.status !== "active"} onClick={() => completeTransfer().catch(() => {})}>
+                      <PhoneForwarded className="h-3 w-3 mr-1" />
+                      {t("dashboard.completeTransfer")}
+                    </Button>
+                    <Button variant="secondary" size="sm" className="h-7 text-xs" disabled={activeCall.consultationCall.status !== "active"} onClick={() => mergeConference().catch(() => {})}>
+                      <Users className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
