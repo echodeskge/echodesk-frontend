@@ -590,7 +590,10 @@
     "resume": "Resume",
     "transfer": "Transfer",
     "answer": "Answer",
+    "accept": "Accept",
     "decline": "Decline",
+    "missedCall": "Missed Call",
+    "callBack": "Call Back",
     "endCall": "End Call",
     "makeACall": "Make a Call",
     "enterPhoneNumber": "Enter phone number",
@@ -775,6 +778,7 @@
     "callDetail": {
       "clientInfo": "Client Information",
       "unknownCaller": "Unknown Caller",
+      "viewDetails": "View caller details",
       "viewProfile": "View Full Profile",
       "recentTickets": "Recent Tickets",
       "noTickets": "No tickets found for this client",

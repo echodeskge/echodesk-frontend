@@ -9,6 +9,25 @@ import {
 } from 'sip.js';
 import type { SipConfigurationDetail } from '@/api/generated/interfaces';
 
+// [Issue #6] Extracted audio constraints constant — previously duplicated in 3 places
+const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+  sampleRate: 48000,
+  channelCount: 1,
+};
+
+// [Issue #8] Cache the dynamic import result so NoiseSuppression module is loaded only once
+let noiseSuppressionModuleCache: Promise<typeof import('./NoiseSuppression')> | null = null;
+
+function getNoiseSuppressionModule(): Promise<typeof import('./NoiseSuppression')> {
+  if (!noiseSuppressionModuleCache) {
+    noiseSuppressionModuleCache = import('./NoiseSuppression');
+  }
+  return noiseSuppressionModuleCache;
+}
+
 export interface SipCallEvents {
   onCallProgress: () => void;
   onCallAccepted: () => void;
@@ -23,6 +42,8 @@ export interface SipCallEvents {
   onConsultationAccepted: () => void;
   onConsultationEnded: () => void;
   onConsultationFailed: (error: string) => void;
+  // [Issue #9] New event for call quality degradation warnings
+  onCallQualityWarning: (message: string) => void;
 }
 
 export class SipService {
@@ -36,6 +57,15 @@ export class SipService {
   private isRegistered = false;
   private noiseSuppression: import('./NoiseSuppression').NoiseSuppression | null = null;
   private noiseSuppressionEnabled = false; // Disabled by default — adds ~43ms latency
+
+  // [Issue #1] Flag to prevent concurrent setupAudioStreams invocations
+  private audioSetupDone = false;
+
+  // [Issue #2] Track the retry timeout so it can be cleared on cleanup
+  private audioPlayRetryTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  // [Issue #7] Track AudioContext instances created in setupAudioStreams for cleanup
+  private audioContext: AudioContext | null = null;
 
   constructor(
     localAudio: HTMLAudioElement,
@@ -123,6 +153,24 @@ export class SipService {
     return `${wsProtocol}://${sipConfig.sip_server}:${port}${wsPath}`;
   }
 
+  // [Issue #2 / #7] Clear audio-related timers and contexts
+  private cleanupAudioResources(): void {
+    // Clear retry timeout
+    if (this.audioPlayRetryTimeout !== null) {
+      clearTimeout(this.audioPlayRetryTimeout);
+      this.audioPlayRetryTimeout = null;
+    }
+
+    // [Issue #7] Close the AudioContext created in setupAudioStreams
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close().catch(() => {});
+      this.audioContext = null;
+    }
+
+    // Reset the audio setup flag so a new call can set up audio fresh
+    this.audioSetupDone = false;
+  }
+
   // Initialize SIP user agent
   async initialize(sipConfig: SipConfigurationDetail): Promise<void> {
     try {
@@ -145,7 +193,7 @@ Solutions:
 
 Traditional SIP providers work with desktop softphones (like Zoiper) but not web browsers due to security restrictions.`;
 
-        console.error('SIP Provider Compatibility Issue:', errorMessage);
+        console.error('[SipService] Provider compatibility issue:', errorMessage);
         throw new Error(errorMessage);
       }
 
@@ -154,6 +202,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
 
       const sipUri = new URI('sip', sipConfig.username, sipConfig.realm || sipConfig.sip_server);
 
+      // [Issue #6] Use extracted AUDIO_CONSTRAINTS constant
       // Create user agent with enhanced configuration
       this.userAgent = new UserAgent({
         uri: sipUri,
@@ -183,13 +232,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
             iceCandidatePoolSize: 10
           },
           constraints: {
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-              sampleRate: 48000,
-              channelCount: 1,
-            },
+            audio: AUDIO_CONSTRAINTS,
             video: false
           }
         },
@@ -212,7 +255,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       await this.register();
 
     } catch (error) {
-      console.error('Failed to initialize SIP:', error);
+      console.error('[SipService] Failed to initialize SIP:', error);
       throw new Error(`SIP initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -248,7 +291,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       await this.registerer.register();
 
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('[SipService] Registration failed:', error);
       this.emit('onRegistrationFailed', error instanceof Error ? error.message : 'Registration failed');
       throw error;
     }
@@ -283,31 +326,30 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       const realm = this.userAgent.configuration.uri?.host || 'pbx.echodesk.ge';
       const targetUri = new URI('sip', cleanNumber, realm);
 
-      // Request user media first to ensure audio is available
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 48000
-        },
-        video: false
-      });
+      // [Issue #3] Wrap getUserMedia in Promise.race with a 10-second timeout
+      const stream = await Promise.race([
+        navigator.mediaDevices.getUserMedia({
+          audio: AUDIO_CONSTRAINTS, // [Issue #6] Use extracted constant
+          video: false
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Microphone access timed out after 10 seconds')), 10000)
+        ),
+      ]);
 
+      // [Issue #6] Use extracted AUDIO_CONSTRAINTS constant
       // Create inviter with enhanced options
       this.currentSession = new Inviter(this.userAgent, targetUri, {
         sessionDescriptionHandlerOptions: {
           constraints: {
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true,
-              sampleRate: 48000
-            },
+            audio: AUDIO_CONSTRAINTS,
             video: false
           }
         }
       });
+
+      // Reset audio setup flag for new call
+      this.audioSetupDone = false;
 
       // Handle session state changes with more detailed logging
       this.currentSession.stateChange.addListener((state: SessionState) => {
@@ -380,7 +422,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       });
 
     } catch (error) {
-      console.error('Failed to make call:', error);
+      console.error('[SipService] Failed to make call:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown call error';
 
       // Specific error handling for common WebRTC issues
@@ -389,7 +431,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
           this.emit('onCallFailed', 'Microphone access denied. Please allow microphone access and try again.');
         } else if (error.name === 'NotFoundError') {
           this.emit('onCallFailed', 'No microphone found. Please connect a microphone and try again.');
-        } else if (error.message.includes('getUserMedia')) {
+        } else if (error.message.includes('getUserMedia') || error.message.includes('timed out')) {
           this.emit('onCallFailed', 'Audio device error: ' + error.message);
         } else {
           this.emit('onCallFailed', errorMessage);
@@ -406,6 +448,9 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
   // Handle incoming call
   private handleIncomingCall(invitation: Invitation) {
     this.currentSession = invitation;
+
+    // Reset audio setup flag for new call
+    this.audioSetupDone = false;
 
     // Handle session state changes
     invitation.stateChange.addListener((state: SessionState) => {
@@ -432,16 +477,17 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     }
 
     try {
+      // [Issue #6] Use extracted AUDIO_CONSTRAINTS constant
       await this.currentSession.accept({
         sessionDescriptionHandlerOptions: {
           constraints: {
-            audio: true,
+            audio: AUDIO_CONSTRAINTS,
             video: false
           }
         }
       });
     } catch (error) {
-      console.error('Failed to accept call:', error);
+      console.error('[SipService] Failed to accept call:', error);
       throw error;
     }
   }
@@ -456,7 +502,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       await this.currentSession.reject();
       this.currentSession = null;
     } catch (error) {
-      console.error('Failed to reject call:', error);
+      console.error('[SipService] Failed to reject call:', error);
       throw error;
     }
   }
@@ -499,7 +545,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
 
       await (this.currentSession as any).invite(options);
     } catch (error) {
-      console.error('Failed to toggle hold:', error);
+      console.error('[SipService] Failed to toggle hold:', error);
       throw error;
     }
   }
@@ -524,30 +570,35 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         return true;
       }
 
-      // Fallback: send via SIP INFO
+      // [Issue #4] Fallback: send via SIP INFO — wrap in try-catch with proper error handling
       if (this.currentSession.state === SessionState.Established) {
-        (this.currentSession as any).info({
-          requestOptions: {
-            body: {
-              contentType: 'application/dtmf-relay',
-              body: `Signal=${tone}\r\nDuration=100`,
+        try {
+          (this.currentSession as any).info({
+            requestOptions: {
+              body: {
+                contentType: 'application/dtmf-relay',
+                body: `Signal=${tone}\r\nDuration=100`,
+              },
             },
-          },
-        });
-        return true;
+          });
+          return true;
+        } catch (infoError) {
+          console.warn('[SipService] SIP INFO DTMF fallback failed:', infoError);
+          return false;
+        }
       }
 
       return false;
     } catch (error) {
-      console.error('Failed to send DTMF:', error);
+      console.error('[SipService] Failed to send DTMF:', error);
       return false;
     }
   }
 
-  // Apply RNNoise noise suppression to outgoing audio
+  // [Issue #8] Apply RNNoise noise suppression to outgoing audio — uses cached import
   private async applyNoiseSuppression(audioSender: RTCRtpSender, peerConnection: RTCPeerConnection): Promise<void> {
     try {
-      const { NoiseSuppression } = await import('./NoiseSuppression');
+      const { NoiseSuppression } = await getNoiseSuppressionModule();
       this.noiseSuppression = new NoiseSuppression();
 
       const originalTrack = audioSender.track;
@@ -561,7 +612,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         await audioSender.replaceTrack(cleanTrack);
       }
     } catch (error) {
-      console.warn('Failed to apply noise suppression:', error);
+      console.warn('[SipService] Failed to apply noise suppression:', error);
     }
   }
 
@@ -588,7 +639,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       const targetUri = new URI('sip', targetNumber, this.userAgent?.configuration.uri?.host || '');
       await (this.currentSession as any).refer(targetUri);
     } catch (error) {
-      console.error('Failed to transfer call:', error);
+      console.error('[SipService] Failed to transfer call:', error);
       throw error;
     }
   }
@@ -638,7 +689,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         }
       });
     } catch (error) {
-      console.error('Failed to start consultation:', error);
+      console.error('[SipService] Failed to start consultation:', error);
       // Resume original call on failure
       try { await this.toggleHold(false); } catch {}
       this.consultationSession = null;
@@ -665,7 +716,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       this.consultationSession = null;
       this.currentSession = null;
     } catch (error) {
-      console.error('Failed to complete attended transfer:', error);
+      console.error('[SipService] Failed to complete attended transfer:', error);
       throw error;
     }
   }
@@ -680,7 +731,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
           await this.consultationSession.cancel();
         }
       } catch (error) {
-        console.error('Error ending consultation:', error);
+        console.warn('[SipService] Error ending consultation:', error);
       }
       this.consultationSession = null;
     }
@@ -691,7 +742,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         await this.toggleHold(false);
         this.setupAudioForSession(this.currentSession);
       } catch (error) {
-        console.error('Error resuming original call:', error);
+        console.error('[SipService] Error resuming original call:', error);
       }
     }
   }
@@ -724,12 +775,14 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         if (receiver.track && receiver.track.kind === 'audio') {
           const stream = new MediaStream([receiver.track]);
           this.remoteAudioElement.srcObject = stream;
-          this.remoteAudioElement.play().catch(console.warn);
+          this.remoteAudioElement.play().catch((e) => {
+            console.warn('[SipService] Failed to play session audio:', e);
+          });
           break;
         }
       }
     } catch (error) {
-      console.error('Failed to setup audio for session:', error);
+      console.error('[SipService] Failed to setup audio for session:', error);
     }
   }
 
@@ -748,6 +801,8 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     }
 
     if (!this.currentSession) {
+      // [Issue #7] Still clean up audio resources even if session is already null
+      this.cleanupAudioResources();
       return;
     }
 
@@ -765,20 +820,29 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         this.noiseSuppression.destroy();
         this.noiseSuppression = null;
       }
+      // [Issue #2 / #7] Clean up audio resources
+      this.cleanupAudioResources();
     } catch (error) {
-      console.error('Failed to end call:', error);
+      console.error('[SipService] Failed to end call:', error);
       this.currentSession = null;
       if (this.noiseSuppression) {
         this.noiseSuppression.destroy();
         this.noiseSuppression = null;
       }
+      // [Issue #2 / #7] Clean up audio resources even on error
+      this.cleanupAudioResources();
     }
   }
 
   // Setup audio streams
-  private setupAudioStreams() {
+  setupAudioStreams() {
+    // [Issue #1] Prevent concurrent audio setup — flag checked and set atomically
+    if (this.audioSetupDone) {
+      return;
+    }
+
     if (!this.currentSession || !this.remoteAudioElement || !this.localAudioElement) {
-      console.warn('Cannot setup audio streams - missing session or audio elements');
+      console.warn('[SipService] Cannot setup audio streams - missing session or audio elements');
       return;
     }
 
@@ -786,16 +850,19 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       // Get session description handler
       const sessionDescriptionHandler = this.currentSession.sessionDescriptionHandler;
       if (!sessionDescriptionHandler) {
-        console.warn('No session description handler available');
+        console.warn('[SipService] No session description handler available');
         return;
       }
 
       // Access the peer connection
       const peerConnection = (sessionDescriptionHandler as any).peerConnection as RTCPeerConnection;
       if (!peerConnection) {
-        console.warn('No peer connection available');
+        console.warn('[SipService] No peer connection available');
         return;
       }
+
+      // [Issue #1] Mark audio setup as done to prevent re-entry
+      this.audioSetupDone = true;
 
       // Handle remote stream — apply audio enhancement for narrowband calls
       peerConnection.ontrack = (event) => {
@@ -803,7 +870,13 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         if (this.remoteAudioElement && remoteStream) {
           // Apply audio enhancement pipeline for incoming audio
           try {
+            // [Issue #7] Close previous AudioContext before creating a new one
+            if (this.audioContext && this.audioContext.state !== 'closed') {
+              this.audioContext.close().catch(() => {});
+            }
+
             const ctx = new AudioContext();
+            this.audioContext = ctx; // [Issue #7] Track for cleanup
             const source = ctx.createMediaStreamSource(remoteStream);
 
             // Compressor: even out volume levels
@@ -838,7 +911,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
             const gain = ctx.createGain();
             gain.gain.value = 1.3;
 
-            // Connect: source → highpass → warmth → presence → compressor → gain → destination
+            // Connect: source -> highpass -> warmth -> presence -> compressor -> gain -> destination
             const dest = ctx.createMediaStreamDestination();
             source.connect(highPass);
             highPass.connect(warmthBoost);
@@ -861,10 +934,19 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
           this.remoteAudioElement.play().then(() => {
             // Remote audio playing
           }).catch(e => {
-            console.warn('Failed to play remote audio:', e);
-            // Try to play again after user interaction
-            setTimeout(() => {
-              this.remoteAudioElement?.play().catch(console.warn);
+            console.warn('[SipService] Failed to play remote audio, retrying in 1s:', e);
+            // [Issue #2] Clear any previous retry before scheduling a new one
+            if (this.audioPlayRetryTimeout !== null) {
+              clearTimeout(this.audioPlayRetryTimeout);
+            }
+            this.audioPlayRetryTimeout = setTimeout(() => {
+              this.audioPlayRetryTimeout = null;
+              // [Issue #2] Check element still exists before attempting play
+              if (this.remoteAudioElement) {
+                this.remoteAudioElement.play().catch((retryErr) => {
+                  console.warn('[SipService] Retry play also failed:', retryErr);
+                });
+              }
             }, 1000);
           });
         }
@@ -876,16 +958,22 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
           // Verify audio streams
           this.verifyAudioStreams(peerConnection);
         } else if (peerConnection.connectionState === 'failed') {
-          console.error('Peer connection failed');
+          console.error('[SipService] Peer connection failed');
           this.emit('onCallFailed', 'Connection failed');
         }
       };
 
       // Handle ICE connection state changes
       peerConnection.oniceconnectionstatechange = () => {
-        if (peerConnection.iceConnectionState === 'failed') {
-          console.error('ICE connection failed');
+        const state = peerConnection.iceConnectionState;
+        if (state === 'failed') {
+          // [Issue #5 / #10] ICE failure — unrecoverable
+          console.error('[SipService] ICE connection failed');
           this.emit('onCallFailed', 'Network connection failed');
+        } else if (state === 'disconnected') {
+          // [Issue #5 / #9] ICE disconnected — may recover, but warn the UI
+          console.warn('[SipService] ICE connection disconnected — possible network issue');
+          this.emit('onCallQualityWarning', 'Network connection unstable — call quality may be degraded');
         }
       };
 
@@ -899,7 +987,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         // Apply noise suppression to outgoing audio
         if (this.noiseSuppressionEnabled) {
           this.applyNoiseSuppression(audioSender, peerConnection).catch(err => {
-            console.warn('Noise suppression failed, using raw audio:', err);
+            console.warn('[SipService] Noise suppression failed, using raw audio:', err);
           });
         }
 
@@ -913,18 +1001,20 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
       // Check if we already have tracks
       const receivers = peerConnection.getReceivers();
 
-      receivers.forEach((receiver, index) => {
+      receivers.forEach((receiver) => {
         if (receiver.track && receiver.track.kind === 'audio') {
           const stream = new MediaStream([receiver.track]);
           if (this.remoteAudioElement) {
             this.remoteAudioElement.srcObject = stream;
-            this.remoteAudioElement.play().catch(console.warn);
+            this.remoteAudioElement.play().catch((e) => {
+              console.warn('[SipService] Failed to play existing receiver track:', e);
+            });
           }
         }
       });
 
     } catch (error) {
-      console.error('Failed to setup audio streams:', error);
+      console.error('[SipService] Failed to setup audio streams:', error);
     }
   }
 
@@ -966,6 +1056,9 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
         await this.endCall();
       }
 
+      // [Issue #2 / #7] Clean up audio resources on full disconnect
+      this.cleanupAudioResources();
+
       // Stop user agent
       if (this.userAgent) {
         await this.userAgent.stop();
@@ -974,7 +1067,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
 
       this.isRegistered = false;
     } catch (error) {
-      console.error('Error during disconnect:', error);
+      console.error('[SipService] Error during disconnect:', error);
     }
   }
 
@@ -991,7 +1084,7 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
 
       return isConnected;
     } catch (error) {
-      console.error('SIP connection test failed:', error);
+      console.error('[SipService] SIP connection test failed:', error);
       return false;
     }
   }

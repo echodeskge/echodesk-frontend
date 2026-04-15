@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Phone, PhoneMissed, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useCall } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +13,7 @@ import { DialpadPopup } from "./DialpadPopup";
 import { IncomingCallNotification } from "./IncomingCallNotification";
 
 export default function DialpadWidget() {
+  const t = useTranslations("calls");
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
   const {
@@ -57,13 +60,14 @@ export default function DialpadWidget() {
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <PhoneMissed className="h-5 w-5 text-red-500" />
-                <p className="text-sm font-semibold">Missed Call</p>
+                <p className="text-sm font-semibold">{t("missedCall")}</p>
               </div>
               <button onClick={clearMissedCall} className="text-muted-foreground hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">{missedCall.number}</p>
+            <p className="text-sm text-muted-foreground mb-1">{missedCall.number}</p>
+            <p className="text-xs text-muted-foreground mb-2">{format(missedCall.time, "h:mm a")}</p>
             <Button
               size="sm"
               className="w-full bg-green-600 hover:bg-green-700"
@@ -74,7 +78,7 @@ export default function DialpadWidget() {
               }}
             >
               <Phone className="h-4 w-4 mr-1" />
-              Call Back
+              {t("callBack")}
             </Button>
           </div>
         </div>

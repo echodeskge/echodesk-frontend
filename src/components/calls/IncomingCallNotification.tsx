@@ -1,15 +1,35 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Phone, PhoneOff, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCall } from "@/contexts/CallContext";
 import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 
+const AUTO_DISMISS_MS = 30000; // Auto-dismiss after 30 seconds
+
 export function IncomingCallNotification() {
+  const t = useTranslations("calls");
   const { activeCall, handleAcceptCall, handleRejectCall } = useCall();
   const { openSidebar } = useIncomingCallSidebar();
+  const [dismissed, setDismissed] = useState(false);
 
-  if (!activeCall || activeCall.direction !== "incoming" || activeCall.status !== "ringing") {
+  // Auto-dismiss after 30 seconds
+  useEffect(() => {
+    if (activeCall?.direction === "incoming" && activeCall.status === "ringing") {
+      setDismissed(false);
+      const timer = setTimeout(() => setDismissed(true), AUTO_DISMISS_MS);
+      return () => clearTimeout(timer);
+    }
+  }, [activeCall?.id, activeCall?.status, activeCall?.direction]);
+
+  if (
+    !activeCall ||
+    activeCall.direction !== "incoming" ||
+    activeCall.status !== "ringing" ||
+    dismissed
+  ) {
     return null;
   }
 
@@ -28,7 +48,7 @@ export function IncomingCallNotification() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold truncate">
-              {activeCall.callerName || "Incoming Call"}
+              {activeCall.callerName || t("incomingCall")}
             </p>
             <p className="text-sm text-muted-foreground">{activeCall.number}</p>
           </div>
@@ -37,7 +57,7 @@ export function IncomingCallNotification() {
             size="icon"
             className="h-8 w-8 flex-shrink-0"
             onClick={handleViewDetails}
-            title="View caller details"
+            title={t("callDetail.viewDetails")}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -49,7 +69,7 @@ export function IncomingCallNotification() {
             size="sm"
           >
             <Phone className="h-4 w-4 mr-1" />
-            Accept
+            {t("accept")}
           </Button>
           <Button
             onClick={handleRejectCall}
@@ -58,7 +78,7 @@ export function IncomingCallNotification() {
             size="sm"
           >
             <PhoneOff className="h-4 w-4 mr-1" />
-            Decline
+            {t("decline")}
           </Button>
         </div>
       </div>

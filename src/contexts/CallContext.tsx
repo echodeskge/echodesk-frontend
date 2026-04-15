@@ -126,6 +126,16 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const ringtoneTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isRingtonePlayingRef = useRef<boolean>(false);
 
+  // Auto-clear errors after 5 seconds
+  const errorTimerRef = useRef<NodeJS.Timeout | null>(null);
+  useEffect(() => {
+    if (error) {
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => setError(''), 5000);
+    }
+    return () => { if (errorTimerRef.current) clearTimeout(errorTimerRef.current); };
+  }, [error]);
+
   // Ref that always mirrors activeCall state – used inside event callbacks
   // to avoid stale closures.
   const activeCallRef = useRef<ActiveCall | null>(null);
@@ -139,15 +149,25 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     activeSipConfigRef.current = activeSipConfig;
   }, [activeSipConfig]);
 
+  // Mounted flag to prevent state updates after unmount
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Track reconnect timeout for cleanup
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // ---------------------------------------------------------------------------
   // Ringtone helpers (Web Audio API – 800 Hz sine wave)
   // ---------------------------------------------------------------------------
 
   const createRingtone = useCallback(async () => {
-    if (!isRingtonePlayingRef.current) return;
+    if (!isRingtonePlayingRef.current || !mountedRef.current) return;
 
     try {
-      if (!audioContextRef.current) {
+      if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
         audioContextRef.current = new (window.AudioContext ||
           (window as any).webkitAudioContext)();
       }
@@ -169,11 +189,13 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.5);
 
-      if (isRingtonePlayingRef.current) {
+      // Re-check flag after async operations to prevent infinite loop
+      if (isRingtonePlayingRef.current && mountedRef.current) {
         ringtoneTimeoutRef.current = setTimeout(createRingtone, 1000);
       }
     } catch (err) {
       console.warn('Could not create ringtone:', err);
+      isRingtonePlayingRef.current = false;
     }
   }, []);
 
@@ -222,6 +244,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         sipService.on('onUnregistered', () => {
+          if (!mountedRef.current) return;
           setSipRegistered(false);
           setSipConnecting(false);
 
@@ -229,11 +252,12 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (!activeCallRef.current) {
             const retryCount = (reconnectAttemptsRef.current || 0) + 1;
             reconnectAttemptsRef.current = retryCount;
-            if (retryCount <= 3) {
-              const delay = retryCount * 5000; // 5s, 10s, 15s
-              console.log(`SIP disconnected, retrying in ${delay / 1000}s (attempt ${retryCount}/3)`);
-              setTimeout(() => {
-                if (activeSipConfigRef.current && sipServiceRef.current) {
+            if (retryCount <= 5) {
+              const delay = retryCount * 5000;
+              console.warn(`SIP disconnected, retrying in ${delay / 1000}s (attempt ${retryCount}/5)`);
+              if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+              reconnectTimeoutRef.current = setTimeout(() => {
+                if (mountedRef.current && activeSipConfigRef.current && sipServiceRef.current) {
                   sipServiceRef.current.register?.().catch(() => {});
                 }
               }, delay);
@@ -242,10 +266,24 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         sipService.on('onRegistrationFailed', (err) => {
+          if (!mountedRef.current) return;
           console.error('SIP registration failed:', err);
           setSipRegistered(false);
           setSipConnecting(false);
           setError(`SIP registration failed: ${err || 'Unknown error'}`);
+
+          // Auto-retry registration failures too (with longer backoff)
+          const retryCount = (reconnectAttemptsRef.current || 0) + 1;
+          reconnectAttemptsRef.current = retryCount;
+          if (retryCount <= 3) {
+            const delay = retryCount * 10000;
+            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = setTimeout(() => {
+              if (mountedRef.current && activeSipConfigRef.current && sipServiceRef.current) {
+                sipServiceRef.current.register?.().catch(() => {});
+              }
+            }, delay);
+          }
         });
 
         sipService.on('onIncomingCall', async (invitation: Invitation) => {
@@ -279,6 +317,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         sipService.on('onCallAccepted', async () => {
           stopRingtone();
+          if (!mountedRef.current) return;
 
           const current = activeCallRef.current;
           if (current) {
@@ -304,6 +343,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         sipService.on('onCallEnded', async () => {
           stopRingtone();
+          if (!mountedRef.current) return;
 
           const current = activeCallRef.current;
 
@@ -330,6 +370,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         sipService.on('onCallFailed', async (callError) => {
           console.error('Call failed:', callError);
           stopRingtone();
+          if (!mountedRef.current) return;
 
           const current = activeCallRef.current;
           if (current) {
@@ -561,42 +602,42 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const current = activeCallRef.current;
 
-    // Update state to consulting
-    setActiveCall(prev => prev ? {
-      ...prev,
-      isOnHold: true,
-      transferPhase: 'consulting',
-      consultationCall: {
-        targetNumber,
-        targetName,
-        status: 'connecting',
-        duration: 0,
-      },
-    } : null);
-
     try {
-      // Log consultation on backend
+      // 1. Log consultation on backend FIRST (before SIP)
       const { default: axios } = await import('@/api/axios');
       const res = await axios.post(`/api/call-logs/${current.logId}/initiate_consultation/`, {
         target_number: targetNumber,
       });
       const consultationLogId = res.data.consultation_log_id;
 
-      // Start SIP consultation call
+      // 2. Update state to consulting
+      setActiveCall(prev => prev ? {
+        ...prev,
+        isOnHold: true,
+        transferPhase: 'consulting',
+        consultationCall: {
+          targetNumber,
+          targetName,
+          status: 'connecting',
+          duration: 0,
+          logId: consultationLogId,
+        },
+      } : null);
+
+      // 3. Start SIP consultation call (puts original on hold internally)
       await sipServiceRef.current.startConsultation(targetNumber);
 
-      // Update with log ID
+      // 4. Update status to ringing
       setActiveCall(prev => prev ? {
         ...prev,
         consultationCall: prev.consultationCall ? {
           ...prev.consultationCall,
-          logId: consultationLogId,
           status: 'ringing',
         } : null,
       } : null);
     } catch (err) {
       console.error('Failed to start attended transfer:', err);
-      // Revert state
+      // Revert state — SIP session cleanup handled by SipService on failure
       setActiveCall(prev => prev ? {
         ...prev,
         isOnHold: false,
@@ -611,14 +652,19 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!sipServiceRef.current || !activeCallRef.current) return;
 
     const current = activeCallRef.current;
+    if (!current.consultationCall?.logId) {
+      setError('Cannot complete transfer: consultation not properly logged');
+      return;
+    }
+
     try {
       await sipServiceRef.current.completeAttendedTransfer();
 
       // Log on backend
       const { default: axios } = await import('@/api/axios');
       await axios.post(`/api/call-logs/${current.logId}/complete_attended_transfer/`, {
-        consultation_log_id: current.consultationCall?.logId,
-        target_number: current.consultationCall?.targetNumber,
+        consultation_log_id: current.consultationCall.logId,
+        target_number: current.consultationCall.targetNumber,
       });
 
       setActiveCall(null);
@@ -626,6 +672,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setCallEndedCounter(c => c + 1);
     } catch (err) {
       console.error('Failed to complete transfer:', err);
+      setError('Transfer failed. Try again or cancel.');
     }
   }, []);
 
@@ -707,9 +754,20 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadSipConfiguration();
 
     return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
       if (sipServiceRef.current) {
         sipServiceRef.current.disconnect();
         sipServiceRef.current = null;
+      }
+      // Clean up audio elements to prevent media stream leaks
+      if (localAudioRef.current) {
+        localAudioRef.current.srcObject = null;
+      }
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = null;
       }
       stopRingtone();
       if (callTimerRef.current) {

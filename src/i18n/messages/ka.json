@@ -590,7 +590,10 @@
     "resume": "გაგრძელება",
     "transfer": "გადაცემა",
     "answer": "პასუხი",
+    "accept": "მიღება",
     "decline": "უარყოფა",
+    "missedCall": "გამოტოვებული ზარი",
+    "callBack": "დარეკვა",
     "endCall": "ზარის დასრულება",
     "makeACall": "ზარის განხორციელება",
     "enterPhoneNumber": "შეიყვანეთ ტელეფონის ნომერი",
@@ -775,6 +778,7 @@
     "callDetail": {
       "clientInfo": "კლიენტის ინფორმაცია",
       "unknownCaller": "უცნობი აბონენტი",
+      "viewDetails": "აბონენტის დეტალები",
       "viewProfile": "პროფილის ნახვა",
       "recentTickets": "ბოლო ტიკეტები",
       "noTickets": "ტიკეტები არ მოიძებნა",
