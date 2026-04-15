@@ -288,7 +288,9 @@ export function IncomingCallSidebar() {
                       {activeCall.consultationCall.targetName || activeCall.consultationCall.targetNumber}
                     </span>
                     <Badge variant="secondary" className="ml-2 text-[10px]">
-                      {activeCall.consultationCall.status}
+                      {activeCall.consultationCall.status === "connecting" && t("dashboard.connecting")}
+                      {activeCall.consultationCall.status === "ringing" && t("dashboard.ringing")}
+                      {activeCall.consultationCall.status === "active" && t("dashboard.active")}
                     </Badge>
                   </div>
                   <div className="flex gap-1.5">

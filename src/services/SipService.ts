@@ -408,6 +408,21 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
               case 487:
                 errorMessage = 'Request terminated';
                 break;
+              case 401:
+                errorMessage = 'Authentication failed';
+                break;
+              case 403:
+                errorMessage = 'Call forbidden — check permissions';
+                break;
+              case 481:
+                errorMessage = 'Call no longer exists';
+                break;
+              case 500:
+                errorMessage = 'Server error — try again';
+                break;
+              case 503:
+                errorMessage = 'Service unavailable — try again later';
+                break;
               default:
                 errorMessage = `Call failed (${response.message.statusCode}: ${response.message.reasonPhrase})`;
             }
