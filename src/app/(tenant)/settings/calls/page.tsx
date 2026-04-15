@@ -89,6 +89,16 @@ interface PbxSettings {
   sound_review_prompt_url: string | null;
   sound_review_invalid_url: string | null;
   sound_review_thanks_url: string | null;
+  sound_queue_position_1_url: string | null;
+  sound_queue_position_2_url: string | null;
+  sound_queue_position_3_url: string | null;
+  sound_queue_position_4_url: string | null;
+  sound_queue_position_5_url: string | null;
+  sound_queue_position_6_url: string | null;
+  sound_queue_position_7_url: string | null;
+  sound_queue_position_8_url: string | null;
+  sound_queue_position_9_url: string | null;
+  sound_queue_position_10_url: string | null;
 }
 
 const DEFAULT_PBX_SETTINGS: PbxSettings = {
@@ -115,6 +125,16 @@ const DEFAULT_PBX_SETTINGS: PbxSettings = {
   sound_review_prompt_url: null,
   sound_review_invalid_url: null,
   sound_review_thanks_url: null,
+  sound_queue_position_1_url: null,
+  sound_queue_position_2_url: null,
+  sound_queue_position_3_url: null,
+  sound_queue_position_4_url: null,
+  sound_queue_position_5_url: null,
+  sound_queue_position_6_url: null,
+  sound_queue_position_7_url: null,
+  sound_queue_position_8_url: null,
+  sound_queue_position_9_url: null,
+  sound_queue_position_10_url: null,
 };
 
 const SOUND_TYPES = [
@@ -127,6 +147,19 @@ const SOUND_TYPES = [
   { key: 'review_prompt', urlField: 'sound_review_prompt_url', titleKey: 'soundReviewPrompt', descKey: 'soundReviewPromptDesc' },
   { key: 'review_invalid', urlField: 'sound_review_invalid_url', titleKey: 'soundReviewInvalid', descKey: 'soundReviewInvalidDesc' },
   { key: 'review_thanks', urlField: 'sound_review_thanks_url', titleKey: 'soundReviewThanks', descKey: 'soundReviewThanksDesc' },
+] as const;
+
+const QUEUE_POSITION_SOUND_TYPES = [
+  { key: 'queue_position_1', urlField: 'sound_queue_position_1_url', titleKey: 'soundQueuePosition1', descKey: 'soundQueuePosition1Desc' },
+  { key: 'queue_position_2', urlField: 'sound_queue_position_2_url', titleKey: 'soundQueuePosition2', descKey: 'soundQueuePosition2Desc' },
+  { key: 'queue_position_3', urlField: 'sound_queue_position_3_url', titleKey: 'soundQueuePosition3', descKey: 'soundQueuePosition3Desc' },
+  { key: 'queue_position_4', urlField: 'sound_queue_position_4_url', titleKey: 'soundQueuePosition4', descKey: 'soundQueuePosition4Desc' },
+  { key: 'queue_position_5', urlField: 'sound_queue_position_5_url', titleKey: 'soundQueuePosition5', descKey: 'soundQueuePosition5Desc' },
+  { key: 'queue_position_6', urlField: 'sound_queue_position_6_url', titleKey: 'soundQueuePosition6', descKey: 'soundQueuePosition6Desc' },
+  { key: 'queue_position_7', urlField: 'sound_queue_position_7_url', titleKey: 'soundQueuePosition7', descKey: 'soundQueuePosition7Desc' },
+  { key: 'queue_position_8', urlField: 'sound_queue_position_8_url', titleKey: 'soundQueuePosition8', descKey: 'soundQueuePosition8Desc' },
+  { key: 'queue_position_9', urlField: 'sound_queue_position_9_url', titleKey: 'soundQueuePosition9', descKey: 'soundQueuePosition9Desc' },
+  { key: 'queue_position_10', urlField: 'sound_queue_position_10_url', titleKey: 'soundQueuePosition10', descKey: 'soundQueuePosition10Desc' },
 ] as const;
 
 // ─── Working Hours Grid ──────────────────────────────────────────────────────
@@ -1087,6 +1120,24 @@ export default function CallSettingsPage() {
                 ) : (
                   <div className="grid gap-4">
                     {SOUND_TYPES.map((sound) => (
+                      <SoundCard
+                        key={sound.key}
+                        title={ts(sound.titleKey)}
+                        description={ts(sound.descKey)}
+                        soundUrl={soundSettings[sound.urlField as keyof PbxSettings] as string | null}
+                        onUpload={(file) => uploadSound(soundSipConfigId, sound.key, file)}
+                        onRemove={() => removeSound(soundSipConfigId, sound.key)}
+                        uploading={uploadingSoundType === sound.key}
+                      />
+                    ))}
+
+                    {/* Queue Position Announcements */}
+                    <div className="col-span-full">
+                      <h3 className="text-lg font-semibold mt-6 mb-2">{ts("queuePositionTitle")}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">{ts("queuePositionDescription")}</p>
+                    </div>
+
+                    {QUEUE_POSITION_SOUND_TYPES.map((sound) => (
                       <SoundCard
                         key={sound.key}
                         title={ts(sound.titleKey)}
