@@ -25,7 +25,10 @@ import {
   Pause,
   Play,
   PhoneForwarded,
+  X,
+  Users,
 } from "lucide-react";
+import type { TransferPhase, ConsultationCall } from "@/contexts/CallContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface ActiveCallDisplayProps {
@@ -36,12 +39,17 @@ interface ActiveCallDisplayProps {
   callerName?: string;
   isOnHold?: boolean;
   isMuted?: boolean;
+  transferPhase?: TransferPhase;
+  consultationCall?: ConsultationCall | null;
   onEndCall: () => void;
   onToggleHold?: () => void;
   onToggleMute?: () => void;
   onAccept?: () => void;
   onReject?: () => void;
   onTransfer?: (targetNumber: string) => void;
+  onStartAttendedTransfer?: (targetNumber: string, targetName?: string) => void;
+  onCompleteTransfer?: () => void;
+  onCancelTransfer?: () => void;
 }
 
 export function ActiveCallDisplay({
@@ -58,12 +66,18 @@ export function ActiveCallDisplay({
   onAccept,
   onReject,
   onTransfer,
+  transferPhase = "idle",
+  consultationCall,
+  onStartAttendedTransfer,
+  onCompleteTransfer,
+  onCancelTransfer,
 }: ActiveCallDisplayProps) {
   const t = useTranslations("calls");
   const { user } = useAuth();
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferNumber, setTransferNumber] = useState("");
   const [transferMode, setTransferMode] = useState<"agent" | "external">("agent");
+  const [transferType, setTransferType] = useState<"blind" | "attended">("attended");
   const [agents, setAgents] = useState<Array<{ id: number; userId: number; name: string; extension: string; phone: string; online: boolean }>>([]);
 
   useEffect(() => {
@@ -216,9 +230,85 @@ export function ActiveCallDisplay({
             </Button>
           </div>
 
-          {/* Transfer panel */}
-          {showTransfer && onTransfer && (
+          {/* Consultation state display */}
+          {transferPhase === "consulting" && consultationCall && (
+            <div className="mt-3 space-y-3">
+              <div className="rounded-md border border-border bg-muted p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{t("dashboard.customerOnHold")}</span>
+                  <Badge variant="secondary">{t("onHold")}</Badge>
+                </div>
+                <p className="text-sm font-medium">{callerName || phoneNumber}</p>
+              </div>
+              <div className="rounded-md border-2 border-primary/50 bg-primary/5 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{t("dashboard.consultingWith")}</span>
+                  <Badge variant={consultationCall.status === "active" ? "default" : "secondary"}>
+                    {consultationCall.status === "connecting" && t("dashboard.connecting")}
+                    {consultationCall.status === "ringing" && t("dashboard.ringing")}
+                    {consultationCall.status === "active" && t("dashboard.active")}
+                  </Badge>
+                </div>
+                <p className="text-sm font-medium">
+                  {consultationCall.targetName || consultationCall.targetNumber}
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onCancelTransfer}
+                  className="text-xs"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  {t("dashboard.cancelTransfer")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={onCompleteTransfer}
+                  disabled={consultationCall.status !== "active"}
+                  className="text-xs"
+                >
+                  <PhoneForwarded className="h-4 w-4 mr-1" />
+                  {t("dashboard.completeTransfer")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled
+                  className="text-xs"
+                  title="Coming soon"
+                >
+                  <Users className="h-4 w-4 mr-1" />
+                  {t("dashboard.merge")}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Transfer panel (only when not in consultation) */}
+          {showTransfer && onTransfer && transferPhase === "idle" && (
             <div className="mt-3 space-y-2">
+              {/* Transfer type toggle */}
+              <div className="flex gap-1 p-1 bg-muted rounded-md">
+                <Button
+                  variant={transferType === "attended" ? "default" : "ghost"}
+                  size="sm"
+                  className="flex-1 text-xs h-7"
+                  onClick={() => setTransferType("attended")}
+                >
+                  {t("dashboard.attendedTransfer")}
+                </Button>
+                <Button
+                  variant={transferType === "blind" ? "default" : "ghost"}
+                  size="sm"
+                  className="flex-1 text-xs h-7"
+                  onClick={() => setTransferType("blind")}
+                >
+                  {t("dashboard.blindTransfer")}
+                </Button>
+              </div>
+
               {transferMode === "agent" ? (
                 <div className="space-y-2">
                   {agents.length > 0 ? (
@@ -231,7 +321,11 @@ export function ActiveCallDisplay({
                           className="w-full justify-start text-xs"
                           disabled={!agent.online}
                           onClick={() => {
-                            onTransfer(agent.extension);
+                            if (transferType === "attended" && onStartAttendedTransfer) {
+                              onStartAttendedTransfer(agent.extension, agent.name);
+                            } else {
+                              onTransfer(agent.extension);
+                            }
                             setShowTransfer(false);
                           }}
                         >
@@ -265,7 +359,11 @@ export function ActiveCallDisplay({
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && transferNumber) {
-                          onTransfer(transferNumber);
+                          if (transferType === "attended" && onStartAttendedTransfer) {
+                            onStartAttendedTransfer(transferNumber);
+                          } else {
+                            onTransfer(transferNumber);
+                          }
                           setShowTransfer(false);
                         }
                       }}
@@ -274,7 +372,11 @@ export function ActiveCallDisplay({
                       size="sm"
                       onClick={() => {
                         if (transferNumber) {
-                          onTransfer(transferNumber);
+                          if (transferType === "attended" && onStartAttendedTransfer) {
+                            onStartAttendedTransfer(transferNumber);
+                          } else {
+                            onTransfer(transferNumber);
+                          }
                           setShowTransfer(false);
                         }
                       }}

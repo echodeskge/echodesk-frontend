@@ -30,6 +30,16 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 // ---------------------------------------------------------------------------
 
 export type CallStatus = 'idle' | 'ringing' | 'connecting' | 'active' | 'ending';
+export type TransferPhase = 'idle' | 'consulting' | 'conferenced';
+
+export interface ConsultationCall {
+  targetNumber: string;
+  targetName?: string;
+  status: 'connecting' | 'ringing' | 'active' | 'ended' | 'failed';
+  startTime?: Date;
+  duration: number;
+  logId?: number;
+}
 
 export interface ActiveCall {
   id: string;
@@ -43,6 +53,8 @@ export interface ActiveCall {
   invitation?: Invitation;
   isOnHold?: boolean;
   isMuted?: boolean;
+  transferPhase: TransferPhase;
+  consultationCall: ConsultationCall | null;
 }
 
 export interface CallContextValue {
@@ -68,6 +80,9 @@ export interface CallContextValue {
   callEndedCounter: number;
   sendDTMF: (tone: string) => boolean;
   transferCall: (targetNumber: string) => Promise<void>;
+  startAttendedTransfer: (targetNumber: string, targetName?: string) => Promise<void>;
+  completeTransfer: () => Promise<void>;
+  cancelTransfer: () => Promise<void>;
   missedCall: { number: string; time: Date } | null;
   clearMissedCall: () => void;
 }
@@ -253,6 +268,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               status: 'ringing',
               duration: 0,
               invitation,
+              transferPhase: 'idle',
+              consultationCall: null,
             });
           } catch (err) {
             console.error('Failed to log incoming call:', err);
@@ -328,6 +345,46 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setCallDuration(0);
           setCallEndedCounter(c => c + 1);
           setError(`Call failed: ${callError || 'Unknown error'}`);
+        });
+
+        // Consultation call events (for attended transfer)
+        sipService.on('onConsultationAccepted', () => {
+          setActiveCall(prev => prev ? {
+            ...prev,
+            consultationCall: prev.consultationCall ? {
+              ...prev.consultationCall,
+              status: 'active',
+              startTime: new Date(),
+            } : null,
+          } : null);
+        });
+
+        sipService.on('onConsultationEnded', () => {
+          // If still in consulting phase, auto-cancel and resume original
+          const current = activeCallRef.current;
+          if (current?.transferPhase === 'consulting') {
+            setActiveCall(prev => prev ? {
+              ...prev,
+              isOnHold: false,
+              transferPhase: 'idle',
+              consultationCall: null,
+            } : null);
+            // Resume original call audio
+            try { sipService.cancelConsultation(); } catch {}
+          }
+        });
+
+        sipService.on('onConsultationFailed', (err) => {
+          console.error('Consultation call failed:', err);
+          setActiveCall(prev => prev ? {
+            ...prev,
+            isOnHold: false,
+            transferPhase: 'idle',
+            consultationCall: null,
+          } : null);
+          setError(`Consultation failed: ${err}`);
+          // Resume original call
+          try { sipService.cancelConsultation(); } catch {}
         });
 
         await sipService.initialize(config);
@@ -407,6 +464,8 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         direction: 'outgoing',
         status: 'connecting',
         duration: 0,
+        transferPhase: 'idle',
+        consultationCall: null,
       });
 
       await sipServiceRef.current.makeCall(dialNumber);
@@ -494,6 +553,105 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const transferCall = useCallback(async (targetNumber: string) => {
     if (!sipServiceRef.current) throw new Error('No SIP service');
     await sipServiceRef.current.transferCall(targetNumber);
+  }, []);
+
+  const startAttendedTransfer = useCallback(async (targetNumber: string, targetName?: string) => {
+    if (!sipServiceRef.current || !activeCallRef.current) throw new Error('No active call');
+
+    const current = activeCallRef.current;
+
+    // Update state to consulting
+    setActiveCall(prev => prev ? {
+      ...prev,
+      isOnHold: true,
+      transferPhase: 'consulting',
+      consultationCall: {
+        targetNumber,
+        targetName,
+        status: 'connecting',
+        duration: 0,
+      },
+    } : null);
+
+    try {
+      // Log consultation on backend
+      const { default: axios } = await import('@/api/axios');
+      const res = await axios.post(`/api/call-logs/${current.logId}/initiate_consultation/`, {
+        target_number: targetNumber,
+      });
+      const consultationLogId = res.data.consultation_log_id;
+
+      // Start SIP consultation call
+      await sipServiceRef.current.startConsultation(targetNumber);
+
+      // Update with log ID
+      setActiveCall(prev => prev ? {
+        ...prev,
+        consultationCall: prev.consultationCall ? {
+          ...prev.consultationCall,
+          logId: consultationLogId,
+          status: 'ringing',
+        } : null,
+      } : null);
+    } catch (err) {
+      console.error('Failed to start attended transfer:', err);
+      // Revert state
+      setActiveCall(prev => prev ? {
+        ...prev,
+        isOnHold: false,
+        transferPhase: 'idle',
+        consultationCall: null,
+      } : null);
+      throw err;
+    }
+  }, []);
+
+  const completeTransfer = useCallback(async () => {
+    if (!sipServiceRef.current || !activeCallRef.current) return;
+
+    const current = activeCallRef.current;
+    try {
+      await sipServiceRef.current.completeAttendedTransfer();
+
+      // Log on backend
+      const { default: axios } = await import('@/api/axios');
+      await axios.post(`/api/call-logs/${current.logId}/complete_attended_transfer/`, {
+        consultation_log_id: current.consultationCall?.logId,
+        target_number: current.consultationCall?.targetNumber,
+      });
+
+      setActiveCall(null);
+      setCallDuration(0);
+      setCallEndedCounter(c => c + 1);
+    } catch (err) {
+      console.error('Failed to complete transfer:', err);
+    }
+  }, []);
+
+  const cancelTransfer = useCallback(async () => {
+    if (!sipServiceRef.current || !activeCallRef.current) return;
+
+    const current = activeCallRef.current;
+    try {
+      await sipServiceRef.current.cancelConsultation();
+
+      // Log on backend
+      if (current.consultationCall?.logId) {
+        const { default: axios } = await import('@/api/axios');
+        await axios.post(`/api/call-logs/${current.logId}/cancel_consultation/`, {
+          consultation_log_id: current.consultationCall.logId,
+        });
+      }
+
+      setActiveCall(prev => prev ? {
+        ...prev,
+        isOnHold: false,
+        transferPhase: 'idle',
+        consultationCall: null,
+      } : null);
+    } catch (err) {
+      console.error('Failed to cancel transfer:', err);
+    }
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -598,6 +756,9 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     callEndedCounter,
     sendDTMF,
     transferCall,
+    startAttendedTransfer,
+    completeTransfer,
+    cancelTransfer,
     missedCall,
     clearMissedCall,
   };

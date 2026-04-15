@@ -30,6 +30,9 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
     handleToggleMute,
     sendDTMF,
     transferCall,
+    startAttendedTransfer,
+    completeTransfer,
+    cancelTransfer,
     error,
   } = useCall();
 
@@ -97,6 +100,11 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
                 onToggleHold={handleToggleHold}
                 onToggleMute={handleToggleMute}
                 onTransfer={async (num) => { try { await transferCall(num); } catch {} }}
+                transferPhase={activeCall.transferPhase}
+                consultationCall={activeCall.consultationCall}
+                onStartAttendedTransfer={async (num, name) => { try { await startAttendedTransfer(num, name); } catch {} }}
+                onCompleteTransfer={async () => { try { await completeTransfer(); } catch {} }}
+                onCancelTransfer={async () => { try { await cancelTransfer(); } catch {} }}
               />
               {activeCall.status === "active" && (
                 <div className="mt-3 border-t pt-3">

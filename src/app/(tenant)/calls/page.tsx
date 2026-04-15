@@ -35,6 +35,9 @@ export default function CallsPage() {
     handleToggleMute,
     sendDTMF,
     transferCall,
+    startAttendedTransfer,
+    completeTransfer,
+    cancelTransfer,
     error,
     loading,
   } = useCall();
@@ -115,6 +118,11 @@ export default function CallsPage() {
                 onToggleHold={handleToggleHold}
                 onToggleMute={handleToggleMute}
                 onTransfer={async (num) => { try { await transferCall(num); } catch {} }}
+                transferPhase={activeCall.transferPhase}
+                consultationCall={activeCall.consultationCall}
+                onStartAttendedTransfer={async (num, name) => { try { await startAttendedTransfer(num, name); } catch {} }}
+                onCompleteTransfer={async () => { try { await completeTransfer(); } catch {} }}
+                onCancelTransfer={async () => { try { await cancelTransfer(); } catch {} }}
               />
               {activeCall.status === "active" && (
                 <DialPad

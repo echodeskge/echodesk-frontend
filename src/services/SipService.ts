@@ -19,12 +19,17 @@ export interface SipCallEvents {
   onRegistered: () => void;
   onUnregistered: () => void;
   onRegistrationFailed: (error: string) => void;
+  onConsultationProgress: () => void;
+  onConsultationAccepted: () => void;
+  onConsultationEnded: () => void;
+  onConsultationFailed: (error: string) => void;
 }
 
 export class SipService {
   private userAgent: UserAgent | null = null;
   private registerer: Registerer | null = null;
   private currentSession: Inviter | Invitation | null = null;
+  private consultationSession: Inviter | null = null;
   private localAudioElement: HTMLAudioElement | null = null;
   private remoteAudioElement: HTMLAudioElement | null = null;
   private events: Partial<SipCallEvents> = {};
@@ -588,8 +593,153 @@ Traditional SIP providers work with desktop softphones (like Zoiper) but not web
     }
   }
 
-  // End current call
+  // Start a consultation call for attended transfer (puts original call on hold)
+  async startConsultation(targetNumber: string): Promise<void> {
+    if (!this.userAgent || !this.currentSession || this.currentSession.state !== SessionState.Established) {
+      throw new Error('No active call for consultation');
+    }
+
+    try {
+      // Put original call on hold
+      await this.toggleHold(true);
+
+      // Create consultation call
+      const realm = this.userAgent.configuration.uri?.host || '';
+      const targetUri = new URI('sip', targetNumber, realm);
+
+      this.consultationSession = new Inviter(this.userAgent, targetUri, {
+        sessionDescriptionHandlerOptions: {
+          constraints: { audio: true, video: false }
+        }
+      });
+
+      this.consultationSession.stateChange.addListener((state: SessionState) => {
+        switch (state) {
+          case SessionState.Establishing:
+            this.emit('onConsultationProgress');
+            break;
+          case SessionState.Established:
+            this.emit('onConsultationAccepted');
+            this.setupAudioForSession(this.consultationSession!);
+            break;
+          case SessionState.Terminated:
+            this.emit('onConsultationEnded');
+            this.consultationSession = null;
+            break;
+        }
+      });
+
+      await this.consultationSession.invite({
+        requestDelegate: {
+          onReject: () => {
+            this.emit('onConsultationFailed', 'Consultation call rejected');
+            this.consultationSession = null;
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to start consultation:', error);
+      // Resume original call on failure
+      try { await this.toggleHold(false); } catch {}
+      this.consultationSession = null;
+      throw error;
+    }
+  }
+
+  // Complete attended transfer: bridge customer to consultation target
+  async completeAttendedTransfer(): Promise<void> {
+    if (!this.currentSession || !this.consultationSession) {
+      throw new Error('Both original and consultation sessions required');
+    }
+
+    if (this.consultationSession.state !== SessionState.Established) {
+      throw new Error('Consultation call not established');
+    }
+
+    try {
+      // REFER with Replaces: tells Asterisk to bridge customer to consultation target
+      await (this.currentSession as any).refer(this.consultationSession);
+
+      // Clean up both local sessions
+      try { await this.consultationSession.bye(); } catch {}
+      this.consultationSession = null;
+      this.currentSession = null;
+    } catch (error) {
+      console.error('Failed to complete attended transfer:', error);
+      throw error;
+    }
+  }
+
+  // Cancel consultation: end consultation call, resume original
+  async cancelConsultation(): Promise<void> {
+    if (this.consultationSession) {
+      try {
+        if (this.consultationSession.state === SessionState.Established) {
+          await this.consultationSession.bye();
+        } else if (this.consultationSession.state === SessionState.Establishing) {
+          await this.consultationSession.cancel();
+        }
+      } catch (error) {
+        console.error('Error ending consultation:', error);
+      }
+      this.consultationSession = null;
+    }
+
+    // Resume original call
+    if (this.currentSession && this.currentSession.state === SessionState.Established) {
+      try {
+        await this.toggleHold(false);
+        this.setupAudioForSession(this.currentSession);
+      } catch (error) {
+        console.error('Error resuming original call:', error);
+      }
+    }
+  }
+
+  // Check if consultation session is active
+  hasConsultationSession(): boolean {
+    return this.consultationSession !== null && this.consultationSession.state === SessionState.Established;
+  }
+
+  // Setup audio for a specific session (used for switching between original and consultation)
+  private setupAudioForSession(session: Inviter | Invitation) {
+    if (!this.remoteAudioElement) return;
+
+    try {
+      const sdh = session.sessionDescriptionHandler;
+      if (!sdh) return;
+
+      const pc = (sdh as any).peerConnection as RTCPeerConnection | undefined;
+      if (!pc) return;
+
+      const receivers = pc.getReceivers();
+      for (const receiver of receivers) {
+        if (receiver.track && receiver.track.kind === 'audio') {
+          const stream = new MediaStream([receiver.track]);
+          this.remoteAudioElement.srcObject = stream;
+          this.remoteAudioElement.play().catch(console.warn);
+          break;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to setup audio for session:', error);
+    }
+  }
+
+  // End current call (and consultation if active)
   async endCall(): Promise<void> {
+    // End consultation session if active
+    if (this.consultationSession) {
+      try {
+        if (this.consultationSession.state === SessionState.Established) {
+          await this.consultationSession.bye();
+        } else if (this.consultationSession.state === SessionState.Establishing) {
+          await this.consultationSession.cancel();
+        }
+      } catch {}
+      this.consultationSession = null;
+    }
+
     if (!this.currentSession) {
       return;
     }

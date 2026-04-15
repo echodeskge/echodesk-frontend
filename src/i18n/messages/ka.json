@@ -653,7 +653,14 @@
       "noAgents": "ტელეფონის მინიჭების მქონე აგენტები არ არიან",
       "transferToNumber": "გარე ნომერზე გადამისამართება",
       "transferToAgent": "აგენტზე გადამისამართება",
-      "offline": "ოფლაინ"
+      "offline": "ოფლაინ",
+      "attendedTransfer": "კონსულტაცია",
+      "blindTransfer": "პირდაპირი",
+      "consultingWith": "კონსულტაცია",
+      "customerOnHold": "კლიენტი მოლოდინშია",
+      "completeTransfer": "გადამისამართება",
+      "cancelTransfer": "გაუქმება",
+      "merge": "გაერთიანება"
     },
     "settings": {
       "title": "SIP პარამეტრები",

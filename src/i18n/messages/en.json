@@ -653,7 +653,14 @@
       "noAgents": "No agents with phone assignments",
       "transferToNumber": "Transfer to external number",
       "transferToAgent": "Transfer to agent",
-      "offline": "offline"
+      "offline": "offline",
+      "attendedTransfer": "Attended",
+      "blindTransfer": "Blind",
+      "consultingWith": "Consulting with",
+      "customerOnHold": "Customer on hold",
+      "completeTransfer": "Transfer",
+      "cancelTransfer": "Cancel",
+      "merge": "Merge"
     },
     "settings": {
       "title": "SIP Settings",
