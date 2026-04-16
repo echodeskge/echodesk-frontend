@@ -59,7 +59,9 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
     <div
       ref={popupRef}
       className="fixed z-[52] animate-in slide-in-from-bottom-2 duration-200"
-      style={{ right: 24, bottom: 160 }}
+      // Sit just above the phone floating button (bottom 54 + size 36 + 8px gap).
+      // right:12 matches the button so the popup is right-edge aligned.
+      style={{ right: 12, bottom: 98 }}
     >
       <Card className="w-[300px] min-w-[300px] max-w-[300px] shadow-2xl border overflow-hidden">
         {/* Header */}
