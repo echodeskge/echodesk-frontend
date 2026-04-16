@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState, useEffect } from "react"
+import { useCallback, useMemo, useState, useEffect, useRef } from "react"
 
 import type { UserType } from "@/components/chat/types"
 
@@ -43,10 +43,21 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
     return null
   }, [chatState.chats, rawChatsData, chatIdParam])
 
-  // Lazy message loading is already handled by chat-box-content-list's
-  // useEffect (which calls handleSelectChat → handleLoadChatMessages via
-  // fetchQuery). Adding a duplicate trigger here was causing a second
-  // /facebook-messages/ request on every chat click — removed.
+  // Trigger lazy message loading for the selected chat. This must run from
+  // here (not only from chat-box-content-list) because when messages haven't
+  // loaded yet the skeleton renders in place of ChatBoxContent → its
+  // chat-box-content-list never mounts → nothing would trigger the load.
+  // Unassigned chats also hide the content/composer — so this top-level
+  // effect is the only place that reliably loads messages.
+  // fetchQuery with 2-min staleTime dedupes any concurrent calls.
+  const loadingTriggeredRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (chat && !chat.messagesLoaded && loadChatMessages) {
+      if (loadingTriggeredRef.current.has(chat.id)) return
+      loadingTriggeredRef.current.add(chat.id)
+      loadChatMessages(chat.id)
+    }
+  }, [chat, loadChatMessages])
 
   // Calculate matching message indices
   const matchingMessageIndices = useMemo(() => {
