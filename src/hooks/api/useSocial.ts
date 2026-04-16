@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   socialFacebookSendMessageCreate,
   socialWhatsappOauthStartRetrieve,
@@ -1034,24 +1034,41 @@ export function useAssignChat() {
       }
 
       if (foundConv) {
-        queryClient.setQueriesData<{
+        // Walk cached conversations queries. For any assigned=true variant that
+        // exists, prepend the conversation; for other variants, only update if
+        // it's already present (to avoid breaking other filter buckets).
+        const allConvQueries = queryClient.getQueriesData<{
           pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>;
           pageParams: number[];
-        }>({ queryKey: socialKeys.conversations() }, (old) => {
-          if (!old?.pages || old.pages.length === 0) return old;
-          // Only mutate caches that already contain the conversation OR are the assigned list
-          // This is a simplification — we prepend into the first page if absent.
-          const alreadyPresent = old.pages.some((page) =>
-            page.results?.some((c) => c.conversation_id === foundConv!.conversation_id)
-          );
-          if (alreadyPresent) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page, idx) =>
-              idx === 0 ? { ...page, results: [foundConv!, ...(page.results ?? [])] } : page
-            ),
-          };
-        });
+        }>({ queryKey: socialKeys.conversations() });
+
+        for (const [key] of allConvQueries) {
+          const filtersInKey = key[2] as { assigned?: boolean } | undefined;
+          const isAssignedVariant = filtersInKey?.assigned === true;
+
+          queryClient.setQueryData<{
+            pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>;
+            pageParams: number[];
+          }>(key, (old) => {
+            if (!old?.pages || old.pages.length === 0) {
+              if (!isAssignedVariant) return old;
+              return {
+                pages: [{ results: [foundConv!], next: null, count: 1 }],
+                pageParams: [1],
+              };
+            }
+            const alreadyPresent = old.pages.some((page) =>
+              page.results?.some((c) => c.conversation_id === foundConv!.conversation_id)
+            );
+            if (alreadyPresent) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page, idx) =>
+                idx === 0 ? { ...page, results: [foundConv!, ...(page.results ?? [])] } : page
+              ),
+            };
+          });
+        }
       }
 
       return { prevMyAssignments, prevAssignmentStatus, prevConversationsCaches };
@@ -2572,6 +2589,9 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
     },
     enabled,
     staleTime: 10000, // 10 seconds
+    // Keep the previously-rendered list visible while switching tabs or filters,
+    // so the sidebar doesn't show a full-page spinner on tab switch.
+    placeholderData: keepPreviousData,
   });
 }
 
