@@ -85,10 +85,10 @@ export default function DialpadWidget() {
       )}
 
       {/* Floating phone icon button — stacked above TeamChat icon.
-          Bottom 10 + size 28 + gap 6 = 44 for the second slot. */}
+          Bottom 12 + size 36 + gap 6 = 54 for the second slot. */}
       <div
         className="fixed z-50 cursor-pointer"
-        style={{ right: 10, bottom: 44 }}
+        style={{ right: 12, bottom: 54 }}
         data-dialpad-trigger
         onClick={toggleDialpad}
       >
@@ -101,25 +101,25 @@ export default function DialpadWidget() {
                 ? "bg-green-600 hover:bg-green-700 hover:scale-105"
                 : "bg-primary hover:bg-primary/90 hover:scale-105"
           )}
-          style={{ width: 28, height: 28 }}
+          style={{ width: 36, height: 36 }}
         >
-          <Phone className={cn("h-3.5 w-3.5 text-primary-foreground", hasActiveCall && "animate-pulse")} />
+          <Phone className={cn("h-4 w-4 text-primary-foreground", hasActiveCall && "animate-pulse")} />
 
           {/* SIP registered indicator */}
           {sipRegistered && !hasActiveCall && (
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-green-500 border border-background" />
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
           )}
 
           {/* Active call pulse */}
           {hasActiveCall && !isRinging && (
-            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border border-background animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
           )}
 
           {/* Ringing indicator */}
           {isRinging && (
-            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 border border-background" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-background" />
             </span>
           )}
         </div>
