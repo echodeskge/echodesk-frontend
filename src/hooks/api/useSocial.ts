@@ -1227,6 +1227,8 @@ export function useEndSession() {
         socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id)
       );
       const prevUnreadCount = queryClient.getQueryData<UnreadMessagesCount>(socialKeys.unreadCount());
+      // Snapshot all conversation list caches so we can roll back on error.
+      const prevConversationsCaches = queryClient.getQueriesData({ queryKey: socialKeys.conversations() });
 
       // Optimistically update assignment status to completed and remove from active lists
       queryClient.setQueryData<ChatAssignment[]>(socialKeys.myAssignments(), (old) => {
@@ -1260,27 +1262,34 @@ export function useEndSession() {
         );
       }
 
-      // Optimistically mark conversation as read — ending session clears unread
+      // Ending a session archives the conversation on the server. Optimistically
+      // remove it from every non-archived conversations cache so the user doesn't
+      // see it lingering in "All Chats" or "Assigned to Me" after End Session.
+      // Also track its unread_count so we can decrement the global badge.
       let unreadDelta = 0;
-      queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
-        { queryKey: socialKeys.conversations() },
-        (old) => {
-          if (!old?.pages) return old;
-          return {
-            ...old,
-            pages: old.pages.map((page) => ({
-              ...page,
-              results: page.results?.map((conv) => {
-                if (conv.conversation_id === variables.conversation_id) {
+      queryClient.setQueriesData<{
+        pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>;
+        pageParams: number[];
+      }>({ queryKey: socialKeys.conversations() }, (old) => {
+        if (!old?.pages) return old;
+        let removed = false;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            results: page.results?.filter((conv) => {
+              if (conv.conversation_id === variables.conversation_id) {
+                if (!removed) {
                   unreadDelta = conv.unread_count || 0;
-                  return { ...conv, unread_count: 0 };
+                  removed = true;
                 }
-                return conv;
-              }),
-            })),
-          };
-        }
-      );
+                return false;
+              }
+              return true;
+            }),
+          })),
+        };
+      });
 
       // Decrement unread count
       if (prevUnreadCount && unreadDelta > 0) {
@@ -1292,7 +1301,13 @@ export function useEndSession() {
         });
       }
 
-      return { prevMyAssignments, prevAllAssignments, prevAssignmentStatus, prevUnreadCount };
+      return {
+        prevMyAssignments,
+        prevAllAssignments,
+        prevAssignmentStatus,
+        prevUnreadCount,
+        prevConversationsCaches,
+      };
     },
     onError: (_err, variables, context) => {
       if (context?.prevMyAssignments !== undefined) {
@@ -1309,6 +1324,12 @@ export function useEndSession() {
       }
       if (context?.prevUnreadCount) {
         queryClient.setQueryData(socialKeys.unreadCount(), context.prevUnreadCount);
+      }
+      // Restore all conversation list caches (undo the optimistic removal)
+      if (context?.prevConversationsCaches) {
+        for (const [key, data] of context.prevConversationsCaches) {
+          queryClient.setQueryData(key, data);
+        }
       }
     },
     onSettled: (_data, _err, variables) => {
