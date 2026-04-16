@@ -95,9 +95,9 @@ export function useUnreadMessagesCount(options?: { refetchInterval?: number | fa
       const response = await axios.get('/api/social/unread-count/');
       return response.data;
     },
-    staleTime: 5 * 1000, // Consider data fresh for 5 seconds
+    staleTime: 15 * 1000, // Consider data fresh for 15 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchInterval: options?.refetchInterval ?? 10000, // Poll every 10 seconds by default
+    refetchInterval: options?.refetchInterval ?? 30000, // Poll every 30 seconds by default
     enabled: options?.enabled ?? true,
   });
 }
@@ -911,9 +911,9 @@ export function useMyAssignments(options?: { enabled?: boolean }) {
       const response = await axios.get('/api/social/assignments/');
       return response.data;
     },
-    staleTime: 5 * 1000, // Consider data fresh for 5 seconds
+    staleTime: 15 * 1000, // Consider data fresh for 15 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchInterval: 10000, // Poll every 10 seconds
+    refetchInterval: 30000, // Poll every 30 seconds (WebSocket handles immediate updates)
     enabled: options?.enabled ?? true,
   });
 }
@@ -951,7 +951,7 @@ export function useAssignmentStatus(
       const response = await axios.get(`/api/social/assignments/status/?${params.toString()}`);
       return response.data;
     },
-    staleTime: 2 * 1000, // Consider data fresh for 2 seconds
+    staleTime: 10 * 1000, // Consider data fresh for 10 seconds (was 2s — too aggressive)
     enabled: options?.enabled ?? (!!platform && !!conversationId && !!accountId),
   });
 }

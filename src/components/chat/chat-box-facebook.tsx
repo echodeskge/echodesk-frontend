@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState, useEffect, useRef } from "react"
+import { useCallback, useMemo, useState, useEffect } from "react"
 
 import type { UserType } from "@/components/chat/types"
 
@@ -28,9 +28,6 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
 
   const chatIdParam = selectedChatId
 
-  // Track which chats have already triggered loading to prevent duplicate calls
-  const loadingTriggeredRef = useRef<Set<string>>(new Set())
-
   const chat = useMemo(() => {
     if (chatIdParam) {
       // Find the chat by ID in reducer state first
@@ -46,17 +43,10 @@ export function ChatBoxFacebook({ user, onMessageSent, isConnected = false }: Ch
     return null
   }, [chatState.chats, rawChatsData, chatIdParam])
 
-  // Trigger lazy loading when chat is selected via URL navigation
-  useEffect(() => {
-    if (chat && !chat.messagesLoaded && loadChatMessages) {
-      // Prevent duplicate loading for the same chat
-      if (loadingTriggeredRef.current.has(chat.id)) {
-        return
-      }
-      loadingTriggeredRef.current.add(chat.id)
-      loadChatMessages(chat.id)
-    }
-  }, [chat, loadChatMessages])
+  // Lazy message loading is already handled by chat-box-content-list's
+  // useEffect (which calls handleSelectChat → handleLoadChatMessages via
+  // fetchQuery). Adding a duplicate trigger here was causing a second
+  // /facebook-messages/ request on every chat click — removed.
 
   // Calculate matching message indices
   const matchingMessageIndices = useMemo(() => {
