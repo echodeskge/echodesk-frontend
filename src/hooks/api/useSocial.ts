@@ -218,7 +218,9 @@ export function useMarkConversationUnread() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      // Optimistic update covers the conversation-list state. Only the global
+      // badge needs a server-fresh value, and even then the client-side
+      // optimistic increment is a close-enough estimate.
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
   });
@@ -2635,7 +2637,8 @@ export function useMarkAllAsRead() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      // Optimistic update already zeroed unread_count across all cached
+      // conversation lists. Only refresh the global badge total.
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
   });
