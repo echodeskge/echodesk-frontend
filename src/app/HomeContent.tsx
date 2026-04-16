@@ -10,7 +10,7 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 import { toast } from "sonner";
 
-function HomeContentInner() {
+function HomeContentInner({ initialTenantSubdomain }: { initialTenantSubdomain: string | null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -91,14 +91,21 @@ function HomeContentInner() {
     return <LoginForm tenant={tenant} onLogin={login} />;
   }
 
+  // Middleware detected a tenant subdomain at the edge (e.g. amanati.echodesk.ge)
+  // but the tenant config hasn't loaded yet. Show a loading spinner instead of
+  // flashing the main echodesk.ge landing page.
+  if (initialTenantSubdomain) {
+    return <LoadingSpinner />;
+  }
+
   // If no tenant (main domain), show landing page
   return <EchoDeskLanding />;
 }
 
-export default function HomeContent() {
+export default function HomeContent({ initialTenantSubdomain = null }: { initialTenantSubdomain?: string | null }) {
   return (
     <Suspense fallback={<LoadingSpinner />}>
-      <HomeContentInner />
+      <HomeContentInner initialTenantSubdomain={initialTenantSubdomain} />
     </Suspense>
   );
 }
