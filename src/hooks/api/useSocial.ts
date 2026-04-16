@@ -1092,9 +1092,11 @@ export function useAssignChat() {
       }
     },
     onSettled: (_data, _err, variables) => {
-      // Sync with server
+      // Sync with server. Skip conversations() invalidation — the onMutate
+      // optimistic insert already updated the cache, and the tab switch triggers
+      // a natural useInfiniteQuery fetch on the new key. Double-invalidating
+      // here just causes a redundant refetch on slow networks.
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
-      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
       queryClient.invalidateQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
       });
@@ -1319,23 +1321,14 @@ export function useEndSession() {
       }
     },
     onSettled: (_data, _err, variables) => {
+      // Sync assignment state with server. Conversations/unread/messages are
+      // already handled by the optimistic update and by WebSocket events
+      // (the rating request message arrives via WebSocket), so no need to
+      // force refetches here.
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
-      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
-      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
       queryClient.invalidateQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
       });
-      // Only invalidate the affected platform's message list — a rating request
-      // message was just sent, but other platforms are unaffected.
-      const platformMessagesKey = {
-        facebook: socialKeys.facebookMessages(),
-        instagram: socialKeys.instagramMessages(),
-        whatsapp: socialKeys.whatsappMessages(),
-        email: socialKeys.emailMessages(),
-      }[variables.platform];
-      if (platformMessagesKey) {
-        queryClient.invalidateQueries({ queryKey: platformMessagesKey });
-      }
     },
   });
 }
