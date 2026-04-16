@@ -129,17 +129,19 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
   }, [previewUrls])
 
   // Helper: send files for WhatsApp (one per API call since WA supports one media per message)
-  const sendWhatsAppFiles = async (files: File[], phoneNumber: string, accountId: string, messageText: string) => {
+  const sendWhatsAppFiles = async (files: File[], phoneNumber: string, accountId: string, messageText: string, replyToMessageId?: string) => {
     // Send first file with text caption, rest without
     for (let i = 0; i < files.length; i++) {
       const formData = new FormData()
       formData.append('to_number', phoneNumber)
       formData.append('waba_id', accountId)
       formData.append('message', i === 0 ? messageText : '')
+      if (i === 0 && replyToMessageId) {
+        formData.append('reply_to_message_id', replyToMessageId)
+      }
       formData.append('media', files[i])
       await axios.post('/api/social/whatsapp/send-message/', formData)
     }
-    // If there were files but we still need to send text-only (no files scenario handled by caller)
   }
 
   // Helper: send files for Instagram (one per API call, same as WhatsApp)
@@ -228,14 +230,14 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
       const phoneNumber = recipientId.startsWith('+') ? recipientId : `+${recipientId}`
 
       if (files.length > 0) {
-        await sendWhatsAppFiles(files, phoneNumber, accountId, messageText)
-        // If text + no files scenario — text already sent as caption with first file
+        await sendWhatsAppFiles(files, phoneNumber, accountId, messageText, replyingTo?.messageId)
       } else {
         // Text only
         await axios.post('/api/social/whatsapp/send-message/', {
           to_number: phoneNumber,
           message: messageText,
           waba_id: accountId,
+          reply_to_message_id: replyingTo?.messageId || '',
         })
       }
     } else if (platform === 'email') {

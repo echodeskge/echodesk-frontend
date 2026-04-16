@@ -567,7 +567,7 @@ export function useSendWhatsAppMessage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { to_number: string; message: string; waba_id: string }) => {
+    mutationFn: async (data: { to_number: string; message: string; waba_id: string; reply_to_message_id?: string }) => {
       const response = await axios.post('/api/social/whatsapp/send-message/', data);
       return response.data;
     },

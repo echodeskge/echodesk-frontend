@@ -610,6 +610,9 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
             account_id: wabaId,
             source: msg.source,
             is_echo: msg.is_echo,
+            sent_by_name: msg.sent_by_name,
+            reply_to_message_id: msg.reply_to_message_id,
+            reply_to_id: msg.reply_to_id,
           };
         });
 

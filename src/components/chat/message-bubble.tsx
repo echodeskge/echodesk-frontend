@@ -75,8 +75,8 @@ function MessageActions({
   platform?: string
   onReply: () => void
 }) {
-  // Only show for Facebook/Instagram messages (not email or WhatsApp for now)
-  if (platform !== 'facebook' && platform !== 'instagram') return null
+  // Only show for Facebook/Instagram/WhatsApp messages (not email)
+  if (platform !== 'facebook' && platform !== 'instagram' && platform !== 'whatsapp') return null
   if (!message.platformMessageId) return null
 
   return (
