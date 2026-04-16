@@ -32,24 +32,33 @@ import {
   MessageCircle,
   Clock,
   ExternalLink,
-  X
+  Phone,
 } from "lucide-react";
 
 type SortField = 'name' | 'total_ratings' | 'average_rating';
+type SourceFilter = 'all' | 'social' | 'calls';
 
-const platformColors = {
+const platformColors: Record<string, string> = {
   facebook: 'bg-blue-100 text-blue-800',
   instagram: 'bg-pink-100 text-pink-800',
   whatsapp: 'bg-green-100 text-green-800',
   email: 'bg-gray-100 text-gray-800',
+  phone_sms: 'bg-amber-100 text-amber-800',
+  phone_callback: 'bg-violet-100 text-violet-800',
 };
 
-const platformLabels = {
+const platformLabels: Record<string, string> = {
   facebook: 'Facebook',
   instagram: 'Instagram',
   whatsapp: 'WhatsApp',
   email: 'Email',
+  phone_sms: 'SMS',
+  phone_callback: 'Callback',
 };
+
+function isPhonePlatform(platform: string): boolean {
+  return platform === 'phone_sms' || platform === 'phone_callback';
+}
 
 function formatDateTime(dateString: string | null): string {
   if (!dateString) return '-';
@@ -94,12 +103,17 @@ export default function RatingStatisticsPage() {
   const [sortBy, setSortBy] = useState<SortField>('average_rating');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [source, setSource] = useState<SourceFilter>('all');
 
-  const { data, isLoading, error } = useRatingStatistics(startDate, endDate);
-  const { data: sessionsData, isLoading: sessionsLoading } = useUserChatSessions(selectedUserId, startDate, endDate);
+  const { data, isLoading, error } = useRatingStatistics(startDate, endDate, source);
+  const { data: sessionsData, isLoading: sessionsLoading } = useUserChatSessions(selectedUserId, startDate, endDate, source);
 
-  // Navigate to chat conversation
-  const navigateToChat = (session: ChatSession) => {
+  // Navigate to chat conversation (only for social platforms)
+  const navigateToSession = (session: ChatSession) => {
+    if (isPhonePlatform(session.platform)) {
+      // Phone sessions don't have a chat page to navigate to
+      return;
+    }
     // Build the chat ID: {platform_prefix}_{account_id}_{conversation_id}
     const platformPrefix = session.platform === 'facebook' ? 'fb' : session.platform === 'instagram' ? 'ig' : 'wa';
     const chatId = `${platformPrefix}_${session.account_id}_${session.conversation_id}`;
@@ -228,6 +242,26 @@ export default function RatingStatisticsPage() {
     );
   };
 
+  const renderPlatformBadge = (session: ChatSession) => {
+    const color = platformColors[session.platform] || 'bg-gray-100 text-gray-800';
+    const label = platformLabels[session.platform] || session.platform;
+
+    if (isPhonePlatform(session.platform)) {
+      return (
+        <Badge className={color}>
+          <Phone className="h-3 w-3 mr-1" />
+          {label}
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge className={color}>
+        {label}
+      </Badge>
+    );
+  };
+
   // Check access
   if (!isSuperAdmin) {
     return (
@@ -343,6 +377,33 @@ export default function RatingStatisticsPage() {
         </CardContent>
       </Card>
 
+      {/* Source Filter */}
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant={source === 'all' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSource('all')}
+        >
+          {t("allSources")}
+        </Button>
+        <Button
+          variant={source === 'social' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSource('social')}
+        >
+          <MessageSquare className="h-4 w-4 mr-1.5" />
+          {t("socialMedia")}
+        </Button>
+        <Button
+          variant={source === 'calls' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setSource('calls')}
+        >
+          <Phone className="h-4 w-4 mr-1.5" />
+          {t("phoneCalls")}
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card className="shadow-none border border-gray-200">
@@ -366,6 +427,19 @@ export default function RatingStatisticsPage() {
             <div className="text-sm text-muted-foreground">
               {t("totalRatings")}
             </div>
+            {data?.overall?.by_source && source === 'all' && (
+              <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                {data.overall.by_source.social && (
+                  <div>{t("socialCount", { count: data.overall.by_source.social.total })}</div>
+                )}
+                {data.overall.by_source.calls_callback && (
+                  <div>{t("callbackCount", { count: data.overall.by_source.calls_callback.total })}</div>
+                )}
+                {data.overall.by_source.calls_sms && (
+                  <div>{t("smsCount", { count: data.overall.by_source.calls_sms.total })}</div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -447,8 +521,24 @@ export default function RatingStatisticsPage() {
                       <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </TableCell>
-                  <TableCell className="text-center font-medium">
-                    {userStats.total_ratings}
+                  <TableCell className="text-center">
+                    <div className="font-medium">{userStats.total_ratings}</div>
+                    {source === 'all' && (userStats.social_ratings != null || userStats.call_ratings != null) && (
+                      <div className="flex items-center justify-center gap-1.5 mt-1">
+                        {userStats.social_ratings != null && userStats.social_ratings > 0 && (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                            <MessageSquare className="h-3 w-3 mr-0.5" />
+                            {userStats.social_ratings}
+                          </Badge>
+                        )}
+                        {userStats.call_ratings != null && userStats.call_ratings > 0 && (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                            <Phone className="h-3 w-3 mr-0.5" />
+                            {userStats.call_ratings}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell className="text-center">
                     {renderStars(userStats.average_rating)}
@@ -513,7 +603,7 @@ export default function RatingStatisticsPage() {
         </CardContent>
       </Card>
 
-      {/* User Chat Sessions Modal */}
+      {/* User Sessions Modal */}
       <Dialog open={selectedUserId !== null} onOpenChange={(open) => !open && setSelectedUserId(null)}>
         <DialogContent className="max-w-[100vw] sm:max-w-[90vw] h-[100dvh] sm:h-[80vh] max-h-[100dvh] sm:max-h-[80vh] overflow-hidden flex flex-col rounded-none sm:rounded-lg border-0 sm:border">
           <DialogHeader>
@@ -556,19 +646,22 @@ export default function RatingStatisticsPage() {
                       {sessionsData.sessions.map((session: ChatSession) => (
                         <TableRow
                           key={session.id}
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => navigateToChat(session)}
+                          className={`hover:bg-muted/50 ${isPhonePlatform(session.platform) ? '' : 'cursor-pointer'}`}
+                          onClick={() => navigateToSession(session)}
                         >
                           <TableCell>
                             <div className="flex items-center gap-2">
+                              {isPhonePlatform(session.platform) && (
+                                <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                              )}
                               <div className="font-medium">{session.customer_name}</div>
-                              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                              {!isPhonePlatform(session.platform) && (
+                                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                              )}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge className={platformColors[session.platform]}>
-                              {platformLabels[session.platform]}
-                            </Badge>
+                            {renderPlatformBadge(session)}
                           </TableCell>
                           <TableCell>
                             {renderRatingBadge(session.rating)}
@@ -605,18 +698,21 @@ export default function RatingStatisticsPage() {
                   {sessionsData.sessions.map((session: ChatSession) => (
                     <Card
                       key={session.id}
-                      className="cursor-pointer hover:bg-muted/50 transition-colors shadow-none"
-                      onClick={() => navigateToChat(session)}
+                      className={`transition-colors shadow-none ${isPhonePlatform(session.platform) ? '' : 'cursor-pointer hover:bg-muted/50'}`}
+                      onClick={() => navigateToSession(session)}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center gap-2 mb-2">
+                          {isPhonePlatform(session.platform) && (
+                            <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          )}
                           <span className="font-medium truncate">{session.customer_name}</span>
-                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          {!isPhonePlatform(session.platform) && (
+                            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <Badge className={platformColors[session.platform]}>
-                            {platformLabels[session.platform]}
-                          </Badge>
+                          {renderPlatformBadge(session)}
                           {renderRatingBadge(session.rating)}
                         </div>
                         {session.comment && (

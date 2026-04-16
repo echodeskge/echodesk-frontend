@@ -978,6 +978,13 @@ export interface RatingUserStats {
     '4': number;
     '5': number;
   };
+  social_ratings?: number;
+  call_ratings?: number;
+}
+
+export interface BySourceBreakdown {
+  total: number;
+  average: number;
 }
 
 export interface RatingStatisticsResponse {
@@ -986,17 +993,23 @@ export interface RatingStatisticsResponse {
   overall: {
     total_ratings: number;
     average_rating: number;
+    by_source?: {
+      social?: BySourceBreakdown;
+      calls_callback?: BySourceBreakdown;
+      calls_sms?: BySourceBreakdown;
+    };
   };
   users: RatingUserStats[];
 }
 
-export function useRatingStatistics(startDate?: string, endDate?: string) {
+export function useRatingStatistics(startDate?: string, endDate?: string, source?: string) {
   return useQuery<RatingStatisticsResponse>({
-    queryKey: [...socialKeys.all, 'ratingStatistics', startDate, endDate],
+    queryKey: [...socialKeys.all, 'ratingStatistics', startDate, endDate, source],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
+      if (source && source !== 'all') params.append('source', source);
       const response = await axios.get(`/api/social/rating-statistics/?${params.toString()}`);
       return response.data;
     },
@@ -1007,7 +1020,7 @@ export function useRatingStatistics(startDate?: string, endDate?: string) {
 // User chat sessions for investigation
 export interface ChatSession {
   id: number;
-  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'phone_sms' | 'phone_callback';
   conversation_id: string;
   account_id: string;
   customer_name: string;
@@ -1031,13 +1044,14 @@ export interface UserChatSessionsResponse {
   total_sessions: number;
 }
 
-export function useUserChatSessions(userId: number | null, startDate?: string, endDate?: string) {
+export function useUserChatSessions(userId: number | null, startDate?: string, endDate?: string, source?: string) {
   return useQuery<UserChatSessionsResponse>({
-    queryKey: [...socialKeys.all, 'userSessions', userId, startDate, endDate],
+    queryKey: [...socialKeys.all, 'userSessions', userId, startDate, endDate, source],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
+      if (source && source !== 'all') params.append('source', source);
       const response = await axios.get(`/api/social/rating-statistics/user/${userId}/?${params.toString()}`);
       return response.data;
     },
