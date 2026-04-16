@@ -128,7 +128,8 @@ export function useMarkConversationRead() {
             pages: old.pages.map((page) => ({
               ...page,
               results: page.results?.map((conv) =>
-                conv.conversation_id === variables.conversation_id
+                conv.sender_id === variables.conversation_id &&
+                String(conv.platform) === variables.platform
                   ? { ...conv, unread_count: 0 }
                   : conv
               ),
@@ -191,7 +192,8 @@ export function useMarkConversationUnread() {
             pages: old.pages.map((page) => ({
               ...page,
               results: page.results?.map((conv) =>
-                conv.conversation_id === variables.conversation_id
+                conv.sender_id === variables.conversation_id &&
+                String(conv.platform) === variables.platform
                   ? { ...conv, unread_count: 1 }
                   : conv
               ),
@@ -1024,7 +1026,7 @@ export function useAssignChat() {
         for (const page of infiniteData?.pages ?? []) {
           const hit = page.results?.find(
             (c) =>
-              c.conversation_id === variables.conversation_id &&
+              c.sender_id === variables.conversation_id &&
               c.account_id === variables.account_id &&
               String(c.platform) === variables.platform
           );
@@ -1280,7 +1282,7 @@ export function useEndSession() {
             ...page,
             results: page.results?.filter((conv) => {
               const matches =
-                conv.conversation_id === variables.conversation_id &&
+                conv.sender_id === variables.conversation_id &&
                 conv.account_id === variables.account_id &&
                 String(conv.platform) === variables.platform;
               if (matches) {
@@ -2711,8 +2713,13 @@ export function useArchiveConversation() {
 
       const prevUnreadCount = queryClient.getQueryData<UnreadMessagesCount>(socialKeys.unreadCount());
 
-      // Build a set of conversation IDs being archived for fast lookup
-      const archivingIds = new Set(conversations.map((c) => c.conversation_id));
+      // Build a set of archive keys. Each request entry identifies a chat by
+      // (platform, account_id, conversation_id=sender_id). The API response
+      // embeds platform+account+sender into `conversation_id` ("fb_…_…"), so
+      // match on sender_id+account_id+platform instead.
+      const archivingKeys = new Set(
+        conversations.map((c) => `${c.platform}|${c.account_id}|${c.conversation_id}`)
+      );
 
       // Optimistically remove archived conversations from all conversation list caches
       queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
@@ -2723,7 +2730,9 @@ export function useArchiveConversation() {
             ...old,
             pages: old.pages.map((page) => ({
               ...page,
-              results: page.results?.filter((conv) => !archivingIds.has(conv.conversation_id)),
+              results: page.results?.filter(
+                (conv) => !archivingKeys.has(`${String(conv.platform)}|${conv.account_id}|${conv.sender_id}`)
+              ),
             })),
           };
         }
@@ -2757,8 +2766,11 @@ export function useUnarchiveConversation() {
     onMutate: async (conversations) => {
       await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
 
-      // Build a set of conversation IDs being unarchived for fast lookup
-      const unarchivingIds = new Set(conversations.map((c) => c.conversation_id));
+      // Build a set of unarchive keys (see useArchiveConversation for why we
+      // match on sender_id+account_id+platform).
+      const unarchivingKeys = new Set(
+        conversations.map((c) => `${c.platform}|${c.account_id}|${c.conversation_id}`)
+      );
 
       // Optimistically remove from the archived conversations list (if viewing archived)
       queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
@@ -2769,7 +2781,9 @@ export function useUnarchiveConversation() {
             ...old,
             pages: old.pages.map((page) => ({
               ...page,
-              results: page.results?.filter((conv) => !unarchivingIds.has(conv.conversation_id)),
+              results: page.results?.filter(
+                (conv) => !unarchivingKeys.has(`${String(conv.platform)}|${conv.account_id}|${conv.sender_id}`)
+              ),
             })),
           };
         }
