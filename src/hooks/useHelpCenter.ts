@@ -100,7 +100,8 @@ export function useHelpCategories(params?: {
 
       const url = `${HELP_API_BASE}/categories/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
       const response = await helpCenterAxios.get(url);
-      return response.data;
+      // API returns paginated { count, results } or direct array
+      return response.data?.results ?? response.data;
     },
   });
 }
@@ -142,7 +143,7 @@ export function useHelpArticles(params?: {
 
       const url = `${HELP_API_BASE}/articles/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
       const response = await helpCenterAxios.get(url);
-      return response.data;
+      return response.data?.results ?? response.data;
     },
   });
 }
@@ -173,7 +174,7 @@ export function useFeaturedArticles(params?: { lang?: string; forDashboard?: boo
 
       const url = `${HELP_API_BASE}/articles/featured/${searchParams.toString() ? '?' + searchParams.toString() : ''}`;
       const response = await helpCenterAxios.get(url);
-      return response.data;
+      return response.data?.results ?? response.data;
     },
   });
 }
@@ -190,7 +191,7 @@ export function useHelpSearch(query: string, params?: { lang?: string; forPublic
 
       const url = `${HELP_API_BASE}/search/?${searchParams.toString()}`;
       const response = await helpCenterAxios.get(url);
-      return response.data;
+      return response.data?.results ?? response.data;
     },
     enabled: query.length >= 2,
   });
