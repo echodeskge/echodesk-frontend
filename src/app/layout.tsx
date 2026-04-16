@@ -12,7 +12,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickMessages, GLOBAL_NAMESPACES } from '@/lib/pick-messages';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
-import { NetworkMonitor } from '@/components/debug/NetworkMonitor';
 import { Toaster } from 'sonner';
 
 const geistSans = Geist({
@@ -67,7 +66,6 @@ export default async function RootLayout({
           </SessionProvider>
         </NextIntlClientProvider>
         <Toaster position="bottom-right" richColors />
-        <NetworkMonitor />
       </body>
     </html>
   );
