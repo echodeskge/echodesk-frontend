@@ -5,10 +5,11 @@ import type { TeamChatUser, TeamChatConversation, TeamChatMessage } from './type
 
 // Layout constants
 export const LAYOUT = {
-  MAIN_ICON: { size: 56, right: 24, bottom: 24 },
+  // Floating icon: ~60% of previous 56px size, tighter to the corner
+  MAIN_ICON: { size: 34, right: 12, bottom: 12 },
   POPUP: { width: 320, height: 450 },
   WINDOW: { width: 280, height: 400, gap: 12 },
-  BUBBLE: { size: 48, gap: 8 },
+  BUBBLE: { size: 34, gap: 6 },
   Z_INDEX: { icon: 50, popup: 53, window: 51, bubble: 49 },
   MAX_OPEN_CHATS: 4,
   MAX_TOTAL_CHATS: 6,
