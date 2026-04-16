@@ -261,7 +261,6 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const END_SESSION_BLOCK_MS = 60_000;
 
   const stableChatsData = useMemo(() => {
-    // Filter out chats that are still within the end-session block window
     const now = Date.now();
     const filterEnded = (chats: ChatType[]) =>
       chats.filter((c) => {
@@ -282,8 +281,18 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       }
       return filterEnded(prevChatsRef.current);
     }
-    // Fresh data arrived — clear transient removed IDs
+    // Fresh server data arrived — clear transient removed IDs.
     removedChatIdsRef.current.clear();
+    // If the server includes a chat that's in our ended set, the server
+    // explicitly unarchived it (e.g. the customer sent a new message after
+    // End Session). Trust the server and lift the local block so the chat
+    // reappears in All Chats.
+    if (endedChatIdsRef.current.size > 0) {
+      const freshIds = new Set(chatsData.map((c) => c.id));
+      for (const id of Array.from(endedChatIdsRef.current.keys())) {
+        if (freshIds.has(id)) endedChatIdsRef.current.delete(id);
+      }
+    }
     const filtered = filterEnded(chatsData);
     prevChatsRef.current = filtered;
     return filtered;
@@ -467,14 +476,21 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     }
 
     // Skip WebSocket-driven re-addition of chats that were just ended via
-    // End Session. Without this guard the rating-request echo (outgoing) or
-    // any late-arriving message resurrects the chat right after the user
-    // optimistically removed it from the sidebar.
-    const endedAt = endedChatIdsRef.current.get(chatId);
-    if (endedAt !== undefined) {
-      if (Date.now() - endedAt < END_SESSION_BLOCK_MS) {
-        return;
+    // End Session — but only for outgoing (business) messages. The rating-
+    // request echo is what resurrects the chat undesirably. A genuine
+    // incoming message from the customer must still reappear the chat so
+    // the agent sees it (the backend also auto-unarchives in that case).
+    if (isFromBusiness) {
+      const endedAt = endedChatIdsRef.current.get(chatId);
+      if (endedAt !== undefined) {
+        if (Date.now() - endedAt < END_SESSION_BLOCK_MS) {
+          return;
+        }
+        endedChatIdsRef.current.delete(chatId);
       }
+    } else {
+      // New incoming message — the chat is legitimately back. Lift the
+      // block so subsequent renders can include it again.
       endedChatIdsRef.current.delete(chatId);
     }
 
