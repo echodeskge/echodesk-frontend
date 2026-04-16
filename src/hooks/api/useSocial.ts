@@ -95,9 +95,9 @@ export function useUnreadMessagesCount(options?: { refetchInterval?: number | fa
       const response = await axios.get('/api/social/unread-count/');
       return response.data;
     },
-    staleTime: 15 * 1000, // Consider data fresh for 15 seconds
+    staleTime: 5 * 1000, // Consider data fresh for 5 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchInterval: options?.refetchInterval ?? 15000, // Poll every 15 seconds by default
+    refetchInterval: options?.refetchInterval ?? 10000, // Poll every 10 seconds by default
     enabled: options?.enabled ?? true,
   });
 }
@@ -110,8 +110,57 @@ export function useMarkConversationRead() {
       const response = await axios.post('/api/social/mark-read/', data);
       return response.data;
     },
-    onSuccess: () => {
-      // Invalidate unread count so it updates
+    onMutate: async (variables) => {
+      // Cancel ongoing refetches to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
+      await queryClient.cancelQueries({ queryKey: socialKeys.unreadCount() });
+
+      // Snapshot previous data for rollback
+      const prevUnreadCount = queryClient.getQueryData<UnreadMessagesCount>(socialKeys.unreadCount());
+
+      // Optimistically set unread count to 0 in all matching conversation list caches
+      queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
+        { queryKey: socialKeys.conversations() },
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              results: page.results?.map((conv) =>
+                conv.conversation_id === variables.conversation_id
+                  ? { ...conv, unread_count: 0 }
+                  : conv
+              ),
+            })),
+          };
+        }
+      );
+
+      // Optimistically decrement platform unread count
+      if (prevUnreadCount) {
+        const platformKey = variables.platform as keyof Omit<UnreadMessagesCount, 'total'>;
+        const currentPlatformCount = prevUnreadCount[platformKey] || 0;
+        if (currentPlatformCount > 0) {
+          queryClient.setQueryData<UnreadMessagesCount>(socialKeys.unreadCount(), {
+            ...prevUnreadCount,
+            [platformKey]: currentPlatformCount - 1,
+            total: Math.max(0, prevUnreadCount.total - 1),
+          });
+        }
+      }
+
+      return { prevUnreadCount };
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback unread count on error
+      if (context?.prevUnreadCount) {
+        queryClient.setQueryData(socialKeys.unreadCount(), context.prevUnreadCount);
+      }
+    },
+    onSettled: () => {
+      // Sync with server
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
   });
@@ -125,8 +174,49 @@ export function useMarkConversationUnread() {
       const response = await axios.post('/api/social/mark-unread/', data);
       return response.data;
     },
-    onSuccess: () => {
-      // Invalidate conversations and unread count so they update
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
+      await queryClient.cancelQueries({ queryKey: socialKeys.unreadCount() });
+
+      const prevUnreadCount = queryClient.getQueryData<UnreadMessagesCount>(socialKeys.unreadCount());
+
+      // Optimistically set unread count to 1 in all matching conversation list caches
+      queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
+        { queryKey: socialKeys.conversations() },
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              results: page.results?.map((conv) =>
+                conv.conversation_id === variables.conversation_id
+                  ? { ...conv, unread_count: 1 }
+                  : conv
+              ),
+            })),
+          };
+        }
+      );
+
+      // Optimistically increment platform unread count
+      if (prevUnreadCount) {
+        const platformKey = variables.platform as keyof Omit<UnreadMessagesCount, 'total'>;
+        queryClient.setQueryData<UnreadMessagesCount>(socialKeys.unreadCount(), {
+          ...prevUnreadCount,
+          [platformKey]: (prevUnreadCount[platformKey] || 0) + 1,
+          total: prevUnreadCount.total + 1,
+        });
+      }
+
+      return { prevUnreadCount };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevUnreadCount) {
+        queryClient.setQueryData(socialKeys.unreadCount(), context.prevUnreadCount);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
@@ -821,9 +911,9 @@ export function useMyAssignments(options?: { enabled?: boolean }) {
       const response = await axios.get('/api/social/assignments/');
       return response.data;
     },
-    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+    staleTime: 5 * 1000, // Consider data fresh for 5 seconds
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchInterval: 30000, // Poll every 30 seconds
+    refetchInterval: 10000, // Poll every 10 seconds
     enabled: options?.enabled ?? true,
   });
 }
@@ -861,7 +951,7 @@ export function useAssignmentStatus(
       const response = await axios.get(`/api/social/assignments/status/?${params.toString()}`);
       return response.data;
     },
-    staleTime: 10 * 1000, // Consider data fresh for 10 seconds
+    staleTime: 2 * 1000, // Consider data fresh for 2 seconds
     enabled: options?.enabled ?? (!!platform && !!conversationId && !!accountId),
   });
 }
@@ -875,7 +965,67 @@ export function useAssignChat() {
       const response = await axios.post('/api/social/assignments/assign/', data);
       return response.data as ChatAssignment;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (variables) => {
+      // Cancel ongoing refetches to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: socialKeys.assignments() });
+      await queryClient.cancelQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+
+      // Snapshot previous data for rollback
+      const prevMyAssignments = queryClient.getQueryData<ChatAssignment[]>(socialKeys.myAssignments());
+      const prevAssignmentStatus = queryClient.getQueryData<ChatAssignmentStatusResponse>(
+        socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id)
+      );
+
+      // Optimistically add to myAssignments cache
+      const optimisticAssignment: ChatAssignment = {
+        id: -1, // Temporary ID
+        platform: variables.platform,
+        conversation_id: variables.conversation_id,
+        account_id: variables.account_id,
+        full_conversation_id: `${variables.platform}_${variables.conversation_id}`,
+        assigned_user: -1,
+        assigned_user_name: '',
+        assigned_user_email: '',
+        status: 'active',
+        session_started_at: null,
+        session_ended_at: null,
+        assigned_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData<ChatAssignment[]>(socialKeys.myAssignments(), (old) => {
+        return [...(old || []), optimisticAssignment];
+      });
+
+      // Optimistically set assignment status to assigned
+      if (prevAssignmentStatus) {
+        queryClient.setQueryData<ChatAssignmentStatusResponse>(
+          socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+          {
+            ...prevAssignmentStatus,
+            assignment: optimisticAssignment,
+          }
+        );
+      }
+
+      return { prevMyAssignments, prevAssignmentStatus };
+    },
+    onError: (_err, variables, context) => {
+      // Rollback on error
+      if (context?.prevMyAssignments !== undefined) {
+        queryClient.setQueryData(socialKeys.myAssignments(), context.prevMyAssignments);
+      }
+      if (context?.prevAssignmentStatus !== undefined) {
+        queryClient.setQueryData(
+          socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+          context.prevAssignmentStatus
+        );
+      }
+    },
+    onSettled: (_data, _err, variables) => {
+      // Sync with server
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
       queryClient.invalidateQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
@@ -893,7 +1043,62 @@ export function useUnassignChat() {
       const response = await axios.post('/api/social/assignments/unassign/', data);
       return response.data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: socialKeys.assignments() });
+      await queryClient.cancelQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+
+      const prevMyAssignments = queryClient.getQueryData<ChatAssignment[]>(socialKeys.myAssignments());
+      const prevAllAssignments = queryClient.getQueryData<ChatAssignment[]>(socialKeys.allAssignments());
+      const prevAssignmentStatus = queryClient.getQueryData<ChatAssignmentStatusResponse>(
+        socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id)
+      );
+
+      // Optimistically remove from myAssignments cache
+      queryClient.setQueryData<ChatAssignment[]>(socialKeys.myAssignments(), (old) => {
+        if (!old) return old;
+        return old.filter(
+          (a) => !(a.platform === variables.platform && a.conversation_id === variables.conversation_id)
+        );
+      });
+
+      // Optimistically remove from allAssignments cache
+      queryClient.setQueryData<ChatAssignment[]>(socialKeys.allAssignments(), (old) => {
+        if (!old) return old;
+        return old.filter(
+          (a) => !(a.platform === variables.platform && a.conversation_id === variables.conversation_id)
+        );
+      });
+
+      // Optimistically set assignment status to unassigned
+      if (prevAssignmentStatus) {
+        queryClient.setQueryData<ChatAssignmentStatusResponse>(
+          socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+          {
+            ...prevAssignmentStatus,
+            assignment: null,
+          }
+        );
+      }
+
+      return { prevMyAssignments, prevAllAssignments, prevAssignmentStatus };
+    },
+    onError: (_err, variables, context) => {
+      if (context?.prevMyAssignments !== undefined) {
+        queryClient.setQueryData(socialKeys.myAssignments(), context.prevMyAssignments);
+      }
+      if (context?.prevAllAssignments !== undefined) {
+        queryClient.setQueryData(socialKeys.allAssignments(), context.prevAllAssignments);
+      }
+      if (context?.prevAssignmentStatus !== undefined) {
+        queryClient.setQueryData(
+          socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+          context.prevAssignmentStatus
+        );
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
       queryClient.invalidateQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
@@ -947,8 +1152,108 @@ export function useEndSession() {
       const response = await axios.post('/api/social/assignments/end-session/', data);
       return response.data;
     },
-    onSuccess: (_, variables) => {
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: socialKeys.assignments() });
+      await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
+      await queryClient.cancelQueries({ queryKey: socialKeys.unreadCount() });
+      await queryClient.cancelQueries({
+        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+      });
+
+      const prevMyAssignments = queryClient.getQueryData<ChatAssignment[]>(socialKeys.myAssignments());
+      const prevAllAssignments = queryClient.getQueryData<ChatAssignment[]>(socialKeys.allAssignments());
+      const prevAssignmentStatus = queryClient.getQueryData<ChatAssignmentStatusResponse>(
+        socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id)
+      );
+      const prevUnreadCount = queryClient.getQueryData<UnreadMessagesCount>(socialKeys.unreadCount());
+
+      // Optimistically update assignment status to completed and remove from active lists
+      queryClient.setQueryData<ChatAssignment[]>(socialKeys.myAssignments(), (old) => {
+        if (!old) return old;
+        return old.filter(
+          (a) => !(a.platform === variables.platform && a.conversation_id === variables.conversation_id)
+        );
+      });
+
+      queryClient.setQueryData<ChatAssignment[]>(socialKeys.allAssignments(), (old) => {
+        if (!old) return old;
+        return old.map((a) =>
+          a.platform === variables.platform && a.conversation_id === variables.conversation_id
+            ? { ...a, status: 'completed' as ChatAssignmentStatus, session_ended_at: new Date().toISOString() }
+            : a
+        );
+      });
+
+      // Optimistically update assignment status
+      if (prevAssignmentStatus?.assignment) {
+        queryClient.setQueryData<ChatAssignmentStatusResponse>(
+          socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+          {
+            ...prevAssignmentStatus,
+            assignment: {
+              ...prevAssignmentStatus.assignment,
+              status: 'completed',
+              session_ended_at: new Date().toISOString(),
+            },
+          }
+        );
+      }
+
+      // Optimistically mark conversation as read — ending session clears unread
+      let unreadDelta = 0;
+      queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
+        { queryKey: socialKeys.conversations() },
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              results: page.results?.map((conv) => {
+                if (conv.conversation_id === variables.conversation_id) {
+                  unreadDelta = conv.unread_count || 0;
+                  return { ...conv, unread_count: 0 };
+                }
+                return conv;
+              }),
+            })),
+          };
+        }
+      );
+
+      // Decrement unread count
+      if (prevUnreadCount && unreadDelta > 0) {
+        const platformKey = variables.platform as keyof Omit<UnreadMessagesCount, 'total'>;
+        queryClient.setQueryData<UnreadMessagesCount>(socialKeys.unreadCount(), {
+          ...prevUnreadCount,
+          [platformKey]: Math.max(0, (prevUnreadCount[platformKey] || 0) - unreadDelta),
+          total: Math.max(0, prevUnreadCount.total - unreadDelta),
+        });
+      }
+
+      return { prevMyAssignments, prevAllAssignments, prevAssignmentStatus, prevUnreadCount };
+    },
+    onError: (_err, variables, context) => {
+      if (context?.prevMyAssignments !== undefined) {
+        queryClient.setQueryData(socialKeys.myAssignments(), context.prevMyAssignments);
+      }
+      if (context?.prevAllAssignments !== undefined) {
+        queryClient.setQueryData(socialKeys.allAssignments(), context.prevAllAssignments);
+      }
+      if (context?.prevAssignmentStatus !== undefined) {
+        queryClient.setQueryData(
+          socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
+          context.prevAssignmentStatus
+        );
+      }
+      if (context?.prevUnreadCount) {
+        queryClient.setQueryData(socialKeys.unreadCount(), context.prevUnreadCount);
+      }
+    },
+    onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
       queryClient.invalidateQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
       });
@@ -2209,7 +2514,7 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
       return undefined;
     },
     enabled,
-    staleTime: 30000, // 30 seconds
+    staleTime: 10000, // 10 seconds
   });
 }
 
@@ -2234,8 +2539,46 @@ export function useMarkAllAsRead() {
       const response = await axios.post<MarkAllReadResponse>('/api/social/mark-all-read/', { platform });
       return response.data;
     },
-    onSuccess: () => {
-      // Invalidate conversations and unread count
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
+      await queryClient.cancelQueries({ queryKey: socialKeys.unreadCount() });
+
+      const prevUnreadCount = queryClient.getQueryData<UnreadMessagesCount>(socialKeys.unreadCount());
+
+      // Optimistically set all conversations' unread count to 0
+      queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
+        { queryKey: socialKeys.conversations() },
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              results: page.results?.map((conv) => ({ ...conv, unread_count: 0 })),
+            })),
+          };
+        }
+      );
+
+      // Optimistically set all unread counts to 0
+      if (prevUnreadCount) {
+        queryClient.setQueryData<UnreadMessagesCount>(socialKeys.unreadCount(), {
+          total: 0,
+          facebook: 0,
+          instagram: 0,
+          whatsapp: 0,
+          email: 0,
+        });
+      }
+
+      return { prevUnreadCount };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevUnreadCount) {
+        queryClient.setQueryData(socialKeys.unreadCount(), context.prevUnreadCount);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
@@ -2277,8 +2620,38 @@ export function useArchiveConversation() {
       const response = await axios.post<ArchiveResponse>('/api/social/conversations/archive/', { conversations });
       return response.data;
     },
-    onSuccess: () => {
-      // Invalidate both regular and archived conversations
+    onMutate: async (conversations) => {
+      await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
+      await queryClient.cancelQueries({ queryKey: socialKeys.unreadCount() });
+
+      const prevUnreadCount = queryClient.getQueryData<UnreadMessagesCount>(socialKeys.unreadCount());
+
+      // Build a set of conversation IDs being archived for fast lookup
+      const archivingIds = new Set(conversations.map((c) => c.conversation_id));
+
+      // Optimistically remove archived conversations from all conversation list caches
+      queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
+        { queryKey: socialKeys.conversations() },
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              results: page.results?.filter((conv) => !archivingIds.has(conv.conversation_id)),
+            })),
+          };
+        }
+      );
+
+      return { prevUnreadCount };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prevUnreadCount) {
+        queryClient.setQueryData(socialKeys.unreadCount(), context.prevUnreadCount);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
@@ -2296,8 +2669,29 @@ export function useUnarchiveConversation() {
       const response = await axios.post<UnarchiveResponse>('/api/social/conversations/unarchive/', { conversations });
       return response.data;
     },
-    onSuccess: () => {
-      // Invalidate both regular and archived conversations
+    onMutate: async (conversations) => {
+      await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
+
+      // Build a set of conversation IDs being unarchived for fast lookup
+      const unarchivingIds = new Set(conversations.map((c) => c.conversation_id));
+
+      // Optimistically remove from the archived conversations list (if viewing archived)
+      queryClient.setQueriesData<{ pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>; pageParams: number[] }>(
+        { queryKey: socialKeys.conversations() },
+        (old) => {
+          if (!old?.pages) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page) => ({
+              ...page,
+              results: page.results?.filter((conv) => !unarchivingIds.has(conv.conversation_id)),
+            })),
+          };
+        }
+      );
+    },
+    onSettled: () => {
+      // Sync with server - invalidate all conversation lists to refresh both archived and inbox
       queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
     },
   });
