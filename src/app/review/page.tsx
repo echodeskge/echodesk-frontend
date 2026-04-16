@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2, CheckCircle2, AlertCircle, Clock, ExternalLink } from "lucide-react";
 import Image from "next/image";
 import { EmojiRatingSelector, EMOJI_OPTIONS } from "@/components/review/EmojiRatingSelector";
-import { useRatingInfo, useSubmitRating } from "@/hooks/api/usePublicRating";
+import { useRatingInfo, useSubmitRating, type RatingType } from "@/hooks/api/usePublicRating";
 
 type Lang = 'ka' | 'en';
 
@@ -94,6 +94,7 @@ function LanguageSwitcher({ lang, onChange }: { lang: Lang; onChange: (lang: Lan
 function ReviewContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const type = (searchParams.get("type") || "social") as RatingType;
 
   const [lang, setLang] = useState<Lang>('ka');
   const [selectedRating, setSelectedRating] = useState<1 | 3 | 5 | null>(null);
@@ -103,7 +104,7 @@ function ReviewContent() {
 
   const t = translations[lang];
 
-  const { data: ratingInfo, isLoading: isLoadingInfo } = useRatingInfo(token);
+  const { data: ratingInfo, isLoading: isLoadingInfo } = useRatingInfo(token, type);
   const submitRating = useSubmitRating();
 
   const handleSubmit = async () => {
@@ -112,6 +113,7 @@ function ReviewContent() {
     try {
       const result = await submitRating.mutateAsync({
         token,
+        type,
         data: {
           rating: selectedRating,
           comment: comment.trim() || undefined,

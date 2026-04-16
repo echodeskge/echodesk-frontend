@@ -2,10 +2,11 @@
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import axios from '@/api/axios';
-import { socialPublicRatingRetrieve } from '@/api/generated';
 
 // Public rating API - no authentication required
 // These endpoints are accessed via tenant subdomain
+
+export type RatingType = 'social' | 'call';
 
 export interface RatingInfo {
   valid: boolean;
@@ -30,17 +31,20 @@ export interface SubmitRatingResponse {
 
 /**
  * Get rating info by token (validates token)
+ * @param type - 'social' for chat ratings, 'call' for call ratings
  */
-export function useRatingInfo(token: string | null) {
+export function useRatingInfo(token: string | null, type: RatingType = 'social') {
   return useQuery<RatingInfo>({
-    queryKey: ['public-rating', token],
+    queryKey: ['public-rating', token, type],
     queryFn: async () => {
       if (!token) {
         return { valid: false, error: 'No token provided' };
       }
       try {
-        const response = await socialPublicRatingRetrieve(token);
-        return response as RatingInfo;
+        const response = await axios.get(`/api/social/public/rating/${token}/`, {
+          params: type !== 'social' ? { type } : undefined,
+        });
+        return response.data as RatingInfo;
       } catch (error: any) {
         // Handle specific error responses
         if (error.response?.status === 404) {
@@ -63,11 +67,15 @@ export function useRatingInfo(token: string | null) {
 
 /**
  * Submit a public rating
+ * @param type - 'social' for chat ratings, 'call' for call ratings
  */
 export function useSubmitRating() {
-  return useMutation<SubmitRatingResponse, Error, { token: string; data: SubmitRatingRequest }>({
-    mutationFn: async ({ token, data }) => {
-      const response = await axios.post(`/api/social/public/rating/${token}/submit/`, data);
+  return useMutation<SubmitRatingResponse, Error, { token: string; data: SubmitRatingRequest; type?: RatingType }>({
+    mutationFn: async ({ token, data, type = 'social' }) => {
+      const response = await axios.post(`/api/social/public/rating/${token}/submit/`, {
+        ...data,
+        ...(type !== 'social' ? { type } : {}),
+      });
       return response.data as SubmitRatingResponse;
     },
   });

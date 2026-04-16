@@ -927,7 +927,22 @@
     "soundQueuePosition9": "რიგის პოზიცია 9",
     "soundQueuePosition9Desc": "უკრავს როცა აბონენტი რიგში მე-9-ეა",
     "soundQueuePosition10": "რიგის პოზიცია 10",
-    "soundQueuePosition10Desc": "უკრავს როცა აბონენტი რიგში მე-10-ე ან მეტია"
+    "soundQueuePosition10Desc": "უკრავს როცა აბონენტი რიგში მე-10-ე ან მეტია",
+    "reviewSettings": "შეფასების პარამეტრები",
+    "reviewSettingsDesc": "კლიენტთა შეფასების მეთოდის კონფიგურაცია ზარის შემდეგ",
+    "reviewMethod": "შეფასების მეთოდი",
+    "reviewDisabled": "გამორთული",
+    "reviewCallback": "სატელეფონო callback",
+    "reviewSms": "SMS ბმული",
+    "reviewBoth": "ორივე (SMS + Callback)",
+    "smsApiKey": "SMS API გასაღები (sender.ge)",
+    "smsTemplateKa": "SMS შაბლონი (ქართული)",
+    "smsTemplateEn": "SMS შაბლონი (ინგლისური)",
+    "smsTemplatePlaceholder": "'{link}' გამოიყენეთ შეფასების ბმულის ჩასასმელად",
+    "reviewDelay": "დაყოვნება (საათი)",
+    "reviewDelayDesc": "ბოლო ზარის შემდეგ დაელოდეთ ამ რაოდენობის საათს",
+    "reviewCooldown": "გაგრილება (საათი)",
+    "reviewCooldownDesc": "მინიმალური საათები შეფასების მოთხოვნებს შორის"
   },
   "chat": {
     "history": "ისტორია",

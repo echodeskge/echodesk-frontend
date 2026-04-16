@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Plus, Zap, Upload, Trash2, Loader2 } from "lucide-react";
 import {
@@ -80,6 +81,12 @@ interface PbxSettings {
   holidays: Holiday[];
   after_hours_action: 'announcement' | 'voicemail' | 'forward';
   forward_number: string;
+  review_method: string;
+  sms_api_key: string;
+  sms_rating_template_ka: string;
+  sms_rating_template_en: string;
+  review_delay_hours: number;
+  review_cooldown_hours: number;
   sound_greeting_url: string | null;
   sound_after_hours_url: string | null;
   sound_queue_hold_url: string | null;
@@ -116,6 +123,12 @@ const DEFAULT_PBX_SETTINGS: PbxSettings = {
   holidays: [],
   after_hours_action: 'announcement',
   forward_number: '',
+  review_method: 'none',
+  sms_api_key: '',
+  sms_rating_template_ka: '',
+  sms_rating_template_en: '',
+  review_delay_hours: 1,
+  review_cooldown_hours: 24,
   sound_greeting_url: null,
   sound_after_hours_url: null,
   sound_queue_hold_url: null,
@@ -695,6 +708,12 @@ export default function CallSettingsPage() {
         holidays: pbxSettings.holidays,
         after_hours_action: pbxSettings.after_hours_action,
         forward_number: pbxSettings.forward_number,
+        review_method: pbxSettings.review_method,
+        sms_api_key: pbxSettings.sms_api_key,
+        sms_rating_template_ka: pbxSettings.sms_rating_template_ka,
+        sms_rating_template_en: pbxSettings.sms_rating_template_en,
+        review_delay_hours: pbxSettings.review_delay_hours,
+        review_cooldown_hours: pbxSettings.review_cooldown_hours,
       });
       toast({
         title: ts("success"),
@@ -1056,6 +1075,112 @@ export default function CallSettingsPage() {
                           <Plus className="h-4 w-4 mr-2" />
                           {ts("addHoliday")}
                         </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Review Settings */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">{ts("reviewSettings")}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{ts("reviewSettingsDesc")}</p>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Review Method */}
+                        <div className="space-y-2">
+                          <Label>{ts("reviewMethod")}</Label>
+                          <Select
+                            value={pbxSettings.review_method}
+                            onValueChange={(value) =>
+                              setPbxSettings((prev) => ({ ...prev, review_method: value }))
+                            }
+                          >
+                            <SelectTrigger className="w-full max-w-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">{ts("reviewDisabled")}</SelectItem>
+                              <SelectItem value="callback">{ts("reviewCallback")}</SelectItem>
+                              <SelectItem value="sms">{ts("reviewSms")}</SelectItem>
+                              <SelectItem value="both">{ts("reviewBoth")}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* SMS Settings — shown when sms or both */}
+                        {(pbxSettings.review_method === 'sms' || pbxSettings.review_method === 'both') && (
+                          <>
+                            <div className="space-y-2">
+                              <Label>{ts("smsApiKey")}</Label>
+                              <Input
+                                type="password"
+                                className="max-w-sm"
+                                value={pbxSettings.sms_api_key}
+                                onChange={(e) =>
+                                  setPbxSettings((prev) => ({ ...prev, sms_api_key: e.target.value }))
+                                }
+                                placeholder="sender.ge API key"
+                              />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>{ts("smsTemplateKa")}</Label>
+                              <Textarea
+                                value={pbxSettings.sms_rating_template_ka}
+                                onChange={(e) =>
+                                  setPbxSettings((prev) => ({ ...prev, sms_rating_template_ka: e.target.value }))
+                                }
+                                placeholder={`\u10D2\u10DB\u10D0\u10D3\u10DA\u10DD\u10D1\u10D7! \u10E8\u10D4\u10D0\u10E4\u10D0\u10E1\u10D4\u10D7: {link}`}
+                                rows={2}
+                                className="resize-none"
+                              />
+                              <p className="text-xs text-muted-foreground">{ts("smsTemplatePlaceholder")}</p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>{ts("smsTemplateEn")}</Label>
+                              <Textarea
+                                value={pbxSettings.sms_rating_template_en}
+                                onChange={(e) =>
+                                  setPbxSettings((prev) => ({ ...prev, sms_rating_template_en: e.target.value }))
+                                }
+                                placeholder="Thank you! Rate us: {link}"
+                                rows={2}
+                                className="resize-none"
+                              />
+                              <p className="text-xs text-muted-foreground">{ts("smsTemplatePlaceholder")}</p>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Delay & Cooldown */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>{ts("reviewDelay")}</Label>
+                            <Input
+                              type="number"
+                              min={0}
+                              className="max-w-sm"
+                              value={pbxSettings.review_delay_hours}
+                              onChange={(e) =>
+                                setPbxSettings((prev) => ({ ...prev, review_delay_hours: Number(e.target.value) }))
+                              }
+                            />
+                            <p className="text-xs text-muted-foreground">{ts("reviewDelayDesc")}</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>{ts("reviewCooldown")}</Label>
+                            <Input
+                              type="number"
+                              min={0}
+                              className="max-w-sm"
+                              value={pbxSettings.review_cooldown_hours}
+                              onChange={(e) =>
+                                setPbxSettings((prev) => ({ ...prev, review_cooldown_hours: Number(e.target.value) }))
+                              }
+                            />
+                            <p className="text-xs text-muted-foreground">{ts("reviewCooldownDesc")}</p>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
 

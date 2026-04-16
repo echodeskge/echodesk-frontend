@@ -12,21 +12,17 @@ import { renderHook, waitFor, act } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 
-vi.mock("@/api/generated", () => ({
-  socialPublicRatingRetrieve: vi.fn(),
-}));
-
 vi.mock("@/api/axios", () => ({
   default: {
+    get: vi.fn(),
     post: vi.fn(),
   },
 }));
 
 import { useRatingInfo, useSubmitRating } from "@/hooks/api/usePublicRating";
-import { socialPublicRatingRetrieve } from "@/api/generated";
 import axios from "@/api/axios";
 
-const mockRatingRetrieve = vi.mocked(socialPublicRatingRetrieve);
+const mockAxiosGet = vi.mocked(axios.get);
 const mockAxiosPost = vi.mocked(axios.post);
 
 function createWrapper() {
@@ -49,11 +45,13 @@ describe("usePublicRating", () => {
 
   describe("useRatingInfo", () => {
     it("fetches rating info with valid token", async () => {
-      mockRatingRetrieve.mockResolvedValue({
-        valid: true,
-        tenant_name: "Acme Corp",
-        tenant_logo_url: "https://example.com/logo.png",
-      } as any);
+      mockAxiosGet.mockResolvedValue({
+        data: {
+          valid: true,
+          tenant_name: "Acme Corp",
+          tenant_logo_url: "https://example.com/logo.png",
+        },
+      });
 
       const { result } = renderHook(() => useRatingInfo("abc-token-123"), {
         wrapper: createWrapper(),
@@ -62,7 +60,10 @@ describe("usePublicRating", () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
       expect(result.current.data?.valid).toBe(true);
       expect(result.current.data?.tenant_name).toBe("Acme Corp");
-      expect(mockRatingRetrieve).toHaveBeenCalledWith("abc-token-123");
+      expect(mockAxiosGet).toHaveBeenCalledWith(
+        "/api/social/public/rating/abc-token-123/",
+        { params: undefined }
+      );
     });
 
     it("is disabled when token is null", () => {
@@ -71,7 +72,7 @@ describe("usePublicRating", () => {
       });
 
       expect(result.current.fetchStatus).toBe("idle");
-      expect(mockRatingRetrieve).not.toHaveBeenCalled();
+      expect(mockAxiosGet).not.toHaveBeenCalled();
     });
 
     it("returns invalid for null token passed to queryFn", async () => {
@@ -85,7 +86,7 @@ describe("usePublicRating", () => {
     });
 
     it("handles 404 error (invalid token)", async () => {
-      mockRatingRetrieve.mockRejectedValue({
+      mockAxiosGet.mockRejectedValue({
         response: { status: 404 },
       });
 
@@ -99,7 +100,7 @@ describe("usePublicRating", () => {
     });
 
     it("handles 410 error (expired token)", async () => {
-      mockRatingRetrieve.mockRejectedValue({
+      mockAxiosGet.mockRejectedValue({
         response: { status: 410 },
       });
 
@@ -114,7 +115,7 @@ describe("usePublicRating", () => {
     });
 
     it("handles 409 error (already rated)", async () => {
-      mockRatingRetrieve.mockRejectedValue({
+      mockAxiosGet.mockRejectedValue({
         response: { status: 409 },
       });
 
@@ -129,7 +130,7 @@ describe("usePublicRating", () => {
     });
 
     it("handles generic error", async () => {
-      mockRatingRetrieve.mockRejectedValue(new Error("Network error"));
+      mockAxiosGet.mockRejectedValue(new Error("Network error"));
 
       const { result } = renderHook(() => useRatingInfo("some-token"), {
         wrapper: createWrapper(),

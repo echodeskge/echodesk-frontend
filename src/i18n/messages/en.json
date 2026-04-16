@@ -927,7 +927,22 @@
     "soundQueuePosition9": "Queue Position 9",
     "soundQueuePosition9Desc": "Played when caller is 9th in queue",
     "soundQueuePosition10": "Queue Position 10",
-    "soundQueuePosition10Desc": "Played when caller is 10th or higher in queue"
+    "soundQueuePosition10Desc": "Played when caller is 10th or higher in queue",
+    "reviewSettings": "Review Settings",
+    "reviewSettingsDesc": "Configure how customers rate your service after calls",
+    "reviewMethod": "Review Collection Method",
+    "reviewDisabled": "Disabled",
+    "reviewCallback": "Phone Callback",
+    "reviewSms": "SMS Link",
+    "reviewBoth": "Both (SMS + Callback)",
+    "smsApiKey": "SMS API Key (sender.ge)",
+    "smsTemplateKa": "SMS Template (Georgian)",
+    "smsTemplateEn": "SMS Template (English)",
+    "smsTemplatePlaceholder": "Use '{link}' as placeholder for the rating link",
+    "reviewDelay": "Delay (hours)",
+    "reviewDelayDesc": "Wait this many hours after the last call before sending",
+    "reviewCooldown": "Cooldown (hours)",
+    "reviewCooldownDesc": "Minimum hours between review requests per caller"
   },
   "chat": {
     "history": "History",
