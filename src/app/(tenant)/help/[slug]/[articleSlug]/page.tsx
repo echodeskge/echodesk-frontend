@@ -20,6 +20,8 @@ const translations = {
     backToHelp: 'Help Center',
     backToCategory: 'Back to',
     lastUpdated: 'Last updated',
+    featured: 'Featured',
+    notFound: 'Article not found',
     contentTypes: {
       video: 'Video Tutorial',
       article: 'Article',
@@ -31,22 +33,26 @@ const translations = {
     backToHelp: 'დახმარების ცენტრი',
     backToCategory: 'უკან',
     lastUpdated: 'ბოლო განახლება',
+    featured: 'რჩეული',
+    notFound: 'სტატია ვერ მოიძებნა',
     contentTypes: {
       video: 'ვიდეო გაკვეთილი',
       article: 'სტატია',
       guide: 'ნაბიჯ-ნაბიჯ სახელმძღვანელო',
-      faq: 'FAQ',
+      faq: 'ხშირი კითხვები',
     },
   },
   ru: {
     backToHelp: 'Центр помощи',
     backToCategory: 'Назад к',
     lastUpdated: 'Последнее обновление',
+    featured: 'Избранное',
+    notFound: 'Статья не найдена',
     contentTypes: {
       video: 'Видео урок',
       article: 'Статья',
       guide: 'Пошаговое руководство',
-      faq: 'FAQ',
+      faq: 'Часто задаваемые вопросы',
     },
   },
 };
@@ -126,7 +132,7 @@ export default function HelpArticlePage() {
                   {t.contentTypes[article.content_type]}
                 </Badge>
                 {article.is_featured && (
-                  <Badge variant="default">Featured</Badge>
+                  <Badge variant="default">{t.featured}</Badge>
                 )}
               </div>
 
@@ -184,7 +190,7 @@ export default function HelpArticlePage() {
         </article>
       ) : (
         <div className="text-center py-16 text-muted-foreground">
-          Article not found
+          {t.notFound}
         </div>
       )}
     </div>

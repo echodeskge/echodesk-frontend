@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useLocale } from 'next-intl';
 import { Search, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,11 @@ import { useHelpSearch } from '@/hooks/useHelpCenter';
 import { HelpArticleCard } from './HelpArticleCard';
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
+
+const searchI18n = {
+  en: { noResults: 'No results found for' },
+  ka: { noResults: 'ვერაფერი მოიძებნა მოთხოვნით' },
+};
 
 interface HelpSearchProps {
   lang?: string;
@@ -23,7 +29,7 @@ export function HelpSearch({
   forPublic = true,
   forDashboard = false,
   linkPrefix = '/docs',
-  placeholder = 'Search for help...',
+  placeholder,
   className,
 }: HelpSearchProps) {
   const [query, setQuery] = useState('');
@@ -88,7 +94,7 @@ export function HelpSearch({
             </div>
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              No results found for "{query}"
+              {(searchI18n[lang as keyof typeof searchI18n] || searchI18n.en).noResults} &quot;{query}&quot;
             </div>
           )}
         </div>

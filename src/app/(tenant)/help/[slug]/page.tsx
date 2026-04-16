@@ -13,16 +13,19 @@ const translations = {
     backToHelp: 'Back to Help Center',
     articles: 'articles',
     noArticles: 'No articles in this category yet',
+    notFound: 'Category not found',
   },
   ka: {
     backToHelp: 'დახმარების ცენტრში დაბრუნება',
     articles: 'სტატია',
     noArticles: 'ამ კატეგორიაში სტატიები ჯერ არ არის',
+    notFound: 'კატეგორია ვერ მოიძებნა',
   },
   ru: {
     backToHelp: 'Вернуться в центр помощи',
     articles: 'статей',
     noArticles: 'В этой категории пока нет статей',
+    notFound: 'Категория не найдена',
   },
 };
 
@@ -109,7 +112,7 @@ export default function HelpCategoryPage() {
         </>
       ) : (
         <div className="text-center py-16 text-muted-foreground">
-          Category not found
+          {t.notFound}
         </div>
       )}
     </div>

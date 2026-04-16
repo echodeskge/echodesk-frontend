@@ -86,7 +86,7 @@ export function VideoTutorial({ url, title, thumbnail, duration, className }: Vi
         />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-          <span className="text-gray-400">Video Preview</span>
+          <span className="text-gray-400 text-4xl">▶</span>
         </div>
       )}
 

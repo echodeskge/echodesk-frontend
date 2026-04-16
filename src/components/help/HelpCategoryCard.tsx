@@ -22,6 +22,7 @@ interface HelpCategoryCardProps {
   category: HelpCategory;
   linkPrefix?: string;
   className?: string;
+  lang?: string;
 }
 
 // Map icon names to Lucide icons
@@ -42,7 +43,7 @@ function getIcon(iconName: string): LucideIcon {
   return iconMap[iconName] || BookOpen;
 }
 
-export function HelpCategoryCard({ category, linkPrefix = '/docs', className }: HelpCategoryCardProps) {
+export function HelpCategoryCard({ category, linkPrefix = '/docs', className, lang = 'en' }: HelpCategoryCardProps) {
   const Icon = getIcon(category.icon);
 
   return (
@@ -66,7 +67,7 @@ export function HelpCategoryCard({ category, linkPrefix = '/docs', className }: 
                 </CardDescription>
               )}
               <p className="text-sm text-muted-foreground mt-2">
-                {category.article_count} {category.article_count === 1 ? 'article' : 'articles'}
+                {category.article_count} {category.article_count === 1 ? (lang === 'ka' ? 'სტატია' : 'article') : (lang === 'ka' ? 'სტატია' : 'articles')}
               </p>
             </div>
           </div>

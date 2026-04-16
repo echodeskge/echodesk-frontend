@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import { Video, FileText, ListOrdered, HelpCircle, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,11 @@ interface HelpArticleCardProps {
   showCategory?: boolean;
   className?: string;
 }
+
+const i18n = {
+  en: { video: 'Video', article: 'Article', guide: 'Guide', faq: 'FAQ', featured: 'Featured', in: 'in' },
+  ka: { video: 'ვიდეო', article: 'სტატია', guide: 'სახელმძღვანელო', faq: 'FAQ', featured: 'რჩეული', in: '' },
+};
 
 const contentTypeConfig = {
   video: {
@@ -43,6 +49,8 @@ export function HelpArticleCard({
   showCategory = false,
   className,
 }: HelpArticleCardProps) {
+  const locale = useLocale() as keyof typeof i18n;
+  const labels = i18n[locale] || i18n.en;
   const config = contentTypeConfig[article.content_type];
   const Icon = config.icon;
 
@@ -82,11 +90,11 @@ export function HelpArticleCard({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1 flex-wrap">
                 <Badge variant="secondary" className={cn('text-xs', config.color)}>
-                  {config.label}
+                  {labels[article.content_type] || config.label}
                 </Badge>
                 {article.is_featured && (
                   <Badge variant="default" className="text-xs">
-                    Featured
+                    {labels.featured}
                   </Badge>
                 )}
               </div>
@@ -100,7 +108,7 @@ export function HelpArticleCard({
               )}
               {showCategory && article.category_name && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  in {article.category_name}
+                  {labels.in ? `${labels.in} ` : ''}{article.category_name}
                 </p>
               )}
             </div>
