@@ -1266,6 +1266,7 @@ export function useEndSession() {
       // remove it from every non-archived conversations cache so the user doesn't
       // see it lingering in "All Chats" or "Assigned to Me" after End Session.
       // Also track its unread_count so we can decrement the global badge.
+      // Match on all three identifiers to avoid collisions across platforms.
       let unreadDelta = 0;
       queryClient.setQueriesData<{
         pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>;
@@ -1278,7 +1279,11 @@ export function useEndSession() {
           pages: old.pages.map((page) => ({
             ...page,
             results: page.results?.filter((conv) => {
-              if (conv.conversation_id === variables.conversation_id) {
+              const matches =
+                conv.conversation_id === variables.conversation_id &&
+                conv.account_id === variables.account_id &&
+                String(conv.platform) === variables.platform;
+              if (matches) {
                 if (!removed) {
                   unreadDelta = conv.unread_count || 0;
                   removed = true;
