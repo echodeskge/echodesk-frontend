@@ -221,18 +221,24 @@ export function ChatProvider({
     })
   }, [loadChatMessages, chatState.chats, queryClient])
 
-  // Force reload messages for a chat (e.g., after sending an email where there's no WebSocket echo)
+  // Force reload messages for a chat (e.g., after sending an email where there's no WebSocket echo).
+  // Go through fetchQuery so in-flight requests for the same chat dedupe — otherwise
+  // a concurrent handleLoadChatMessages call would issue a duplicate network request.
   const handleReloadChatMessages = useCallback(async (chatId: string) => {
     if (!loadChatMessages) return
     try {
-      const messages = await loadChatMessages(chatId)
+      const messages = await queryClient.fetchQuery({
+        queryKey: ['chatMessages', chatId],
+        queryFn: () => loadChatMessages(chatId),
+        staleTime: 0, // Force refetch, but dedupe with in-flight queries of the same key
+      })
       if (messages.length > 0) {
         dispatch({ type: "updateChatMessages", chatId, messages })
       }
     } catch (error) {
       console.error("Failed to reload chat messages:", error)
     }
-  }, [loadChatMessages])
+  }, [loadChatMessages, queryClient])
 
   // Load full message history for a chat (when user clicks "Load History")
   const handleLoadFullHistory = useCallback(async (chatId: string) => {
@@ -258,14 +264,13 @@ export function ChatProvider({
     dispatch({ type: "selectChat", chat })
     // Call the optional callback when a chat is selected
     onChatSelected?.(chat)
-    // Trigger lazy loading if messages not loaded
+    // Trigger lazy loading only if messages not loaded. If already loaded, rely on
+    // the WebSocket push for new messages and React Query's staleTime for refreshes —
+    // re-fetching on every re-select caused duplicate network requests.
     if (!chat.messagesLoaded && loadChatMessages) {
       handleLoadChatMessages(chat.id)
-    } else if (chat.messagesLoaded && loadChatMessages) {
-      // Silently refetch in background to pick up any missed messages
-      handleReloadChatMessages(chat.id)
     }
-  }, [onChatSelected, loadChatMessages, handleLoadChatMessages, handleReloadChatMessages])
+  }, [onChatSelected, loadChatMessages, handleLoadChatMessages])
 
   return (
     <ChatContext.Provider
