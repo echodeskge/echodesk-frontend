@@ -159,8 +159,9 @@ export function useMarkConversationRead() {
       }
     },
     onSettled: () => {
-      // Sync with server
-      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      // Only refresh the unread count badge — the conversations list was already
+      // optimistically updated to unread_count: 0 and doesn't need a server refetch
+      // just to mark a single chat read (the rest of the list is unchanged).
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     },
   });
@@ -1091,15 +1092,12 @@ export function useAssignChat() {
         }
       }
     },
-    onSettled: (_data, _err, variables) => {
-      // Sync with server. Skip conversations() invalidation — the onMutate
-      // optimistic insert already updated the cache, and the tab switch triggers
-      // a natural useInfiniteQuery fetch on the new key. Double-invalidating
-      // here just causes a redundant refetch on slow networks.
+    onSettled: () => {
+      // Sync with server. Invalidating the base assignments() key also
+      // invalidates the assignmentStatus(...) children — no need for a
+      // second specific invalidation, which would trigger a duplicate
+      // refetch on slow networks.
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
-      queryClient.invalidateQueries({
-        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
-      });
     },
   });
 }
@@ -1170,9 +1168,6 @@ export function useUnassignChat() {
     },
     onSettled: (_data, _err, variables) => {
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
-      queryClient.invalidateQueries({
-        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
-      });
     },
   });
 }
@@ -1188,9 +1183,6 @@ export function useTransferChat() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
-      queryClient.invalidateQueries({
-        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
-      });
     },
   });
 }
@@ -1206,9 +1198,6 @@ export function useStartSession() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
-      queryClient.invalidateQueries({
-        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
-      });
     },
   });
 }
@@ -1326,9 +1315,6 @@ export function useEndSession() {
       // (the rating request message arrives via WebSocket), so no need to
       // force refetches here.
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
-      queryClient.invalidateQueries({
-        queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
-      });
     },
   });
 }
