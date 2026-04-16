@@ -282,17 +282,13 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       return filterEnded(prevChatsRef.current);
     }
     // Fresh server data arrived — clear transient removed IDs.
+    // Note: we deliberately DON'T lift the end-session block just because the
+    // server returned the chat. The server may temporarily include the chat
+    // because of rating-request echoes or timing races, which would make the
+    // chat pop back in seconds after End Session. The block is cleared only
+    // by a real incoming customer message in handleNewMessage, or when the
+    // 60s TTL expires.
     removedChatIdsRef.current.clear();
-    // If the server includes a chat that's in our ended set, the server
-    // explicitly unarchived it (e.g. the customer sent a new message after
-    // End Session). Trust the server and lift the local block so the chat
-    // reappears in All Chats.
-    if (endedChatIdsRef.current.size > 0) {
-      const freshIds = new Set(chatsData.map((c) => c.id));
-      for (const id of Array.from(endedChatIdsRef.current.keys())) {
-        if (freshIds.has(id)) endedChatIdsRef.current.delete(id);
-      }
-    }
     const filtered = filterEnded(chatsData);
     prevChatsRef.current = filtered;
     return filtered;
