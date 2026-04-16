@@ -174,13 +174,19 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     router.push(newUrl, { scroll: false });
   }, [searchParams, router, getBaseRoute]);
 
-  // Read assignment tab from URL search params (persists across navigation)
-  const assignmentTabFromUrl = searchParams.get('tab') as AssignmentTabType | null;
-  const assignmentTab: AssignmentTabType = assignmentTabFromUrl === 'assigned' ? 'assigned' : 'all';
+  // Assignment tab state. Seeded from URL (so deep links work) but then kept
+  // entirely in local state. Using router.replace() here would trigger a full
+  // Next.js RSC refresh that flashes the layout after every tab change — we
+  // avoid it by updating the URL via history.replaceState (no re-render).
+  const [assignmentTab, setAssignmentTabState] = useState<AssignmentTabType>(() => {
+    const tabFromUrl = searchParams.get('tab');
+    return tabFromUrl === 'assigned' ? 'assigned' : 'all';
+  });
 
-  // Update assignment tab in URL (preserves selected chat)
   const setAssignmentTab = useCallback((tab: AssignmentTabType) => {
-    const newParams = new URLSearchParams(searchParams.toString());
+    setAssignmentTabState(tab);
+    if (typeof window === 'undefined') return;
+    const newParams = new URLSearchParams(window.location.search);
     if (tab === 'assigned') {
       newParams.set('tab', 'assigned');
     } else {
@@ -188,8 +194,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     }
     const queryString = newParams.toString();
     const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
-    router.replace(newUrl, { scroll: false });
-  }, [searchParams, pathname, router]);
+    window.history.replaceState(null, '', newUrl);
+  }, [pathname]);
 
   // Debounce search query (300ms delay)
   const debouncedSearchQuery = useDebounce(searchQuery, 300);

@@ -650,17 +650,9 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
             {assignmentEnabled && chatInfo && (
               <>
                 <DropdownMenuSeparator />
-                {/* Assign to Me - show if not assigned */}
-                {!isAssigned && (
-                  <DropdownMenuItem
-                    onClick={handleAssign}
-                    onMouseEnter={prefetchAssignedConversations}
-                    disabled={isAssignmentLoading}
-                  >
-                    <UserPlus className="size-4 mr-2" />
-                    {assignChat.isPending ? "Assigning..." : "Assign to Me"}
-                  </DropdownMenuItem>
-                )}
+                {/* Assign to Me was here — removed from the dropdown per UX.
+                    The dedicated "Assign to Me" button in the chat footer empty
+                    state is the only entry point for self-assignment. */}
 
                 {/* Session controls - only show if assigned to me (session management is part of assignment) */}
                 {isAssignedToMe && (
