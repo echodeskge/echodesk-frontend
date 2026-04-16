@@ -253,24 +253,48 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   // Keep previous chats during query key transitions to prevent state wipe
   const prevChatsRef = useRef<ChatType[]>([]);
   const removedChatIdsRef = useRef<Set<string>>(new Set());
+  // Chats that were explicitly ended (End Session). We block WebSocket-driven
+  // re-addition of these chats for a short window so the rating-request echo
+  // and any late-arriving messages don't resurrect them in "All Chats" right
+  // after the user ended the session.
+  const endedChatIdsRef = useRef<Map<string, number>>(new Map());
+  const END_SESSION_BLOCK_MS = 60_000;
+
   const stableChatsData = useMemo(() => {
+    // Filter out chats that are still within the end-session block window
+    const now = Date.now();
+    const filterEnded = (chats: ChatType[]) =>
+      chats.filter((c) => {
+        const endedAt = endedChatIdsRef.current.get(c.id);
+        if (endedAt === undefined) return true;
+        if (now - endedAt > END_SESSION_BLOCK_MS) {
+          endedChatIdsRef.current.delete(c.id);
+          return true;
+        }
+        return false;
+      });
+
     if (chatsData.length === 0 && isFetching) {
       if (removedChatIdsRef.current.size > 0) {
-        return prevChatsRef.current.filter(c => !removedChatIdsRef.current.has(c.id));
+        return filterEnded(
+          prevChatsRef.current.filter((c) => !removedChatIdsRef.current.has(c.id))
+        );
       }
-      return prevChatsRef.current;
+      return filterEnded(prevChatsRef.current);
     }
-    // Fresh data arrived — clear removed IDs
+    // Fresh data arrived — clear transient removed IDs
     removedChatIdsRef.current.clear();
-    prevChatsRef.current = chatsData;
-    return chatsData;
+    const filtered = filterEnded(chatsData);
+    prevChatsRef.current = filtered;
+    return filtered;
   }, [chatsData, isFetching]);
 
   // Callback for ChatProvider to notify when a chat is removed (e.g., end session)
   const handleChatRemoved = useCallback((chatId: string) => {
     removedChatIdsRef.current.add(chatId);
+    endedChatIdsRef.current.set(chatId, Date.now());
     // Also remove from prevChatsRef so it doesn't reappear on tab switch
-    prevChatsRef.current = prevChatsRef.current.filter(c => c.id !== chatId);
+    prevChatsRef.current = prevChatsRef.current.filter((c) => c.id !== chatId);
   }, []);
 
   // Ref to hold the addIncomingMessage dispatch function (set by ChatProvider)
@@ -440,6 +464,18 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           newMessage.text = attName ? `📎 ${attName}` : '📎 Attachment sent';
         }
       }
+    }
+
+    // Skip WebSocket-driven re-addition of chats that were just ended via
+    // End Session. Without this guard the rating-request echo (outgoing) or
+    // any late-arriving message resurrects the chat right after the user
+    // optimistically removed it from the sidebar.
+    const endedAt = endedChatIdsRef.current.get(chatId);
+    if (endedAt !== undefined) {
+      if (Date.now() - endedAt < END_SESSION_BLOCK_MS) {
+        return;
+      }
+      endedChatIdsRef.current.delete(chatId);
     }
 
     // Dispatch to chat state if the handler is available

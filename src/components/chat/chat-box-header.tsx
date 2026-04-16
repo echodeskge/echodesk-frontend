@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useCallback } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { Square } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { ChatHeaderActions } from "./chat-header-actions"
 import { ChatHeaderInfo } from "./chat-header-info"
 import { ChatMenuButton } from "./chat-menu-button"
+import { useChatContext } from "./hooks/use-chat-context"
 
 interface ChatBoxHeaderProps {
   chat: ChatType
@@ -31,8 +32,6 @@ interface ChatBoxHeaderProps {
 
 export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: ChatBoxHeaderProps) {
   const pathname = usePathname()
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const { user } = useAuth()
   const { toast } = useToast()
   const t = useTranslations("chat")
@@ -79,9 +78,23 @@ export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: Chat
   // Don't show if status is 'completed' (waiting for rating)
   const showEndSessionButton = assignmentEnabled && isAssignedToMe && isInSession
 
+  const { setSelectedChatId, handleRemoveChat } = useChatContext()
+
   // Handle end session
   const handleEndSession = () => {
     if (!chatInfo) return
+
+    // Immediately (before waiting for the server) clear the chat from the
+    // sidebar, deselect it, and drop its ID from the URL. The mutation
+    // still runs in the background via endSession.mutate.
+    handleRemoveChat(chat.id)
+    setSelectedChatId(null)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search).toString()
+      const newUrl = getBaseRoute() + (params ? `?${params}` : '')
+      window.history.replaceState(null, '', newUrl)
+    }
+
     endSession.mutate(
       {
         platform: chatInfo.platform,
@@ -94,9 +107,6 @@ export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: Chat
             title: t("sessionEnded"),
             description: t("movedToHistory"),
           })
-          // Clear chat ID from URL but preserve query params (e.g. ?tab=assigned)
-          const params = searchParams.toString()
-          router.push(getBaseRoute() + (params ? `?${params}` : ''))
         },
       }
     )
