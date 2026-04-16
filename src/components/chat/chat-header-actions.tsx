@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft } from "lucide-react"
@@ -23,6 +23,7 @@ import {
   useUnarchiveConversation,
   socialKeys,
 } from "@/hooks/api/useSocial"
+import { usePrefetchConversations, usePrefetchUnreadCount } from "@/hooks/api/usePrefetchSocial"
 import { parseChatId } from "@/lib/chatUtils"
 import { useUsers } from "@/hooks/api/useUsers"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
@@ -83,6 +84,14 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const markUnread = useMarkConversationUnread()
   const archiveConversation = useArchiveConversation()
   const unarchiveConversation = useUnarchiveConversation()
+
+  // Prefetch handlers — warm caches before the user clicks Assign / End Session
+  const prefetchAssignedConversations = usePrefetchConversations('assigned')
+  const prefetchUnread = usePrefetchUnreadCount()
+  const handleEndSessionHover = useCallback(() => {
+    prefetchAssignedConversations()
+    prefetchUnread()
+  }, [prefetchAssignedConversations, prefetchUnread])
 
   // Parse chat ID for assignment operations
   const chatInfo = useMemo(() => {
@@ -561,7 +570,12 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
         {/* More Actions Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger className="self-center" asChild>
-            <Button variant="ghost" size="icon" aria-label="More actions">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="More actions"
+              onMouseEnter={handleEndSessionHover}
+            >
               <EllipsisVertical className="size-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -638,7 +652,11 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                 <DropdownMenuSeparator />
                 {/* Assign to Me - show if not assigned */}
                 {!isAssigned && (
-                  <DropdownMenuItem onClick={handleAssign} disabled={isAssignmentLoading}>
+                  <DropdownMenuItem
+                    onClick={handleAssign}
+                    onMouseEnter={prefetchAssignedConversations}
+                    disabled={isAssignmentLoading}
+                  >
                     <UserPlus className="size-4 mr-2" />
                     {assignChat.isPending ? "Assigning..." : "Assign to Me"}
                   </DropdownMenuItem>
@@ -657,7 +675,11 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
 
                     {/* End Session - only show if in session */}
                     {isInSession && (
-                      <DropdownMenuItem onClick={handleEndSession} disabled={isAssignmentLoading}>
+                      <DropdownMenuItem
+                        onClick={handleEndSession}
+                        onMouseEnter={handleEndSessionHover}
+                        disabled={isAssignmentLoading}
+                      >
                         <Square className="size-4 mr-2" />
                         {endSession.isPending ? "Ending..." : "End Session"}
                       </DropdownMenuItem>

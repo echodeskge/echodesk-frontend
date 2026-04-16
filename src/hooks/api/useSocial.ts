@@ -968,6 +968,7 @@ export function useAssignChat() {
     onMutate: async (variables) => {
       // Cancel ongoing refetches to prevent race conditions
       await queryClient.cancelQueries({ queryKey: socialKeys.assignments() });
+      await queryClient.cancelQueries({ queryKey: socialKeys.conversations() });
       await queryClient.cancelQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
       });
@@ -977,6 +978,8 @@ export function useAssignChat() {
       const prevAssignmentStatus = queryClient.getQueryData<ChatAssignmentStatusResponse>(
         socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id)
       );
+      // Snapshot all conversations caches so we can roll back if the assign fails
+      const prevConversationsCaches = queryClient.getQueriesData({ queryKey: socialKeys.conversations() });
 
       // Optimistically add to myAssignments cache
       const optimisticAssignment: ChatAssignment = {
@@ -1010,7 +1013,48 @@ export function useAssignChat() {
         );
       }
 
-      return { prevMyAssignments, prevAssignmentStatus };
+      // Optimistically insert the conversation into the assigned={true} list
+      // by finding it in any cached conversations list and copying it across.
+      let foundConv: UnifiedConversation | undefined;
+      for (const [, data] of prevConversationsCaches) {
+        const infiniteData = data as { pages?: Array<{ results?: UnifiedConversation[] }> } | undefined;
+        for (const page of infiniteData?.pages ?? []) {
+          const hit = page.results?.find(
+            (c) =>
+              c.conversation_id === variables.conversation_id &&
+              c.account_id === variables.account_id &&
+              String(c.platform) === variables.platform
+          );
+          if (hit) {
+            foundConv = hit;
+            break;
+          }
+        }
+        if (foundConv) break;
+      }
+
+      if (foundConv) {
+        queryClient.setQueriesData<{
+          pages: Array<{ results?: UnifiedConversation[]; next?: string | null; count?: number }>;
+          pageParams: number[];
+        }>({ queryKey: socialKeys.conversations() }, (old) => {
+          if (!old?.pages || old.pages.length === 0) return old;
+          // Only mutate caches that already contain the conversation OR are the assigned list
+          // This is a simplification — we prepend into the first page if absent.
+          const alreadyPresent = old.pages.some((page) =>
+            page.results?.some((c) => c.conversation_id === foundConv!.conversation_id)
+          );
+          if (alreadyPresent) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page, idx) =>
+              idx === 0 ? { ...page, results: [foundConv!, ...(page.results ?? [])] } : page
+            ),
+          };
+        });
+      }
+
+      return { prevMyAssignments, prevAssignmentStatus, prevConversationsCaches };
     },
     onError: (_err, variables, context) => {
       // Rollback on error
@@ -1023,10 +1067,17 @@ export function useAssignChat() {
           context.prevAssignmentStatus
         );
       }
+      // Restore all conversation list caches
+      if (context?.prevConversationsCaches) {
+        for (const [key, data] of context.prevConversationsCaches) {
+          queryClient.setQueryData(key, data);
+        }
+      }
     },
     onSettled: (_data, _err, variables) => {
       // Sync with server
       queryClient.invalidateQueries({ queryKey: socialKeys.assignments() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
       queryClient.invalidateQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
       });
@@ -1257,11 +1308,17 @@ export function useEndSession() {
       queryClient.invalidateQueries({
         queryKey: socialKeys.assignmentStatus(variables.platform, variables.conversation_id, variables.account_id),
       });
-      // Also invalidate messages since a rating request message was sent
-      queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
-      queryClient.invalidateQueries({ queryKey: socialKeys.instagramMessages() });
-      queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
-      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      // Only invalidate the affected platform's message list — a rating request
+      // message was just sent, but other platforms are unaffected.
+      const platformMessagesKey = {
+        facebook: socialKeys.facebookMessages(),
+        instagram: socialKeys.instagramMessages(),
+        whatsapp: socialKeys.whatsappMessages(),
+        email: socialKeys.emailMessages(),
+      }[variables.platform];
+      if (platformMessagesKey) {
+        queryClient.invalidateQueries({ queryKey: platformMessagesKey });
+      }
     },
   });
 }

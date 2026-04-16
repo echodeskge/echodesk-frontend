@@ -2,7 +2,7 @@ import { forwardRef } from "react"
 
 import type { MessageType, UserType } from "@/components/chat/types"
 import { formatDistanceToNow } from "date-fns"
-import { Pencil, Trash2, Smartphone, History, Reply, Monitor, MessageCircle, Instagram, Facebook } from "lucide-react"
+import { Pencil, Trash2, Smartphone, History, Reply, MessageCircle, Instagram, Facebook } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -135,25 +135,14 @@ function MessageSourceIcon({ source, platform }: { source?: string; platform?: s
   )
 }
 
-// Staff member name badge for messages sent via EchoDesk
-function MessageAuthorBadge({ sentByName, source }: { sentByName?: string; source?: string }) {
-  // Only show author name for messages sent via EchoDesk
-  if (!sentByName || (source && source !== 'echodesk' && source !== 'cloud_api')) return null
+// Staff member name for business-side messages
+function MessageAuthorBadge({ sentByName }: { sentByName?: string }) {
+  if (!sentByName) return null
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Monitor className="h-3 w-3 text-primary" />
-            <span className="font-medium">{sentByName}</span>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="text-xs">
-          Sent via EchoDesk by {sentByName}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span className="text-[11px] text-muted-foreground">
+      {sentByName}
+    </span>
   )
 }
 
@@ -261,9 +250,9 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
           "flex items-center gap-1.5",
           isByCurrentUser && "justify-end"
         )}>
-          {/* Author badge for messages sent via EchoDesk */}
-          {isByCurrentUser && (
-            <MessageAuthorBadge sentByName={message.sentByName} source={message.source} />
+          {/* Author name for business-side messages */}
+          {isByCurrentUser && message.sentByName && (
+            <MessageAuthorBadge sentByName={message.sentByName} />
           )}
 
           {/* Source indicator for external app messages (all platforms) */}

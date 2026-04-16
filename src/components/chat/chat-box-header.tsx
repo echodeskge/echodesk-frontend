@@ -10,6 +10,7 @@ import {
   useAssignmentStatus,
   useEndSession,
 } from "@/hooks/api/useSocial"
+import { usePrefetchConversations, usePrefetchUnreadCount } from "@/hooks/api/usePrefetchSocial"
 import { parseChatId } from "@/lib/chatUtils"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslations } from "next-intl"
@@ -60,6 +61,14 @@ export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: Chat
   // End session mutation
   const endSession = useEndSession()
 
+  // Prefetch handlers — warm caches before the user clicks End Session
+  const prefetchAssignedConversations = usePrefetchConversations('assigned')
+  const prefetchUnread = usePrefetchUnreadCount()
+  const handleEndSessionHover = useCallback(() => {
+    prefetchAssignedConversations()
+    prefetchUnread()
+  }, [prefetchAssignedConversations, prefetchUnread])
+
   // Assignment state
   const assignmentEnabled = assignmentStatusData?.settings?.chat_assignment_enabled ?? false
   const assignment = assignmentStatusData?.assignment
@@ -104,6 +113,7 @@ export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: Chat
           variant="destructive"
           size="sm"
           onClick={handleEndSession}
+          onMouseEnter={handleEndSessionHover}
           disabled={endSession.isPending}
           className="ml-auto mr-2"
         >
