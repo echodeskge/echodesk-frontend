@@ -38,13 +38,25 @@ import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 import { useCall } from "@/contexts/CallContext";
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
 import {
-  clientsList,
   callLogsList,
   callLogsPartialUpdate,
   ticketsList,
 } from "@/api/generated/api";
 import type { Client, CallLog, TicketList } from "@/api/generated/interfaces";
+import axios from "@/api/axios";
 import { format } from "date-fns";
+
+interface PhoneLookupResponse {
+  results: Array<{
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    company: string;
+    source: 'crm' | 'social';
+  }>;
+  count: number;
+}
 
 function formatDuration(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -78,9 +90,24 @@ export function IncomingCallSidebar() {
 
     setLoading(true);
     try {
-      // Search for client by phone number
-      const clientsResult = await clientsList(undefined, 1, 5, phoneNumber);
-      const matchedClient = clientsResult.results?.[0] || null;
+      // Look up the caller by phone — the backend matches on the last 7
+      // digits across both crm.Client and SocialIntegration.SocialClient,
+      // so a number like "597147515" finds a stored "+995597147515".
+      const lookupResp = await axios.get<PhoneLookupResponse>(
+        `/api/clients/lookup-by-phone/?phone=${encodeURIComponent(phoneNumber)}`
+      );
+      const matched = lookupResp.data.results?.[0] || null;
+      const matchedClient = matched
+        ? ({
+            id: matched.id,
+            name: matched.name,
+            email: matched.email,
+            phone: matched.phone,
+            company: matched.company,
+            // The Client interface has more fields (created_at/updated_at/is_active)
+            // — fill harmless defaults so the existing UI keeps reading .name etc.
+          } as Client)
+        : null;
       setClient(matchedClient);
 
       // Fetch recent tickets if client found
@@ -180,14 +207,8 @@ export function IncomingCallSidebar() {
                 <p className="text-sm text-muted-foreground">{phoneNumber}</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 flex-shrink-0"
-              onClick={closeSidebar}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            {/* SheetContent already renders a close X in the top-right corner;
+                no need for a second one here. */}
           </div>
 
           {/* Active Call Controls */}

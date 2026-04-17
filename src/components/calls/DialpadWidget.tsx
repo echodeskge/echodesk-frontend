@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Phone, PhoneMissed, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useCall } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 import { DialpadPopup } from "./DialpadPopup";
 import { IncomingCallNotification } from "./IncomingCallNotification";
 
@@ -27,6 +28,16 @@ export default function DialpadWidget() {
     clearMissedCall,
     setDialNumber,
   } = useCall();
+  const { isOpen: sidebarOpen } = useIncomingCallSidebar();
+
+  // The right-side call sidebar carries the same end/hold/mute/transfer
+  // controls plus client context — when it opens, hide the bottom-right
+  // popup so the user isn't seeing two stacked call UIs at once.
+  useEffect(() => {
+    if (sidebarOpen && isDialpadOpen) {
+      setIsDialpadOpen(false);
+    }
+  }, [sidebarOpen, isDialpadOpen, setIsDialpadOpen]);
 
   // Check user's group-level feature keys (same as sidebar uses userProfile)
   const hasIpCalling = useMemo(() => {
@@ -125,8 +136,9 @@ export default function DialpadWidget() {
         </div>
       </div>
 
-      {/* Dialpad popup */}
-      {isDialpadOpen && (
+      {/* Dialpad popup — suppressed while the call sidebar is showing
+          to avoid two overlapping call UIs. */}
+      {isDialpadOpen && !sidebarOpen && (
         <DialpadPopup onClose={() => setIsDialpadOpen(false)} />
       )}
     </>
