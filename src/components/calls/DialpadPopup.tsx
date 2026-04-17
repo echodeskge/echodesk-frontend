@@ -129,6 +129,12 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
               onChange={setDialNumber}
               onCall={makeCall}
               disabled={!sipRegistered}
+              // Decline button sits in the bottom-right action slot.
+              // In idle state there is nothing to decline — keep it disabled
+              // so the layout stays balanced; if a ringing call arrives this
+              // view is swapped out for ActiveCallDisplay anyway.
+              onDecline={handleEndCall}
+              declineDisabled
             />
           )}
         </div>

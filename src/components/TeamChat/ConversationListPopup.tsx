@@ -30,14 +30,25 @@ export function ConversationListPopup({
   // Filter users and conversations based on search
   // All hooks must be called before any early returns
   const filteredUsers = useMemo(() => {
-    if (!searchQuery) return users;
     const query = searchQuery.toLowerCase();
-    return users.filter(
-      (user) =>
-        user.full_name.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query)
-    );
-  }, [users, searchQuery]);
+    const base = !searchQuery
+      ? users
+      : users.filter(
+          (user) =>
+            user.full_name.toLowerCase().includes(query) ||
+            user.email.toLowerCase().includes(query)
+        );
+
+    // Online members float to the top; alphabetical within each group.
+    // onlineUsers is reactive via useTeamChatWebSocket, so the list
+    // re-sorts automatically when users connect/disconnect.
+    return [...base].sort((a, b) => {
+      const aOnline = onlineUsers.has(a.id) ? 0 : 1;
+      const bOnline = onlineUsers.has(b.id) ? 0 : 1;
+      if (aOnline !== bOnline) return aOnline - bOnline;
+      return (a.full_name ?? '').localeCompare(b.full_name ?? '');
+    });
+  }, [users, searchQuery, onlineUsers]);
 
   const filteredConversations = useMemo(() => {
     let filtered = conversations;
