@@ -67,7 +67,7 @@ export function DialPad({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           className={cn(
-            "w-full h-12 bg-transparent border-0 outline-none",
+            "w-full h-12 bg-transparent border-0 outline-none caret-transparent",
             "text-center text-3xl font-medium tracking-wide tabular-nums",
             "placeholder:text-sm placeholder:font-normal placeholder:tracking-normal",
             "placeholder:text-muted-foreground/50"
