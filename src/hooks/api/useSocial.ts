@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import { parseTimestamp } from '@/lib/parseTimestamp';
 import {
   socialFacebookSendMessageCreate,
   socialWhatsappOauthStartRetrieve,
@@ -2526,7 +2527,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
       senderName: conv.sender_name,
       senderAvatar: conv.profile_pic_url || undefined,
       lastMessage: conv.last_message.text || conv.last_message.attachment_type || '',
-      lastMessageAt: new Date(conv.last_message.timestamp),
+      lastMessageAt: parseTimestamp(conv.last_message.timestamp),
       unreadCount: conv.unread_count,
     }));
   }, [data, limit]);
@@ -2598,6 +2599,11 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
     },
     enabled,
     staleTime: 10000, // 10 seconds
+    // Background refetch so the sidebar self-heals if the WebSocket disconnects
+    // silently (load balancer idle timeout, flaky network). WebSocket push is
+    // still the primary real-time path — this is a fallback only.
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
     // Keep the previously-rendered list visible while switching tabs or filters,
     // so the sidebar doesn't show a full-page spinner on tab switch.
     placeholderData: keepPreviousData,

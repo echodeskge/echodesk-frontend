@@ -1,4 +1,5 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
+import { parseTimestamp } from "@/lib/parseTimestamp";
 
 /**
  * Strips HTML tags from a string and decodes HTML entities
@@ -167,7 +168,7 @@ function convertMessageFields(msg: UnifiedMessage, senderId: string): MessageTyp
     files,
     voiceMessage,
     status,
-    createdAt: new Date(msg.timestamp),
+    createdAt: parseTimestamp(msg.timestamp),
     platformMessageId: msg.platform_message_id,
     senderName: effectiveSenderName,
     recipientName: msg.recipient_name,
@@ -175,7 +176,7 @@ function convertMessageFields(msg: UnifiedMessage, senderId: string): MessageTyp
     isEcho: msg.is_echo,
     sentByName: msg.sent_by_name,
     isEdited: msg.is_edited,
-    editedAt: msg.edited_at ? new Date(msg.edited_at) : undefined,
+    editedAt: msg.edited_at ? parseTimestamp(msg.edited_at) : undefined,
     originalText: msg.original_text,
     isRevoked: msg.is_revoked,
     revokedAt: msg.revoked_at ? new Date(msg.revoked_at) : undefined,
@@ -329,7 +330,7 @@ export function convertFacebookMessagesToChatFormat(
     }
     const lastMessage: LastMessageType = {
       content: lastMessageContent || '',
-      createdAt: new Date(lastMsg.timestamp),
+      createdAt: parseTimestamp(lastMsg.timestamp),
     };
 
     // Determine if messages are loaded (empty messages array means lazy loading needed)
@@ -481,7 +482,7 @@ export function convertApiConversationsToChatFormat(
 
     const lastMessage = {
       content: lastMessageContent,
-      createdAt: new Date(lastMsg.timestamp),
+      createdAt: parseTimestamp(lastMsg.timestamp),
     };
 
     return {

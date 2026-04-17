@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Square, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -14,7 +14,6 @@ import {
   useAssignChat,
   useUnassignChat,
   useStartSession,
-  useEndSession,
   useTransferChat,
   useEmailFolders,
   useEmailAction,
@@ -23,7 +22,6 @@ import {
   useUnarchiveConversation,
   socialKeys,
 } from "@/hooks/api/useSocial"
-import { usePrefetchConversations, usePrefetchUnreadCount } from "@/hooks/api/usePrefetchSocial"
 import { parseChatId } from "@/lib/chatUtils"
 import { useUsers } from "@/hooks/api/useUsers"
 import { useChatContext } from "@/components/chat/hooks/use-chat-context"
@@ -85,14 +83,6 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const archiveConversation = useArchiveConversation()
   const unarchiveConversation = useUnarchiveConversation()
 
-  // Prefetch handlers — warm caches before the user clicks Assign / End Session
-  const prefetchAssignedConversations = usePrefetchConversations('assigned')
-  const prefetchUnread = usePrefetchUnreadCount()
-  const handleEndSessionHover = useCallback(() => {
-    prefetchAssignedConversations()
-    prefetchUnread()
-  }, [prefetchAssignedConversations, prefetchUnread])
-
   // Parse chat ID for assignment operations
   const chatInfo = useMemo(() => {
     if (!chat?.id) return null
@@ -140,7 +130,6 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const assignChat = useAssignChat()
   const unassignChat = useUnassignChat()
   const startSession = useStartSession()
-  const endSession = useEndSession()
   const transferChat = useTransferChat()
 
   // Fetch users for transfer dropdown
@@ -266,31 +255,6 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     })
   }
 
-  const handleEndSession = () => {
-    if (!chatInfo || !chat) return
-    const chatIdToRemove = chat.id
-    // End session - backend archives the conversation automatically
-    endSession.mutate(
-      {
-        platform: chatInfo.platform,
-        conversation_id: chatInfo.conversationId,
-        account_id: chatInfo.accountId,
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Session ended",
-            description: "Conversation moved to history",
-          })
-          // Immediately remove chat from sidebar and clear selection
-          handleRemoveChat(chatIdToRemove)
-          setSelectedChatId(null)
-          queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
-        },
-      }
-    )
-  }
-
   const handleTransfer = () => {
     if (!chatInfo || !transferTarget) return
     transferChat.mutate(
@@ -322,7 +286,7 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     )
   }
 
-  const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || endSession.isPending || transferChat.isPending
+  const isAssignmentLoading = assignChat.isPending || unassignChat.isPending || startSession.isPending || transferChat.isPending
 
   // Handle move to folder for email threads
   const handleMoveToFolder = (targetFolder: string) => {
@@ -574,7 +538,6 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               variant="ghost"
               size="icon"
               aria-label="More actions"
-              onMouseEnter={handleEndSessionHover}
             >
               <EllipsisVertical className="size-4" />
             </Button>
@@ -654,29 +617,14 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                     The dedicated "Assign to Me" button in the chat footer empty
                     state is the only entry point for self-assignment. */}
 
-                {/* Session controls - only show if assigned to me (session management is part of assignment) */}
-                {isAssignedToMe && (
-                  <>
-                    {/* Start Session - only show if assignment is active (not in session) */}
-                    {isActiveAssignment && (
-                      <DropdownMenuItem onClick={handleStartSession} disabled={isAssignmentLoading}>
-                        <Play className="size-4 mr-2" />
-                        {startSession.isPending ? "Starting..." : "Start Session"}
-                      </DropdownMenuItem>
-                    )}
-
-                    {/* End Session - only show if in session */}
-                    {isInSession && (
-                      <DropdownMenuItem
-                        onClick={handleEndSession}
-                        onMouseEnter={handleEndSessionHover}
-                        disabled={isAssignmentLoading}
-                      >
-                        <Square className="size-4 mr-2" />
-                        {endSession.isPending ? "Ending..." : "End Session"}
-                      </DropdownMenuItem>
-                    )}
-                  </>
+                {/* Start Session stays in the dropdown; End Session was removed
+                    from here — the dedicated red "End Session" button in the
+                    chat header footer is the single entry point for ending. */}
+                {isAssignedToMe && isActiveAssignment && (
+                  <DropdownMenuItem onClick={handleStartSession} disabled={isAssignmentLoading}>
+                    <Play className="size-4 mr-2" />
+                    {startSession.isPending ? "Starting..." : "Start Session"}
+                  </DropdownMenuItem>
                 )}
 
                 {/* Unassign - always show if assigned to me (release chat) */}
@@ -695,20 +643,13 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                       Assigned to {assignment.assigned_user_name}
                     </DropdownMenuItem>
 
-                    {/* Admin actions for chats assigned to others */}
+                    {/* Admin actions for chats assigned to others — End Session
+                        was removed from the dropdown per UX; use Unassign instead. */}
                     {canDelete && (
-                      <>
-                        {isInSession && (
-                          <DropdownMenuItem onClick={handleEndSession} disabled={isAssignmentLoading}>
-                            <Square className="size-4 mr-2" />
-                            {endSession.isPending ? "Ending..." : "End Session"}
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem onClick={handleUnassign} disabled={isAssignmentLoading}>
-                          <UserMinus className="size-4 mr-2" />
-                          {unassignChat.isPending ? "Unassigning..." : "Unassign"}
-                        </DropdownMenuItem>
-                      </>
+                      <DropdownMenuItem onClick={handleUnassign} disabled={isAssignmentLoading}>
+                        <UserMinus className="size-4 mr-2" />
+                        {unassignChat.isPending ? "Unassigning..." : "Unassign"}
+                      </DropdownMenuItem>
                     )}
                   </>
                 )}

@@ -10,8 +10,10 @@ import { ChatBoxFacebook } from "@/components/chat/chat-box-facebook";
 import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType, MessageType, AssignmentTabType } from "@/components/chat/types";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
-import { useMarkConversationRead, useUnifiedConversations } from "@/hooks/api/useSocial";
+import { useMarkConversationRead, useUnifiedConversations, socialKeys } from "@/hooks/api/useSocial";
+import { useQueryClient } from "@tanstack/react-query";
 import { consumePendingMedia } from "@/lib/pendingMedia";
+import { parseTimestamp } from "@/lib/parseTimestamp";
 import { getApiUrl } from "@/api/axios";
 
 // Custom hook for debounced value
@@ -69,6 +71,7 @@ interface MessagesChatProps {
 
 export default function MessagesChat({ platforms }: MessagesChatProps) {
   const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email"];
+  const queryClient = useQueryClient();
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -365,7 +368,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       senderId: isFromBusiness ? 'business' : (messageData.sender_id || messageData.from_number || ''),
       text: messageData.message_text || '',
       status: 'DELIVERED',
-      createdAt: new Date(messageData.timestamp),
+      createdAt: parseTimestamp(messageData.timestamp),
       platformMessageId: messageData.message_id,
       senderName: messageData.sender_name || messageData.contact_name,
       platform: messageData.platform,
@@ -511,10 +514,20 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // Status updates don't require refetch
   }, []);
 
-  // Handle WebSocket connection status
-  const handleConnectionChange = useCallback(() => {
-    // Connection status change
-  }, []);
+  // Track prior WebSocket connection state so we can detect reconnects
+  // (disconnected → connected) and catch up on any conversations/messages
+  // that were missed while the socket was down.
+  const wasConnectedRef = useRef(false);
+  const handleConnectionChange = useCallback((connected: boolean) => {
+    if (connected && !wasConnectedRef.current) {
+      // Transition to connected (includes first connect). If we were previously
+      // disconnected for any reason, invalidate the conversations list so the
+      // sidebar re-syncs immediately instead of waiting for the 30s poll tick.
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    }
+    wasConnectedRef.current = connected;
+  }, [queryClient]);
 
   // Initialize WebSocket connection
   const { isConnected } = useMessagesWebSocket({
