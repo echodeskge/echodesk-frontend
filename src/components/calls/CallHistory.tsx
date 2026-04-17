@@ -312,10 +312,16 @@ export function CallHistory() {
                     </div>
                   )}
 
-                  {/* Recording player */}
+                  {/* Recording player — stream through the backend proxy so the
+                      browser doesn't hit the PBX directly (PBX blocks the browser
+                      origin with 403; backend is allowlisted). */}
                   {playingRecordingId === log.id && log.recording_url && (
                     <div className="mt-2">
-                      <audio controls className="w-full h-8" src={log.recording_url} />
+                      <audio
+                        controls
+                        className="w-full h-8"
+                        src={`/api/call-logs/${log.id}/recording/`}
+                      />
                     </div>
                   )}
                 </CardContent>
