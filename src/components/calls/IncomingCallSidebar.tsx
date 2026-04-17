@@ -150,7 +150,6 @@ export function IncomingCallSidebar() {
 
   const isCallActive =
     activeCall &&
-    activeCall.direction === "incoming" &&
     (activeCall.status === "active" || activeCall.status === "ringing");
 
   return (
@@ -165,7 +164,11 @@ export function IncomingCallSidebar() {
             <div className="flex items-center gap-3 min-w-0">
               <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 {isCallActive ? (
-                  <PhoneIncoming className="h-5 w-5 text-primary" />
+                  activeCall?.direction === "outgoing" ? (
+                    <PhoneOutgoing className="h-5 w-5 text-primary" />
+                  ) : (
+                    <PhoneIncoming className="h-5 w-5 text-primary" />
+                  )
                 ) : (
                   <Phone className="h-5 w-5 text-muted-foreground" />
                 )}

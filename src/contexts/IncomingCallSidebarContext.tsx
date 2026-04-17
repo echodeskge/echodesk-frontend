@@ -33,11 +33,12 @@ export function IncomingCallSidebarProvider({ children }: IncomingCallSidebarPro
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [clientName, setClientName] = useState<string | null>(null);
 
-  // Auto-open sidebar when an incoming call is answered
+  // Auto-open sidebar whenever a call goes active — same UX for incoming
+  // (after accept) and outbound (after callee picks up). The sidebar's data
+  // fetches key off the phone number, not the call direction.
   useEffect(() => {
     if (
       activeCall &&
-      activeCall.direction === "incoming" &&
       activeCall.status === "active" &&
       activeCall.logId
     ) {
