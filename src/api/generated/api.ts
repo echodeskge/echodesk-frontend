@@ -7137,6 +7137,11 @@ export async function socialEmailFoldersRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function socialEmailReactivateCreate(): Promise<any> {
+  const response = await axios.post(`/api/social/email/reactivate/`);
+  return response.data;
+}
+
 export async function socialEmailSendCreate(): Promise<any> {
   const response = await axios.post(`/api/social/email/send/`);
   return response.data;

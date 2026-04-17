@@ -8,6 +8,7 @@ import {
   useDisconnectEmail,
   useSyncEmail,
   useUpdateEmailConnection,
+  useReactivateEmailConnection,
   EmailConnectRequest,
   EmailConnectionDetail,
 } from '@/hooks/api/useSocial';
@@ -62,8 +63,10 @@ function EmailAccountCard({
   onEdit,
   onEditSignature,
   onManageAccess,
+  onReactivate,
   isSyncing,
   isDisconnecting,
+  isReactivating,
 }: {
   connection: EmailConnectionDetail;
   onSync: () => void;
@@ -71,9 +74,14 @@ function EmailAccountCard({
   onEdit: () => void;
   onEditSignature: () => void;
   onManageAccess: () => void;
+  onReactivate: (password?: string) => void;
   isSyncing: boolean;
   isDisconnecting: boolean;
+  isReactivating: boolean;
 }) {
+  const [reactivatePassword, setReactivatePassword] = useState('');
+  const autoDisabled = Boolean(connection.auto_disabled_at);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -83,6 +91,17 @@ function EmailAccountCard({
       minute: '2-digit',
     });
   };
+
+  const statusLabel = autoDisabled
+    ? 'Auto-disabled'
+    : connection.is_active
+      ? 'Active'
+      : 'Inactive';
+  const statusClass = autoDisabled
+    ? 'bg-amber-500 hover:bg-amber-600 text-white'
+    : connection.is_active
+      ? 'bg-green-600 hover:bg-green-700'
+      : '';
 
   return (
     <div className="border rounded-lg p-4 space-y-3">
@@ -97,10 +116,10 @@ function EmailAccountCard({
           </div>
         </div>
         <Badge
-          variant={connection.is_active ? 'default' : 'secondary'}
-          className={cn('self-start sm:self-auto', connection.is_active && 'bg-green-600 hover:bg-green-700')}
+          variant={connection.is_active || autoDisabled ? 'default' : 'secondary'}
+          className={cn('self-start sm:self-auto', statusClass)}
         >
-          {connection.is_active ? 'Active' : 'Inactive'}
+          {statusLabel}
         </Badge>
       </div>
 
@@ -126,11 +145,59 @@ function EmailAccountCard({
         </div>
       </div>
 
-      {connection.last_sync_error && (
-        <Alert variant="destructive" className="py-2">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-xs">{connection.last_sync_error}</AlertDescription>
+      {autoDisabled ? (
+        <Alert className="py-3 border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100 dark:border-amber-900">
+          <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="space-y-2">
+            <div className="text-xs">
+              <span className="font-medium">Sync stopped automatically.</span>{' '}
+              {connection.last_sync_error || 'A non-transient error occurred.'}{' '}
+              Update credentials below (if needed) and click Reactivate. Sync will
+              stay off until the connection passes a live IMAP test.
+            </div>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                onReactivate(reactivatePassword.trim() || undefined);
+              }}
+              className="flex flex-col sm:flex-row gap-2"
+            >
+              <Input
+                type="password"
+                placeholder="New password (optional — leave blank to retry with stored creds)"
+                value={reactivatePassword}
+                onChange={(event) => setReactivatePassword(event.target.value)}
+                className="text-xs h-8 flex-1 bg-background"
+                autoComplete="new-password"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                variant="default"
+                disabled={isReactivating}
+              >
+                {isReactivating ? (
+                  <>
+                    <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                    Testing…
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-3 w-3" />
+                    Reactivate
+                  </>
+                )}
+              </Button>
+            </form>
+          </AlertDescription>
         </Alert>
+      ) : (
+        connection.last_sync_error && (
+          <Alert variant="destructive" className="py-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-xs">{connection.last_sync_error}</AlertDescription>
+          </Alert>
+        )
       )}
 
       <div className="flex gap-2 pt-2 flex-wrap">
@@ -144,9 +211,10 @@ function EmailAccountCard({
         </Button>
         <Button
           onClick={onSync}
-          disabled={isSyncing}
+          disabled={isSyncing || autoDisabled}
           variant="outline"
           size="sm"
+          title={autoDisabled ? 'Reactivate the connection before syncing' : undefined}
         >
           {isSyncing ? (
             <>
@@ -220,6 +288,7 @@ export function EmailConnection() {
   const [showSignaturePreview, setShowSignaturePreview] = useState(false);
   const [syncingConnectionId, setSyncingConnectionId] = useState<number | null>(null);
   const [disconnectingConnectionId, setDisconnectingConnectionId] = useState<number | null>(null);
+  const [reactivatingConnectionId, setReactivatingConnectionId] = useState<number | null>(null);
 
   // Signature form state
   const [signatureHtml, setSignatureHtml] = useState('');
@@ -247,6 +316,31 @@ export function EmailConnection() {
   const disconnectEmail = useDisconnectEmail();
   const syncEmail = useSyncEmail();
   const updateEmailConnection = useUpdateEmailConnection();
+  const reactivateEmailConnection = useReactivateEmailConnection();
+
+  const handleReactivate = async (connectionId: number, password?: string) => {
+    try {
+      setReactivatingConnectionId(connectionId);
+      await reactivateEmailConnection.mutateAsync({
+        connection_id: connectionId,
+        ...(password ? { password } : {}),
+      });
+      toast.success('Connection reactivated. Sync will resume on the next cycle.');
+    } catch (error: unknown) {
+      const message =
+        (typeof error === 'object' &&
+          error !== null &&
+          'response' in error &&
+          typeof (error as { response?: { data?: { error?: string } } }).response?.data?.error ===
+            'string'
+          ? (error as { response: { data: { error: string } } }).response.data.error
+          : undefined) ||
+        'Reactivation failed — check credentials and try again.';
+      toast.error(message);
+    } finally {
+      setReactivatingConnectionId(null);
+    }
+  };
 
   const connections = status?.connections || [];
   const hasConnections = connections.length > 0;
@@ -569,8 +663,10 @@ export function EmailConnection() {
                   onEdit={() => handleEdit(connection)}
                   onEditSignature={() => handleEditSignature(connection)}
                   onManageAccess={() => handleManageAccess(connection)}
+                  onReactivate={(password) => handleReactivate(connection.id, password)}
                   isSyncing={syncingConnectionId === connection.id}
                   isDisconnecting={disconnectingConnectionId === connection.id}
+                  isReactivating={reactivatingConnectionId === connection.id}
                 />
               ))}
             </div>

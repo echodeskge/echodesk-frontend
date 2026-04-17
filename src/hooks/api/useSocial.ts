@@ -1497,6 +1497,13 @@ export interface EmailConnectionDetail {
   is_active: boolean;
   last_sync_at: string | null;
   last_sync_error: string;
+  /**
+   * ISO timestamp set when the Celery sync worker auto-disabled this
+   * connection after a non-transient failure. Non-null means is_active was
+   * flipped off by the system (not by the user) — the UI should force the
+   * user through the Reactivate flow which re-tests the credentials.
+   */
+  auto_disabled_at: string | null;
   sync_folder: string;
   sync_days_back: number;
   connected_at: string;
@@ -1871,6 +1878,35 @@ export function useUpdateEmailConnection() {
     mutationFn: async (data: EmailConnectionUpdateRequest) => {
       const response = await axios.post('/api/social/email/update/', data);
       return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
+    },
+  });
+}
+
+export interface EmailReactivateRequest {
+  connection_id: number;
+  /** Optional: new password to store + test before flipping is_active back on. */
+  password?: string;
+  /** Optional IMAP/SMTP overrides — any provided field replaces the stored value. */
+  username?: string;
+  imap_server?: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server?: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+}
+
+export function useReactivateEmailConnection() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: EmailReactivateRequest) => {
+      const response = await axios.post('/api/social/email/reactivate/', data);
+      return response.data as { message: string; connection: EmailConnectionDetail };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
