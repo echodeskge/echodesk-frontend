@@ -211,7 +211,7 @@ export function CallHistory() {
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[130px] h-9">
+          <SelectTrigger className="w-auto min-w-[160px] h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -223,7 +223,7 @@ export function CallHistory() {
           </SelectContent>
         </Select>
         <Select value={directionFilter} onValueChange={setDirectionFilter}>
-          <SelectTrigger className="w-[130px] h-9">
+          <SelectTrigger className="w-auto min-w-[180px] h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
