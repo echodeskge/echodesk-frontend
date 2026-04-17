@@ -65,6 +65,9 @@ import type {
   CallEvent,
   CallStatusUpdateRequest,
   ConsultationInitiateRequest,
+  MergeConferenceRequest,
+  MergeConferenceResponse,
+  SmsReviewResponse,
   CallRecording,
   PatchedCallStatusUpdateRequest,
   CallInitiateRequest,
@@ -1829,6 +1832,28 @@ export async function callLogsInitiateConsultationCreate(
 ): Promise<Record<string, any>> {
   const response = await axios.post(
     `/api/call-logs/${id}/initiate_consultation/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function callLogsMergeConferenceCreate(
+  id: number,
+  data: MergeConferenceRequest,
+): Promise<MergeConferenceResponse> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/merge_conference/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function callLogsSendSmsReviewCreate(
+  id: number,
+  data: CallLogRequest,
+): Promise<SmsReviewResponse> {
+  const response = await axios.post(
+    `/api/call-logs/${id}/send_sms_review/`,
     data,
   );
   return response.data;
@@ -5088,6 +5113,11 @@ export async function invoicesSettingsPartialUpdate(
   return response.data;
 }
 
+export async function invoicesSettingsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/invoices/settings/${id}/`);
+  return response.data;
+}
+
 export async function invoicesSettingsAvailableItemlistsRetrieve(): Promise<InvoiceSettings> {
   const response = await axios.get(
     `/api/invoices/settings/available-itemlists/`,
@@ -5098,6 +5128,23 @@ export async function invoicesSettingsAvailableItemlistsRetrieve(): Promise<Invo
 export async function invoicesSettingsDebugSubscriptionRetrieve(): Promise<InvoiceSettings> {
   const response = await axios.get(
     `/api/invoices/settings/debug-subscription/`,
+  );
+  return response.data;
+}
+
+export async function invoicesSettingsRemoveBadgeDestroy(): Promise<any> {
+  const response = await axios.delete(`/api/invoices/settings/remove-badge/`);
+  return response.data;
+}
+
+export async function invoicesSettingsRemoveLogoDestroy(): Promise<any> {
+  const response = await axios.delete(`/api/invoices/settings/remove-logo/`);
+  return response.data;
+}
+
+export async function invoicesSettingsRemoveSignatureDestroy(): Promise<any> {
+  const response = await axios.delete(
+    `/api/invoices/settings/remove-signature/`,
   );
   return response.data;
 }
@@ -6281,6 +6328,11 @@ export async function pbxSettingsUploadSoundCreate(
 
 export async function pbxCallRoutingRetrieve(): Promise<any> {
   const response = await axios.get(`/api/pbx/call-routing/`);
+  return response.data;
+}
+
+export async function pbxSendReviewSmsCreate(): Promise<any> {
+  const response = await axios.post(`/api/pbx/send-review-sms/`);
   return response.data;
 }
 

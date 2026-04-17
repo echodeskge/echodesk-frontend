@@ -2043,6 +2043,17 @@ export interface ListItemRequest {
   custom_data?: any;
 }
 
+export interface MergeConferenceRequest {
+  consultation_log_id: number;
+}
+
+export interface MergeConferenceResponse {
+  conference_room: string;
+  original_call_id: string;
+  consultation_call_id: string;
+  channels_redirected: string[];
+}
+
 export interface Notification {
   id: number;
   user: number;
@@ -4276,6 +4287,11 @@ export interface SipConfigurationRequest {
   max_concurrent_calls?: number;
 }
 
+export interface SmsReviewResponse {
+  status: string;
+  message_id: string;
+}
+
 export interface SocialAccount {
   id: number;
   platform: SocialAccountPlatformEnum;
@@ -5391,6 +5407,8 @@ export interface WhatsAppMessage {
   revoked_at: string;
   sent_by: number;
   sent_by_name: string;
+  reply_to_message_id: string;
+  reply_to_id: number;
   created_at: string;
 }
 
