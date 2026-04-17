@@ -774,7 +774,9 @@
       "addNote": "შენიშვნა",
       "viewNotes": "შენიშვნები",
       "notesPlaceholder": "დაამატეთ ზარის შენიშვნები...",
-      "recording": "ჩანაწერი"
+      "recording": "ჩანაწერი",
+      "recordingLoadFailed": "ჩანაწერი ვერ ჩაიტვირთა.",
+      "recordingLoading": "იტვირთება…"
     },
     "callDetail": {
       "clientInfo": "კლიენტის ინფორმაცია",

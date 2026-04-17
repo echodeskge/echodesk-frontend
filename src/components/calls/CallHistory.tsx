@@ -57,6 +57,61 @@ export function CallHistory() {
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null);
   const [notesText, setNotesText] = useState("");
   const [playingRecordingId, setPlayingRecordingId] = useState<number | null>(null);
+  // Blob URLs are produced by URL.createObjectURL after fetching the audio
+  // through axios (so the auth header gets attached and the response targets
+  // the API origin instead of the page origin). Keyed by call log id.
+  const [recordingBlobUrls, setRecordingBlobUrls] = useState<Record<number, string>>({});
+  const [recordingLoadingId, setRecordingLoadingId] = useState<number | null>(null);
+  const [recordingError, setRecordingError] = useState<Record<number, string>>({});
+
+  // Revoke blob URLs on unmount so the browser can release the bytes.
+  useEffect(() => {
+    return () => {
+      Object.values(recordingBlobUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+    // intentionally empty deps — only on unmount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const togglePlayback = useCallback(async (logId: number) => {
+    // Toggle off
+    if (playingRecordingId === logId) {
+      setPlayingRecordingId(null);
+      return;
+    }
+    setPlayingRecordingId(logId);
+    setRecordingError((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).filter(([key]) => Number(key) !== logId)
+      )
+    );
+
+    // Already loaded — just show the player
+    if (recordingBlobUrls[logId]) return;
+
+    try {
+      setRecordingLoadingId(logId);
+      const response = await axios.get(`/api/call-logs/${logId}/recording/`, {
+        responseType: "blob",
+      });
+      const blob = response.data as Blob;
+      // Force the right MIME so Safari doesn't bail when upstream sends
+      // application/octet-stream by accident.
+      const audioBlob = blob.type === "audio/wav"
+        ? blob
+        : new Blob([blob], { type: "audio/wav" });
+      const blobUrl = URL.createObjectURL(audioBlob);
+      setRecordingBlobUrls((prev) => ({ ...prev, [logId]: blobUrl }));
+    } catch (error) {
+      console.error("Failed to load recording", error);
+      setRecordingError((prev) => ({
+        ...prev,
+        [logId]: t("logs.recordingLoadFailed"),
+      }));
+    } finally {
+      setRecordingLoadingId(null);
+    }
+  }, [playingRecordingId, recordingBlobUrls, t]);
 
   const fetchCallLogs = useCallback(async (pageNum = 1, append = false) => {
     try {
@@ -267,10 +322,13 @@ export function CallHistory() {
                         variant="ghost"
                         size="sm"
                         className="h-5 px-1.5 text-xs"
-                        onClick={() => setPlayingRecordingId(playingRecordingId === log.id ? null : log.id)}
+                        onClick={() => togglePlayback(log.id)}
+                        disabled={recordingLoadingId === log.id}
                       >
                         <Play className="h-3 w-3 mr-1" />
-                        {t("logs.recording")}
+                        {recordingLoadingId === log.id
+                          ? t("logs.recordingLoading")
+                          : t("logs.recording")}
                       </Button>
                     )}
                     {/* Notes toggle */}
@@ -312,16 +370,30 @@ export function CallHistory() {
                     </div>
                   )}
 
-                  {/* Recording player — stream through the backend proxy so the
-                      browser doesn't hit the PBX directly (PBX blocks the browser
-                      origin with 403; backend is allowlisted). */}
+                  {/* Recording player — bytes are fetched through axios (with
+                      auth header + correct API origin) and exposed via a blob
+                      URL so the browser's <audio> element can play them. The
+                      relative-URL approach failed because the audio element
+                      sends no Authorization header and resolves the URL
+                      against the page origin, not the API origin. */}
                   {playingRecordingId === log.id && log.recording_url && (
-                    <div className="mt-2">
-                      <audio
-                        controls
-                        className="w-full h-8"
-                        src={`/api/call-logs/${log.id}/recording/`}
-                      />
+                    <div className="mt-2 space-y-1">
+                      {recordingError[log.id] ? (
+                        <div className="text-xs text-destructive">
+                          {recordingError[log.id]}
+                        </div>
+                      ) : recordingBlobUrls[log.id] ? (
+                        <audio
+                          controls
+                          autoPlay
+                          className="w-full h-8"
+                          src={recordingBlobUrls[log.id]}
+                        />
+                      ) : (
+                        <div className="text-xs text-muted-foreground">
+                          {t("logs.recordingLoading")}
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>

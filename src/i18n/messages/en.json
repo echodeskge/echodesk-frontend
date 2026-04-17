@@ -774,7 +774,9 @@
       "addNote": "Note",
       "viewNotes": "Notes",
       "notesPlaceholder": "Add call notes...",
-      "recording": "Recording"
+      "recording": "Recording",
+      "recordingLoadFailed": "Failed to load recording.",
+      "recordingLoading": "Loading…"
     },
     "callDetail": {
       "clientInfo": "Client Information",
