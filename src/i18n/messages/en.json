@@ -598,6 +598,7 @@
     "makeACall": "Make a Call",
     "enterPhoneNumber": "Enter phone number",
     "call": "Call",
+    "deleteDigit": "Delete digit",
     "clear": "Clear",
     "recentCalls": "Recent Calls",
     "refresh": "Refresh",

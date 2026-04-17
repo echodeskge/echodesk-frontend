@@ -143,11 +143,6 @@ export default function CallsPage() {
                 onChange={setDialNumber}
                 onCall={makeCall}
                 disabled={!sipRegistered}
-                // Mirror the popup: the decline button is shown but stays
-                // disabled in idle state (a ringing call swaps this branch
-                // for ActiveCallDisplay above).
-                onDecline={handleEndCall}
-                declineDisabled
               />
             )}
           </div>
