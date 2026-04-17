@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import axiosInstance from "@/api/axios";
@@ -23,6 +23,8 @@ import { Loader2 } from "lucide-react";
 type Priority = "high" | "medium" | "low";
 
 const PRIORITIES: Priority[] = ["high", "medium", "low"];
+const MAX_FILES = 5;
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — mirrors FileDropzone props below
 
 export function BugReportDialog() {
   const { isOpen, closeBugReport } = useBugReport();
@@ -66,6 +68,50 @@ export function BugReportDialog() {
     });
   };
 
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    if (submitting) return;
+
+    const items = e.clipboardData?.items;
+    if (!items || items.length === 0) return;
+
+    const pasted: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) pasted.push(file);
+      }
+    }
+
+    if (pasted.length === 0) return;
+    e.preventDefault();
+
+    let oversizeCount = 0;
+    const sizeOk = pasted.filter((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        oversizeCount += 1;
+        return false;
+      }
+      return true;
+    });
+
+    const remaining = Math.max(0, MAX_FILES - files.length);
+    const toAdd = sizeOk.slice(0, remaining);
+    const maxDropped = sizeOk.length - toAdd.length;
+
+    if (toAdd.length > 0) {
+      handleFilesSelected(toAdd);
+    }
+
+    if (oversizeCount > 0 || maxDropped > 0) {
+      const parts: string[] = [];
+      if (toAdd.length > 0) parts.push(`${toAdd.length} added`);
+      if (maxDropped > 0) parts.push(`${maxDropped} skipped (max ${MAX_FILES})`);
+      if (oversizeCount > 0) parts.push(`${oversizeCount} skipped (too large)`);
+      toast.info(parts.join(" · "));
+    }
+  }, [submitting, files.length]);
+
   const handleSubmit = async () => {
     if (!title.trim()) return;
 
@@ -99,7 +145,7 @@ export function BugReportDialog() {
           <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 py-2" onPaste={handlePaste}>
           <div className="space-y-2">
             <Label htmlFor="bug-title">{t("fieldTitle")} *</Label>
             <Input
@@ -156,8 +202,8 @@ export function BugReportDialog() {
               onFilesSelected={handleFilesSelected}
               files={files}
               onRemoveFile={handleRemoveFile}
-              maxFiles={5}
-              maxSize={20 * 1024 * 1024}
+              maxFiles={MAX_FILES}
+              maxSize={MAX_FILE_SIZE}
               disabled={submitting}
             />
           </div>
