@@ -247,3 +247,13 @@ Changes and additions come into effect after Echodesk.ge sends a personal notifi
 CONTACTING Echodesk.ge
 
 For questions related to the Privacy Policy and for obtaining additional information, please contact us at info@echodesk.ge.
+
+## Cookies
+
+EchoDesk uses the following cookies:
+
+- **Necessary**: session cookie (login), CSRF token, locale preference. Always active.
+- **Analytics** (consent-gated): Google Analytics 4 (anonymized IP), Microsoft Clarity.
+- **Error monitoring** (legitimate interest): Sentry. Collects error stack traces, no PII.
+
+You can change your preferences any time via the "Cookie preferences" link in the footer.

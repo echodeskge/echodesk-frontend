@@ -4,9 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
+import { useConsent } from '@/lib/consent';
 
 export function Footer() {
   const t = useTranslations('landing.footer');
+  const tFooter = useTranslations('footer');
+  const { openBanner } = useConsent();
 
   return (
     <footer className="border-t bg-muted/40">
@@ -115,12 +118,22 @@ export function Footer() {
                 </a>
               </li>
               <li>{t('contact.address')}: Tbilisi, Georgia</li>
+              <li className="pt-2">Echodesk LLC / შპს ექოდესკი</li>
+              <li>{tFooter('legal.taxId')}</li>
             </ul>
           </div>
         </div>
 
-        <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
+        <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} EchoDesk. {t('rights')}</p>
+          <span aria-hidden="true" className="hidden sm:inline">·</span>
+          <button
+            type="button"
+            onClick={openBanner}
+            className="hover:text-secondary transition-colors underline-offset-2 hover:underline"
+          >
+            {tFooter('cookiePreferences')}
+          </button>
         </div>
       </div>
     </footer>

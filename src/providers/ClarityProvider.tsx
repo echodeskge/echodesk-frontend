@@ -1,23 +1,36 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Clarity from '@microsoft/clarity';
 import { useAuth } from '@/contexts/AuthContext';
+import { useConsent } from '@/lib/consent';
 
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || 'u70lkaxt6k';
 
 export function ClarityProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { categories } = useConsent();
+  const initializedRef = useRef(false);
 
-  // Initialize Clarity on mount
+  // Initialize Clarity only when analytics consent is granted.
+  // Clarity does not expose a clean teardown, so once initialized it
+  // stays for the rest of the session; revoking consent mid-session
+  // will prevent future re-inits only.
   useEffect(() => {
-    if (typeof window !== 'undefined' && CLARITY_PROJECT_ID) {
+    if (
+      typeof window !== 'undefined' &&
+      CLARITY_PROJECT_ID &&
+      categories.analytics &&
+      !initializedRef.current
+    ) {
       Clarity.init(CLARITY_PROJECT_ID);
+      initializedRef.current = true;
     }
-  }, []);
+  }, [categories.analytics]);
 
-  // Identify user when authenticated
+  // Identify user when authenticated (only if Clarity is live)
   useEffect(() => {
+    if (!initializedRef.current) return;
     if (user && typeof window !== 'undefined') {
       // Identify user for better session tracking
       // Clarity will hash the custom-id on client before sending
@@ -42,7 +55,7 @@ export function ClarityProvider({ children }: { children: React.ReactNode }) {
         Clarity.setTag('is_superuser', 'true');
       }
     }
-  }, [user]);
+  }, [user, categories.analytics]);
 
   return <>{children}</>;
 }

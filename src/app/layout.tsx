@@ -14,6 +14,8 @@ import { pickMessages, GLOBAL_NAMESPACES } from '@/lib/pick-messages';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
 import { OrganizationSchema } from '@/components/seo/OrganizationSchema';
 import { GoogleAnalytics } from '@/components/seo/GoogleAnalytics';
+import { ConsentProvider } from '@/lib/consent';
+import { CookieConsent } from '@/components/cookie-consent/CookieConsent';
 import { Toaster } from 'sonner';
 
 const SITE_URL =
@@ -102,24 +104,27 @@ export default async function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
         <OrganizationSchema />
-        <GoogleAnalytics />
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
-          <SessionProvider>
-            <QueryProvider>
-              <TenantProvider>
-                <AuthProvider>
-                  <ThemeProvider>
-                    <ClarityProvider>
-                      <SubscriptionProvider>
-                        {children}
-                      </SubscriptionProvider>
-                    </ClarityProvider>
-                  </ThemeProvider>
-                </AuthProvider>
-              </TenantProvider>
-            </QueryProvider>
-          </SessionProvider>
+          <ConsentProvider>
+            <SessionProvider>
+              <QueryProvider>
+                <TenantProvider>
+                  <AuthProvider>
+                    <ThemeProvider>
+                      <ClarityProvider>
+                        <SubscriptionProvider>
+                          {children}
+                        </SubscriptionProvider>
+                      </ClarityProvider>
+                    </ThemeProvider>
+                  </AuthProvider>
+                </TenantProvider>
+              </QueryProvider>
+            </SessionProvider>
+            <GoogleAnalytics />
+            <CookieConsent />
+          </ConsentProvider>
         </NextIntlClientProvider>
         <Toaster position="bottom-right" richColors />
       </body>

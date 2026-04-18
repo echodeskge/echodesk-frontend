@@ -15,6 +15,8 @@ export const GLOBAL_NAMESPACES = [
   'notFound',
   'subscription',
   'calls',
+  'cookie',
+  'footer',
 ];
 
 /**

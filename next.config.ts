@@ -4,14 +4,50 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+/**
+ * Content Security Policy — emitted in **Report-Only** mode for now so we
+ * can observe violations before enforcement. Edit entries in the array
+ * below rather than the joined string.
+ */
+const CSP_DIRECTIVES = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clarity.ms https://www.googletagmanager.com https://www.google-analytics.com https://*.sentry.io https://connect.facebook.net",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "img-src 'self' data: blob: https://*",
+  "font-src 'self' https://fonts.gstatic.com data:",
+  "connect-src 'self' https://*.echodesk.ge https://*.clarity.ms https://*.google-analytics.com https://*.googletagmanager.com https://*.sentry.io https://*.ingest.sentry.io https://*.anthropic.com",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
 const nextConfig: NextConfig = {
   // DigitalOcean App Platform optimization
   output: 'standalone',
-  
+
   // Disable React Strict Mode for better drag and drop performance
   reactStrictMode: false,
-  
+
   async headers() {
+    const securityHeaders: { key: string; value: string }[] = [
+      { key: 'X-Frame-Options', value: 'DENY' },
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(self), geolocation=(), interest-cohort=()',
+      },
+      { key: 'Content-Security-Policy-Report-Only', value: CSP_DIRECTIVES },
+    ];
+
+    // Only ship HSTS in production — otherwise localhost pins itself to HTTPS.
+    if (process.env.NODE_ENV === 'production') {
+      securityHeaders.push({
+        key: 'Strict-Transport-Security',
+        value: 'max-age=31536000; includeSubDomains; preload',
+      });
+    }
+
     return [
       {
         // Apply CORS headers for API routes
@@ -47,11 +83,7 @@ const nextConfig: NextConfig = {
       {
         // Security headers for all pages
         source: '/(.*)',
-        headers: [
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-        ],
+        headers: securityHeaders,
       },
     ];
   },

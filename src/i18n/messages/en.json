@@ -4272,5 +4272,34 @@
         "description": "Run your whole business from one platform."
       }
     }
+  },
+  "cookie": {
+    "title": "Cookie preferences",
+    "description": "We use cookies to analyze traffic and improve the product. You can accept all, reject optional ones, or pick what to allow.",
+    "learnMore": "Read our privacy policy",
+    "acceptAll": "Accept all",
+    "rejectOptional": "Reject optional",
+    "customize": "Customize",
+    "savePreferences": "Save preferences",
+    "categories": {
+      "necessary": {
+        "title": "Necessary",
+        "description": "Required for the site to function (login, routing, security). Always active."
+      },
+      "analytics": {
+        "title": "Analytics",
+        "description": "Helps us understand how visitors use the site (Google Analytics, Microsoft Clarity)."
+      },
+      "marketing": {
+        "title": "Marketing",
+        "description": "Used for personalized ads and remarketing. Currently not used; reserved for future."
+      }
+    }
+  },
+  "footer": {
+    "legal": {
+      "taxId": "Tax ID: 405794289"
+    },
+    "cookiePreferences": "Cookie preferences"
   }
 }
