@@ -17,6 +17,10 @@ export const GLOBAL_NAMESPACES = [
   'calls',
   'cookie',
   'footer',
+  // Marketing blocks rendered inside the shared <Footer/>: newsletter
+  // signup form + the testimonials strip used by landing pages.
+  'newsletter',
+  'testimonials',
 ];
 
 /**
