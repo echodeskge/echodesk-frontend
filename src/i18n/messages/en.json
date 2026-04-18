@@ -4507,7 +4507,8 @@
       "extensions": "Extensions",
       "queues": "Queues",
       "inbound": "Inbound Routes",
-      "statistics": "Statistics"
+      "statistics": "Statistics",
+      "server": "PBX Server"
     },
     "overview": {
       "totalCalls": "Total calls",
@@ -4698,6 +4699,39 @@
       "updated": "Updated.",
       "deleted": "Deleted.",
       "error": "Something went wrong. Please try again."
+    },
+    "server": {
+      "title": "Your PBX server",
+      "description": "Register your own Asterisk server and let EchoDesk manage extensions, queues and inbound routes on it.",
+      "register": "Connect your PBX",
+      "edit": "Edit PBX server",
+      "notRegistered": "No PBX server registered yet. Connect yours to start managing extensions from here.",
+      "statusLabel": "Status",
+      "pendingStatus": "Awaiting install",
+      "provisioningStatus": "Provisioning",
+      "activeStatus": "Active",
+      "errorStatus": "Error",
+      "revokedStatus": "Revoked",
+      "installCommand": "Run this one line on your Asterisk server (as root):",
+      "copy": "Copy",
+      "copied": "Copied",
+      "regenerateToken": "Regenerate install token",
+      "form": {
+        "name": "Name",
+        "nameHelp": "Friendly label (e.g. \"Main PBX\").",
+        "fqdn": "FQDN",
+        "fqdnHelp": "Fully-qualified domain name of your Asterisk server (e.g. pbx.mycompany.com).",
+        "publicIp": "Public IP",
+        "publicIpHelp": "Needed so our database firewall can allow your PBX.",
+        "amiPort": "AMI port",
+        "usePrefix": "Legacy tenant-prefix naming",
+        "usePrefixHelp": "Only enable for legacy deployments sharing a DB. Leave off for new servers."
+      },
+      "lastSeen": "Last seen",
+      "lastSeenNever": "Never",
+      "asteriskVersion": "Asterisk version",
+      "advancedTitle": "Advanced",
+      "installBlocked": "Install endpoint is not available until the form is saved."
     }
   }
 }

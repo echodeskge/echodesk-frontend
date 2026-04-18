@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 
 const PBX_TABS = [
   { id: "overview", href: "/settings/pbx", exact: true },
+  { id: "server", href: "/settings/pbx/server" },
   { id: "trunks", href: "/settings/pbx/trunks" },
   { id: "extensions", href: "/settings/pbx/extensions" },
   { id: "queues", href: "/settings/pbx/queues" },

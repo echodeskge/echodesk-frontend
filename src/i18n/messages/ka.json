@@ -4504,7 +4504,8 @@
       "extensions": "ხაზები",
       "queues": "რიგები",
       "inbound": "შემოსული მარშრუტები",
-      "statistics": "სტატისტიკა"
+      "statistics": "სტატისტიკა",
+      "server": "PBX სერვერი"
     },
     "overview": {
       "totalCalls": "ჯამი ზარები",
@@ -4695,6 +4696,39 @@
       "updated": "განახლებულია.",
       "deleted": "წაშლილია.",
       "error": "დაფიქსირდა შეცდომა. სცადეთ ხელახლა."
+    },
+    "server": {
+      "title": "თქვენი PBX სერვერი",
+      "description": "დაარეგისტრირეთ საკუთარი Asterisk სერვერი და მართეთ აქ ხაზები, რიგები და შემოსული მარშრუტები.",
+      "register": "დააკავშირეთ PBX",
+      "edit": "PBX სერვერის რედაქტირება",
+      "notRegistered": "PBX სერვერი ჯერ არ არის დარეგისტრირებული. დააკავშირეთ თქვენი.",
+      "statusLabel": "სტატუსი",
+      "pendingStatus": "ინსტალაციის მოლოდინში",
+      "provisioningStatus": "მომზადება",
+      "activeStatus": "აქტიური",
+      "errorStatus": "შეცდომა",
+      "revokedStatus": "გაუქმებული",
+      "installCommand": "გაუშვით ეს ერთი ბრძანება Asterisk სერვერზე (root-ით):",
+      "copy": "კოპირება",
+      "copied": "კოპირებულია",
+      "regenerateToken": "ინსტალაციის ტოკენის განახლება",
+      "form": {
+        "name": "სახელი",
+        "nameHelp": "მეგობრული ლეიბლი (მაგ. \"მთავარი PBX\").",
+        "fqdn": "FQDN",
+        "fqdnHelp": "Asterisk სერვერის სრული დომენი (მაგ. pbx.company.com).",
+        "publicIp": "საჯარო IP",
+        "publicIpHelp": "აუცილებელია ჩვენი DB-ის firewall-მა დაუშვას თქვენი PBX.",
+        "amiPort": "AMI პორტი",
+        "usePrefix": "ძველი ტენანტის პრეფიქსი",
+        "usePrefixHelp": "მხოლოდ DB-გაზიარებული ძველი მიდგომისთვის. ახალისთვის გამორთეთ."
+      },
+      "lastSeen": "ბოლო კავშირი",
+      "lastSeenNever": "არასდროს",
+      "asteriskVersion": "Asterisk ვერსია",
+      "advancedTitle": "დამატებითი",
+      "installBlocked": "ინსტალაციის endpoint მომზადდება შენახვის შემდეგ."
     }
   }
 }

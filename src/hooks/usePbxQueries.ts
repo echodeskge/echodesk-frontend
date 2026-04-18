@@ -25,6 +25,11 @@ import {
   callStatsUsersRetrieve,
   callStatsUsersTimelineRetrieve,
   callStatsQueuesRetrieve,
+  pbxServersList,
+  pbxServersCreate,
+  pbxServersPartialUpdate,
+  pbxServersDestroy,
+  pbxServersRegenerateTokenCreate,
 } from "@/api/generated/api";
 import type {
   TrunkRequest,
@@ -33,6 +38,8 @@ import type {
   PatchedQueueRequest,
   InboundRouteRequest,
   PatchedInboundRouteRequest,
+  PbxServerRequest,
+  PatchedPbxServerRequest,
 } from "@/api/generated/interfaces";
 
 export const trunkKeys = {
@@ -281,5 +288,55 @@ export function useCallStatsQueue(queueId: number | null, range: "today" | "week
     queryKey: statsKeys.queues(queueId ?? 0, range),
     queryFn: () => callStatsQueuesRetrieve(queueId!, range),
     enabled: queueId != null,
+  });
+}
+
+
+// PbxServer (Phase 2: BYO Asterisk)
+
+export const pbxServerKeys = {
+  all: ["pbx-servers"] as const,
+  list: () => [...pbxServerKeys.all, "list"] as const,
+  detail: (id: number) => [...pbxServerKeys.all, "detail", id] as const,
+};
+
+export function usePbxServers() {
+  return useQuery({
+    queryKey: pbxServerKeys.list(),
+    queryFn: () => pbxServersList(),
+  });
+}
+
+export function useCreatePbxServer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: PbxServerRequest) => pbxServersCreate(data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: pbxServerKeys.all }),
+  });
+}
+
+export function useUpdatePbxServer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: PatchedPbxServerRequest }) =>
+      pbxServersPartialUpdate(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: pbxServerKeys.all }),
+  });
+}
+
+export function useDeletePbxServer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => pbxServersDestroy(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: pbxServerKeys.all }),
+  });
+}
+
+export function useRegeneratePbxServerToken() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: PbxServerRequest }) =>
+      pbxServersRegenerateTokenCreate(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: pbxServerKeys.all }),
   });
 }

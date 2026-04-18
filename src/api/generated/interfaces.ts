@@ -2974,6 +2974,13 @@ export interface PaginatedOrderListList {
   results: OrderList[];
 }
 
+export interface PaginatedPbxServerList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: PbxServer[];
+}
+
 export interface PaginatedPermissionList {
   count: number;
   next?: string;
@@ -3860,6 +3867,26 @@ export interface PatchedOrderRequest {
   cancelled_at?: string;
 }
 
+export interface PatchedPbxServerRequest {
+  name?: string;
+  fqdn?: string;
+  public_ip?: string;
+  realtime_db_host?: string;
+  realtime_db_port?: number;
+  realtime_db_name?: string;
+  realtime_db_user?: string;
+  realtime_db_password?: string;
+  realtime_db_sslmode?: string;
+  ami_host?: string;
+  ami_port?: number;
+  ami_username?: string;
+  ami_password?: string;
+  wss_url?: string;
+  recording_base_url?: string;
+  use_tenant_prefix?: boolean;
+  notes?: string;
+}
+
 export interface PatchedProductCreateUpdateRequest {
   sku?: string;
   slug?: string;
@@ -4286,6 +4313,57 @@ export interface PaymentStatusD7dEnum {
 }
 
 export interface PaymentTypeEnum {
+  [key: string]: any;
+}
+
+export interface PbxServer {
+  id: number;
+  name: string;
+  fqdn: string;
+  public_ip?: string;
+  realtime_db_host: string;
+  realtime_db_port?: number;
+  realtime_db_name: string;
+  realtime_db_user: string;
+  realtime_db_sslmode?: string;
+  ami_host?: string;
+  ami_port?: number;
+  ami_username?: string;
+  wss_url?: string;
+  recording_base_url?: string;
+  status: PbxServerStatusEnum;
+  asterisk_version: string;
+  last_seen_at: string;
+  enrollment_token: string;
+  enrollment_expires_at: string;
+  install_command: string;
+  use_tenant_prefix?: boolean;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PbxServerRequest {
+  name: string;
+  fqdn: string;
+  public_ip?: string;
+  realtime_db_host: string;
+  realtime_db_port?: number;
+  realtime_db_name: string;
+  realtime_db_user: string;
+  realtime_db_password?: string;
+  realtime_db_sslmode?: string;
+  ami_host?: string;
+  ami_port?: number;
+  ami_username?: string;
+  ami_password?: string;
+  wss_url?: string;
+  recording_base_url?: string;
+  use_tenant_prefix?: boolean;
+  notes?: string;
+}
+
+export interface PbxServerStatusEnum {
   [key: string]: any;
 }
 

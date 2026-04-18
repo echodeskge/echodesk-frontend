@@ -366,6 +366,10 @@ import type {
   AddNewCardResponse,
   AddEcommerceCardResponse,
   SetDefaultCardRequestRequest,
+  PaginatedPbxServerList,
+  PbxServerRequest,
+  PbxServer,
+  PatchedPbxServerRequest,
   PaginatedPermissionList,
   Permission,
   PaginatedUserPhoneAssignmentList,
@@ -7175,6 +7179,70 @@ export async function checkPaymentStatus(paymentId: string): Promise<{
 
 export async function paymentsWebhookCreate(): Promise<any> {
   const response = await axios.post(`/api/payments/webhook/`);
+  return response.data;
+}
+
+export async function pbxServersList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedPbxServerList> {
+  const response = await axios.get(
+    `/api/pbx-servers/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function pbxServersCreate(
+  data: PbxServerRequest,
+): Promise<PbxServer> {
+  const response = await axios.post(`/api/pbx-servers/`, data);
+  return response.data;
+}
+
+export async function pbxServersRetrieve(id: number): Promise<PbxServer> {
+  const response = await axios.get(`/api/pbx-servers/${id}/`);
+  return response.data;
+}
+
+export async function pbxServersUpdate(
+  id: number,
+  data: PbxServerRequest,
+): Promise<PbxServer> {
+  const response = await axios.put(`/api/pbx-servers/${id}/`, data);
+  return response.data;
+}
+
+export async function pbxServersPartialUpdate(
+  id: number,
+  data: PatchedPbxServerRequest,
+): Promise<PbxServer> {
+  const response = await axios.patch(`/api/pbx-servers/${id}/`, data);
+  return response.data;
+}
+
+export async function pbxServersDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/pbx-servers/${id}/`);
+  return response.data;
+}
+
+export async function pbxServersRegenerateTokenCreate(
+  id: number,
+  data: PbxServerRequest,
+): Promise<PbxServer> {
+  const response = await axios.post(
+    `/api/pbx-servers/${id}/regenerate-token/`,
+    data,
+  );
   return response.data;
 }
 
