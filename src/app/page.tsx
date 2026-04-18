@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
+import { getTranslations } from 'next-intl/server';
 import HomeContent from './HomeContent';
 import { FALLBACK_FEATURES } from '@/data/pricing-fallback';
 import { SoftwareApplicationSchema } from '@/components/seo/SoftwareApplicationSchema';
@@ -73,12 +74,15 @@ export default async function Home() {
   // Only fetch features when we're rendering the marketing page — tenant
   // subdomains render a login form and don't need pricing data.
   const initialFeatures = tenantSubdomain ? [] : await fetchFeaturesServer();
+  // Resolve the FAQ translator eagerly so FAQPageSchema can render
+  // synchronously — preserves head-positioning of <title>/<meta>.
+  const tFaq = tenantSubdomain ? null : await getTranslations('landing.faq');
   return (
     <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, ['auth', 'landing'])}>
-      {!tenantSubdomain && (
+      {!tenantSubdomain && tFaq && (
         <>
           <SoftwareApplicationSchema features={initialFeatures} />
-          <FAQPageSchema />
+          <FAQPageSchema t={tFaq} />
         </>
       )}
       <HomeContent

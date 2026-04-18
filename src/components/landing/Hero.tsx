@@ -15,7 +15,7 @@ export function Hero() {
     <section className="container space-y-10">
       <div className="grid place-items-center text-center gap-y-6">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 text-secondary text-sm font-medium">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 dark:bg-blue-500/10 text-secondary dark:text-blue-300 text-sm font-medium">
           <MessageSquare className="h-4 w-4" />
           <span>{t('badge')}</span>
         </div>

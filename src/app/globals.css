@@ -237,7 +237,9 @@
   --secondary: 240 3.7% 15.9%;
   --secondary-foreground: 0 0% 98%;
   --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
+  /* Bumped lightness from 64.9% → 70.2% to clear WCAG AA 4.5:1 on dark
+     surfaces (Lighthouse was reporting 4.45 for small helper text). */
+  --muted-foreground: 240 5% 70.2%;
   --accent: 240 3.7% 15.9%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 84.2% 35.2%;
