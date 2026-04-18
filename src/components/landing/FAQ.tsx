@@ -4,16 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const FAQ_KEYS = [
-  'whatIsEchodesk',
-  'channels',
-  'calling',
-  'gelBilling',
-  'freeTrial',
-  'competitors',
-  'dataResidency',
-] as const;
+import { FAQ_KEYS } from './faq-keys';
 
 /**
  * Homepage FAQ accordion. The same question/answer set is exposed as
@@ -71,4 +62,3 @@ export function FAQ() {
   );
 }
 
-export { FAQ_KEYS };

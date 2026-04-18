@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 import { JsonLd } from './JsonLd';
-import { FAQ_KEYS } from '@/components/landing/FAQ';
+import { FAQ_KEYS } from '@/components/landing/faq-keys';
 
 /**
  * FAQPage JSON-LD for the homepage. Reads the same translations the
