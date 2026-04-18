@@ -17,10 +17,13 @@ import { useConsent, type ConsentCategories } from '@/lib/consent';
  */
 export function CookieConsent() {
   const t = useTranslations('cookie');
-  const { status, categories, accept, reject, setCategories } = useConsent();
+  const { status, categories, hydrated, accept, reject, setCategories } = useConsent();
   const [customizing, setCustomizing] = useState(false);
   const [draft, setDraft] = useState<ConsentCategories>(categories);
 
+  // Don't render until we've read localStorage — otherwise the banner flashes
+  // on every refresh for users who already made a choice.
+  if (!hydrated) return null;
   if (status !== 'pending') return null;
 
   const updateDraft = (key: 'analytics' | 'marketing', value: boolean) => {
