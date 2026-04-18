@@ -97,8 +97,8 @@ export function Header() {
           {/* Language Switcher */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <Globe className="h-4 w-4" />
+              <Button variant="ghost" size="sm" className="gap-2" aria-label={t('language')}>
+                <Globe className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">{t('language')}</span>
               </Button>
             </DropdownMenuTrigger>
@@ -122,12 +122,14 @@ export function Header() {
             variant="ghost"
             size="sm"
             className="md:hidden"
+            aria-label={mobileMenuOpen ? t('closeMenu') : t('openMenu')}
+            aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? (
-              <X className="h-5 w-5" />
+              <X className="h-5 w-5" aria-hidden="true" />
             ) : (
-              <Menu className="h-5 w-5" />
+              <Menu className="h-5 w-5" aria-hidden="true" />
             )}
           </Button>
         </div>

@@ -2484,7 +2484,9 @@
       "terms": "Terms",
       "docs": "Documentation",
       "language": "Language",
-      "getStarted": "Get Started"
+      "getStarted": "Get Started",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu"
     },
     "hero": {
       "badge": "All-in-One Customer Support Platform",
@@ -2559,6 +2561,7 @@
     "pricing": {
       "title": "Simple, Transparent Pricing",
       "subtitle": "Choose the plan that fits your team size and needs. No hidden fees.",
+      "agentCountLabel": "Number of agents",
       "tabs": {
         "agentBased": "Agent Based Packages",
         "crmBased": "CRM Based Packages"

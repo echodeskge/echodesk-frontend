@@ -150,6 +150,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                     min={5}
                     max={200}
                     step={5}
+                    aria-label={t('agentCountLabel')}
                     className="w-full"
                   />
                   <div className="flex justify-between text-xs text-muted-foreground">

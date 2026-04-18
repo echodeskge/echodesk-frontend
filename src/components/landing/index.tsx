@@ -16,13 +16,13 @@ export function EchoDeskLanding({ initialFeatures = [] }: { initialFeatures?: Fe
       <Header />
 
       {/* Main Content */}
-      <div className="py-16 space-y-24 bg-background">
+      <main className="py-16 space-y-24 bg-background">
         <Hero />
         <Features />
         <Pricing initialFeatures={initialFeatures} />
         <FAQ />
         <CTA />
-      </div>
+      </main>
 
       {/* Footer */}
       <Footer />

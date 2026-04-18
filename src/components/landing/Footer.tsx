@@ -23,24 +23,40 @@ export function Footer() {
             />
             <p className="text-sm text-muted-foreground">{t('tagline')}</p>
             <div className="flex gap-3">
-              <a href="#" className="hover:text-secondary transition-colors">
-                <Facebook className="h-5 w-5" />
+              <a
+                href="#"
+                aria-label="Facebook"
+                className="hover:text-secondary transition-colors"
+              >
+                <Facebook className="h-5 w-5" aria-hidden="true" />
               </a>
-              <a href="#" className="hover:text-secondary transition-colors">
-                <Instagram className="h-5 w-5" />
+              <a
+                href="#"
+                aria-label="Instagram"
+                className="hover:text-secondary transition-colors"
+              >
+                <Instagram className="h-5 w-5" aria-hidden="true" />
               </a>
-              <a href="#" className="hover:text-secondary transition-colors">
-                <Linkedin className="h-5 w-5" />
+              <a
+                href="#"
+                aria-label="LinkedIn"
+                className="hover:text-secondary transition-colors"
+              >
+                <Linkedin className="h-5 w-5" aria-hidden="true" />
               </a>
-              <a href="mailto:info@echodesk.ge" className="hover:text-secondary transition-colors">
-                <Mail className="h-5 w-5" />
+              <a
+                href="mailto:info@echodesk.ge"
+                aria-label="Email EchoDesk"
+                className="hover:text-secondary transition-colors"
+              >
+                <Mail className="h-5 w-5" aria-hidden="true" />
               </a>
             </div>
           </div>
 
           {/* Product */}
           <div className="space-y-4">
-            <h4 className="font-semibold">{t('product.title')}</h4>
+            <h3 className="font-semibold">{t('product.title')}</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="#features" className="text-muted-foreground hover:text-secondary transition-colors">
@@ -62,7 +78,7 @@ export function Footer() {
 
           {/* Legal */}
           <div className="space-y-4">
-            <h4 className="font-semibold">{t('legal.title')}</h4>
+            <h3 className="font-semibold">{t('legal.title')}</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/privacy-policy" className="text-muted-foreground hover:text-secondary transition-colors">
@@ -84,7 +100,7 @@ export function Footer() {
 
           {/* Contact */}
           <div className="space-y-4">
-            <h4 className="font-semibold">{t('contact.title')}</h4>
+            <h3 className="font-semibold">{t('contact.title')}</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 {t('contact.email')}:{' '}
