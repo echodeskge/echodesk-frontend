@@ -6,6 +6,7 @@ import { pickRouteMessages } from '@/lib/pick-messages';
 import HomeContent from './HomeContent';
 import { FALLBACK_FEATURES } from '@/data/pricing-fallback';
 import { SoftwareApplicationSchema } from '@/components/seo/SoftwareApplicationSchema';
+import { FAQPageSchema } from '@/components/seo/FAQPageSchema';
 import { buildSeoMetadata } from '@/lib/seo-metadata';
 import type { Feature } from '@/types/package';
 
@@ -74,7 +75,12 @@ export default async function Home() {
   const initialFeatures = tenantSubdomain ? [] : await fetchFeaturesServer();
   return (
     <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, ['auth', 'landing'])}>
-      {!tenantSubdomain && <SoftwareApplicationSchema features={initialFeatures} />}
+      {!tenantSubdomain && (
+        <>
+          <SoftwareApplicationSchema features={initialFeatures} />
+          <FAQPageSchema />
+        </>
+      )}
       <HomeContent
         initialTenantSubdomain={tenantSubdomain}
         initialFeatures={initialFeatures}

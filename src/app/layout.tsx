@@ -9,7 +9,7 @@ import QueryProvider from '@/providers/QueryProvider';
 import { SessionProvider } from '@/providers/SessionProvider';
 import { ClarityProvider } from '@/providers/ClarityProvider';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getLocale } from 'next-intl/server';
 import { pickMessages, GLOBAL_NAMESPACES } from '@/lib/pick-messages';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
 import { OrganizationSchema } from '@/components/seo/OrganizationSchema';
@@ -89,9 +89,10 @@ export default async function RootLayout({
 }>) {
   const allMessages = await getMessages();
   const messages = pickMessages(allMessages as Record<string, unknown>, GLOBAL_NAMESPACES);
+  const locale = await getLocale();
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         {/* Preconnect to third-party origins for faster loading */}
         <link rel="preconnect" href="https://www.clarity.ms" />

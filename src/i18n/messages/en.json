@@ -2627,6 +2627,40 @@
       "button": "Start Free Trial",
       "noCreditCard": "No credit card required • 14-day free trial"
     },
+    "faq": {
+      "heading": "Frequently asked questions",
+      "subheading": "Everything you need to know about running your business on EchoDesk.",
+      "items": {
+        "whatIsEchodesk": {
+          "question": "What is EchoDesk?",
+          "answer": "EchoDesk is an all-in-one business platform for Georgian SMBs. One workspace for WhatsApp, Messenger, Instagram, email, SIP phone calls, tickets, invoices, bookings, and leave management — billed in Georgian Lari."
+        },
+        "channels": {
+          "question": "Can I reply to WhatsApp, Messenger, and email from one inbox?",
+          "answer": "Yes. Every conversation lands in the same inbox regardless of channel. Your team picks up where the customer left off, with full history attached to the client record."
+        },
+        "calling": {
+          "question": "Do you support SIP calling?",
+          "answer": "Yes — EchoDesk ships with a built-in SIP PBX. Connect your Georgian provider, assign extensions to agents, and record calls directly against the client's ticket history."
+        },
+        "gelBilling": {
+          "question": "Is EchoDesk billed in Georgian Lari?",
+          "answer": "Yes, all pricing is in GEL and payments are processed through Bank of Georgia. No foreign currency conversion, no surprise invoices."
+        },
+        "freeTrial": {
+          "question": "Is there a free trial?",
+          "answer": "Every account gets 14 days free, no credit card required. You can invite your team, connect channels, and publish invoices during the trial — nothing is locked."
+        },
+        "competitors": {
+          "question": "How is EchoDesk different from Kommo, Bitrix24, or Zendesk?",
+          "answer": "EchoDesk is pay-per-feature, priced in GEL, and supports Georgian businesses out of the box: Georgian hosting, local SIP providers, GEL invoices, and Tbilisi-based support. International tools charge in USD and don't integrate with Georgian telephony or accounting."
+        },
+        "dataResidency": {
+          "question": "Where is my data stored?",
+          "answer": "Data is stored in Frankfurt (EU) on DigitalOcean infrastructure. Tenant isolation is enforced at the database level — your conversations and invoices never touch another customer's schema."
+        }
+      }
+    },
     "footer": {
       "tagline": "Centralize customer communication across all channels",
       "product": {

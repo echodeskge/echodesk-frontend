@@ -4,6 +4,7 @@ import { Header } from './Header';
 import { Hero } from './Hero';
 import { Features } from './Features';
 import { Pricing } from './Pricing';
+import { FAQ } from './FAQ';
 import { CTA } from './CTA';
 import { Footer } from './Footer';
 import type { Feature } from '@/types/package';
@@ -19,6 +20,7 @@ export function EchoDeskLanding({ initialFeatures = [] }: { initialFeatures?: Fe
         <Hero />
         <Features />
         <Pricing initialFeatures={initialFeatures} />
+        <FAQ />
         <CTA />
       </div>
 
@@ -28,4 +30,4 @@ export function EchoDeskLanding({ initialFeatures = [] }: { initialFeatures?: Fe
   );
 }
 
-export { Header, Hero, Features, Pricing, CTA, Footer };
+export { Header, Hero, Features, Pricing, FAQ, CTA, Footer };
