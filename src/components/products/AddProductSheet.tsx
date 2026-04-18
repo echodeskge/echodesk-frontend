@@ -42,13 +42,13 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
 
 /**
- * The generated StatusF43enum is typed as `{ [key: string]: any }` (an object)
+ * The generated Status711enum is typed as `{ [key: string]: any }` (an object)
  * instead of a proper string union, because the OpenAPI generator cannot resolve
- * the Django enum. We cast status string literals through `StatusF43enum` using
+ * the Django enum. We cast status string literals through `Status711enum` using
  * this helper to avoid bare `as any`.
  */
-import type { StatusF43enum } from "@/api/generated/interfaces";
-const asStatus = (v: string) => v as unknown as StatusF43enum;
+import type { Status711enum } from "@/api/generated/interfaces";
+const asStatus = (v: string) => v as unknown as Status711enum;
 
 interface AddProductSheetProps {
   open: boolean;

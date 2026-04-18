@@ -16,6 +16,7 @@ import {
   Shield,
   MessageSquare,
   Phone,
+  Headset,
   ShoppingBag,
   Receipt,
   Calendar,
@@ -90,6 +91,13 @@ const settingsNav: SettingsNavItem[] = [
     href: "/settings/calls",
     icon: Phone,
     labelKey: "nav.calls",
+    featureKey: "ip_calling",
+  },
+  {
+    id: "pbx",
+    href: "/settings/pbx",
+    icon: Headset,
+    labelKey: "nav.pbx",
     featureKey: "ip_calling",
   },
   {

@@ -830,6 +830,10 @@ export interface DescriptionFormatEnum {
   [key: string]: any;
 }
 
+export interface DestinationTypeEnum {
+  [key: string]: any;
+}
+
 export interface DirectionEnum {
   [key: string]: any;
 }
@@ -1503,6 +1507,36 @@ export interface HomepageVariantEnum {
   [key: string]: any;
 }
 
+export interface InboundRoute {
+  id: number;
+  did: string;
+  trunk?: number;
+  trunk_name: string;
+  destination_type?: DestinationTypeEnum;
+  destination_queue?: number;
+  destination_queue_slug: string;
+  destination_extension?: number;
+  destination_extension_display: string;
+  ivr_custom_context?: string;
+  working_hours_override?: number;
+  priority?: number;
+  is_active?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InboundRouteRequest {
+  did: string;
+  trunk?: number;
+  destination_type?: DestinationTypeEnum;
+  destination_queue?: number;
+  destination_extension?: number;
+  ivr_custom_context?: string;
+  working_hours_override?: number;
+  priority?: number;
+  is_active?: boolean;
+}
+
 export interface InitializeUserRequestRequest {
   user_id: number;
   year?: number;
@@ -1865,6 +1899,10 @@ export interface ItemListRequest {
 }
 
 export interface ItemSourceEnum {
+  [key: string]: any;
+}
+
+export interface JoinemptyEnum {
   [key: string]: any;
 }
 
@@ -2294,6 +2332,10 @@ export interface LeaveTypeListRequest {
   color?: string;
   is_active?: boolean;
   sort_order?: number;
+}
+
+export interface LeavewhenemptyEnum {
+  [key: string]: any;
 }
 
 export interface ListItem {
@@ -2764,6 +2806,13 @@ export interface PaginatedHomepageSectionList {
   results: HomepageSection[];
 }
 
+export interface PaginatedInboundRouteList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InboundRoute[];
+}
+
 export interface PaginatedInstagramAccountConnectionList {
   count: number;
   next?: string;
@@ -2995,6 +3044,20 @@ export interface PaginatedPublicLandingPageListList {
   results: PublicLandingPageList[];
 }
 
+export interface PaginatedQueueListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: QueueList[];
+}
+
+export interface PaginatedQueueMemberList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: QueueMember[];
+}
+
 export interface PaginatedQuickReplyList {
   count: number;
   next?: string;
@@ -3196,6 +3259,13 @@ export interface PaginatedTikTokMessageList {
   next?: string;
   previous?: string;
   results: TikTokMessage[];
+}
+
+export interface PaginatedTrunkListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TrunkList[];
 }
 
 export interface PaginatedUnifiedConversation {
@@ -3559,6 +3629,18 @@ export interface PatchedHomepageSectionRequest {
   text_color?: string;
 }
 
+export interface PatchedInboundRouteRequest {
+  did?: string;
+  trunk?: number;
+  destination_type?: DestinationTypeEnum;
+  destination_queue?: number;
+  destination_extension?: number;
+  ivr_custom_context?: string;
+  working_hours_override?: number;
+  priority?: number;
+  is_active?: boolean;
+}
+
 export interface PatchedInstagramAccountConnectionRequest {
   instagram_account_id?: string;
   username?: string;
@@ -3842,6 +3924,24 @@ export interface PatchedPublicHolidayCreateUpdateRequest {
   applies_to_all?: boolean;
 }
 
+export interface PatchedQueueRequest {
+  name?: string;
+  slug?: string;
+  strategy?: StrategyEnum;
+  group?: number;
+  timeout_seconds?: number;
+  max_wait_seconds?: number;
+  max_len?: number;
+  wrapup_time?: number;
+  music_on_hold?: string;
+  announce_position?: boolean;
+  announce_holdtime?: boolean;
+  joinempty?: JoinemptyEnum;
+  leavewhenempty?: LeavewhenemptyEnum;
+  is_active?: boolean;
+  is_default?: boolean;
+}
+
 export interface PatchedQuickReplyRequest {
   title?: string;
   message?: string;
@@ -4114,6 +4214,23 @@ export interface PatchedTicketRequest {
   is_paid?: boolean;
   amount_paid?: string;
   payment_due_date?: string;
+}
+
+export interface PatchedTrunkRequest {
+  name?: string;
+  provider?: string;
+  sip_server?: string;
+  sip_port?: number;
+  username?: string;
+  password?: string;
+  realm?: string;
+  proxy?: string;
+  register?: boolean;
+  codecs?: any;
+  caller_id_number?: string;
+  phone_numbers?: any;
+  is_active?: boolean;
+  is_default?: boolean;
 }
 
 export interface PatchedUserPhoneAssignmentRequest {
@@ -4611,6 +4728,76 @@ export interface PublicLandingPageList {
   highlighted_feature_slugs?: any;
   published_at?: string;
   updated_at: string;
+}
+
+export interface Queue {
+  id: number;
+  name: string;
+  slug: string;
+  strategy?: StrategyEnum;
+  group: number;
+  group_name: string;
+  timeout_seconds?: number;
+  max_wait_seconds?: number;
+  max_len?: number;
+  wrapup_time?: number;
+  music_on_hold?: string;
+  announce_position?: boolean;
+  announce_holdtime?: boolean;
+  joinempty?: JoinemptyEnum;
+  leavewhenempty?: LeavewhenemptyEnum;
+  is_active?: boolean;
+  is_default?: boolean;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QueueList {
+  id: number;
+  name: string;
+  slug: string;
+  strategy?: StrategyEnum;
+  group: number;
+  group_name: string;
+  member_count: number;
+  is_active?: boolean;
+  is_default?: boolean;
+}
+
+export interface QueueMember {
+  id: number;
+  queue: number;
+  queue_slug: string;
+  queue_name: string;
+  user_phone_assignment: number;
+  extension: string;
+  phone_number: string;
+  user_id: number;
+  user_email: string;
+  user_name: string;
+  penalty: number;
+  paused: boolean;
+  is_active: boolean;
+  synced_at: string;
+}
+
+export interface QueueRequest {
+  name: string;
+  slug: string;
+  strategy?: StrategyEnum;
+  group: number;
+  timeout_seconds?: number;
+  max_wait_seconds?: number;
+  max_len?: number;
+  wrapup_time?: number;
+  music_on_hold?: string;
+  announce_position?: boolean;
+  announce_holdtime?: boolean;
+  joinempty?: JoinemptyEnum;
+  leavewhenempty?: LeavewhenemptyEnum;
+  is_active?: boolean;
+  is_default?: boolean;
 }
 
 export interface QuickReply {
@@ -5176,6 +5363,10 @@ export interface StoreThemeResponse {
   radius: string;
   store_name: string;
   payment: PaymentConfigResponse;
+}
+
+export interface StrategyEnum {
+  [key: string]: any;
 }
 
 export interface SubjectEnum {
@@ -5827,6 +6018,51 @@ export interface TimeTrackingSummary {
 
 export interface TransferTypeEnum {
   [key: string]: any;
+}
+
+export interface Trunk {
+  id: number;
+  name: string;
+  provider?: string;
+  sip_server: string;
+  sip_port?: number;
+  username: string;
+  password: string;
+  realm?: string;
+  proxy?: string;
+  register?: boolean;
+  codecs?: any;
+  caller_id_number?: string;
+  phone_numbers?: any;
+  is_active?: boolean;
+  is_default?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrunkList {
+  id: number;
+  name: string;
+  provider?: string;
+  phone_numbers?: any;
+  is_active?: boolean;
+}
+
+export interface TrunkRequest {
+  name: string;
+  provider?: string;
+  sip_server: string;
+  sip_port?: number;
+  username: string;
+  password: string;
+  realm?: string;
+  proxy?: string;
+  register?: boolean;
+  codecs?: any;
+  caller_id_number?: string;
+  phone_numbers?: any;
+  is_active?: boolean;
+  is_default?: boolean;
 }
 
 export interface UnifiedConversation {

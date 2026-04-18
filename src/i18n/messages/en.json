@@ -321,7 +321,7 @@
       "timeTracking": "View your time tracking data",
       "userStatistics": "View time tracking statistics for all users",
       "preferences": "Personal notification and social settings",
-      "settingsNotifications": "Configure your notification preferences",
+      "settingsNotifications": "Configure notification preferences",
       "reportBug": "Report a bug to the EchoDesk team",
       "help": "Access tutorials, guides and documentation",
       "settingsSocial": "Social media integration settings",
@@ -334,8 +334,7 @@
       "settingsGroups": "Manage user groups",
       "settingsSocialConnections": "Manage social media connections",
       "settingsSocialAutoPosting": "Configure automatic posting",
-      "settingsSocialRatingStatistics": "View rating statistics",
-      "settingsNotifications": "Configure notification preferences"
+      "settingsSocialRatingStatistics": "View rating statistics"
     },
     "settingsSocial": "Social Settings",
     "settingsCalls": "Calls Settings",
@@ -1499,7 +1498,8 @@
       "ratingStatistics": "Rating Statistics",
       "users": "Users",
       "groups": "Groups",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "pbx": "PBX"
     }
   },
   "users": {
@@ -4490,5 +4490,219 @@
       "taxId": "Tax ID: 405794289"
     },
     "cookiePreferences": "Cookie preferences"
+  },
+  "pbxSettings": {
+    "nav": {
+      "label": "PBX"
+    },
+    "page": {
+      "title": "PBX Management",
+      "description": "Manage SIP trunks, extensions, queues, inbound routing and call statistics for your phone system.",
+      "upgradeTitle": "Upgrade required",
+      "upgradeDescription": "PBX management is included in the IP calling add-on. Upgrade your plan to unlock this feature."
+    },
+    "tabs": {
+      "overview": "Overview",
+      "trunks": "Trunks",
+      "extensions": "Extensions",
+      "queues": "Queues",
+      "inbound": "Inbound Routes",
+      "hours": "Hours & Sounds",
+      "statistics": "Statistics"
+    },
+    "overview": {
+      "totalCalls": "Total calls",
+      "answered": "Answered",
+      "missed": "Missed",
+      "answerRate": "Answer rate",
+      "avgTalk": "Avg talk time",
+      "busiestHour": "Busiest hour",
+      "busiestDay": "Busiest day",
+      "inboundCalls": "Inbound calls",
+      "outboundCalls": "Outbound calls",
+      "trunks": "Trunks",
+      "queues": "Queues",
+      "routes": "Inbound routes",
+      "topUsersTitle": "Top agents this month",
+      "noData": "No call data for the selected period.",
+      "rangeLabel": "Range",
+      "rangeToday": "Today",
+      "rangeWeek": "This week",
+      "rangeMonth": "This month"
+    },
+    "trunks": {
+      "title": "SIP Trunks",
+      "description": "Connections to your SIP providers for inbound DIDs and outbound calls.",
+      "new": "New trunk",
+      "edit": "Edit trunk",
+      "empty": "No trunks yet. Add your first SIP provider connection to start receiving and placing calls.",
+      "deleteConfirm": "Delete trunk \"{name}\"? Inbound routes and extensions tied to this trunk will stop working.",
+      "columns": {
+        "name": "Name",
+        "provider": "Provider",
+        "sipServer": "SIP server",
+        "phoneNumbers": "Phone numbers",
+        "status": "Status"
+      },
+      "form": {
+        "name": "Name",
+        "nameHelp": "A friendly label for this trunk.",
+        "provider": "Provider",
+        "providerHelp": "e.g., Magti, Silknet.",
+        "sipServer": "SIP server host",
+        "sipPort": "SIP port",
+        "username": "Username",
+        "password": "Password",
+        "realm": "Realm",
+        "proxy": "Outbound proxy",
+        "register": "Register to provider",
+        "registerHelp": "Sends a SIP REGISTER so the provider knows where to deliver inbound calls.",
+        "codecs": "Codecs",
+        "codecsHelp": "Comma-separated (e.g., g722, alaw, ulaw).",
+        "callerIdNumber": "Outbound caller ID",
+        "phoneNumbers": "Phone numbers (DIDs)",
+        "phoneNumbersHelp": "DIDs owned by this trunk. Press Enter to add.",
+        "addPhoneNumber": "Add number",
+        "isActive": "Active"
+      }
+    },
+    "extensions": {
+      "title": "Extensions",
+      "description": "Phone extensions assigned to your users. Sync status shows whether Asterisk is up to date."
+    },
+    "queues": {
+      "title": "Call Queues",
+      "description": "Queues route inbound calls to a backing user group. All group members with an active extension are rung based on the strategy.",
+      "new": "New queue",
+      "edit": "Edit queue",
+      "empty": "No queues yet. Create a queue and point it at a user group to start routing calls.",
+      "deleteConfirm": "Delete queue \"{name}\"? Inbound routes pointing at this queue will need to be updated.",
+      "membersTitle": "Queue agents",
+      "membersHelp": "Members are derived from the backing group. Edit group membership to add or remove agents.",
+      "noMembers": "This queue's backing group has no users with an active extension.",
+      "columns": {
+        "name": "Name",
+        "strategy": "Strategy",
+        "group": "Group",
+        "members": "Members",
+        "status": "Status",
+        "default": "Default"
+      },
+      "form": {
+        "name": "Name",
+        "slug": "Slug",
+        "slugHelp": "Lowercase identifier used in the PBX config. Auto-filled from name.",
+        "strategy": "Ring strategy",
+        "group": "Backing group",
+        "groupHelp": "Users in this group with an active extension become queue agents.",
+        "timeoutSeconds": "Per-agent ring timeout (s)",
+        "maxWaitSeconds": "Max caller wait (s)",
+        "maxLen": "Max queue length",
+        "maxLenHelp": "0 = unlimited.",
+        "musicOnHold": "Music on hold class",
+        "announcePosition": "Announce queue position",
+        "announceHoldtime": "Announce hold time",
+        "wrapupTime": "Wrap-up time (s)",
+        "joinempty": "Join when empty",
+        "leavewhenempty": "Leave when empty",
+        "isDefault": "Default queue",
+        "isActive": "Active"
+      },
+      "strategies": {
+        "ringall": "Ring all",
+        "rrmemory": "Round robin (memory)",
+        "leastrecent": "Least recent",
+        "fewestcalls": "Fewest calls",
+        "random": "Random",
+        "linear": "Linear",
+        "wrandom": "Weighted random"
+      }
+    },
+    "inbound": {
+      "title": "Inbound Routes",
+      "description": "Map incoming DIDs to a queue, extension, voicemail, or custom IVR context.",
+      "new": "New route",
+      "edit": "Edit route",
+      "empty": "No inbound routes yet. Add your first DID to start receiving calls.",
+      "deleteConfirm": "Delete inbound route for \"{did}\"?",
+      "columns": {
+        "did": "DID",
+        "destinationType": "Destination type",
+        "destination": "Destination",
+        "priority": "Priority",
+        "status": "Status"
+      },
+      "destinations": {
+        "queue": "Queue",
+        "extension": "Extension",
+        "voicemail": "Voicemail",
+        "ivr_custom": "Custom IVR",
+        "hangup": "Hang up"
+      },
+      "form": {
+        "did": "DID / pattern",
+        "didHelp": "The number dialed to reach this route.",
+        "trunk": "Trunk",
+        "destinationType": "Destination type",
+        "destinationQueue": "Destination queue",
+        "destinationExtension": "Destination extension",
+        "ivrCustomContext": "Custom IVR context",
+        "ivrCustomContextHelp": "Name of a context defined in extensions_custom.conf.",
+        "workingHoursOverride": "Working hours override",
+        "priority": "Priority",
+        "priorityHelp": "Lower numbers are checked first.",
+        "isActive": "Active",
+        "errors": {
+          "queueRequired": "Select a destination queue.",
+          "extensionRequired": "Select a destination extension.",
+          "ivrContextRequired": "Enter the custom IVR context name."
+        }
+      }
+    },
+    "hours": {
+      "title": "Working Hours & Sounds",
+      "description": "Working hours, holidays, sound prompts and review settings. Managed in the existing Calls settings page."
+    },
+    "statistics": {
+      "title": "Call Statistics",
+      "description": "Per-user monthly call activity for your team.",
+      "monthPicker": "Month",
+      "overviewTitle": "Overview",
+      "leaderboardTitle": "Agents by talk time",
+      "timelineTitle": "Daily timeline",
+      "empty": "No call data for the selected period.",
+      "columns": {
+        "user": "Agent",
+        "answered": "Answered",
+        "missed": "Missed",
+        "outbound": "Outbound",
+        "totalTalk": "Total talk",
+        "avgTalk": "Avg / call"
+      },
+      "user": {
+        "backToList": "Back to all agents",
+        "dailyCalls": "Calls per day",
+        "dailyTalk": "Talk time per day",
+        "day": "Day"
+      }
+    },
+    "form": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete",
+      "saving": "Saving…",
+      "deleting": "Deleting…",
+      "required": "Required",
+      "confirmDelete": "Delete",
+      "confirmDeleteTitle": "Confirm deletion"
+    },
+    "toast": {
+      "created": "Created.",
+      "updated": "Updated.",
+      "deleted": "Deleted.",
+      "error": "Something went wrong. Please try again."
+    }
   }
 }

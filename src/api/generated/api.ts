@@ -249,6 +249,11 @@ import type {
   HelpArticleList,
   PaginatedHelpCategoryListList,
   HelpCategoryDetail,
+  PaginatedInboundRouteList,
+  Queue,
+  InboundRouteRequest,
+  InboundRoute,
+  PatchedInboundRouteRequest,
   PaginatedInvoiceListList,
   InvoiceCreateUpdateRequest,
   InvoiceCreateUpdate,
@@ -368,6 +373,11 @@ import type {
   UserPhoneAssignment,
   UserPhoneAssignmentDetail,
   PatchedUserPhoneAssignmentRequest,
+  PaginatedQueueMemberList,
+  QueueMember,
+  PaginatedQueueListList,
+  QueueRequest,
+  PatchedQueueRequest,
   TenantRegistrationRequest,
   Tenant,
   TenantIpwhitelistRequest,
@@ -470,6 +480,10 @@ import type {
   PaginatedTicketTimeLogList,
   TicketTimeLog,
   TimeTrackingSummary,
+  PaginatedTrunkListList,
+  TrunkRequest,
+  Trunk,
+  PatchedTrunkRequest,
   PaginatedUserList,
   UserCreateRequest,
   UserCreate,
@@ -2265,6 +2279,48 @@ export async function callLogsStatisticsRetrieve(
 ): Promise<Record<string, any>> {
   const response = await axios.get(
     `/api/call-logs/statistics/${period ? '?period=' + encodeURIComponent(period) : ''}`,
+  );
+  return response.data;
+}
+
+export async function callStatsOverviewRetrieve(
+  range?: 'month' | 'today' | 'week',
+): Promise<any> {
+  const response = await axios.get(
+    `/api/call-stats/overview/${range ? '?range=' + encodeURIComponent(range) : ''}`,
+  );
+  return response.data;
+}
+
+export async function callStatsQueuesRetrieve(
+  queueId: number,
+  range?: 'month' | 'today' | 'week',
+): Promise<any> {
+  const response = await axios.get(
+    `/api/call-stats/queues/${(() => {
+      const parts = [
+        'queue_id=' + encodeURIComponent(queueId),
+        range ? 'range=' + encodeURIComponent(range) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function callStatsUsersRetrieve(month?: string): Promise<any> {
+  const response = await axios.get(
+    `/api/call-stats/users/${month ? '?month=' + encodeURIComponent(month) : ''}`,
+  );
+  return response.data;
+}
+
+export async function callStatsUsersTimelineRetrieve(
+  userId: number,
+  month?: string,
+): Promise<any> {
+  const response = await axios.get(
+    `/api/call-stats/users/${userId}/timeline/${month ? '?month=' + encodeURIComponent(month) : ''}`,
   );
   return response.data;
 }
@@ -5114,6 +5170,76 @@ export async function helpPublicSearchRetrieve(): Promise<any> {
   return response.data;
 }
 
+export async function inboundRoutesList(
+  destinationQueue?: number,
+  destinationType?:
+    | 'extension'
+    | 'hangup'
+    | 'ivr_custom'
+    | 'queue'
+    | 'voicemail',
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+  trunk?: number,
+): Promise<PaginatedInboundRouteList> {
+  const response = await axios.get(
+    `/api/inbound-routes/${(() => {
+      const parts = [
+        destinationQueue
+          ? 'destination_queue=' + encodeURIComponent(destinationQueue)
+          : null,
+        destinationType
+          ? 'destination_type=' + encodeURIComponent(destinationType)
+          : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        trunk ? 'trunk=' + encodeURIComponent(trunk) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function inboundRoutesCreate(
+  data: InboundRouteRequest,
+): Promise<InboundRoute> {
+  const response = await axios.post(`/api/inbound-routes/`, data);
+  return response.data;
+}
+
+export async function inboundRoutesRetrieve(id: number): Promise<InboundRoute> {
+  const response = await axios.get(`/api/inbound-routes/${id}/`);
+  return response.data;
+}
+
+export async function inboundRoutesUpdate(
+  id: number,
+  data: InboundRouteRequest,
+): Promise<InboundRoute> {
+  const response = await axios.put(`/api/inbound-routes/${id}/`, data);
+  return response.data;
+}
+
+export async function inboundRoutesPartialUpdate(
+  id: number,
+  data: PatchedInboundRouteRequest,
+): Promise<InboundRoute> {
+  const response = await axios.patch(`/api/inbound-routes/${id}/`, data);
+  return response.data;
+}
+
+export async function inboundRoutesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/inbound-routes/${id}/`);
+  return response.data;
+}
+
 export async function invoicesClientsList(
   page?: number,
   pageSize?: number,
@@ -7193,6 +7319,103 @@ export async function resolveEcommerceDomain(domain: string): Promise<{
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
   );
+  return response.data;
+}
+
+export async function queueMembersList(
+  isActive?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  paused?: boolean,
+  queue?: number,
+  search?: string,
+): Promise<PaginatedQueueMemberList> {
+  const response = await axios.get(
+    `/api/queue-members/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        paused ? 'paused=' + encodeURIComponent(paused) : null,
+        queue ? 'queue=' + encodeURIComponent(queue) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function queueMembersRetrieve(id: number): Promise<QueueMember> {
+  const response = await axios.get(`/api/queue-members/${id}/`);
+  return response.data;
+}
+
+export async function queuesList(
+  group?: number,
+  isActive?: boolean,
+  isDefault?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+  strategy?:
+    | 'fewestcalls'
+    | 'leastrecent'
+    | 'linear'
+    | 'random'
+    | 'ringall'
+    | 'rrmemory'
+    | 'wrandom',
+): Promise<PaginatedQueueListList> {
+  const response = await axios.get(
+    `/api/queues/${(() => {
+      const parts = [
+        group ? 'group=' + encodeURIComponent(group) : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isDefault ? 'is_default=' + encodeURIComponent(isDefault) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        strategy ? 'strategy=' + encodeURIComponent(strategy) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function queuesCreate(data: QueueRequest): Promise<Queue> {
+  const response = await axios.post(`/api/queues/`, data);
+  return response.data;
+}
+
+export async function queuesRetrieve(id: number): Promise<Queue> {
+  const response = await axios.get(`/api/queues/${id}/`);
+  return response.data;
+}
+
+export async function queuesUpdate(
+  id: number,
+  data: QueueRequest,
+): Promise<Queue> {
+  const response = await axios.put(`/api/queues/${id}/`, data);
+  return response.data;
+}
+
+export async function queuesPartialUpdate(
+  id: number,
+  data: PatchedQueueRequest,
+): Promise<Queue> {
+  const response = await axios.patch(`/api/queues/${id}/`, data);
+  return response.data;
+}
+
+export async function queuesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/queues/${id}/`);
   return response.data;
 }
 
@@ -9558,6 +9781,65 @@ export async function timeLogsMyTimeSummaryRetrieve(
   const response = await axios.get(
     `/api/time-logs/my_time_summary/${days ? '?days=' + encodeURIComponent(days) : ''}`,
   );
+  return response.data;
+}
+
+export async function trunksList(
+  isActive?: boolean,
+  isDefault?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  provider?: string,
+  register?: boolean,
+  search?: string,
+): Promise<PaginatedTrunkListList> {
+  const response = await axios.get(
+    `/api/trunks/${(() => {
+      const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isDefault ? 'is_default=' + encodeURIComponent(isDefault) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        provider ? 'provider=' + encodeURIComponent(provider) : null,
+        register ? 'register=' + encodeURIComponent(register) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function trunksCreate(data: TrunkRequest): Promise<Trunk> {
+  const response = await axios.post(`/api/trunks/`, data);
+  return response.data;
+}
+
+export async function trunksRetrieve(id: number): Promise<Trunk> {
+  const response = await axios.get(`/api/trunks/${id}/`);
+  return response.data;
+}
+
+export async function trunksUpdate(
+  id: number,
+  data: TrunkRequest,
+): Promise<Trunk> {
+  const response = await axios.put(`/api/trunks/${id}/`, data);
+  return response.data;
+}
+
+export async function trunksPartialUpdate(
+  id: number,
+  data: PatchedTrunkRequest,
+): Promise<Trunk> {
+  const response = await axios.patch(`/api/trunks/${id}/`, data);
+  return response.data;
+}
+
+export async function trunksDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/trunks/${id}/`);
   return response.data;
 }
 

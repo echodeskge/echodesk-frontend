@@ -23,7 +23,7 @@ import {
 import type {
   SipConfigurationDetail,
   DirectionEnum,
-  Status6efEnum,
+  Status711enum,
   CallLogCreate,
 } from '@/api/generated/interfaces';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -338,7 +338,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             try {
               await callLogsUpdateStatusPartialUpdate(current.logId, {
-                status: 'answered' as unknown as Status6efEnum,
+                status: 'answered' as unknown as Status711enum,
               });
             } catch (err) {
               console.error('Failed to update call status:', err);
@@ -360,7 +360,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (current) {
             try {
               await callLogsEndCallCreate(current.logId, {
-                status: 'ended' as unknown as Status6efEnum,
+                status: 'ended' as unknown as Status711enum,
               });
             } catch (err) {
               console.error('Failed to end call log:', err);
@@ -381,7 +381,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (current) {
             try {
               await callLogsUpdateStatusPartialUpdate(current.logId, {
-                status: 'failed' as unknown as Status6efEnum,
+                status: 'failed' as unknown as Status711enum,
               });
             } catch (err) {
               console.error('Failed to update call status:', err);
@@ -549,7 +549,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setCallEndedCounter(c => c + 1);
 
         await callLogsUpdateStatusPartialUpdate(current.logId, {
-          status: 'cancelled' as unknown as Status6efEnum,
+          status: 'cancelled' as unknown as Status711enum,
         });
       } catch (err: unknown) {
         console.error('Failed to reject call:', err);
