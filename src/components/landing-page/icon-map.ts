@@ -1,6 +1,8 @@
 import {
   MessageSquare,
   Phone,
+  PhoneMissed,
+  Mic,
   Mail,
   Globe,
   Shield,
@@ -12,6 +14,17 @@ import {
   Users,
   BarChart3,
   Sparkles,
+  Layers,
+  Server,
+  CreditCard,
+  Coins,
+  Monitor,
+  Ticket,
+  TicketCheck,
+  Receipt,
+  Headphones,
+  Building2,
+  MapPin,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -23,6 +36,8 @@ import {
 const ICON_MAP: Record<string, LucideIcon> = {
   MessageSquare,
   Phone,
+  PhoneMissed,
+  Mic,
   Mail,
   Globe,
   Shield,
@@ -34,6 +49,17 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Users,
   BarChart3,
   Sparkles,
+  Layers,
+  Server,
+  CreditCard,
+  Coins,
+  Monitor,
+  Ticket,
+  TicketCheck,
+  Receipt,
+  Headphones,
+  Building2,
+  MapPin,
 };
 
 export function getLandingIcon(name: string | undefined): LucideIcon {
