@@ -11,6 +11,25 @@ import type {
   PatchedTicketAttachmentRequest,
   TenantDashboardData,
   TenantLoginRequest,
+  PaginatedBlogCategoryAdminList,
+  BlogCategoryAdminRequest,
+  BlogCategoryAdmin,
+  PatchedBlogCategoryAdminRequest,
+  PaginatedBlogPostAdminList,
+  BlogPostAdminRequest,
+  BlogPostAdmin,
+  PatchedBlogPostAdminRequest,
+  PaginatedBlogPostRunAdminList,
+  BlogPostRunAdmin,
+  PaginatedBlogTopicAdminList,
+  BlogTopicAdminRequest,
+  BlogTopicAdmin,
+  PatchedBlogTopicAdminRequest,
+  PaginatedPublicBlogCategoryList,
+  PublicBlogCategory,
+  PaginatedPublicBlogPostListList,
+  PublicBlogPostDetail,
+  PublicBlogPostList,
   PaginatedBoardList,
   BoardRequest,
   Board,
@@ -257,6 +276,19 @@ import type {
   ItemListRequest,
   ItemList,
   PatchedItemListRequest,
+  PaginatedLandingPageAdminList,
+  LandingPageAdminRequest,
+  LandingPageAdmin,
+  PatchedLandingPageAdminRequest,
+  PaginatedLandingPageRunAdminList,
+  LandingPageRunAdmin,
+  PaginatedLandingTopicAdminList,
+  LandingTopicAdminRequest,
+  LandingTopicAdmin,
+  PatchedLandingTopicAdminRequest,
+  LandingTopicSeedItemRequest,
+  PaginatedPublicLandingPageListList,
+  PublicLandingPageDetail,
   PaginatedLeaveApprovalChainList,
   LeaveApprovalChainRequest,
   LeaveApprovalChain,
@@ -564,6 +596,287 @@ export async function updateTenantProfile(): Promise<{
   user?: Record<string, any>;
 }> {
   const response = await axios.patch(`/api/auth/profile/update/`);
+  return response.data;
+}
+
+export async function blogAdminCategoriesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedBlogCategoryAdminList> {
+  const response = await axios.get(
+    `/api/blog/admin/categories/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function blogAdminCategoriesCreate(
+  data: BlogCategoryAdminRequest,
+): Promise<BlogCategoryAdmin> {
+  const response = await axios.post(`/api/blog/admin/categories/`, data);
+  return response.data;
+}
+
+export async function blogAdminCategoriesRetrieve(
+  id: number,
+): Promise<BlogCategoryAdmin> {
+  const response = await axios.get(`/api/blog/admin/categories/${id}/`);
+  return response.data;
+}
+
+export async function blogAdminCategoriesUpdate(
+  id: number,
+  data: BlogCategoryAdminRequest,
+): Promise<BlogCategoryAdmin> {
+  const response = await axios.put(`/api/blog/admin/categories/${id}/`, data);
+  return response.data;
+}
+
+export async function blogAdminCategoriesPartialUpdate(
+  id: number,
+  data: PatchedBlogCategoryAdminRequest,
+): Promise<BlogCategoryAdmin> {
+  const response = await axios.patch(`/api/blog/admin/categories/${id}/`, data);
+  return response.data;
+}
+
+export async function blogAdminCategoriesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/blog/admin/categories/${id}/`);
+  return response.data;
+}
+
+export async function blogAdminPostsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedBlogPostAdminList> {
+  const response = await axios.get(
+    `/api/blog/admin/posts/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function blogAdminPostsCreate(
+  data: BlogPostAdminRequest,
+): Promise<BlogPostAdmin> {
+  const response = await axios.post(`/api/blog/admin/posts/`, data);
+  return response.data;
+}
+
+export async function blogAdminPostsRetrieve(
+  id: number,
+): Promise<BlogPostAdmin> {
+  const response = await axios.get(`/api/blog/admin/posts/${id}/`);
+  return response.data;
+}
+
+export async function blogAdminPostsUpdate(
+  id: number,
+  data: BlogPostAdminRequest,
+): Promise<BlogPostAdmin> {
+  const response = await axios.put(`/api/blog/admin/posts/${id}/`, data);
+  return response.data;
+}
+
+export async function blogAdminPostsPartialUpdate(
+  id: number,
+  data: PatchedBlogPostAdminRequest,
+): Promise<BlogPostAdmin> {
+  const response = await axios.patch(`/api/blog/admin/posts/${id}/`, data);
+  return response.data;
+}
+
+export async function blogAdminPostsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/blog/admin/posts/${id}/`);
+  return response.data;
+}
+
+export async function blogAdminPostsApproveCreate(
+  id: number,
+  data: BlogPostAdminRequest,
+): Promise<BlogPostAdmin> {
+  const response = await axios.post(
+    `/api/blog/admin/posts/${id}/approve/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function blogAdminPostsArchiveCreate(
+  id: number,
+  data: BlogPostAdminRequest,
+): Promise<BlogPostAdmin> {
+  const response = await axios.post(
+    `/api/blog/admin/posts/${id}/archive/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function blogAdminRunsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+): Promise<PaginatedBlogPostRunAdminList> {
+  const response = await axios.get(
+    `/api/blog/admin/runs/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function blogAdminRunsRetrieve(
+  id: number,
+): Promise<BlogPostRunAdmin> {
+  const response = await axios.get(`/api/blog/admin/runs/${id}/`);
+  return response.data;
+}
+
+export async function blogAdminTopicsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedBlogTopicAdminList> {
+  const response = await axios.get(
+    `/api/blog/admin/topics/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function blogAdminTopicsCreate(
+  data: BlogTopicAdminRequest,
+): Promise<BlogTopicAdmin> {
+  const response = await axios.post(`/api/blog/admin/topics/`, data);
+  return response.data;
+}
+
+export async function blogAdminTopicsRetrieve(
+  id: number,
+): Promise<BlogTopicAdmin> {
+  const response = await axios.get(`/api/blog/admin/topics/${id}/`);
+  return response.data;
+}
+
+export async function blogAdminTopicsUpdate(
+  id: number,
+  data: BlogTopicAdminRequest,
+): Promise<BlogTopicAdmin> {
+  const response = await axios.put(`/api/blog/admin/topics/${id}/`, data);
+  return response.data;
+}
+
+export async function blogAdminTopicsPartialUpdate(
+  id: number,
+  data: PatchedBlogTopicAdminRequest,
+): Promise<BlogTopicAdmin> {
+  const response = await axios.patch(`/api/blog/admin/topics/${id}/`, data);
+  return response.data;
+}
+
+export async function blogAdminTopicsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/blog/admin/topics/${id}/`);
+  return response.data;
+}
+
+export async function blogAdminTopicsSeedCreate(
+  data: BlogTopicAdminRequest,
+): Promise<BlogTopicAdmin> {
+  const response = await axios.post(`/api/blog/admin/topics/seed/`, data);
+  return response.data;
+}
+
+export async function blogPublicCategoriesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedPublicBlogCategoryList> {
+  const response = await axios.get(
+    `/api/blog/public/categories/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function blogPublicCategoriesRetrieve(
+  slug: string,
+): Promise<PublicBlogCategory> {
+  const response = await axios.get(`/api/blog/public/categories/${slug}/`);
+  return response.data;
+}
+
+export async function blogPublicPostsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+): Promise<PaginatedPublicBlogPostListList> {
+  const response = await axios.get(
+    `/api/blog/public/posts/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function blogPublicPostsRetrieve(
+  slug: string,
+): Promise<PublicBlogPostDetail> {
+  const response = await axios.get(`/api/blog/public/posts/${slug}/`);
+  return response.data;
+}
+
+export async function blogPublicPostsFeaturedRetrieve(): Promise<PublicBlogPostList> {
+  const response = await axios.get(`/api/blog/public/posts/featured/`);
+  return response.data;
+}
+
+export async function blogPublicSearchRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/blog/public/search/`);
   return response.data;
 }
 
@@ -1848,6 +2161,11 @@ export async function callLogsMergeConferenceCreate(
   return response.data;
 }
 
+export async function callLogsRecordingRetrieve(id: number): Promise<string> {
+  const response = await axios.get(`/api/call-logs/${id}/recording/`);
+  return response.data;
+}
+
 export async function callLogsSendSmsReviewCreate(
   id: number,
   data: CallLogRequest,
@@ -2075,6 +2393,18 @@ export async function clientsCallHistoryList(
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function clientsLookupByPhoneRetrieve(
+  phone: string,
+): Promise<Record<string, any>> {
+  const response = await axios.get(
+    `/api/clients/lookup-by-phone/${(() => {
+      const parts = ['phone=' + encodeURIComponent(phone)].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
   );
@@ -5308,6 +5638,202 @@ export async function itemListsRootItemsRetrieve(
 
 export async function itemListsPublicRetrieve(): Promise<ItemList> {
   const response = await axios.get(`/api/item-lists/public/`);
+  return response.data;
+}
+
+export async function landingAdminPagesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedLandingPageAdminList> {
+  const response = await axios.get(
+    `/api/landing/admin/pages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function landingAdminPagesCreate(
+  data: LandingPageAdminRequest,
+): Promise<LandingPageAdmin> {
+  const response = await axios.post(`/api/landing/admin/pages/`, data);
+  return response.data;
+}
+
+export async function landingAdminPagesRetrieve(
+  id: number,
+): Promise<LandingPageAdmin> {
+  const response = await axios.get(`/api/landing/admin/pages/${id}/`);
+  return response.data;
+}
+
+export async function landingAdminPagesUpdate(
+  id: number,
+  data: LandingPageAdminRequest,
+): Promise<LandingPageAdmin> {
+  const response = await axios.put(`/api/landing/admin/pages/${id}/`, data);
+  return response.data;
+}
+
+export async function landingAdminPagesPartialUpdate(
+  id: number,
+  data: PatchedLandingPageAdminRequest,
+): Promise<LandingPageAdmin> {
+  const response = await axios.patch(`/api/landing/admin/pages/${id}/`, data);
+  return response.data;
+}
+
+export async function landingAdminPagesDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/landing/admin/pages/${id}/`);
+  return response.data;
+}
+
+export async function landingAdminPagesApproveCreate(
+  id: number,
+  data: LandingPageAdminRequest,
+): Promise<LandingPageAdmin> {
+  const response = await axios.post(
+    `/api/landing/admin/pages/${id}/approve/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function landingAdminPagesArchiveCreate(
+  id: number,
+  data: LandingPageAdminRequest,
+): Promise<LandingPageAdmin> {
+  const response = await axios.post(
+    `/api/landing/admin/pages/${id}/archive/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function landingAdminRunsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+): Promise<PaginatedLandingPageRunAdminList> {
+  const response = await axios.get(
+    `/api/landing/admin/runs/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function landingAdminRunsRetrieve(
+  id: number,
+): Promise<LandingPageRunAdmin> {
+  const response = await axios.get(`/api/landing/admin/runs/${id}/`);
+  return response.data;
+}
+
+export async function landingAdminTopicsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedLandingTopicAdminList> {
+  const response = await axios.get(
+    `/api/landing/admin/topics/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function landingAdminTopicsCreate(
+  data: LandingTopicAdminRequest,
+): Promise<LandingTopicAdmin> {
+  const response = await axios.post(`/api/landing/admin/topics/`, data);
+  return response.data;
+}
+
+export async function landingAdminTopicsRetrieve(
+  id: number,
+): Promise<LandingTopicAdmin> {
+  const response = await axios.get(`/api/landing/admin/topics/${id}/`);
+  return response.data;
+}
+
+export async function landingAdminTopicsUpdate(
+  id: number,
+  data: LandingTopicAdminRequest,
+): Promise<LandingTopicAdmin> {
+  const response = await axios.put(`/api/landing/admin/topics/${id}/`, data);
+  return response.data;
+}
+
+export async function landingAdminTopicsPartialUpdate(
+  id: number,
+  data: PatchedLandingTopicAdminRequest,
+): Promise<LandingTopicAdmin> {
+  const response = await axios.patch(`/api/landing/admin/topics/${id}/`, data);
+  return response.data;
+}
+
+export async function landingAdminTopicsDestroy(id: number): Promise<any> {
+  const response = await axios.delete(`/api/landing/admin/topics/${id}/`);
+  return response.data;
+}
+
+export async function landingAdminTopicsSeedCreate(
+  data: LandingTopicSeedItemRequest[],
+): Promise<any> {
+  const response = await axios.post(`/api/landing/admin/topics/seed/`, data);
+  return response.data;
+}
+
+export async function landingPublicPagesList(
+  lang?: 'en' | 'ka',
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  pageType?: 'comparison' | 'feature' | 'vertical',
+): Promise<PaginatedPublicLandingPageListList> {
+  const response = await axios.get(
+    `/api/landing/public/pages/${(() => {
+      const parts = [
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        pageType ? 'page_type=' + encodeURIComponent(pageType) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function landingPublicPagesRetrieve(
+  slug: string,
+  lang?: 'en' | 'ka',
+): Promise<PublicLandingPageDetail> {
+  const response = await axios.get(
+    `/api/landing/public/pages/${slug}/${lang ? '?lang=' + encodeURIComponent(lang) : ''}`,
+  );
   return response.data;
 }
 

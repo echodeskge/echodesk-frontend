@@ -76,6 +76,134 @@ export interface BlankEnum {
   [key: string]: any;
 }
 
+export interface BlogCategoryAdmin {
+  id: number;
+  name: any;
+  slug: string;
+  description?: any;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  seo_title?: any;
+  seo_description?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlogCategoryAdminRequest {
+  name: any;
+  slug: string;
+  description?: any;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  seo_title?: any;
+  seo_description?: any;
+}
+
+export interface BlogPostAdmin {
+  id: number;
+  slug: string;
+  post_type?: PostTypeEnum;
+  title?: any;
+  summary?: any;
+  content_html?: any;
+  meta_title?: any;
+  meta_description?: any;
+  keywords?: any;
+  hero_image_url?: string;
+  faq_items?: any;
+  competitor_name?: string;
+  comparison_matrix?: any;
+  status?: Status61dEnum;
+  published_at?: string;
+  reading_time_minutes: number;
+  is_featured?: boolean;
+  generated_by_ai: boolean;
+  ai_model: string;
+  ai_prompt_tokens: number;
+  ai_completion_tokens: number;
+  ai_generated_at: string;
+  reviewed_at: string;
+  review_notes?: string;
+  created_at: string;
+  updated_at: string;
+  category?: number;
+  source_topic: number;
+  reviewed_by: number;
+  created_by: number;
+  updated_by: number;
+}
+
+export interface BlogPostAdminRequest {
+  slug: string;
+  post_type?: PostTypeEnum;
+  title?: any;
+  summary?: any;
+  content_html?: any;
+  meta_title?: any;
+  meta_description?: any;
+  keywords?: any;
+  hero_image_url?: string;
+  faq_items?: any;
+  competitor_name?: string;
+  comparison_matrix?: any;
+  status?: Status61dEnum;
+  published_at?: string;
+  is_featured?: boolean;
+  review_notes?: string;
+  category?: number;
+}
+
+export interface BlogPostRunAdmin {
+  id: number;
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  started_at: string;
+  completed_at: string;
+  success: boolean;
+  error_message: string;
+  raw_response: any;
+  topic: number;
+  resulting_post: number;
+}
+
+export interface BlogTopicAdmin {
+  id: number;
+  slug: string;
+  title_hint?: any;
+  angle_hint?: string;
+  post_type: PostTypeEnum;
+  target_keywords?: any;
+  primary_language?: PrimaryLanguageDd7enum;
+  competitor_name?: string;
+  priority?: number;
+  status?: Status873enum;
+  retry_count: number;
+  processed_at: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  generated_post: number;
+  created_by: number;
+}
+
+export interface BlogTopicAdminRequest {
+  slug: string;
+  title_hint?: any;
+  angle_hint?: string;
+  post_type: PostTypeEnum;
+  target_keywords?: any;
+  primary_language?: PrimaryLanguageDd7enum;
+  competitor_name?: string;
+  priority?: number;
+  status?: Status873enum;
+  notes?: string;
+}
+
 export interface Board {
   id: number;
   name: string;
@@ -290,8 +418,8 @@ export interface CallLog {
   handled_by_name: string;
   sip_configuration?: number;
   sip_config_name: string;
-  recording_url?: string;
-  call_quality_score?: number;
+  recording_url: string;
+  call_quality_score: number;
   transferred_to?: string;
   transferred_to_user?: number;
   transferred_to_user_name: string;
@@ -343,8 +471,8 @@ export interface CallLogDetail {
   handled_by_name: string;
   sip_configuration?: number;
   sip_config_name: string;
-  recording_url?: string;
-  call_quality_score?: number;
+  recording_url: string;
+  call_quality_score: number;
   created_at: string;
   updated_at: string;
   events: CallEvent[];
@@ -364,8 +492,6 @@ export interface CallLogRequest {
   sip_call_id?: string;
   handled_by?: number;
   sip_configuration?: number;
-  recording_url?: string;
-  call_quality_score?: number;
   transferred_to?: string;
   transferred_to_user?: number;
   transferred_at?: string;
@@ -1702,6 +1828,129 @@ export interface KanbanBoard {
   tickets_by_column: string;
 }
 
+export interface LandingPageAdmin {
+  id: number;
+  slug: string;
+  page_type: PageTypeBd2enum;
+  title?: any;
+  hero_subtitle?: any;
+  summary?: any;
+  meta_title?: any;
+  meta_description?: any;
+  keywords?: any;
+  og_tag?: string;
+  content_blocks?: any;
+  faq_items?: any;
+  highlighted_feature_slugs?: any;
+  competitor_name?: string;
+  comparison_matrix?: any;
+  status?: Status61dEnum;
+  published_at?: string;
+  generated_by_ai: boolean;
+  ai_model: string;
+  ai_prompt_tokens: number;
+  ai_completion_tokens: number;
+  ai_generated_at: string;
+  reviewed_at: string;
+  review_notes?: string;
+  created_at: string;
+  updated_at: string;
+  source_topic: number;
+  reviewed_by: number;
+  created_by: number;
+  updated_by: number;
+}
+
+export interface LandingPageAdminRequest {
+  slug: string;
+  page_type: PageTypeBd2enum;
+  title?: any;
+  hero_subtitle?: any;
+  summary?: any;
+  meta_title?: any;
+  meta_description?: any;
+  keywords?: any;
+  og_tag?: string;
+  content_blocks?: any;
+  faq_items?: any;
+  highlighted_feature_slugs?: any;
+  competitor_name?: string;
+  comparison_matrix?: any;
+  status?: Status61dEnum;
+  published_at?: string;
+  review_notes?: string;
+}
+
+export interface LandingPageRunAdmin {
+  id: number;
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  started_at: string;
+  completed_at: string;
+  success: boolean;
+  error_message: string;
+  raw_response: any;
+  topic: number;
+  resulting_page: number;
+}
+
+export interface LandingTopicAdmin {
+  id: number;
+  slug: string;
+  page_type: PageTypeBd2enum;
+  title_hint?: any;
+  angle_hint?: string;
+  target_keywords?: any;
+  primary_language?: PrimaryLanguageDd7enum;
+  highlighted_feature_slugs?: any;
+  competitor_name?: string;
+  priority?: number;
+  status?: Status873enum;
+  retry_count: number;
+  processed_at: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  generated_page: number;
+  created_by: number;
+}
+
+export interface LandingTopicAdminRequest {
+  slug: string;
+  page_type: PageTypeBd2enum;
+  title_hint?: any;
+  angle_hint?: string;
+  target_keywords?: any;
+  primary_language?: PrimaryLanguageDd7enum;
+  highlighted_feature_slugs?: any;
+  competitor_name?: string;
+  priority?: number;
+  status?: Status873enum;
+  notes?: string;
+}
+
+export interface LandingTopicSeedItemPageTypeEnum {
+  [key: string]: any;
+}
+
+export interface LandingTopicSeedItemPrimaryLanguageEnum {
+  [key: string]: any;
+}
+
+export interface LandingTopicSeedItemRequest {
+  slug: string;
+  page_type: LandingTopicSeedItemPageTypeEnum;
+  title_hint?: any;
+  angle_hint?: string;
+  target_keywords?: string[];
+  primary_language?: LandingTopicSeedItemPrimaryLanguageEnum;
+  highlighted_feature_slugs?: string[];
+  competitor_name?: string;
+  priority?: number;
+  notes?: string;
+}
+
 export interface Language {
   id: number;
   code: string;
@@ -2211,11 +2460,43 @@ export interface OrderRequest {
   cancelled_at?: string;
 }
 
+export interface PageTypeBd2enum {
+  [key: string]: any;
+}
+
 export interface PaginatedAttributeDefinitionList {
   count: number;
   next?: string;
   previous?: string;
   results: AttributeDefinition[];
+}
+
+export interface PaginatedBlogCategoryAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BlogCategoryAdmin[];
+}
+
+export interface PaginatedBlogPostAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BlogPostAdmin[];
+}
+
+export interface PaginatedBlogPostRunAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BlogPostRunAdmin[];
+}
+
+export interface PaginatedBlogTopicAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BlogTopicAdmin[];
 }
 
 export interface PaginatedBoardList {
@@ -2456,6 +2737,27 @@ export interface PaginatedItemListMinimalList {
   results: ItemListMinimal[];
 }
 
+export interface PaginatedLandingPageAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LandingPageAdmin[];
+}
+
+export interface PaginatedLandingPageRunAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LandingPageRunAdmin[];
+}
+
+export interface PaginatedLandingTopicAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: LandingTopicAdmin[];
+}
+
 export interface PaginatedLanguageList {
   count: number;
   next?: string;
@@ -2575,11 +2877,32 @@ export interface PaginatedPromoCodeList {
   results: PromoCode[];
 }
 
+export interface PaginatedPublicBlogCategoryList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: PublicBlogCategory[];
+}
+
+export interface PaginatedPublicBlogPostListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: PublicBlogPostList[];
+}
+
 export interface PaginatedPublicHolidayListList {
   count: number;
   next?: string;
   previous?: string;
   results: PublicHolidayList[];
+}
+
+export interface PaginatedPublicLandingPageListList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: PublicLandingPageList[];
 }
 
 export interface PaginatedQuickReplyList {
@@ -2836,6 +3159,51 @@ export interface PatchedAttributeDefinitionRequest {
   is_active?: boolean;
 }
 
+export interface PatchedBlogCategoryAdminRequest {
+  name?: any;
+  slug?: string;
+  description?: any;
+  icon?: string;
+  position?: number;
+  is_active?: boolean;
+  is_featured?: boolean;
+  seo_title?: any;
+  seo_description?: any;
+}
+
+export interface PatchedBlogPostAdminRequest {
+  slug?: string;
+  post_type?: PostTypeEnum;
+  title?: any;
+  summary?: any;
+  content_html?: any;
+  meta_title?: any;
+  meta_description?: any;
+  keywords?: any;
+  hero_image_url?: string;
+  faq_items?: any;
+  competitor_name?: string;
+  comparison_matrix?: any;
+  status?: Status61dEnum;
+  published_at?: string;
+  is_featured?: boolean;
+  review_notes?: string;
+  category?: number;
+}
+
+export interface PatchedBlogTopicAdminRequest {
+  slug?: string;
+  title_hint?: any;
+  angle_hint?: string;
+  post_type?: PostTypeEnum;
+  target_keywords?: any;
+  primary_language?: PrimaryLanguageDd7enum;
+  competitor_name?: string;
+  priority?: number;
+  status?: Status873enum;
+  notes?: string;
+}
+
 export interface PatchedBoardRequest {
   name?: string;
   description?: string;
@@ -2878,8 +3246,6 @@ export interface PatchedCallLogRequest {
   sip_call_id?: string;
   handled_by?: number;
   sip_configuration?: number;
-  recording_url?: string;
-  call_quality_score?: number;
   transferred_to?: string;
   transferred_to_user?: number;
   transferred_at?: string;
@@ -3168,6 +3534,40 @@ export interface PatchedItemListRequest {
   is_public?: boolean;
   parent_list?: number;
   custom_fields_schema?: any;
+}
+
+export interface PatchedLandingPageAdminRequest {
+  slug?: string;
+  page_type?: PageTypeBd2enum;
+  title?: any;
+  hero_subtitle?: any;
+  summary?: any;
+  meta_title?: any;
+  meta_description?: any;
+  keywords?: any;
+  og_tag?: string;
+  content_blocks?: any;
+  faq_items?: any;
+  highlighted_feature_slugs?: any;
+  competitor_name?: string;
+  comparison_matrix?: any;
+  status?: Status61dEnum;
+  published_at?: string;
+  review_notes?: string;
+}
+
+export interface PatchedLandingTopicAdminRequest {
+  slug?: string;
+  page_type?: PageTypeBd2enum;
+  title_hint?: any;
+  angle_hint?: string;
+  target_keywords?: any;
+  primary_language?: PrimaryLanguageDd7enum;
+  highlighted_feature_slugs?: any;
+  competitor_name?: string;
+  priority?: number;
+  status?: Status873enum;
+  notes?: string;
 }
 
 export interface PatchedLanguageRequest {
@@ -3668,6 +4068,10 @@ export interface PlatformTypeEnum {
   [key: string]: any;
 }
 
+export interface PostTypeEnum {
+  [key: string]: any;
+}
+
 export interface PreferredDayOfWeekEnum {
   [key: string]: any;
 }
@@ -3677,6 +4081,10 @@ export interface PreferredLanguageEnum {
 }
 
 export interface PricingModelEnum {
+  [key: string]: any;
+}
+
+export interface PrimaryLanguageDd7enum {
   [key: string]: any;
 }
 
@@ -3965,6 +4373,53 @@ export interface PromoValidateResponse {
   message: string;
 }
 
+export interface PublicBlogCategory {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  icon?: string;
+  position?: number;
+  is_featured?: boolean;
+  post_count: string;
+}
+
+export interface PublicBlogPostDetail {
+  id: number;
+  slug: string;
+  post_type?: PostTypeEnum;
+  title: string;
+  summary: string;
+  category: PublicBlogCategory;
+  hero_image_url?: string;
+  published_at?: string;
+  reading_time_minutes?: number;
+  is_featured?: boolean;
+  competitor_name?: string;
+  content_html: string;
+  meta_title: string;
+  meta_description: string;
+  keywords?: any;
+  faq_items?: any;
+  comparison_matrix?: any;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicBlogPostList {
+  id: number;
+  slug: string;
+  post_type?: PostTypeEnum;
+  title: string;
+  summary: string;
+  category: PublicBlogCategory;
+  hero_image_url?: string;
+  published_at?: string;
+  reading_time_minutes?: number;
+  is_featured?: boolean;
+  competitor_name?: string;
+}
+
 export interface PublicHolidayCreateUpdate {
   name: any;
   date: string;
@@ -3999,6 +4454,41 @@ export interface PublicHolidayList {
   name_display: string;
   date: string;
   is_recurring?: boolean;
+}
+
+export interface PublicLandingPageDetail {
+  id: number;
+  slug: string;
+  page_type: PageTypeBd2enum;
+  title: string;
+  hero_subtitle: string;
+  summary: string;
+  og_tag?: string;
+  competitor_name?: string;
+  highlighted_feature_slugs?: any;
+  published_at?: string;
+  updated_at: string;
+  meta_title: string;
+  meta_description: string;
+  keywords?: any;
+  content_blocks?: any;
+  faq_items?: any;
+  comparison_matrix?: any;
+  created_at: string;
+}
+
+export interface PublicLandingPageList {
+  id: number;
+  slug: string;
+  page_type: PageTypeBd2enum;
+  title: string;
+  hero_subtitle: string;
+  summary: string;
+  og_tag?: string;
+  competitor_name?: string;
+  highlighted_feature_slugs?: any;
+  published_at?: string;
+  updated_at: string;
 }
 
 export interface QuickReply {
@@ -4522,11 +5012,19 @@ export interface Status2c9enum {
   [key: string]: any;
 }
 
+export interface Status61dEnum {
+  [key: string]: any;
+}
+
 export interface Status6efEnum {
   [key: string]: any;
 }
 
 export interface Status711enum {
+  [key: string]: any;
+}
+
+export interface Status873enum {
   [key: string]: any;
 }
 

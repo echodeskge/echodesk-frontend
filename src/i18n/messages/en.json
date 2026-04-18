@@ -2533,6 +2533,22 @@
         "title": "WhatsApp Business API",
         "description": "Connect your WhatsApp Business account and handle customer conversations at scale with advanced features."
       },
+      "email": {
+        "title": "Email helpdesk",
+        "description": "IMAP + SMTP two-way sync. Thread grouping, flags, labels, attachments — same inbox as social and calls."
+      },
+      "invoicing": {
+        "title": "GEL invoicing",
+        "description": "Draft → Sent → Paid, line items, tax, recurring billing, Bank of Georgia payments built-in."
+      },
+      "bookings": {
+        "title": "Online bookings",
+        "description": "Calendar slots, service categories, payment on booking. Multi-language Georgian client-facing forms."
+      },
+      "leave": {
+        "title": "Leave management",
+        "description": "Vacation, sick, personal. Manager + HR approval workflow, accrual or annual allocation."
+      },
       "analytics": {
         "title": "Advanced Analytics",
         "description": "Track team performance, response times, resolution rates, and customer satisfaction with detailed reports and dashboards."
@@ -2629,6 +2645,12 @@
       "subtitle": "Join hundreds of businesses using EchoDesk to deliver exceptional customer service",
       "button": "Start Free Trial",
       "noCreditCard": "No credit card required • 14-day free trial"
+    },
+    "pageCommon": {
+      "relatedHeading": "Related pages",
+      "ctaTitle": "Ready to run your business from one place?",
+      "ctaSubtitle": "14 days free. No credit card required.",
+      "ctaButton": "Start free trial"
     },
     "faq": {
       "heading": "Frequently asked questions",
@@ -4200,6 +4222,12 @@
       "ogTitle": "Refund Policy",
       "ogSubtitle": "How refunds work for monthly and annual plans",
       "ogTag": "Legal"
+    },
+    "landing": {
+      "fallback": {
+        "title": "EchoDesk",
+        "description": "Run your whole business from one platform."
+      }
     }
   }
 }
