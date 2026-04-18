@@ -1,17 +1,10 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages, getTranslations } from "next-intl/server";
+import { getMessages } from "next-intl/server";
+import { buildSeoMetadata } from "@/lib/seo-metadata";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("seo.docs");
-  return {
-    title: t("title"),
-    description: t("description"),
-    keywords: t("keywords"),
-    openGraph: { title: t("title"), description: t("description") },
-    twitter: { title: t("title"), description: t("description") },
-    alternates: { canonical: "/docs" },
-  };
+export function generateMetadata(): Promise<Metadata> {
+  return buildSeoMetadata({ namespace: "seo.docs", path: "/docs" });
 }
 
 export default async function DocsLayout({

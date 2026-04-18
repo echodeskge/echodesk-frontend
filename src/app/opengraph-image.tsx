@@ -12,7 +12,8 @@ import { ImageResponse } from 'next/og';
  * Per-page images: drop a sibling `opengraph-image.tsx` into any route
  * folder — Next.js uses the nearest one.
  */
-export const alt = 'EchoDesk — CRM billed in GEL, Georgian-hosted';
+export const alt =
+  'EchoDesk — run your whole business from one place: social, calls, email, tickets, invoices, bookings, leave management.';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 

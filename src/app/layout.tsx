@@ -32,21 +32,24 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: 'EchoDesk — CRM billed in GEL for Georgian businesses',
+    default: 'EchoDesk — Run your whole business from one place',
     template: '%s | EchoDesk',
   },
   description:
-    'All-in-one CRM with WhatsApp, email, Messenger, Instagram, SIP calling, and tickets — billed in Georgian Lari and hosted in Georgia.',
+    'Run your whole business from one platform: WhatsApp, Messenger, Instagram, email, SIP calls, tickets, invoices, bookings, and leave management — built for Georgian teams.',
   applicationName: 'EchoDesk',
   authors: [{ name: 'EchoDesk', url: SITE_URL }],
   generator: 'Next.js',
   keywords: [
-    'CRM Georgia',
-    'CRM საქართველო',
-    'WhatsApp CRM',
-    'helpdesk Georgia',
-    'SIP PBX CRM',
-    'GEL billing',
+    'all-in-one business software',
+    'WhatsApp helpdesk',
+    'omnichannel CRM',
+    'invoicing Georgia',
+    'booking software',
+    'HR Georgia',
+    'leave management',
+    'SIP PBX',
+    'Kommo alternative',
     'Tbilisi CRM',
   ],
   openGraph: {
@@ -62,8 +65,6 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@echodesk',
     creator: '@echodesk',
-    // twitter:image is injected from src/app/twitter-image.tsx if present,
-    // otherwise falls back to opengraph-image.tsx — Next.js handles both.
   },
   alternates: {
     canonical: SITE_URL,

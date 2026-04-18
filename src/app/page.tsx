@@ -1,29 +1,16 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
 import HomeContent from './HomeContent';
 import { FALLBACK_FEATURES } from '@/data/pricing-fallback';
 import { SoftwareApplicationSchema } from '@/components/seo/SoftwareApplicationSchema';
+import { buildSeoMetadata } from '@/lib/seo-metadata';
 import type { Feature } from '@/types/package';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('seo.home');
-  return {
-    title: t('title'),
-    description: t('description'),
-    keywords: t('keywords'),
-    openGraph: {
-      title: t('title'),
-      description: t('description'),
-      // images: auto-injected from src/app/opengraph-image.tsx
-    },
-    twitter: {
-      title: t('title'),
-      description: t('description'),
-    },
-  };
+export function generateMetadata(): Promise<Metadata> {
+  return buildSeoMetadata({ namespace: 'seo.home', path: '/' });
 }
 
 // Force per-request rendering so the tenant hint from middleware is read on
