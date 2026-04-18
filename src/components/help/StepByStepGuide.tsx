@@ -1,8 +1,10 @@
 'use client';
 
+import { useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 import type { GuideStep } from '@/hooks/useHelpCenter';
+import { useEnhanceCodeBlocks } from './useEnhanceCodeBlocks';
 
 interface StepByStepGuideProps {
   steps: GuideStep[];
@@ -10,12 +12,15 @@ interface StepByStepGuideProps {
 }
 
 export function StepByStepGuide({ steps, className }: StepByStepGuideProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEnhanceCodeBlocks(ref, [steps]);
+
   if (!steps || steps.length === 0) {
     return null;
   }
 
   return (
-    <div className={cn('space-y-10', className)}>
+    <div ref={ref} className={cn('space-y-10', className)}>
       {steps.map((step, index) => (
         <div
           key={index}

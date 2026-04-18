@@ -255,3 +255,95 @@
   --chart-4: 280 65% 60%;
   --chart-5: 340 75% 55%;
 }
+
+/* =====================================================================
+   Help Center code blocks (enhanced by useEnhanceCodeBlocks)
+   - Gives <pre> blocks a dev-blog look: dark panel, subtle border,
+     language pill top-left, copy button top-right with flash feedback.
+   - Works for both static code fences inside articles (rendered via
+     dangerouslySetInnerHTML) and content-type="guide" step bodies.
+   ===================================================================== */
+
+/* The pre element itself — paddingTop is set inline by the hook so the
+   overlay children don't collide with the first line of code. */
+.prose pre {
+  position: relative;
+}
+
+.code-block-lang {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: hsl(240 5% 65%);
+  background: hsl(240 5% 20% / 0.6);
+  border: 1px solid hsl(240 5% 28%);
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-family: inherit;
+  pointer-events: none;
+  user-select: none;
+}
+
+.code-block-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(240 5% 80%);
+  background: hsl(240 5% 18%);
+  border: 1px solid hsl(240 5% 28%);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease, background-color 150ms ease, color 150ms ease;
+  user-select: none;
+  font-family: inherit;
+  line-height: 1;
+}
+
+/* Always show on touch devices (hover is unreliable). Also show when the
+   pre is focused (keyboard nav). */
+@media (hover: none) {
+  .code-block-copy {
+    opacity: 1;
+  }
+}
+
+.prose pre:hover .code-block-copy,
+.prose pre:focus-within .code-block-copy,
+.code-block-copy:focus-visible {
+  opacity: 1;
+}
+
+.code-block-copy:hover {
+  background: hsl(240 5% 22%);
+  color: hsl(0 0% 98%);
+}
+
+.code-block-copy.is-copied {
+  color: hsl(142 71% 65%);
+  border-color: hsl(142 71% 35%);
+  background: hsl(142 71% 10%);
+  opacity: 1;
+}
+
+.code-block-copy-label {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Keep long lines horizontally scrollable instead of wrapping under the
+   copy button. */
+.prose pre code {
+  display: block;
+  overflow-x: auto;
+  white-space: pre;
+}

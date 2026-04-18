@@ -1,5 +1,9 @@
+'use client';
+
+import { useRef } from 'react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
+import { useEnhanceCodeBlocks } from './useEnhanceCodeBlocks';
 
 interface ArticleContentProps {
   content: string;
@@ -7,12 +11,16 @@ interface ArticleContentProps {
 }
 
 export function ArticleContent({ content, className }: ArticleContentProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEnhanceCodeBlocks(ref, [content]);
+
   if (!content) {
     return null;
   }
 
   return (
     <div
+      ref={ref}
       className={cn(
         'prose prose-lg dark:prose-invert max-w-none',
         // Heading rhythm.
