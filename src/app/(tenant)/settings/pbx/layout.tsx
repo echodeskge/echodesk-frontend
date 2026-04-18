@@ -15,7 +15,6 @@ const PBX_TABS = [
   { id: "extensions", href: "/settings/pbx/extensions" },
   { id: "queues", href: "/settings/pbx/queues" },
   { id: "inbound", href: "/settings/pbx/inbound" },
-  { id: "hours", href: "/settings/pbx/hours" },
   { id: "statistics", href: "/settings/pbx/statistics" },
 ];
 

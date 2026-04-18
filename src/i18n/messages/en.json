@@ -4507,7 +4507,6 @@
       "extensions": "Extensions",
       "queues": "Queues",
       "inbound": "Inbound Routes",
-      "hours": "Hours & Sounds",
       "statistics": "Statistics"
     },
     "overview": {
@@ -4658,10 +4657,6 @@
           "ivrContextRequired": "Enter the custom IVR context name."
         }
       }
-    },
-    "hours": {
-      "title": "Working Hours & Sounds",
-      "description": "Working hours, holidays, sound prompts and review settings. Managed in the existing Calls settings page."
     },
     "statistics": {
       "title": "Call Statistics",
