@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { cookies } from 'next/headers';
 import { fetchBlogPostsServer } from '@/hooks/useBlog';
 import { BlogCard } from '@/components/blog/BlogCard';
+import { BlogSearchBar } from '@/components/blog/BlogSearchBar';
 
 export const revalidate = 300; // 5 min ISR — new posts reach /blog within 5 minutes of approval.
 
@@ -45,6 +46,9 @@ export default async function BlogIndexPage() {
             ? 'შედარებები, გზამკვლევები, კლიენტის ისტორიები — ერთი ადგილიდან მთელი ბიზნესის მართვის გარშემო.'
             : 'Comparisons, guides, and customer stories — all about running your whole business from one tool.'}
         </p>
+        <div className="pt-2">
+          <BlogSearchBar />
+        </div>
       </header>
 
       {listing.results.length === 0 ? (

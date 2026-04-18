@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense, useCallback } from "react";
+import { useEffect, Suspense, useCallback, type ReactNode } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,9 +14,10 @@ import type { Feature } from "@/types/package";
 interface HomeContentProps {
   initialTenantSubdomain: string | null;
   initialFeatures: Feature[];
+  testimonialsSlot?: ReactNode;
 }
 
-function HomeContentInner({ initialTenantSubdomain, initialFeatures }: HomeContentProps) {
+function HomeContentInner({ initialTenantSubdomain, initialFeatures, testimonialsSlot }: HomeContentProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -105,18 +106,25 @@ function HomeContentInner({ initialTenantSubdomain, initialFeatures }: HomeConte
   }
 
   // If no tenant (main domain), show landing page
-  return <EchoDeskLanding initialFeatures={initialFeatures} />;
+  return (
+    <EchoDeskLanding
+      initialFeatures={initialFeatures}
+      testimonialsSlot={testimonialsSlot}
+    />
+  );
 }
 
 export default function HomeContent({
   initialTenantSubdomain = null,
   initialFeatures = [],
+  testimonialsSlot,
 }: Partial<HomeContentProps>) {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <HomeContentInner
         initialTenantSubdomain={initialTenantSubdomain}
         initialFeatures={initialFeatures}
+        testimonialsSlot={testimonialsSlot}
       />
     </Suspense>
   );

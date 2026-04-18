@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
@@ -8,6 +8,8 @@ import HomeContent from './HomeContent';
 import { FALLBACK_FEATURES } from '@/data/pricing-fallback';
 import { SoftwareApplicationSchema } from '@/components/seo/SoftwareApplicationSchema';
 import { FAQPageSchema } from '@/components/seo/FAQPageSchema';
+import { Testimonials } from '@/components/marketing/Testimonials';
+import { fetchTestimonialsServer } from '@/hooks/useMarketing';
 import { buildSeoMetadata } from '@/lib/seo-metadata';
 import type { Feature } from '@/types/package';
 
@@ -78,8 +80,14 @@ export default async function Home() {
   // Resolve the FAQ translator eagerly so FAQPageSchema can render
   // synchronously — preserves head-positioning of <title>/<meta>.
   const tFaq = tenantSubdomain ? null : await getTranslations('landing.faq');
+  // Resolve locale for testimonials from the NEXT_LOCALE cookie (set by
+  // the language switcher in the header). Falls back to Georgian.
+  const cookieStore = await cookies();
+  const rawLocale = cookieStore.get('NEXT_LOCALE')?.value;
+  const locale: 'ka' | 'en' = rawLocale === 'en' ? 'en' : 'ka';
+  const testimonials = tenantSubdomain ? [] : await fetchTestimonialsServer(locale);
   return (
-    <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, ['auth', 'landing'])}>
+    <NextIntlClientProvider messages={pickRouteMessages(messages as Record<string, unknown>, ['auth', 'landing', 'testimonials'])}>
       {!tenantSubdomain && tFaq && (
         <>
           <SoftwareApplicationSchema features={initialFeatures} />
@@ -89,6 +97,11 @@ export default async function Home() {
       <HomeContent
         initialTenantSubdomain={tenantSubdomain}
         initialFeatures={initialFeatures}
+        testimonialsSlot={
+          !tenantSubdomain && testimonials.length > 0 ? (
+            <Testimonials testimonials={testimonials} />
+          ) : null
+        }
       />
     </NextIntlClientProvider>
   );

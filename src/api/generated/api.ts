@@ -331,6 +331,23 @@ import type {
   PaginatedListItemMinimalList,
   ListItemRequest,
   PatchedListItemRequest,
+  PaginatedContactSubmissionAdminList,
+  ContactSubmissionAdmin,
+  ContactSubmissionAdminRequest,
+  PatchedContactSubmissionAdminRequest,
+  PaginatedNewsletterSubscriberAdminList,
+  NewsletterSubscriberAdmin,
+  PaginatedTestimonialAdminList,
+  TestimonialAdminRequest,
+  TestimonialAdmin,
+  PatchedTestimonialAdminRequest,
+  ContactSubmissionCreateRequest,
+  ContactSubmitResponse,
+  NewsletterSubscribeRequest,
+  NewsletterSubscribeResponse,
+  NewsletterUnsubscribeResponse,
+  PaginatedTestimonialList,
+  Testimonial,
   PaginatedNotificationList,
   NotificationRequest,
   Notification,
@@ -6559,6 +6576,219 @@ export async function listItemsReorderPartialUpdate(
   data: PatchedListItemRequest,
 ): Promise<ListItem> {
   const response = await axios.patch(`/api/list-items/${id}/reorder/`, data);
+  return response.data;
+}
+
+export async function marketingAdminContactSubmissionsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedContactSubmissionAdminList> {
+  const response = await axios.get(
+    `/api/marketing/admin/contact-submissions/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function marketingAdminContactSubmissionsRetrieve(
+  id: number,
+): Promise<ContactSubmissionAdmin> {
+  const response = await axios.get(
+    `/api/marketing/admin/contact-submissions/${id}/`,
+  );
+  return response.data;
+}
+
+export async function marketingAdminContactSubmissionsUpdate(
+  id: number,
+  data: ContactSubmissionAdminRequest,
+): Promise<ContactSubmissionAdmin> {
+  const response = await axios.put(
+    `/api/marketing/admin/contact-submissions/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function marketingAdminContactSubmissionsPartialUpdate(
+  id: number,
+  data: PatchedContactSubmissionAdminRequest,
+): Promise<ContactSubmissionAdmin> {
+  const response = await axios.patch(
+    `/api/marketing/admin/contact-submissions/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function marketingAdminNewsletterSubscribersList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedNewsletterSubscriberAdminList> {
+  const response = await axios.get(
+    `/api/marketing/admin/newsletter-subscribers/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function marketingAdminNewsletterSubscribersRetrieve(
+  id: number,
+): Promise<NewsletterSubscriberAdmin> {
+  const response = await axios.get(
+    `/api/marketing/admin/newsletter-subscribers/${id}/`,
+  );
+  return response.data;
+}
+
+export async function marketingAdminNewsletterSubscribersExportRetrieve(): Promise<any> {
+  const response = await axios.get(
+    `/api/marketing/admin/newsletter-subscribers/export/`,
+  );
+  return response.data;
+}
+
+export async function marketingAdminTestimonialsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedTestimonialAdminList> {
+  const response = await axios.get(
+    `/api/marketing/admin/testimonials/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function marketingAdminTestimonialsCreate(
+  data: TestimonialAdminRequest,
+): Promise<TestimonialAdmin> {
+  const response = await axios.post(`/api/marketing/admin/testimonials/`, data);
+  return response.data;
+}
+
+export async function marketingAdminTestimonialsRetrieve(
+  id: number,
+): Promise<TestimonialAdmin> {
+  const response = await axios.get(`/api/marketing/admin/testimonials/${id}/`);
+  return response.data;
+}
+
+export async function marketingAdminTestimonialsUpdate(
+  id: number,
+  data: TestimonialAdminRequest,
+): Promise<TestimonialAdmin> {
+  const response = await axios.put(
+    `/api/marketing/admin/testimonials/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function marketingAdminTestimonialsPartialUpdate(
+  id: number,
+  data: PatchedTestimonialAdminRequest,
+): Promise<TestimonialAdmin> {
+  const response = await axios.patch(
+    `/api/marketing/admin/testimonials/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function marketingAdminTestimonialsDestroy(
+  id: number,
+): Promise<any> {
+  const response = await axios.delete(
+    `/api/marketing/admin/testimonials/${id}/`,
+  );
+  return response.data;
+}
+
+export async function marketingPublicContactSubmitCreate(
+  data: ContactSubmissionCreateRequest,
+): Promise<ContactSubmitResponse> {
+  const response = await axios.post(
+    `/api/marketing/public/contact/submit/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function marketingPublicNewsletterSubscribeCreate(
+  data: NewsletterSubscribeRequest,
+): Promise<NewsletterSubscribeResponse> {
+  const response = await axios.post(
+    `/api/marketing/public/newsletter/subscribe/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function marketingPublicNewsletterUnsubscribeRetrieve(
+  token: string,
+): Promise<NewsletterUnsubscribeResponse> {
+  const response = await axios.get(
+    `/api/marketing/public/newsletter/unsubscribe/${token}/`,
+  );
+  return response.data;
+}
+
+export async function marketingPublicTestimonialsList(
+  lang?: 'en' | 'ka',
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedTestimonialList> {
+  const response = await axios.get(
+    `/api/marketing/public/testimonials/${(() => {
+      const parts = [
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function marketingPublicTestimonialsRetrieve(
+  slug: string,
+  lang?: 'en' | 'ka',
+): Promise<Testimonial> {
+  const response = await axios.get(
+    `/api/marketing/public/testimonials/${slug}/${lang ? '?lang=' + encodeURIComponent(lang) : ''}`,
+  );
   return response.data;
 }
 

@@ -3,7 +3,169 @@
     "title": "404",
     "subtitle": "Page Not Found",
     "description": "We couldn't find the page you're looking for. It might have been moved or doesn't exist.",
-    "homeButton": "Home Page"
+    "homeButton": "Home Page",
+    "heading": "Page not found",
+    "subheading": "The page you're looking for has moved, been renamed, or never existed. Try the search below or head home.",
+    "goHome": "Go home",
+    "browseBlog": "Browse the blog",
+    "searchPrompt": "Search our articles and guides"
+  },
+  "contact": {
+    "hero": {
+      "title": "Let's talk",
+      "subtitle": "Sales, demos, or support — we reply within one business day."
+    },
+    "form": {
+      "name": "Name",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your full name",
+      "email": "Email",
+      "emailLabel": "Email",
+      "phone": "Phone (optional)",
+      "phoneLabel": "Phone (optional)",
+      "phonePlaceholder": "+995 ...",
+      "company": "Company",
+      "companyLabel": "Company",
+      "companyPlaceholder": "Your company",
+      "subject": "I want to talk about",
+      "subjectLabel": "I want to talk about",
+      "subjects": {
+        "sales": "Pricing & plans",
+        "demo": "Live demo",
+        "support": "Product support",
+        "partnership": "Partnership",
+        "other": "Something else"
+      },
+      "subjectOptions": {
+        "sales": "Pricing & plans",
+        "demo": "Live demo",
+        "support": "Product support",
+        "partnership": "Partnership",
+        "other": "Something else"
+      },
+      "message": "Message",
+      "messageLabel": "Message",
+      "messagePlaceholder": "Tell us a bit about your team and what you need.",
+      "submit": "Send message",
+      "submitting": "Sending...",
+      "error": "Something went wrong. Please try again.",
+      "rateLimited": "Too many requests — please try again in a minute.",
+      "rateLimit": "Too many requests — please try again in a minute."
+    },
+    "success": {
+      "title": "Message sent",
+      "body": "Thanks! A real human from the EchoDesk team will reply within one business day."
+    },
+    "error": {
+      "title": "Couldn't send your message",
+      "body": "Something went wrong on our side. Please try again or email us directly at info@echodesk.ge."
+    },
+    "sidebar": {
+      "phone": "+995 (510) 003-358",
+      "phoneLabel": "Phone",
+      "email": "info@echodesk.ge",
+      "emailLabel": "Email",
+      "address": "Tbilisi, Georgia",
+      "addressLabel": "Office",
+      "responseTime": "Response within 1 business day",
+      "responseTimeLabel": "Response time",
+      "languages": "ქართული & English",
+      "languagesLabel": "Languages"
+    }
+  },
+  "about": {
+    "hero": {
+      "headline": "Built in Tbilisi for Georgian SMBs",
+      "subheadline": "EchoDesk is the all-in-one operations tool Georgian teams wanted — messaging, calls, invoices, bookings and HR in one place, priced in GEL, run from Tbilisi.",
+      "cta": "Talk to us"
+    },
+    "story": {
+      "body": "EchoDesk started because every small Georgian business we worked with was paying for four tools that didn't talk to each other — a chat widget, a phone system, an invoicing app, and a shared inbox. Each vendor charged in dollars, each vendor was built for somewhere else. So we built one platform for here: Georgian Bank ready, GEL-priced, bilingual, and run by a team you can actually pick up the phone and call."
+    },
+    "values": {
+      "local": {
+        "title": "Local, not localized",
+        "description": "Built in Tbilisi. Bilingual from day one. Georgian Bank, BOG, and TBC integrations work because we live here."
+      },
+      "pricing": {
+        "title": "Fair GEL pricing",
+        "description": "No dollar-to-lari surprises. Pay per agent per feature, month to month. No long contracts, no setup fees."
+      },
+      "smb": {
+        "title": "Built for SMBs",
+        "description": "If you have 3 to 50 people, you're our ideal customer. We care about your shop, clinic, or agency — not just enterprise logos."
+      }
+    },
+    "stats": {
+      "tenants": {
+        "value": "50+",
+        "label": "Georgian teams",
+        "hint": "running their business on EchoDesk"
+      },
+      "messages": {
+        "value": "10M+",
+        "label": "Messages handled",
+        "hint": "WhatsApp, Messenger, Instagram, email"
+      },
+      "calls": {
+        "value": "500K+",
+        "label": "Calls routed",
+        "hint": "through our Tbilisi-hosted PBX"
+      },
+      "invoices": {
+        "value": "2M+ GEL",
+        "label": "Invoiced",
+        "hint": "with BOG & TBC payment links"
+      }
+    },
+    "cta": {
+      "title": "Ready to see EchoDesk in your business?",
+      "body": "Bring your team. We'll show you how it replaces your current stack in under 20 minutes.",
+      "button": "Book a demo"
+    }
+  },
+  "integrations": {
+    "hero": {
+      "title": "One platform, every channel",
+      "subtitle": "Pick only what you need. Pay per agent. Cancel any time.",
+      "count": "{count} integrations in one platform"
+    },
+    "categoryLabels": {
+      "CORE": "Core",
+      "INTEGRATION": "Integrations",
+      "COMMUNICATION": "Communication",
+      "ANALYTICS": "Analytics",
+      "SUPPORT": "Support",
+      "LIMITS": "Plans & limits",
+      "core": "Core",
+      "messaging": "Messaging",
+      "telephony": "Telephony",
+      "productivity": "Productivity",
+      "billing": "Billing",
+      "support": "Support",
+      "integration": "Integrations",
+      "communication": "Communication",
+      "analytics": "Analytics",
+      "limits": "Plans & limits"
+    },
+    "pricePerUser": "{price}₾ / user / mo",
+    "cta": {
+      "title": "Need an integration we don't ship yet?",
+      "body": "Tell us what you're wiring together — we build what our customers actually ask for.",
+      "button": "Request an integration"
+    }
+  },
+  "newsletter": {
+    "heading": "Monthly tips for Georgian SMBs",
+    "description": "One email a month. Product updates, Georgian business guides, WhatsApp & CRM tactics. No spam.",
+    "placeholder": "you@company.ge",
+    "button": "Subscribe",
+    "success": "Subscribed — check your inbox for confirmation.",
+    "error": "Something went wrong. Please try again."
+  },
+  "testimonials": {
+    "heading": "Georgian teams already running on EchoDesk",
+    "subheading": "Real quotes from shops, clinics, and agencies who replaced their old stack."
   },
   "common": {
     "save": "Save",
@@ -2735,7 +2897,10 @@
         "title": "Product",
         "features": "Features",
         "pricing": "Pricing",
-        "signUp": "Sign Up"
+        "signUp": "Sign Up",
+        "integrations": "Integrations",
+        "about": "About",
+        "contact": "Contact"
       },
       "legal": {
         "title": "Legal",
@@ -4265,6 +4430,30 @@
       "ogTitle": "Refund Policy",
       "ogSubtitle": "How refunds work for monthly and annual plans",
       "ogTag": "Legal"
+    },
+    "contact": {
+      "title": "Contact EchoDesk — Tbilisi support, GEL pricing, same-day replies",
+      "description": "Talk to the EchoDesk team in Tbilisi. Sales, demos, or support — we reply within one business day in Georgian or English.",
+      "keywords": "contact EchoDesk, CRM Georgia support, Tbilisi SaaS sales, WhatsApp CRM contact, Georgian CRM demo",
+      "ogTitle": "Talk to a real human",
+      "ogSubtitle": "Sales, demos, and support — reply within 1 business day",
+      "ogTag": "Contact"
+    },
+    "about": {
+      "title": "About EchoDesk — built in Tbilisi for Georgian SMBs",
+      "description": "EchoDesk is an all-in-one operations platform built in Tbilisi for Georgian small and mid-size businesses. WhatsApp, calls, invoices, bookings, and HR — priced in GEL, run by a local team.",
+      "keywords": "about EchoDesk, Georgian SaaS, Tbilisi CRM company, all-in-one business platform Georgia, GEL SaaS pricing",
+      "ogTitle": "Built in Tbilisi for Georgian SMBs",
+      "ogSubtitle": "All your operations in one place — priced in GEL",
+      "ogTag": "About"
+    },
+    "integrations": {
+      "title": "EchoDesk integrations — WhatsApp, SIP, invoicing, bookings, email",
+      "description": "See every integration EchoDesk ships: WhatsApp Business, Instagram DM, Messenger, email, SIP PBX, invoicing, bookings, and leave management — all priced in GEL per agent.",
+      "keywords": "EchoDesk integrations, WhatsApp CRM, SIP PBX Georgia, invoicing integration, booking software Georgia, email helpdesk, pay per feature",
+      "ogTitle": "One platform, every channel",
+      "ogSubtitle": "WhatsApp, calls, invoices, bookings, HR — pick and pay per agent",
+      "ogTag": "Integrations"
     },
     "landing": {
       "fallback": {

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Header } from './Header';
 import { Hero } from './Hero';
 import { Features } from './Features';
@@ -9,7 +10,17 @@ import { CTA } from './CTA';
 import { Footer } from './Footer';
 import type { Feature } from '@/types/package';
 
-export function EchoDeskLanding({ initialFeatures = [] }: { initialFeatures?: Feature[] }) {
+export function EchoDeskLanding({
+  initialFeatures = [],
+  testimonialsSlot = null,
+}: {
+  initialFeatures?: Feature[];
+  // Async server component rendered by page.tsx and passed in as a
+  // pre-rendered slot. Keeps this wrapper a client component (needed
+  // for Header interactivity + language switcher) while allowing the
+  // testimonials strip to fetch server-side for SEO.
+  testimonialsSlot?: ReactNode;
+}) {
   return (
     <div className="min-h-screen">
       {/* Header with Language Switcher */}
@@ -20,6 +31,7 @@ export function EchoDeskLanding({ initialFeatures = [] }: { initialFeatures?: Fe
         <Hero />
         <Features />
         <Pricing initialFeatures={initialFeatures} />
+        {testimonialsSlot}
         <FAQ />
         <CTA />
       </main>

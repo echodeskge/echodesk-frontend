@@ -5,15 +5,28 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { Facebook, Instagram, Linkedin, Mail } from 'lucide-react';
 import { useConsent } from '@/lib/consent';
+import { NewsletterSignup } from '@/components/marketing/NewsletterSignup';
 
 export function Footer() {
   const t = useTranslations('landing.footer');
   const tFooter = useTranslations('footer');
+  const tNewsletter = useTranslations('newsletter');
   const { openBanner } = useConsent();
 
   return (
     <footer className="border-t bg-muted/40">
-      <div className="container py-12">
+      <div className="container py-12 space-y-10">
+        {/* Newsletter block — above the link grid */}
+        <div className="rounded-2xl border bg-background p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="space-y-1 max-w-xl">
+            <h3 className="text-lg font-semibold">{tNewsletter('heading')}</h3>
+            <p className="text-sm text-muted-foreground">{tNewsletter('description')}</p>
+          </div>
+          <div className="md:w-96">
+            <NewsletterSignup source="footer" />
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
@@ -74,6 +87,21 @@ export function Footer() {
               <li>
                 <Link href="/registration" className="text-muted-foreground hover:text-secondary transition-colors">
                   {t('product.signUp')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/integrations" className="text-muted-foreground hover:text-secondary transition-colors">
+                  {t('product.integrations')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/about" className="text-muted-foreground hover:text-secondary transition-colors">
+                  {t('product.about')}
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-muted-foreground hover:text-secondary transition-colors">
+                  {t('product.contact')}
                 </Link>
               </li>
             </ul>

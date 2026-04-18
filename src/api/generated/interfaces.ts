@@ -178,7 +178,7 @@ export interface BlogTopicAdmin {
   angle_hint?: string;
   post_type: PostTypeEnum;
   target_keywords?: any;
-  primary_language?: PrimaryLanguageDd7enum;
+  primary_language?: LocaleEnum;
   competitor_name?: string;
   priority?: number;
   status?: Status873enum;
@@ -197,7 +197,7 @@ export interface BlogTopicAdminRequest {
   angle_hint?: string;
   post_type: PostTypeEnum;
   target_keywords?: any;
-  primary_language?: PrimaryLanguageDd7enum;
+  primary_language?: LocaleEnum;
   competitor_name?: string;
   priority?: number;
   status?: Status873enum;
@@ -710,6 +710,51 @@ export interface ClientRequest {
 export interface ConsultationInitiateRequest {
   target_number: string;
   target_user_id?: number;
+}
+
+export interface ContactSubmissionAdmin {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  subject: SubjectEnum;
+  message: string;
+  preferred_language: LocaleEnum;
+  referrer_url: string;
+  user_agent: string;
+  status?: ContactSubmissionAdminStatusEnum;
+  handled_at?: string;
+  internal_notes?: string;
+  created_at: string;
+  updated_at: string;
+  handled_by?: number;
+}
+
+export interface ContactSubmissionAdminRequest {
+  status?: ContactSubmissionAdminStatusEnum;
+  handled_at?: string;
+  internal_notes?: string;
+  handled_by?: number;
+}
+
+export interface ContactSubmissionAdminStatusEnum {
+  [key: string]: any;
+}
+
+export interface ContactSubmissionCreateRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  subject?: SubjectEnum;
+  message: string;
+  preferred_language?: LocaleEnum;
+}
+
+export interface ContactSubmitResponse {
+  status: string;
+  id: number;
 }
 
 export interface ContactTypeEnum {
@@ -1902,7 +1947,7 @@ export interface LandingTopicAdmin {
   title_hint?: any;
   angle_hint?: string;
   target_keywords?: any;
-  primary_language?: PrimaryLanguageDd7enum;
+  primary_language?: LocaleEnum;
   highlighted_feature_slugs?: any;
   competitor_name?: string;
   priority?: number;
@@ -1922,7 +1967,7 @@ export interface LandingTopicAdminRequest {
   title_hint?: any;
   angle_hint?: string;
   target_keywords?: any;
-  primary_language?: PrimaryLanguageDd7enum;
+  primary_language?: LocaleEnum;
   highlighted_feature_slugs?: any;
   competitor_name?: string;
   priority?: number;
@@ -2292,6 +2337,10 @@ export interface ListItemRequest {
   custom_data?: any;
 }
 
+export interface LocaleEnum {
+  [key: string]: any;
+}
+
 export interface MergeConferenceRequest {
   consultation_log_id: number;
 }
@@ -2301,6 +2350,33 @@ export interface MergeConferenceResponse {
   original_call_id: string;
   consultation_call_id: string;
   channels_redirected: string[];
+}
+
+export interface NewsletterSubscribeRequest {
+  email: string;
+  locale?: LocaleEnum;
+  source?: string;
+}
+
+export interface NewsletterSubscribeResponse {
+  status: string;
+}
+
+export interface NewsletterSubscriberAdmin {
+  id: number;
+  email: string;
+  locale?: LocaleEnum;
+  is_active?: boolean;
+  source?: string;
+  unsubscribe_token: string;
+  unsubscribed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewsletterUnsubscribeResponse {
+  status: string;
+  email: string;
 }
 
 export interface Notification {
@@ -2576,6 +2652,13 @@ export interface PaginatedClientList {
   results: Client[];
 }
 
+export interface PaginatedContactSubmissionAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: ContactSubmissionAdmin[];
+}
+
 export interface PaginatedDepartmentList {
   count: number;
   next?: string;
@@ -2814,6 +2897,13 @@ export interface PaginatedListItemMinimalList {
   results: ListItemMinimal[];
 }
 
+export interface PaginatedNewsletterSubscriberAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: NewsletterSubscriberAdmin[];
+}
+
 export interface PaginatedNotificationList {
   count: number;
   next?: string;
@@ -3024,6 +3114,20 @@ export interface PaginatedTenantPermissionList {
   results: TenantPermission[];
 }
 
+export interface PaginatedTestimonialAdminList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TestimonialAdmin[];
+}
+
+export interface PaginatedTestimonialList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: Testimonial[];
+}
+
 export interface PaginatedTicketAssignmentList {
   count: number;
   next?: string;
@@ -3197,7 +3301,7 @@ export interface PatchedBlogTopicAdminRequest {
   angle_hint?: string;
   post_type?: PostTypeEnum;
   target_keywords?: any;
-  primary_language?: PrimaryLanguageDd7enum;
+  primary_language?: LocaleEnum;
   competitor_name?: string;
   priority?: number;
   status?: Status873enum;
@@ -3298,6 +3402,13 @@ export interface PatchedClientRequest {
   phone?: string;
   company?: string;
   is_active?: boolean;
+}
+
+export interface PatchedContactSubmissionAdminRequest {
+  status?: ContactSubmissionAdminStatusEnum;
+  handled_at?: string;
+  internal_notes?: string;
+  handled_by?: number;
 }
 
 export interface PatchedDashboardAppearanceSettingsRequest {
@@ -3562,7 +3673,7 @@ export interface PatchedLandingTopicAdminRequest {
   title_hint?: any;
   angle_hint?: string;
   target_keywords?: any;
-  primary_language?: PrimaryLanguageDd7enum;
+  primary_language?: LocaleEnum;
   highlighted_feature_slugs?: any;
   competitor_name?: string;
   priority?: number;
@@ -3907,12 +4018,27 @@ export interface PatchedTenantRequest {
   plan?: PlanEnum;
   max_users?: number;
   max_storage?: number;
-  preferred_language?: PreferredLanguageEnum;
+  preferred_language?: PreferredLanguage0bbEnum;
   frontend_url?: string;
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   min_users_per_ticket?: number;
   only_superadmin_can_delete_tickets?: boolean;
+}
+
+export interface PatchedTestimonialAdminRequest {
+  slug?: string;
+  position?: number;
+  is_active?: boolean;
+  author_name?: string;
+  author_role_ka?: string;
+  author_role_en?: string;
+  company_name?: string;
+  logo_url?: string;
+  avatar_url?: string;
+  quote_ka?: string;
+  quote_en?: string;
+  rating?: number;
 }
 
 export interface PatchedTicketAssignmentRequest {
@@ -4076,15 +4202,11 @@ export interface PreferredDayOfWeekEnum {
   [key: string]: any;
 }
 
-export interface PreferredLanguageEnum {
+export interface PreferredLanguage0bbEnum {
   [key: string]: any;
 }
 
 export interface PricingModelEnum {
-  [key: string]: any;
-}
-
-export interface PrimaryLanguageDd7enum {
   [key: string]: any;
 }
 
@@ -5056,6 +5178,10 @@ export interface StoreThemeResponse {
   payment: PaymentConfigResponse;
 }
 
+export interface SubjectEnum {
+  [key: string]: any;
+}
+
 export interface SyncStatusEnum {
   [key: string]: any;
 }
@@ -5158,7 +5284,7 @@ export interface Tenant {
   plan?: PlanEnum;
   max_users?: number;
   max_storage?: number;
-  preferred_language?: PreferredLanguageEnum;
+  preferred_language?: PreferredLanguage0bbEnum;
   frontend_url?: string;
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
@@ -5175,7 +5301,7 @@ export interface TenantCreate {
   plan?: PlanEnum;
   max_users?: number;
   max_storage?: number;
-  preferred_language?: PreferredLanguageEnum;
+  preferred_language?: PreferredLanguage0bbEnum;
 }
 
 export interface TenantCreateRequest {
@@ -5186,7 +5312,7 @@ export interface TenantCreateRequest {
   plan?: PlanEnum;
   max_users?: number;
   max_storage?: number;
-  preferred_language?: PreferredLanguageEnum;
+  preferred_language?: PreferredLanguage0bbEnum;
   domain: string;
 }
 
@@ -5290,7 +5416,7 @@ export interface TenantRegistrationRequest {
   admin_password: string;
   admin_first_name: string;
   admin_last_name: string;
-  preferred_language?: PreferredLanguageEnum;
+  preferred_language?: PreferredLanguage0bbEnum;
 }
 
 export interface TenantRequest {
@@ -5302,12 +5428,57 @@ export interface TenantRequest {
   plan?: PlanEnum;
   max_users?: number;
   max_storage?: number;
-  preferred_language?: PreferredLanguageEnum;
+  preferred_language?: PreferredLanguage0bbEnum;
   frontend_url?: string;
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   min_users_per_ticket?: number;
   only_superadmin_can_delete_tickets?: boolean;
+}
+
+export interface Testimonial {
+  slug: string;
+  author_name: string;
+  role: string;
+  company_name?: string;
+  logo_url?: string;
+  avatar_url?: string;
+  quote: string;
+  rating?: number;
+  position?: number;
+}
+
+export interface TestimonialAdmin {
+  id: number;
+  slug: string;
+  position?: number;
+  is_active?: boolean;
+  author_name: string;
+  author_role_ka?: string;
+  author_role_en?: string;
+  company_name?: string;
+  logo_url?: string;
+  avatar_url?: string;
+  quote_ka: string;
+  quote_en?: string;
+  rating?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TestimonialAdminRequest {
+  slug: string;
+  position?: number;
+  is_active?: boolean;
+  author_name: string;
+  author_role_ka?: string;
+  author_role_en?: string;
+  company_name?: string;
+  logo_url?: string;
+  avatar_url?: string;
+  quote_ka: string;
+  quote_en?: string;
+  rating?: number;
 }
 
 export interface ThemePresetEnum {
