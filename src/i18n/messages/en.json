@@ -4108,6 +4108,14 @@
       "ogSubtitle": "Social · calls · email · tickets · invoices · bookings · leave management",
       "ogTag": "All-in-one"
     },
+    "blog": {
+      "title": "Blog — EchoDesk",
+      "description": "Comparisons, how-to guides, and customer stories about running a Georgian business from one tool — WhatsApp, calls, invoices, bookings, HR.",
+      "keywords": "EchoDesk blog, CRM comparison Georgia, WhatsApp helpdesk guide, Kommo alternative, Tbilisi SMB software",
+      "ogTitle": "EchoDesk blog",
+      "ogSubtitle": "Comparisons, guides, and customer stories for Georgian teams",
+      "ogTag": "Blog"
+    },
     "pricing": {
       "title": "Stop paying for features you don't use — EchoDesk pricing",
       "description": "Pick only the modules your team actually needs — tickets, WhatsApp, SIP calls, email, invoices, bookings, leave management — then scale from 5 to 200 agents. Transparent monthly pricing in GEL, cancel anytime.",
