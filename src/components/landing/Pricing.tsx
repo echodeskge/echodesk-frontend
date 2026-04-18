@@ -328,32 +328,30 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
       <div className="max-w-4xl mx-auto mt-16">
         <Card>
           <CardHeader>
-            <CardTitle>Flexible Pricing</CardTitle>
-            <CardDescription>
-              Our feature-based pricing grows with your team
-            </CardDescription>
+            <CardTitle>{t('info.title')}</CardTitle>
+            <CardDescription>{t('info.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <div className="text-2xl">💪</div>
-                <h3 className="font-semibold">Pay for what you use</h3>
+                <h3 className="font-semibold">{t('info.payUse.title')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Select only the features you need. No bloated packages.
+                  {t('info.payUse.description')}
                 </p>
               </div>
               <div className="space-y-2">
                 <div className="text-2xl">📈</div>
-                <h3 className="font-semibold">Scale with confidence</h3>
+                <h3 className="font-semibold">{t('info.scale.title')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Add agents or features anytime. Pricing updates automatically.
+                  {t('info.scale.description')}
                 </p>
               </div>
               <div className="space-y-2">
                 <div className="text-2xl">🔄</div>
-                <h3 className="font-semibold">Cancel anytime</h3>
+                <h3 className="font-semibold">{t('info.cancel.title')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  No long-term commitments. Manage your subscription easily from your dashboard.
+                  {t('info.cancel.description')}
                 </p>
               </div>
             </div>
@@ -362,7 +360,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
       </div>
 
       <div className="text-center mt-8 text-sm text-muted-foreground">
-        <p>All prices in Georgian Lari (₾). Billed monthly. Cancel anytime.</p>
+        <p>{t('allPricesNote')}</p>
       </div>
     </section>
   );

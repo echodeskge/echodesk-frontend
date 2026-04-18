@@ -2638,7 +2638,24 @@
         "usersUnlimited": "Unlimited users"
       },
       "getStarted": "Get Started",
-      "paymentNote": "All payments processed securely through Bank of Georgia"
+      "paymentNote": "All payments processed securely through Bank of Georgia",
+      "info": {
+        "title": "Flexible Pricing",
+        "subtitle": "Our feature-based pricing grows with your team",
+        "payUse": {
+          "title": "Pay for what you use",
+          "description": "Select only the features you need. No bloated packages."
+        },
+        "scale": {
+          "title": "Scale with confidence",
+          "description": "Add agents or features anytime. Pricing updates automatically."
+        },
+        "cancel": {
+          "title": "Cancel anytime",
+          "description": "No long-term commitments. Manage your subscription easily from your dashboard."
+        }
+      },
+      "allPricesNote": "All prices in Georgian Lari (₾). Billed monthly. Cancel anytime."
     },
     "cta": {
       "title": "Ready to Transform Your Customer Support?",
