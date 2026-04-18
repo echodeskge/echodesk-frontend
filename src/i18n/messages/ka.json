@@ -4103,37 +4103,58 @@
     "home": {
       "title": "EchoDesk — CRM ქართულ ლარში ქართული ბიზნესებისთვის",
       "description": "ყოვლისმომცველი CRM სისტემა — WhatsApp, ელფოსტა, Messenger, Instagram, SIP ზარები და ტიკეტები. გადახდა ლარში, ჰოსტინგი საქართველოში. დაიწყე უფასოდ და გადაიხადე მხოლოდ საჭირო ფუნქციებისთვის.",
-      "keywords": "CRM საქართველო, CRM ქართული, WhatsApp CRM, helpdesk საქართველო, SIP PBX, ლარში ფასი, CRM თბილისი"
+      "keywords": "CRM საქართველო, CRM ქართული, WhatsApp CRM, helpdesk საქართველო, SIP PBX, ლარში ფასი, CRM თბილისი",
+      "ogTitle": "CRM ლარში ფასებით",
+      "ogSubtitle": "ტიკეტები · WhatsApp · SIP · ელფოსტა — ქართული ჰოსტინგით",
+      "ogTag": "CRM"
     },
     "pricing": {
       "title": "ფასი ლარში — თითო ფუნქციაზე, თითო აგენტზე | EchoDesk",
       "description": "გამჭვირვალე ფასი ლარში. აარჩიე მხოლოდ ის ფუნქციები, რაც გჭირდება — ტიკეტები, WhatsApp, ელფოსტა, Messenger, Instagram, PBX ზარები — და გაზარდე აგენტები 5-დან 200-მდე.",
-      "keywords": "CRM ფასი საქართველო, ლარში ფასი, WhatsApp CRM ღირებულება, helpdesk ფასი, SIP ფასი"
+      "keywords": "CRM ფასი საქართველო, ლარში ფასი, WhatsApp CRM ღირებულება, helpdesk ფასი, SIP ფასი",
+      "ogTitle": "გამჭვირვალე ფასი ლარში",
+      "ogSubtitle": "თითო ფუნქციაზე, თითო აგენტზე · 5-დან 200-მდე",
+      "ogTag": "ფასები"
     },
     "docs": {
       "title": "დოკუმენტაცია | EchoDesk",
       "description": "დაყენების ინსტრუქციები, API-ს ცნობარი და გზამკვლევები EchoDesk-ისთვის — CRM, WhatsApp, PBX და სხვა.",
-      "keywords": "EchoDesk დოკუმენტაცია, CRM სახელმძღვანელო, helpdesk დაყენება"
+      "keywords": "EchoDesk დოკუმენტაცია, CRM სახელმძღვანელო, helpdesk დაყენება",
+      "ogTitle": "EchoDesk დოკუმენტაცია",
+      "ogSubtitle": "დაყენების ინსტრუქციები, API და გზამკვლევები",
+      "ogTag": "დოკუმენტაცია"
     },
     "registration": {
       "title": "დაიწყე უფასო EchoDesk — CRM საქართველოსთვის",
       "description": "შექმენი შენი EchoDesk სამუშაო სივრცე ორ წუთზე ნაკლებ დროში. პირველი 14 დღე უფასოა, შემდეგ — ლარში.",
-      "keywords": "EchoDesk უფასო, CRM საქართველო რეგისტრაცია, helpdesk რეგისტრაცია"
+      "keywords": "EchoDesk უფასო, CRM საქართველო რეგისტრაცია, helpdesk რეგისტრაცია",
+      "ogTitle": "დაიწყე უფასო EchoDesk",
+      "ogSubtitle": "14 დღე უფასოდ · ფასი ლარში · 2 წუთში დაყენება",
+      "ogTag": "უფასო ცდა"
     },
     "privacyPolicy": {
       "title": "კონფიდენციალურობის პოლიტიკა | EchoDesk",
       "description": "როგორ აგროვებს, ამუშავებს და იცავს EchoDesk მონაცემებს საქართველოსა და ევროკავშირში მოქმედი მომხმარებლებისთვის.",
-      "keywords": "EchoDesk კონფიდენციალურობა, მონაცემთა დაცვა საქართველო, GDPR CRM"
+      "keywords": "EchoDesk კონფიდენციალურობა, მონაცემთა დაცვა საქართველო, GDPR CRM",
+      "ogTitle": "კონფიდენციალურობის პოლიტიკა",
+      "ogSubtitle": "მონაცემთა დაცვა ქართველი და ევროპელი მომხმარებლებისთვის",
+      "ogTag": "იურიდიული"
     },
     "termsOfService": {
       "title": "მომსახურების პირობები | EchoDesk",
       "description": "EchoDesk-ის გამოყენების პირობები ყველა გეგმისა და ფუნქციისთვის.",
-      "keywords": "EchoDesk პირობები, CRM პირობები, SaaS ხელშეკრულება საქართველო"
+      "keywords": "EchoDesk პირობები, CRM პირობები, SaaS ხელშეკრულება საქართველო",
+      "ogTitle": "მომსახურების პირობები",
+      "ogSubtitle": "EchoDesk-ის გამოყენების ხელშეკრულება",
+      "ogTag": "იურიდიული"
     },
     "refundPolicy": {
       "title": "თანხის დაბრუნების პოლიტიკა | EchoDesk",
       "description": "EchoDesk-ის ყოველთვიური და წლიური ხელმოწერების თანხის დაბრუნების წესი.",
-      "keywords": "EchoDesk დაბრუნება, CRM გაუქმება, SaaS დაბრუნების პოლიტიკა"
+      "keywords": "EchoDesk დაბრუნება, CRM გაუქმება, SaaS დაბრუნების პოლიტიკა",
+      "ogTitle": "თანხის დაბრუნების პოლიტიკა",
+      "ogSubtitle": "როგორ მუშაობს დაბრუნება ყოველთვიურ და წლიურ გეგმებზე",
+      "ogTag": "იურიდიული"
     }
   }
 }

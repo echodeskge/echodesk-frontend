@@ -13,11 +13,18 @@ import { getMessages } from 'next-intl/server';
 import { pickMessages, GLOBAL_NAMESPACES } from '@/lib/pick-messages';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
 import { OrganizationSchema } from '@/components/seo/OrganizationSchema';
+import { ogImage } from '@/lib/og';
 import { Toaster } from 'sonner';
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   `https://${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`;
+
+const DEFAULT_OG = ogImage({
+  title: 'CRM billed in GEL',
+  subtitle: 'Tickets · WhatsApp · SIP · email — Georgian-hosted',
+  tag: 'CRM',
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,7 +64,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     images: [
       {
-        url: '/og/home.png',
+        url: DEFAULT_OG,
         width: 1200,
         height: 630,
         alt: 'EchoDesk — CRM billed in GEL',
@@ -68,7 +75,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     site: '@echodesk',
     creator: '@echodesk',
-    images: ['/og/home.png'],
+    images: [DEFAULT_OG],
   },
   alternates: {
     canonical: SITE_URL,

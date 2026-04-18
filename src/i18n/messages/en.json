@@ -4103,37 +4103,58 @@
     "home": {
       "title": "EchoDesk — CRM billed in GEL for Georgian businesses",
       "description": "All-in-one CRM with WhatsApp, email, Messenger, Instagram, SIP calling, and tickets — billed in Georgian Lari and hosted in Georgia. Start free, pay only for the features you use.",
-      "keywords": "CRM Georgia, CRM saqartvelo, WhatsApp CRM, helpdesk Georgia, SIP PBX CRM, GEL billing, Tbilisi CRM"
+      "keywords": "CRM Georgia, CRM saqartvelo, WhatsApp CRM, helpdesk Georgia, SIP PBX CRM, GEL billing, Tbilisi CRM",
+      "ogTitle": "CRM billed in GEL",
+      "ogSubtitle": "Tickets · WhatsApp · SIP · email — Georgian-hosted",
+      "ogTag": "CRM"
     },
     "pricing": {
       "title": "Pricing in GEL — pay per feature, per agent | EchoDesk",
       "description": "Transparent GEL pricing. Pick only the features your team needs — tickets, WhatsApp, email, Messenger, Instagram, PBX calls — and scale agents from 5 to 200.",
-      "keywords": "CRM pricing Georgia, GEL pricing, WhatsApp CRM cost, helpdesk ფასი, SIP pricing"
+      "keywords": "CRM pricing Georgia, GEL pricing, WhatsApp CRM cost, helpdesk ფასი, SIP pricing",
+      "ogTitle": "Transparent GEL pricing",
+      "ogSubtitle": "Pay per feature, per agent · from 5 to 200 agents",
+      "ogTag": "Pricing"
     },
     "docs": {
       "title": "Documentation | EchoDesk",
       "description": "Setup guides, API reference, and how-tos for EchoDesk — CRM, WhatsApp, PBX, and more.",
-      "keywords": "EchoDesk docs, CRM documentation, helpdesk setup"
+      "keywords": "EchoDesk docs, CRM documentation, helpdesk setup",
+      "ogTitle": "EchoDesk Documentation",
+      "ogSubtitle": "Setup guides, API reference, and how-tos",
+      "ogTag": "Docs"
     },
     "registration": {
       "title": "Start a free EchoDesk trial — CRM for Georgia",
       "description": "Create your EchoDesk workspace in under two minutes. First 14 days free, billed in GEL afterward.",
-      "keywords": "EchoDesk trial, CRM Georgia signup, helpdesk registration"
+      "keywords": "EchoDesk trial, CRM Georgia signup, helpdesk registration",
+      "ogTitle": "Start a free EchoDesk trial",
+      "ogSubtitle": "14 days free · GEL pricing · 2-minute setup",
+      "ogTag": "Free trial"
     },
     "privacyPolicy": {
       "title": "Privacy Policy | EchoDesk",
       "description": "How EchoDesk collects, processes, and protects data for tenants operating in Georgia and the EU.",
-      "keywords": "EchoDesk privacy, data protection Georgia, GDPR CRM"
+      "keywords": "EchoDesk privacy, data protection Georgia, GDPR CRM",
+      "ogTitle": "Privacy Policy",
+      "ogSubtitle": "Data practices for Georgian and EU tenants",
+      "ogTag": "Legal"
     },
     "termsOfService": {
       "title": "Terms of Service | EchoDesk",
       "description": "The terms governing your use of EchoDesk across all plans and features.",
-      "keywords": "EchoDesk terms, CRM terms, SaaS agreement Georgia"
+      "keywords": "EchoDesk terms, CRM terms, SaaS agreement Georgia",
+      "ogTitle": "Terms of Service",
+      "ogSubtitle": "The agreement that governs your EchoDesk workspace",
+      "ogTag": "Legal"
     },
     "refundPolicy": {
       "title": "Refund Policy | EchoDesk",
       "description": "Our refund approach for monthly and annual EchoDesk subscriptions.",
-      "keywords": "EchoDesk refund, CRM cancellation, SaaS refund policy"
+      "keywords": "EchoDesk refund, CRM cancellation, SaaS refund policy",
+      "ogTitle": "Refund Policy",
+      "ogSubtitle": "How refunds work for monthly and annual plans",
+      "ogTag": "Legal"
     }
   }
 }

@@ -6,10 +6,12 @@ import { pickRouteMessages } from '@/lib/pick-messages';
 import HomeContent from './HomeContent';
 import { FALLBACK_FEATURES } from '@/data/pricing-fallback';
 import { SoftwareApplicationSchema } from '@/components/seo/SoftwareApplicationSchema';
+import { ogImage } from '@/lib/og';
 import type { Feature } from '@/types/package';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('seo.home');
+  const og = ogImage({ title: t('ogTitle'), subtitle: t('ogSubtitle'), tag: t('ogTag') });
   return {
     title: t('title'),
     description: t('description'),
@@ -17,12 +19,12 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: t('title'),
       description: t('description'),
-      images: ['/og/home.png'],
+      images: [og],
     },
     twitter: {
       title: t('title'),
       description: t('description'),
-      images: ['/og/home.png'],
+      images: [og],
     },
   };
 }
