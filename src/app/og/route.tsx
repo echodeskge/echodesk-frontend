@@ -2,7 +2,9 @@ import { ImageResponse } from 'next/og';
 import type { NextRequest } from 'next/server';
 
 export const runtime = 'edge';
-export const contentType = 'image/png';
+// `contentType` is reserved for opengraph-image.tsx / twitter-image.tsx
+// file conventions, not for generic route.tsx handlers — ImageResponse
+// sets the Content-Type header itself.
 
 // Brand palette pulled from public/logo-svg.svg
 const BRAND = {
