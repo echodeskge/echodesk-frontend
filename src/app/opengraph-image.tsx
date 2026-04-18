@@ -39,9 +39,10 @@ async function loadFontTTF(slug: string, subset: string, weight: number): Promis
 
 export default async function OpenGraphImage() {
   const domain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge';
-  const title = 'One inbox for every channel';
-  const subtitle = 'WhatsApp · SIP calls · email · Messenger · Instagram — unified helpdesk';
-  const tag = 'Helpdesk';
+  const title = 'Run your business from one place';
+  const subtitle =
+    'Social · calls · email · tickets · invoices · bookings · leave management';
+  const tag = 'All-in-one';
   const footerLeft = domain;
   const footerRight = 'Built for Georgian teams · billed in GEL';
   const [interBold, interReg] = await Promise.all([
