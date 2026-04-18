@@ -15,11 +15,12 @@ export function generateMetadata(): Promise<Metadata> {
   return buildSeoMetadata({ namespace: 'seo.home', path: '/' });
 }
 
-// Force per-request rendering so the tenant hint from middleware is read on
-// every navigation/cold-load. Without this, Next.js may static-render the
-// root page once and serve the same HTML to every hostname.
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// `headers()` inside the component body auto-opts the route into dynamic
+// rendering, so we don't need `export const dynamic = 'force-dynamic'`.
+// Avoiding the explicit flag also avoids Next.js's aggressive streaming
+// mode, which was pushing <title>/<meta name="description"> out of
+// <head> and into <body> (Lighthouse then marked the page as missing a
+// description).
 
 const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'mail', 'admin']);
 
