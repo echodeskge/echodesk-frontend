@@ -1,8 +1,5 @@
 import { ImageResponse } from 'next/og';
-import {
-  fetchLandingPageServer,
-  fetchLandingPagesServer,
-} from '@/hooks/useLandingPages';
+import { fetchLandingPageServer } from '@/hooks/useLandingPages';
 
 export const alt = 'EchoDesk for your industry';
 export const size = { width: 1200, height: 630 };
@@ -24,19 +21,7 @@ async function loadFontTTF(slug: string, subset: string, weight: number): Promis
   return res.arrayBuffer();
 }
 
-export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-  try {
-    const list = await fetchLandingPagesServer({
-      pageType: 'vertical',
-      pageSize: 100,
-    });
-    return list.results.map((p) => ({
-      slug: p.slug.replace(/^for-/, ''),
-    }));
-  } catch {
-    return [];
-  }
-}
+// No generateStaticParams — see src/app/[slug]/opengraph-image.tsx.
 
 export default async function VerticalOGImage({
   params,

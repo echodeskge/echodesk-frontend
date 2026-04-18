@@ -5,10 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
 import { extractTenantSubdomainFromHost } from '@/lib/tenant-subdomain';
-import {
-  fetchLandingPageServer,
-  fetchLandingPagesServer,
-} from '@/hooks/useLandingPages';
+import { fetchLandingPageServer } from '@/hooks/useLandingPages';
 import { fetchFeaturesServer } from '@/lib/fetch-features';
 import { LandingPageView } from '@/components/landing-page/LandingPageView';
 
@@ -28,19 +25,8 @@ async function resolveLocale(): Promise<'ka' | 'en'> {
 // (e.g. `compare-kommo`); the public URL is `/compare/kommo`. We strip
 // the prefix for the URL param and re-add it when calling the API.
 
-export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-  try {
-    const list = await fetchLandingPagesServer({
-      pageType: 'comparison',
-      pageSize: 100,
-    });
-    return list.results.map((p) => ({
-      slug: p.slug.replace(/^compare-/, ''),
-    }));
-  } catch {
-    return [];
-  }
-}
+// No `generateStaticParams` — see src/app/[slug]/page.tsx for why.
+// ISR with revalidate=300 gives the same effective caching.
 
 export async function generateMetadata({
   params,

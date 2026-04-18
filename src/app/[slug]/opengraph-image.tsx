@@ -1,8 +1,5 @@
 import { ImageResponse } from 'next/og';
-import {
-  fetchLandingPageServer,
-  fetchLandingPagesServer,
-} from '@/hooks/useLandingPages';
+import { fetchLandingPageServer } from '@/hooks/useLandingPages';
 
 /**
  * Per-slug OG card for feature landing pages. Built once per deploy —
@@ -32,17 +29,8 @@ async function loadFontTTF(slug: string, subset: string, weight: number): Promis
   return res.arrayBuffer();
 }
 
-export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-  try {
-    const list = await fetchLandingPagesServer({
-      pageType: 'feature',
-      pageSize: 100,
-    });
-    return list.results.map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
-  }
-}
+// No generateStaticParams — OG images render on first request and
+// get cached by the CDN. Mirrors the blog pattern.
 
 export default async function FeatureLandingOGImage({
   params,

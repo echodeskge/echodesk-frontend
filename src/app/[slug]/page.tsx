@@ -5,10 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
 import { extractTenantSubdomainFromHost } from '@/lib/tenant-subdomain';
-import {
-  fetchLandingPageServer,
-  fetchLandingPagesServer,
-} from '@/hooks/useLandingPages';
+import { fetchLandingPageServer } from '@/hooks/useLandingPages';
 import { fetchFeaturesServer } from '@/lib/fetch-features';
 import { LandingPageView } from '@/components/landing-page/LandingPageView';
 
@@ -28,24 +25,12 @@ async function resolveLocale(): Promise<'ka' | 'en'> {
   return raw === 'en' ? 'en' : 'ka';
 }
 
-// ---------------------------------------------------------------------------
-// generateStaticParams — pre-build every published feature page.
-// Unknown slugs still work at request time via ISR + dynamicParams default.
-// ---------------------------------------------------------------------------
-
-export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-  try {
-    const list = await fetchLandingPagesServer({
-      pageType: 'feature',
-      pageSize: 100,
-    });
-    return list.results.map((p) => ({ slug: p.slug }));
-  } catch {
-    // Silent fallback — if the API is down at build time we still want
-    // `next build` to succeed; pages will be generated on first request.
-    return [];
-  }
-}
+// Note: no `generateStaticParams`. Calling it would ask Next.js to
+// prerender at build time, but the root layout resolves locale via
+// `cookies()` in src/i18n/request.ts — dynamic APIs aren't available
+// during static generation, so the prerender fails with
+// DynamicServerError. Letting the page render on-demand + caching via
+// the 5-min ISR gives the same effect for SEO without the build error.
 
 // ---------------------------------------------------------------------------
 // Metadata
