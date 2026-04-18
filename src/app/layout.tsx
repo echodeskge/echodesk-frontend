@@ -12,7 +12,12 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { pickMessages, GLOBAL_NAMESPACES } from '@/lib/pick-messages';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
+import { OrganizationSchema } from '@/components/seo/OrganizationSchema';
 import { Toaster } from 'sonner';
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  `https://${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,8 +30,54 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EchoDesk - Multi-Tenant CRM",
-  description: "Professional CRM solution for modern businesses",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'EchoDesk — CRM billed in GEL for Georgian businesses',
+    template: '%s | EchoDesk',
+  },
+  description:
+    'All-in-one CRM with WhatsApp, email, Messenger, Instagram, SIP calling, and tickets — billed in Georgian Lari and hosted in Georgia.',
+  applicationName: 'EchoDesk',
+  authors: [{ name: 'EchoDesk', url: SITE_URL }],
+  generator: 'Next.js',
+  keywords: [
+    'CRM Georgia',
+    'CRM საქართველო',
+    'WhatsApp CRM',
+    'helpdesk Georgia',
+    'SIP PBX CRM',
+    'GEL billing',
+    'Tbilisi CRM',
+  ],
+  openGraph: {
+    type: 'website',
+    siteName: 'EchoDesk',
+    locale: 'ka_GE',
+    alternateLocale: ['en_US'],
+    url: SITE_URL,
+    images: [
+      {
+        url: '/og/home.png',
+        width: 1200,
+        height: 630,
+        alt: 'EchoDesk — CRM billed in GEL',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@echodesk',
+    creator: '@echodesk',
+    images: ['/og/home.png'],
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+  },
 };
 
 export default async function RootLayout({
@@ -47,6 +98,7 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://echodesk-spaces.fra1.digitaloceanspaces.com" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
+        <OrganizationSchema />
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
           <SessionProvider>

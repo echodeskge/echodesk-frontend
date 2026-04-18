@@ -20,40 +20,46 @@ import Link from "next/link";
 import { featuresList } from "@/api/generated/api";
 import type { Feature } from "@/types/package";
 
-export function Pricing() {
+// Required features that cannot be unchecked
+const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
+const POPULAR_FEATURE_KEYS = ['ticket_management', 'user_management', 'settings'];
+
+function preselectIds(features: Feature[]): number[] {
+  return features.filter((f) => POPULAR_FEATURE_KEYS.includes(f.key)).map((f) => f.id);
+}
+
+export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] }) {
   const t = useTranslations("landing.pricing");
-  const [features, setFeatures] = useState<Feature[]>([]);
-  const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
+  // Seed both features and the default selection from the server-rendered
+  // props so the first paint already shows real GEL prices. Crawlers get
+  // the full pricing HTML without waiting for client-side fetch.
+  const [features, setFeatures] = useState<Feature[]>(initialFeatures);
+  const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>(() =>
+    preselectIds(initialFeatures)
+  );
   const [agentCount, setAgentCount] = useState(5);
-  const [loading, setLoading] = useState(true);
 
-  // Load features on mount
+  // On the client, refresh features in the background so the prices stay
+  // accurate even if the HTML was served from a stale ISR cache. Only kicks
+  // in when we didn't get server-seeded data (edge case).
   useEffect(() => {
-    loadFeatures();
-  }, []);
-
-  // Required features that cannot be unchecked
-  const REQUIRED_FEATURE_KEYS = ['user_management', 'settings'];
-
-  const loadFeatures = async () => {
-    try {
-      setLoading(true);
-      const data = await featuresList();
-      const allFeatures = (data.results || []) as Feature[];
-      setFeatures(allFeatures);
-
-      // Pre-select required features + popular features for demo
-      const popularKeys = ['ticket_management', 'user_management', 'settings'];
-      const popularIds = allFeatures
-        .filter(f => popularKeys.includes(f.key))
-        .map(f => f.id);
-      setSelectedFeatureIds(popularIds);
-    } catch (error) {
-      console.error('Failed to load features:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    if (initialFeatures.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await featuresList();
+        const all = (data.results || []) as Feature[];
+        if (cancelled || all.length === 0) return;
+        setFeatures(all);
+        setSelectedFeatureIds(preselectIds(all));
+      } catch {
+        /* fallback is the initial (possibly empty) set */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialFeatures.length]);
 
   // Group features by category
   const featuresByCategory = useMemo(() => {
@@ -118,13 +124,10 @@ export function Pricing() {
         </p>
       </div>
 
-      {loading ? (
-        <div className="text-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading features...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
+        {/* Everything below renders synchronously from server-seeded props
+            so crawlers + LLMs get the full pricing HTML in the initial
+            response (no "Loading features…" placeholder). */}
           {/* Left Column: Agent Count Selector */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
@@ -319,7 +322,6 @@ export function Pricing() {
             )}
           </div>
         </div>
-      )}
 
       {/* Info Section */}
       <div className="max-w-4xl mx-auto mt-16">

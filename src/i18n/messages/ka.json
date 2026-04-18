@@ -4098,5 +4098,42 @@
       "subjectRequired": "თემა აუცილებელია",
       "messageRequired": "შეტყობინება აუცილებელია"
     }
+  },
+  "seo": {
+    "home": {
+      "title": "EchoDesk — CRM ქართულ ლარში ქართული ბიზნესებისთვის",
+      "description": "ყოვლისმომცველი CRM სისტემა — WhatsApp, ელფოსტა, Messenger, Instagram, SIP ზარები და ტიკეტები. გადახდა ლარში, ჰოსტინგი საქართველოში. დაიწყე უფასოდ და გადაიხადე მხოლოდ საჭირო ფუნქციებისთვის.",
+      "keywords": "CRM საქართველო, CRM ქართული, WhatsApp CRM, helpdesk საქართველო, SIP PBX, ლარში ფასი, CRM თბილისი"
+    },
+    "pricing": {
+      "title": "ფასი ლარში — თითო ფუნქციაზე, თითო აგენტზე | EchoDesk",
+      "description": "გამჭვირვალე ფასი ლარში. აარჩიე მხოლოდ ის ფუნქციები, რაც გჭირდება — ტიკეტები, WhatsApp, ელფოსტა, Messenger, Instagram, PBX ზარები — და გაზარდე აგენტები 5-დან 200-მდე.",
+      "keywords": "CRM ფასი საქართველო, ლარში ფასი, WhatsApp CRM ღირებულება, helpdesk ფასი, SIP ფასი"
+    },
+    "docs": {
+      "title": "დოკუმენტაცია | EchoDesk",
+      "description": "დაყენების ინსტრუქციები, API-ს ცნობარი და გზამკვლევები EchoDesk-ისთვის — CRM, WhatsApp, PBX და სხვა.",
+      "keywords": "EchoDesk დოკუმენტაცია, CRM სახელმძღვანელო, helpdesk დაყენება"
+    },
+    "registration": {
+      "title": "დაიწყე უფასო EchoDesk — CRM საქართველოსთვის",
+      "description": "შექმენი შენი EchoDesk სამუშაო სივრცე ორ წუთზე ნაკლებ დროში. პირველი 14 დღე უფასოა, შემდეგ — ლარში.",
+      "keywords": "EchoDesk უფასო, CRM საქართველო რეგისტრაცია, helpdesk რეგისტრაცია"
+    },
+    "privacyPolicy": {
+      "title": "კონფიდენციალურობის პოლიტიკა | EchoDesk",
+      "description": "როგორ აგროვებს, ამუშავებს და იცავს EchoDesk მონაცემებს საქართველოსა და ევროკავშირში მოქმედი მომხმარებლებისთვის.",
+      "keywords": "EchoDesk კონფიდენციალურობა, მონაცემთა დაცვა საქართველო, GDPR CRM"
+    },
+    "termsOfService": {
+      "title": "მომსახურების პირობები | EchoDesk",
+      "description": "EchoDesk-ის გამოყენების პირობები ყველა გეგმისა და ფუნქციისთვის.",
+      "keywords": "EchoDesk პირობები, CRM პირობები, SaaS ხელშეკრულება საქართველო"
+    },
+    "refundPolicy": {
+      "title": "თანხის დაბრუნების პოლიტიკა | EchoDesk",
+      "description": "EchoDesk-ის ყოველთვიური და წლიური ხელმოწერების თანხის დაბრუნების წესი.",
+      "keywords": "EchoDesk დაბრუნება, CRM გაუქმება, SaaS დაბრუნების პოლიტიკა"
+    }
   }
 }

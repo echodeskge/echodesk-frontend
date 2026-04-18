@@ -6,8 +6,9 @@ import { Features } from './Features';
 import { Pricing } from './Pricing';
 import { CTA } from './CTA';
 import { Footer } from './Footer';
+import type { Feature } from '@/types/package';
 
-export function EchoDeskLanding() {
+export function EchoDeskLanding({ initialFeatures = [] }: { initialFeatures?: Feature[] }) {
   return (
     <div className="min-h-screen">
       {/* Header with Language Switcher */}
@@ -17,7 +18,7 @@ export function EchoDeskLanding() {
       <div className="py-16 space-y-24 bg-background">
         <Hero />
         <Features />
-        <Pricing />
+        <Pricing initialFeatures={initialFeatures} />
         <CTA />
       </div>
 

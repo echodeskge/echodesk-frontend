@@ -9,8 +9,14 @@ import LoginForm from "@/components/LoginForm";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import ErrorMessage from "@/components/ErrorMessage";
 import { toast } from "sonner";
+import type { Feature } from "@/types/package";
 
-function HomeContentInner({ initialTenantSubdomain }: { initialTenantSubdomain: string | null }) {
+interface HomeContentProps {
+  initialTenantSubdomain: string | null;
+  initialFeatures: Feature[];
+}
+
+function HomeContentInner({ initialTenantSubdomain, initialFeatures }: HomeContentProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -99,13 +105,19 @@ function HomeContentInner({ initialTenantSubdomain }: { initialTenantSubdomain: 
   }
 
   // If no tenant (main domain), show landing page
-  return <EchoDeskLanding />;
+  return <EchoDeskLanding initialFeatures={initialFeatures} />;
 }
 
-export default function HomeContent({ initialTenantSubdomain = null }: { initialTenantSubdomain?: string | null }) {
+export default function HomeContent({
+  initialTenantSubdomain = null,
+  initialFeatures = [],
+}: Partial<HomeContentProps>) {
   return (
     <Suspense fallback={<LoadingSpinner />}>
-      <HomeContentInner initialTenantSubdomain={initialTenantSubdomain} />
+      <HomeContentInner
+        initialTenantSubdomain={initialTenantSubdomain}
+        initialFeatures={initialFeatures}
+      />
     </Suspense>
   );
 }
