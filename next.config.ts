@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
   // Disable React Strict Mode for better drag and drop performance
   reactStrictMode: false,
 
+  // Tree-shake the icon packs we use heavily — drops ~40-60 KB off bundles
+  // that import a handful of icons from each library.
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns'],
+  },
+
   async headers() {
     const securityHeaders: { key: string; value: string }[] = [
       { key: 'X-Frame-Options', value: 'DENY' },
