@@ -13,6 +13,7 @@ import { getMessages } from 'next-intl/server';
 import { pickMessages, GLOBAL_NAMESPACES } from '@/lib/pick-messages';
 import { DevTenantLoader } from '@/components/DevTenantLoader';
 import { OrganizationSchema } from '@/components/seo/OrganizationSchema';
+import { GoogleAnalytics } from '@/components/seo/GoogleAnalytics';
 import { Toaster } from 'sonner';
 
 const SITE_URL =
@@ -100,6 +101,7 @@ export default async function RootLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
         <OrganizationSchema />
+        <GoogleAnalytics />
         <DevTenantLoader />
         <NextIntlClientProvider messages={messages}>
           <SessionProvider>
