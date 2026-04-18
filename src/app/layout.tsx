@@ -66,6 +66,11 @@ export const metadata: Metadata = {
     site: '@echodesk',
     creator: '@echodesk',
   },
+  // Kills the "Missing fb:app_id" warning in Facebook's sharing debugger
+  // and unlocks per-share analytics in the Facebook app dashboard.
+  facebook: {
+    appId: '649149741547110',
+  },
   alternates: {
     canonical: SITE_URL,
   },
