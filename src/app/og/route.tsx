@@ -1,7 +1,14 @@
 import { ImageResponse } from 'next/og';
 import type { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
+// Run on the default Node.js runtime — DO App Platform doesn't have
+// edge infrastructure, so `runtime: 'edge'` was producing 504s
+// (upstream_reset_before_response_started) because the edge-compiled
+// route couldn't register. ImageResponse still works under Node.
+export const runtime = 'nodejs';
+// Cache the rendered PNG aggressively — the output is fully determined
+// by the query string so it's safe to CDN-cache for a day.
+export const revalidate = 86400;
 // `contentType` is reserved for opengraph-image.tsx / twitter-image.tsx
 // file conventions, not for generic route.tsx handlers — ImageResponse
 // sets the Content-Type header itself.
