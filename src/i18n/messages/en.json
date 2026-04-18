@@ -4101,19 +4101,19 @@
   },
   "seo": {
     "home": {
-      "title": "EchoDesk — CRM billed in GEL for Georgian businesses",
-      "description": "All-in-one CRM with WhatsApp, email, Messenger, Instagram, SIP calling, and tickets — billed in Georgian Lari and hosted in Georgia. Start free, pay only for the features you use.",
-      "keywords": "CRM Georgia, CRM saqartvelo, WhatsApp CRM, helpdesk Georgia, SIP PBX CRM, GEL billing, Tbilisi CRM",
-      "ogTitle": "CRM billed in GEL",
-      "ogSubtitle": "Tickets · WhatsApp · SIP · email — Georgian-hosted",
-      "ogTag": "CRM"
+      "title": "EchoDesk — One helpdesk for WhatsApp, calls, and email",
+      "description": "Stop juggling five apps to answer one customer. EchoDesk unifies WhatsApp, Messenger, Instagram, email, and SIP calls into a single ticket inbox — built for Georgian teams, pay only for what you use. Start free for 14 days.",
+      "keywords": "WhatsApp helpdesk, unified inbox Georgia, customer support software, omnichannel CRM, SIP PBX helpdesk, Tbilisi support tool, Kommo alternative",
+      "ogTitle": "One inbox for every channel",
+      "ogSubtitle": "WhatsApp · SIP calls · email · Messenger · Instagram — unified helpdesk",
+      "ogTag": "Helpdesk"
     },
     "pricing": {
-      "title": "Pricing in GEL — pay per feature, per agent | EchoDesk",
-      "description": "Transparent GEL pricing. Pick only the features your team needs — tickets, WhatsApp, email, Messenger, Instagram, PBX calls — and scale agents from 5 to 200.",
-      "keywords": "CRM pricing Georgia, GEL pricing, WhatsApp CRM cost, helpdesk ფასი, SIP pricing",
-      "ogTitle": "Transparent GEL pricing",
-      "ogSubtitle": "Pay per feature, per agent · from 5 to 200 agents",
+      "title": "Stop paying for features you don't use — EchoDesk pricing",
+      "description": "Pick only the features your team actually needs — tickets, WhatsApp, SIP calls, email, Messenger, Instagram — then scale from 5 to 200 agents. Transparent monthly pricing in GEL, cancel anytime.",
+      "keywords": "pay per feature CRM, WhatsApp helpdesk pricing, SIP PBX cost, CRM pricing Georgia, GEL pricing, Kommo vs EchoDesk",
+      "ogTitle": "Pay only for what you use",
+      "ogSubtitle": "Pick features, scale agents, no bloated packages",
       "ogTag": "Pricing"
     },
     "docs": {
@@ -4125,11 +4125,11 @@
       "ogTag": "Docs"
     },
     "registration": {
-      "title": "Start a free EchoDesk trial — CRM for Georgia",
-      "description": "Create your EchoDesk workspace in under two minutes. First 14 days free, billed in GEL afterward.",
-      "keywords": "EchoDesk trial, CRM Georgia signup, helpdesk registration",
-      "ogTitle": "Start a free EchoDesk trial",
-      "ogSubtitle": "14 days free · GEL pricing · 2-minute setup",
+      "title": "Try EchoDesk free for 14 days — no credit card",
+      "description": "Spin up a full helpdesk — WhatsApp, calls, email, tickets — in under two minutes. 14 days free, no card required. If it works, pay in GEL; if not, walk away.",
+      "keywords": "EchoDesk free trial, WhatsApp helpdesk trial, CRM Georgia signup, Kommo alternative trial",
+      "ogTitle": "14 days. No card. Full helpdesk.",
+      "ogSubtitle": "Spin up WhatsApp, calls, email, and tickets in two minutes",
       "ogTag": "Free trial"
     },
     "privacyPolicy": {
