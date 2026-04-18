@@ -119,9 +119,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
     <section id="pricing" className="container py-16 space-y-8">
       <div className="text-center mx-auto space-y-4 max-w-3xl">
         <h2 className="text-4xl font-bold">{t("title")}</h2>
-        <p className="text-lg text-muted-foreground">
-          Pay only for what you need. Select features and team size to see your price.
-        </p>
+        <p className="text-lg text-muted-foreground">{t('builderSubtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
@@ -132,14 +130,14 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardHeader>
-                <CardTitle>Team Size</CardTitle>
-                <CardDescription>How many agents will use EchoDesk?</CardDescription>
+                <CardTitle>{t('builder.teamSize.title')}</CardTitle>
+                <CardDescription>{t('builder.teamSize.description')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Agent Count Display */}
                 <div className="text-center space-y-2">
                   <div className="text-5xl font-bold text-primary">{agentCount}</div>
-                  <div className="text-sm text-muted-foreground">agents</div>
+                  <div className="text-sm text-muted-foreground">{t('builder.agents')}</div>
                 </div>
 
                 {/* Slider */}
@@ -163,12 +161,12 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
 
                 {/* Monthly Total */}
                 <div className="space-y-2">
-                  <div className="text-sm font-medium text-muted-foreground">Your Monthly Cost</div>
+                  <div className="text-sm font-medium text-muted-foreground">{t('builder.monthlyCost')}</div>
                   <div className="space-y-1">
                     <div className="text-4xl font-bold text-primary">
                       {monthlyTotal.toFixed(2)}₾
                     </div>
-                    <div className="text-xs text-muted-foreground">per month</div>
+                    <div className="text-xs text-muted-foreground">{t('builder.perMonth')}</div>
                   </div>
                 </div>
 
@@ -176,7 +174,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                 <Link href={registrationUrl} className="block w-full">
                   <Button size="lg" className="w-full">
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Get Started
+                    {t('getStarted')}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -188,10 +186,8 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Select Your Features</CardTitle>
-                <CardDescription>
-                  Choose the features your team needs. Add or remove anytime.
-                </CardDescription>
+                <CardTitle>{t('builder.selectFeatures.title')}</CardTitle>
+                <CardDescription>{t('builder.selectFeatures.description')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {Object.entries(featuresByCategory).map(([category, categoryFeatures]) => (
@@ -235,7 +231,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                                 {feature.name}
                                 {isRequired && (
                                   <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                    Required
+                                    {t('builder.required')}
                                   </span>
                                 )}
                               </Label>
@@ -249,7 +245,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                               <div className="font-semibold text-primary">
                                 {pricePerAgent.toFixed(2)}₾
                               </div>
-                              <div className="text-xs text-muted-foreground">per agent/mo</div>
+                              <div className="text-xs text-muted-foreground">{t('builder.perAgentMonth')}</div>
                               {isSelected && (
                                 <div className="text-xs font-medium text-muted-foreground">
                                   = {totalPrice.toFixed(2)}₾/mo
@@ -266,8 +262,8 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                 {selectedFeatureIds.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <Sparkles className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="font-medium">Select features to build your custom plan</p>
-                    <p className="text-sm">Start by choosing the features your team needs</p>
+                    <p className="font-medium">{t('builder.empty.title')}</p>
+                    <p className="text-sm">{t('builder.empty.description')}</p>
                   </div>
                 )}
               </CardContent>
@@ -279,10 +275,10 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Check className="h-5 w-5 text-primary" />
-                    Your Custom Plan
+                    {t('builder.customPlan.title')}
                   </CardTitle>
                   <CardDescription>
-                    {selectedFeatureIds.length} feature{selectedFeatureIds.length !== 1 ? 's' : ''} selected for {agentCount} agents
+                    {t('builder.customPlan.description', { count: selectedFeatureIds.length, agents: agentCount })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -306,7 +302,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                       })}
                     <Separator className="my-3" />
                     <div className="flex items-center justify-between font-semibold text-lg">
-                      <span>Total per month:</span>
+                      <span>{t('builder.totalPerMonth')}</span>
                       <span className="text-primary">{monthlyTotal.toFixed(2)}₾</span>
                     </div>
                   </div>
@@ -314,7 +310,7 @@ export function Pricing({ initialFeatures = [] }: { initialFeatures?: Feature[] 
                 <CardFooter>
                   <Link href={registrationUrl} className="w-full">
                     <Button size="lg" className="w-full">
-                      Continue with this plan
+                      {t('builder.continueWithPlan')}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>

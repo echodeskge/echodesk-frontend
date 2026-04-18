@@ -2577,7 +2577,33 @@
     "pricing": {
       "title": "Simple, Transparent Pricing",
       "subtitle": "Choose the plan that fits your team size and needs. No hidden fees.",
+      "builderSubtitle": "Pay only for what you need. Select features and team size to see your price.",
       "agentCountLabel": "Number of agents",
+      "builder": {
+        "teamSize": {
+          "title": "Team Size",
+          "description": "How many agents will use EchoDesk?"
+        },
+        "agents": "agents",
+        "monthlyCost": "Your Monthly Cost",
+        "perMonth": "per month",
+        "selectFeatures": {
+          "title": "Select Your Features",
+          "description": "Choose the features your team needs. Add or remove anytime."
+        },
+        "required": "Required",
+        "perAgentMonth": "per agent/mo",
+        "empty": {
+          "title": "Select features to build your custom plan",
+          "description": "Start by choosing the features your team needs"
+        },
+        "customPlan": {
+          "title": "Your Custom Plan",
+          "description": "{count} features selected for {agents} agents"
+        },
+        "totalPerMonth": "Total per month:",
+        "continueWithPlan": "Continue with this plan"
+      },
       "tabs": {
         "agentBased": "Agent Based Packages",
         "crmBased": "CRM Based Packages"
