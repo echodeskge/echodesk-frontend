@@ -203,7 +203,14 @@ export const ChatReducer = (
         return chat
       })
 
-      // If chat wasn't found in the list, create a new chat entry
+      // If chat wasn't found in the list, create a new chat entry.
+      // messagesLoaded is INTENTIONALLY false here — we only have the one
+      // incoming message, not the conversation's history. Marking it true
+      // would short-circuit handleLoadChatMessages (see
+      // chat-context.tsx:191), leaving the user stuck on a single-message
+      // stub view. Reported by teonagolodze.16@gmail.com (amanati,
+      // 2026-04-21): after ending a chat, a reappearing conversation
+      // showed only fragmentary history.
       if (!chatFound) {
         const newChat: ChatType = {
           id: chatId,
@@ -217,7 +224,7 @@ export const ChatReducer = (
           typingUsers: [],
           unreadCount: 1,
           platform: message.platform,
-          messagesLoaded: true,
+          messagesLoaded: false,
         }
         updatedChats = [newChat, ...updatedChats]
       } else {

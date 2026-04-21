@@ -471,6 +471,31 @@ describe("ChatReducer", () => {
       expect(result.chats[0].platform).toBe("whatsapp");
     });
 
+    // Guards against a production bug (teonagolodze.16@gmail.com, amanati,
+    // 2026-04-21): after ending a chat, a WebSocket message arrived and
+    // addIncomingMessage resurrected the chat with messagesLoaded=true.
+    // That short-circuited chat-context's handleLoadChatMessages (which
+    // only fetches when messagesLoaded is false), so the user saw only
+    // the one new message with no prior history.
+    it("marks resurrected chats as NOT loaded so history is re-fetched", () => {
+      // Chat was removed from state (via End Session), so it's absent here.
+      const state = makeState({ chats: [] });
+      const msg = makeMessage({ text: "Reappeared", platform: "facebook" });
+
+      const result = ChatReducer(state, {
+        type: "addIncomingMessage",
+        chatId: "fb_216614575366038_9701885179839675",
+        message: msg,
+        senderName: "Bullet Fan",
+      });
+
+      expect(result.chats).toHaveLength(1);
+      // Must be false — we only have one message and the chat needs a
+      // full history fetch next time it's selected.
+      expect(result.chats[0].messagesLoaded).toBe(false);
+      expect(result.chats[0].messages).toHaveLength(1);
+    });
+
     it("updates selectedChat when it matches", () => {
       const chat = makeChat({ id: "c1" });
       const state = makeState({ chats: [chat], selectedChat: chat });
