@@ -216,6 +216,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     hasNextPage,
     isFetchingNextPage,
     isFetching,
+    isPlaceholderData,
   } = useUnifiedConversations({
     platforms: platformFilter || enabledPlatforms.join(','),
     folder: selectedEmailFolder,
@@ -875,8 +876,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   // Determine if search is loading (typing or fetching)
   const searchLoading = isSearching || (isFetching && debouncedSearchQuery !== '');
 
-  // Combined loading state - show loading if initial load OR loading direct chat
-  const isLoadingChat = isLoading || isLoadingDirectChat;
+  // Combined loading state — show loading if initial load, loading a direct
+  // chat, OR swapping filters/tabs (at which point React Query is still
+  // rendering the PREVIOUS tab's data via placeholderData=keepPreviousData).
+  // Without the isPlaceholderData flag the sidebar would briefly show the
+  // wrong conversations when switching Current ↔ History / tab filters.
+  const isLoadingChat = isLoading || isLoadingDirectChat || (isPlaceholderData && isFetching);
 
   return (
     <ChatProvider

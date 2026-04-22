@@ -46,6 +46,12 @@ export function ChatSidebarList() {
 
   const showLoading = isInitialLoading && chatState.chats.length === 0 && !hasEverLoaded
   const isRefetching = isInitialLoading && chatState.chats.length === 0 && hasEverLoaded
+  // When isInitialLoading fires while we still have chats in state (e.g.
+  // React Query's placeholderData is showing the previous tab/filter's
+  // data during a transition), the two checks above would both be false
+  // and the user sees the stale list. Force the skeleton during those
+  // transitions so the sidebar visibly reloads.
+  const isViewTransition = isInitialLoading && chatState.chats.length > 0
 
   // Filter and sort chats
   // "Assigned" tab filtering is handled by the backend via the `assigned` query param.
@@ -86,7 +92,7 @@ export function ChatSidebarList() {
     return "No conversations yet"
   }
 
-  const showSkeleton = showLoading || isRefetching || isSearchLoading
+  const showSkeleton = showLoading || isRefetching || isSearchLoading || isViewTransition
 
   return (
     <div
