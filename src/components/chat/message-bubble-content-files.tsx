@@ -1,5 +1,6 @@
 import { ExternalLink, Loader2 } from "lucide-react"
 import { useState } from "react"
+import { toast } from "sonner"
 // Use the configured instance with the auth-token interceptor — the raw
 // `axios` library doesn't attach the Bearer/Token header, which is why
 // the previous version kept returning 401 on the WhatsApp media proxy.
@@ -40,9 +41,25 @@ function AuthenticatedFileLink({
       // to start loading before we drop the reference.
       window.open(blobUrl, "_blank", "noopener,noreferrer")
       setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000)
-    } catch {
-      // Silent failure keeps the UI responsive; the user can retry. A toast
-      // could be added via sonner if we want louder feedback later.
+    } catch (err: unknown) {
+      // WhatsApp expires Cloud-API media after a short window (days for
+      // documents, up to 30 days for other types). When that happens the
+      // proxy now returns 404 with a helpful detail message — surface it
+      // as a toast so the agent knows to ask the customer to resend.
+      const axiosErr = err as {
+        response?: { status?: number; data?: { detail?: string; error?: string } }
+      }
+      const status = axiosErr?.response?.status
+      const detail = axiosErr?.response?.data?.detail || axiosErr?.response?.data?.error
+      if (status === 404) {
+        toast.error("File no longer available", {
+          description: detail || "WhatsApp expired this attachment. Ask the sender to resend it.",
+        })
+      } else {
+        toast.error("Couldn't open file", {
+          description: detail || "Please try again in a moment.",
+        })
+      }
     } finally {
       setLoading(false)
     }
