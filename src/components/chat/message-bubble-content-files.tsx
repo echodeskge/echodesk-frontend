@@ -1,6 +1,9 @@
 import { ExternalLink, Loader2 } from "lucide-react"
 import { useState } from "react"
-import axios from "axios"
+// Use the configured instance with the auth-token interceptor — the raw
+// `axios` library doesn't attach the Bearer/Token header, which is why
+// the previous version kept returning 401 on the WhatsApp media proxy.
+import axios from "@/api/axios"
 
 import type { MessageType } from "@/components/chat/types"
 
