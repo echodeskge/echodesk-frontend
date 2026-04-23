@@ -2,10 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { CallButton } from './CallButton';
+import { CallOverlay } from './CallOverlay';
 import { Composer } from './Composer';
 import { Header } from './Header';
 import { MessageList } from './MessageList';
 import { PreChatForm } from './PreChatForm';
+import { useSipCall } from './useSipCall';
 import { getConfig, type WidgetConfig, WidgetApiError } from './widget-api';
 import { useWidgetSession } from './useWidgetSession';
 
@@ -34,6 +37,7 @@ export function WidgetShell({ token }: WidgetShellProps) {
   const [prechatDone, setPrechatDone] = useState(false);
 
   const session = useWidgetSession(token);
+  const call = useSipCall();
 
   // Load config -----------------------------------------------------------
   useEffect(() => {
@@ -151,9 +155,63 @@ export function WidgetShell({ token }: WidgetShellProps) {
   const brand = config.brand_color || '#2A2B7D';
   const welcome = pickLocalized(config.welcome_message);
 
+  // Voice call plumbing. The button only renders when the tenant has
+  // voice_enabled=true on their widget config. It's disabled until the
+  // visitor has a session_id (backend won't mint SIP creds otherwise).
+  const voiceEnabled = Boolean(config.voice_enabled);
+  const canStartCall = voiceEnabled && Boolean(session.sessionId);
+  const callActive =
+    call.state !== 'idle' && call.state !== 'ended' && call.state !== 'error';
+  // Overlay covers idle transitions too: show it any time the call has
+  // progressed past 'idle' so the user sees both progress + terminal
+  // states (ringing, connected, ended, error). The overlay has its own
+  // close button for terminal states.
+  const showCallOverlay = call.state !== 'idle';
+
+  const handleStartCall = () => {
+    if (!session.sessionId) return;
+    void call.startCall({ token, sessionId: session.sessionId });
+  };
+
   return (
-    <div className="echodesk-widget-root">
-      <Header config={config} onClose={onClose} />
+    <div className="echodesk-widget-root" style={{ position: 'relative' }}>
+      <Header
+        config={config}
+        onClose={onClose}
+        actions={
+          voiceEnabled ? (
+            <CallButton
+              brandColor={brand}
+              disabled={!canStartCall || callActive}
+              disabledReason={
+                !session.sessionId
+                  ? 'Send a message first to enable calling'
+                  : callActive
+                  ? 'A call is already in progress'
+                  : undefined
+              }
+              onClick={handleStartCall}
+            />
+          ) : null
+        }
+      />
+
+      {showCallOverlay && (
+        <CallOverlay
+          brandColor={brand}
+          state={call.state}
+          errorCode={call.errorCode}
+          isMuted={call.isMuted}
+          callDurationSec={call.callDurationSec}
+          onHangUp={() => {
+            void call.hangUp();
+          }}
+          onToggleMute={call.toggleMute}
+          onDismissError={() => {
+            void call.hangUp();
+          }}
+        />
+      )}
 
       {needsPrechat ? (
         <PreChatForm
