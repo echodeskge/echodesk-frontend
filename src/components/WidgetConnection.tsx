@@ -10,7 +10,6 @@ import {
   Plus,
   AlertCircle,
   Loader2,
-  Phone,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +44,8 @@ import {
   type PreChatFormConfig,
 } from '@/components/widget-settings/WidgetMessagesEditor';
 import { WidgetPreviewFrame } from '@/components/widget-settings/WidgetPreviewFrame';
+import { WidgetVoiceCallsSection } from '@/components/widget-settings/WidgetVoiceCallsSection';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 type LocaleText = Record<string, string>;
 
@@ -84,6 +85,21 @@ export function WidgetConnection() {
       setSelectedId(connections[0].id);
     }
   }, [connections, selectedId]);
+
+  // Voice-call gate: only tenants with the `ip_calling` feature (= PBX
+  // wired up) can use widget voice, since calls route through Asterisk.
+  const { data: userProfile } = useUserProfile();
+  const hasIpCallingFeature = useMemo(() => {
+    const profile = userProfile as Record<string, unknown> | undefined;
+    if (!profile?.feature_keys) return false;
+    let keys: string[] = [];
+    if (typeof profile.feature_keys === 'string') {
+      try { keys = JSON.parse(profile.feature_keys as string); } catch { return false; }
+    } else if (Array.isArray(profile.feature_keys)) {
+      keys = profile.feature_keys as string[];
+    }
+    return keys.includes('ip_calling');
+  }, [userProfile]);
 
   const selected: WidgetConnectionType | undefined = useMemo(() => {
     if (!connections) return undefined;
@@ -321,28 +337,19 @@ export function WidgetConnection() {
             />
           </div>
 
-          {/* Voice calls read-only teaser — actual editing happens in PR 9 */}
-          <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 p-3 opacity-70">
-            <div className="flex items-start gap-2">
-              <Phone className="h-4 w-4 mt-0.5 text-muted-foreground" />
-              <div>
-                <Label htmlFor="widget_voice_enabled" className="font-medium">
-                  {t('voiceCallsLabel')}
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {t('voiceCallsComingSoon')}
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="widget_voice_enabled"
-              checked={Boolean(selected.voice_enabled)}
-              disabled
-              aria-label={t('voiceCallsLabel')}
-            />
-          </div>
         </CardContent>
       </Card>
+
+      <WidgetVoiceCallsSection
+        voiceEnabled={Boolean(selected.voice_enabled)}
+        voiceQueue={String(selected.voice_queue || 'support')}
+        voiceWorkingHoursOnly={Boolean(selected.voice_working_hours_only)}
+        hasIpCallingFeature={hasIpCallingFeature}
+        saving={autoSaving || updateMutation.isPending}
+        onChange={(next) => {
+          scheduleAutoSave(selected.id, next as Partial<PatchedWidgetConnectionRequest>);
+        }}
+      />
 
       {/* Two-column: editor on the left, preview on the right */}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
