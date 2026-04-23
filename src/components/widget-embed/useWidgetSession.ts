@@ -128,7 +128,13 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
   const appendIfNew = useCallback((msg: WidgetMessage) => {
     if (messageIdsRef.current.has(msg.message_id)) return;
     messageIdsRef.current.add(msg.message_id);
-    setMessages((prev) => prev.concat(msg));
+    setMessages((prev) => {
+      // Double-check state by id — covers the race where the visitor's
+      // HTTP POST broadcasts back over their own WS before `send()` has
+      // swapped the optimistic bubble's tempId for the real message_id.
+      if (prev.some((m) => m.message_id === msg.message_id)) return prev;
+      return prev.concat(msg);
+    });
     if (!lastTsRef.current || msg.timestamp > lastTsRef.current) {
       lastTsRef.current = msg.timestamp;
     }
@@ -454,13 +460,25 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
           attachments,
         });
 
-        // Swap the optimistic bubble for the authoritative server copy.
-        // Also register the real message_id so the inevitable WS echo
-        // from `new_message` is deduped out.
-        setMessages((prev) =>
-          prev.map((m) => (m.message_id === tempId ? { ...res } : m))
-        );
+        // Register the real message_id FIRST so the WS echo from our own
+        // POST broadcast gets deduped by appendIfNew before it races the
+        // state swap below. (The backend broadcasts every visitor POST to
+        // `widget_visitor_<session>` for multi-tab sync, and that echo
+        // lands on this very iframe.)
         messageIdsRef.current.add(res.message_id);
+        // Swap the optimistic bubble for the authoritative server copy.
+        setMessages((prev) => {
+          const swapped = prev.map((m) =>
+            m.message_id === tempId ? { ...res } : m
+          );
+          // Extra safety: if the WS echo arrived BEFORE sendMessage()
+          // resolved, the real message_id is already in the list AND the
+          // optimistic bubble still exists. Drop the optimistic duplicate.
+          if (prev.some((m) => m.message_id === res.message_id)) {
+            return swapped.filter((m) => m.message_id !== tempId);
+          }
+          return swapped;
+        });
         if (!lastTsRef.current || res.timestamp > lastTsRef.current) {
           lastTsRef.current = res.timestamp;
         }
