@@ -105,9 +105,23 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
     return null
   }, [chat?.platform, chat?.users])
 
-  // For client lookup, use customer email as platformId for email platform
-  // This ensures all emails from the same person are linked to the same client
-  const clientLookupPlatformId = isEmail && customerEmail ? customerEmail : chatInfo?.conversationId || ''
+  // For widget platform the chatInfo.conversationId is the SESSION id (changes
+  // when a returning visitor opens a new session), but the stable identifier
+  // is visitor_id — stored as the non-business user's id on the chat. Use
+  // visitor_id as the CRM platform_id so a returning visitor links to the
+  // same SocialClient instead of creating a new one each session.
+  const widgetVisitorId = useMemo(() => {
+    if (chat?.platform !== 'widget') return null
+    const customerUser = chat.users?.find((u) => u.id !== 'business')
+    return customerUser?.id || null
+  }, [chat?.platform, chat?.users])
+
+  // For client lookup, pick the platform's stable identifier.
+  const clientLookupPlatformId = isEmail && customerEmail
+    ? customerEmail
+    : chat?.platform === 'widget' && widgetVisitorId
+      ? widgetVisitorId
+      : chatInfo?.conversationId || ''
 
   // Social client lookup - find if this chat has a linked client
   const { data: clientByAccount } = useSocialClientByAccount(
