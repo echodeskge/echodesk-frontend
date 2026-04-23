@@ -28,6 +28,7 @@ import {
   Check,
   X,
   MessageSquare,
+  MessageCircle,
   Clock,
   AlertCircle,
   Info,
@@ -39,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 import { EmailConnection } from "@/components/EmailConnection";
 import { TikTokConnection } from "@/components/TikTokConnection";
+import { WidgetConnection } from "@/components/WidgetConnection";
 
 // WhatsApp icon component
 const WhatsAppIcon = ({ className }: { className?: string }) => (
@@ -206,6 +208,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
     { value: "instagram", label: "Instagram", icon: Instagram, color: "text-pink-600" },
     { value: "whatsapp", label: "WhatsApp", icon: WhatsAppIcon, color: "text-green-600" },
     { value: "email", label: "Email", icon: Mail, color: "text-red-600" },
+    { value: "widget", label: "Website widget", icon: MessageCircle, color: "text-indigo-600" },
     { value: "tiktok", label: "TikTok", icon: TikTokIcon, color: "text-black" },
   ];
 
@@ -582,6 +585,11 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
         {/* Email Tab */}
         <TabsContent value="email">
           <EmailConnection />
+        </TabsContent>
+
+        {/* Website Widget Tab */}
+        <TabsContent value="widget">
+          <WidgetConnection />
         </TabsContent>
 
         {/* TikTok Tab */}

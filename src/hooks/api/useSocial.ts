@@ -30,6 +30,9 @@ import type {
   PatchedEmailDraftRequest,
   PaginatedUnifiedConversation,
   UnifiedConversation,
+  WidgetConnection,
+  WidgetConnectionRequest,
+  PatchedWidgetConnectionRequest,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -75,6 +78,8 @@ export const socialKeys = {
   tiktokStatus: () => [...socialKeys.tiktok(), 'status'] as const,
   tiktokMessages: () => [...socialKeys.tiktok(), 'messages'] as const,
   tiktokMessagesList: (filters: Record<string, any>) => [...socialKeys.tiktokMessages(), filters] as const,
+  widget: () => [...socialKeys.all, 'widget'] as const,
+  widgetConnections: () => [...socialKeys.widget(), 'connections'] as const,
 };
 
 // ============================================================================
@@ -2957,5 +2962,76 @@ export function useClearPlatformHistory() {
   });
 }
 
+// ============================================================================
+// WIDGET CONNECTIONS (Website chat widget)
+// ============================================================================
+//
+// The generated API helpers (widgetAdminConnections*) return `any`, so we
+// wrap them with typed axios calls using the generated interfaces. These hooks
+// power the "Website widget" tab in `/settings/social/connections`.
+//
+
+export function useWidgetConnections() {
+  return useQuery<WidgetConnection[]>({
+    queryKey: socialKeys.widgetConnections(),
+    queryFn: async () => {
+      const response = await axios.get('/api/widget/admin/connections/');
+      // DRF returns {count, next, previous, results} (or may return a bare array).
+      if (Array.isArray(response.data)) return response.data as WidgetConnection[];
+      return (response.data?.results ?? []) as WidgetConnection[];
+    },
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useCreateWidgetConnection() {
+  const queryClient = useQueryClient();
+  return useMutation<WidgetConnection, unknown, Partial<WidgetConnectionRequest>>({
+    mutationFn: async (data) => {
+      const response = await axios.post<WidgetConnection>(
+        '/api/widget/admin/connections/',
+        data,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.widgetConnections() });
+    },
+  });
+}
+
+export function useUpdateWidgetConnection() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    WidgetConnection,
+    unknown,
+    { id: number; data: Partial<PatchedWidgetConnectionRequest> }
+  >({
+    mutationFn: async ({ id, data }) => {
+      const response = await axios.patch<WidgetConnection>(
+        `/api/widget/admin/connections/${id}/`,
+        data,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.widgetConnections() });
+    },
+  });
+}
+
+export function useDeleteWidgetConnection() {
+  const queryClient = useQueryClient();
+  return useMutation<void, unknown, number>({
+    mutationFn: async (id) => {
+      await axios.delete(`/api/widget/admin/connections/${id}/`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.widgetConnections() });
+    },
+  });
+}
+
 // Re-export types for convenience
 export type { UnifiedConversation, PaginatedUnifiedConversation };
+export type { WidgetConnection, WidgetConnectionRequest, PatchedWidgetConnectionRequest };
