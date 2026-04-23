@@ -36,7 +36,7 @@ function useDebounce<T>(value: T, delay: number): T {
 // Unified message interface for lazy loading
 interface UnifiedMessage {
   id: string;
-  platform: "facebook" | "instagram" | "whatsapp" | "email";
+  platform: "facebook" | "instagram" | "whatsapp" | "email" | "widget";
   sender_id: string;
   sender_name: string;
   recipient_name?: string;
@@ -63,14 +63,14 @@ interface UnifiedMessage {
   reply_to_id?: number;
 }
 
-type Platform = "facebook" | "instagram" | "whatsapp" | "email";
+type Platform = "facebook" | "instagram" | "whatsapp" | "email" | "widget";
 
 interface MessagesChatProps {
   platforms?: Platform[];
 }
 
 export default function MessagesChat({ platforms }: MessagesChatProps) {
-  const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email"];
+  const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email", "widget"];
   const queryClient = useQueryClient();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -240,7 +240,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     const allConversations = conversationsData.pages.flatMap(page =>
       (page.results || []).map(conv => ({
         ...conv,
-        platform: String(conv.platform) as 'facebook' | 'instagram' | 'whatsapp' | 'email',
+        platform: String(conv.platform) as 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget',
       }))
     );
 
@@ -352,6 +352,8 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       chatId = `wa_${wabaId}_${number || conversationId}`;
     } else if (platform === 'email') {
       chatId = conversationId;
+    } else if (platform === 'widget' && messageData.connection_id && messageData.session_id) {
+      chatId = `widget_${messageData.connection_id}_${messageData.session_id}`;
     } else {
       // Fallback: try to use chat_id from message or conversation_id from data
       chatId = messageData.chat_id || data?.conversation_id;
@@ -776,7 +778,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const parts = chatId.split('_');
         const platformPrefix = parts[0];
 
-        let platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
+        let platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
         let senderName = 'Unknown';
         let accountName = '';
 
@@ -797,6 +799,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           platform = 'email';
           const incomingMsg = messages.find(m => m.senderId !== 'business');
           senderName = incomingMsg?.senderName || 'Unknown';
+        } else if (platformPrefix === 'widget') {
+          platform = 'widget';
+          const incomingMsg = messages.find(m => m.senderId !== 'business');
+          senderName = incomingMsg?.senderName || 'Website visitor';
         } else {
           return;
         }

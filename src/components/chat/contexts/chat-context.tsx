@@ -19,7 +19,7 @@ export function ChatProvider({
   onChatSelected,
   loadChatMessages,
   isInitialLoading = false,
-  platforms = ['facebook', 'instagram', 'whatsapp', 'email'],
+  platforms = ['facebook', 'instagram', 'whatsapp', 'email', 'widget'],
   platformFilter: externalPlatformFilter,
   setPlatformFilter: externalSetPlatformFilter,
   selectedEmailFolder: externalSelectedEmailFolder,

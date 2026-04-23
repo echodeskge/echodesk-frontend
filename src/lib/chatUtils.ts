@@ -14,6 +14,7 @@ export interface ParsedChatId {
  * - Instagram: ig_{account_id}_{sender_id}
  * - WhatsApp: wa_{waba_id}_{from_number}
  * - Email: email_{connection_id}_{thread_id}
+ * - Widget: widget_{connection_id}_{session_id}
  */
 export function parseChatId(chatId: string, platform?: string): ParsedChatId | null {
   const parts = chatId.split('_');
@@ -36,6 +37,8 @@ export function parseChatId(chatId: string, platform?: string): ParsedChatId | n
     parsedPlatform = 'whatsapp';
   } else if (prefix === 'email') {
     parsedPlatform = 'email';
+  } else if (prefix === 'widget') {
+    parsedPlatform = 'widget';
   } else {
     return null;
   }

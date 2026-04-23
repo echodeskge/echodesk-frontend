@@ -321,6 +321,19 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
       if (reloadChatMessages) {
         reloadChatMessages(selectedChat.id)
       }
+    } else if (platform === 'widget') {
+      const connectionId = accountId
+      const sessionId = recipientId
+      if (files.length > 0) {
+        // Widget attachments land in PR 6; reject here so the UI surfaces a clear
+        // error rather than silently dropping the file.
+        throw new Error('Widget attachments are not available yet')
+      }
+      await axios.post('/api/widget/admin/messages/send/', {
+        connection_id: Number(connectionId),
+        session_id: sessionId,
+        message_text: messageText,
+      })
     } else {
       throw new Error('Unsupported platform: ' + platform)
     }

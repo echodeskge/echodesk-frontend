@@ -197,7 +197,7 @@ function convertMessageFields(msg: UnifiedMessage, senderId: string): MessageTyp
 // Unified message interfaces supporting Facebook, Instagram, WhatsApp, and Email
 interface UnifiedMessage {
   id: string;
-  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
   sender_id: string;
   sender_name: string;
   recipient_name?: string; // For outgoing messages - the customer's name
@@ -243,7 +243,7 @@ interface UnifiedMessage {
 }
 
 interface UnifiedConversation {
-  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
   conversation_id: string;
   sender_id: string;
   sender_name: string;
@@ -495,7 +495,7 @@ export function convertApiConversationsToChatFormat(
       users: [customerUser, businessUser],
       typingUsers: [],
       unreadCount: conversation.unread_count,
-      platform: conversation.platform as 'facebook' | 'instagram' | 'whatsapp' | 'email',
+      platform: conversation.platform as 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget',
       messagesLoaded: false, // Always false - messages need to be fetched
     };
   });

@@ -172,7 +172,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
       // Play platform-specific notification sound
       const platform = data?.platform || messageData?.platform;
-      if (platform && ['facebook', 'instagram', 'whatsapp', 'email'].includes(platform)) {
+      if (platform && ['facebook', 'instagram', 'whatsapp', 'email', 'widget'].includes(platform)) {
         getNotificationSound().playForPlatform(platform);
       } else {
         // Fallback to system sound

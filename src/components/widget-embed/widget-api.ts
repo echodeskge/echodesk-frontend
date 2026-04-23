@@ -158,3 +158,29 @@ export function listMessages(
     { method: 'GET', signal }
   );
 }
+
+/**
+ * Build the WebSocket URL for the visitor-side widget connection.
+ *
+ * Mirrors the protocol of `API_BASE` — if the API is served over HTTPS we
+ * open a `wss://` socket, otherwise plain `ws://` (for local development
+ * against a plain-HTTP backend). Anonymous — no JWT. Backend validates the
+ * `<token>` + `<session_id>` pair.
+ */
+export function buildWebSocketUrl(token: string, sessionId: string): string {
+  let base = API_BASE;
+  // Normalize trailing slash
+  if (base.endsWith('/')) base = base.slice(0, -1);
+
+  let wsBase: string;
+  if (base.startsWith('https://')) {
+    wsBase = 'wss://' + base.slice('https://'.length);
+  } else if (base.startsWith('http://')) {
+    wsBase = 'ws://' + base.slice('http://'.length);
+  } else {
+    // API_BASE is a bare host; default to secure.
+    wsBase = 'wss://' + base;
+  }
+
+  return `${wsBase}/ws/widget/${encodeURIComponent(token)}/${encodeURIComponent(sessionId)}/`;
+}

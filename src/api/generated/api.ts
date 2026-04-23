@@ -10133,6 +10133,11 @@ export async function widgetAdminMessagesRetrieve(
   return response.data;
 }
 
+export async function widgetAdminMessagesSendCreate(): Promise<any> {
+  const response = await axios.post(`/api/widget/admin/messages/send/`);
+  return response.data;
+}
+
 export async function widgetPublicConfigRetrieve(): Promise<any> {
   const response = await axios.get(`/api/widget/public/config/`);
   return response.data;

@@ -107,7 +107,7 @@ export function useMarkConversationRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget'; conversation_id: string }) => {
       const response = await axios.post('/api/social/mark-read/', data);
       return response.data;
     },
@@ -173,7 +173,7 @@ export function useMarkConversationUnread() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget'; conversation_id: string }) => {
       const response = await axios.post('/api/social/mark-unread/', data);
       return response.data;
     },
@@ -233,7 +233,7 @@ export function useDeleteConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget'; conversation_id: string }) => {
       const response = await axios.delete('/api/social/delete-conversation/', { data });
       return response.data;
     },
@@ -338,6 +338,52 @@ export function useSendFacebookMessage() {
     mutationFn: socialFacebookSendMessageCreate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.facebookMessages() });
+    },
+  });
+}
+
+// ============================================================================
+// WIDGET (EMBEDDABLE WEBSITE CHAT) HOOKS
+// ============================================================================
+
+export interface SendWidgetMessagePayload {
+  connection_id: number;
+  session_id: string;
+  message_text: string;
+  attachments?: Array<{
+    url: string;
+    filename?: string;
+    size?: number;
+    content_type?: string;
+  }>;
+}
+
+export interface WidgetAdminMessageResponse {
+  id: number;
+  message_id: string;
+  message_text: string;
+  is_from_visitor: boolean;
+  timestamp: string;
+  attachments?: unknown[];
+  [key: string]: unknown;
+}
+
+/**
+ * Agent-side send for the embeddable website widget. POSTs to the admin
+ * endpoint; the backend fans the message out via Channels to both the
+ * visitor's widget (group `widget_visitor_<session_id>`) and the shared
+ * agent inbox (`messages_<tenant_schema>`) so the existing `MessagesChat`
+ * WebSocket handler renders it without extra glue.
+ *
+ * Returns the created `WidgetMessage`. We intentionally do NOT invalidate
+ * conversation/message lists here — the WebSocket broadcast will push the
+ * new row into the existing caches.
+ */
+export function useSendWidgetMessage() {
+  return useMutation({
+    mutationFn: async (data: SendWidgetMessagePayload): Promise<WidgetAdminMessageResponse> => {
+      const response = await axios.post('/api/widget/admin/messages/send/', data);
+      return response.data as WidgetAdminMessageResponse;
     },
   });
 }
@@ -868,7 +914,7 @@ export function useUpdateSocialSettings() {
 // CHAT ASSIGNMENT HOOKS
 // ============================================================================
 
-export type ChatAssignmentPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'email';
+export type ChatAssignmentPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
 export type ChatAssignmentStatus = 'active' | 'in_session' | 'completed';
 
 export interface ChatAssignment {
