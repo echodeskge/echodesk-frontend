@@ -23,7 +23,7 @@ function useCurrentListFilters() {
 
   const defaultPlatforms = Array.isArray(platforms)
     ? platforms.join(",")
-    : "facebook,instagram,whatsapp,email";
+    : "facebook,instagram,whatsapp,email,widget";
 
   return {
     platforms: platformFilter || defaultPlatforms,

@@ -35,7 +35,7 @@ export function ChatSidebarActionButtons() {
       archiveAllMutation.mutate('email')
     } else {
       // On social page: only mark social messages as read
-      markAllAsReadMutation.mutate('facebook,instagram,whatsapp')
+      markAllAsReadMutation.mutate('facebook,instagram,whatsapp,widget')
     }
   }
 
@@ -44,7 +44,7 @@ export function ChatSidebarActionButtons() {
       archiveAllMutation.mutate('email')
     } else {
       // Only archive social messages, not email
-      archiveAllMutation.mutate('facebook,instagram,whatsapp')
+      archiveAllMutation.mutate('facebook,instagram,whatsapp,widget')
     }
   }
 

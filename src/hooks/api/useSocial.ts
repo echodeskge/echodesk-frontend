@@ -2595,7 +2595,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
         params: {
           page: 1,
           page_size: limit,
-          platforms: 'facebook,instagram,whatsapp',
+          platforms: 'facebook,instagram,whatsapp,email,widget',
         },
       });
       return response.data;
@@ -2651,7 +2651,7 @@ export interface UseUnifiedConversationsOptions {
  */
 export function useUnifiedConversations(options: UseUnifiedConversationsOptions = {}) {
   const {
-    platforms = 'facebook,instagram,whatsapp,email',
+    platforms = 'facebook,instagram,whatsapp,email,widget',
     search = '',
     folder = 'INBOX',
     pageSize = 50,
