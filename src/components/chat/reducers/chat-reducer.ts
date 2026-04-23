@@ -183,11 +183,30 @@ export const ChatReducer = (
       const { chatId, message, senderName } = action
       const isSelectedChat = state.selectedChat?.id === chatId
 
+      // Dedupe by message id. Broadcast paths can overlap (WS echo of an
+      // agent-sent message, tenant-group + conversation-group double
+      // delivery, or a client that toggled visibility while the WS was
+      // redelivering queued frames). Skip if the exact message already
+      // exists in the chat.
+      let duplicateDetected = false
+      const isDuplicate = (existing: ChatType): boolean => {
+        const list = existing.messages || []
+        const matchId = message.id ? (m: MessageType) => m.id === message.id : null
+        const matchPlatform = message.platformMessageId
+          ? (m: MessageType) => m.platformMessageId === message.platformMessageId
+          : null
+        return list.some((m) => (matchId ? matchId(m) : false) || (matchPlatform ? matchPlatform(m) : false))
+      }
+
       // Find the chat and update it
       let chatFound = false
       let updatedChats = state.chats.map(chat => {
         if (chat.id === chatId) {
           chatFound = true
+          if (isDuplicate(chat)) {
+            duplicateDetected = true
+            return chat
+          }
           const currentMessages = chat.messages || []
           return {
             ...chat,
@@ -202,6 +221,10 @@ export const ChatReducer = (
         }
         return chat
       })
+
+      if (duplicateDetected) {
+        return state
+      }
 
       // If chat wasn't found in the list, create a new chat entry.
       // messagesLoaded is INTENTIONALLY false here — we only have the one
