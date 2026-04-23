@@ -213,6 +213,90 @@
 
     try { document.body.appendChild(btn); }
     catch (_e) { /* body gone? bail silently */ }
+
+    // ---- Proactive message ---------------------------------------------
+    // After the tenant-configured delay, show a speech-bubble nudge next
+    // to the floating button. Skipped on repeat tabs / repeat sessions so
+    // visitors don't see it every page load.
+    if (cfg && cfg.proactive_enabled && !isOpen) {
+      var delayMs = Math.max(1, Number(cfg.proactive_delay_seconds) || 30) * 1000;
+      var proactiveKey = 'echodesk.widget.proactive.' + token;
+      var alreadyShown = false;
+      try { alreadyShown = sessionStorage.getItem(proactiveKey) === '1'; } catch (_e) {}
+      if (!alreadyShown) {
+        setTimeout(function () {
+          if (isOpen) return;
+          var text = pickLocalized(cfg.proactive_message);
+          if (!text) return;
+          showProactive(text);
+          try { sessionStorage.setItem(proactiveKey, '1'); } catch (_e) {}
+        }, delayMs);
+      }
+    }
+
+    function pickLocalized(value) {
+      if (!value) return '';
+      if (typeof value === 'string') return value;
+      var pref = (navigator.language || 'en').slice(0, 2);
+      return value[pref] || value.en || (Object.values ? Object.values(value).find(function (v) { return typeof v === 'string' && v; }) : '') || '';
+    }
+
+    function showProactive(text) {
+      var bubble = document.createElement('div');
+      bubble.setAttribute('role', 'dialog');
+      bubble.setAttribute('aria-label', 'Chat prompt');
+      bubble.style.cssText =
+        'position:fixed;bottom:86px;' + positionCss +
+        'max-width:260px;background:#fff;color:#111827;' +
+        'border:1px solid #e5e7eb;border-radius:14px;' +
+        'box-shadow:0 8px 24px rgba(0,0,0,.12);' +
+        'padding:10px 32px 10px 14px;font-size:13px;line-height:1.4;' +
+        'z-index:2147483000;cursor:pointer;' +
+        'opacity:0;transform:translateY(6px);' +
+        'transition:opacity .18s ease,transform .18s ease;';
+      bubble.textContent = text;
+
+      var close = document.createElement('button');
+      close.setAttribute('aria-label', 'Dismiss');
+      close.setAttribute('type', 'button');
+      close.style.cssText =
+        'position:absolute;top:4px;right:4px;width:22px;height:22px;' +
+        'border:0;background:transparent;color:#9ca3af;font-size:16px;' +
+        'line-height:1;cursor:pointer;border-radius:4px;padding:0;';
+      close.textContent = '×';
+      close.onclick = function (e) {
+        e.stopPropagation();
+        dismiss();
+      };
+      bubble.appendChild(close);
+
+      bubble.onclick = function () {
+        dismiss();
+        if (!isOpen) toggle();
+      };
+
+      function dismiss() {
+        bubble.style.opacity = '0';
+        bubble.style.transform = 'translateY(6px)';
+        setTimeout(function () {
+          if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
+        }, 200);
+      }
+
+      document.body.appendChild(bubble);
+      if (window.requestAnimationFrame) {
+        requestAnimationFrame(function () {
+          bubble.style.opacity = '1';
+          bubble.style.transform = '';
+        });
+      } else {
+        bubble.style.opacity = '1';
+        bubble.style.transform = '';
+      }
+
+      // Auto-dismiss after 45 seconds if the visitor doesn't engage.
+      setTimeout(dismiss, 45000);
+    }
   }
 
   function onReady(cb) {

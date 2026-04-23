@@ -2127,6 +2127,21 @@
       "autoSaving": "Saving...",
       "autoSaved": "Saved",
       "saveFailed": "Failed to save changes",
+      "proactive": {
+        "title": "Proactive messages",
+        "description": "Show a friendly nudge near the widget button after a visitor has been on your website for a while.",
+        "enableLabel": "Enable proactive messages",
+        "enableHelp": "When enabled, a speech-bubble appears next to the chat button with your message. Visitors see it once per browsing session so it never feels spammy.",
+        "messageEn": "Message (English)",
+        "messageKa": "Message (Georgian)",
+        "messagePlaceholderEn": "Hi there! Need help with anything?",
+        "messagePlaceholderKa": "გამარჯობა! შემიძლია დაგეხმაროთ?",
+        "delayLabel": "Show after",
+        "delayUnit": "seconds on the page",
+        "delayHelp": "Most tenants pick between 20 and 60 seconds. Too soon feels pushy; too late and visitors have already left.",
+        "save": "Save proactive message",
+        "saving": "Saving…"
+      },
       "voice": {
         "title": "Voice calls (optional)",
         "description": "When enabled, visitors see a Call button in the widget. Calls ring into your existing call-center queue like any other inbound call.",

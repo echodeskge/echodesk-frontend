@@ -437,17 +437,12 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
       setIsSending(true);
       setError(null);
 
-      // Optimistic local bubble so the UI feels instant.
-      const tempId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const optimistic: WidgetMessage = {
-        message_id: tempId,
-        message_text: trimmed,
-        is_from_visitor: true,
-        timestamp: new Date().toISOString(),
-        attachments,
-      };
-      setMessages((prev) => prev.concat(optimistic));
-
+      // No optimistic bubble — the bubble only appears when we receive the
+      // authoritative copy back from the server (via WS echo, or polling
+      // fallback). This keeps the "render once" invariant trivial: there's
+      // exactly one source of truth for a message's existence in the UI.
+      // A sub-second latency between hitting Send and seeing the bubble is
+      // the trade-off for zero-dedupe-logic simplicity.
       try {
         let sid = sessionIdRef.current;
         if (!sid) sid = await startSession();
@@ -460,37 +455,17 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
           attachments,
         });
 
-        // Register the real message_id FIRST so the WS echo from our own
-        // POST broadcast gets deduped by appendIfNew before it races the
-        // state swap below. (The backend broadcasts every visitor POST to
-        // `widget_visitor_<session>` for multi-tab sync, and that echo
-        // lands on this very iframe.)
-        messageIdsRef.current.add(res.message_id);
-        // Swap the optimistic bubble for the authoritative server copy.
-        setMessages((prev) => {
-          const swapped = prev.map((m) =>
-            m.message_id === tempId ? { ...res } : m
-          );
-          // Extra safety: if the WS echo arrived BEFORE sendMessage()
-          // resolved, the real message_id is already in the list AND the
-          // optimistic bubble still exists. Drop the optimistic duplicate.
-          if (prev.some((m) => m.message_id === res.message_id)) {
-            return swapped.filter((m) => m.message_id !== tempId);
-          }
-          return swapped;
-        });
-        if (!lastTsRef.current || res.timestamp > lastTsRef.current) {
-          lastTsRef.current = res.timestamp;
-        }
+        // Feed the authoritative response through the same merge path the
+        // WS listener uses. appendIfNew dedupes against the WS echo that
+        // arrives slightly earlier / later from the backend broadcast.
+        appendIfNew(res);
       } catch (err) {
-        // Roll back the optimistic bubble on hard failure.
-        setMessages((prev) => prev.filter((m) => m.message_id !== tempId));
         setError(err instanceof Error ? err.message : 'send_failed');
       } finally {
         setIsSending(false);
       }
     },
-    [startSession, token]
+    [appendIfNew, startSession, token]
   );
 
   return {

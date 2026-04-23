@@ -45,6 +45,7 @@ import {
 } from '@/components/widget-settings/WidgetMessagesEditor';
 import { WidgetPreviewFrame } from '@/components/widget-settings/WidgetPreviewFrame';
 import { WidgetVoiceCallsSection } from '@/components/widget-settings/WidgetVoiceCallsSection';
+import { WidgetProactiveSection } from '@/components/widget-settings/WidgetProactiveSection';
 import { useUserProfile } from '@/hooks/useUserProfile';
 
 type LocaleText = Record<string, string>;
@@ -348,6 +349,25 @@ export function WidgetConnection() {
         saving={autoSaving || updateMutation.isPending}
         onChange={(next) => {
           scheduleAutoSave(selected.id, next as Partial<PatchedWidgetConnectionRequest>);
+        }}
+      />
+
+      <WidgetProactiveSection
+        enabled={Boolean((selected as unknown as Record<string, unknown>).proactive_enabled)}
+        message={asLocaleText((selected as unknown as Record<string, unknown>).proactive_message)}
+        delaySeconds={Number((selected as unknown as Record<string, unknown>).proactive_delay_seconds) || 30}
+        saving={autoSaving || updateMutation.isPending}
+        onToggle={(v) =>
+          scheduleAutoSave(
+            selected.id,
+            { proactive_enabled: v } as unknown as Partial<PatchedWidgetConnectionRequest>,
+          )
+        }
+        onSave={async (payload) => {
+          await savePatchNow(
+            selected.id,
+            payload as unknown as Partial<PatchedWidgetConnectionRequest>,
+          );
         }}
       />
 
