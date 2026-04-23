@@ -58,7 +58,7 @@ export interface UseWidgetSessionResult {
   isSending: boolean;
   error: string | null;
   startSession: (opts?: StartSessionOpts) => Promise<string | null>;
-  send: (text: string) => Promise<void>;
+  send: (text: string, attachments?: WidgetMessage['attachments']) => Promise<void>;
 }
 
 const POLL_INTERVAL_MS = 4000;
@@ -424,9 +424,9 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
 
   // ---- Send -----------------------------------------------------------
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, attachments?: WidgetMessage['attachments']) => {
       const trimmed = text.trim();
-      if (!trimmed) return;
+      if (!trimmed && (!attachments || attachments.length === 0)) return;
 
       setIsSending(true);
       setError(null);
@@ -438,6 +438,7 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
         message_text: trimmed,
         is_from_visitor: true,
         timestamp: new Date().toISOString(),
+        attachments,
       };
       setMessages((prev) => prev.concat(optimistic));
 
@@ -450,6 +451,7 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
           token,
           session_id: sid,
           message_text: trimmed,
+          attachments,
         });
 
         // Swap the optimistic bubble for the authoritative server copy.

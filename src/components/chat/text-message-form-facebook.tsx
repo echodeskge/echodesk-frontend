@@ -325,9 +325,11 @@ export function TextMessageFormFacebook({ onMessageSent }: TextMessageFormFacebo
       const connectionId = accountId
       const sessionId = recipientId
       if (files.length > 0) {
-        // Widget attachments land in PR 6; reject here so the UI surfaces a clear
-        // error rather than silently dropping the file.
-        throw new Error('Widget attachments are not available yet')
+        // Agents can currently only reply with text to a website-widget visitor.
+        // Visitors can upload files to us; the reverse direction is out of scope
+        // for v1 since the widget has no auth-gated download path the way email/
+        // Facebook do, and most tenant workflows don't need it.
+        throw new Error('Sending files to website visitors is not yet supported')
       }
       await axios.post('/api/widget/admin/messages/send/', {
         connection_id: Number(connectionId),

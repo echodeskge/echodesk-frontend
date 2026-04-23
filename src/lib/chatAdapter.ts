@@ -60,6 +60,25 @@ function convertAttachments(msg: UnifiedMessage): AttachmentResult {
     });
 
     if (fileAttachments.length > 0) files = fileAttachments;
+  } else if (msg.platform === 'widget' && msg.attachments && msg.attachments.length > 0) {
+    // Widget attachments come as {url, filename, size, content_type}. Split
+    // images into `images` so they render inline; everything else becomes a
+    // file link.
+    const imageAtts: { name: string; url: string; size: number; type: string }[] = [];
+    const fileAtts: { name: string; url: string; size: number }[] = [];
+    for (const att of msg.attachments as Array<{ url?: string; filename?: string; size?: number; content_type?: string }>) {
+      if (!att?.url) continue;
+      const ct = (att.content_type || '').toLowerCase();
+      if (ct.startsWith('image/')) {
+        imageAtts.push({ name: att.filename || 'image', url: att.url, size: att.size || 0, type: 'image' });
+      } else if (ct.startsWith('audio/')) {
+        voiceMessage = { name: att.filename || 'audio', url: att.url, size: att.size || 0 };
+      } else {
+        fileAtts.push({ name: att.filename || 'file', url: att.url, size: att.size || 0 });
+      }
+    }
+    if (imageAtts.length > 0) images = imageAtts;
+    if (fileAtts.length > 0) files = fileAtts;
   } else {
     // For other platforms (Facebook, Instagram, WhatsApp)
     const attachmentType = msg.attachment_type || msg.message_type || '';

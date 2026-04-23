@@ -191,7 +191,8 @@ export function WidgetShell({ token }: WidgetShellProps) {
             brandColor={brand}
             disabled={false}
             isSending={session.isSending || session.isStartingSession}
-            onSend={(text) => session.send(text)}
+            getUploadContext={() => ({ token, session_id: session.sessionId })}
+            onSend={(text, attachments) => session.send(text, attachments)}
           />
         </>
       )}

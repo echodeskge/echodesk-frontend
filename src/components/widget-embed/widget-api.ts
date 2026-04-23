@@ -144,6 +144,40 @@ export function sendMessage(
   });
 }
 
+export interface WidgetUploadResponse {
+  url: string;
+  filename: string;
+  size: number;
+  content_type?: string;
+}
+
+export async function uploadAttachment(
+  params: { token: string; session_id: string; file: File },
+  signal?: AbortSignal
+): Promise<WidgetUploadResponse> {
+  const fd = new FormData();
+  fd.append('token', params.token);
+  fd.append('session_id', params.session_id);
+  fd.append('file', params.file, params.file.name);
+  const res = await fetch(`${API_BASE}/api/widget/public/upload/`, {
+    method: 'POST',
+    body: fd,
+    credentials: 'omit',
+    signal,
+  });
+  const text = await res.text();
+  let body: unknown = null;
+  if (text) { try { body = JSON.parse(text); } catch { body = text; } }
+  if (!res.ok) {
+    const errCode =
+      body && typeof body === 'object' && 'error' in (body as Record<string, unknown>)
+        ? String((body as Record<string, unknown>).error)
+        : undefined;
+    throw new WidgetApiError(errCode || `HTTP ${res.status}`, res.status, errCode);
+  }
+  return body as WidgetUploadResponse;
+}
+
 export function listMessages(
   params: { token: string; session_id: string; after?: string },
   signal?: AbortSignal

@@ -10158,6 +10158,11 @@ export async function widgetPublicSessionsCreate(): Promise<any> {
   return response.data;
 }
 
+export async function widgetPublicUploadCreate(): Promise<any> {
+  const response = await axios.post(`/api/widget/public/upload/`);
+  return response.data;
+}
+
 export async function notificationsLogsRetrieve(): Promise<any> {
   const response = await axios.get(`/notifications/logs/`);
   return response.data;
