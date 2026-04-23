@@ -532,7 +532,14 @@ export function useSipCall(): UseSipCallResult {
   }
 
   const hangUp = useCallback(async () => {
-    if (state === 'idle' || state === 'ended') return;
+    // Terminal states: the overlay uses hangUp as its "close" button too, so
+    // returning to 'idle' from 'ended'/'error' is how the overlay disappears.
+    if (state === 'idle') return;
+    if (state === 'ended' || state === 'error') {
+      setErrorCode(null);
+      safeSetState('idle');
+      return;
+    }
     safeSetState('ending');
     await teardown('ended');
   }, [safeSetState, state, teardown]);

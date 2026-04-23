@@ -146,7 +146,11 @@
         'box-shadow:0 12px 32px rgba(0,0,0,.18);z-index:2147483000;' +
         'transition:opacity .15s ease, transform .15s ease;' +
         'opacity:0;transform:translateY(8px);';
-      iframe.setAttribute('allow', 'clipboard-write');
+      // microphone + autoplay are required for WebRTC voice calls; without
+      // an explicit allow-list the browser's permissions policy blocks the
+      // iframe from requesting mic access at all and remote audio can't
+      // autoplay without a gesture on the iframe origin.
+      iframe.setAttribute('allow', 'clipboard-write; microphone; autoplay');
       document.body.appendChild(iframe);
       // Fade in after mount.
       if (window.requestAnimationFrame) {
