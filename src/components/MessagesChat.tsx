@@ -372,7 +372,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // Convert WebSocket message to MessageType format
     // For sent messages (from business), use "business" as senderId to match currentUser.id
     const newMessage: MessageType = {
-      id: String(messageData.id),
+      // Widget WS payloads don't carry a DB id — fall back to the stable
+      // platform message id so the reducer's dedupe can tell widget
+      // messages apart instead of collapsing them all under id="undefined".
+      id: messageData.id != null ? String(messageData.id) : String(messageData.message_id || ''),
       senderId: isFromBusiness ? 'business' : (messageData.sender_id || messageData.from_number || ''),
       text: messageData.message_text || '',
       status: 'DELIVERED',

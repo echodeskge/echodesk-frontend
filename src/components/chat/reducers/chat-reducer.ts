@@ -188,14 +188,23 @@ export const ChatReducer = (
       // delivery, or a client that toggled visibility while the WS was
       // redelivering queued frames). Skip if the exact message already
       // exists in the chat.
+      //
+      // Careful: some WS payloads don't carry a DB id. We must only dedupe
+      // on TRULY unique keys — a shared "undefined"/"null"/"" would
+      // collapse every subsequent message into the first one.
       let duplicateDetected = false
+      const hasUsableKey = (v: unknown): v is string | number =>
+        v != null && v !== '' && v !== 'undefined' && v !== 'null'
       const isDuplicate = (existing: ChatType): boolean => {
         const list = existing.messages || []
-        const matchId = message.id ? (m: MessageType) => m.id === message.id : null
-        const matchPlatform = message.platformMessageId
-          ? (m: MessageType) => m.platformMessageId === message.platformMessageId
-          : null
-        return list.some((m) => (matchId ? matchId(m) : false) || (matchPlatform ? matchPlatform(m) : false))
+        const idKey = hasUsableKey(message.id) ? message.id : undefined
+        const pKey = hasUsableKey(message.platformMessageId) ? message.platformMessageId : undefined
+        if (idKey === undefined && pKey === undefined) return false
+        return list.some((m) => {
+          if (idKey !== undefined && m.id === idKey) return true
+          if (pKey !== undefined && m.platformMessageId === pKey) return true
+          return false
+        })
       }
 
       // Find the chat and update it
