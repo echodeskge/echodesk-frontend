@@ -324,7 +324,12 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // Format: fb_{page_id}_{sender_id}, ig_{account_id}_{sender_id}, wa_{waba_id}_{number}, email_{thread_id}
     let chatId: string | undefined;
     const platform = messageData.platform;
-    const isFromBusiness = messageData.is_from_page || messageData.is_from_business || false;
+    // Widget uses the inverted convention — is_from_visitor=true means the
+    // customer sent it, so is_from_business = !is_from_visitor.
+    const isFromBusiness =
+      platform === 'widget'
+        ? !messageData.is_from_visitor
+        : (messageData.is_from_page || messageData.is_from_business || false);
 
     // Only process messages for enabled platforms on this page
     if (!enabledPlatforms.includes(platform)) {
