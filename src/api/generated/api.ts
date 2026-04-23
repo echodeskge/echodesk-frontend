@@ -10138,6 +10138,11 @@ export async function widgetAdminMessagesSendCreate(): Promise<any> {
   return response.data;
 }
 
+export async function widgetPublicCallCredentialsCreate(): Promise<any> {
+  const response = await axios.post(`/api/widget/public/call/credentials/`);
+  return response.data;
+}
+
 export async function widgetPublicConfigRetrieve(): Promise<any> {
   const response = await axios.get(`/api/widget/public/config/`);
   return response.data;

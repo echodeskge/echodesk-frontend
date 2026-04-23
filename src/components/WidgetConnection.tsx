@@ -44,9 +44,7 @@ import {
   type PreChatFormConfig,
 } from '@/components/widget-settings/WidgetMessagesEditor';
 import { WidgetPreviewFrame } from '@/components/widget-settings/WidgetPreviewFrame';
-import { WidgetVoiceCallsSection } from '@/components/widget-settings/WidgetVoiceCallsSection';
 import { WidgetProactiveSection } from '@/components/widget-settings/WidgetProactiveSection';
-import { useUserProfile } from '@/hooks/useUserProfile';
 
 type LocaleText = Record<string, string>;
 
@@ -86,21 +84,6 @@ export function WidgetConnection() {
       setSelectedId(connections[0].id);
     }
   }, [connections, selectedId]);
-
-  // Voice-call gate: only tenants with the `ip_calling` feature (= PBX
-  // wired up) can use widget voice, since calls route through Asterisk.
-  const { data: userProfile } = useUserProfile();
-  const hasIpCallingFeature = useMemo(() => {
-    const profile = userProfile as Record<string, unknown> | undefined;
-    if (!profile?.feature_keys) return false;
-    let keys: string[] = [];
-    if (typeof profile.feature_keys === 'string') {
-      try { keys = JSON.parse(profile.feature_keys as string); } catch { return false; }
-    } else if (Array.isArray(profile.feature_keys)) {
-      keys = profile.feature_keys as string[];
-    }
-    return keys.includes('ip_calling');
-  }, [userProfile]);
 
   const selected: WidgetConnectionType | undefined = useMemo(() => {
     if (!connections) return undefined;
@@ -340,17 +323,6 @@ export function WidgetConnection() {
 
         </CardContent>
       </Card>
-
-      <WidgetVoiceCallsSection
-        voiceEnabled={Boolean(selected.voice_enabled)}
-        voiceQueue={String(selected.voice_queue || 'support')}
-        voiceWorkingHoursOnly={Boolean(selected.voice_working_hours_only)}
-        hasIpCallingFeature={hasIpCallingFeature}
-        saving={autoSaving || updateMutation.isPending}
-        onChange={(next) => {
-          scheduleAutoSave(selected.id, next as Partial<PatchedWidgetConnectionRequest>);
-        }}
-      />
 
       <WidgetProactiveSection
         enabled={Boolean((selected as unknown as Record<string, unknown>).proactive_enabled)}

@@ -4322,6 +4322,9 @@ export interface PatchedWidgetConnectionRequest {
   voice_enabled?: boolean;
   voice_queue?: string;
   voice_working_hours_only?: boolean;
+  proactive_enabled?: boolean;
+  proactive_message?: any;
+  proactive_delay_seconds?: number;
 }
 
 export interface PaymentConfigResponse {
@@ -6502,6 +6505,9 @@ export interface WidgetConnection {
   voice_enabled?: boolean;
   voice_queue?: string;
   voice_working_hours_only?: boolean;
+  proactive_enabled?: boolean;
+  proactive_message?: any;
+  proactive_delay_seconds?: number;
   created_at: string;
   updated_at: string;
 }
@@ -6519,6 +6525,9 @@ export interface WidgetConnectionRequest {
   voice_enabled?: boolean;
   voice_queue?: string;
   voice_working_hours_only?: boolean;
+  proactive_enabled?: boolean;
+  proactive_message?: any;
+  proactive_delay_seconds?: number;
 }
 
 export interface WidgetMessage {

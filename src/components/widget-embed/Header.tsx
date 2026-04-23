@@ -1,6 +1,5 @@
 "use client";
 
-import type { ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 import type { WidgetConfig } from './widget-api';
@@ -8,15 +7,9 @@ import type { WidgetConfig } from './widget-api';
 interface HeaderProps {
   config: WidgetConfig | null;
   onClose: () => void;
-  /**
-   * Optional trailing-action slot, rendered to the left of the close (X)
-   * button in the header. Used by WidgetShell to mount the voice-call
-   * button when `config.voice_enabled` is true.
-   */
-  actions?: ReactNode;
 }
 
-export function Header({ config, onClose, actions }: HeaderProps) {
+export function Header({ config, onClose }: HeaderProps) {
   const brand = config?.brand_color || '#2A2B7D';
   const online = config?.is_online ?? true;
 
@@ -54,7 +47,6 @@ export function Header({ config, onClose, actions }: HeaderProps) {
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        {actions}
         <button
           type="button"
           onClick={onClose}

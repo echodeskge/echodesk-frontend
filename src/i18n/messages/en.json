@@ -2142,18 +2142,6 @@
         "save": "Save proactive message",
         "saving": "Saving…"
       },
-      "voice": {
-        "title": "Voice calls (optional)",
-        "description": "When enabled, visitors see a Call button in the widget. Calls ring into your existing call-center queue like any other inbound call.",
-        "enableLabel": "Enable voice calls in the widget",
-        "enableHelp": "Visitors on your website can click to call. Calls route through your PBX and land in the queue you choose below.",
-        "queueLabel": "Ring this queue",
-        "queueHelp": "Which agent queue picks up widget calls. Agents in the queue will ring the same way they do for phone calls.",
-        "queuePlaceholder": "Select a queue",
-        "noQueuesWarning": "You don't have any active queues yet. Create one in /settings/pbx before enabling voice.",
-        "hoursLabel": "Only allow calls during business hours",
-        "hoursHelp": "Outside your configured away hours, the Call button still shows but returns a clear \"call back during business hours\" message."
-      },
       "install": {
         "title": "Installation snippet",
         "description": "Paste this tag before '</body>' on every page you want the chat on.",

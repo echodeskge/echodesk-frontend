@@ -24,7 +24,6 @@ export interface WidgetConfig {
     [k: string]: unknown;
   };
   offline_message: string | { [lang: string]: string };
-  voice_enabled?: boolean;
   is_online?: boolean;
   is_setup_mode?: boolean;
   origin_allowed?: boolean;
@@ -190,39 +189,6 @@ export function listMessages(
   return request<WidgetMessage[]>(
     `/api/widget/public/messages/list/?${qs.toString()}`,
     { method: 'GET', signal }
-  );
-}
-
-/**
- * Short-lived SIP credentials issued to the anonymous visitor so the browser
- * can place a WebRTC call directly into the tenant's PBX (pbx2.echodesk.cloud).
- *
- * The password is valid for ~4 hours. The visitor registers as
- * `widget_<session_id>` and dials the pre-configured `destination_extension`
- * (typically "support"). ICE servers come from the backend so we can swap in
- * TURN relays later without a widget release.
- */
-export interface WidgetCallCredentials {
-  sip_uri: string;
-  sip_username: string;
-  sip_password: string;
-  sip_server_wss: string;
-  sip_domain: string;
-  destination_extension: string;
-  ice_servers: Array<{ urls: string | string[]; username?: string; credential?: string }>;
-}
-
-export function fetchCallCredentials(
-  params: { token: string; session_id: string },
-  signal?: AbortSignal
-) {
-  return request<WidgetCallCredentials>(
-    `/api/widget/public/call/credentials/`,
-    {
-      method: 'POST',
-      body: JSON.stringify(params),
-      signal,
-    }
   );
 }
 
