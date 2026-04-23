@@ -111,6 +111,27 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
 
   // If assignment mode is enabled but user can't send messages, show appropriate UI
   if (assignmentEnabled && !canSendMessages) {
+    // History view = read-only audit. Don't offer "Assign to Me" here — it
+    // silently unarchives the conversation, which caused a loop where agents
+    // accidentally reopened old chats then had to end-session them again
+    // (reported: amanati, teonagolodze.16@gmail.com, 2026-04-23). The
+    // explicit reopen path is the "Restore from History" item in the chat
+    // header menu, which is unambiguous about its effect.
+    if (showArchived) {
+      return (
+        <CardFooter className="py-4 border-t border-border">
+          <div className="w-full flex flex-col items-center justify-center gap-2 py-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              This conversation is in history (read-only).
+            </p>
+            <p className="text-xs text-muted-foreground">
+              To reply, use <span className="font-medium">Restore from History</span> in the chat menu.
+            </p>
+          </div>
+        </CardFooter>
+      )
+    }
+
     return (
       <CardFooter className="py-4 border-t border-border">
         <div className="w-full flex flex-col items-center justify-center gap-3 py-4">
