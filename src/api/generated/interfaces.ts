@@ -3317,6 +3317,20 @@ export interface PaginatedWhatsAppMessageList {
   results: WhatsAppMessage[];
 }
 
+export interface PaginatedWidgetConnectionList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WidgetConnection[];
+}
+
+export interface PaginatedWidgetMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: WidgetMessage[];
+}
+
 export interface PasswordResetConfirmRequest {
   email: string;
   code: string;
@@ -4294,6 +4308,21 @@ export interface PatchedWhatsAppBusinessAccountRequest {
   is_active?: boolean;
 }
 
+export interface PatchedWidgetConnectionRequest {
+  label?: string;
+  is_active?: boolean;
+  allowed_origins?: any;
+  brand_color?: string;
+  position?: PositionEnum;
+  welcome_message?: any;
+  pre_chat_form?: any;
+  offline_message?: any;
+  business_hours_schedule?: any;
+  voice_enabled?: boolean;
+  voice_queue?: string;
+  voice_working_hours_only?: boolean;
+}
+
 export interface PaymentConfigResponse {
   active_providers: string[];
   enable_cash_on_delivery: boolean;
@@ -4386,6 +4415,10 @@ export interface PlanEnum {
 }
 
 export interface PlatformTypeEnum {
+  [key: string]: any;
+}
+
+export interface PositionEnum {
   [key: string]: any;
 }
 
@@ -6448,4 +6481,55 @@ export interface WhatsAppTemplateSendRequest {
   template_id: number;
   to_number: string;
   parameters?: Record<string, any>;
+}
+
+export interface WidgetConnection {
+  id: number;
+  tenant_schema: string;
+  widget_token: string;
+  label?: string;
+  is_active?: boolean;
+  allowed_origins?: any;
+  brand_color?: string;
+  position?: PositionEnum;
+  welcome_message?: any;
+  pre_chat_form?: any;
+  offline_message?: any;
+  business_hours_schedule?: any;
+  voice_enabled?: boolean;
+  voice_queue?: string;
+  voice_working_hours_only?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WidgetConnectionRequest {
+  label?: string;
+  is_active?: boolean;
+  allowed_origins?: any;
+  brand_color?: string;
+  position?: PositionEnum;
+  welcome_message?: any;
+  pre_chat_form?: any;
+  offline_message?: any;
+  business_hours_schedule?: any;
+  voice_enabled?: boolean;
+  voice_queue?: string;
+  voice_working_hours_only?: boolean;
+}
+
+export interface WidgetMessage {
+  id: number;
+  session_id: string;
+  message_id: string;
+  message_text?: string;
+  attachments?: any;
+  is_from_visitor?: boolean;
+  sent_by?: number;
+  is_delivered: boolean;
+  delivered_at: string;
+  is_read_by_visitor: boolean;
+  is_read_by_staff: boolean;
+  timestamp: string;
+  created_at: string;
 }

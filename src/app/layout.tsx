@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { headers } from 'next/headers';
 import "./globals.css";
 import { TenantProvider } from '@/contexts/TenantContext';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -89,6 +90,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Widget embed routes render inside a cross-origin iframe on tenant
+  // websites. They must NOT pull in i18n / consent / Clarity / Sentry /
+  // tenant context — those providers add >200 KB, multi-count Clarity
+  // sessions, and assume a tenant is in scope. We bypass the whole tree
+  // here and let src/app/widget/embed/layout.tsx own its own <html>/<body>.
+  //
+  // We rely on the `x-pathname` header set by middleware.ts because
+  // Next.js doesn't yet expose the current URL to server layouts directly.
+  const hdrs = await headers();
+  const pathname = hdrs.get('x-pathname') || '';
+  if (pathname.startsWith('/widget/embed')) {
+    return <>{children}</>;
+  }
+
   const allMessages = await getMessages();
   const messages = pickMessages(allMessages as Record<string, unknown>, GLOBAL_NAMESPACES);
   const locale = await getLocale();

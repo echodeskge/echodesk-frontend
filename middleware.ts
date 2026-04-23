@@ -20,31 +20,36 @@ function detectTenantSubdomain(hostname: string, mainDomain: string): string | n
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge';
+  const pathname = request.nextUrl.pathname;
 
   // Skip middleware for API routes and static files (not for pages)
   if (
-    request.nextUrl.pathname.startsWith('/api/') ||
-    request.nextUrl.pathname.startsWith('/_next/') ||
-    request.nextUrl.pathname.includes('.')
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next/') ||
+    pathname.includes('.')
   ) {
     return NextResponse.next();
   }
 
   const subdomain = detectTenantSubdomain(hostname, mainDomain);
 
+  // Forward the pathname on every request so the root layout can detect
+  // routes that need to bypass heavy providers (e.g. /widget/embed, which
+  // runs inside a cross-origin iframe and must be minimal).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
+
   if (subdomain) {
     // Forward the tenant hint via REQUEST headers so Server Components
     // (app/page.tsx, layouts) can read it with `headers()` and render the
     // tenant-aware UI on the very first byte — no flash of the main
     // echodesk.ge landing page before client hydration.
-    const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-tenant-subdomain', subdomain);
-    return NextResponse.next({
-      request: { headers: requestHeaders },
-    });
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 }
 
 export const config = {

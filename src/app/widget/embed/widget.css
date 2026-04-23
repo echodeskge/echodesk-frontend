@@ -1,0 +1,49 @@
+/*
+ * Widget-only styles. Deliberately tiny so the iframe bundle stays light.
+ * We inherit Tailwind (imported via globals.css in the layout) and add a
+ * handful of scoped overrides here so the iframe body doesn't fight with
+ * the host page's background (we want it transparent at the edges so the
+ * border-radius on the iframe itself shows cleanly).
+ */
+
+.echodesk-widget-body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+.echodesk-widget-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: #ffffff;
+}
+
+/* Send-button + visitor-bubble colour is set via inline style using the
+ * tenant's brand_color, but we expose a CSS variable for consistency. */
+.echodesk-widget-root {
+  --ed-brand: #2a2b7d;
+  --ed-brand-contrast: #ffffff;
+  --ed-muted: #f3f4f6;
+  --ed-muted-fg: #6b7280;
+  --ed-border: #e5e7eb;
+}
+
+.echodesk-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.echodesk-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+.echodesk-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

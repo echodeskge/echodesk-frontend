@@ -35,6 +35,11 @@ const nextConfig: NextConfig = {
   },
 
   async headers() {
+    // Security headers applied globally EXCEPT to the widget embed route,
+    // which must be framable by any tenant's website. We omit
+    // X-Frame-Options on the widget route entirely (modern browsers honour
+    // Content-Security-Policy: frame-ancestors, set below) and keep the
+    // rest of the hardening in place.
     const securityHeaders: { key: string; value: string }[] = [
       { key: 'X-Frame-Options', value: 'DENY' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -46,12 +51,31 @@ const nextConfig: NextConfig = {
       { key: 'Content-Security-Policy-Report-Only', value: CSP_DIRECTIVES },
     ];
 
+    // Widget-embed variant: drop X-Frame-Options:DENY so third-party sites
+    // can iframe the route, and replace the global CSP-RO with one that
+    // explicitly allows frame-ancestors *. The backend's per-connection
+    // allowed_origins list enforces the actual authorization at API time.
+    const widgetEmbedHeaders: { key: string; value: string }[] = [
+      { key: 'X-Content-Type-Options', value: 'nosniff' },
+      { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(self), geolocation=(), interest-cohort=()',
+      },
+      {
+        key: 'Content-Security-Policy',
+        value: "frame-ancestors *;",
+      },
+    ];
+
     // Only ship HSTS in production — otherwise localhost pins itself to HTTPS.
     if (process.env.NODE_ENV === 'production') {
-      securityHeaders.push({
+      const hsts = {
         key: 'Strict-Transport-Security',
         value: 'max-age=31536000; includeSubDomains; preload',
-      });
+      };
+      securityHeaders.push(hsts);
+      widgetEmbedHeaders.push(hsts);
     }
 
     return [
@@ -87,7 +111,29 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Security headers for all pages
+        // Widget bootstrap script — 1h cache so the same visitor reuses it
+        // across page loads, yet tenants don't wait ages for updates to
+        // propagate after we ship fixes.
+        source: '/widget.js',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400' },
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
+      {
+        // Widget iframe UI — framable by any tenant site. Must come BEFORE
+        // the catch-all `/(.*)` block so Next.js's first-match wins.
+        source: '/widget/embed',
+        headers: widgetEmbedHeaders,
+      },
+      {
+        source: '/widget/embed/:path*',
+        headers: widgetEmbedHeaders,
+      },
+      {
+        // Security headers for all remaining pages
         source: '/(.*)',
         headers: securityHeaders,
       },

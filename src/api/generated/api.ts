@@ -496,6 +496,12 @@ import type {
   UserUpdate,
   PatchedUserUpdateRequest,
   UserRequest,
+  PaginatedWidgetConnectionList,
+  WidgetConnectionRequest,
+  WidgetConnection,
+  PatchedWidgetConnectionRequest,
+  PaginatedWidgetMessageList,
+  WidgetMessage,
 } from './interfaces';
 
 export async function attachmentsList(
@@ -4591,6 +4597,7 @@ export async function ecommerceClientProductsList(
   attrMaterial?: string,
   attrNumberOfLamps?: string,
   attrSubcategory?: string,
+  attr?: string,
   isFeatured?: boolean,
   language?: string,
   maxPrice?: number,
@@ -4617,6 +4624,7 @@ export async function ecommerceClientProductsList(
         attrSubcategory
           ? 'attr_subcategory=' + encodeURIComponent(attrSubcategory)
           : null,
+        attr ? 'attr_წითელი=' + encodeURIComponent(attr) : null,
         isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
         language ? 'language=' + encodeURIComponent(language) : null,
         maxPrice ? 'max_price=' + encodeURIComponent(maxPrice) : null,
@@ -10034,6 +10042,114 @@ export async function webhooksSipCreate(data: {
   metadata?: Record<string, any>;
 }): Promise<Record<string, any>> {
   const response = await axios.post(`/api/webhooks/sip/`, data);
+  return response.data;
+}
+
+export async function widgetAdminConnectionsList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedWidgetConnectionList> {
+  const response = await axios.get(
+    `/api/widget/admin/connections/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function widgetAdminConnectionsCreate(
+  data: WidgetConnectionRequest,
+): Promise<WidgetConnection> {
+  const response = await axios.post(`/api/widget/admin/connections/`, data);
+  return response.data;
+}
+
+export async function widgetAdminConnectionsRetrieve(
+  id: string,
+): Promise<WidgetConnection> {
+  const response = await axios.get(`/api/widget/admin/connections/${id}/`);
+  return response.data;
+}
+
+export async function widgetAdminConnectionsUpdate(
+  id: string,
+  data: WidgetConnectionRequest,
+): Promise<WidgetConnection> {
+  const response = await axios.put(
+    `/api/widget/admin/connections/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function widgetAdminConnectionsPartialUpdate(
+  id: string,
+  data: PatchedWidgetConnectionRequest,
+): Promise<WidgetConnection> {
+  const response = await axios.patch(
+    `/api/widget/admin/connections/${id}/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function widgetAdminConnectionsDestroy(id: string): Promise<any> {
+  const response = await axios.delete(`/api/widget/admin/connections/${id}/`);
+  return response.data;
+}
+
+export async function widgetAdminMessagesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedWidgetMessageList> {
+  const response = await axios.get(
+    `/api/widget/admin/messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function widgetAdminMessagesRetrieve(
+  id: string,
+): Promise<WidgetMessage> {
+  const response = await axios.get(`/api/widget/admin/messages/${id}/`);
+  return response.data;
+}
+
+export async function widgetPublicConfigRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/widget/public/config/`);
+  return response.data;
+}
+
+export async function widgetPublicMessagesCreate(): Promise<any> {
+  const response = await axios.post(`/api/widget/public/messages/`);
+  return response.data;
+}
+
+export async function widgetPublicMessagesListRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/widget/public/messages/list/`);
+  return response.data;
+}
+
+export async function widgetPublicSessionsCreate(): Promise<any> {
+  const response = await axios.post(`/api/widget/public/sessions/`);
   return response.data;
 }
 
