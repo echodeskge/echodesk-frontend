@@ -77,6 +77,8 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
                 ? "bg-gradient-to-br from-purple-600 to-pink-600"
                 : chat.platform === "email"
                 ? "bg-red-600"
+                : chat.platform === "widget"
+                ? "bg-indigo-600"
                 : "bg-green-600"
             )}>
               {chat.platform === "facebook" ? (

@@ -853,6 +853,7 @@ export interface SocialSettings {
   notification_sound_instagram: string;
   notification_sound_whatsapp: string;
   notification_sound_email: string;
+  notification_sound_widget: string;
   notification_sound_team_chat: string;
   notification_sound_system: string;
   // Auto-reply settings
@@ -892,6 +893,7 @@ export function useUpdateSocialSettings() {
       | 'notification_sound_instagram'
       | 'notification_sound_whatsapp'
       | 'notification_sound_email'
+      | 'notification_sound_widget'
       | 'notification_sound_team_chat'
       | 'notification_sound_system'
       | 'timezone'

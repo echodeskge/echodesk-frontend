@@ -58,6 +58,7 @@ export function ChatSidebarActionButtons() {
     { value: 'facebook', label: 'Messenger', icon: Facebook },
     { value: 'instagram', label: 'Instagram', icon: Instagram },
     { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+    { value: 'widget', label: 'Website widget', icon: MessageCircle },
   ]
 
   return (

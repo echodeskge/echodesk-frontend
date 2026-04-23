@@ -4090,6 +4090,7 @@ export interface PatchedSocialIntegrationSettingsRequest {
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
   notification_sound_email?: string;
+  notification_sound_widget?: string;
   notification_sound_team_chat?: string;
   notification_sound_system?: string;
   timezone?: string;
@@ -5351,6 +5352,7 @@ export interface SocialIntegrationSettings {
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
   notification_sound_email?: string;
+  notification_sound_widget?: string;
   notification_sound_team_chat?: string;
   notification_sound_system?: string;
   timezone?: string;
@@ -5375,6 +5377,7 @@ export interface SocialIntegrationSettingsRequest {
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
   notification_sound_email?: string;
+  notification_sound_widget?: string;
   notification_sound_team_chat?: string;
   notification_sound_system?: string;
   timezone?: string;

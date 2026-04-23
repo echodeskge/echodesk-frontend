@@ -253,6 +253,8 @@ function NotificationsTab({
   setSoundWhatsapp,
   soundEmail,
   setSoundEmail,
+  soundWidget,
+  setSoundWidget,
   soundTeamChat,
   setSoundTeamChat,
   soundSystem,
@@ -272,6 +274,8 @@ function NotificationsTab({
   setSoundWhatsapp: (v: string) => void;
   soundEmail: string;
   setSoundEmail: (v: string) => void;
+  soundWidget: string;
+  setSoundWidget: (v: string) => void;
   soundTeamChat: string;
   setSoundTeamChat: (v: string) => void;
   soundSystem: string;
@@ -441,6 +445,33 @@ function NotificationsTab({
                 </SelectContent>
               </Select>
               <Button variant="ghost" size="icon" onClick={() => previewSound(soundEmail)}>
+                <Play className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Website Widget Sound */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <Label className="flex items-center gap-2">
+              <span className="text-indigo-600">&#9679;</span>
+              {t("settingsPage.notificationSounds.widget") || "Website widget"}
+            </Label>
+            <div className="flex gap-2">
+              <Select value={soundWidget} onValueChange={setSoundWidget}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {NOTIFICATION_SOUNDS.map((sound) => (
+                    <SelectItem key={sound.value} value={sound.value}>
+                      {sound.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button variant="ghost" size="icon" onClick={() => previewSound(soundWidget)}>
                 <Play className="h-4 w-4" />
               </Button>
             </div>
@@ -1087,6 +1118,7 @@ export default function SocialSettingsPage() {
   const [soundInstagram, setSoundInstagram] = useState('mixkit-magic-notification-ring-2344.wav');
   const [soundWhatsapp, setSoundWhatsapp] = useState('mixkit-positive-notification-951.wav');
   const [soundEmail, setSoundEmail] = useState('mixkit-bell-notification-933.wav');
+  const [soundWidget, setSoundWidget] = useState('mixkit-bubble-pop-up-alert-notification-2357.wav');
   const [soundTeamChat, setSoundTeamChat] = useState('mixkit-happy-bells-notification-937.wav');
   const [soundSystem, setSoundSystem] = useState('mixkit-confirmation-tone-2867.wav');
 
@@ -1116,6 +1148,7 @@ export default function SocialSettingsPage() {
       setSoundInstagram(settings.notification_sound_instagram || 'mixkit-magic-notification-ring-2344.wav');
       setSoundWhatsapp(settings.notification_sound_whatsapp || 'mixkit-positive-notification-951.wav');
       setSoundEmail(settings.notification_sound_email || 'mixkit-bell-notification-933.wav');
+      setSoundWidget(settings.notification_sound_widget || 'mixkit-bubble-pop-up-alert-notification-2357.wav');
       setSoundTeamChat(settings.notification_sound_team_chat || 'mixkit-happy-bells-notification-937.wav');
       setSoundSystem(settings.notification_sound_system || 'mixkit-confirmation-tone-2867.wav');
       // Auto-reply settings
@@ -1160,6 +1193,7 @@ export default function SocialSettingsPage() {
       notification_sound_instagram: soundInstagram,
       notification_sound_whatsapp: soundWhatsapp,
       notification_sound_email: soundEmail,
+      notification_sound_widget: soundWidget,
       notification_sound_team_chat: soundTeamChat,
       notification_sound_system: soundSystem,
       // Auto-reply settings
@@ -1237,6 +1271,8 @@ export default function SocialSettingsPage() {
             setSoundWhatsapp={setSoundWhatsapp}
             soundEmail={soundEmail}
             setSoundEmail={setSoundEmail}
+            soundWidget={soundWidget}
+            setSoundWidget={setSoundWidget}
             soundTeamChat={soundTeamChat}
             setSoundTeamChat={setSoundTeamChat}
             soundSystem={soundSystem}

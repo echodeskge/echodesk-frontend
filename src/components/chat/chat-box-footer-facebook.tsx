@@ -148,8 +148,10 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
           )}
 
           {isAssignedToMe && !isInSession && (
-            chatInfo?.platform === 'email' ? (
-              // For email, allow starting new session immediately (no rating flow)
+            (chatInfo?.platform === 'email' || chatInfo?.platform === 'widget') ? (
+              // Email + widget skip the rating flow — the visitor may have
+              // already closed the tab, so requiring a rating before reopening
+              // would effectively lock the conversation out forever.
               <>
                 <p className="text-sm text-muted-foreground text-center">
                   Session ended
