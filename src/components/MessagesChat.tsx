@@ -725,6 +725,51 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         return convertUnifiedMessagesToMessageType(unifiedMessages);
       }
 
+      if (platform === 'widget' && parts.length >= 3) {
+        const connectionId = parts[1];
+        const sessionId = parts.slice(2).join('_');
+
+        const response = await axios.get("/api/widget/admin/messages/", {
+          params: {
+            session_id: sessionId,
+            page_size: initialLoad ? 100 : 500,
+          },
+        });
+        const messages = response.data?.results || response.data || [];
+
+        const unifiedMessages: UnifiedMessage[] = (messages as Array<Record<string, unknown>>).map((msg) => {
+          const attachments = (msg.attachments as Array<{ content_type?: string }> | undefined) || [];
+          const firstType = (attachments[0]?.content_type || '').toLowerCase();
+          const attachment_type = firstType.startsWith('image/')
+            ? 'image'
+            : firstType.startsWith('audio/')
+              ? 'audio'
+              : firstType.startsWith('video/')
+                ? 'video'
+                : attachments.length > 0 ? 'file' : undefined;
+          return {
+            id: String(msg.id),
+            platform: "widget" as const,
+            sender_id: String((msg.sender_id as string | undefined) || sessionId),
+            sender_name: String((msg.sender_name as string | undefined) || 'Website visitor'),
+            profile_pic_url: undefined,
+            message_text: String((msg.message_text as string | undefined) || ''),
+            attachment_type,
+            attachments: msg.attachments as never,
+            timestamp: String(msg.timestamp || ''),
+            is_from_business: !(msg.is_from_visitor as boolean | undefined),
+            is_delivered: Boolean(msg.is_delivered),
+            is_read: Boolean(msg.is_read_by_visitor),
+            conversation_id: chatId,
+            platform_message_id: String(msg.message_id || msg.id),
+            account_id: connectionId,
+            sent_by_name: (msg.sent_by_name as string | undefined) || undefined,
+          };
+        });
+
+        return convertUnifiedMessagesToMessageType(unifiedMessages);
+      }
+
       return [];
     } catch (err) {
       console.error("Failed to load chat messages:", err);
