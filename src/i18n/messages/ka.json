@@ -2313,7 +2313,8 @@
     },
     "actions": {
       "edit": "რედაქტირება",
-      "delete": "წაშლა"
+      "delete": "წაშლა",
+      "openChat": "ჩატის გახსნა"
     },
     "booking": {
       "verified": "დადასტურებული",

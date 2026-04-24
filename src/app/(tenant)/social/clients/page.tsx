@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +74,7 @@ const platformColors: Record<string, string> = {
   whatsapp: "bg-green-600",
   email: "bg-gray-600",
   tiktok: "bg-black",
+  widget: "bg-indigo-600",
 };
 
 // Platform icons
@@ -81,7 +84,15 @@ const platformLabels: Record<string, string> = {
   whatsapp: "WA",
   email: "Email",
   tiktok: "TT",
+  widget: "Widget",
 };
+
+interface ChatLinkedAccount {
+  id: number;
+  platform: string;
+  display_name: string;
+  chat_id: string | null;
+}
 
 function getInitials(name: string): string {
   return name
@@ -101,6 +112,7 @@ interface ClientFormData {
 
 export default function SocialClientsPage() {
   const t = useTranslations("socialClients");
+  const router = useRouter();
   const { toast } = useToast();
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -554,6 +566,33 @@ export default function SocialClientsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {(() => {
+                              const chatAccounts: ChatLinkedAccount[] = Array.isArray(
+                                (client as unknown as { social_accounts?: ChatLinkedAccount[] }).social_accounts,
+                              )
+                                ? ((client as unknown as { social_accounts?: ChatLinkedAccount[] }).social_accounts || [])
+                                : [];
+                              const openable = chatAccounts.filter((a) => !!a.chat_id);
+                              if (openable.length === 0) return null;
+                              return (
+                                <>
+                                  {openable.map((acct) => (
+                                    <DropdownMenuItem
+                                      key={acct.id}
+                                      onClick={() => router.push(`/social/messages/${acct.chat_id}`)}
+                                    >
+                                      <MessageSquare className="h-4 w-4 mr-2" />
+                                      {t("actions.openChat") || "Open chat"}
+                                      <span className="ml-auto text-xs text-muted-foreground">
+                                        {platformLabels[acct.platform] || acct.platform}
+                                        {acct.display_name ? ` · ${acct.display_name}` : ""}
+                                      </span>
+                                    </DropdownMenuItem>
+                                  ))}
+                                  <DropdownMenuSeparator />
+                                </>
+                              );
+                            })()}
                             <DropdownMenuItem onClick={() => handleOpenEdit(client)}>
                               <Pencil className="h-4 w-4 mr-2" />
                               {t("actions.edit")}

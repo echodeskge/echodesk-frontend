@@ -2470,7 +2470,8 @@
     },
     "actions": {
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "openChat": "Open chat"
     },
     "booking": {
       "verified": "Verified",
