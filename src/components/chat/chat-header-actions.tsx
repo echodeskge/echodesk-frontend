@@ -292,6 +292,10 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
                 : 'The visitor has been asked to rate the chat.',
           })
           queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
+          // Drop the chat from the detail view — the conversation has
+          // moved to History server-side and there's nothing left to do
+          // with it from the active inbox.
+          setSelectedChatId(null)
         },
         onError: (error: any) => {
           setShowEndWidgetDialog(false)

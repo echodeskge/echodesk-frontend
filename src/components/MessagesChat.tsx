@@ -527,14 +527,18 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
   // Handle widget `session_ended` events. The conversation already moved
   // to history server-side (visitor close + agent close both archive),
-  // so we only need to refresh the cached query data — the existing
-  // chat list / chat-box-footer plumbing already swaps the composer for
-  // the ended banner once it sees the new session_ended_at field.
-  // No toast — the agent will see the chat move to History on its own.
-  const handleSessionEnded = useCallback(() => {
+  // so we refresh the cached queries + deselect the chat if the agent
+  // happened to have it open — exiting the chat detail view drops them
+  // back on the inbox, which matches the post-archive UX everywhere else.
+  // No toast: the move-to-history is the visible signal.
+  const handleSessionEnded = useCallback((data: any) => {
     queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
     queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
-  }, [queryClient]);
+    const endedConversationId = data?.conversation_id;
+    if (endedConversationId && endedConversationId === selectedChatId) {
+      setSelectedChatId(null);
+    }
+  }, [queryClient, selectedChatId, setSelectedChatId]);
 
   // Track prior WebSocket connection state so we can detect reconnects
   // (disconnected → connected) and catch up on any conversations/messages
