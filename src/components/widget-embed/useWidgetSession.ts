@@ -415,6 +415,24 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
       const payload = data as Record<string, unknown>;
       const type = payload.type;
 
+      // The connection handshake carries the session's current ended-state.
+      // This catches the "missed event" case: the WS was closed when the
+      // session ended (iframe was hidden, host reload, network blip), so
+      // the visitor never got the live `session_ended` frame. On reconnect
+      // we resync from the handshake and route them to the review form.
+      if (type === 'connection') {
+        const rawEndedBy = payload.ended_by;
+        if (
+          rawEndedBy === 'visitor' ||
+          rawEndedBy === 'agent' ||
+          rawEndedBy === 'timeout'
+        ) {
+          setEndedBy(rawEndedBy);
+          dropStoredSessionId();
+        }
+        return;
+      }
+
       if (type === 'session_ended') {
         const rawEndedBy = payload.ended_by;
         if (
