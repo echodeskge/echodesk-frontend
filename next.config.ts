@@ -260,9 +260,11 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   
-  // Enable TypeScript checking during build, ignore ESLint warnings
+  // Skip type checking during `next build` — it adds ~30-60s to every DO
+  // build for no benefit, since `npx tsc --noEmit` already runs locally and
+  // via `npm run test`'s pretest step. Type errors are caught before push.
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
   eslint: {
     // Allow builds to succeed with ESLint warnings (unused vars, any types)
@@ -292,28 +294,35 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // Smaller source-map set keeps build time down — stack traces get a
+  // touch less detail, fine for our scale.
+  widenClientFileUpload: false,
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   tunnelRoute: "/monitoring",
 
-  // Hides source maps from generated client bundles
+  // Hides source maps from generated client bundles. We also short-circuit
+  // the upload entirely when no auth token is set (PR previews, forks) —
+  // the upload would 401 anyway and the build-time map-generation work is
+  // the expensive part we want to skip.
   sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
     deleteSourcemapsAfterUpload: true,
   },
 
   // Webpack-specific options (moved from deprecated top-level options)
   webpack: {
-    // Automatically annotate React components to show their full name in breadcrumbs and session replay
+    // React component annotation runs an extra Babel pass on every JSX
+    // element to add `data-sentry-component` attrs. Disabled — meaningful
+    // build-time cost for a feature we don't actively use in triage.
     reactComponentAnnotation: {
-      enabled: true,
+      enabled: false,
     },
     // Automatically tree-shake Sentry logger statements to reduce bundle size
     treeshake: {
       removeDebugLogging: true,
     },
-    // Enables automatic instrumentation of Vercel Cron Monitors
-    automaticVercelMonitors: true,
+    // We're on DO App Platform, not Vercel — disable to skip the cron-scan pass.
+    automaticVercelMonitors: false,
   },
 });
