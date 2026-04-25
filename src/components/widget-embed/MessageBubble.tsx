@@ -18,6 +18,7 @@ export function MessageBubble({ message, brandColor }: MessageBubbleProps) {
 
   return (
     <div
+      className={isVisitor ? 'echodesk-msg-enter--visitor' : 'echodesk-msg-enter--agent'}
       style={{
         display: 'flex',
         justifyContent: isVisitor ? 'flex-end' : 'flex-start',

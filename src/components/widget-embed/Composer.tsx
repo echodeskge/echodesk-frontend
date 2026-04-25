@@ -33,11 +33,22 @@ export function Composer({
   const [uploadingCount, setUploadingCount] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sendButtonRef = useRef<HTMLButtonElement>(null);
+
+  const fireSendPulse = () => {
+    const btn = sendButtonRef.current;
+    if (!btn) return;
+    btn.classList.remove('echodesk-send-firing');
+    // Force reflow so the animation re-triggers when send is hit twice
+    void btn.offsetWidth;
+    btn.classList.add('echodesk-send-firing');
+  };
 
   const submit = async () => {
     const value = text.trim();
     if (isSending) return;
     if (!value && attachments.length === 0) return;
+    fireSendPulse();
     setText('');
     const sent = attachments;
     setAttachments([]);
@@ -123,6 +134,7 @@ export function Composer({
           {attachments.map((att, idx) => (
             <span
               key={att.url}
+              className="echodesk-attachment-chip"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -244,6 +256,7 @@ export function Composer({
           }}
         />
         <button
+          ref={sendButtonRef}
           type="button"
           onClick={() => void submit()}
           disabled={sendDisabled}
@@ -259,7 +272,7 @@ export function Composer({
             alignItems: 'center',
             justifyContent: 'center',
             cursor: sendDisabled ? 'not-allowed' : 'pointer',
-            transition: 'background .12s ease',
+            transition: 'background .12s ease, transform .12s ease',
           }}
         >
           <Send size={16} />

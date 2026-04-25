@@ -175,6 +175,7 @@ export function WidgetShell({ token }: WidgetShellProps) {
           {session.error && (
             <div
               role="status"
+              className="echodesk-error-strip"
               style={{
                 background: '#fef2f2',
                 color: '#b91c1c',

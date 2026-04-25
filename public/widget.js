@@ -101,7 +101,36 @@
   // ---- Mount once DOM is ready -----------------------------------------
   function mount(cfg) {
     var positionCss = cfg.position === 'bottom-left' ? 'left: 20px;' : 'right: 20px;';
+    var transformOrigin = cfg.position === 'bottom-left' ? 'bottom left' : 'bottom right';
     var brandColor = cfg.brand_color || '#2A2B7D';
+    var reduceMotion = false;
+    try {
+      reduceMotion = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (_e) { reduceMotion = false; }
+
+    // Inject a one-time keyframe stylesheet so we can use CSS animations
+    // for the bubble + badge without bloating the JS with frame-loops.
+    if (!document.getElementById('echodesk-widget-anim-styles')) {
+      var styles = document.createElement('style');
+      styles.id = 'echodesk-widget-anim-styles';
+      styles.textContent =
+        '@keyframes ed-btn-in {' +
+        '  0% { opacity: 0; transform: scale(.6) translateY(20px); }' +
+        '  60% { opacity: 1; transform: scale(1.08) translateY(-2px); }' +
+        '  100% { opacity: 1; transform: scale(1) translateY(0); }' +
+        '}' +
+        '@keyframes ed-badge-pop {' +
+        '  0% { transform: scale(0); }' +
+        '  60% { transform: scale(1.2); }' +
+        '  100% { transform: scale(1); }' +
+        '}' +
+        '@keyframes ed-proactive-in {' +
+        '  0% { opacity: 0; transform: translateY(8px) scale(.95); }' +
+        '  100% { opacity: 1; transform: none; }' +
+        '}';
+      document.head.appendChild(styles);
+    }
 
     // Floating button ----------------------------------------------------
     var btn = document.createElement('button');
@@ -113,14 +142,25 @@
       'background:' + brandColor + ';color:#fff;cursor:pointer;' +
       'box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:2147483000;' +
       'display:flex;align-items:center;justify-content:center;padding:0;' +
-      'transition:transform .12s ease;';
+      'transition:transform .18s cubic-bezier(.2,.8,.25,1),' +
+      ' box-shadow .18s ease;' +
+      (reduceMotion ? '' :
+        'animation:ed-btn-in .42s cubic-bezier(.2,.8,.25,1) both;');
     btn.innerHTML =
       '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
       'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>' +
       '</svg>';
-    btn.onmouseenter = function () { btn.style.transform = 'scale(1.05)'; };
-    btn.onmouseleave = function () { btn.style.transform = ''; };
+    btn.onmouseenter = function () {
+      btn.style.transform = 'scale(1.06)';
+      btn.style.boxShadow = '0 6px 18px rgba(0,0,0,.22)';
+    };
+    btn.onmouseleave = function () {
+      btn.style.transform = '';
+      btn.style.boxShadow = '0 4px 12px rgba(0,0,0,.15)';
+    };
+    btn.onmousedown = function () { btn.style.transform = 'scale(.94)'; };
+    btn.onmouseup = function () { btn.style.transform = 'scale(1.06)'; };
 
     // Unread badge (hidden until we receive a count > 0) -----------------
     var badge = document.createElement('span');
@@ -128,11 +168,13 @@
       'position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;' +
       'border-radius:999px;min-width:20px;height:20px;font-size:11px;' +
       'font-weight:600;display:none;align-items:center;justify-content:center;' +
-      'padding:0 6px;box-sizing:border-box;pointer-events:none;';
+      'padding:0 6px;box-sizing:border-box;pointer-events:none;' +
+      'transform-origin:center;';
     btn.appendChild(badge);
 
     var iframe = null;
     var isOpen = false;
+    var iframeAnimTimer = null;
 
     function createIframe() {
       iframe = document.createElement('iframe');
@@ -144,37 +186,81 @@
         'height:600px;max-height:calc(100vh - 110px);' +
         'border:0;border-radius:16px;background:#fff;' +
         'box-shadow:0 12px 32px rgba(0,0,0,.18);z-index:2147483000;' +
-        'transition:opacity .15s ease, transform .15s ease;' +
-        'opacity:0;transform:translateY(8px);';
+        'transition:opacity .22s cubic-bezier(.2,.8,.25,1),' +
+        ' transform .22s cubic-bezier(.2,.8,.25,1);' +
+        'transform-origin:' + transformOrigin + ';' +
+        (reduceMotion ?
+          'opacity:1;transform:none;' :
+          'opacity:0;transform:translateY(12px) scale(.96);');
       iframe.setAttribute('allow', 'clipboard-write');
       document.body.appendChild(iframe);
-      // Fade in after mount.
+      // Two-frame settle so the browser commits the initial style before we
+      // toggle the final-state values; otherwise Chrome occasionally skips
+      // the transition on first mount.
       if (window.requestAnimationFrame) {
         requestAnimationFrame(function () {
-          iframe.style.opacity = '1';
-          iframe.style.transform = '';
+          requestAnimationFrame(function () {
+            iframe.style.opacity = '1';
+            iframe.style.transform = 'none';
+          });
         });
       } else {
         iframe.style.opacity = '1';
-        iframe.style.transform = '';
+        iframe.style.transform = 'none';
       }
+    }
+
+    function showIframe() {
+      if (!iframe) {
+        createIframe();
+        return;
+      }
+      iframe.style.display = '';
+      iframe.style.pointerEvents = '';
+      // Re-trigger the open animation if we're showing a hidden frame.
+      if (window.requestAnimationFrame && !reduceMotion) {
+        iframe.style.opacity = '0';
+        iframe.style.transform = 'translateY(12px) scale(.96)';
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            iframe.style.opacity = '1';
+            iframe.style.transform = 'none';
+          });
+        });
+      }
+    }
+
+    function hideIframe() {
+      if (!iframe) return;
+      if (reduceMotion) {
+        iframe.style.display = 'none';
+        return;
+      }
+      iframe.style.opacity = '0';
+      iframe.style.transform = 'translateY(12px) scale(.96)';
+      iframe.style.pointerEvents = 'none';
+      if (iframeAnimTimer) clearTimeout(iframeAnimTimer);
+      iframeAnimTimer = setTimeout(function () {
+        if (iframe && !isOpen) iframe.style.display = 'none';
+      }, 220);
     }
 
     function toggle() {
       isOpen = !isOpen;
       if (isOpen) {
-        if (!iframe) createIframe();
-        else iframe.style.display = '';
+        showIframe();
         // Clear unread when opened.
-        badge.style.display = 'none';
-        badge.textContent = '';
+        if (badge.style.display !== 'none') {
+          badge.style.display = 'none';
+          badge.textContent = '';
+        }
         if (iframe && iframe.contentWindow) {
           try {
             iframe.contentWindow.postMessage({ type: 'echodesk:open' }, EMBED_ORIGIN);
           } catch (_e) {}
         }
-      } else if (iframe) {
-        iframe.style.display = 'none';
+      } else {
+        hideIframe();
       }
     }
     btn.onclick = toggle;
@@ -188,15 +274,22 @@
 
       if (msg.type === 'echodesk:unread' && typeof msg.count === 'number') {
         if (msg.count > 0 && !isOpen) {
+          var wasHidden = badge.style.display === 'none' || badge.style.display === '';
           badge.style.display = 'flex';
           badge.textContent = msg.count > 99 ? '99+' : String(msg.count);
+          if (wasHidden && !reduceMotion) {
+            badge.style.animation = 'none';
+            // Force reflow so re-applying the animation kicks off again.
+            void badge.offsetWidth;
+            badge.style.animation = 'ed-badge-pop .32s cubic-bezier(.2,.8,.25,1)';
+          }
         } else {
           badge.style.display = 'none';
           badge.textContent = '';
         }
       } else if (msg.type === 'echodesk:close') {
         isOpen = false;
-        if (iframe) iframe.style.display = 'none';
+        hideIframe();
       } else if (msg.type === 'echodesk:ready' && iframe && iframe.contentWindow) {
         // Iframe signalled it's hydrated; re-send "open" if user clicked fast.
         if (isOpen) {
@@ -247,9 +340,12 @@
         'border:1px solid #e5e7eb;border-radius:14px;' +
         'box-shadow:0 8px 24px rgba(0,0,0,.12);' +
         'padding:10px 32px 10px 14px;font-size:13px;line-height:1.4;' +
-        'z-index:2147483000;cursor:pointer;' +
-        'opacity:0;transform:translateY(6px);' +
-        'transition:opacity .18s ease,transform .18s ease;';
+        'z-index:2147483000;cursor:pointer;transform-origin:' + transformOrigin + ';' +
+        'transition:opacity .18s ease,transform .18s ease;' +
+        (reduceMotion ?
+          'opacity:1;' :
+          'opacity:0;transform:translateY(8px) scale(.95);' +
+          'animation:ed-proactive-in .32s cubic-bezier(.2,.8,.25,1) .05s forwards;');
       bubble.textContent = text;
 
       var close = document.createElement('button');
@@ -272,23 +368,16 @@
       };
 
       function dismiss() {
+        bubble.style.animation = 'none';
         bubble.style.opacity = '0';
-        bubble.style.transform = 'translateY(6px)';
+        bubble.style.transform = 'translateY(8px) scale(.95)';
         setTimeout(function () {
           if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
         }, 200);
       }
 
       document.body.appendChild(bubble);
-      if (window.requestAnimationFrame) {
-        requestAnimationFrame(function () {
-          bubble.style.opacity = '1';
-          bubble.style.transform = '';
-        });
-      } else {
-        bubble.style.opacity = '1';
-        bubble.style.transform = '';
-      }
+      // CSS animation handles the entry on its own; no JS toggle needed.
 
       // Auto-dismiss after 45 seconds if the visitor doesn't engage.
       setTimeout(dismiss, 45000);

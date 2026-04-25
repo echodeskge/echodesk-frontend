@@ -29,6 +29,7 @@ export function Header({ config, onClose }: HeaderProps) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div
           aria-hidden="true"
+          className={online ? 'echodesk-status-online' : undefined}
           style={{
             width: 8,
             height: 8,
