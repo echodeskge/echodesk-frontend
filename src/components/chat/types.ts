@@ -150,6 +150,10 @@ export interface ChatType {
   platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget"
   // Lazy loading - if true, messages need to be fetched when chat is selected
   messagesLoaded?: boolean
+  // Widget-only: when set, the visitor session is closed. Composer is
+  // disabled and a banner is shown explaining who ended the conversation.
+  sessionEndedAt?: string
+  sessionEndedBy?: "visitor" | "agent" | "timeout"
 }
 
 export interface ChatStateType {

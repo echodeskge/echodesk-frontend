@@ -450,6 +450,10 @@ interface ApiUnifiedConversation {
   account_name: string;
   account_id: string;
   subject?: string | null;
+  // Widget-only: present when the visitor or another agent has closed
+  // the chat. Used to disable the composer + show a banner.
+  session_ended_at?: string | null;
+  session_ended_by?: 'visitor' | 'agent' | 'timeout' | null;
 }
 
 /**
@@ -516,6 +520,8 @@ export function convertApiConversationsToChatFormat(
       unreadCount: conversation.unread_count,
       platform: conversation.platform as 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget',
       messagesLoaded: false, // Always false - messages need to be fetched
+      sessionEndedAt: conversation.session_ended_at || undefined,
+      sessionEndedBy: conversation.session_ended_by || undefined,
     };
   });
 

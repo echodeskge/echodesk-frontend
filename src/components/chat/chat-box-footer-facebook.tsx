@@ -109,6 +109,29 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
     )
   }
 
+  // Widget-only: if the session has been closed (visitor, agent, or timeout)
+  // suppress the composer entirely so agents can't send into a dead session.
+  // The visitor's iframe is showing the post-chat review form at this point;
+  // a reply here would silently fail and never reach them.
+  if (currentChat?.platform === 'widget' && currentChat.sessionEndedAt) {
+    const endedByLabel =
+      currentChat.sessionEndedBy === 'visitor'
+        ? 'The visitor ended this conversation.'
+        : currentChat.sessionEndedBy === 'agent'
+        ? 'This conversation was ended by an agent.'
+        : 'This conversation has ended.'
+    return (
+      <CardFooter className="py-4 border-t border-border">
+        <div className="w-full flex flex-col items-center justify-center gap-1 py-4 text-center">
+          <p className="text-sm text-muted-foreground">{endedByLabel}</p>
+          <p className="text-xs text-muted-foreground">
+            New messages from this visitor will start a fresh chat.
+          </p>
+        </div>
+      </CardFooter>
+    )
+  }
+
   // If assignment mode is enabled but user can't send messages, show appropriate UI
   if (assignmentEnabled && !canSendMessages) {
     // History view = read-only audit. Don't offer "Assign to Me" here — it
