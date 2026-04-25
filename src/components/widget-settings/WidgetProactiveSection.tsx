@@ -39,7 +39,7 @@ export function WidgetProactiveSection({
   onToggle,
   onSave,
 }: WidgetProactiveSectionProps) {
-  const t = useTranslations('settings.social.widget.proactive');
+  const t = useTranslations('social.widget.proactive');
 
   const [en, setEn] = useState(message.en || '');
   const [ka, setKa] = useState(message.ka || '');

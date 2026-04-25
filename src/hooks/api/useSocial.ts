@@ -393,6 +393,31 @@ export function useSendWidgetMessage() {
   });
 }
 
+interface EndWidgetSessionPayload {
+  connection_id: number;
+  session_id: string;
+}
+
+interface EndWidgetSessionResponse {
+  status: 'ok' | 'already_ended';
+  ended_at?: string;
+  ended_by?: string;
+}
+
+/**
+ * Agent-initiated widget session close. Marks the WidgetSession as
+ * `ended_by='agent'` server-side and triggers a `session_ended` WS event
+ * which the visitor's iframe uses to show the post-chat review prompt.
+ */
+export function useEndWidgetSession() {
+  return useMutation({
+    mutationFn: async (data: EndWidgetSessionPayload): Promise<EndWidgetSessionResponse> => {
+      const response = await axios.post('/api/widget/admin/sessions/close/', data);
+      return response.data as EndWidgetSessionResponse;
+    },
+  });
+}
+
 export function useConnectFacebook() {
   const queryClient = useQueryClient();
 

@@ -4,8 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   buildWebSocketUrl,
+  closeSession as closeSessionApi,
   createSession,
   listMessages,
+  rateSession as rateSessionApi,
   sendMessage,
   WidgetApiError,
   type WidgetMessage,
@@ -33,6 +35,73 @@ function sessionStorageKey(token: string) {
   return `echodesk.widget.session_${token}`;
 }
 
+/**
+ * Stored session shape: `{sessionId, savedAt}`.
+ *
+ * `savedAt` is wall-clock ms-since-epoch — used to TTL the entry so a stale
+ * `widget_session_id` can't outlive the backend's 24-hour idle window. If the
+ * stored entry is older than 24h we drop it on the floor and start fresh,
+ * which avoids the visitor-side 410 round-trip on the first message after a
+ * long idle.
+ *
+ * Backwards-compat: old installs persisted a bare string `<session_id>` under
+ * the same key. `readStoredSession` accepts either shape and treats the bare
+ * form as "no timestamp known" — we keep using it but stamp `savedAt` on the
+ * next write.
+ */
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface StoredSession {
+  sessionId: string;
+  savedAt: number | null;
+}
+
+function readStoredSession(token: string): StoredSession | null {
+  try {
+    const raw = localStorage.getItem(sessionStorageKey(token));
+    if (!raw) return null;
+    // Try JSON first (new format).
+    if (raw.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(raw) as { sessionId?: unknown; savedAt?: unknown };
+        const sessionId =
+          typeof parsed.sessionId === 'string' ? parsed.sessionId : null;
+        if (!sessionId) return null;
+        const savedAt =
+          typeof parsed.savedAt === 'number' && Number.isFinite(parsed.savedAt)
+            ? parsed.savedAt
+            : null;
+        if (savedAt !== null && Date.now() - savedAt > SESSION_TTL_MS) {
+          // Stale — drop it.
+          try {
+            localStorage.removeItem(sessionStorageKey(token));
+          } catch {
+            /* ignore */
+          }
+          return null;
+        }
+        return { sessionId, savedAt };
+      } catch {
+        return null;
+      }
+    }
+    // Legacy: bare string. Keep it (we'll re-stamp on next write) but with
+    // no savedAt so it's effectively "valid until something writes again".
+    return { sessionId: raw, savedAt: null };
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSession(token: string, sessionId: string) {
+  try {
+    const payload: StoredSession = { sessionId, savedAt: Date.now() };
+    localStorage.setItem(sessionStorageKey(token), JSON.stringify(payload));
+  } catch {
+    /* storage blocked — fine */
+  }
+}
+
 function generateId(): string {
   // crypto.randomUUID exists in all modern browsers; fall back if missing.
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -52,14 +121,40 @@ export interface StartSessionOpts {
   visitorEmail?: string;
 }
 
+export type SessionEndedBy = 'visitor' | 'agent' | 'timeout' | null;
+
 export interface UseWidgetSessionResult {
   sessionId: string | null;
   messages: WidgetMessage[];
   isStartingSession: boolean;
   isSending: boolean;
   error: string | null;
+  /**
+   * Non-null once the session has been closed. The shell uses this to swap
+   * the composer/messages for the post-chat review form.
+   */
+  endedBy: SessionEndedBy;
   startSession: (opts?: StartSessionOpts) => Promise<string | null>;
   send: (text: string, attachments?: WidgetMessage['attachments']) => Promise<void>;
+  /**
+   * Visitor-initiated end. Fires the public close endpoint, then sets
+   * `endedBy='visitor'` so the shell shows the rating prompt. Does NOT clear
+   * localStorage — that happens after the review form is dismissed (or after
+   * the visitor explicitly closes the iframe via the post-rating "Skip"
+   * button).
+   */
+  closeSession: () => Promise<void>;
+  /** Submit a 1–5 rating + optional comment for the just-ended session. */
+  rate: (
+    rating: number,
+    comment?: string
+  ) => Promise<{ status: 'ok'; rating: number } | null>;
+  /**
+   * Hard reset. Wipes local session id, message history, AND localStorage.
+   * Called from the shell after the review form is fully dismissed so the
+   * next iframe open lands on a fresh session.
+   */
+  clearSession: () => void;
 }
 
 const POLL_INTERVAL_MS = 4000;
@@ -94,6 +189,7 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [endedBy, setEndedBy] = useState<SessionEndedBy>(null);
 
   // Keep the latest values in refs for use inside stable callbacks.
   const sessionIdRef = useRef<string | null>(null);
@@ -112,22 +208,19 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
   const isWsIntentionalCloseRef = useRef<boolean>(false);
   const useFallbackPollingRef = useRef<boolean>(false);
 
-  // Restore any persisted session_id on mount.
+  // Restore any persisted session_id on mount. `readStoredSession` enforces
+  // the 24h TTL — anything older is dropped before it gets here.
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(sessionStorageKey(token));
-      if (stored) {
-        sessionIdRef.current = stored;
-        setSessionId(stored);
-      }
-    } catch {
-      /* storage blocked — fine, we just start fresh */
+    const stored = readStoredSession(token);
+    if (stored) {
+      sessionIdRef.current = stored.sessionId;
+      setSessionId(stored.sessionId);
     }
   }, [token]);
 
   // Hard-reset all session-bound state. Called when the backend tells us
-  // a stored session is no longer valid (HTTP 410 `session_expired`) so the
-  // visitor can transparently start a fresh conversation on their next send.
+  // a stored session is no longer valid (HTTP 410 `session_expired`), or by
+  // the shell after the visitor dismisses the post-chat review.
   const clearSession = useCallback(() => {
     try {
       localStorage.removeItem(sessionStorageKey(token));
@@ -139,6 +232,7 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
     lastTsRef.current = null;
     setSessionId(null);
     setMessages([]);
+    setEndedBy(null);
   }, [token]);
 
   const isSessionExpired = (err: unknown): boolean =>
@@ -310,6 +404,19 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
 
       const payload = data as Record<string, unknown>;
       const type = payload.type;
+
+      if (type === 'session_ended') {
+        const rawEndedBy = payload.ended_by;
+        if (
+          rawEndedBy === 'visitor' ||
+          rawEndedBy === 'agent' ||
+          rawEndedBy === 'timeout'
+        ) {
+          setEndedBy(rawEndedBy);
+        }
+        return;
+      }
+
       if (type !== 'new_message') return;
 
       const raw = payload.message;
@@ -436,11 +543,7 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
         });
         const newId = res.session_id;
         sessionIdRef.current = newId;
-        try {
-          localStorage.setItem(sessionStorageKey(token), newId);
-        } catch {
-          /* ignore */
-        }
+        writeStoredSession(token, newId);
         setSessionId(newId);
         return newId;
       } catch (err) {
@@ -509,13 +612,57 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
     [appendIfNew, clearSession, startSession, token]
   );
 
+  // ---- Visitor-initiated end of conversation -------------------------
+  const closeSession = useCallback(async () => {
+    const sid = sessionIdRef.current;
+    if (!sid) {
+      // No active session — just flip the local state so the shell can
+      // route to the review/closed view without a backend round-trip.
+      setEndedBy('visitor');
+      return;
+    }
+    try {
+      await closeSessionApi({ token, session_id: sid });
+    } catch (err) {
+      // Best-effort: even if the close API fails (e.g. session already
+      // expired server-side), still surface ended state locally so the
+      // visitor isn't stuck in a half-closed UI.
+      if (!isSessionExpired(err)) {
+        // Swallow other errors silently — closing is a teardown action.
+      }
+    }
+    setEndedBy('visitor');
+  }, [token]);
+
+  const rate = useCallback(
+    async (rating: number, comment?: string) => {
+      const sid = sessionIdRef.current;
+      if (!sid) return null;
+      try {
+        return await rateSessionApi({
+          token,
+          session_id: sid,
+          rating,
+          comment: comment?.trim() || undefined,
+        });
+      } catch {
+        return null;
+      }
+    },
+    [token]
+  );
+
   return {
     sessionId,
     messages,
     isStartingSession,
     isSending,
     error,
+    endedBy,
     startSession,
     send,
+    closeSession,
+    rate,
+    clearSession,
   };
 }

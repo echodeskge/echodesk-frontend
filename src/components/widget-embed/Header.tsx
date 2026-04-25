@@ -6,10 +6,15 @@ import type { WidgetConfig } from './widget-api';
 
 interface HeaderProps {
   config: WidgetConfig | null;
-  onClose: () => void;
+  /**
+   * Fired when the visitor clicks the X. The shell decides what happens next
+   * (open a minimize-vs-end dialog, just hide the iframe, etc.) — the header
+   * stays dumb so the same close button works for every shell state.
+   */
+  onCloseRequest: () => void;
 }
 
-export function Header({ config, onClose }: HeaderProps) {
+export function Header({ config, onCloseRequest }: HeaderProps) {
   const brand = config?.brand_color || '#2A2B7D';
   const online = config?.is_online ?? true;
 
@@ -50,7 +55,7 @@ export function Header({ config, onClose }: HeaderProps) {
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <button
           type="button"
-          onClick={onClose}
+          onClick={onCloseRequest}
           aria-label="Close chat"
           style={{
             background: 'transparent',

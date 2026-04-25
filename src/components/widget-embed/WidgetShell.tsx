@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { CloseConfirmDialog } from './CloseConfirmDialog';
 import { Composer } from './Composer';
 import { Header } from './Header';
 import { MessageList } from './MessageList';
 import { PreChatForm } from './PreChatForm';
+import { ReviewForm } from './ReviewForm';
 import { getConfig, type WidgetConfig, WidgetApiError } from './widget-api';
 import { useWidgetSession } from './useWidgetSession';
 
@@ -34,12 +36,24 @@ const EMBED_ORIGIN = '*';
 // the config request resolves instantly.
 const SPLASH_DURATION_MS = 2000;
 
+type Overlay = 'none' | 'closing-confirm' | 'review';
+
 export function WidgetShell({ token }: WidgetShellProps) {
   const [state, setState] = useState<ShellState>({ kind: 'loading' });
   const [splashDone, setSplashDone] = useState(false);
   const [prechatDone, setPrechatDone] = useState(false);
+  const [overlay, setOverlay] = useState<Overlay>('none');
 
   const session = useWidgetSession(token);
+
+  // Agent / timeout-driven session ends arrive over WS; useWidgetSession
+  // exposes them as `endedBy`. As soon as the visitor isn't already in the
+  // close dialog or review screen, route them to the review form.
+  useEffect(() => {
+    if (!session.endedBy) return;
+    if (overlay === 'review') return;
+    setOverlay('review');
+  }, [session.endedBy, overlay]);
 
   // Hold the brand splash for the full duration regardless of how quickly
   // /api/widget/public/config/ resolves.
@@ -93,13 +107,39 @@ export function WidgetShell({ token }: WidgetShellProps) {
     }
   }, []);
 
-  const onClose = useCallback(() => {
+  const postClose = useCallback(() => {
     try {
       window.parent.postMessage({ type: 'echodesk:close' }, EMBED_ORIGIN);
     } catch {
       /* ignore */
     }
   }, []);
+
+  // X click — surface the minimize-vs-end choice. The overlay is suppressed
+  // entirely if the session is already ended (review form is showing) — in
+  // that case the X just minimizes the iframe without further prompts.
+  const onCloseRequest = useCallback(() => {
+    if (session.endedBy || overlay === 'review') {
+      postClose();
+      return;
+    }
+    setOverlay('closing-confirm');
+  }, [overlay, postClose, session.endedBy]);
+
+  // Visitor picked "End conversation" in the dialog. Tell the backend, then
+  // route to the review form. We optimistically transition even if the
+  // network call fails — `closeSession` is best-effort by design.
+  const onEndConversation = useCallback(async () => {
+    await session.closeSession();
+    setOverlay('review');
+  }, [session]);
+
+  // Review form done (submit OR skip). Wipe local session, hide the iframe.
+  const onReviewDone = useCallback(() => {
+    session.clearSession();
+    setOverlay('none');
+    postClose();
+  }, [postClose, session]);
 
   const needsPrechat = useMemo(() => {
     if (state.kind !== 'ready') return false;
@@ -123,7 +163,7 @@ export function WidgetShell({ token }: WidgetShellProps) {
         : 'Chat is temporarily unavailable.';
     return (
       <div className="echodesk-widget-root">
-        <Header config={null} onClose={onClose} />
+        <Header config={null} onCloseRequest={postClose} />
         <div
           style={{
             flex: 1,
@@ -151,11 +191,27 @@ export function WidgetShell({ token }: WidgetShellProps) {
   const brand = config.brand_color || '#2A2B7D';
   const welcome = pickLocalized(config.welcome_message);
 
+  // Review can be shown either because the visitor explicitly ended the
+  // conversation (overlay='review' set after closeSession resolves) or
+  // because the agent / timeout closed it server-side (session.endedBy
+  // arrives over WS and the effect above flips overlay to 'review').
+  const showReview = overlay === 'review';
+  const reviewEndedBy = session.endedBy || 'visitor';
+
   return (
     <div className="echodesk-widget-root" style={{ position: 'relative' }}>
-      <Header config={config} onClose={onClose} />
+      <Header config={config} onCloseRequest={onCloseRequest} />
 
-      {needsPrechat ? (
+      {showReview ? (
+        <ReviewForm
+          brandColor={brand}
+          endedBy={reviewEndedBy}
+          onSubmit={async (rating, comment) => {
+            await session.rate(rating, comment);
+          }}
+          onSkip={onReviewDone}
+        />
+      ) : needsPrechat ? (
         <PreChatForm
           config={config}
           isSubmitting={session.isStartingSession}
@@ -196,6 +252,18 @@ export function WidgetShell({ token }: WidgetShellProps) {
             onSend={(text, attachments) => session.send(text, attachments)}
           />
         </>
+      )}
+
+      {overlay === 'closing-confirm' && (
+        <CloseConfirmDialog
+          brandColor={brand}
+          onMinimize={() => {
+            setOverlay('none');
+            postClose();
+          }}
+          onEndConversation={() => void onEndConversation()}
+          onCancel={() => setOverlay('none')}
+        />
       )}
     </div>
   );

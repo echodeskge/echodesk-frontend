@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft } from "lucide-react"
+import { EllipsisVertical, Wifi, WifiOff, Trash2, Search, UserPlus, UserMinus, Play, FolderInput, MailOpen, UserRound, Archive, ArchiveRestore, ArrowRightLeft, MessageSquareX } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 import { useAuth } from "@/contexts/AuthContext"
@@ -20,6 +20,7 @@ import {
   useMarkConversationUnread,
   useArchiveConversation,
   useUnarchiveConversation,
+  useEndWidgetSession,
   socialKeys,
 } from "@/hooks/api/useSocial"
 import { parseChatId } from "@/lib/chatUtils"
@@ -66,7 +67,9 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
   const { toast } = useToast()
   const t = useTranslations("chat")
   const deleteConversation = useDeleteConversation()
+  const endWidgetSession = useEndWidgetSession()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showEndWidgetDialog, setShowEndWidgetDialog] = useState(false)
   const [showClientPanel, setShowClientPanel] = useState(false)
   const [transferTarget, setTransferTarget] = useState<{ id: number; name: string } | null>(null)
   const [transferSearch, setTransferSearch] = useState('')
@@ -258,6 +261,48 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
       conversation_id: chatInfo.conversationId,
       account_id: chatInfo.accountId,
     })
+  }
+
+  // Widget-only: end the visitor's session server-side and trigger the
+  // post-chat review prompt in their iframe (via WS `session_ended`).
+  const handleEndWidgetConversation = () => {
+    if (!chatInfo || chatInfo.platform !== 'widget') return
+    const connectionId = Number(chatInfo.accountId)
+    if (!Number.isFinite(connectionId)) {
+      toast({
+        title: 'Couldn\'t end conversation',
+        description: 'Invalid widget connection id.',
+        variant: 'destructive',
+      })
+      return
+    }
+    endWidgetSession.mutate(
+      {
+        connection_id: connectionId,
+        session_id: chatInfo.conversationId,
+      },
+      {
+        onSuccess: (res) => {
+          setShowEndWidgetDialog(false)
+          toast({
+            title: res.status === 'already_ended' ? 'Already ended' : 'Conversation ended',
+            description:
+              res.status === 'already_ended'
+                ? 'This conversation was already closed.'
+                : 'The visitor has been asked to rate the chat.',
+          })
+          queryClient.invalidateQueries({ queryKey: socialKeys.conversations() })
+        },
+        onError: (error: any) => {
+          setShowEndWidgetDialog(false)
+          toast({
+            title: 'Failed to end conversation',
+            description: error?.response?.data?.error || 'Please try again.',
+            variant: 'destructive',
+          })
+        },
+      }
+    )
   }
 
   const handleStartSession = () => {
@@ -670,6 +715,20 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
               </>
             )}
 
+            {/* Widget-only: end the visitor's session and prompt them for a rating */}
+            {chatInfo?.platform === 'widget' && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowEndWidgetDialog(true)}
+                  disabled={endWidgetSession.isPending}
+                >
+                  <MessageSquareX className="mr-2 size-4" />
+                  End conversation
+                </DropdownMenuItem>
+              </>
+            )}
+
             {/* Staff-only actions - Block only in dropdown */}
             {canDelete && chat && (
               <>
@@ -695,6 +754,29 @@ export function ChatHeaderActions({ isConnected = false, chat, onSearchClick }: 
           </Button>
         )}
       </div>
+
+      {/* End Widget Conversation Confirmation Dialog */}
+      <AlertDialog open={showEndWidgetDialog} onOpenChange={setShowEndWidgetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End this conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The visitor&apos;s widget will switch to a post-chat review prompt. They&apos;ll
+              be able to leave a rating and comment. The session will be marked as
+              ended and any new message from the visitor will start a fresh conversation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={endWidgetSession.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEndWidgetConversation}
+              disabled={endWidgetSession.isPending}
+            >
+              {endWidgetSession.isPending ? 'Ending…' : 'End conversation'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

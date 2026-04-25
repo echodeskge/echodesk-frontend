@@ -193,6 +193,43 @@ export function listMessages(
 }
 
 /**
+ * Visitor-initiated session close. Body: `{token, session_id}`.
+ * Response: `{status: 'ok' | 'already_ended', ended_at?, ended_by?}`.
+ */
+export function closeSession(
+  payload: { token: string; session_id: string },
+  signal?: AbortSignal
+) {
+  return request<{
+    status: 'ok' | 'already_ended';
+    ended_at?: string;
+    ended_by?: string;
+  }>(`/api/widget/public/sessions/close/`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    signal,
+  });
+}
+
+/**
+ * Visitor-side post-conversation rating. 1–5 stars + optional comment.
+ * Body: `{token, session_id, rating, comment?}`.
+ */
+export function rateSession(
+  payload: { token: string; session_id: string; rating: number; comment?: string },
+  signal?: AbortSignal
+) {
+  return request<{ status: 'ok'; rating: number }>(
+    `/api/widget/public/sessions/rate/`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      signal,
+    }
+  );
+}
+
+/**
  * Build the WebSocket URL for the visitor-side widget connection.
  *
  * Mirrors the protocol of `API_BASE` — if the API is served over HTTPS we
