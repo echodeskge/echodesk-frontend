@@ -208,23 +208,20 @@
         iframe.style.transform = 'none';
         return;
       }
-      // Snap to closed state first so the transition has a delta to interpolate.
-      iframe.style.transition = '';
+      // Snap to the closed state with NO transition. We need this committed
+      // before we apply the open-state values, otherwise the browser coalesces
+      // both mutations into a single paint and skips the animation.
+      // `transition: none` + a forced reflow (offsetWidth read) is the canonical
+      // way to re-trigger a CSS transition on an element that's been hidden +
+      // reshown — `display: none → display: ''` alone doesn't, and double rAF
+      // is flaky in Chrome when the iframe was just un-`display:none`'d.
+      iframe.style.transition = 'none';
       iframe.style.opacity = '0';
       iframe.style.transform = CLOSED_TRANSFORM;
-      // Two-frame settle: commit closed state, then flip to open with the
-      // open-transition active. Without the double rAF Chrome skips the
-      // transition on first mount.
-      var settle = function () {
-        setOpenTransition();
-        iframe.style.opacity = '1';
-        iframe.style.transform = 'none';
-      };
-      if (window.requestAnimationFrame) {
-        requestAnimationFrame(function () { requestAnimationFrame(settle); });
-      } else {
-        settle();
-      }
+      void iframe.offsetWidth;
+      setOpenTransition();
+      iframe.style.opacity = '1';
+      iframe.style.transform = 'none';
     }
 
     function createIframe() {
