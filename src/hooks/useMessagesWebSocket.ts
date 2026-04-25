@@ -9,6 +9,7 @@ interface WebSocketMessage {
 interface UseMessagesWebSocketOptions {
   onNewMessage?: (data: any) => void;
   onConversationUpdate?: (data: any) => void;
+  onSessionEnded?: (data: any) => void;
   onConnectionChange?: (connected: boolean) => void;
   autoReconnect?: boolean;
   reconnectInterval?: number;
@@ -17,6 +18,7 @@ interface UseMessagesWebSocketOptions {
 export function useMessagesWebSocket({
   onNewMessage,
   onConversationUpdate,
+  onSessionEnded,
   onConnectionChange,
   autoReconnect = true,
   reconnectInterval = 3000,
@@ -33,14 +35,16 @@ export function useMessagesWebSocket({
   // Store callbacks in refs to avoid reconnection on callback changes
   const onNewMessageRef = useRef(onNewMessage);
   const onConversationUpdateRef = useRef(onConversationUpdate);
+  const onSessionEndedRef = useRef(onSessionEnded);
   const onConnectionChangeRef = useRef(onConnectionChange);
 
   // Update refs when callbacks change
   useEffect(() => {
     onNewMessageRef.current = onNewMessage;
     onConversationUpdateRef.current = onConversationUpdate;
+    onSessionEndedRef.current = onSessionEnded;
     onConnectionChangeRef.current = onConnectionChange;
-  }, [onNewMessage, onConversationUpdate, onConnectionChange]);
+  }, [onNewMessage, onConversationUpdate, onSessionEnded, onConnectionChange]);
 
   // Store tenant in ref to avoid recreating connect when tenant object changes
   const tenantRef = useRef(tenant);
@@ -138,6 +142,10 @@ export function useMessagesWebSocket({
 
             case 'delivery_receipt':
               onConversationUpdateRef.current?.(data);
+              break;
+
+            case 'session_ended':
+              onSessionEndedRef.current?.(data);
               break;
 
             case 'pong':

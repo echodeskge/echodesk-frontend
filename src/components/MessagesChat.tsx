@@ -11,6 +11,7 @@ import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType, MessageType, AssignmentTabType } from "@/components/chat/types";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { useMarkConversationRead, useUnifiedConversations, socialKeys } from "@/hooks/api/useSocial";
+import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { consumePendingMedia } from "@/lib/pendingMedia";
 import { parseTimestamp } from "@/lib/parseTimestamp";
@@ -72,6 +73,7 @@ interface MessagesChatProps {
 export default function MessagesChat({ platforms }: MessagesChatProps) {
   const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email", "widget"];
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -525,6 +527,25 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // Status updates don't require refetch
   }, []);
 
+  // Handle widget `session_ended` events. Refresh the conversation list so
+  // the agent UI picks up the closed state, and surface a toast so they
+  // notice the visitor (or another agent) ended the chat in real time.
+  const handleSessionEnded = useCallback((data: any) => {
+    queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+    queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+    const endedBy = data?.ended_by;
+    const who =
+      endedBy === 'visitor'
+        ? 'Visitor'
+        : endedBy === 'agent'
+        ? 'Agent'
+        : 'System';
+    toast({
+      title: 'Chat ended',
+      description: `${who} ended the conversation.`,
+    });
+  }, [queryClient, toast]);
+
   // Track prior WebSocket connection state so we can detect reconnects
   // (disconnected → connected) and catch up on any conversations/messages
   // that were missed while the socket was down.
@@ -544,6 +565,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   const { isConnected } = useMessagesWebSocket({
     onNewMessage: handleNewMessage,
     onConversationUpdate: handleConversationUpdate,
+    onSessionEnded: handleSessionEnded,
     onConnectionChange: handleConnectionChange,
     autoReconnect: true,
     reconnectInterval: 3000,
