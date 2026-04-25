@@ -29,11 +29,24 @@ const EMBED_ORIGIN = '*';
  *   3. Otherwise → MessageList + Composer. `useWidgetSession` lazily creates
  *      the server-side session on first send.
  */
+// Brand splash duration. Shown over the loading state so the widget always
+// presents the EchoDesk logo for a beat before the chat appears, even if
+// the config request resolves instantly.
+const SPLASH_DURATION_MS = 2000;
+
 export function WidgetShell({ token }: WidgetShellProps) {
   const [state, setState] = useState<ShellState>({ kind: 'loading' });
+  const [splashDone, setSplashDone] = useState(false);
   const [prechatDone, setPrechatDone] = useState(false);
 
   const session = useWidgetSession(token);
+
+  // Hold the brand splash for the full duration regardless of how quickly
+  // /api/widget/public/config/ resolves.
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashDone(true), SPLASH_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load config -----------------------------------------------------------
   useEffect(() => {
@@ -95,23 +108,10 @@ export function WidgetShell({ token }: WidgetShellProps) {
     return Boolean(state.config.pre_chat_form?.enabled);
   }, [prechatDone, session.sessionId, state]);
 
-  if (state.kind === 'loading') {
-    return (
-      <div className="echodesk-widget-root">
-        <div
-          style={{
-            display: 'flex',
-            flex: 1,
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#9ca3af',
-            fontSize: 13,
-          }}
-        >
-          Loading chat…
-        </div>
-      </div>
-    );
+  // Show the EchoDesk brand splash whenever the config is still loading OR
+  // the minimum splash duration hasn't elapsed yet — whichever takes longer.
+  if (state.kind === 'loading' || !splashDone) {
+    return <BrandSplash />;
   }
 
   if (state.kind === 'config-error') {
@@ -218,4 +218,27 @@ function mapErrorCopy(code: string): string {
   if (/origin/i.test(code)) return 'This widget is not enabled on the current site.';
   if (/rate|limit|429/i.test(code)) return 'Too many messages — please wait a moment.';
   return 'Something went wrong. Please try again.';
+}
+
+/**
+ * Brand splash shown for the first SPLASH_DURATION_MS of every iframe load.
+ * Plain inline styles + the keyframes registered in widget.css so visitors
+ * always see "EchoDesk.ge" before the chat materialises.
+ */
+function BrandSplash() {
+  return (
+    <div className="echodesk-widget-root echodesk-splash-root">
+      <div className="echodesk-splash-inner">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-svg.svg"
+          alt="EchoDesk"
+          width={140}
+          height={40}
+          className="echodesk-splash-logo"
+        />
+        <span className="echodesk-splash-domain">echodesk.ge</span>
+      </div>
+    </div>
+  );
 }
