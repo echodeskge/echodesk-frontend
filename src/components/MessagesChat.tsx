@@ -11,7 +11,6 @@ import { ChatBoxPlaceholder } from "@/components/chat/chat-box-placeholder";
 import type { ChatType, MessageType, AssignmentTabType } from "@/components/chat/types";
 import { useMessagesWebSocket } from "@/hooks/useMessagesWebSocket";
 import { useMarkConversationRead, useUnifiedConversations, socialKeys } from "@/hooks/api/useSocial";
-import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { consumePendingMedia } from "@/lib/pendingMedia";
 import { parseTimestamp } from "@/lib/parseTimestamp";
@@ -73,7 +72,6 @@ interface MessagesChatProps {
 export default function MessagesChat({ platforms }: MessagesChatProps) {
   const enabledPlatforms = platforms || ["facebook", "instagram", "whatsapp", "email", "widget"];
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -527,24 +525,16 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // Status updates don't require refetch
   }, []);
 
-  // Handle widget `session_ended` events. Refresh the conversation list so
-  // the agent UI picks up the closed state, and surface a toast so they
-  // notice the visitor (or another agent) ended the chat in real time.
-  const handleSessionEnded = useCallback((data: any) => {
+  // Handle widget `session_ended` events. The conversation already moved
+  // to history server-side (visitor close + agent close both archive),
+  // so we only need to refresh the cached query data — the existing
+  // chat list / chat-box-footer plumbing already swaps the composer for
+  // the ended banner once it sees the new session_ended_at field.
+  // No toast — the agent will see the chat move to History on its own.
+  const handleSessionEnded = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
     queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
-    const endedBy = data?.ended_by;
-    const who =
-      endedBy === 'visitor'
-        ? 'Visitor'
-        : endedBy === 'agent'
-        ? 'Agent'
-        : 'System';
-    toast({
-      title: 'Chat ended',
-      description: `${who} ended the conversation.`,
-    });
-  }, [queryClient, toast]);
+  }, [queryClient]);
 
   // Track prior WebSocket connection state so we can detect reconnects
   // (disconnected → connected) and catch up on any conversations/messages
