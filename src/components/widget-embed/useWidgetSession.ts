@@ -218,22 +218,32 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
     }
   }, [token]);
 
-  // Hard-reset all session-bound state. Called when the backend tells us
-  // a stored session is no longer valid (HTTP 410 `session_expired`), or by
-  // the shell after the visitor dismisses the post-chat review.
-  const clearSession = useCallback(() => {
+  // Drop just the localStorage pointer to the active session. We use this
+  // the moment a session ends (visitor- OR agent-initiated) so the next
+  // iframe open never resurrects a closed session id from disk — even if
+  // the visitor closes the iframe before completing the review form. The
+  // in-memory session_id stays around so the review form can still POST
+  // the rating against it.
+  const dropStoredSessionId = useCallback(() => {
     try {
       localStorage.removeItem(sessionStorageKey(token));
     } catch {
       /* ignore */
     }
+  }, [token]);
+
+  // Hard-reset all session-bound state. Called when the backend tells us
+  // a stored session is no longer valid (HTTP 410 `session_expired`), or by
+  // the shell after the visitor dismisses the post-chat review.
+  const clearSession = useCallback(() => {
+    dropStoredSessionId();
     sessionIdRef.current = null;
     messageIdsRef.current = new Set();
     lastTsRef.current = null;
     setSessionId(null);
     setMessages([]);
     setEndedBy(null);
-  }, [token]);
+  }, [dropStoredSessionId]);
 
   const isSessionExpired = (err: unknown): boolean =>
     err instanceof WidgetApiError &&
@@ -413,6 +423,10 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
           rawEndedBy === 'timeout'
         ) {
           setEndedBy(rawEndedBy);
+          // Wipe the persisted session id immediately so the next iframe
+          // open never resurrects a closed session — even if the visitor
+          // closes the iframe before completing the review form.
+          dropStoredSessionId();
         }
         return;
       }
@@ -475,7 +489,7 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
         openWs();
       }, delay);
     };
-  }, [appendIfNew, clearWsTimers, pollOnce, scheduleNextPoll, stopPolling, token]);
+  }, [appendIfNew, clearWsTimers, dropStoredSessionId, pollOnce, scheduleNextPoll, stopPolling, token]);
 
   // ---- Visibility handling -------------------------------------------
   useEffect(() => {
@@ -632,7 +646,12 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
       }
     }
     setEndedBy('visitor');
-  }, [token]);
+    // Drop the persisted session id immediately. The in-memory id is kept
+    // until the review form is dismissed so `rate()` still has a target,
+    // but localStorage is gone right now — closing the iframe before
+    // reviewing won't resurrect the closed session on the next open.
+    dropStoredSessionId();
+  }, [dropStoredSessionId, token]);
 
   const rate = useCallback(
     async (rating: number, comment?: string) => {
