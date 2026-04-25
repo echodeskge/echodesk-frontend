@@ -229,15 +229,22 @@ function BrandSplash() {
   return (
     <div className="echodesk-widget-root echodesk-splash-root">
       <div className="echodesk-splash-inner">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-svg.svg"
-          alt="EchoDesk"
-          width={140}
-          height={40}
-          className="echodesk-splash-logo"
-        />
-        <span className="echodesk-splash-domain">echodesk.ge</span>
+        <a
+          href="https://echodesk.ge"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Open echodesk.ge"
+          className="echodesk-splash-link"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-svg.svg"
+            alt="EchoDesk"
+            width={140}
+            height={40}
+            className="echodesk-splash-logo"
+          />
+        </a>
       </div>
     </div>
   );

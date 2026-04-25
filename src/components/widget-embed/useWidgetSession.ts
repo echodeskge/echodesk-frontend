@@ -7,6 +7,7 @@ import {
   createSession,
   listMessages,
   sendMessage,
+  WidgetApiError,
   type WidgetMessage,
 } from './widget-api';
 
@@ -124,6 +125,26 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
     }
   }, [token]);
 
+  // Hard-reset all session-bound state. Called when the backend tells us
+  // a stored session is no longer valid (HTTP 410 `session_expired`) so the
+  // visitor can transparently start a fresh conversation on their next send.
+  const clearSession = useCallback(() => {
+    try {
+      localStorage.removeItem(sessionStorageKey(token));
+    } catch {
+      /* ignore */
+    }
+    sessionIdRef.current = null;
+    messageIdsRef.current = new Set();
+    lastTsRef.current = null;
+    setSessionId(null);
+    setMessages([]);
+  }, [token]);
+
+  const isSessionExpired = (err: unknown): boolean =>
+    err instanceof WidgetApiError &&
+    (err.status === 410 || err.code === 'session_expired');
+
   // ---- Shared message-merge helper ------------------------------------
   const appendIfNew = useCallback((msg: WidgetMessage) => {
     if (messageIdsRef.current.has(msg.message_id)) return;
@@ -164,6 +185,11 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
     } catch (err) {
       // Silent on poll errors — keep the loop alive. Surface only hard
       // auth/forbidden errors so we stop hammering the backend.
+      if (isSessionExpired(err)) {
+        // Stale session — wipe local state so the next send starts fresh.
+        clearSession();
+        return;
+      }
       if (err instanceof Error && /403|404/.test(err.message)) {
         setError(err.message);
         if (pollTimerRef.current) {
@@ -172,7 +198,7 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
         }
       }
     }
-  }, [token]);
+  }, [clearSession, token]);
 
   const stopPolling = useCallback(() => {
     if (pollTimerRef.current) {
@@ -448,24 +474,39 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
         if (!sid) sid = await startSession();
         if (!sid) throw new Error('session_unavailable');
 
-        const res = await sendMessage({
-          token,
-          session_id: sid,
-          message_text: trimmed,
-          attachments,
-        });
-
-        // Feed the authoritative response through the same merge path the
-        // WS listener uses. appendIfNew dedupes against the WS echo that
-        // arrives slightly earlier / later from the backend broadcast.
-        appendIfNew(res);
+        try {
+          const res = await sendMessage({
+            token,
+            session_id: sid,
+            message_text: trimmed,
+            attachments,
+          });
+          // Feed the authoritative response through the same merge path the
+          // WS listener uses. appendIfNew dedupes against the WS echo that
+          // arrives slightly earlier / later from the backend broadcast.
+          appendIfNew(res);
+        } catch (err) {
+          if (!isSessionExpired(err)) throw err;
+          // Stored session expired server-side. Clear it, mint a fresh one,
+          // and resend transparently so the visitor never sees the failure.
+          clearSession();
+          const newSid = await startSession();
+          if (!newSid) throw new Error('session_unavailable');
+          const res = await sendMessage({
+            token,
+            session_id: newSid,
+            message_text: trimmed,
+            attachments,
+          });
+          appendIfNew(res);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'send_failed');
       } finally {
         setIsSending(false);
       }
     },
-    [appendIfNew, startSession, token]
+    [appendIfNew, clearSession, startSession, token]
   );
 
   return {

@@ -176,6 +176,57 @@
     var isOpen = false;
     var iframeAnimTimer = null;
 
+    // Open: gentle overshoot pop-out from the button corner.
+    // Close: smooth ease-in shrink back toward the button corner.
+    // The dramatic scale delta + transform-origin = "bottom right/left" makes
+    // the iframe feel like it's minimising into / maximising out of the button.
+    var OPEN_EASING = 'cubic-bezier(.34, 1.4, .64, 1)';
+    var CLOSE_EASING = 'cubic-bezier(.55, 0, .45, 1)';
+    var OPEN_DURATION_MS = 320;
+    var CLOSE_DURATION_MS = 240;
+    var CLOSED_TRANSFORM = 'translateY(40px) scale(.4)';
+
+    function setOpenTransition() {
+      iframe.style.transition =
+        'opacity ' + OPEN_DURATION_MS + 'ms ' + OPEN_EASING + ',' +
+        ' transform ' + OPEN_DURATION_MS + 'ms ' + OPEN_EASING;
+    }
+    function setCloseTransition() {
+      iframe.style.transition =
+        'opacity ' + CLOSE_DURATION_MS + 'ms ' + CLOSE_EASING + ',' +
+        ' transform ' + CLOSE_DURATION_MS + 'ms ' + CLOSE_EASING;
+    }
+
+    function animateOpen() {
+      if (iframeAnimTimer) {
+        clearTimeout(iframeAnimTimer);
+        iframeAnimTimer = null;
+      }
+      if (reduceMotion) {
+        iframe.style.transition = '';
+        iframe.style.opacity = '1';
+        iframe.style.transform = 'none';
+        return;
+      }
+      // Snap to closed state first so the transition has a delta to interpolate.
+      iframe.style.transition = '';
+      iframe.style.opacity = '0';
+      iframe.style.transform = CLOSED_TRANSFORM;
+      // Two-frame settle: commit closed state, then flip to open with the
+      // open-transition active. Without the double rAF Chrome skips the
+      // transition on first mount.
+      var settle = function () {
+        setOpenTransition();
+        iframe.style.opacity = '1';
+        iframe.style.transform = 'none';
+      };
+      if (window.requestAnimationFrame) {
+        requestAnimationFrame(function () { requestAnimationFrame(settle); });
+      } else {
+        settle();
+      }
+    }
+
     function createIframe() {
       iframe = document.createElement('iframe');
       iframe.title = 'EchoDesk chat';
@@ -186,28 +237,14 @@
         'height:600px;max-height:calc(100vh - 110px);' +
         'border:0;border-radius:16px;background:#fff;' +
         'box-shadow:0 12px 32px rgba(0,0,0,.18);z-index:2147483000;' +
-        'transition:opacity .22s cubic-bezier(.2,.8,.25,1),' +
-        ' transform .22s cubic-bezier(.2,.8,.25,1);' +
         'transform-origin:' + transformOrigin + ';' +
+        'will-change:transform,opacity;' +
         (reduceMotion ?
           'opacity:1;transform:none;' :
-          'opacity:0;transform:translateY(12px) scale(.96);');
+          'opacity:0;transform:' + CLOSED_TRANSFORM + ';');
       iframe.setAttribute('allow', 'clipboard-write');
       document.body.appendChild(iframe);
-      // Two-frame settle so the browser commits the initial style before we
-      // toggle the final-state values; otherwise Chrome occasionally skips
-      // the transition on first mount.
-      if (window.requestAnimationFrame) {
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            iframe.style.opacity = '1';
-            iframe.style.transform = 'none';
-          });
-        });
-      } else {
-        iframe.style.opacity = '1';
-        iframe.style.transform = 'none';
-      }
+      animateOpen();
     }
 
     function showIframe() {
@@ -217,17 +254,7 @@
       }
       iframe.style.display = '';
       iframe.style.pointerEvents = '';
-      // Re-trigger the open animation if we're showing a hidden frame.
-      if (window.requestAnimationFrame && !reduceMotion) {
-        iframe.style.opacity = '0';
-        iframe.style.transform = 'translateY(12px) scale(.96)';
-        requestAnimationFrame(function () {
-          requestAnimationFrame(function () {
-            iframe.style.opacity = '1';
-            iframe.style.transform = 'none';
-          });
-        });
-      }
+      animateOpen();
     }
 
     function hideIframe() {
@@ -236,13 +263,14 @@
         iframe.style.display = 'none';
         return;
       }
+      setCloseTransition();
       iframe.style.opacity = '0';
-      iframe.style.transform = 'translateY(12px) scale(.96)';
+      iframe.style.transform = CLOSED_TRANSFORM;
       iframe.style.pointerEvents = 'none';
       if (iframeAnimTimer) clearTimeout(iframeAnimTimer);
       iframeAnimTimer = setTimeout(function () {
         if (iframe && !isOpen) iframe.style.display = 'none';
-      }, 220);
+      }, CLOSE_DURATION_MS);
     }
 
     function toggle() {

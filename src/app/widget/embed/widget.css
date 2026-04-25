@@ -133,17 +133,27 @@
   gap: 10px;
   animation: ed-splash-in .5s cubic-bezier(.2, .8, .25, 1) both;
 }
+.echodesk-splash-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 8px;
+  outline: none;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+.echodesk-splash-link:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+.echodesk-splash-link:focus-visible {
+  box-shadow: 0 0 0 2px rgba(42, 43, 125, 0.35);
+}
 .echodesk-splash-logo {
   width: 140px;
   height: auto;
   display: block;
   animation: ed-splash-pulse 2s ease-in-out infinite;
-}
-.echodesk-splash-domain {
-  font-size: 12px;
-  color: #9ca3af;
-  letter-spacing: .04em;
-  font-weight: 500;
 }
 
 @keyframes ed-splash-in {
