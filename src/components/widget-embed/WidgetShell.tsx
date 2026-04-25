@@ -126,12 +126,15 @@ export function WidgetShell({ token }: WidgetShellProps) {
     setOverlay('closing-confirm');
   }, [overlay, postClose, session.endedBy]);
 
-  // Visitor picked "End conversation" in the dialog. Tell the backend, then
-  // route to the review form. We optimistically transition even if the
-  // network call fails — `closeSession` is best-effort by design.
-  const onEndConversation = useCallback(async () => {
-    await session.closeSession();
+  // Visitor picked "End conversation" in the dialog. Flip the UI to the
+  // review form FIRST so the visitor sees an immediate response — the
+  // backend close call runs in the background. If the API errors,
+  // `closeSession` still flips `endedBy` locally so the review form stays
+  // up. Worst case (API hang + visitor never rates) is purely server-side
+  // bookkeeping which we accept; the in-iframe experience is what matters.
+  const onEndConversation = useCallback(() => {
     setOverlay('review');
+    void session.closeSession();
   }, [session]);
 
   // Review form done (submit OR skip). Wipe local session, hide the iframe.
