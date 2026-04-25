@@ -58,7 +58,11 @@
   window.__echodeskWidgetLoaded = true;
 
   // ---- Config fetch + short-lived LS cache -----------------------------
-  var CACHE_TTL_MS = 10 * 60 * 1000;
+  // 2-minute TTL keeps the snappy "open instantly from cache" UX while
+  // making tenant-side config edits propagate within ~2 minutes worst case.
+  // We also stale-while-revalidate: every cache hit triggers a background
+  // refresh so the NEXT page load already has the latest config.
+  var CACHE_TTL_MS = 2 * 60 * 1000;
   var CACHE_KEY = 'echodesk.widget.cfg.' + token;
 
   function readCache() {
@@ -78,24 +82,36 @@
     } catch (_e) { /* storage blocked / quota exceeded — fine */ }
   }
 
-  function fetchConfig(cb) {
-    var cached = readCache();
-    if (cached) { cb(cached); return; }
-
+  function fetchFreshConfig() {
     var url = API_ORIGIN + '/api/widget/public/config/?token=' + encodeURIComponent(token);
     try {
-      fetch(url, { credentials: 'omit' })
+      return fetch(url, { credentials: 'omit', cache: 'no-store' })
         .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
         .then(function (res) {
           if (!res.ok || (res.body && res.body.error)) {
             try { console.warn('[EchoDesk widget] config error:', res.body && res.body.error); } catch (_e) {}
-            return;
+            return null;
           }
           writeCache(res.body);
-          cb(res.body);
+          return res.body;
         })
-        .catch(function () { /* silent — don't break the host page */ });
-    } catch (_e) { /* fetch unavailable (very old browser) */ }
+        .catch(function () { return null; /* silent — don't break the host page */ });
+    } catch (_e) {
+      return Promise.resolve(null); /* fetch unavailable (very old browser) */
+    }
+  }
+
+  function fetchConfig(cb) {
+    var cached = readCache();
+    if (cached) {
+      // Use cache for immediate render, but kick off a fresh fetch in the
+      // background so the LS cache is up-to-date for the next page load.
+      cb(cached);
+      fetchFreshConfig();
+      return;
+    }
+    var p = fetchFreshConfig();
+    if (p && p.then) p.then(function (cfg) { if (cfg) cb(cfg); });
   }
 
   // ---- Mount once DOM is ready -----------------------------------------
