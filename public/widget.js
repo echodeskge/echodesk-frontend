@@ -243,7 +243,18 @@
     function createIframe() {
       iframe = document.createElement('iframe');
       iframe.title = 'EchoDesk chat';
-      iframe.src = EMBED_ORIGIN + '/widget/embed/?t=' + encodeURIComponent(token);
+      // Pass the host page's URL + referrer through query params so the
+      // iframe can record the *real* page_url / referrer when creating a
+      // session. From inside the iframe, `window.location.href` is the
+      // embed URL itself and `document.referrer` is the host page — i.e.
+      // both refer to the wrong thing for analytics.
+      var hostUrl = '';
+      var hostRef = '';
+      try { hostUrl = window.location.href || ''; } catch (_e) {}
+      try { hostRef = document.referrer || ''; } catch (_e) {}
+      iframe.src = EMBED_ORIGIN + '/widget/embed/?t=' + encodeURIComponent(token) +
+        (hostUrl ? '&host_url=' + encodeURIComponent(hostUrl) : '') +
+        (hostRef ? '&host_ref=' + encodeURIComponent(hostRef) : '');
       iframe.style.cssText =
         'position:fixed;bottom:90px;' + positionCss +
         'width:380px;max-width:calc(100vw - 40px);' +

@@ -565,13 +565,28 @@ export function useWidgetSession(token: string): UseWidgetSessionResult {
       setError(null);
       try {
         const visitorId = getOrCreateVisitorId();
+        // Prefer the host-page URL + referrer that widget.js threaded
+        // through as `host_url` / `host_ref` query params. Falls back to
+        // the iframe's own values for direct-load testing (e.g. opening
+        // /widget/embed/?t=… directly in a tab).
+        let pageUrl: string | undefined;
+        let referrer: string | undefined;
+        try {
+          if (typeof window !== 'undefined') {
+            const sp = new URLSearchParams(window.location.search);
+            pageUrl = sp.get('host_url') || window.location.href;
+            referrer = sp.get('host_ref') || document.referrer || undefined;
+          }
+        } catch {
+          /* best-effort — backend just stores whatever we send */
+        }
         const res = await createSession({
           token,
           visitor_id: visitorId,
           visitor_name: opts?.visitorName,
           visitor_email: opts?.visitorEmail,
-          page_url: typeof window !== 'undefined' ? window.location.href : undefined,
-          referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+          page_url: pageUrl,
+          referrer: referrer,
         });
         const newId = res.session_id;
         sessionIdRef.current = newId;
