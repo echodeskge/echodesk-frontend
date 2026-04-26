@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock, Calendar, ArrowRight } from 'lucide-react';
 import { fetchBlogPostServer, fetchBlogPostsServer } from '@/hooks/useBlog';
@@ -23,11 +22,16 @@ const POST_TYPE_LABELS: Record<string, string> = {
   thought_leadership: 'Perspective',
 };
 
-async function resolveLocale(): Promise<'ka' | 'en'> {
-  const cookieStore = await cookies();
-  const raw = cookieStore.get('NEXT_LOCALE')?.value;
-  return raw === 'en' ? 'en' : 'ka';
-}
+// Blog posts always render in Georgian for the default route. We
+// deliberately do NOT call `cookies()` here — even though that would
+// match the language-switcher cookie, it forces dynamic rendering
+// which pushes generateMetadata out of the <head> chunk and into the
+// streamed body, breaking link-unfurler previews (Slack, iMessage,
+// FB Messenger, Telegram, WhatsApp). Going static + ka-default keeps
+// per-article OG meta in <head> where scrapers can find it. English
+// versions can be added later under /en/blog/<slug> as a separate
+// statically-generated route.
+const DEFAULT_LANG: 'ka' | 'en' = 'ka';
 
 // -------------------------------------------------------------------
 // Metadata
@@ -39,13 +43,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const lang = await resolveLocale();
-  const post = await fetchBlogPostServer(slug, lang).catch(() => null);
+  const post = await fetchBlogPostServer(slug, DEFAULT_LANG).catch(() => null);
   if (!post) {
     return { title: 'Not found' };
   }
 
   const url = `${SITE_URL}/blog/${post.slug}`;
+  const ogImage = post.hero_image_url || `${SITE_URL}/opengraph-image`;
   return {
     title: post.meta_title || post.title,
     description: post.meta_description || post.summary,
@@ -54,12 +58,13 @@ export async function generateMetadata({
     openGraph: {
       type: 'article',
       siteName: 'EchoDesk',
-      locale: lang === 'ka' ? 'ka_GE' : 'en_US',
+      locale: DEFAULT_LANG === 'ka' ? 'ka_GE' : 'en_US',
       url,
       title: post.meta_title || post.title,
       description: post.meta_description || post.summary,
       publishedTime: post.published_at,
       modifiedTime: post.updated_at,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
     },
     twitter: {
       card: 'summary_large_image',
@@ -67,8 +72,34 @@ export async function generateMetadata({
       creator: '@echodesk',
       title: post.meta_title || post.title,
       description: post.meta_description || post.summary,
+      images: [ogImage],
     },
   };
+}
+
+/**
+ * Build-time static generation: list every published slug so Next.js
+ * pre-renders each article into a static HTML file with metadata fully
+ * resolved in <head>. Without this, the page is dynamic (because of the
+ * fetch + revalidate) and Next.js streams metadata into the body — chat
+ * unfurlers don't parse body, so per-article previews never render.
+ *
+ * dynamicParams = true (default) means new posts not in this list are
+ * still rendered on demand and cached by ISR — the static prerender is
+ * just a fast-path for known slugs at build time.
+ */
+export async function generateStaticParams() {
+  try {
+    const data = await fetchBlogPostsServer({
+      lang: DEFAULT_LANG,
+      pageSize: 500,
+    });
+    return (data.results || []).map((p) => ({ slug: p.slug }));
+  } catch {
+    // Build must not fail if the API is down — Next.js will fall back to
+    // on-demand rendering for any slug.
+    return [];
+  }
 }
 
 // -------------------------------------------------------------------
@@ -81,7 +112,7 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const lang = await resolveLocale();
+  const lang = DEFAULT_LANG;
   const post = await fetchBlogPostServer(slug, lang).catch(() => null);
   if (!post) notFound();
 
