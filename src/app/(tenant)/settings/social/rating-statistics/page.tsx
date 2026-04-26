@@ -43,6 +43,7 @@ const platformColors: Record<string, string> = {
   instagram: 'bg-pink-100 text-pink-800',
   whatsapp: 'bg-green-100 text-green-800',
   email: 'bg-gray-100 text-gray-800',
+  widget: 'bg-purple-100 text-purple-800',
   phone_sms: 'bg-amber-100 text-amber-800',
   phone_callback: 'bg-violet-100 text-violet-800',
 };
@@ -52,6 +53,7 @@ const platformLabels: Record<string, string> = {
   instagram: 'Instagram',
   whatsapp: 'WhatsApp',
   email: 'Email',
+  widget: 'Widget',
   phone_sms: 'SMS',
   phone_callback: 'Callback',
 };

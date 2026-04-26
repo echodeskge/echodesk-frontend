@@ -1487,7 +1487,7 @@ export function useRatingStatistics(startDate?: string, endDate?: string, source
 // User chat sessions for investigation
 export interface ChatSession {
   id: number;
-  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'phone_sms' | 'phone_callback';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'phone_sms' | 'phone_callback';
   conversation_id: string;
   account_id: string;
   customer_name: string;
