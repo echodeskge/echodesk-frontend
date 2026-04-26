@@ -49,6 +49,8 @@ export const socialKeys = {
   allAssignments: () => [...socialKeys.assignments(), 'all'] as const,
   assignmentStatus: (platform: string, conversationId: string, accountId: string) =>
     [...socialKeys.assignments(), 'status', platform, conversationId, accountId] as const,
+  bulkAssignmentStatus: (platforms: string) =>
+    [...socialKeys.assignments(), 'bulkStatus', platforms] as const,
   messagingWindow: (platform: string, conversationId: string, accountId: string) =>
     [...socialKeys.all, 'messagingWindow', platform, conversationId, accountId] as const,
   facebook: () => [...socialKeys.all, 'facebook'] as const,
@@ -1017,26 +1019,74 @@ export function useAllAssignments(options?: { enabled?: boolean }) {
   });
 }
 
-// Get assignment status for a specific conversation
+export interface BulkAssignmentStatusResponse {
+  assignments: ChatAssignment[];
+  settings: ChatAssignmentStatusResponse['settings'];
+}
+
+const DEFAULT_BULK_PLATFORMS = 'facebook,instagram,whatsapp,email,widget';
+
+/**
+ * Single shared query that loads every active / in-session / completed
+ * assignment for the visible platforms plus the tenant settings flags.
+ *
+ * The agent inbox renders 20+ chats and each one used to fire its own
+ * `/assignments/status/` request. With this hook every chat's
+ * `useAssignmentStatus` reads from the same cache via `select`, so the
+ * whole inbox costs ONE round-trip instead of N.
+ */
+export function useBulkAssignmentStatus(options?: { platforms?: string; enabled?: boolean }) {
+  const platforms = options?.platforms ?? DEFAULT_BULK_PLATFORMS;
+  return useQuery<BulkAssignmentStatusResponse>({
+    queryKey: socialKeys.bulkAssignmentStatus(platforms),
+    queryFn: async () => {
+      const response = await axios.get<BulkAssignmentStatusResponse>(
+        '/api/social/assignments/bulk-status/',
+        { params: { platforms } }
+      );
+      return response.data;
+    },
+    staleTime: 10 * 1000,
+    enabled: options?.enabled ?? true,
+  });
+}
+
+// Get assignment status for a specific conversation. Reads from the shared
+// `useBulkAssignmentStatus` cache so we don't fan out to N requests for N
+// chats — each call reuses the same in-flight bulk query and selects its
+// row via `select`.
 export function useAssignmentStatus(
   platform: ChatAssignmentPlatform,
   conversationId: string,
   accountId: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; platforms?: string }
 ) {
-  return useQuery<ChatAssignmentStatusResponse>({
-    queryKey: socialKeys.assignmentStatus(platform, conversationId, accountId),
+  const platforms = options?.platforms ?? DEFAULT_BULK_PLATFORMS;
+  const enabled = options?.enabled ?? (!!platform && !!conversationId && !!accountId);
+
+  return useQuery<BulkAssignmentStatusResponse, Error, ChatAssignmentStatusResponse>({
+    queryKey: socialKeys.bulkAssignmentStatus(platforms),
     queryFn: async () => {
-      const params = new URLSearchParams({
-        platform,
-        conversation_id: conversationId,
-        account_id: accountId,
-      });
-      const response = await axios.get(`/api/social/assignments/status/?${params.toString()}`);
+      const response = await axios.get<BulkAssignmentStatusResponse>(
+        '/api/social/assignments/bulk-status/',
+        { params: { platforms } }
+      );
       return response.data;
     },
-    staleTime: 10 * 1000, // Consider data fresh for 10 seconds (was 2s — too aggressive)
-    enabled: options?.enabled ?? (!!platform && !!conversationId && !!accountId),
+    staleTime: 10 * 1000,
+    enabled,
+    select: (data): ChatAssignmentStatusResponse => {
+      const match = data.assignments.find(
+        (a) =>
+          a.platform === platform &&
+          a.conversation_id === conversationId &&
+          a.account_id === accountId
+      );
+      return {
+        assignment: match ?? null,
+        settings: data.settings,
+      };
+    },
   });
 }
 

@@ -595,7 +595,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           params: {
             page_id: pageId,
             sender_id: senderId,
-            page_size: initialLoad ? 100 : 500,
+            page_size: initialLoad ? 50 : 500,
             ...(initialLoad && { initial_load: 'true' }),
           },
         });
@@ -637,7 +637,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           params: {
             account_id: accountId,
             sender_id: senderId,
-            page_size: initialLoad ? 100 : 500,
+            page_size: initialLoad ? 50 : 500,
             ...(initialLoad && { initial_load: 'true' }),
           },
         });
@@ -677,7 +677,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           params: {
             waba_id: wabaId,
             from_number: fromNumber,
-            page_size: initialLoad ? 100 : 500,
+            page_size: initialLoad ? 50 : 500,
             ...(initialLoad && { initial_load: 'true' }),
           },
         });
@@ -763,7 +763,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         const response = await axios.get("/api/widget/admin/messages/", {
           params: {
             session_id: sessionId,
-            page_size: initialLoad ? 100 : 500,
+            page_size: initialLoad ? 50 : 500,
           },
         });
         const messages = response.data?.results || response.data || [];
