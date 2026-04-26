@@ -1,13 +1,29 @@
 {
-  "name": "EchoDesk",
+  "name": "EchoDesk — Run your whole business from one place",
   "short_name": "EchoDesk",
-  "description": "Customer Support Platform",
-  "start_url": "/",
+  "description": "All-in-one CRM for Georgian teams: WhatsApp, Messenger, Instagram, email, SIP calls, tickets, invoices, bookings, and leave management.",
+  "start_url": "/?utm_source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "background_color": "#0d0e3a",
+  "theme_color": "#2A2B7D",
   "orientation": "portrait-primary",
+  "lang": "ka",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "communication"],
   "icons": [
+    {
+      "src": "/icon",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/logo-svg.svg",
       "sizes": "any",

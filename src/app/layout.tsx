@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { headers } from 'next/headers';
 import "./globals.css";
@@ -77,12 +77,54 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
+    languages: {
+      'en-US': `${SITE_URL}/en`,
+      'ka-GE': `${SITE_URL}/ka`,
+    },
   },
   robots: {
     index: true,
     follow: true,
     googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
   },
+  manifest: '/manifest.json',
+  // Tells iOS to treat the PWA as a standalone web app and use the
+  // light bar colour from the theme — only takes effect when the user
+  // has saved the site to their home screen.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'EchoDesk',
+  },
+  // formatDetection avoids iOS auto-linking phone numbers / addresses
+  // in arbitrary text — we surface those intentionally on landing pages.
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
+  },
+  // Microsoft tile (Windows pinned-site icon). Falls back to the green-E
+  // icon endpoint Next.js generates from src/app/icon.tsx.
+  other: {
+    'msapplication-TileColor': '#2A2B7D',
+    'msapplication-TileImage': '/icon',
+  },
+};
+
+/**
+ * Theme + viewport metadata — Next.js 15 wants these in their own export
+ * (separate from `metadata`) so the static optimizer can resolve them
+ * without rendering the full <Metadata>.
+ */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#2A2B7D' },
+    { media: '(prefers-color-scheme: dark)', color: '#0d0e3a' },
+  ],
+  colorScheme: 'light dark',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default async function RootLayout({
