@@ -150,9 +150,42 @@ export default async function RootLayout({
   const messages = pickMessages(allMessages as Record<string, unknown>, GLOBAL_NAMESPACES);
   const locale = await getLocale();
 
+  // Site-level OG/Twitter fallback rendered directly in <head> JSX so it
+  // flushes in the FIRST head chunk (~5KB) instead of being injected
+  // mid-stream by the metadata API. React 19 hoists late <meta> tags to
+  // <head> in the browser, but link-unfurler crawlers (Slack, iMessage,
+  // Telegram, FB Messenger, WhatsApp) parse static HTML and never see the
+  // hoisted version. Page-level generateMetadata still overrides for
+  // browsers; scrapers see this baseline.
+  const SCRAPER_OG_TITLE = 'EchoDesk — Run your whole business from one place';
+  const SCRAPER_OG_DESCRIPTION =
+    'All-in-one CRM for Georgian teams: WhatsApp, Messenger, Instagram, email, SIP calls, tickets, invoices, bookings, and leave management.';
+  const SCRAPER_OG_IMAGE = `${SITE_URL}/opengraph-image`;
+
   return (
     <html lang={locale}>
       <head>
+        {/* ---- OG / Twitter fallback for link unfurlers ---- */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="EchoDesk" />
+        <meta property="og:url" content={SITE_URL} />
+        <meta property="og:title" content={SCRAPER_OG_TITLE} />
+        <meta property="og:description" content={SCRAPER_OG_DESCRIPTION} />
+        <meta property="og:image" content={SCRAPER_OG_IMAGE} />
+        <meta property="og:image:secure_url" content={SCRAPER_OG_IMAGE} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:alt" content="EchoDesk — run your whole business from one place: social, calls, email, tickets, invoices, bookings, leave management." />
+        <meta property="og:locale" content="ka_GE" />
+        <meta property="og:locale:alternate" content="en_US" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@echodesk" />
+        <meta name="twitter:creator" content="@echodesk" />
+        <meta name="twitter:title" content={SCRAPER_OG_TITLE} />
+        <meta name="twitter:description" content={SCRAPER_OG_DESCRIPTION} />
+        <meta name="twitter:image" content={SCRAPER_OG_IMAGE} />
+        <meta name="twitter:image:alt" content="EchoDesk — run your whole business from one place." />
         {/* Preconnect to third-party origins for faster loading */}
         <link rel="preconnect" href="https://www.clarity.ms" />
         <link rel="preconnect" href="https://scripts.clarity.ms" />
