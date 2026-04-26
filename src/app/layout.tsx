@@ -56,20 +56,14 @@ export const metadata: Metadata = {
     'Kommo alternative',
     'Tbilisi CRM',
   ],
-  openGraph: {
-    type: 'website',
-    siteName: 'EchoDesk',
-    locale: 'ka_GE',
-    alternateLocale: ['en_US'],
-    url: SITE_URL,
-    // og:image is injected by Next.js from src/app/opengraph-image.tsx
-    // (generated statically at build time).
-  },
-  twitter: {
-    card: 'summary_large_image',
-    site: '@echodesk',
-    creator: '@echodesk',
-  },
+  // openGraph + twitter intentionally NOT set here — the same fields are
+  // hardcoded in the layout's <head> JSX below so they flush in the
+  // initial head chunk for chat-app link unfurlers (which don't run JS
+  // and don't see Next.js's late metadata-API injection). Letting the
+  // metadata API ALSO emit them produced duplicates that some scrapers
+  // flagged as ambiguous. Per-page generateMetadata can still set its
+  // own openGraph / twitter — those override at the body level for
+  // browsers (which run React 19 and hoist meta tags into <head>).
   // Kills the "Missing fb:app_id" warning in Facebook's sharing debugger
   // and unlocks per-share analytics in the Facebook app dashboard.
   facebook: {
@@ -77,10 +71,10 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
-    languages: {
-      'en-US': `${SITE_URL}/en`,
-      'ka-GE': `${SITE_URL}/ka`,
-    },
+    // No `languages` map — we don't have distinct per-language URLs
+    // (locale is served via the NEXT_LOCALE cookie, same path). Pointing
+    // hreflang at /en or /ka triggered Google to crawl 404s, so the only
+    // honest signal is the canonical URL plus <html lang>.
   },
   robots: {
     index: true,
