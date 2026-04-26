@@ -206,6 +206,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
   // Track if we're currently searching (search input has value but API hasn't responded yet)
   const isSearching = searchQuery !== '' && searchQuery !== debouncedSearchQuery;
 
+  // Hoisted WS connection state. The WebSocket hook lower in this component
+  // updates this via onConnectionChange so useUnifiedConversations can switch
+  // off its background poll while the live channel is healthy.
+  const [isWsConnected, setIsWsConnected] = useState(false);
+
   // Use the unified conversations hook
   const {
     data: conversationsData,
@@ -225,6 +230,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     assigned: assignmentTab === 'assigned',
     archived: showArchived,
     connectionId: selectedEmailConnectionId,
+    isWsConnected,
   });
 
   // State to hold a directly loaded chat (when navigating to a URL not in the list)
@@ -553,6 +559,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
     }
     wasConnectedRef.current = connected;
+    setIsWsConnected(connected);
   }, [queryClient]);
 
   // Initialize WebSocket connection

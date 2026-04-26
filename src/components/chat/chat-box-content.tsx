@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import type { ChatType, UserType } from "@/components/chat/types"
 
 import { CardContent } from "@/components/ui/card"
@@ -11,7 +12,7 @@ interface ChatBoxContentProps {
   highlightedMessageIndex?: number
 }
 
-export function ChatBoxContent({
+function ChatBoxContentInner({
   user,
   chat,
   highlightedMessageIndex,
@@ -26,3 +27,5 @@ export function ChatBoxContent({
     </CardContent>
   )
 }
+
+export const ChatBoxContent = memo(ChatBoxContentInner)

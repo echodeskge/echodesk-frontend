@@ -2668,6 +2668,9 @@ export interface UseUnifiedConversationsOptions {
   assigned?: boolean;
   archived?: boolean;
   connectionId?: number | null;  // Filter by email connection ID
+  // When true, the caller has a healthy WebSocket subscription pushing updates,
+  // so we can stop polling. Defaults to false (poll always) for safety.
+  isWsConnected?: boolean;
 }
 
 /**
@@ -2684,6 +2687,7 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
     assigned = false,
     archived = false,
     connectionId = null,
+    isWsConnected = false,
   } = options;
 
   return useInfiniteQuery({
@@ -2712,11 +2716,14 @@ export function useUnifiedConversations(options: UseUnifiedConversationsOptions 
       return undefined;
     },
     enabled,
-    staleTime: 10000, // 10 seconds
-    // Background refetch so the sidebar self-heals if the WebSocket disconnects
-    // silently (load balancer idle timeout, flaky network). WebSocket push is
-    // still the primary real-time path — this is a fallback only.
-    refetchInterval: 30000,
+    // Trust WS push as the primary freshness path; treat list as fresh for a
+    // minute so re-renders don't trigger background fetches when nothing has
+    // actually changed.
+    staleTime: 60000,
+    // Background refetch only when WS is unavailable, so we self-heal if the
+    // socket drops (load balancer idle timeout, flaky network) but stop the
+    // 30s poll storm whenever the live channel is healthy.
+    refetchInterval: isWsConnected ? false : 30000,
     refetchIntervalInBackground: false,
     // Keep the previously-rendered list visible while switching tabs or filters,
     // so the sidebar doesn't show a full-page spinner on tab switch.

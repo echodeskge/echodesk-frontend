@@ -1,4 +1,4 @@
-import { forwardRef } from "react"
+import { forwardRef, memo } from "react"
 
 import type { MessageType, UserType } from "@/components/chat/types"
 import { formatDistanceToNow } from "date-fns"
@@ -146,7 +146,7 @@ function MessageAuthorBadge({ sentByName }: { sentByName?: string }) {
   )
 }
 
-export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
+const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
   function MessageBubble(
     { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery },
     ref
@@ -298,3 +298,5 @@ export const MessageBubble = forwardRef<HTMLLIElement, MessageBubbleProps>(
     </li>
   )
 })
+
+export const MessageBubble = memo(MessageBubbleInner)
