@@ -480,11 +480,15 @@ export default function EcommerceSettingsPage() {
         // Decimal fields — only send when a pin has actually been dropped.
         // Sending an empty string would fail server-side validation; sending
         // null would force `as any` (the generated type is string | undefined).
+        // Truncate to 6 decimals to match the backend's `DecimalField(
+        // max_digits=9, decimal_places=6)`. Leaflet emits 14-digit floats and
+        // the server rejects anything past 6dp ("more than 9 digits in total").
+        // 6dp ≈ 11 cm precision at the equator, plenty for courier delivery.
         ...(settings.quickshipper_pickup_latitude != null && {
-          quickshipper_pickup_latitude: String(settings.quickshipper_pickup_latitude),
+          quickshipper_pickup_latitude: settings.quickshipper_pickup_latitude.toFixed(6),
         }),
         ...(settings.quickshipper_pickup_longitude != null && {
-          quickshipper_pickup_longitude: String(settings.quickshipper_pickup_longitude),
+          quickshipper_pickup_longitude: settings.quickshipper_pickup_longitude.toFixed(6),
         }),
         quickshipper_pickup_extra_instructions: settings.quickshipper_pickup_extra_instructions,
         ...(bogSecret && { bog_client_secret: bogSecret }),
