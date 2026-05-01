@@ -212,6 +212,7 @@ import type {
   ProductReviewCreate,
   PromoValidateRequestRequest,
   PromoValidateResponse,
+  QuickshipperQuoteRequestRequest,
   StoreThemeResponse,
   ChangePasswordRequestRequest,
   ChangePasswordResponse,
@@ -3797,6 +3798,13 @@ export async function ecommerceAdminPromoCodesDestroy(
   return response.data;
 }
 
+export async function ecommerceQuickshipperTestConnection(): Promise<any> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/quickshipper/test-connection/`,
+  );
+  return response.data;
+}
+
 export async function ecommerceAdminReviewsList(
   isApproved?: boolean,
   isVerifiedPurchase?: boolean,
@@ -4730,6 +4738,16 @@ export async function ecommerceClientShippingMethodsRetrieve(
   return response.data;
 }
 
+export async function ecommerceQuickshipperQuote(
+  data: QuickshipperQuoteRequestRequest,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/ecommerce/client/shipping/quote/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function getStoreTheme(): Promise<StoreThemeResponse> {
   const response = await axios.get(`/api/ecommerce/client/theme/`);
   return response.data;
@@ -4831,6 +4849,13 @@ export async function flittPaymentWebhook(): Promise<any> {
 
 export async function tbcPaymentWebhook(): Promise<any> {
   const response = await axios.post(`/api/ecommerce/payment-webhook/tbc/`);
+  return response.data;
+}
+
+export async function ecommerceQuickshipperWebhook(): Promise<any> {
+  const response = await axios.post(
+    `/api/ecommerce/shipping-webhook/quickshipper/`,
+  );
   return response.data;
 }
 
@@ -7743,6 +7768,11 @@ export async function socialAssignmentsAssignCreate(): Promise<any> {
   return response.data;
 }
 
+export async function socialAssignmentsBulkStatusRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/assignments/bulk-status/`);
+  return response.data;
+}
+
 export async function socialAssignmentsEndSessionCreate(): Promise<any> {
   const response = await axios.post(`/api/social/assignments/end-session/`);
   return response.data;
@@ -9435,6 +9465,15 @@ export async function tenantSettingsGet(): Promise<{
   return response.data;
 }
 
+export async function tenantPublicBranding(): Promise<{
+  logo?: string;
+  company_name?: string;
+  schema_name?: string;
+}> {
+  const response = await axios.get(`/api/tenant-settings/public-branding/`);
+  return response.data;
+}
+
 export async function tenantSettingsRemoveLogo(): Promise<{
   message?: string;
 }> {
@@ -10138,8 +10177,15 @@ export async function widgetAdminMessagesSendCreate(): Promise<any> {
   return response.data;
 }
 
-export async function widgetPublicCallCredentialsCreate(): Promise<any> {
-  const response = await axios.post(`/api/widget/public/call/credentials/`);
+export async function widgetAdminSessionsCloseCreate(data: {
+  connection_id: number;
+  session_id: string;
+}): Promise<{
+  status?: 'ok' | 'already_ended';
+  ended_at?: string;
+  ended_by?: 'visitor' | 'agent' | 'timeout';
+}> {
+  const response = await axios.post(`/api/widget/admin/sessions/close/`, data);
   return response.data;
 }
 
@@ -10160,6 +10206,31 @@ export async function widgetPublicMessagesListRetrieve(): Promise<any> {
 
 export async function widgetPublicSessionsCreate(): Promise<any> {
   const response = await axios.post(`/api/widget/public/sessions/`);
+  return response.data;
+}
+
+export async function widgetPublicSessionsCloseCreate(data: {
+  token: string;
+  session_id: string;
+}): Promise<{
+  status?: 'ok' | 'already_ended';
+  ended_at?: string;
+  ended_by?: 'visitor' | 'agent' | 'timeout';
+}> {
+  const response = await axios.post(`/api/widget/public/sessions/close/`, data);
+  return response.data;
+}
+
+export async function widgetPublicSessionsRateCreate(data: {
+  token: string;
+  session_id: string;
+  rating: number;
+  comment?: string;
+}): Promise<{
+  status?: 'ok';
+  rating?: number;
+}> {
+  const response = await axios.post(`/api/widget/public/sessions/rate/`, data);
   return response.data;
 }
 

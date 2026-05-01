@@ -10,8 +10,9 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
-import { CreditCard, Store, Eye, EyeOff, CheckCircle2, AlertCircle, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check } from "lucide-react"
-import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate, ecommerceAdminSettingsDeleteDeploymentDestroy } from "@/api/generated/api"
+import { CreditCard, Store, Eye, EyeOff, CheckCircle2, AlertCircle, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check, Truck } from "lucide-react"
+import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate, ecommerceAdminSettingsDeleteDeploymentDestroy, ecommerceQuickshipperTestConnection } from "@/api/generated/api"
+import { MiniMapPicker } from "@/components/MiniMapPicker"
 import type { EcommerceSettings as EcommerceSettingsType, EcommerceSettingsRequest, DeploymentResponse } from "@/api/generated/interfaces"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -55,6 +56,16 @@ interface EcommerceSettings {
   store_name: string
   store_email: string
   store_phone: string
+  // Quickshipper courier integration
+  quickshipper_enabled: boolean
+  quickshipper_use_production: boolean
+  quickshipper_pickup_contact_name: string
+  quickshipper_pickup_phone: string
+  quickshipper_pickup_address: string
+  quickshipper_pickup_city: string
+  quickshipper_pickup_latitude: number | null
+  quickshipper_pickup_longitude: number | null
+  quickshipper_pickup_extra_instructions: string
 }
 
 interface DeploymentInfo {
@@ -133,8 +144,21 @@ export default function EcommerceSettingsPage() {
     store_name: "",
     store_email: "",
     store_phone: "",
+    quickshipper_enabled: false,
+    quickshipper_use_production: false,
+    quickshipper_pickup_contact_name: "",
+    quickshipper_pickup_phone: "",
+    quickshipper_pickup_address: "",
+    quickshipper_pickup_city: "",
+    quickshipper_pickup_latitude: null,
+    quickshipper_pickup_longitude: null,
+    quickshipper_pickup_extra_instructions: "",
   })
   const [bogSecret, setBogSecret] = useState("")
+  const [quickshipperApiKey, setQuickshipperApiKey] = useState("")
+  const [hasQuickshipperKey, setHasQuickshipperKey] = useState(false)
+  const [quickshipperWebhookSecret, setQuickshipperWebhookSecret] = useState("")
+  const [testingQuickshipper, setTestingQuickshipper] = useState(false)
   const [hasExistingCredentials, setHasExistingCredentials] = useState(false)
   const [deploymentInfo, setDeploymentInfo] = useState<DeploymentInfo>({
     frontend_url: null,
@@ -185,8 +209,25 @@ export default function EcommerceSettingsPage() {
           store_name: settingsData.store_name || "",
           store_email: settingsData.store_email || "",
           store_phone: settingsData.store_phone || "",
+          quickshipper_enabled: settingsData.quickshipper_enabled ?? false,
+          quickshipper_use_production: settingsData.quickshipper_use_production ?? false,
+          quickshipper_pickup_contact_name: settingsData.quickshipper_pickup_contact_name || "",
+          quickshipper_pickup_phone: settingsData.quickshipper_pickup_phone || "",
+          quickshipper_pickup_address: settingsData.quickshipper_pickup_address || "",
+          quickshipper_pickup_city: settingsData.quickshipper_pickup_city || "",
+          quickshipper_pickup_latitude:
+            settingsData.quickshipper_pickup_latitude != null
+              ? Number(settingsData.quickshipper_pickup_latitude)
+              : null,
+          quickshipper_pickup_longitude:
+            settingsData.quickshipper_pickup_longitude != null
+              ? Number(settingsData.quickshipper_pickup_longitude)
+              : null,
+          quickshipper_pickup_extra_instructions: settingsData.quickshipper_pickup_extra_instructions || "",
         })
         setHasExistingCredentials(!!settingsData.bog_client_id)
+        setHasQuickshipperKey(!!settingsData.has_quickshipper_credentials)
+        setQuickshipperWebhookSecret(settingsData.quickshipper_webhook_secret || "")
 
         // Extract deployment info if available
         if (settingsData.ecommerce_frontend_url !== undefined || settingsData.deployment_status !== undefined) {
@@ -428,10 +469,29 @@ export default function EcommerceSettingsPage() {
         store_name: settings.store_name,
         store_email: settings.store_email,
         store_phone: settings.store_phone,
+        // Quickshipper courier integration. The webhook secret is read-only
+        // server-side (auto-allocated on first enable) so we don't send it.
+        quickshipper_enabled: settings.quickshipper_enabled,
+        quickshipper_use_production: settings.quickshipper_use_production,
+        quickshipper_pickup_contact_name: settings.quickshipper_pickup_contact_name,
+        quickshipper_pickup_phone: settings.quickshipper_pickup_phone,
+        quickshipper_pickup_address: settings.quickshipper_pickup_address,
+        quickshipper_pickup_city: settings.quickshipper_pickup_city,
+        // Decimal fields — only send when a pin has actually been dropped.
+        // Sending an empty string would fail server-side validation; sending
+        // null would force `as any` (the generated type is string | undefined).
+        ...(settings.quickshipper_pickup_latitude != null && {
+          quickshipper_pickup_latitude: String(settings.quickshipper_pickup_latitude),
+        }),
+        ...(settings.quickshipper_pickup_longitude != null && {
+          quickshipper_pickup_longitude: String(settings.quickshipper_pickup_longitude),
+        }),
+        quickshipper_pickup_extra_instructions: settings.quickshipper_pickup_extra_instructions,
         ...(bogSecret && { bog_client_secret: bogSecret }),
         ...(settings.tbc_client_secret && { tbc_client_secret: settings.tbc_client_secret }),
         ...(settings.flitt_password && { flitt_password: settings.flitt_password }),
         ...(settings.paddle_api_key && { paddle_api_key: settings.paddle_api_key }),
+        ...(quickshipperApiKey && { quickshipper_api_key: quickshipperApiKey }),
       }
 
       if (settings.id) {
@@ -448,6 +508,10 @@ export default function EcommerceSettingsPage() {
       if (bogSecret) {
         setHasExistingCredentials(true)
         setBogSecret("") // Clear the input after saving
+      }
+      if (quickshipperApiKey) {
+        setHasQuickshipperKey(true)
+        setQuickshipperApiKey("")
       }
 
       // Clear secret fields after save
@@ -873,6 +937,267 @@ export default function EcommerceSettingsPage() {
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Delivery — Quickshipper */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Truck className="h-5 w-5" />
+            <CardTitle>Delivery — Quickshipper</CardTitle>
+          </div>
+          <CardDescription>
+            Connect your Quickshipper account to dispatch couriers automatically
+            when an order is placed. The storefront will replace static shipping
+            methods with a live quote based on each order&apos;s delivery address.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="quickshipper_enabled" className="text-base">
+                Enable Quickshipper
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                When on, the storefront fetches a real-time courier price + ETA
+                at checkout instead of showing your manual shipping methods.
+              </p>
+            </div>
+            <Switch
+              id="quickshipper_enabled"
+              checked={settings.quickshipper_enabled}
+              onCheckedChange={(checked) =>
+                setSettings((prev) => ({ ...prev, quickshipper_enabled: checked }))
+              }
+            />
+          </div>
+
+          {settings.quickshipper_enabled && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="quickshipper_api_key">
+                    API key
+                    {hasQuickshipperKey && (
+                      <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        on file
+                      </span>
+                    )}
+                  </Label>
+                  <PasswordInput
+                    id="quickshipper_api_key"
+                    value={quickshipperApiKey}
+                    onChange={setQuickshipperApiKey}
+                    placeholder={
+                      hasQuickshipperKey
+                        ? "Leave blank to keep the existing key"
+                        : "Paste your Quickshipper API key"
+                    }
+                  />
+                </div>
+                <div className="flex items-end">
+                  <div className="flex items-center justify-between rounded-lg border p-3 w-full">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="quickshipper_use_production" className="text-base">
+                        Production mode
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Off = Quickshipper sandbox, on = production billing.
+                      </p>
+                    </div>
+                    <Switch
+                      id="quickshipper_use_production"
+                      checked={settings.quickshipper_use_production}
+                      onCheckedChange={(checked) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          quickshipper_use_production: checked,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-base">Pickup address</Label>
+                  <p className="text-sm text-muted-foreground">
+                    The courier will pick up every shipment from this location.
+                    Drop a pin on the map for accurate routing.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quickshipper_pickup_contact_name">
+                      Contact name
+                    </Label>
+                    <Input
+                      id="quickshipper_pickup_contact_name"
+                      value={settings.quickshipper_pickup_contact_name}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          quickshipper_pickup_contact_name: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. Shop manager"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quickshipper_pickup_phone">Phone</Label>
+                    <Input
+                      id="quickshipper_pickup_phone"
+                      value={settings.quickshipper_pickup_phone}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          quickshipper_pickup_phone: e.target.value,
+                        }))
+                      }
+                      placeholder="+995..."
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="quickshipper_pickup_address">Street</Label>
+                    <Input
+                      id="quickshipper_pickup_address"
+                      value={settings.quickshipper_pickup_address}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          quickshipper_pickup_address: e.target.value,
+                        }))
+                      }
+                      placeholder="e.g. 12 Rustaveli Ave"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="quickshipper_pickup_city">City</Label>
+                    <Input
+                      id="quickshipper_pickup_city"
+                      value={settings.quickshipper_pickup_city}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          quickshipper_pickup_city: e.target.value,
+                        }))
+                      }
+                      placeholder="Tbilisi"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quickshipper_pickup_extra_instructions">
+                    Extra instructions
+                  </Label>
+                  <Input
+                    id="quickshipper_pickup_extra_instructions"
+                    value={settings.quickshipper_pickup_extra_instructions}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        quickshipper_pickup_extra_instructions: e.target.value,
+                      }))
+                    }
+                    placeholder="Door code, floor, what to ring at"
+                  />
+                </div>
+
+                <MiniMapPicker
+                  latitude={settings.quickshipper_pickup_latitude}
+                  longitude={settings.quickshipper_pickup_longitude}
+                  onChange={(lat, lng) =>
+                    setSettings((prev) => ({
+                      ...prev,
+                      quickshipper_pickup_latitude: lat,
+                      quickshipper_pickup_longitude: lng,
+                    }))
+                  }
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={testingQuickshipper || (!hasQuickshipperKey && !quickshipperApiKey)}
+                  onClick={async () => {
+                    setTestingQuickshipper(true)
+                    try {
+                      const res = await ecommerceQuickshipperTestConnection() as {
+                        success: boolean
+                        shop_name?: string
+                        balance?: string
+                        has_providers?: boolean
+                        error?: string
+                      }
+                      if (res.success) {
+                        toast.success(
+                          `Connected as ${res.shop_name || "Quickshipper account"}` +
+                            (res.balance ? ` · balance: ${res.balance}` : "") +
+                            (res.has_providers ? "" : " · ⚠ no couriers configured yet")
+                        )
+                      } else {
+                        toast.error(res.error || "Quickshipper rejected the request")
+                      }
+                    } catch (err) {
+                      const msg =
+                        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+                        (err as Error).message ||
+                        "Test failed"
+                      toast.error(msg)
+                    } finally {
+                      setTestingQuickshipper(false)
+                    }
+                  }}
+                >
+                  {testingQuickshipper ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Testing…
+                    </>
+                  ) : (
+                    "Test connection"
+                  )}
+                </Button>
+
+                {quickshipperWebhookSecret && (
+                  <div className="flex flex-1 min-w-[260px] items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs">
+                    <span className="font-medium text-muted-foreground">
+                      Webhook signing secret:
+                    </span>
+                    <code className="font-mono text-[11px] truncate flex-1">
+                      {quickshipperWebhookSecret}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(quickshipperWebhookSecret)
+                        toast.success("Copied")
+                      }}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 

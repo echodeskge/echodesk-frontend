@@ -914,6 +914,17 @@ export interface EcommerceSettings {
   paddle_client_token?: string;
   paddle_use_production?: boolean;
   has_paddle_credentials: boolean;
+  quickshipper_enabled?: boolean;
+  has_quickshipper_credentials: boolean;
+  quickshipper_use_production?: boolean;
+  quickshipper_webhook_secret: string;
+  quickshipper_pickup_contact_name?: string;
+  quickshipper_pickup_phone?: string;
+  quickshipper_pickup_address?: string;
+  quickshipper_pickup_city?: string;
+  quickshipper_pickup_latitude?: string;
+  quickshipper_pickup_longitude?: string;
+  quickshipper_pickup_extra_instructions?: string;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -961,6 +972,16 @@ export interface EcommerceSettingsRequest {
   paddle_webhook_secret?: string;
   paddle_client_token?: string;
   paddle_use_production?: boolean;
+  quickshipper_enabled?: boolean;
+  quickshipper_api_key?: string;
+  quickshipper_use_production?: boolean;
+  quickshipper_pickup_contact_name?: string;
+  quickshipper_pickup_phone?: string;
+  quickshipper_pickup_address?: string;
+  quickshipper_pickup_city?: string;
+  quickshipper_pickup_latitude?: string;
+  quickshipper_pickup_longitude?: string;
+  quickshipper_pickup_extra_instructions?: string;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -3545,6 +3566,16 @@ export interface PatchedEcommerceSettingsRequest {
   paddle_webhook_secret?: string;
   paddle_client_token?: string;
   paddle_use_production?: boolean;
+  quickshipper_enabled?: boolean;
+  quickshipper_api_key?: string;
+  quickshipper_use_production?: boolean;
+  quickshipper_pickup_contact_name?: string;
+  quickshipper_pickup_phone?: string;
+  quickshipper_pickup_address?: string;
+  quickshipper_pickup_city?: string;
+  quickshipper_pickup_latitude?: string;
+  quickshipper_pickup_longitude?: string;
+  quickshipper_pickup_extra_instructions?: string;
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
@@ -4319,9 +4350,6 @@ export interface PatchedWidgetConnectionRequest {
   pre_chat_form?: any;
   offline_message?: any;
   business_hours_schedule?: any;
-  voice_enabled?: boolean;
-  voice_queue?: string;
-  voice_working_hours_only?: boolean;
   proactive_enabled?: boolean;
   proactive_message?: any;
   proactive_delay_seconds?: number;
@@ -4939,6 +4967,11 @@ export interface QuickReplyRequest {
   position?: number;
 }
 
+export interface QuickshipperQuoteRequestRequest {
+  cart_id: number;
+  delivery_address_id: number;
+}
+
 export interface RecurringBooking {
   id: number;
   client: BookingClient;
@@ -5317,6 +5350,7 @@ export interface SocialClientList {
   profile_picture: string;
   social_accounts_count: string;
   platforms: string;
+  social_accounts: string;
   created_at: string;
   updated_at: string;
   first_name: string;
@@ -6502,9 +6536,6 @@ export interface WidgetConnection {
   pre_chat_form?: any;
   offline_message?: any;
   business_hours_schedule?: any;
-  voice_enabled?: boolean;
-  voice_queue?: string;
-  voice_working_hours_only?: boolean;
   proactive_enabled?: boolean;
   proactive_message?: any;
   proactive_delay_seconds?: number;
@@ -6522,9 +6553,6 @@ export interface WidgetConnectionRequest {
   pre_chat_form?: any;
   offline_message?: any;
   business_hours_schedule?: any;
-  voice_enabled?: boolean;
-  voice_queue?: string;
-  voice_working_hours_only?: boolean;
   proactive_enabled?: boolean;
   proactive_message?: any;
   proactive_delay_seconds?: number;
