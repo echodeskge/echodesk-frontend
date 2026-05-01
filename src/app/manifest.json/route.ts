@@ -3,21 +3,25 @@ import { headers } from 'next/headers';
 /**
  * Dynamic per-tenant PWA manifest.
  *
- * The PWA install dialog shows the `name` field as the app title
- * ("Tenant - EchoDesk"), so it has to be tenant-aware. Middleware
- * skips paths that contain a `.` (so the `x-tenant-subdomain`
- * header it normally injects isn't set here), so we resolve the
- * tenant from the raw `host` header using the same rules as
- * `middleware.ts::detectTenantSubdomain`.
+ * Each tenant subdomain (e.g. amanati.echodesk.ge) gets its own
+ * install title and home-screen icon: the tenant's display name and
+ * uploaded logo, fetched from the backend `tenant-settings/public-
+ * branding/` endpoint at request time.
  *
- * Served at `/manifest.json` to keep parity with the URL referenced
- * from `layout.tsx`'s metadata and from any already-installed PWAs
- * whose cached manifest URL points here. Returning a route handler
- * (instead of using `app/manifest.ts`) preserves that exact URL.
+ * Middleware skips paths containing a `.` (so the
+ * `x-tenant-subdomain` header it normally injects isn't set here);
+ * we resolve the tenant from the raw `host` header instead and call
+ * the per-tenant API URL the same way `axios.ts` does on the client.
+ *
+ * Served at `/manifest.json` to keep the URL stable for any already-
+ * installed PWAs that point here. Falls back to the default EchoDesk
+ * branding (and the generic green "E" icons at /pwa-icon-192 and
+ * /pwa-icon-512) if branding fetch fails or no tenant logo is set.
  */
 
 const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'mail', 'admin']);
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge';
+const API_DOMAIN = process.env.NEXT_PUBLIC_API_DOMAIN || 'api.echodesk.ge';
 
 function detectTenantSubdomain(hostname: string): string | null {
   const host = hostname.split(':')[0];
@@ -36,6 +40,29 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+interface PublicBranding {
+  logo: string | null;
+  company_name: string;
+  schema_name: string;
+}
+
+async function fetchTenantBranding(subdomain: string): Promise<PublicBranding | null> {
+  const url = `https://${subdomain}.${API_DOMAIN}/api/tenant-settings/public-branding/`;
+  try {
+    const res = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      // Cache per-tenant for 5 min on the edge — branding rarely changes,
+      // and we'd rather serve a slightly stale icon than block the install
+      // dialog on a slow API roundtrip.
+      next: { revalidate: 300, tags: [`tenant-branding-${subdomain}`] },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as PublicBranding;
+  } catch {
+    return null;
+  }
+}
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -43,9 +70,40 @@ export async function GET() {
   const hostname = requestHeaders.get('host') || '';
   const subdomain = detectTenantSubdomain(hostname);
 
-  const tenantName = subdomain ? capitalize(subdomain) : null;
-  const name = tenantName ? `${tenantName} - EchoDesk` : 'EchoDesk';
-  const shortName = tenantName ?? 'EchoDesk';
+  let displayName: string | null = null;
+  let logoUrl: string | null = null;
+
+  if (subdomain) {
+    const branding = await fetchTenantBranding(subdomain);
+    if (branding) {
+      displayName = branding.company_name || capitalize(subdomain);
+      logoUrl = branding.logo;
+    } else {
+      // Backend unreachable — derive a name from the subdomain so the
+      // install dialog still reads as the tenant, not generic EchoDesk.
+      displayName = capitalize(subdomain);
+    }
+  }
+
+  const name = displayName ? `${displayName} - EchoDesk` : 'EchoDesk';
+  const shortName = displayName ?? 'EchoDesk';
+
+  // Tenant logo (when uploaded) drives the install icon. We don't know
+  // the dimensions of an arbitrary uploaded image, so we declare it with
+  // `sizes: "any"` and `purpose: "any"` (no maskable — uploads can have
+  // their own backgrounds and we'd rather show the logo as-is than risk
+  // the OS cropping into important detail). Fallback EchoDesk icons stay
+  // in the array so OSes that demand a fixed size still find one.
+  const icons: Array<{ src: string; sizes: string; type: string; purpose: string }> = [];
+  if (logoUrl) {
+    icons.push({ src: logoUrl, sizes: 'any', type: 'image/png', purpose: 'any' });
+  }
+  icons.push(
+    { src: '/icon', sizes: '32x32', type: 'image/png', purpose: 'any' },
+    { src: '/apple-icon', sizes: '180x180', type: 'image/png', purpose: 'any' },
+    { src: '/pwa-icon-192', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+    { src: '/pwa-icon-512', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+  );
 
   const manifest = {
     name,
@@ -61,17 +119,15 @@ export async function GET() {
     lang: 'ka',
     dir: 'ltr',
     categories: ['business', 'productivity', 'communication'],
-    icons: [
-      { src: '/icon', sizes: '32x32', type: 'image/png', purpose: 'any' },
-      { src: '/apple-icon', sizes: '180x180', type: 'image/png', purpose: 'any' },
-      { src: '/pwa-icon-192', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-      { src: '/pwa-icon-512', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
-    ],
+    icons,
   };
 
   return Response.json(manifest, {
     headers: {
       'Content-Type': 'application/manifest+json',
+      // Browsers re-fetch the manifest periodically; 5-minute edge cache
+      // keeps the per-tenant fetch fanout low without staling the title
+      // for too long if the tenant renames themselves.
       'Cache-Control': 'public, max-age=300, s-maxage=300',
     },
   });
