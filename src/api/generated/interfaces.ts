@@ -951,6 +951,12 @@ export interface EcommerceSettings {
   tax_inclusive?: boolean;
   tax_label?: string;
   homepage_variant?: HomepageVariantEnum | BlankEnum;
+  storefront_template?: StorefrontTemplateEnum;
+  voltage_theme_preset?: VoltageThemePresetEnum;
+  voltage_color_mode?: VoltageColorModeEnum;
+  voltage_density?: VoltageDensityEnum;
+  voltage_radius?: VoltageRadiusEnum;
+  voltage_font_pair?: VoltageFontPairEnum;
   created_at: string;
   updated_at: string;
 }
@@ -1004,6 +1010,12 @@ export interface EcommerceSettingsRequest {
   tax_inclusive?: boolean;
   tax_label?: string;
   homepage_variant?: HomepageVariantEnum | BlankEnum;
+  storefront_template?: StorefrontTemplateEnum;
+  voltage_theme_preset?: VoltageThemePresetEnum;
+  voltage_color_mode?: VoltageColorModeEnum;
+  voltage_density?: VoltageDensityEnum;
+  voltage_radius?: VoltageRadiusEnum;
+  voltage_font_pair?: VoltageFontPairEnum;
 }
 
 export interface EmailDraft {
@@ -2520,6 +2532,11 @@ export interface OrderCreate {
   notes?: string;
   promo_code?: string;
   shipping_method_id?: number;
+  quickshipper_provider_id?: number;
+  quickshipper_provider_fee_id?: string;
+  quickshipper_parcel_dimensions_id?: number;
+  quickshipper_price?: string;
+  quickshipper_provider_name?: string;
 }
 
 export interface OrderCreateRequest {
@@ -2529,6 +2546,11 @@ export interface OrderCreateRequest {
   notes?: string;
   promo_code?: string;
   shipping_method_id?: number;
+  quickshipper_provider_id?: number;
+  quickshipper_provider_fee_id?: string;
+  quickshipper_parcel_dimensions_id?: number;
+  quickshipper_price?: string;
+  quickshipper_provider_name?: string;
 }
 
 export interface OrderItem {
@@ -3598,6 +3620,12 @@ export interface PatchedEcommerceSettingsRequest {
   tax_inclusive?: boolean;
   tax_label?: string;
   homepage_variant?: HomepageVariantEnum | BlankEnum;
+  storefront_template?: StorefrontTemplateEnum;
+  voltage_theme_preset?: VoltageThemePresetEnum;
+  voltage_color_mode?: VoltageColorModeEnum;
+  voltage_density?: VoltageDensityEnum;
+  voltage_radius?: VoltageRadiusEnum;
+  voltage_font_pair?: VoltageFontPairEnum;
 }
 
 export interface PatchedEmailDraftRequest {
@@ -5516,6 +5544,10 @@ export interface StoreThemeResponse {
   payment: PaymentConfigResponse;
 }
 
+export interface StorefrontTemplateEnum {
+  [key: string]: any;
+}
+
 export interface StrategyEnum {
   [key: string]: any;
 }
@@ -6380,6 +6412,26 @@ export interface VerifyDomainResponse {
   success: boolean;
   verified: boolean;
   verification: Record<string, any>[];
+}
+
+export interface VoltageColorModeEnum {
+  [key: string]: any;
+}
+
+export interface VoltageDensityEnum {
+  [key: string]: any;
+}
+
+export interface VoltageFontPairEnum {
+  [key: string]: any;
+}
+
+export interface VoltageRadiusEnum {
+  [key: string]: any;
+}
+
+export interface VoltageThemePresetEnum {
+  [key: string]: any;
 }
 
 export interface WhatsAppBusinessAccount {

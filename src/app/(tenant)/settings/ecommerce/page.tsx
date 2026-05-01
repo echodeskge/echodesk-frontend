@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
-import { CreditCard, Store, Eye, EyeOff, CheckCircle2, AlertCircle, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check, Truck } from "lucide-react"
+import { CreditCard, Store, Eye, EyeOff, CheckCircle2, AlertCircle, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check, Truck, Palette } from "lucide-react"
 import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate, ecommerceAdminSettingsDeleteDeploymentDestroy, ecommerceQuickshipperTestConnection } from "@/api/generated/api"
 import { MiniMapPicker } from "@/components/MiniMapPicker"
 import type { EcommerceSettings as EcommerceSettingsType, EcommerceSettingsRequest, DeploymentResponse } from "@/api/generated/interfaces"
@@ -66,6 +66,41 @@ interface EcommerceSettings {
   quickshipper_pickup_latitude: number | null
   quickshipper_pickup_longitude: number | null
   quickshipper_pickup_extra_instructions: string
+  // Storefront visual template
+  storefront_template: StorefrontTemplate
+  voltage_theme_preset: VoltageTheme
+  voltage_color_mode: VoltageMode
+  voltage_density: VoltageDensity
+  voltage_radius: VoltageRadius
+  voltage_font_pair: VoltageFontPair
+}
+
+type StorefrontTemplate = "classic" | "voltage"
+type VoltageTheme = "refurb" | "cobalt" | "ember" | "forest" | "violet" | "mono" | "rose"
+type VoltageMode = "light" | "dark"
+type VoltageDensity = "compact" | "cozy" | "comfortable"
+type VoltageRadius = "sharp" | "soft" | "rounded"
+type VoltageFontPair = "bricolage-inter" | "space-dm" | "serif-inter" | "mono-inter"
+
+// Voltage colour-pair previews. Hex values are picked to read well as a
+// 24×24 swatch — they're the prototype's `--accent` mapped to sRGB. The
+// `accent2` is the secondary swatch shown in the corner of each chip so
+// the tenant sees both colours of the pair at once.
+const VOLTAGE_THEME_SWATCHES: Record<VoltageTheme, { label: string; accent: string; accent2: string }> = {
+  refurb: { label: "Refurb", accent: "#f0d860", accent2: "#3955d6" },
+  cobalt: { label: "Cobalt", accent: "#3955d6", accent2: "#f0d860" },
+  ember: { label: "Ember", accent: "#dd6b3a", accent2: "#1a1a2e" },
+  forest: { label: "Forest", accent: "#3a8c5a", accent2: "#e8d35a" },
+  violet: { label: "Violet", accent: "#8e4dd6", accent2: "#e6cc60" },
+  mono: { label: "Mono", accent: "#1a1a2e", accent2: "#f5f5f0" },
+  rose: { label: "Rose", accent: "#e35884", accent2: "#1a1a2e" },
+}
+
+const VOLTAGE_FONT_PAIR_LABELS: Record<VoltageFontPair, { label: string; sample: string; family: string }> = {
+  "bricolage-inter": { label: "Bricolage + Inter", sample: "Aa", family: "'Bricolage Grotesque', system-ui, sans-serif" },
+  "space-dm": { label: "Space Grotesk + DM Sans", sample: "Aa", family: "'Space Grotesk', system-ui, sans-serif" },
+  "serif-inter": { label: "Instrument Serif + Inter", sample: "Aa", family: "'Instrument Serif', Georgia, serif" },
+  "mono-inter": { label: "JetBrains Mono + Inter", sample: "Aa", family: "'JetBrains Mono', ui-monospace, monospace" },
 }
 
 interface DeploymentInfo {
@@ -105,6 +140,43 @@ function PasswordInput({
       >
         {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </Button>
+    </div>
+  )
+}
+
+// Small segmented-toggle helper. Used by the Voltage tweaks block to
+// pick between mode / density / radius. Kept inline because it's only
+// useful here and adding a shadcn primitive for it would be overkill.
+function SegmentedToggle({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div className="inline-flex w-full rounded-md border bg-muted p-0.5">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+              value === opt.value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -153,6 +225,12 @@ export default function EcommerceSettingsPage() {
     quickshipper_pickup_latitude: null,
     quickshipper_pickup_longitude: null,
     quickshipper_pickup_extra_instructions: "",
+    storefront_template: "classic",
+    voltage_theme_preset: "refurb",
+    voltage_color_mode: "light",
+    voltage_density: "cozy",
+    voltage_radius: "soft",
+    voltage_font_pair: "bricolage-inter",
   })
   const [bogSecret, setBogSecret] = useState("")
   const [quickshipperApiKey, setQuickshipperApiKey] = useState("")
@@ -224,6 +302,23 @@ export default function EcommerceSettingsPage() {
               ? Number(settingsData.quickshipper_pickup_longitude)
               : null,
           quickshipper_pickup_extra_instructions: settingsData.quickshipper_pickup_extra_instructions || "",
+          // Storefront visual template — falls back to "classic" so the
+          // form never shows undefined; backend defaults to the same.
+          storefront_template:
+            (settingsData as { storefront_template?: StorefrontTemplate }).storefront_template ||
+            "classic",
+          voltage_theme_preset:
+            (settingsData as { voltage_theme_preset?: VoltageTheme }).voltage_theme_preset ||
+            "refurb",
+          voltage_color_mode:
+            (settingsData as { voltage_color_mode?: VoltageMode }).voltage_color_mode || "light",
+          voltage_density:
+            (settingsData as { voltage_density?: VoltageDensity }).voltage_density || "cozy",
+          voltage_radius:
+            (settingsData as { voltage_radius?: VoltageRadius }).voltage_radius || "soft",
+          voltage_font_pair:
+            (settingsData as { voltage_font_pair?: VoltageFontPair }).voltage_font_pair ||
+            "bricolage-inter",
         })
         setHasExistingCredentials(!!settingsData.bog_client_id)
         setHasQuickshipperKey(!!settingsData.has_quickshipper_credentials)
@@ -491,6 +586,19 @@ export default function EcommerceSettingsPage() {
           quickshipper_pickup_longitude: settings.quickshipper_pickup_longitude.toFixed(6),
         }),
         quickshipper_pickup_extra_instructions: settings.quickshipper_pickup_extra_instructions,
+        // Storefront visual template + voltage tweaks. The generated
+        // EcommerceSettingsRequest types these fields as opaque
+        // `*Enum` stubs (drf-spectacular emits enum names but no
+        // value union), so we cast through `unknown` to satisfy
+        // TypeScript without losing the runtime string values.
+        ...({
+          storefront_template: settings.storefront_template,
+          voltage_theme_preset: settings.voltage_theme_preset,
+          voltage_color_mode: settings.voltage_color_mode,
+          voltage_density: settings.voltage_density,
+          voltage_radius: settings.voltage_radius,
+          voltage_font_pair: settings.voltage_font_pair,
+        } as unknown as Partial<EcommerceSettingsRequest>),
         ...(bogSecret && { bog_client_secret: bogSecret }),
         ...(settings.tbc_client_secret && { tbc_client_secret: settings.tbc_client_secret }),
         ...(settings.flitt_password && { flitt_password: settings.flitt_password }),
@@ -1201,6 +1309,199 @@ export default function EcommerceSettingsPage() {
                 )}
               </div>
             </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Storefront Template */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            <CardTitle>Storefront Template</CardTitle>
+          </div>
+          <CardDescription>
+            Pick the visual design your storefront renders. The Voltage template ships
+            with its own colour palette, density, radius and font controls.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Template radio cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(
+              [
+                {
+                  value: "classic" as const,
+                  label: "Classic",
+                  blurb: "Clean, neutral, shadcn-style. The current default.",
+                  preview: (
+                    <div className="grid grid-cols-3 gap-1 h-full">
+                      <div className="bg-muted rounded col-span-2"></div>
+                      <div className="bg-muted-foreground/20 rounded"></div>
+                      <div className="bg-muted-foreground/15 rounded col-span-3"></div>
+                    </div>
+                  ),
+                },
+                {
+                  value: "voltage" as const,
+                  label: "Voltage",
+                  blurb: "Bold electronics. Big display type, oversized cards, sticker badges.",
+                  preview: (
+                    <div className="grid grid-cols-3 gap-1 h-full">
+                      <div
+                        className="rounded col-span-2"
+                        style={{ background: VOLTAGE_THEME_SWATCHES[settings.voltage_theme_preset].accent }}
+                      ></div>
+                      <div
+                        className="rounded"
+                        style={{ background: VOLTAGE_THEME_SWATCHES[settings.voltage_theme_preset].accent2 }}
+                      ></div>
+                      <div className="bg-foreground/90 rounded col-span-3"></div>
+                    </div>
+                  ),
+                },
+              ] as const
+            ).map((opt) => {
+              const checked = settings.storefront_template === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    setSettings((prev) => ({ ...prev, storefront_template: opt.value }))
+                  }
+                  className={`flex flex-col rounded-lg border-2 p-3 text-left transition-colors ${
+                    checked ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/30"
+                  }`}
+                >
+                  <div className="h-16 w-full mb-3">{opt.preview}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{opt.label}</span>
+                    {checked && (
+                      <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground mt-1">{opt.blurb}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Voltage tweaks — only visible when Voltage is selected */}
+          {settings.storefront_template === "voltage" && (
+            <div className="space-y-5 pt-2">
+              <Separator />
+
+              {/* Colour preset */}
+              <div className="space-y-2">
+                <Label>Colour preset</Label>
+                <p className="text-xs text-muted-foreground">
+                  Drives the accent + secondary-accent pair across the entire storefront.
+                </p>
+                <div className="grid grid-cols-7 gap-2">
+                  {(Object.keys(VOLTAGE_THEME_SWATCHES) as VoltageTheme[]).map((key) => {
+                    const sw = VOLTAGE_THEME_SWATCHES[key]
+                    const checked = settings.voltage_theme_preset === key
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        title={sw.label}
+                        onClick={() =>
+                          setSettings((prev) => ({ ...prev, voltage_theme_preset: key }))
+                        }
+                        className={`relative aspect-square rounded-lg border-2 transition-all ${
+                          checked ? "border-foreground scale-105" : "border-transparent hover:scale-105"
+                        }`}
+                        style={{ background: sw.accent }}
+                      >
+                        <span
+                          className="absolute bottom-1 right-1 h-3 w-3 rounded-full border border-white/40"
+                          style={{ background: sw.accent2 }}
+                        ></span>
+                        {checked && (
+                          <Check className="absolute top-1 left-1 h-3 w-3 text-white drop-shadow" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Mode + Density + Radius — three side-by-side segmented toggles */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <SegmentedToggle
+                  label="Mode"
+                  options={[
+                    { value: "light", label: "Light" },
+                    { value: "dark", label: "Dark" },
+                  ]}
+                  value={settings.voltage_color_mode}
+                  onChange={(v) =>
+                    setSettings((prev) => ({ ...prev, voltage_color_mode: v as VoltageMode }))
+                  }
+                />
+                <SegmentedToggle
+                  label="Density"
+                  options={[
+                    { value: "compact", label: "Compact" },
+                    { value: "cozy", label: "Cozy" },
+                    { value: "comfortable", label: "Comfy" },
+                  ]}
+                  value={settings.voltage_density}
+                  onChange={(v) =>
+                    setSettings((prev) => ({ ...prev, voltage_density: v as VoltageDensity }))
+                  }
+                />
+                <SegmentedToggle
+                  label="Radius"
+                  options={[
+                    { value: "sharp", label: "Sharp" },
+                    { value: "soft", label: "Soft" },
+                    { value: "rounded", label: "Round" },
+                  ]}
+                  value={settings.voltage_radius}
+                  onChange={(v) =>
+                    setSettings((prev) => ({ ...prev, voltage_radius: v as VoltageRadius }))
+                  }
+                />
+              </div>
+
+              {/* Font pair */}
+              <div className="space-y-2">
+                <Label>Font pair</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {(Object.keys(VOLTAGE_FONT_PAIR_LABELS) as VoltageFontPair[]).map((key) => {
+                    const fp = VOLTAGE_FONT_PAIR_LABELS[key]
+                    const checked = settings.voltage_font_pair === key
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() =>
+                          setSettings((prev) => ({ ...prev, voltage_font_pair: key }))
+                        }
+                        className={`flex flex-col items-center justify-center rounded-lg border-2 p-3 transition-colors ${
+                          checked
+                            ? "border-primary bg-primary/5"
+                            : "border-muted hover:border-muted-foreground/30"
+                        }`}
+                      >
+                        <span
+                          className="text-3xl font-bold leading-none mb-1"
+                          style={{ fontFamily: fp.family }}
+                        >
+                          {fp.sample}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground text-center">
+                          {fp.label}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
