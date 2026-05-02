@@ -124,6 +124,29 @@ export function EditProductSheet({
       // Reset manual edit flags
       setSkuManuallyEdited(true); // Already has values, don't auto-generate
 
+      // Backend stores the primary image URL in `Product.image` and any
+      // additional uploads as `ProductImage` rows. The picker is a flat
+      // comma-separated string, so rebuild it here. On submit the
+      // backend re-splits the string and re-syncs the rows.
+      const imageUrls: string[] = [];
+      const splitLegacy = (raw: string | null | undefined) =>
+        (raw || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.startsWith("http://") || s.startsWith("https://"));
+      for (const url of splitLegacy(product.image)) {
+        if (!imageUrls.includes(url)) imageUrls.push(url);
+      }
+      const sortedExtras = [...(product.images || [])].sort(
+        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+      );
+      for (const row of sortedExtras) {
+        for (const url of splitLegacy(row.image)) {
+          if (!imageUrls.includes(url)) imageUrls.push(url);
+        }
+      }
+      const mergedImageString = imageUrls.join(", ");
+
       // Set form values
       form.reset({
         name: product.name || {},
@@ -134,7 +157,7 @@ export function EditProductSheet({
         price: product.price,
         compare_at_price: product.compare_at_price || "",
         cost_price: product.cost_price || "",
-        image: product.image || "",
+        image: mergedImageString,
         quantity: product.quantity || 0,
         low_stock_threshold: product.low_stock_threshold || 10,
         status: product.status,
