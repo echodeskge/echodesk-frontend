@@ -79,6 +79,7 @@ interface EcommerceSettings {
   // Google Ads / GA4 tracking
   google_ads_conversion_id: string
   google_ads_purchase_label: string
+  google_analytics_id: string
 }
 
 type StorefrontTemplate = "classic" | "voltage"
@@ -240,6 +241,7 @@ export default function EcommerceSettingsPage() {
     voltage_font_pair: "bricolage-inter",
     google_ads_conversion_id: "",
     google_ads_purchase_label: "",
+    google_analytics_id: "",
   })
   const [bogSecret, setBogSecret] = useState("")
   const [quickshipperApiKey, setQuickshipperApiKey] = useState("")
@@ -334,6 +336,8 @@ export default function EcommerceSettingsPage() {
             (settingsData as { google_ads_conversion_id?: string }).google_ads_conversion_id || "",
           google_ads_purchase_label:
             (settingsData as { google_ads_purchase_label?: string }).google_ads_purchase_label || "",
+          google_analytics_id:
+            (settingsData as { google_analytics_id?: string }).google_analytics_id || "",
         })
         setHasExistingCredentials(!!settingsData.bog_client_id)
         setHasQuickshipperKey(!!settingsData.has_quickshipper_credentials)
@@ -618,6 +622,7 @@ export default function EcommerceSettingsPage() {
           // reflected in the generated types yet).
           google_ads_conversion_id: settings.google_ads_conversion_id,
           google_ads_purchase_label: settings.google_ads_purchase_label,
+          google_analytics_id: settings.google_analytics_id,
           // Pickup option
           allow_pickup: settings.allow_pickup,
         } as unknown as Partial<EcommerceSettingsRequest>),
@@ -1587,6 +1592,20 @@ export default function EcommerceSettingsPage() {
               The label suffix from your <strong>Purchase</strong> conversion action. Example: if Google gave you{" "}
               <code className="font-mono">AW-18133924374/abcDEFghi123456789</code>, paste only{" "}
               <code className="font-mono">abcDEFghi123456789</code>.
+            </p>
+          </div>
+          <div className="space-y-2 pt-4 border-t">
+            <Label htmlFor="google_analytics_id">Google Analytics 4 Measurement ID</Label>
+            <Input
+              id="google_analytics_id"
+              placeholder="G-XXXXXXXXXX"
+              value={settings.google_analytics_id}
+              onChange={(e) =>
+                setSettings({ ...settings, google_analytics_id: e.target.value.trim() })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              GA4 measurement ID — drives the visitor / page-view dashboard at <a href="https://analytics.google.com" target="_blank" rel="noreferrer" className="underline">analytics.google.com</a>. Find it in Analytics → Admin → Data Streams. Starts with <code className="font-mono">G-</code>. Independent of Google Ads — both can be set together.
             </p>
           </div>
         </CardContent>
