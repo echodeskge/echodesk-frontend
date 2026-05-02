@@ -80,6 +80,7 @@ interface EcommerceSettings {
   google_ads_conversion_id: string
   google_ads_purchase_label: string
   google_analytics_id: string
+  clarity_project_id: string
 }
 
 type StorefrontTemplate = "classic" | "voltage"
@@ -242,6 +243,7 @@ export default function EcommerceSettingsPage() {
     google_ads_conversion_id: "",
     google_ads_purchase_label: "",
     google_analytics_id: "",
+    clarity_project_id: "",
   })
   const [bogSecret, setBogSecret] = useState("")
   const [quickshipperApiKey, setQuickshipperApiKey] = useState("")
@@ -338,6 +340,8 @@ export default function EcommerceSettingsPage() {
             (settingsData as { google_ads_purchase_label?: string }).google_ads_purchase_label || "",
           google_analytics_id:
             (settingsData as { google_analytics_id?: string }).google_analytics_id || "",
+          clarity_project_id:
+            (settingsData as { clarity_project_id?: string }).clarity_project_id || "",
         })
         setHasExistingCredentials(!!settingsData.bog_client_id)
         setHasQuickshipperKey(!!settingsData.has_quickshipper_credentials)
@@ -623,6 +627,7 @@ export default function EcommerceSettingsPage() {
           google_ads_conversion_id: settings.google_ads_conversion_id,
           google_ads_purchase_label: settings.google_ads_purchase_label,
           google_analytics_id: settings.google_analytics_id,
+          clarity_project_id: settings.clarity_project_id,
           // Pickup option
           allow_pickup: settings.allow_pickup,
         } as unknown as Partial<EcommerceSettingsRequest>),
@@ -1606,6 +1611,32 @@ export default function EcommerceSettingsPage() {
             />
             <p className="text-xs text-muted-foreground">
               GA4 measurement ID — drives the visitor / page-view dashboard at <a href="https://analytics.google.com" target="_blank" rel="noreferrer" className="underline">analytics.google.com</a>. Find it in Analytics → Admin → Data Streams. Starts with <code className="font-mono">G-</code>. Independent of Google Ads — both can be set together.
+            </p>
+          </div>
+          <div className="space-y-2 pt-4 border-t">
+            <Label htmlFor="clarity_project_id">Microsoft Clarity</Label>
+            <Input
+              id="clarity_project_id"
+              placeholder="Paste the Clarity tag (or just the project ID)"
+              value={settings.clarity_project_id}
+              onChange={(e) => {
+                // Accept either just the project ID or the full Clarity
+                // snippet they pasted from clarity.microsoft.com. The
+                // tag has the ID as the last string argument:
+                //   })(window, document, "clarity", "script", "PROJECT_ID");
+                const raw = e.target.value;
+                const fromSnippet =
+                  raw.match(/clarity\.ms\/tag\/([a-z0-9]+)/i)?.[1] ||
+                  raw.match(/["']([a-z0-9]{8,12})["']\s*\)\s*;?\s*<\/script>?$/i)?.[1] ||
+                  raw.match(/["']([a-z0-9]{8,12})["']\s*\)\s*;?$/im)?.[1];
+                setSettings({
+                  ...settings,
+                  clarity_project_id: fromSnippet || raw.trim(),
+                });
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste the entire <code className="font-mono">{`<script>…</script>`}</code> tag from <a href="https://clarity.microsoft.com" target="_blank" rel="noreferrer" className="underline">clarity.microsoft.com</a> → Settings → Setup, or just the project ID (lowercase 10-char string like <code className="font-mono">p1q2r3s4t5</code>). Heatmaps + session recordings appear in the Clarity dashboard within minutes.
             </p>
           </div>
         </CardContent>
