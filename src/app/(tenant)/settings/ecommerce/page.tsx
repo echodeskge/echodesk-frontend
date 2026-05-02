@@ -56,6 +56,9 @@ interface EcommerceSettings {
   store_name: string
   store_email: string
   store_phone: string
+  // Pickup option — separate from Quickshipper (couriers); reuses
+  // the Quickshipper pickup address fields as the pickup point.
+  allow_pickup: boolean
   // Quickshipper courier integration
   quickshipper_enabled: boolean
   quickshipper_use_production: boolean
@@ -219,6 +222,7 @@ export default function EcommerceSettingsPage() {
     store_name: "",
     store_email: "",
     store_phone: "",
+    allow_pickup: false,
     quickshipper_enabled: false,
     quickshipper_use_production: false,
     quickshipper_pickup_contact_name: "",
@@ -292,6 +296,8 @@ export default function EcommerceSettingsPage() {
           store_name: settingsData.store_name || "",
           store_email: settingsData.store_email || "",
           store_phone: settingsData.store_phone || "",
+          allow_pickup:
+            (settingsData as { allow_pickup?: boolean }).allow_pickup ?? false,
           quickshipper_enabled: settingsData.quickshipper_enabled ?? false,
           quickshipper_use_production: settingsData.quickshipper_use_production ?? false,
           quickshipper_pickup_contact_name: settingsData.quickshipper_pickup_contact_name || "",
@@ -612,6 +618,8 @@ export default function EcommerceSettingsPage() {
           // reflected in the generated types yet).
           google_ads_conversion_id: settings.google_ads_conversion_id,
           google_ads_purchase_label: settings.google_ads_purchase_label,
+          // Pickup option
+          allow_pickup: settings.allow_pickup,
         } as unknown as Partial<EcommerceSettingsRequest>),
         ...(bogSecret && { bog_client_secret: bogSecret }),
         ...(settings.tbc_client_secret && { tbc_client_secret: settings.tbc_client_secret }),
@@ -1080,6 +1088,28 @@ export default function EcommerceSettingsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* Pickup option — sits at the top of the Delivery card
+              because it shares the pickup address with Quickshipper. */}
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="allow_pickup" className="text-base">
+                Offer pickup at store
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                When on, customers can choose to collect the order at the store
+                instead of using a courier. Pickup orders are free and can be
+                paid in cash on collection. Uses the pickup address below.
+              </p>
+            </div>
+            <Switch
+              id="allow_pickup"
+              checked={settings.allow_pickup}
+              onCheckedChange={(checked) =>
+                setSettings({ ...settings, allow_pickup: checked })
+              }
+            />
+          </div>
+
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div className="space-y-0.5">
               <Label htmlFor="quickshipper_enabled" className="text-base">
