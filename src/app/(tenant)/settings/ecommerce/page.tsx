@@ -81,6 +81,7 @@ interface EcommerceSettings {
   google_ads_purchase_label: string
   google_analytics_id: string
   clarity_project_id: string
+  google_maps_api_key: string
 }
 
 type StorefrontTemplate = "classic" | "voltage"
@@ -244,6 +245,7 @@ export default function EcommerceSettingsPage() {
     google_ads_purchase_label: "",
     google_analytics_id: "",
     clarity_project_id: "",
+    google_maps_api_key: "",
   })
   const [bogSecret, setBogSecret] = useState("")
   const [quickshipperApiKey, setQuickshipperApiKey] = useState("")
@@ -342,6 +344,8 @@ export default function EcommerceSettingsPage() {
             (settingsData as { google_analytics_id?: string }).google_analytics_id || "",
           clarity_project_id:
             (settingsData as { clarity_project_id?: string }).clarity_project_id || "",
+          google_maps_api_key:
+            (settingsData as { google_maps_api_key?: string }).google_maps_api_key || "",
         })
         setHasExistingCredentials(!!settingsData.bog_client_id)
         setHasQuickshipperKey(!!settingsData.has_quickshipper_credentials)
@@ -628,6 +632,7 @@ export default function EcommerceSettingsPage() {
           google_ads_purchase_label: settings.google_ads_purchase_label,
           google_analytics_id: settings.google_analytics_id,
           clarity_project_id: settings.clarity_project_id,
+          google_maps_api_key: settings.google_maps_api_key,
           // Pickup option
           allow_pickup: settings.allow_pickup,
         } as unknown as Partial<EcommerceSettingsRequest>),
@@ -1638,6 +1643,31 @@ export default function EcommerceSettingsPage() {
             <p className="text-xs text-muted-foreground">
               Paste the entire <code className="font-mono">{`<script>…</script>`}</code> tag from <a href="https://clarity.microsoft.com" target="_blank" rel="noreferrer" className="underline">clarity.microsoft.com</a> → Settings → Setup, or just the project ID (lowercase 10-char string like <code className="font-mono">p1q2r3s4t5</code>). Heatmaps + session recordings appear in the Clarity dashboard within minutes.
             </p>
+          </div>
+          <div className="space-y-2 pt-4 border-t">
+            <Label htmlFor="google_maps_api_key">Google Maps API key</Label>
+            <Input
+              id="google_maps_api_key"
+              placeholder="AIzaSy…"
+              value={settings.google_maps_api_key}
+              onChange={(e) =>
+                setSettings({ ...settings, google_maps_api_key: e.target.value.trim() })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              When set, the storefront&apos;s checkout address pickers switch from the default OpenStreetMap to <strong>Google Maps + Places Autocomplete</strong> — visitors can search an address and the pin auto-drops on the map. Without a key, the existing OSM picker keeps working.
+            </p>
+            <details className="text-xs text-muted-foreground">
+              <summary className="cursor-pointer underline">How to get a Google Maps API key</summary>
+              <ol className="list-decimal pl-5 space-y-1 mt-2">
+                <li>Open <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="underline">console.cloud.google.com</a> and create a new project (or pick an existing one).</li>
+                <li>In the search bar, find <strong>Google Maps Platform → APIs & Services → Library</strong>. Enable these three APIs: <strong>Maps JavaScript API</strong>, <strong>Places API</strong>, <strong>Geocoding API</strong>.</li>
+                <li>Set up <strong>Billing</strong> on the project. Google gives $200 of free Maps usage per month — enough for thousands of monthly visitors. A card is required even within the free tier.</li>
+                <li>Go to <strong>APIs & Services → Credentials → + Create Credentials → API key</strong>. Copy the key (starts with <code className="font-mono">AIzaSy…</code>).</li>
+                <li>Click the new key to edit. Under <strong>Application restrictions</strong> select <strong>HTTP referrers</strong> and add your storefront domains: <code className="font-mono">https://refurb.ge/*</code>, <code className="font-mono">https://*.ecommerce.echodesk.ge/*</code>. Under <strong>API restrictions</strong> limit it to the three APIs above.</li>
+                <li>Paste the key in the field above and save.</li>
+              </ol>
+            </details>
           </div>
         </CardContent>
       </Card>
