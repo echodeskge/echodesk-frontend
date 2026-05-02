@@ -73,6 +73,9 @@ interface EcommerceSettings {
   voltage_density: VoltageDensity
   voltage_radius: VoltageRadius
   voltage_font_pair: VoltageFontPair
+  // Google Ads / GA4 tracking
+  google_ads_conversion_id: string
+  google_ads_purchase_label: string
 }
 
 type StorefrontTemplate = "classic" | "voltage"
@@ -231,6 +234,8 @@ export default function EcommerceSettingsPage() {
     voltage_density: "cozy",
     voltage_radius: "soft",
     voltage_font_pair: "bricolage-inter",
+    google_ads_conversion_id: "",
+    google_ads_purchase_label: "",
   })
   const [bogSecret, setBogSecret] = useState("")
   const [quickshipperApiKey, setQuickshipperApiKey] = useState("")
@@ -319,6 +324,10 @@ export default function EcommerceSettingsPage() {
           voltage_font_pair:
             (settingsData as { voltage_font_pair?: VoltageFontPair }).voltage_font_pair ||
             "bricolage-inter",
+          google_ads_conversion_id:
+            (settingsData as { google_ads_conversion_id?: string }).google_ads_conversion_id || "",
+          google_ads_purchase_label:
+            (settingsData as { google_ads_purchase_label?: string }).google_ads_purchase_label || "",
         })
         setHasExistingCredentials(!!settingsData.bog_client_id)
         setHasQuickshipperKey(!!settingsData.has_quickshipper_credentials)
@@ -598,6 +607,11 @@ export default function EcommerceSettingsPage() {
           voltage_density: settings.voltage_density,
           voltage_radius: settings.voltage_radius,
           voltage_font_pair: settings.voltage_font_pair,
+          // Google Ads / GA4 tracking — same cast pattern as the
+          // voltage fields above (newly added on the backend, not
+          // reflected in the generated types yet).
+          google_ads_conversion_id: settings.google_ads_conversion_id,
+          google_ads_purchase_label: settings.google_ads_purchase_label,
         } as unknown as Partial<EcommerceSettingsRequest>),
         ...(bogSecret && { bog_client_secret: bogSecret }),
         ...(settings.tbc_client_secret && { tbc_client_secret: settings.tbc_client_secret }),
@@ -1503,6 +1517,48 @@ export default function EcommerceSettingsPage() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Marketing — Google Ads / GA4 tracking */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Marketing — Google Ads</CardTitle>
+          <CardDescription>
+            Paste your Google Ads Tag ID to start tracking conversions. The storefront loads gtag.js on every page when set, and fires a `purchase` conversion event on order confirmation when both the Tag ID and conversion label are filled in.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="google_ads_conversion_id">Google Ads Tag ID</Label>
+            <Input
+              id="google_ads_conversion_id"
+              placeholder="AW-18133924374"
+              value={settings.google_ads_conversion_id}
+              onChange={(e) =>
+                setSettings({ ...settings, google_ads_conversion_id: e.target.value.trim() })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              Find this in Google Ads → Admin → Tracking → Google Tag. Starts with <code className="font-mono">AW-</code>.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="google_ads_purchase_label">Purchase conversion label</Label>
+            <Input
+              id="google_ads_purchase_label"
+              placeholder="abcDEFghi123456789"
+              value={settings.google_ads_purchase_label}
+              onChange={(e) =>
+                setSettings({ ...settings, google_ads_purchase_label: e.target.value.trim() })
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              The label suffix from your <strong>Purchase</strong> conversion action. Example: if Google gave you{" "}
+              <code className="font-mono">AW-18133924374/abcDEFghi123456789</code>, paste only{" "}
+              <code className="font-mono">abcDEFghi123456789</code>.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
