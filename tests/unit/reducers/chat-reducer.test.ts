@@ -525,6 +525,41 @@ describe("ChatReducer", () => {
       expect(result.selectedChat?.id).toBe("c1");
       expect(result.selectedChat?.messages).toHaveLength(0);
     });
+
+    // Documents the contract that chat-context's dirty-chat tracking relies on:
+    // when a WebSocket message arrives for a chat the user is NOT viewing, the
+    // message must accumulate inside that chat's entry in state.chats so the
+    // subsequent forced refetch can reconcile against the up-to-date list.
+    it("appends incoming message to non-selected chat's messages array", () => {
+      const activeChat = makeChat({
+        id: "active",
+        messages: [makeMessage({ id: "existing" })],
+        messagesLoaded: true,
+      });
+      const inactiveChat = makeChat({
+        id: "inactive",
+        messages: [makeMessage({ id: "old" })],
+        messagesLoaded: true,
+      });
+      const state = makeState({
+        chats: [activeChat, inactiveChat],
+        selectedChat: activeChat,
+      });
+      const incoming = makeMessage({ id: "fresh", text: "While you were away" });
+
+      const result = ChatReducer(state, {
+        type: "addIncomingMessage",
+        chatId: "inactive",
+        message: incoming,
+      });
+
+      const inactiveAfter = result.chats.find((c) => c.id === "inactive");
+      expect(inactiveAfter?.messages).toHaveLength(2);
+      expect(inactiveAfter?.messages[1].id).toBe("fresh");
+      // Selected chat is untouched.
+      expect(result.selectedChat?.id).toBe("active");
+      expect(result.selectedChat?.messages).toHaveLength(1);
+    });
   });
 
   // -----------------------------------------------------------------------

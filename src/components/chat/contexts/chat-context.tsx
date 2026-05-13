@@ -112,6 +112,18 @@ export function ChatProvider({
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
   const fullHistoryLoadedChatsRef = useRef<Set<string>>(new Set())
 
+  // Tracks chats that received WebSocket messages while they were NOT the
+  // active chat. Those entries' React Query cache for ['chatMessages', id]
+  // may be stale (or warmed with pre-WS data via hover-prefetch), so the next
+  // time the user opens that chat we force a refetch with staleTime:0 to
+  // surface the latest server-side state. Cleared after the reload completes.
+  const dirtyChatsRef = useRef<Set<string>>(new Set())
+
+  // Mirror of the current selected chat id, kept up-to-date via useEffect so
+  // the WS dispatcher (bound once in the effect below) can read it without
+  // re-binding on every selection change.
+  const selectedChatIdRef = useRef<string | null>(null)
+
   // Platform filter state - use external if provided, otherwise internal
   const [internalPlatformFilter, setInternalPlatformFilter] = useState<string | null>(null)
   const platformFilter = externalPlatformFilter !== undefined ? externalPlatformFilter : internalPlatformFilter
@@ -141,10 +153,26 @@ export function ChatProvider({
     dispatch({ type: "updateChats", chats: chatsData })
   }, [chatsData])
 
+  // Keep selectedChatIdRef in sync so the WS dispatcher (below) can compare
+  // the incoming chatId against the currently-selected chat without having
+  // to be re-bound every time the selection changes.
+  useEffect(() => {
+    selectedChatIdRef.current = chatState.selectedChat?.id ?? null
+  }, [chatState.selectedChat?.id])
+
   // Set up the incoming message handler ref for WebSocket integration
   useEffect(() => {
     if (onAddIncomingMessageRef) {
       onAddIncomingMessageRef.current = (chatId: string, message: MessageType, senderName?: string) => {
+        // Mark the chat dirty + invalidate its React Query cache only when
+        // the message arrived for a chat the user isn't currently looking at.
+        // The active chat is kept fresh by the reducer's selectedChat update,
+        // so flagging it here would force an unnecessary refetch on the next
+        // re-select of the same chat.
+        if (chatId !== selectedChatIdRef.current) {
+          dirtyChatsRef.current.add(chatId)
+          queryClient.invalidateQueries({ queryKey: ['chatMessages', chatId] })
+        }
         dispatch({ type: "addIncomingMessage", chatId, message, senderName })
       }
     }
@@ -153,7 +181,7 @@ export function ChatProvider({
         onAddIncomingMessageRef.current = null
       }
     }
-  }, [onAddIncomingMessageRef])
+  }, [onAddIncomingMessageRef, queryClient])
 
   // Handlers for message actions
   const handleAddTextMessage = (text: string) => {
@@ -187,18 +215,26 @@ export function ChatProvider({
     const chatFromState = chatState.chats.find(c => c.id === chatId)
     const chatFromProps = chatsData.find(c => c.id === chatId)
 
-    // Skip if already loaded (check both sources)
-    if (chatFromState?.messagesLoaded || chatFromProps?.messagesLoaded) return
+    // A "dirty" chat is one that received WS messages while it was inactive.
+    // For those we always force a fresh fetch — both prefetch-on-hover and a
+    // previously-loaded state can otherwise hand us pre-WS data that
+    // updateChatMessages would clobber the latest reducer state with.
+    const isDirty = dirtyChatsRef.current.has(chatId)
+
+    // Skip if already loaded — but only when NOT dirty.
+    if (!isDirty && (chatFromState?.messagesLoaded || chatFromProps?.messagesLoaded)) return
 
     setLoadingMessages(true)
     try {
-      // Use fetchQuery to benefit from prefetch cache
+      // Use fetchQuery to benefit from prefetch cache. For dirty chats use
+      // staleTime:0 so the cached pre-WS response is bypassed.
       const messages = await queryClient.fetchQuery({
         queryKey: ['chatMessages', chatId],
         queryFn: () => loadChatMessages(chatId),
-        staleTime: 2 * 60 * 1000, // 2 minutes
+        staleTime: isDirty ? 0 : 2 * 60 * 1000,
       })
       dispatch({ type: "updateChatMessages", chatId, messages })
+      dirtyChatsRef.current.delete(chatId)
     } catch (error) {
       console.error("Failed to load chat messages:", error)
     } finally {
@@ -264,10 +300,15 @@ export function ChatProvider({
     dispatch({ type: "selectChat", chat })
     // Call the optional callback when a chat is selected
     onChatSelected?.(chat)
-    // Trigger lazy loading only if messages not loaded. If already loaded, rely on
-    // the WebSocket push for new messages and React Query's staleTime for refreshes —
-    // re-fetching on every re-select caused duplicate network requests.
-    if (!chat.messagesLoaded && loadChatMessages) {
+    // Trigger lazy loading when:
+    //  - messages haven't been loaded yet, OR
+    //  - this chat is dirty (received WS messages while inactive — we want
+    //    a fresh server view on re-entry so file/burst payloads are reflected).
+    // handleLoadChatMessages itself decides the staleTime based on dirty state.
+    // For already-loaded, non-dirty chats we rely on the WebSocket push for
+    // new messages — re-fetching on every re-select caused duplicate network requests.
+    const isDirty = dirtyChatsRef.current.has(chat.id)
+    if ((isDirty || !chat.messagesLoaded) && loadChatMessages) {
       handleLoadChatMessages(chat.id)
     }
   }, [onChatSelected, loadChatMessages, handleLoadChatMessages])
