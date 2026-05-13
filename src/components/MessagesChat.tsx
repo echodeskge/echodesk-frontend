@@ -283,13 +283,29 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
         return false;
       });
 
+    // Keep the currently-selected chat visible even if the latest API list
+    // excluded it (e.g. user just self-assigned and the All-tab response no
+    // longer returns the assigned chat, or the assigned-tab response hasn't
+    // landed yet). Without this, ChatBoxFacebook briefly renders
+    // "No chat found" because state.chats lost the entry the URL points to.
+    // The chat's prior snapshot is reused so the active view stays mounted.
+    const stickySelected = (chats: ChatType[]): ChatType[] => {
+      if (!selectedChatId) return chats;
+      if (chats.some((c) => c.id === selectedChatId)) return chats;
+      const fromPrev = prevChatsRef.current.find((c) => c.id === selectedChatId);
+      if (!fromPrev) return chats;
+      // Don't resurrect end-session-blocked chats — that block is intentional.
+      if (endedChatIdsRef.current.has(selectedChatId)) return chats;
+      return [fromPrev, ...chats];
+    };
+
     if (chatsData.length === 0 && isFetching) {
       if (removedChatIdsRef.current.size > 0) {
-        return filterEnded(
+        return stickySelected(filterEnded(
           prevChatsRef.current.filter((c) => !removedChatIdsRef.current.has(c.id))
-        );
+        ));
       }
-      return filterEnded(prevChatsRef.current);
+      return stickySelected(filterEnded(prevChatsRef.current));
     }
     // Fresh server data arrived — clear transient removed IDs.
     // Note: we deliberately DON'T lift the end-session block just because the
@@ -299,10 +315,10 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
     // by a real incoming customer message in handleNewMessage, or when the
     // 60s TTL expires.
     removedChatIdsRef.current.clear();
-    const filtered = filterEnded(chatsData);
+    const filtered = stickySelected(filterEnded(chatsData));
     prevChatsRef.current = filtered;
     return filtered;
-  }, [chatsData, isFetching]);
+  }, [chatsData, isFetching, selectedChatId]);
 
   // Callback for ChatProvider to notify when a chat is removed (e.g., end session)
   const handleChatRemoved = useCallback((chatId: string) => {

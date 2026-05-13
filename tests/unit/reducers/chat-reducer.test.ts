@@ -313,6 +313,58 @@ describe("ChatReducer", () => {
 
       expect(result.selectedChat).toBeNull();
     });
+
+    // Regression: WS-appended messages on a chat whose history hadn't been
+    // opened (messagesLoaded:false but messages.length > 0) used to be wiped
+    // when the conversations list refreshed. The merge must now keep them
+    // along with the WS-driven lastMessage and unreadCount.
+    it("preserves WS-appended messages on a chat that was never explicitly loaded", () => {
+      const wsMessage = makeMessage({ id: "ws1", text: "live update" });
+      const existing = makeChat({
+        id: "c1",
+        messages: [wsMessage],
+        messagesLoaded: false,
+        unreadCount: 3,
+        lastMessage: { content: "live update", createdAt: new Date("2024-06-02T12:00:00Z") },
+      });
+      const state = makeState({ chats: [existing] });
+      // API list returns the chat with an older lastMessage and no messages —
+      // simulates a refetch whose response was assembled before the WS push.
+      const apiChat = makeChat({
+        id: "c1",
+        messages: [],
+        unreadCount: 1,
+        lastMessage: { content: "older", createdAt: new Date("2024-06-01T10:00:00Z") },
+      });
+
+      const result = ChatReducer(state, { type: "updateChats", chats: [apiChat] });
+
+      expect(result.chats[0].messages).toHaveLength(1);
+      expect(result.chats[0].messages[0].id).toBe("ws1");
+      expect(result.chats[0].lastMessage.content).toBe("live update");
+      // unread should never decrease below what we observed locally.
+      expect(result.chats[0].unreadCount).toBe(3);
+    });
+
+    it("uses API lastMessage when it is newer than existing", () => {
+      const existing = makeChat({
+        id: "c1",
+        messages: [makeMessage({ id: "old" })],
+        messagesLoaded: true,
+        lastMessage: { content: "old", createdAt: new Date("2024-06-01T10:00:00Z") },
+      });
+      const state = makeState({ chats: [existing] });
+      const apiChat = makeChat({
+        id: "c1",
+        messages: [],
+        lastMessage: { content: "newer from API", createdAt: new Date("2024-06-03T10:00:00Z") },
+      });
+
+      const result = ChatReducer(state, { type: "updateChats", chats: [apiChat] });
+
+      expect(result.chats[0].messages).toHaveLength(1); // existing loaded messages preserved
+      expect(result.chats[0].lastMessage.content).toBe("newer from API");
+    });
   });
 
   // -----------------------------------------------------------------------

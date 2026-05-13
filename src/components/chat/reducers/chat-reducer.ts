@@ -1,6 +1,15 @@
 "use client"
 
-import type { ChatActionType, ChatStateType, MessageType, ChatType } from "../types"
+import type { ChatActionType, ChatStateType, MessageType, ChatType, LastMessageType } from "../types"
+
+// Returns whichever lastMessage has the more recent createdAt. Used by
+// updateChats to avoid letting a stale API snapshot overwrite a WS push that
+// arrived between the request and its response.
+function pickNewerLastMessage(a: LastMessageType, b: LastMessageType): LastMessageType {
+  const at = a?.createdAt ? new Date(a.createdAt).getTime() : 0
+  const bt = b?.createdAt ? new Date(b.createdAt).getTime() : 0
+  return at >= bt ? a : b
+}
 
 export const ChatReducer = (
   state: ChatStateType,
@@ -124,17 +133,41 @@ export const ChatReducer = (
     }
 
     case "updateChats": {
-      // Update chats from external source (e.g., after reloading from API)
-      // Preserve messagesLoaded status and messages from existing chats
+      // Update chats from external source (e.g., after reloading from API).
+      // Preserve any client-side state we've accumulated for each chat:
+      //   - Loaded messages (messagesLoaded:true case) — avoid re-fetching.
+      //   - WS-appended messages on chats whose history hasn't been opened
+      //     yet (messagesLoaded:false but messages.length > 0) — without this
+      //     branch, a list refetch lands the API copy with messages:[] and
+      //     wipes the live update the user just received in the sidebar.
+      // For chats with WS state, also keep lastMessage / unreadCount, since
+      // the WS push is fresher than whatever the API snapshot holds.
       const existingChatsMap = new Map(state.chats.map(c => [c.id, c]))
       const mergedChats = action.chats.map(chat => {
         const existing = existingChatsMap.get(chat.id)
-        if (existing?.messagesLoaded) {
-          // Preserve loaded messages to avoid re-fetching
+        if (!existing) return chat
+        const hasClientMessages = (existing.messages?.length ?? 0) > 0
+        if (existing.messagesLoaded) {
           return {
             ...chat,
             messages: existing.messages,
-            messagesLoaded: true
+            messagesLoaded: true,
+            // If the in-memory lastMessage is newer than the API's, keep it —
+            // covers the case where a WS push landed between the API request
+            // and its response. unreadCount is taken from API: mark-read flows
+            // through it, so trusting API keeps the counter in sync.
+            lastMessage: pickNewerLastMessage(existing.lastMessage, chat.lastMessage),
+          }
+        }
+        if (hasClientMessages) {
+          return {
+            ...chat,
+            messages: existing.messages,
+            messagesLoaded: false,
+            lastMessage: pickNewerLastMessage(existing.lastMessage, chat.lastMessage),
+            // Never lower unread below what we observed locally — WS may have
+            // bumped it past the API's last-known value.
+            unreadCount: Math.max(existing.unreadCount ?? 0, chat.unreadCount ?? 0),
           }
         }
         return chat
