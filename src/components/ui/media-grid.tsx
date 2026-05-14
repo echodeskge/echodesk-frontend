@@ -1,16 +1,22 @@
 "use client"
 
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import type { ComponentProps, MouseEvent } from "react"
-import { X } from "lucide-react"
+import Lightbox from "yet-another-react-lightbox"
+import Captions from "yet-another-react-lightbox/plugins/captions"
+import Counter from "yet-another-react-lightbox/plugins/counter"
+import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen"
+import Thumbnails from "yet-another-react-lightbox/plugins/thumbnails"
+import Video from "yet-another-react-lightbox/plugins/video"
+import Zoom from "yet-another-react-lightbox/plugins/zoom"
+import type { SlideImage, RenderSlideProps } from "yet-another-react-lightbox"
+import "yet-another-react-lightbox/styles.css"
+import "yet-another-react-lightbox/plugins/captions.css"
+import "yet-another-react-lightbox/plugins/counter.css"
+import "yet-another-react-lightbox/plugins/thumbnails.css"
 
 import { cn } from "@/lib/utils"
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import axios from "@/api/axios"
 
 export interface MediaType {
@@ -28,23 +34,23 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
 
 // Check if URL should bypass Next.js Image optimization (external CDNs, proxy URLs, blob URLs)
 function isExternalUrl(src: string | undefined | null): boolean {
-  if (!src) return false;
+  if (!src) return false
   const externalPatterns = [
-    'fbcdn.net',
-    'cdninstagram.com',
-    'whatsapp.net',
-    'fbsbx.com',
-    'digitaloceanspaces.com',
-    '/api/social/whatsapp-media/',
-    'blob:',
-  ];
-  return externalPatterns.some(pattern => src.includes(pattern));
+    "fbcdn.net",
+    "cdninstagram.com",
+    "whatsapp.net",
+    "fbsbx.com",
+    "digitaloceanspaces.com",
+    "/api/social/whatsapp-media/",
+    "blob:",
+  ]
+  return externalPatterns.some((pattern) => src.includes(pattern))
 }
 
 // Check if URL requires authenticated fetch (e.g. WhatsApp media proxy)
 function needsAuthFetch(src: string | undefined | null): boolean {
-  if (!src) return false;
-  return src.includes('/api/social/whatsapp-media/');
+  if (!src) return false
+  return src.includes("/api/social/whatsapp-media/")
 }
 
 /**
@@ -60,8 +66,9 @@ function AuthenticatedImage({ src, alt, className }: { src: string; alt: string;
     setBlobUrl(null)
     setError(false)
 
-    axios.get(src, { responseType: 'blob' })
-      .then(res => {
+    axios
+      .get(src, { responseType: "blob" })
+      .then((res) => {
         if (!cancelled) {
           setBlobUrl(URL.createObjectURL(res.data))
         }
@@ -70,7 +77,9 @@ function AuthenticatedImage({ src, alt, className }: { src: string; alt: string;
         if (!cancelled) setError(true)
       })
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [src])
 
   // Cleanup blob URL on unmount or change
@@ -82,8 +91,13 @@ function AuthenticatedImage({ src, alt, className }: { src: string; alt: string;
 
   if (error) {
     return (
-      <div className={cn("bg-muted flex items-center justify-center text-xs text-muted-foreground rounded-lg", className)}
-        style={{ minHeight: 60 }}>
+      <div
+        className={cn(
+          "bg-muted flex items-center justify-center text-xs text-muted-foreground rounded-lg",
+          className
+        )}
+        style={{ minHeight: 60 }}
+      >
         Failed to load image
       </div>
     )
@@ -106,10 +120,10 @@ export function MediaGrid({
   ...props
 }: MediaGridProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
-  const [lightboxMedia, setLightboxMedia] = useState<MediaType | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
 
   // Filter out items with no src (e.g. sent attachments with no URL yet)
-  const validData = data.filter(item => item.src)
+  const validData = data.filter((item) => item.src)
   if (validData.length === 0) return null
 
   const displayedMedia = validData.slice(0, limit - 1)
@@ -117,55 +131,53 @@ export function MediaGrid({
   const hasMoreMedia = validData.length >= limit
   const lastMedia = hasMoreMedia ? validData[limit - 1] : null
 
-  const handleMediaClick = (item: MediaType, e: MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setLightboxMedia(item)
+  // Build slides for the lightbox. Authenticated images get a sentinel src
+  // (preserved as-is) and are rendered through render.slide below so the
+  // library doesn't try to load them as a plain <img>.
+  const slides = validData.map((item) => {
+    if (item.type === "VIDEO") {
+      return {
+        type: "video" as const,
+        sources: [{ src: item.src, type: guessVideoMime(item.src) }],
+        title: item.alt,
+      }
+    }
+    return {
+      src: item.src,
+      alt: item.alt,
+      // Captions plugin reads `title` / `description`. We don't have a
+      // description, but a per-image title helps when there are many.
+      title: item.alt,
+    } satisfies SlideImage
+  })
+
+  const openLightboxAt = (index: number, e?: MouseEvent<HTMLButtonElement>) => {
+    setLightboxIndex(index)
     setLightboxOpen(true)
-    onMediaClick?.(e)
+    if (e) onMediaClick?.(e)
   }
 
-  const renderImage = (item: MediaType, inLightbox = false) => {
-    const isAuth = needsAuthFetch(item.src);
+  const handleMoreClick = (e: MouseEvent<HTMLButtonElement>) => {
+    // Default behaviour: open the lightbox at the +N slide so the user
+    // can navigate through every remaining image. Callers can still
+    // override via onMoreButtonClick if they want something custom.
+    if (onMoreButtonClick) {
+      onMoreButtonClick(e)
+      return
+    }
+    openLightboxAt(limit - 1, e)
+  }
 
+  const renderImage = (item: MediaType) => {
+    const isAuth = needsAuthFetch(item.src)
     if (isAuth) {
-      return (
-        <AuthenticatedImage
-          src={item.src}
-          alt={item.alt}
-          className={inLightbox
-            ? "max-h-[80vh] max-w-full w-auto h-auto object-contain rounded-lg"
-            : "w-full h-full object-cover rounded-lg"
-          }
-        />
-      );
+      return <AuthenticatedImage src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
     }
-
-    const isExternal = isExternalUrl(item.src);
-
-    if (inLightbox) {
-      return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.src}
-          alt={item.alt}
-          className="max-h-[80vh] max-w-full w-auto h-auto object-contain rounded-lg"
-        />
-      );
-    }
-
+    const isExternal = isExternalUrl(item.src)
     if (isExternal) {
-      // Use regular img tag for external social media URLs to avoid domain issues
-      return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.src}
-          alt={item.alt}
-          className="w-full h-full object-cover rounded-lg"
-        />
-      );
+      // eslint-disable-next-line @next/next/no-img-element
+      return <img src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
     }
-
     return (
       <Image
         src={item.src}
@@ -174,25 +186,18 @@ export function MediaGrid({
         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         fill
       />
-    );
-  };
+    )
+  }
 
-  const renderVideo = (item: MediaType, inLightbox = false) => {
-    return (
-      <video
-        src={item.src}
-        className={cn(
-          "rounded-lg",
-          inLightbox
-            ? "max-h-[80vh] max-w-full w-auto h-auto"
-            : "object-cover w-full h-full"
-        )}
-        controls
-        playsInline
-        preload="metadata"
-      />
-    );
-  };
+  const renderVideoInline = (item: MediaType) => (
+    <video
+      src={item.src}
+      className="rounded-lg object-cover w-full h-full"
+      controls
+      playsInline
+      preload="metadata"
+    />
+  )
 
   // For single media item, use larger display
   const isSingleMedia = validData.length === 1
@@ -207,17 +212,27 @@ export function MediaGrid({
         )}
         {...props}
       >
-        {(isSingleMedia ? validData : displayedMedia).map((item) => (
+        {(isSingleMedia ? validData : displayedMedia).map((item, idx) => (
           <li key={`${item.alt}-${item.src}`} className={isSingleMedia ? "max-w-[280px]" : ""}>
             {item.type === "VIDEO" ? (
-              // Videos are playable inline - no need for click handler
-              <div className="rounded-lg overflow-hidden">
-                {renderVideo(item)}
-              </div>
+              // Videos are playable inline — clicking the tile opens the
+              // lightbox so users can also see them full-screen / next to
+              // the rest of the gallery.
+              <button
+                type="button"
+                onClick={(e) => openLightboxAt(idx, e)}
+                className={cn(
+                  "cursor-pointer block rounded-lg overflow-hidden hover:opacity-90 transition-opacity",
+                  isSingleMedia ? "w-full" : "w-full aspect-square"
+                )}
+                aria-label="View video"
+              >
+                {renderVideoInline(item)}
+              </button>
             ) : (
               <button
                 type="button"
-                onClick={(e) => handleMediaClick(item, e)}
+                onClick={(e) => openLightboxAt(idx, e)}
                 className={cn(
                   "cursor-pointer block rounded-lg overflow-hidden hover:opacity-90 transition-opacity",
                   isSingleMedia ? "w-full" : "w-full aspect-square"
@@ -232,60 +247,64 @@ export function MediaGrid({
 
         {lastMedia && !isSingleMedia && (
           <li>
-            {lastMedia.type === "VIDEO" ? (
-              <div className="relative aspect-square rounded-lg overflow-hidden">
-                {renderVideo(lastMedia)}
-                {remainingCount > 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-3xl text-white font-semibold rounded-lg pointer-events-none">
-                    <span>+{remainingCount}</span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={(e) =>
-                  remainingCount > 0 ? onMoreButtonClick?.(e) : handleMediaClick(lastMedia, e)
-                }
-                className="cursor-pointer relative block w-full aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
-                aria-label={remainingCount > 0 ? "More media" : "View image"}
-              >
-                {renderImage(lastMedia)}
-                {remainingCount > 0 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-3xl text-white font-semibold rounded-lg">
-                    <span>+{remainingCount}</span>
-                  </div>
-                )}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={(e) =>
+                remainingCount > 0 ? handleMoreClick(e) : openLightboxAt(limit - 1, e)
+              }
+              className="cursor-pointer relative block w-full aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+              aria-label={remainingCount > 0 ? `Show ${remainingCount + 1} more` : "View image"}
+            >
+              {lastMedia.type === "VIDEO" ? renderVideoInline(lastMedia) : renderImage(lastMedia)}
+              {remainingCount > 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-3xl text-white font-semibold rounded-lg pointer-events-none">
+                  <span>+{remainingCount}</span>
+                </div>
+              )}
+            </button>
           </li>
         )}
       </ul>
 
-      {/* Lightbox Dialog for full-size image view */}
-      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="flex items-center justify-center w-auto max-w-[90vw] max-h-[90vh] p-0 border-none bg-transparent shadow-none translate-x-0 translate-y-0 top-0 left-0 right-0 bottom-0 m-auto [&>button[aria-label='Close']]:hidden">
-          <DialogTitle className="sr-only">
-            {lightboxMedia?.type === "VIDEO" ? "Video" : "Image"} viewer
-          </DialogTitle>
-          <div className="relative">
-            <button
-              onClick={() => setLightboxOpen(false)}
-              className="absolute -top-3 -right-3 z-50 p-1.5 rounded-full bg-black/70 hover:bg-black/90 text-white transition-colors"
-              aria-label="Close lightbox"
-            >
-              <X className="h-5 w-5" />
-            </button>
-            {lightboxMedia && (
-              lightboxMedia.type === "VIDEO" ? (
-                renderVideo(lightboxMedia, true)
-              ) : (
-                renderImage(lightboxMedia, true)
-              )
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Lightbox
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
+        index={lightboxIndex}
+        slides={slides}
+        on={{ view: ({ index }) => setLightboxIndex(index) }}
+        plugins={[Captions, Counter, Fullscreen, Thumbnails, Video, Zoom]}
+        // Auth-protected URLs (WhatsApp media proxy) can't load as plain
+        // <img>; we render those through AuthenticatedImage which fetches
+        // them via axios and presents a blob URL.
+        render={{
+          slide: ({ slide }: RenderSlideProps) => {
+            if ((slide as { type?: string }).type === "video") return undefined
+            const src = (slide as SlideImage).src
+            if (!needsAuthFetch(src)) return undefined
+            return (
+              <div className="flex items-center justify-center h-full w-full">
+                <AuthenticatedImage
+                  src={src}
+                  alt={(slide as SlideImage).alt || "image"}
+                  className="max-h-[90vh] max-w-[90vw] object-contain"
+                />
+              </div>
+            )
+          },
+        }}
+        carousel={{ finite: true }}
+        thumbnails={{ position: "bottom", width: 80, height: 60 }}
+        zoom={{ maxZoomPixelRatio: 3 }}
+        counter={{ container: { style: { top: 0 } } }}
+      />
     </>
   )
+}
+
+function guessVideoMime(src: string): string {
+  const lower = src.toLowerCase()
+  if (lower.endsWith(".webm")) return "video/webm"
+  if (lower.endsWith(".ogg")) return "video/ogg"
+  if (lower.endsWith(".mov")) return "video/quicktime"
+  return "video/mp4"
 }

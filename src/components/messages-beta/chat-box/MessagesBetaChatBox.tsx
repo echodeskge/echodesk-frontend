@@ -97,16 +97,27 @@ export function MessagesBetaChatBox() {
       .finally(() => inFlightRef.current.delete(id));
   }, [conversation, selectedChatId, messagesLoaded, hydrateMessages]);
 
-  // Mark the conversation read once per (chat × session). The backend then
-  // broadcasts read_state_update (PR3) which clears the badge in every
-  // connected agent's beta sidebar simultaneously — including the user who
-  // just opened it. We POST asynchronously and don't await the result; if
-  // the request fails the badge just stays until the next mark-read.
+  // Mark the conversation read once per (chat × session).
+  //
+  // Two-step pattern:
+  //   • Optimistic local clear so the user's own unread badge drops the
+  //     instant they click. We can't rely on the read_state_update WS echo
+  //     for the actor's own UX — that frame arrives after a round-trip and
+  //     the user is staring at the chat in the meantime.
+  //   • POST /mark-read to the backend, which emits read_state_update so
+  //     every OTHER agent's beta sidebar clears too (PR3 cross-user path).
+  //
+  // The clear is best-effort: a transient failure just means the badge
+  // reappears on the next list refresh.
+  const clearUnreadAction = useMessagesBetaStore((s) => s.clearUnread);
   const markReadFiredRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!conversation || !selectedChatId) return;
     if (markReadFiredRef.current.has(selectedChatId)) return;
     markReadFiredRef.current.add(selectedChatId);
+
+    // Optimistic local clear — instant UX.
+    clearUnreadAction(selectedChatId);
 
     // chatId layout: <prefix>_<account>_<rest>. mark-read only needs the
     // platform + the platform-specific conversation_id, which is everything
@@ -121,11 +132,9 @@ export function MessagesBetaChatBox() {
         conversation_id: conversationKey,
       })
       .catch((err) => {
-        // Don't toast — mark-read is best-effort; a transient failure just
-        // means the badge sticks around until the user re-opens the chat.
         console.warn("[messages-beta] mark-read failed:", err);
       });
-  }, [conversation, selectedChatId]);
+  }, [conversation, selectedChatId, clearUnreadAction]);
 
   const messages = selectMessagesForChat({ messagesByChatId }, selectedChatId);
 

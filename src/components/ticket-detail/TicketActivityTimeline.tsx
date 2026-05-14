@@ -232,10 +232,33 @@ export function TicketActivityTimeline({
 
           // Event
           const EventIcon = getEventIcon(item.field_name);
+          // Description / rich-text fields can hold HTML markup
+          // (<p>, <br>, <strong>, …). The activity log is plain text — strip
+          // tags + decode entities + collapse whitespace before display.
+          // We have to apply this to BOTH the raw old/new values AND the
+          // server-composed `item.text` field: the backend composes "X
+          // changed description from <p>…</p> to …" with HTML inline, so
+          // stripping only the values doesn't help when `item.text` is
+          // already populated.
+          const stripHtml = (val?: string) => {
+            if (!val) return "";
+            const noTags = val.replace(/<[^>]+>/g, " ");
+            const decoded = noTags
+              .replace(/&nbsp;/g, " ")
+              .replace(/&amp;/g, "&")
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">")
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'");
+            return decoded.replace(/\s+/g, " ").trim();
+          };
+          const oldDisplay = stripHtml(item.old_value);
+          const newDisplay = stripHtml(item.new_value);
+          const cleanText = stripHtml(item.text);
           const eventText =
-            item.text ||
-            (item.field_name && item.old_value && item.new_value
-              ? `${getUserName(item.user)} changed ${item.field_name} from "${item.old_value}" to "${item.new_value}"`
+            cleanText ||
+            (item.field_name && (oldDisplay || newDisplay)
+              ? `${getUserName(item.user)} changed ${item.field_name} from "${oldDisplay}" to "${newDisplay}"`
               : item.action ||
                 `${getUserName(item.user)} updated ${item.field_name || "ticket"}`);
 

@@ -85,28 +85,30 @@ export function TicketDescription({ ticket, onUpdate }: TicketDescriptionProps) 
 
   return (
     <div
-      className="group relative cursor-pointer rounded-md p-3 -m-3 transition-colors hover:bg-muted/50"
+      className="group relative cursor-pointer rounded-md p-3 -m-3 transition-colors hover:bg-muted/50 overflow-hidden"
       onClick={startEditing}
     >
       {rawHtml ? (
         <div
-          // Reserve right padding so the absolute-positioned hover hint doesn't
-          // overlap the description content. The hint is `text-xs`; locales
-          // like Georgian ("დააწკაპუნეთ რედაქტირებისთვის") need ~12rem to fit
-          // without wrapping the long word back into the text area.
-          className="prose prose-sm max-w-none dark:prose-invert pr-2 sm:pr-48"
+          className="prose prose-sm max-w-none dark:prose-invert"
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(rawHtml),
           }}
         />
       ) : (
-        <p className="text-sm text-muted-foreground italic pr-2 sm:pr-48">
+        <p className="text-sm text-muted-foreground italic">
           {t("ticketDetail.noDescription")}
         </p>
       )}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity max-w-[12rem]">
-        <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-          <Pencil className="h-3 w-3 shrink-0" />
+      {/* Hover hint: centered overlay with a soft backdrop so it doesn't
+          fight long content (the previous corner badge overflowed for
+          long-word locales like Georgian). The backdrop dims the
+          description just enough that the hint is readable while still
+          letting the user see what they're about to edit. */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] rounded-md" />
+        <span className="relative z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background border shadow-sm text-xs font-medium text-foreground">
+          <Pencil className="h-3.5 w-3.5" />
           {t("ticketDetail.clickToEdit")}
         </span>
       </div>

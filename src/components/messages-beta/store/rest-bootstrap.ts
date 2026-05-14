@@ -76,11 +76,20 @@ export async function fetchInitialConversations(opts: {
 
   const rows: ConversationRow[] = chats.map((chat) => {
     const apiRow = conversations.find((c) => c.conversation_id === chat.id);
+    // `conversationKey` is the UNPREFIXED platform-side conversation
+    // identifier (FB sender_id, WA from_number, widget session_id, email
+    // thread_id). The backend's mark-read / archive / assignment endpoints
+    // accept conversation_id in this same unprefixed shape, and the WS
+    // broadcasts echo it back unprefixed too — so this is the join key the
+    // WS dispatcher's resolveStoreChatIds() will look against. Prefer the
+    // API's sender_id field; fall back to slicing the chat id when older
+    // payloads don't carry sender_id.
+    const fallbackKey = chat.id.split("_").slice(2).join("_") || chat.id;
     return {
       id: chat.id,
       platform: (chat.platform || "facebook") as BetaPlatform,
       accountId: apiRow?.account_id || "",
-      conversationKey: apiRow?.conversation_id || chat.id,
+      conversationKey: apiRow?.sender_id || fallbackKey,
       name: chat.name,
       avatar: chat.avatar,
       lastMessage: chat.lastMessage

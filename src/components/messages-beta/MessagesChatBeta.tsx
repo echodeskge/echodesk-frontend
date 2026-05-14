@@ -27,13 +27,17 @@ export function MessagesChatBeta({ platforms }: Props) {
   const selectedChatId = useMessagesBetaStore((s) => s.selectedChatId);
   const selectChat = useMessagesBetaStore((s) => s.selectChat);
 
-  // URL → store sync. On first mount + any URL change (back/forward, deep
-  // link), hydrate selectedChatId from the route. Mirrors MessagesChat.tsx
-  // behaviour but without the legacy direct-loaded-chat fallback — the WS
-  // store will eventually carry the chat or we'll show the not-found state.
+  // URL → store sync. Hydrate from the route, but ONLY when the URL has a
+  // truthy chat id. Without this guard, the effect fights with sidebar
+  // clicks: handleSelectChat uses history.pushState (not router.push) for
+  // perf, and useParams() doesn't reactively pick up pushState, so urlChatId
+  // stays `undefined` after a click — re-running the effect with that
+  // undefined would then clobber the store back to null and the "Select a
+  // conversation" empty state would render. Mirrors MessagesChat.tsx:111
+  // which uses the same `if (initialChatId && ...)` guard.
   useEffect(() => {
-    if (urlChatId !== selectedChatId) {
-      selectChat(urlChatId || null);
+    if (urlChatId && urlChatId !== selectedChatId) {
+      selectChat(urlChatId);
     }
   }, [urlChatId, selectedChatId, selectChat]);
 

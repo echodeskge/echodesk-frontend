@@ -57,6 +57,66 @@ function buildChatId(messageData: Record<string, any>, dataConversationId?: stri
   return messageData.chat_id || dataConversationId;
 }
 
+/**
+ * Reconstruct our store's prefixed chat id from a backend broadcast that
+ * carries (platform, account_id, conversation_id) where conversation_id is
+ * the raw platform conversation key (FB sender_id, WA from_number, ...).
+ *
+ * Mirrors buildChatId above but for the assignment/archive/read broadcast
+ * shape (account_id arrives explicitly instead of being inferred from a
+ * message payload). Returns `null` when we can't reconstruct (missing
+ * pieces or unsupported platform) so callers can fall back to the
+ * platform+conversationKey scan path.
+ */
+function buildChatIdFromBroadcast(
+  platform: string | undefined,
+  accountId: string | undefined,
+  conversationId: string | undefined
+): string | null {
+  if (!platform || !conversationId) return null;
+  if (platform === "facebook" && accountId) return `fb_${accountId}_${conversationId}`;
+  if (platform === "instagram" && accountId) return `ig_${accountId}_${conversationId}`;
+  if (platform === "whatsapp" && accountId) {
+    const number = conversationId.startsWith("+") ? conversationId.slice(1) : conversationId;
+    return `wa_${accountId}_${number}`;
+  }
+  if (platform === "widget" && accountId) return `widget_${accountId}_${conversationId}`;
+  if (platform === "email") return conversationId; // already prefixed (email_...)
+  return null;
+}
+
+/**
+ * Resolve a backend broadcast to one (or more) of our store's chat ids.
+ * Prefers explicit reconstruction via account_id; falls back to scanning
+ * conversations for a row whose conversationKey matches when account_id
+ * isn't carried (e.g. mark-read endpoints don't take it).
+ */
+function resolveStoreChatIds(
+  store: MessagesBetaStore,
+  platform: string | undefined,
+  accountId: string | null | undefined,
+  conversationKey: string
+): string[] {
+  const built = buildChatIdFromBroadcast(platform, accountId || undefined, conversationKey);
+  if (built && store.conversations.some((r) => r.id === built)) return [built];
+  // Fall back: match against conversationKey on whatever rows exist. This is
+  // used by mark-read-style broadcasts that don't carry account_id, and as a
+  // safety net for fabricated rows whose conversationKey holds the full id.
+  const matches = store.conversations
+    .filter(
+      (row) =>
+        row.conversationKey === conversationKey &&
+        (!platform || row.platform === platform)
+    )
+    .map((r) => r.id);
+  if (matches.length > 0) return matches;
+  // Last resort: maybe conversationKey IS already the prefixed chat id
+  // (fabricated rows, or beta clients that received the broadcast for a chat
+  // they don't have a row for yet).
+  if (built) return [built];
+  return store.conversations.some((r) => r.id === conversationKey) ? [conversationKey] : [];
+}
+
 function frameToMessage(messageData: Record<string, any>): MessageType {
   const isFromBusiness =
     messageData.platform === "widget"
@@ -202,68 +262,83 @@ export function dispatchWsFrame(
 
     case "assignment_update": {
       // Cross-user reactivity — patches the assignment slice for one chat.
-      // Every connected agent on the tenant receives this frame, so when
-      // teammate A claims a chat, teammate B's sidebar tab selectors
-      // recompute and the chat moves between All / Assigned without any
-      // imperative hide-this-row code.
-      const conversationId = frame.conversation_id as string | undefined;
-      if (!conversationId) break;
+      // Every connected agent on the tenant receives this frame.
+      const platformConversationId = frame.conversation_id as string | undefined;
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | undefined;
+      if (!platformConversationId) break;
+
+      const chatIds = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      if (chatIds.length === 0) break;
+
       const assignedUserId = frame.assigned_user_id as number | null | undefined;
-      if (assignedUserId == null) {
-        // Unassigned (or status null = post-end-session deletion).
-        store.patchAssignment(conversationId, null);
-      } else {
-        store.patchAssignment(conversationId, {
-          assignedUserId,
-          assignedUserName: (frame.assigned_user_name as string | null | undefined) ?? null,
-          status: (frame.status as "active" | "in_session" | "completed" | null | undefined) ?? null,
-          sessionStartedAt: (frame.session_started_at as string | null | undefined) ?? null,
-          sessionEndedAt: (frame.session_ended_at as string | null | undefined) ?? null,
-        });
-      }
+      const slice = assignedUserId == null
+        ? null
+        : {
+            assignedUserId,
+            assignedUserName: (frame.assigned_user_name as string | null | undefined) ?? null,
+            status: (frame.status as "active" | "in_session" | "completed" | null | undefined) ?? null,
+            sessionStartedAt: (frame.session_started_at as string | null | undefined) ?? null,
+            sessionEndedAt: (frame.session_ended_at as string | null | undefined) ?? null,
+          };
+      for (const chatId of chatIds) store.patchAssignment(chatId, slice);
       break;
     }
 
     case "read_state_update": {
-      const conversationId = frame.conversation_id as string | null | undefined;
+      const platformConversationId = frame.conversation_id as string | null | undefined;
       const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | null | undefined;
       const unread = frame.unread_count as number | undefined;
-      if (conversationId == null) {
+
+      if (platformConversationId == null) {
         // Bulk hint: clear all unread for the listed platform. Used by
         // mark_all_conversations_read and archive_all_conversations.
         if (platform && enabledPlatforms.includes(platform)) {
           store.clearAllUnreadForPlatform(platform as never);
         }
-      } else {
+        break;
+      }
+
+      const targets = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      const ts = frame.last_read_at as string | undefined;
+      for (const chatId of targets) {
         if (typeof unread === "number") {
-          store.setUnread(conversationId, unread);
+          store.setUnread(chatId, unread);
         } else {
-          store.clearUnread(conversationId);
+          store.clearUnread(chatId);
         }
-        const ts = frame.last_read_at as string | undefined;
-        if (ts) store.setReadWatermark(conversationId, ts);
+        if (ts) store.setReadWatermark(chatId, ts);
       }
       break;
     }
 
     case "archive_update": {
-      const conversationId = frame.conversation_id as string | null | undefined;
+      const platformConversationId = frame.conversation_id as string | null | undefined;
       const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | null | undefined;
       const archived = !!frame.archived;
       const archivedAt = (frame.archived_at as string | null | undefined) ?? null;
       const byUserId = (frame.by_user_id as number | null | undefined) ?? null;
-      if (conversationId == null) {
+
+      if (platformConversationId == null) {
         // Bulk: emitted by archive_all_conversations per-platform.
         if (platform && enabledPlatforms.includes(platform)) {
           store.bulkPatchArchiveForPlatform(platform as never, archived, archivedAt);
         }
-      } else if (archived) {
-        store.patchArchive(conversationId, {
-          archivedAt: archivedAt || new Date().toISOString(),
-          byUserId,
-        });
-      } else {
-        store.patchArchive(conversationId, null);
+        break;
+      }
+
+      const targets = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      for (const chatId of targets) {
+        if (archived) {
+          store.patchArchive(chatId, {
+            archivedAt: archivedAt || new Date().toISOString(),
+            byUserId,
+          });
+        } else {
+          store.patchArchive(chatId, null);
+        }
       }
       break;
     }

@@ -22,6 +22,25 @@ interface TicketHistoryDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/**
+ * Activity log lines should be plain text; description / rich-text values
+ * persisted on the backend can hold HTML (<p>, <br>, …). Strip tags + decode
+ * the common entities so users don't see literal "<p>…</p>" in the history
+ * dialog or the inline timeline.
+ */
+function stripHtmlForActivity(val?: string): string {
+  if (!val) return "";
+  const noTags = val.replace(/<[^>]+>/g, " ");
+  const decoded = noTags
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+  return decoded.replace(/\s+/g, " ").trim();
+}
+
 export function TicketHistoryDialog({
   ticketId,
   open,
@@ -112,7 +131,7 @@ export function TicketHistoryDialog({
                                 {t("from")}:{" "}
                               </span>
                               <span className="line-through text-muted-foreground">
-                                {entry.old_value}
+                                {stripHtmlForActivity(entry.old_value)}
                               </span>
                             </div>
                           )}
@@ -122,7 +141,7 @@ export function TicketHistoryDialog({
                                 {t("to")}:{" "}
                               </span>
                               <span className="font-medium">
-                                {entry.new_value}
+                                {stripHtmlForActivity(entry.new_value)}
                               </span>
                             </div>
                           )}
