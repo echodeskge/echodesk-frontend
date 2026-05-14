@@ -213,4 +213,72 @@ describe("NotificationSoundManager", () => {
       expect(a).toBe(b);
     });
   });
+
+  // -- Per-user sound overrides --
+  describe("per-user sound overrides", () => {
+    it("setUserSoundForPlatform takes precedence over tenant defaults", () => {
+      manager.updateSettings({
+        notification_sound_facebook: "mixkit-bell-notification-933.wav",
+        notification_sound_instagram: "mixkit-bell-notification-933.wav",
+        notification_sound_whatsapp: "mixkit-bell-notification-933.wav",
+        notification_sound_email: "mixkit-bell-notification-933.wav",
+        notification_sound_team_chat: "mixkit-bell-notification-933.wav",
+        notification_sound_system: "mixkit-bell-notification-933.wav",
+      });
+      manager.setUserSoundForPlatform("facebook", "mixkit-doorbell-tone-2864.wav");
+      expect(manager.getSoundForPlatform("facebook")).toBe("mixkit-doorbell-tone-2864.wav");
+      // Other platforms still inherit the tenant default.
+      expect(manager.getSoundForPlatform("instagram")).toBe("mixkit-bell-notification-933.wav");
+    });
+
+    it("user overrides survive a tenant settings refresh", () => {
+      manager.setUserSoundForPlatform("email", "mixkit-doorbell-tone-2864.wav");
+      manager.updateSettings({
+        notification_sound_facebook: "mixkit-bell-notification-933.wav",
+        notification_sound_instagram: "mixkit-bell-notification-933.wav",
+        notification_sound_whatsapp: "mixkit-bell-notification-933.wav",
+        notification_sound_email: "mixkit-positive-notification-951.wav",
+        notification_sound_team_chat: "mixkit-bell-notification-933.wav",
+        notification_sound_system: "mixkit-bell-notification-933.wav",
+      });
+      expect(manager.getSoundForPlatform("email")).toBe("mixkit-doorbell-tone-2864.wav");
+    });
+
+    it("persists overrides to localStorage", () => {
+      manager.setUserSoundForPlatform("system", "mixkit-doorbell-tone-2864.wav");
+      const raw = localStorage.getItem("notification_sound_user_overrides");
+      expect(raw).not.toBeNull();
+      const stored = JSON.parse(raw!);
+      expect(stored.system).toBe("mixkit-doorbell-tone-2864.wav");
+    });
+
+    it("a fresh manager re-loads previously stored overrides", () => {
+      manager.setUserSoundForPlatform("widget", "mixkit-doorbell-tone-2864.wav");
+      // Simulate a new browser tab / page load.
+      const restored = new NotificationSoundManager();
+      expect(restored.getUserSoundForPlatform("widget")).toBe("mixkit-doorbell-tone-2864.wav");
+      expect(restored.getSoundForPlatform("widget")).toBe("mixkit-doorbell-tone-2864.wav");
+    });
+
+    it("clearUserSoundOverrides drops back to tenant defaults", () => {
+      manager.updateSettings({
+        notification_sound_facebook: "mixkit-bell-notification-933.wav",
+        notification_sound_instagram: "mixkit-bell-notification-933.wav",
+        notification_sound_whatsapp: "mixkit-bell-notification-933.wav",
+        notification_sound_email: "mixkit-bell-notification-933.wav",
+        notification_sound_team_chat: "mixkit-bell-notification-933.wav",
+        notification_sound_system: "mixkit-bell-notification-933.wav",
+      });
+      manager.setUserSoundForPlatform("facebook", "mixkit-doorbell-tone-2864.wav");
+      manager.clearUserSoundOverrides();
+      expect(manager.getSoundForPlatform("facebook")).toBe("mixkit-bell-notification-933.wav");
+      expect(manager.getUserSoundForPlatform("facebook")).toBeUndefined();
+    });
+
+    it("passing null clears a single platform's override", () => {
+      manager.setUserSoundForPlatform("facebook", "mixkit-doorbell-tone-2864.wav");
+      manager.setUserSoundForPlatform("facebook", null);
+      expect(manager.getUserSoundForPlatform("facebook")).toBeUndefined();
+    });
+  });
 });

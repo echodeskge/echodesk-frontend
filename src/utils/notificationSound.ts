@@ -98,8 +98,21 @@ const NOTIFICATION_TYPE_SOUNDS: Record<string, string> = {
   call_voicemail: 'mixkit-happy-bells-notification-937.wav',
 };
 
+// Per-user, per-platform sound overrides stored in localStorage. These take
+// precedence over the tenant-wide defaults pushed in via updateSettings(),
+// so each user can pick their own notification sounds without affecting
+// teammates or needing admin permissions.
+const USER_SOUNDS_STORAGE_KEY = 'notification_sound_user_overrides';
+
+type UserSoundOverrides = Partial<Record<NotificationPlatform, string>>;
+
 class NotificationSoundManager {
   private audioCache: Map<string, HTMLAudioElement> = new Map();
+  // Tenant defaults (most recent updateSettings call). Merged with userOverrides
+  // when computing the effective `settings` map.
+  private tenantSettings: Record<NotificationPlatform, string> = { ...DEFAULT_SOUNDS };
+  private userOverrides: UserSoundOverrides = {};
+  // Effective settings = tenantSettings overlaid with userOverrides.
   private settings: Record<NotificationPlatform, string> = { ...DEFAULT_SOUNDS };
   private enabled: boolean = true;
   private volume: number = 0.5;
@@ -110,6 +123,8 @@ class NotificationSoundManager {
       const localSettings = this.loadLocalSettings();
       this.enabled = localSettings.enabled;
       this.volume = localSettings.volume;
+      this.userOverrides = this.loadUserOverrides();
+      this.recomputeSettings();
     }
   }
 
@@ -136,11 +151,44 @@ class NotificationSoundManager {
     }
   }
 
+  private loadUserOverrides(): UserSoundOverrides {
+    try {
+      const raw = localStorage.getItem(USER_SOUNDS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed as UserSoundOverrides;
+      }
+    } catch (error) {
+      console.error('[NotificationSound] Failed to load user sound overrides:', error);
+    }
+    return {};
+  }
+
+  private saveUserOverrides() {
+    try {
+      localStorage.setItem(USER_SOUNDS_STORAGE_KEY, JSON.stringify(this.userOverrides));
+    } catch (error) {
+      console.error('[NotificationSound] Failed to save user sound overrides:', error);
+    }
+  }
+
+  private recomputeSettings() {
+    const merged: Record<NotificationPlatform, string> = { ...DEFAULT_SOUNDS };
+    (Object.keys(merged) as NotificationPlatform[]).forEach((platform) => {
+      merged[platform] = this.userOverrides[platform]
+        || this.tenantSettings[platform]
+        || DEFAULT_SOUNDS[platform];
+    });
+    this.settings = merged;
+  }
+
   /**
-   * Update sound settings from backend
+   * Update sound settings from backend (tenant-wide defaults).
+   * Per-user overrides from localStorage are layered on top, so changing the
+   * tenant defaults won't blow away a user's personal choices.
    */
   public updateSettings(settings: NotificationSoundSettings) {
-    this.settings = {
+    this.tenantSettings = {
       facebook: settings.notification_sound_facebook || DEFAULT_SOUNDS.facebook,
       instagram: settings.notification_sound_instagram || DEFAULT_SOUNDS.instagram,
       whatsapp: settings.notification_sound_whatsapp || DEFAULT_SOUNDS.whatsapp,
@@ -149,6 +197,38 @@ class NotificationSoundManager {
       team_chat: settings.notification_sound_team_chat || DEFAULT_SOUNDS.team_chat,
       system: settings.notification_sound_system || DEFAULT_SOUNDS.system,
     };
+    this.recomputeSettings();
+  }
+
+  /**
+   * Set the current user's sound override for one platform. Persists to
+   * localStorage and takes effect immediately for new notifications. Pass
+   * `null` (or call clearUserSound) to drop the override and fall back to the
+   * tenant default.
+   */
+  public setUserSoundForPlatform(platform: NotificationPlatform, soundFile: string | null) {
+    if (!soundFile) {
+      delete this.userOverrides[platform];
+    } else {
+      this.userOverrides[platform] = soundFile;
+    }
+    this.saveUserOverrides();
+    this.recomputeSettings();
+  }
+
+  /**
+   * Get the raw user override for a platform (without falling back to tenant
+   * defaults). Useful for the preferences UI so it can distinguish
+   * "user picked X" from "user is inheriting the tenant default".
+   */
+  public getUserSoundForPlatform(platform: NotificationPlatform): string | undefined {
+    return this.userOverrides[platform];
+  }
+
+  public clearUserSoundOverrides() {
+    this.userOverrides = {};
+    this.saveUserOverrides();
+    this.recomputeSettings();
   }
 
   /**
