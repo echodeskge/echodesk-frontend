@@ -90,19 +90,23 @@ export function TicketDescription({ ticket, onUpdate }: TicketDescriptionProps) 
     >
       {rawHtml ? (
         <div
-          className="prose prose-sm max-w-none dark:prose-invert"
+          // Reserve right padding so the absolute-positioned hover hint doesn't
+          // overlap the description content. The hint is `text-xs`; locales
+          // like Georgian ("დააწკაპუნეთ რედაქტირებისთვის") need ~12rem to fit
+          // without wrapping the long word back into the text area.
+          className="prose prose-sm max-w-none dark:prose-invert pr-2 sm:pr-48"
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(rawHtml),
           }}
         />
       ) : (
-        <p className="text-sm text-muted-foreground italic">
+        <p className="text-sm text-muted-foreground italic pr-2 sm:pr-48">
           {t("ticketDetail.noDescription")}
         </p>
       )}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <Pencil className="h-3 w-3" />
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity max-w-[12rem]">
+        <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+          <Pencil className="h-3 w-3 shrink-0" />
           {t("ticketDetail.clickToEdit")}
         </span>
       </div>

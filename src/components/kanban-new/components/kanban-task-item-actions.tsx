@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import type { TaskType } from "../types"
 
 import { useKanbanContext } from "../use-kanban-context"
+import { useAuth } from "@/contexts/AuthContext"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -41,6 +42,11 @@ export function KanbanTaskItemActions({ task }: KanbanTaskItemActionsProps) {
     handleSelectTask,
     handleDeleteTask,
   } = useKanbanContext()
+  const { user } = useAuth()
+  // Edit/Delete on ticket cards is admin-only; non-admins shouldn't even see
+  // the 3-dot trigger. Matches the gating used by CallContext / SubscriptionContext.
+  const isAdmin = !!(user?.is_staff || user?.is_superuser)
+  if (!isAdmin) return null
 
   const handleDelete = async () => {
     setShowDeleteDialog(false)
