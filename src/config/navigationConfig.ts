@@ -197,6 +197,15 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     isPremium: true,
   },
   {
+    // Socket-driven inbox (PR1-PR4). Gated on the per-user `messages_beta`
+    // feature key — admins flip it on for tenants ready to dogfood. The
+    // nav-renderer hides this row for everyone else.
+    id: "social/messages-beta",
+    icon: "MessageSquare",
+    requiredFeatureKey: "messages_beta",
+    isPremium: true,
+  },
+  {
     id: "email",
     icon: "Mail",
     requiredFeatureKey: "social_integrations",

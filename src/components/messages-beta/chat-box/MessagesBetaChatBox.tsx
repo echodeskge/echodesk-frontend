@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
+import axios from "@/api/axios";
 import { Card } from "@/components/ui/card";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import type { UserType } from "@/components/chat/types";
 
+import { MessagesBetaComposer } from "../composer/MessagesBetaComposer";
 import { selectMessagesForChat } from "../store/selectors";
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import { fetchMessagesForChat } from "../store/rest-bootstrap";
@@ -45,6 +47,36 @@ export function MessagesBetaChatBox() {
       .catch((err) => console.error("[messages-beta] fetchMessagesForChat failed:", err))
       .finally(() => inFlightRef.current.delete(id));
   }, [conversation, selectedChatId, messagesLoaded, hydrateMessages]);
+
+  // Mark the conversation read once per (chat × session). The backend then
+  // broadcasts read_state_update (PR3) which clears the badge in every
+  // connected agent's beta sidebar simultaneously — including the user who
+  // just opened it. We POST asynchronously and don't await the result; if
+  // the request fails the badge just stays until the next mark-read.
+  const markReadFiredRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!conversation || !selectedChatId) return;
+    if (markReadFiredRef.current.has(selectedChatId)) return;
+    markReadFiredRef.current.add(selectedChatId);
+
+    // chatId layout: <prefix>_<account>_<rest>. mark-read only needs the
+    // platform + the platform-specific conversation_id, which is everything
+    // after the second underscore (matches the legacy /messages convention).
+    const parts = selectedChatId.split("_");
+    if (parts.length < 3) return;
+    const conversationKey = parts.slice(2).join("_");
+
+    axios
+      .post("/api/social/mark-read/", {
+        platform: conversation.platform,
+        conversation_id: conversationKey,
+      })
+      .catch((err) => {
+        // Don't toast — mark-read is best-effort; a transient failure just
+        // means the badge sticks around until the user re-opens the chat.
+        console.warn("[messages-beta] mark-read failed:", err);
+      });
+  }, [conversation, selectedChatId]);
 
   const messages = selectMessagesForChat({ messagesByChatId }, selectedChatId);
 
@@ -116,11 +148,7 @@ export function MessagesBetaChatBox() {
         </ul>
       </div>
 
-      <div className="shrink-0 border-t p-3">
-        <p className="text-xs text-muted-foreground text-center">
-          Composer ships in PR 4 — beta is read-only for now.
-        </p>
-      </div>
+      <MessagesBetaComposer conversation={conversation} />
     </Card>
   );
 }
