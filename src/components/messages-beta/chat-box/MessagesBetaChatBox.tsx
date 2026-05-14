@@ -8,6 +8,7 @@ import { MessageBubble } from "@/components/chat/message-bubble";
 import type { UserType } from "@/components/chat/types";
 
 import { MessagesBetaComposer } from "../composer/MessagesBetaComposer";
+import { MessagesBetaHeaderActions } from "./MessagesBetaHeaderActions";
 import { selectMessagesForChat } from "../store/selectors";
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import { fetchMessagesForChat } from "../store/rest-bootstrap";
@@ -110,14 +111,17 @@ export function MessagesBetaChatBox() {
 
   return (
     <Card className="grow h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 border-b px-4 py-3 flex items-center gap-2">
-        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-          {conversation.name?.slice(0, 2).toUpperCase() || "?"}
+      <div className="shrink-0 border-b px-4 py-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
+            {conversation.name?.slice(0, 2).toUpperCase() || "?"}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium leading-tight truncate">{conversation.name}</p>
+            <p className="text-[11px] text-muted-foreground capitalize">{conversation.platform}</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-medium leading-tight">{conversation.name}</p>
-          <p className="text-[11px] text-muted-foreground capitalize">{conversation.platform}</p>
-        </div>
+        <MessagesBetaHeaderActions conversation={conversation} />
       </div>
 
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3">
