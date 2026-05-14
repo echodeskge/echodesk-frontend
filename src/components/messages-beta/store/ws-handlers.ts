@@ -173,11 +173,74 @@ export function dispatchWsFrame(
       break;
     }
 
-    // PR3 + PR4 additions — handlers stubbed here so an early backend
-    // broadcast of these new types doesn't fall through to the noisy default.
-    case "assignment_update":
-    case "read_state_update":
-    case "archive_update":
+    case "assignment_update": {
+      // Cross-user reactivity — patches the assignment slice for one chat.
+      // Every connected agent on the tenant receives this frame, so when
+      // teammate A claims a chat, teammate B's sidebar tab selectors
+      // recompute and the chat moves between All / Assigned without any
+      // imperative hide-this-row code.
+      const conversationId = frame.conversation_id as string | undefined;
+      if (!conversationId) break;
+      const assignedUserId = frame.assigned_user_id as number | null | undefined;
+      if (assignedUserId == null) {
+        // Unassigned (or status null = post-end-session deletion).
+        store.patchAssignment(conversationId, null);
+      } else {
+        store.patchAssignment(conversationId, {
+          assignedUserId,
+          assignedUserName: (frame.assigned_user_name as string | null | undefined) ?? null,
+          status: (frame.status as "active" | "in_session" | "completed" | null | undefined) ?? null,
+          sessionStartedAt: (frame.session_started_at as string | null | undefined) ?? null,
+          sessionEndedAt: (frame.session_ended_at as string | null | undefined) ?? null,
+        });
+      }
+      break;
+    }
+
+    case "read_state_update": {
+      const conversationId = frame.conversation_id as string | null | undefined;
+      const platform = frame.platform as string | undefined;
+      const unread = frame.unread_count as number | undefined;
+      if (conversationId == null) {
+        // Bulk hint: clear all unread for the listed platform. Used by
+        // mark_all_conversations_read and archive_all_conversations.
+        if (platform && enabledPlatforms.includes(platform)) {
+          store.clearAllUnreadForPlatform(platform as never);
+        }
+      } else {
+        if (typeof unread === "number") {
+          store.setUnread(conversationId, unread);
+        } else {
+          store.clearUnread(conversationId);
+        }
+        const ts = frame.last_read_at as string | undefined;
+        if (ts) store.setReadWatermark(conversationId, ts);
+      }
+      break;
+    }
+
+    case "archive_update": {
+      const conversationId = frame.conversation_id as string | null | undefined;
+      const platform = frame.platform as string | undefined;
+      const archived = !!frame.archived;
+      const archivedAt = (frame.archived_at as string | null | undefined) ?? null;
+      const byUserId = (frame.by_user_id as number | null | undefined) ?? null;
+      if (conversationId == null) {
+        // Bulk: emitted by archive_all_conversations per-platform.
+        if (platform && enabledPlatforms.includes(platform)) {
+          store.bulkPatchArchiveForPlatform(platform as never, archived, archivedAt);
+        }
+      } else if (archived) {
+        store.patchArchive(conversationId, {
+          archivedAt: archivedAt || new Date().toISOString(),
+          byUserId,
+        });
+      } else {
+        store.patchArchive(conversationId, null);
+      }
+      break;
+    }
+
     case "connection":
     case "pong":
       break;

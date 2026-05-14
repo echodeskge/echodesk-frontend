@@ -177,24 +177,182 @@ describe("dispatchWsFrame – unknown types", () => {
       )
     ).not.toThrow();
   });
+});
 
-  it("accepts (no-op) the PR3/PR4 event types so an early backend broadcast doesn't crash", () => {
-    expect(() => {
-      dispatchWsFrame(
-        useMessagesBetaStore.getState(),
-        { type: "assignment_update", conversation_id: "x" },
-        Array.from(PLATFORMS)
-      );
-      dispatchWsFrame(
-        useMessagesBetaStore.getState(),
-        { type: "read_state_update", conversation_id: "x" },
-        Array.from(PLATFORMS)
-      );
-      dispatchWsFrame(
-        useMessagesBetaStore.getState(),
-        { type: "archive_update", conversation_id: "x" },
-        Array.from(PLATFORMS)
-      );
-    }).not.toThrow();
+describe("dispatchWsFrame – assignment_update (cross-user reactivity)", () => {
+  it("patches the assignment slice when a teammate claims a chat", () => {
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_1" })]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "assignment_update",
+        conversation_id: "fb_p_1",
+        platform: "facebook",
+        account_id: "p",
+        assigned_user_id: 7,
+        assigned_user_name: "Teammate",
+        status: "in_session",
+        session_started_at: "2024-06-01T10:00:00Z",
+        session_ended_at: null,
+        by_user_id: 7,
+      },
+      Array.from(PLATFORMS)
+    );
+    const slice = useMessagesBetaStore.getState().assignmentByChatId.fb_p_1;
+    expect(slice).not.toBeNull();
+    expect(slice!.assignedUserId).toBe(7);
+    expect(slice!.status).toBe("in_session");
+  });
+
+  it("clears the assignment slice when assigned_user_id is null (unassign / end-session)", () => {
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_1" })]);
+    useMessagesBetaStore.getState().patchAssignment("fb_p_1", {
+      assignedUserId: 7,
+      assignedUserName: "Teammate",
+      status: "in_session",
+      sessionStartedAt: null,
+      sessionEndedAt: null,
+    });
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "assignment_update",
+        conversation_id: "fb_p_1",
+        platform: "facebook",
+        account_id: "p",
+        assigned_user_id: null,
+        status: null,
+      },
+      Array.from(PLATFORMS)
+    );
+    expect(useMessagesBetaStore.getState().assignmentByChatId.fb_p_1).toBeNull();
+  });
+});
+
+describe("dispatchWsFrame – read_state_update", () => {
+  it("clears unread when conversation_id matches", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_p_1", unreadCount: 3 }),
+    ]);
+    expect(useMessagesBetaStore.getState().unreadByChatId.fb_p_1).toBe(3);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "read_state_update",
+        conversation_id: "fb_p_1",
+        platform: "facebook",
+        unread_count: 0,
+        last_read_at: "2024-06-01T11:00:00Z",
+      },
+      Array.from(PLATFORMS)
+    );
+    expect(useMessagesBetaStore.getState().unreadByChatId.fb_p_1).toBe(0);
+    expect(useMessagesBetaStore.getState().readWatermarkByChatId.fb_p_1).toBe("2024-06-01T11:00:00Z");
+  });
+
+  it("bulk-clears every chat on the platform when conversation_id is null", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_a", platform: "facebook", unreadCount: 2 }),
+      makeRow({ id: "fb_b", platform: "facebook", unreadCount: 5 }),
+      makeRow({ id: "ig_a", platform: "instagram", unreadCount: 4 }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      { type: "read_state_update", conversation_id: null, platform: "facebook", unread_count: 0 },
+      Array.from(PLATFORMS)
+    );
+    const { unreadByChatId } = useMessagesBetaStore.getState();
+    expect(unreadByChatId.fb_a).toBe(0);
+    expect(unreadByChatId.fb_b).toBe(0);
+    // Instagram untouched — bulk hint is platform-scoped.
+    expect(unreadByChatId.ig_a).toBe(4);
+  });
+});
+
+describe("dispatchWsFrame – archive_update", () => {
+  it("moves a chat into the archive map when archived=true", () => {
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_1" })]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "archive_update",
+        conversation_id: "fb_p_1",
+        platform: "facebook",
+        archived: true,
+        archived_at: "2024-06-01T12:00:00Z",
+        by_user_id: 1,
+      },
+      Array.from(PLATFORMS)
+    );
+    const meta = useMessagesBetaStore.getState().archivedByChatId.fb_p_1;
+    expect(meta).not.toBeNull();
+    expect(meta!.archivedAt).toBe("2024-06-01T12:00:00Z");
+    expect(meta!.byUserId).toBe(1);
+  });
+
+  it("clears the archive entry when archived=false (unarchive)", () => {
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_1" })]);
+    useMessagesBetaStore.getState().patchArchive("fb_p_1", {
+      archivedAt: "2024-06-01T12:00:00Z",
+      byUserId: 1,
+    });
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      { type: "archive_update", conversation_id: "fb_p_1", platform: "facebook", archived: false },
+      Array.from(PLATFORMS)
+    );
+    expect(useMessagesBetaStore.getState().archivedByChatId.fb_p_1).toBeNull();
+  });
+
+  it("bulk-archives every conversation on the platform when conversation_id is null", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_a", platform: "facebook" }),
+      makeRow({ id: "fb_b", platform: "facebook" }),
+      makeRow({ id: "ig_a", platform: "instagram" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "archive_update",
+        conversation_id: null,
+        platform: "facebook",
+        archived: true,
+        archived_at: "2024-06-01T12:00:00Z",
+      },
+      Array.from(PLATFORMS)
+    );
+    const { archivedByChatId } = useMessagesBetaStore.getState();
+    expect(archivedByChatId.fb_a).not.toBeNull();
+    expect(archivedByChatId.fb_b).not.toBeNull();
+    // Instagram untouched.
+    expect(archivedByChatId.ig_a).toBeFalsy();
+  });
+});
+
+describe("dispatchWsFrame – cross-user reactivity end-to-end", () => {
+  it("teammate-claims-chat hides it from my All tab + adds it nowhere visible (other user owns it)", async () => {
+    const { selectAllTabConversations, selectAssignedTabConversations } = await import(
+      "@/components/messages-beta/store/selectors"
+    );
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_1" })]);
+    const ME = 1;
+    const TEAMMATE = 2;
+    const ctx = { currentUserId: ME, hideAssignedChats: true };
+
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "assignment_update",
+        conversation_id: "fb_p_1",
+        platform: "facebook",
+        assigned_user_id: TEAMMATE,
+        assigned_user_name: "Bob",
+        status: "in_session",
+      },
+      Array.from(PLATFORMS)
+    );
+    const state = useMessagesBetaStore.getState();
+    expect(selectAllTabConversations(state, ctx)).toEqual([]);
+    expect(selectAssignedTabConversations(state, ctx)).toEqual([]);
   });
 });

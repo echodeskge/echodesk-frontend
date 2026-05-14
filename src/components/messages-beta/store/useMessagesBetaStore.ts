@@ -25,7 +25,21 @@ export interface MessagesBetaActions {
   updateLastMessage: (chatId: string, content: string, createdAt: string) => void;
   setUnread: (chatId: string, count: number) => void;
   clearUnread: (chatId: string) => void;
+  /** Bulk-clear unread for every conversation on the given platform.
+   * Used to consume `read_state_update` frames with conversation_id=null
+   * (the bulk "mark all read" hint emitted by mark_all_conversations_read).
+   */
+  clearAllUnreadForPlatform: (platform: ConversationRow["platform"]) => void;
   setReadWatermark: (chatId: string, isoTs: string) => void;
+  /** Patch the archive slice for every conversation on the given platform.
+   * Used to consume `archive_update` frames with conversation_id=null (the
+   * bulk archive-all hint).
+   */
+  bulkPatchArchiveForPlatform: (
+    platform: ConversationRow["platform"],
+    archived: boolean,
+    archivedAt: string | null
+  ) => void;
   setSessionEnded: (
     chatId: string,
     endedAt: string | null,
@@ -173,10 +187,42 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
       return { unreadByChatId: next };
     }),
 
+  clearAllUnreadForPlatform: (platform) =>
+    set((state) => {
+      const next: Record<string, number> = { ...state.unreadByChatId };
+      let changed = false;
+      for (const row of state.conversations) {
+        if (row.platform === platform && next[row.id]) {
+          next[row.id] = 0;
+          changed = true;
+        }
+      }
+      return changed ? { unreadByChatId: next } : {};
+    }),
+
   setReadWatermark: (chatId, isoTs) =>
     set((state) => ({
       readWatermarkByChatId: { ...state.readWatermarkByChatId, [chatId]: isoTs },
     })),
+
+  bulkPatchArchiveForPlatform: (platform, archived, archivedAt) =>
+    set((state) => {
+      const next: Record<string, ArchiveMeta | null> = { ...state.archivedByChatId };
+      let changed = false;
+      for (const row of state.conversations) {
+        if (row.platform !== platform) continue;
+        if (archived) {
+          if (!next[row.id]) {
+            next[row.id] = { archivedAt: archivedAt || new Date().toISOString(), byUserId: null };
+            changed = true;
+          }
+        } else if (next[row.id]) {
+          next[row.id] = null;
+          changed = true;
+        }
+      }
+      return changed ? { archivedByChatId: next } : {};
+    }),
 
   setSessionEnded: (chatId, endedAt, endedBy) =>
     set((state) => ({
