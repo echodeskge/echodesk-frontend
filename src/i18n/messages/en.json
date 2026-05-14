@@ -205,6 +205,7 @@
     "callsLogs": "Call Logs",
     "callsSettings": "SIP Settings",
     "messages": "Messages",
+    "social/messages-beta": "Messages (Beta)",
     "email": "Email",
     "orders": "Orders",
     "ecommerce": "E-commerce",

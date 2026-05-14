@@ -114,6 +114,58 @@ describe("MessagesBetaStore – appendMessage", () => {
     expect(useMessagesBetaStore.getState().messagesByChatId.a).toHaveLength(1);
   });
 
+  it("fabricates a conversation row when a WS message arrives for an unknown chat", () => {
+    // Bootstrap had no row for fb_p_99 — simulating a brand-new sender or
+    // a sender that wasn't on page 1 of the conversation list.
+    useMessagesBetaStore.getState().hydrateConversations([]);
+    useMessagesBetaStore.getState().appendMessage(
+      "fb_p_99",
+      {
+        id: "m1",
+        senderId: "99",
+        text: "hi",
+        status: "DELIVERED",
+        createdAt: new Date("2024-12-01T10:00:00Z"),
+        senderName: "New Sender",
+        platform: "facebook",
+      },
+      false,
+      {
+        platform: "facebook",
+        accountId: "p",
+        conversationKey: "99",
+        name: "New Sender",
+      }
+    );
+    const state = useMessagesBetaStore.getState();
+    const row = state.conversations.find((c) => c.id === "fb_p_99");
+    expect(row).toBeTruthy();
+    expect(row!.name).toBe("New Sender");
+    expect(row!.platform).toBe("facebook");
+    expect(row!.accountId).toBe("p");
+    expect(row!.lastMessage?.content).toBe("hi");
+    expect(state.unreadByChatId.fb_p_99).toBe(1);
+  });
+
+  it("ensureConversationRow creates a placeholder once, idempotent", () => {
+    useMessagesBetaStore.getState().hydrateConversations([]);
+    useMessagesBetaStore.getState().ensureConversationRow("fb_p_42", {
+      platform: "facebook",
+      accountId: "p",
+      conversationKey: "42",
+      name: "Loading…",
+    });
+    expect(useMessagesBetaStore.getState().conversations).toHaveLength(1);
+    // Second call must NOT duplicate.
+    useMessagesBetaStore.getState().ensureConversationRow("fb_p_42", {
+      platform: "facebook",
+      accountId: "p",
+      conversationKey: "42",
+      name: "Loading…",
+    });
+    expect(useMessagesBetaStore.getState().conversations).toHaveLength(1);
+  });
+
   it("dedupes by platformMessageId when DB id isn't usable", () => {
     useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "a" })]);
     const base = {

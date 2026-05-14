@@ -1,4 +1,4 @@
-import { forwardRef, memo } from "react"
+import { forwardRef, memo, useContext } from "react"
 
 import type { MessageType, UserType } from "@/components/chat/types"
 import { formatDistanceToNow } from "date-fns"
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 
 import { MessageBubbleContent } from "./message-bubble-content"
 import { MessageBubbleStatusIcon } from "./message-bubble-status-icon"
-import { useChatContext } from "./hooks/use-chat-context"
+import { ChatContext } from "./contexts/chat-context"
 import { Button } from "@/components/ui/button"
 
 // Reply preview component
@@ -151,7 +151,13 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
     { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery },
     ref
   ) {
-  const { setReplyingTo } = useChatContext()
+  // Read the chat context defensively so this component also works when
+  // rendered outside a ChatProvider (e.g. on /messages-beta, which manages
+  // its own store and doesn't need the legacy provider just to render
+  // bubbles). `setReplyingTo` becomes a no-op in that case — reply UX is
+  // not wired in beta yet anyway.
+  const chatContext = useContext(ChatContext)
+  const setReplyingTo = chatContext?.setReplyingTo
 
   // Check if this is an email message
   const isEmail = message.platform === 'email' || platform === 'email'
@@ -159,7 +165,7 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
   // Handle reply action
   const handleReply = () => {
     if (!message.platformMessageId) return
-    setReplyingTo({
+    setReplyingTo?.({
       messageId: message.platformMessageId,
       text: message.text?.substring(0, 100),
       senderName: message.senderName || sender?.name,

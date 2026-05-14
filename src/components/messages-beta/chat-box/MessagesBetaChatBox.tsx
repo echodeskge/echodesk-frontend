@@ -12,6 +12,37 @@ import { MessagesBetaHeaderActions } from "./MessagesBetaHeaderActions";
 import { selectMessagesForChat } from "../store/selectors";
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import { fetchMessagesForChat } from "../store/rest-bootstrap";
+import type { BetaPlatform, ConversationRow } from "../store/types";
+
+/**
+ * Parse a chatId prefix into the platform + (account_id, conversation_key)
+ * triple. Used to fabricate a placeholder ConversationRow when the user
+ * deep-links directly to a chat that hasn't been paginated into the
+ * bootstrap list yet. Mirrors the inverse of buildChatId in ws-handlers.ts.
+ */
+function placeholderFromChatId(chatId: string): Omit<ConversationRow, "lastMessage" | "unreadCount" | "avatar"> | null {
+  const parts = chatId.split("_");
+  if (parts.length < 3) return null;
+  const prefix = parts[0];
+  const accountId = parts[1];
+  const conversationKey = parts.slice(2).join("_");
+  const PREFIX_TO_PLATFORM: Record<string, BetaPlatform> = {
+    fb: "facebook",
+    ig: "instagram",
+    wa: "whatsapp",
+    widget: "widget",
+    email: "email",
+  };
+  const platform = PREFIX_TO_PLATFORM[prefix];
+  if (!platform) return null;
+  return {
+    id: chatId,
+    platform,
+    accountId,
+    conversationKey,
+    name: "Loading…",
+  };
+}
 
 const CURRENT_USER: UserType = {
   id: "business",
@@ -25,6 +56,23 @@ export function MessagesBetaChatBox() {
   const messagesByChatId = useMessagesBetaStore((s) => s.messagesByChatId);
   const messagesLoaded = useMessagesBetaStore((s) => s.messagesLoaded);
   const hydrateMessages = useMessagesBetaStore((s) => s.hydrateMessages);
+  const ensureConversationRow = useMessagesBetaStore((s) => s.ensureConversationRow);
+  const bootstrapState = useMessagesBetaStore((s) => s.bootstrapState);
+
+  // Deep-link recovery: if the user landed on /messages-beta/<chatId> for a
+  // conversation that the bootstrap page-1 didn't include (large tenant with
+  // hundreds of chats, archive, etc.), fabricate a placeholder row from the
+  // chatId so the chat box renders and `fetchMessagesForChat` can fire.
+  // Only kick in once bootstrap is done — otherwise we'd race the REST
+  // hydration and end up with a duplicate row.
+  useEffect(() => {
+    if (!selectedChatId) return;
+    if (bootstrapState !== "ready") return;
+    if (conversations.some((c) => c.id === selectedChatId)) return;
+    const placeholder = placeholderFromChatId(selectedChatId);
+    if (!placeholder) return;
+    ensureConversationRow(selectedChatId, placeholder);
+  }, [selectedChatId, bootstrapState, conversations, ensureConversationRow]);
 
   const conversation = useMemo(
     () => conversations.find((c) => c.id === selectedChatId) || null,
@@ -95,9 +143,15 @@ export function MessagesBetaChatBox() {
   }
 
   if (!conversation) {
+    // bootstrapState !== "ready" → REST is still in flight; the
+    // deep-link effect will fabricate a placeholder once it lands.
     return (
       <Card className="grow flex items-center justify-center h-full">
-        <p className="text-sm text-muted-foreground">Conversation not found in this view.</p>
+        <p className="text-sm text-muted-foreground">
+          {bootstrapState === "ready"
+            ? "Conversation not found in this view."
+            : "Loading conversation…"}
+        </p>
       </Card>
     );
   }

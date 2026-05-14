@@ -127,7 +127,34 @@ export function dispatchWsFrame(
 
       const message = frameToMessage(messageData);
       const isSelected = store.selectedChatId === chatId;
-      store.appendMessage(chatId, message, isSelected);
+
+      // Seed metadata so a brand-new sender (no row in the bootstrap list)
+      // shows up in the sidebar instantly. The store falls back to these
+      // values only when the row doesn't already exist; an existing row
+      // is left intact and just gets its lastMessage refreshed.
+      const isFromBusiness =
+        messageData.platform === "widget"
+          ? !messageData.is_from_visitor
+          : messageData.is_from_page || messageData.is_from_business || false;
+      const accountId =
+        messageData.page_id ||
+        messageData.account_id ||
+        messageData.waba_id ||
+        messageData.connection_id ||
+        "";
+      const conversationKey = chatId.split("_").slice(2).join("_") || chatId;
+      const seedRow = {
+        platform: messageData.platform,
+        accountId: String(accountId),
+        conversationKey,
+        // For agent-sent (echo) frames the "name" should be the customer,
+        // not the agent — fall back to recipient_name/contact_name.
+        name: isFromBusiness
+          ? messageData.recipient_name || messageData.contact_name || "Customer"
+          : messageData.sender_name || messageData.contact_name || "New conversation",
+      };
+
+      store.appendMessage(chatId, message, isSelected, seedRow);
       break;
     }
 

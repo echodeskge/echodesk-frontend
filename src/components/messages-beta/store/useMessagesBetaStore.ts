@@ -21,7 +21,25 @@ export interface MessagesBetaActions {
   patchArchive: (chatId: string, meta: ArchiveMeta | null) => void;
 
   hydrateMessages: (chatId: string, messages: MessageType[]) => void;
-  appendMessage: (chatId: string, message: MessageType, isSelected: boolean) => void;
+  /**
+   * Append a WS message. `seedRow` is consulted when the chat isn't in
+   * `conversations[]` yet (brand-new sender, or sender we never paginated
+   * to) — without it, the chat would be invisible in the sidebar until the
+   * next REST refresh, defeating the socket-first design.
+   */
+  appendMessage: (
+    chatId: string,
+    message: MessageType,
+    isSelected: boolean,
+    seedRow?: Partial<Pick<ConversationRow, "platform" | "name" | "avatar" | "accountId" | "conversationKey">>
+  ) => void;
+  /**
+   * Insert a placeholder conversation row before its REST data exists,
+   * used when the user deep-links directly to a chatId that hasn't been
+   * paginated into the bootstrap list. Idempotent: if the row already
+   * exists this is a no-op.
+   */
+  ensureConversationRow: (chatId: string, seed: Pick<ConversationRow, "platform" | "accountId" | "conversationKey" | "name">) => void;
   updateLastMessage: (chatId: string, content: string, createdAt: string) => void;
   setUnread: (chatId: string, count: number) => void;
   clearUnread: (chatId: string) => void;
@@ -114,7 +132,7 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
       messagesLoaded: { ...state.messagesLoaded, [chatId]: true },
     })),
 
-  appendMessage: (chatId, message, isSelected) =>
+  appendMessage: (chatId, message, isSelected, seedRow) =>
     set((state) => {
       const existing = state.messagesByChatId[chatId] || [];
       // De-dupe by id OR platformMessageId — the same frame can arrive twice
@@ -137,22 +155,35 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
       // sidebar reflects the WS push without re-fetching the list.
       const previewText =
         message.text || (message.images && "Image") || (message.files && "File") || "";
-      const updatedRows = state.conversations.map((row) =>
-        row.id === chatId
-          ? {
-              ...row,
-              lastMessage: { content: previewText, createdAt: message.createdAt.toISOString() },
-            }
-          : row
-      );
+      const lastMessage = {
+        content: previewText,
+        createdAt: message.createdAt.toISOString(),
+      };
 
-      // If chat wasn't in our list yet (first ever message), we don't fabricate
-      // a row here — the REST bootstrap or list refetch will hand us a row
-      // with name/avatar/etc. Until then the message sits in messagesByChatId
-      // waiting for its parent row.
-      const conversations = updatedRows.some((r) => r.id === chatId)
-        ? sortConversations(updatedRows)
-        : updatedRows;
+      const rowExists = state.conversations.some((r) => r.id === chatId);
+
+      let updatedRows: ConversationRow[];
+      if (rowExists) {
+        updatedRows = state.conversations.map((row) =>
+          row.id === chatId ? { ...row, lastMessage } : row
+        );
+      } else {
+        // New sender we'd never paginated to — fabricate a minimal row from
+        // the WS payload so the sidebar shows them immediately. The next
+        // REST refresh (or list reconnect-resync) overwrites name / avatar
+        // / metadata with the authoritative server view.
+        const fabricated: ConversationRow = {
+          id: chatId,
+          platform: (seedRow?.platform as ConversationRow["platform"]) || (message.platform as ConversationRow["platform"]) || "facebook",
+          accountId: seedRow?.accountId || "",
+          conversationKey: seedRow?.conversationKey || chatId,
+          name: seedRow?.name || message.senderName || "New conversation",
+          avatar: seedRow?.avatar,
+          lastMessage,
+          unreadCount: 0,
+        };
+        updatedRows = [fabricated, ...state.conversations];
+      }
 
       const unread = { ...state.unreadByChatId };
       if (!isSelected) {
@@ -161,9 +192,24 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
 
       return {
         messagesByChatId: nextMessages,
-        conversations,
+        conversations: sortConversations(updatedRows),
         unreadByChatId: unread,
       };
+    }),
+
+  ensureConversationRow: (chatId, seed) =>
+    set((state) => {
+      if (state.conversations.some((r) => r.id === chatId)) return {};
+      const placeholder: ConversationRow = {
+        id: chatId,
+        platform: seed.platform,
+        accountId: seed.accountId,
+        conversationKey: seed.conversationKey,
+        name: seed.name,
+        lastMessage: null,
+        unreadCount: 0,
+      };
+      return { conversations: sortConversations([placeholder, ...state.conversations]) };
     }),
 
   updateLastMessage: (chatId, content, createdAt) =>
