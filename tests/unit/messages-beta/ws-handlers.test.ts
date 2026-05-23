@@ -329,6 +329,86 @@ describe("dispatchWsFrame – archive_update", () => {
   });
 });
 
+describe("dispatchWsFrame – conversation_deleted (PR F)", () => {
+  it("per-chat frame removes the matching row and leaves siblings alone", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_p_1", conversationKey: "1", accountId: "p" }),
+      makeRow({ id: "fb_p_2", conversationKey: "2", accountId: "p" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "conversation_deleted",
+        platform: "facebook",
+        conversation_id: "1",
+        account_id: "p",
+      },
+      Array.from(PLATFORMS)
+    );
+    const remaining = useMessagesBetaStore.getState().conversations.map((r) => r.id);
+    expect(remaining).toEqual(["fb_p_2"]);
+  });
+
+  it("per-chat frame with no account_id removes every row matching (platform, conversationKey)", () => {
+    // Same customer on two FB pages — the backend's soft delete is loose
+    // by sender_id, so the broadcast intentionally drops both.
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_pageA_42", conversationKey: "42", accountId: "pageA" }),
+      makeRow({ id: "fb_pageB_42", conversationKey: "42", accountId: "pageB" }),
+      makeRow({ id: "fb_pageA_99", conversationKey: "99", accountId: "pageA" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "conversation_deleted",
+        platform: "facebook",
+        conversation_id: "42",
+        account_id: null,
+      },
+      Array.from(PLATFORMS)
+    );
+    const remaining = useMessagesBetaStore.getState().conversations.map((r) => r.id);
+    expect(remaining).toEqual(["fb_pageA_99"]);
+  });
+
+  it("bulk frame (conversation_id null) wipes every row on the platform only", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_p_1", platform: "facebook" }),
+      makeRow({ id: "fb_p_2", platform: "facebook" }),
+      makeRow({ id: "ig_a_1", platform: "instagram", accountId: "a", conversationKey: "1" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "conversation_deleted",
+        platform: "facebook",
+        conversation_id: null,
+        account_id: null,
+      },
+      Array.from(PLATFORMS)
+    );
+    const remaining = useMessagesBetaStore.getState().conversations.map((r) => r.id);
+    expect(remaining).toEqual(["ig_a_1"]);
+  });
+
+  it("bulk frame for a disabled platform is a no-op", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_p_1", platform: "facebook" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "conversation_deleted",
+        platform: "tiktok",
+        conversation_id: null,
+        account_id: null,
+      },
+      Array.from(PLATFORMS)
+    );
+    expect(useMessagesBetaStore.getState().conversations.map((r) => r.id)).toEqual(["fb_p_1"]);
+  });
+});
+
 describe("dispatchWsFrame – cross-user reactivity end-to-end", () => {
   it("teammate-claims-chat hides it from my All tab + adds it nowhere visible (other user owns it)", async () => {
     const { selectAllTabConversations, selectAssignedTabConversations } = await import(

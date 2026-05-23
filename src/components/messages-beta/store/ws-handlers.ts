@@ -397,6 +397,30 @@ export function dispatchWsFrame(
       break;
     }
 
+    case "conversation_deleted": {
+      // PR F additive frame from delete_conversation +
+      // clear_platform_history. Two variants share one type:
+      //   • per-chat: conversation_id set → remove the matching row(s)
+      //   • bulk: conversation_id null → remove every row on the platform
+      //     (used by clear_platform_history when a whole channel is wiped)
+      const platformConversationId = frame.conversation_id as string | null | undefined;
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | null | undefined;
+
+      if (platformConversationId == null) {
+        if (!platform || !enabledPlatforms.includes(platform)) break;
+        const toRemove = store.conversations
+          .filter((row) => row.platform === platform)
+          .map((row) => row.id);
+        for (const chatId of toRemove) store.removeConversation(chatId);
+        break;
+      }
+
+      const targets = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      for (const chatId of targets) store.removeConversation(chatId);
+      break;
+    }
+
     case "connection":
     case "pong":
       break;
