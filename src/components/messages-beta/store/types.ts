@@ -32,6 +32,7 @@ export interface ArchiveMeta {
 
 export type WsState = "idle" | "connecting" | "open" | "reconnecting" | "down";
 export type BootstrapState = "pending" | "loading" | "ready" | "error";
+export type AssignmentTab = "all" | "assigned";
 
 export interface MessagesBetaState {
   conversations: ConversationRow[];
@@ -49,4 +50,18 @@ export interface MessagesBetaState {
   wsState: WsState;
   lastWsActivityAt: number;
   bootstrapState: BootstrapState;
+
+  // --- PR A: sidebar filter slices ---
+  /** Free-text filter applied to the sidebar list (name / lastMessage / platform). Already-debounced upstream. */
+  searchQuery: string;
+  /** When set, the All/Assigned/Archive selectors narrow to this platform only. */
+  platformFilter: BetaPlatform | null;
+  /** When true, the sidebar shows the Archive tab data instead of active inbox. */
+  showArchived: boolean;
+  /** Active tab: "all" or "assigned". Tab control lives in the sidebar; persisted here so URL sync (PR G) can read it. */
+  assignmentTab: AssignmentTab;
+  /** Cursor for the conversations list pagination — `null` means we're on page 1 / no more pages. */
+  nextConversationsPage: number | null;
+  /** True while a next-page fetch is in flight (prevents duplicate scrolls firing parallel requests). */
+  isFetchingNextPage: boolean;
 }

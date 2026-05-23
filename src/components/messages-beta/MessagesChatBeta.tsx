@@ -81,7 +81,7 @@ export function MessagesChatBeta({ platforms }: Props) {
   return (
     <MessagesBetaProvider platforms={platforms}>
       <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
-        <MessagesBetaSidebar onSelectChat={handleSelectChat} />
+        <MessagesBetaSidebar onSelectChat={handleSelectChat} platforms={platforms} />
         <MessagesBetaChatBox />
       </div>
     </MessagesBetaProvider>

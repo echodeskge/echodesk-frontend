@@ -33,6 +33,7 @@ export function MessagesBetaProvider({ platforms, children }: Props) {
   const patchAssignment = useMessagesBetaStore((s) => s.patchAssignment);
   const patchArchive = useMessagesBetaStore((s) => s.patchArchive);
   const setWsState = useMessagesBetaStore((s) => s.setWsState);
+  const setNextConversationsPage = useMessagesBetaStore((s) => s.setNextConversationsPage);
   const lastWsActivityAt = useMessagesBetaStore((s) => s.lastWsActivityAt);
 
   // Capture platforms in a ref so the WS handlers see the latest list without
@@ -51,12 +52,13 @@ export function MessagesBetaProvider({ platforms, children }: Props) {
   const runBootstrap = async () => {
     setBootstrapState("loading");
     try {
-      const { rows, assignments, archives } = await fetchInitialConversations({
+      const { rows, assignments, archives, nextPage } = await fetchInitialConversations({
         platforms: platformsRef.current,
       });
       hydrateConversations(rows);
       for (const [chatId, slice] of assignments) patchAssignment(chatId, slice);
       for (const [chatId, meta] of archives) patchArchive(chatId, meta);
+      setNextConversationsPage(nextPage);
       setBootstrapState("ready");
     } catch (err) {
       console.error("[messages-beta] bootstrap failed:", err);

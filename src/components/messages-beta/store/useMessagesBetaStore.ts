@@ -4,6 +4,8 @@ import type { MessageType } from "@/components/chat/types";
 
 import type {
   ArchiveMeta,
+  AssignmentTab,
+  BetaPlatform,
   ChatAssignmentSlice,
   ConversationRow,
   MessagesBetaState,
@@ -68,6 +70,20 @@ export interface MessagesBetaActions {
 
   setWsState: (state: WsState) => void;
   touchWs: () => void;
+
+  // --- PR A: sidebar filter actions ---
+  setSearchQuery: (q: string) => void;
+  setPlatformFilter: (p: BetaPlatform | null) => void;
+  setShowArchived: (v: boolean) => void;
+  setAssignmentTab: (t: AssignmentTab) => void;
+
+  // --- PR A: conversations pagination ---
+  /** Set after a fetch — null means there is no next page. */
+  setNextConversationsPage: (page: number | null) => void;
+  setIsFetchingNextPage: (v: boolean) => void;
+  /** Append more rows from a paginated fetch. Skips rows whose id already
+   *  exists so a re-fetch (e.g. on reconnect) can't double-insert. */
+  appendConversations: (rows: ConversationRow[]) => void;
 }
 
 export type MessagesBetaStore = MessagesBetaState & MessagesBetaActions;
@@ -84,6 +100,14 @@ const initialState: MessagesBetaState = {
   wsState: "idle",
   lastWsActivityAt: 0,
   bootstrapState: "pending",
+
+  // PR A sidebar slices — defaults match the legacy page's initial render.
+  searchQuery: "",
+  platformFilter: null,
+  showArchived: false,
+  assignmentTab: "all",
+  nextConversationsPage: null,
+  isFetchingNextPage: false,
 };
 
 /**
@@ -284,4 +308,34 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
   setWsState: (wsState) => set({ wsState }),
 
   touchWs: () => set({ lastWsActivityAt: Date.now() }),
+
+  // --- PR A: sidebar filter actions ---
+  setSearchQuery: (q) => set({ searchQuery: q }),
+  setPlatformFilter: (p) => set({ platformFilter: p }),
+  setShowArchived: (v) => set({ showArchived: v }),
+  setAssignmentTab: (t) => set({ assignmentTab: t }),
+
+  // --- PR A: conversations pagination ---
+  setNextConversationsPage: (page) => set({ nextConversationsPage: page }),
+  setIsFetchingNextPage: (v) => set({ isFetchingNextPage: v }),
+  appendConversations: (rows) =>
+    set((state) => {
+      if (!rows.length) return {};
+      // Skip rows we already have; merge unread + carry over WS-driven
+      // lastMessage state for rows we've been patching while the next page
+      // was in flight.
+      const existingIds = new Set(state.conversations.map((r) => r.id));
+      const additions = rows.filter((r) => !existingIds.has(r.id));
+      if (!additions.length) return {};
+      const unread = { ...state.unreadByChatId };
+      for (const r of additions) {
+        // Don't clobber an unread count we've been incrementing via WS while
+        // the user was scrolling; only seed when we have nothing yet.
+        if (unread[r.id] == null) unread[r.id] = r.unreadCount;
+      }
+      return {
+        conversations: sortConversations([...state.conversations, ...additions]),
+        unreadByChatId: unread,
+      };
+    }),
 }));

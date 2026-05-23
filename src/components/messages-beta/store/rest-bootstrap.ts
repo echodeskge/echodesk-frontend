@@ -45,26 +45,22 @@ interface PaginatedConversations {
   next: string | null;
 }
 
-/**
- * Fetches the conversation list once and returns it as ConversationRow[] +
- * the assignment / archive slices to seed those store maps in one pass.
- */
-export async function fetchInitialConversations(opts: {
-  platforms: BetaPlatform[];
-  pageSize?: number;
-}): Promise<{
+export interface BetaConversationsPage {
   rows: ConversationRow[];
   assignments: Array<[string, ChatAssignmentSlice | null]>;
   archives: Array<[string, { archivedAt: string; byUserId: number | null } | null]>;
-}> {
-  const params = {
-    page: 1,
-    page_size: opts.pageSize ?? 50,
-    platforms: opts.platforms.join(","),
-  };
-  const response = await axios.get<PaginatedConversations>("/api/social/conversations/", { params });
-  const conversations = response.data?.results ?? [];
+  /** Next page number to request, or null when there are no more pages. */
+  nextPage: number | null;
+}
 
+/**
+ * Pure mapper from an API conversation array to the trio of beta store
+ * slices. Factored out so initial bootstrap + paginated next-page fetches
+ * share the same shape conversion.
+ */
+function mapApiPageToBetaSlices(
+  conversations: ApiUnifiedConversation[]
+): Pick<BetaConversationsPage, "rows" | "assignments" | "archives"> {
   // Lean on the existing adapter for shape consistency with /messages, then
   // narrow to the slim ConversationRow the beta store cares about.
   const chats = convertApiConversationsToChatFormat(
@@ -126,6 +122,44 @@ export async function fetchInitialConversations(opts: {
     ]);
 
   return { rows, assignments, archives };
+}
+
+/**
+ * Fetch ONE page of the conversations list. Used by both the bootstrap
+ * (page 1) and the sidebar's infinite-scroll loader (page 2…N). Returns
+ * `nextPage` so callers know whether to expose a "load more" cue or stop.
+ */
+export async function fetchConversationsPage(opts: {
+  platforms: BetaPlatform[];
+  page?: number;
+  pageSize?: number;
+}): Promise<BetaConversationsPage> {
+  const page = opts.page ?? 1;
+  const pageSize = opts.pageSize ?? 50;
+  const params = {
+    page,
+    page_size: pageSize,
+    platforms: opts.platforms.join(","),
+  };
+  const response = await axios.get<PaginatedConversations>("/api/social/conversations/", { params });
+  const conversations = response.data?.results ?? [];
+  const slices = mapApiPageToBetaSlices(conversations);
+  return {
+    ...slices,
+    nextPage: response.data?.next ? page + 1 : null,
+  };
+}
+
+/**
+ * Backwards-compat entry point — equivalent to `fetchConversationsPage`
+ * with page=1 + the same default pageSize. Kept so existing call sites
+ * in MessagesBetaProvider don't need to change in this PR.
+ */
+export async function fetchInitialConversations(opts: {
+  platforms: BetaPlatform[];
+  pageSize?: number;
+}): Promise<BetaConversationsPage> {
+  return fetchConversationsPage({ ...opts, page: 1 });
 }
 
 interface UnifiedMessagesEnvelope {
