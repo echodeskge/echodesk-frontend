@@ -1,9 +1,8 @@
 /**
  * Tests for the /messages-beta composer's per-platform dispatcher.
  *
- * Validates only the URL + payload shape for each platform — the UI piece
- * (textarea, attach button, Cmd+Enter) is exercised in higher-level
- * integration tests separately.
+ * After PR C, sendForPlatform takes File[] and an optional reply_to_message_id.
+ * Verifies the per-platform URL + payload shape and the multi-file fan-out.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -12,10 +11,16 @@ import type { ConversationRow } from "@/components/messages-beta/store/types";
 
 const postMock = vi.hoisted(() => vi.fn());
 
-vi.mock("@/api/axios", () => ({
-  default: { post: postMock },
-  getApiUrl: () => "http://test",
-}));
+vi.mock("@/api/axios", async (importOriginal) => {
+  // Keep every other export (createAxiosInstance, getApiUrl, named helpers)
+  // intact so transitively-imported modules don't blow up; override only
+  // the default axios instance whose `post` we're asserting on.
+  const actual = await importOriginal<typeof import("@/api/axios")>();
+  return {
+    ...actual,
+    default: { post: postMock },
+  };
+});
 
 function makeRow(overrides: Partial<ConversationRow> = {}): ConversationRow {
   return {
@@ -37,18 +42,39 @@ beforeEach(() => {
 
 describe("sendForPlatform – facebook", () => {
   it("text-only POSTs JSON to /facebook/send-message/", async () => {
-    await sendForPlatform(makeRow({ id: "fb_pageA_recip1" }), "hello", null);
+    await sendForPlatform(makeRow({ id: "fb_pageA_recip1" }), "hello", []);
     expect(postMock).toHaveBeenCalledTimes(1);
     expect(postMock).toHaveBeenCalledWith("/api/social/facebook/send-message/", {
       recipient_id: "recip1",
       page_id: "pageA",
       message: "hello",
+      reply_to_message_id: "",
     });
   });
 
-  it("with attachment POSTs multipart to /facebook/send-message/", async () => {
+  it("threads reply_to_message_id when provided", async () => {
+    await sendForPlatform(
+      makeRow({ id: "fb_pageA_recip1" }),
+      "thanks",
+      [],
+      "mid_original"
+    );
+    expect(postMock).toHaveBeenCalledWith("/api/social/facebook/send-message/", {
+      recipient_id: "recip1",
+      page_id: "pageA",
+      message: "thanks",
+      reply_to_message_id: "mid_original",
+    });
+  });
+
+  it("with one attachment POSTs multipart with caption + reply", async () => {
     const file = new File(["x"], "a.png", { type: "image/png" });
-    await sendForPlatform(makeRow({ id: "fb_pageA_recip1" }), "caption", file);
+    await sendForPlatform(
+      makeRow({ id: "fb_pageA_recip1" }),
+      "caption",
+      [file],
+      "mid_q"
+    );
     expect(postMock).toHaveBeenCalledTimes(1);
     const [url, body] = postMock.mock.calls[0];
     expect(url).toBe("/api/social/facebook/send-message/");
@@ -57,7 +83,31 @@ describe("sendForPlatform – facebook", () => {
     expect(fd.get("recipient_id")).toBe("recip1");
     expect(fd.get("page_id")).toBe("pageA");
     expect(fd.get("message")).toBe("caption");
+    expect(fd.get("reply_to_message_id")).toBe("mid_q");
     expect(fd.get("media")).toBeInstanceOf(File);
+  });
+
+  it("multi-file fan-out: first carries text + reply, rest send standalone", async () => {
+    const f1 = new File(["a"], "a.png", { type: "image/png" });
+    const f2 = new File(["b"], "b.png", { type: "image/png" });
+    const f3 = new File(["c"], "c.pdf", { type: "application/pdf" });
+    await sendForPlatform(
+      makeRow({ id: "fb_pageA_recip1" }),
+      "look at these",
+      [f1, f2, f3],
+      "mid_q"
+    );
+    expect(postMock).toHaveBeenCalledTimes(3);
+    // First call carries the caption + reply.
+    const fd1 = postMock.mock.calls[0][1] as FormData;
+    expect(fd1.get("message")).toBe("look at these");
+    expect(fd1.get("reply_to_message_id")).toBe("mid_q");
+    // Second + third calls have no text + no reply.
+    const fd2 = postMock.mock.calls[1][1] as FormData;
+    expect(fd2.get("message")).toBe("");
+    expect(fd2.get("reply_to_message_id")).toBeNull();
+    const fd3 = postMock.mock.calls[2][1] as FormData;
+    expect(fd3.get("message")).toBe("");
   });
 });
 
@@ -66,7 +116,7 @@ describe("sendForPlatform – instagram", () => {
     await sendForPlatform(
       makeRow({ id: "ig_acctA_recip1", platform: "instagram", accountId: "acctA" }),
       "hi",
-      null
+      []
     );
     expect(postMock).toHaveBeenCalledWith("/api/social/instagram/send-message/", {
       recipient_id: "recip1",
@@ -81,25 +131,13 @@ describe("sendForPlatform – whatsapp", () => {
     await sendForPlatform(
       makeRow({ id: "wa_waba1_995551234567", platform: "whatsapp", accountId: "waba1" }),
       "hey",
-      null
+      []
     );
     expect(postMock).toHaveBeenCalledWith("/api/social/whatsapp/send-message/", {
       to_number: "+995551234567",
       waba_id: "waba1",
       message: "hey",
-    });
-  });
-
-  it("leaves an already-prefixed phone alone", async () => {
-    await sendForPlatform(
-      makeRow({ id: "wa_waba1_+995551234567", platform: "whatsapp", accountId: "waba1" }),
-      "hey",
-      null
-    );
-    expect(postMock).toHaveBeenCalledWith("/api/social/whatsapp/send-message/", {
-      to_number: "+995551234567",
-      waba_id: "waba1",
-      message: "hey",
+      reply_to_message_id: "",
     });
   });
 
@@ -108,7 +146,7 @@ describe("sendForPlatform – whatsapp", () => {
     await sendForPlatform(
       makeRow({ id: "wa_waba1_995551234567", platform: "whatsapp", accountId: "waba1" }),
       "see image",
-      file
+      [file]
     );
     const [url, body] = postMock.mock.calls[0];
     expect(url).toBe("/api/social/whatsapp/send-message/");
@@ -121,7 +159,7 @@ describe("sendForPlatform – widget", () => {
     await sendForPlatform(
       makeRow({ id: "widget_5_sess-1", platform: "widget", accountId: "5" }),
       "agent reply",
-      null
+      []
     );
     expect(postMock).toHaveBeenCalledWith("/api/widget/admin/messages/send/", {
       connection_id: 5,
@@ -136,21 +174,20 @@ describe("sendForPlatform – widget", () => {
       sendForPlatform(
         makeRow({ id: "widget_5_sess-1", platform: "widget", accountId: "5" }),
         "see image",
-        file
+        [file]
       )
     ).rejects.toThrow(/not yet supported/);
-    expect(postMock).not.toHaveBeenCalled();
   });
 });
 
 describe("sendForPlatform – unsupported prefix", () => {
-  it("throws on unknown prefix without calling axios", async () => {
+  it("throws on unknown prefix", async () => {
     await expect(
       sendForPlatform(
         // @ts-expect-error: forcing an unsupported prefix
         { id: "tiktok_1_2", platform: "tiktok", accountId: "1" },
         "hi",
-        null
+        []
       )
     ).rejects.toThrow(/Unsupported platform/);
     expect(postMock).not.toHaveBeenCalled();

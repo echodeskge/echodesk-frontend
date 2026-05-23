@@ -10,6 +10,7 @@
  * them.
  */
 import { parseTimestamp } from "@/lib/parseTimestamp";
+import { consumePendingMedia } from "@/lib/pendingMedia";
 
 import type { MessageType } from "@/components/chat/types";
 
@@ -175,6 +176,49 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
   return msg;
 }
 
+/**
+ * For self-echoed media (our own send bouncing back via new_message), the
+ * platform's CDN URL is often not yet ready in the echo payload — so the
+ * message renders without an attachment URL and looks broken for a beat.
+ *
+ * The composer (PR C) stashes a blob URL via `addPendingMedia(chatId, …)`
+ * BEFORE sending; here we consume that blob URL once on the matching echo
+ * and slot it into the message. Result: the sent image renders instantly
+ * from local memory until the real URL lands, then the lightbox swaps it
+ * on the next list refresh.
+ */
+function applyPendingMediaIfNeeded(
+  chatId: string,
+  message: MessageType,
+  isFromBusiness: boolean
+): void {
+  if (!isFromBusiness) return;
+  const hasImageUrl = message.images?.some((i) => i.url);
+  const hasFileUrl = message.files?.some((f) => f.url);
+  // Only consume pending media when the echo arrived WITHOUT a usable URL.
+  if (hasImageUrl || hasFileUrl) return;
+  const pending = consumePendingMedia(chatId);
+  if (!pending) return;
+  if (pending.isImage) {
+    message.images = [
+      {
+        name: pending.fileName,
+        url: pending.blobUrl,
+        size: 0,
+        type: "image",
+      },
+    ];
+  } else {
+    message.files = [
+      {
+        name: pending.fileName,
+        url: pending.blobUrl,
+        size: 0,
+      },
+    ];
+  }
+}
+
 export function dispatchWsFrame(
   store: MessagesBetaStore,
   frame: WsFrame,
@@ -191,17 +235,21 @@ export function dispatchWsFrame(
       const chatId = buildChatId(messageData, conversationId);
       if (!chatId) return;
 
+      const isFromBusiness =
+        messageData.platform === "widget"
+          ? !messageData.is_from_visitor
+          : messageData.is_from_page || messageData.is_from_business || false;
+
       const message = frameToMessage(messageData);
+      // If this is our own send echoing back, swap in the pending blob URL
+      // for instant-render. Matches legacy MessagesChat behaviour.
+      applyPendingMediaIfNeeded(chatId, message, isFromBusiness);
       const isSelected = store.selectedChatId === chatId;
 
       // Seed metadata so a brand-new sender (no row in the bootstrap list)
       // shows up in the sidebar instantly. The store falls back to these
       // values only when the row doesn't already exist; an existing row
       // is left intact and just gets its lastMessage refreshed.
-      const isFromBusiness =
-        messageData.platform === "widget"
-          ? !messageData.is_from_visitor
-          : messageData.is_from_page || messageData.is_from_business || false;
       const accountId =
         messageData.page_id ||
         messageData.account_id ||

@@ -74,4 +74,9 @@ export interface MessagesBetaState {
   isLoadingFullHistory: boolean;
   /** Free-text query for the in-thread message search bar. */
   messageSearchQuery: string;
+
+  // --- PR C: composer slices ---
+  /** When set, the next send threads through this message_id as a reply
+   *  quote. Cleared on chat change + after a successful send. */
+  replyingTo: { messageId: string; text?: string; senderName?: string } | null;
 }

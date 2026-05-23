@@ -3,7 +3,7 @@
 import { ReactNode, useMemo } from "react";
 
 import { ChatContext } from "@/components/chat/contexts/chat-context";
-import type { ChatContextType, ReplyingToType } from "@/components/chat/types";
+import type { ChatContextType } from "@/components/chat/types";
 
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 
@@ -31,6 +31,10 @@ import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 export function MessagesBetaChatContextShim({ children }: { children: ReactNode }) {
   const messageSearchQuery = useMessagesBetaStore((s) => s.messageSearchQuery);
   const setMessageSearchQuery = useMessagesBetaStore((s) => s.setMessageSearchQuery);
+  // PR C — reply slice is now live on the beta store. Subscribing here
+  // makes MessageBubble's reply button kick the composer into reply mode.
+  const replyingTo = useMessagesBetaStore((s) => s.replyingTo);
+  const setReplyingTo = useMessagesBetaStore((s) => s.setReplyingTo);
 
   const value: ChatContextType = useMemo(() => {
     const noop = () => {
@@ -41,16 +45,7 @@ export function MessagesBetaChatContextShim({ children }: { children: ReactNode 
     };
     // Cast through `unknown` because we're intentionally NOT implementing
     // the chat-state half of the context (the beta page uses its own store
-    // for everything other than the four fields we expose). Components that
-    // try to read chatState here would never have been wired into beta in
-    // the first place.
-    // Reply functionality is wired in PR C. Until then the bubble's reply
-    // button calls a no-op — harmless. When PR C lands this getter/setter
-    // pair becomes reactive via the beta store.
-    const replyingTo: ReplyingToType | null = null;
-    const setReplyingTo = (_next: ReplyingToType | null) => {
-      /* PR C wires this to the beta store */
-    };
+    // for everything other than the slim slices we expose).
     return {
       chatState: { chats: [], selectedChat: null },
       isChatSidebarOpen: false,
@@ -92,7 +87,7 @@ export function MessagesBetaChatContextShim({ children }: { children: ReactNode 
       setSelectedChatId: noop,
     } as unknown as ChatContextType;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messageSearchQuery, setMessageSearchQuery]);
+  }, [messageSearchQuery, setMessageSearchQuery, replyingTo, setReplyingTo]);
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }

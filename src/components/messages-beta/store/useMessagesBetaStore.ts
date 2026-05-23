@@ -91,6 +91,11 @@ export interface MessagesBetaActions {
   setFullHistoryForChat: (chatId: string, messages: MessageType[]) => void;
   setIsLoadingFullHistory: (v: boolean) => void;
   setMessageSearchQuery: (q: string) => void;
+
+  // --- PR C: composer actions ---
+  setReplyingTo: (
+    reply: { messageId: string; text?: string; senderName?: string } | null
+  ) => void;
 }
 
 export type MessagesBetaStore = MessagesBetaState & MessagesBetaActions;
@@ -120,6 +125,9 @@ const initialState: MessagesBetaState = {
   fullHistoryLoadedByChatId: {},
   isLoadingFullHistory: false,
   messageSearchQuery: "",
+
+  // PR C composer slices.
+  replyingTo: null,
 };
 
 /**
@@ -360,4 +368,7 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
     })),
   setIsLoadingFullHistory: (v) => set({ isLoadingFullHistory: v }),
   setMessageSearchQuery: (q) => set({ messageSearchQuery: q }),
+
+  // --- PR C: composer actions ---
+  setReplyingTo: (reply) => set({ replyingTo: reply }),
 }));
