@@ -84,6 +84,13 @@ export interface MessagesBetaActions {
   /** Append more rows from a paginated fetch. Skips rows whose id already
    *  exists so a re-fetch (e.g. on reconnect) can't double-insert. */
   appendConversations: (rows: ConversationRow[]) => void;
+
+  // --- PR B: thread actions ---
+  /** Replace the message list for a chat from a full-history fetch. Also
+   *  flips fullHistoryLoadedByChatId so the "Load older" button hides. */
+  setFullHistoryForChat: (chatId: string, messages: MessageType[]) => void;
+  setIsLoadingFullHistory: (v: boolean) => void;
+  setMessageSearchQuery: (q: string) => void;
 }
 
 export type MessagesBetaStore = MessagesBetaState & MessagesBetaActions;
@@ -108,6 +115,11 @@ const initialState: MessagesBetaState = {
   assignmentTab: "all",
   nextConversationsPage: null,
   isFetchingNextPage: false,
+
+  // PR B thread slices.
+  fullHistoryLoadedByChatId: {},
+  isLoadingFullHistory: false,
+  messageSearchQuery: "",
 };
 
 /**
@@ -338,4 +350,14 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
         unreadByChatId: unread,
       };
     }),
+
+  // --- PR B: thread actions ---
+  setFullHistoryForChat: (chatId, messages) =>
+    set((state) => ({
+      messagesByChatId: { ...state.messagesByChatId, [chatId]: messages },
+      messagesLoaded: { ...state.messagesLoaded, [chatId]: true },
+      fullHistoryLoadedByChatId: { ...state.fullHistoryLoadedByChatId, [chatId]: true },
+    })),
+  setIsLoadingFullHistory: (v) => set({ isLoadingFullHistory: v }),
+  setMessageSearchQuery: (q) => set({ messageSearchQuery: q }),
 }));

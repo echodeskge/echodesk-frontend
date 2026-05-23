@@ -4,12 +4,12 @@ import { useEffect, useMemo, useRef } from "react";
 
 import axios from "@/api/axios";
 import { Card } from "@/components/ui/card";
-import { MessageBubble } from "@/components/chat/message-bubble";
 import type { UserType } from "@/components/chat/types";
 
 import { MessagesBetaComposer } from "../composer/MessagesBetaComposer";
 import { MessagesBetaHeaderActions } from "./MessagesBetaHeaderActions";
-import { selectMessagesForChat } from "../store/selectors";
+import { MessagesBetaThread } from "./MessagesBetaThread";
+import { MessagesBetaChatContextShim } from "../shims/ChatContextShim";
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import { fetchMessagesForChat } from "../store/rest-bootstrap";
 import type { BetaPlatform, ConversationRow } from "../store/types";
@@ -53,7 +53,6 @@ const CURRENT_USER: UserType = {
 export function MessagesBetaChatBox() {
   const selectedChatId = useMessagesBetaStore((s) => s.selectedChatId);
   const conversations = useMessagesBetaStore((s) => s.conversations);
-  const messagesByChatId = useMessagesBetaStore((s) => s.messagesByChatId);
   const messagesLoaded = useMessagesBetaStore((s) => s.messagesLoaded);
   const hydrateMessages = useMessagesBetaStore((s) => s.hydrateMessages);
   const ensureConversationRow = useMessagesBetaStore((s) => s.ensureConversationRow);
@@ -136,13 +135,6 @@ export function MessagesBetaChatBox() {
       });
   }, [conversation, selectedChatId, clearUnreadAction]);
 
-  const messages = selectMessagesForChat({ messagesByChatId }, selectedChatId);
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages.length]);
-
   if (!selectedChatId) {
     return (
       <Card className="grow flex items-center justify-center h-full">
@@ -165,57 +157,26 @@ export function MessagesBetaChatBox() {
     );
   }
 
-  const userMap = new Map<string, UserType>([
-    [CURRENT_USER.id, CURRENT_USER],
-    [conversation.name || "customer", { id: conversation.name, name: conversation.name, status: "online" }],
-  ]);
-
-  const loadingThisChat = !messagesLoaded[selectedChatId];
-
   return (
-    <Card className="grow h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 border-b px-4 py-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
-            {conversation.name?.slice(0, 2).toUpperCase() || "?"}
+    <MessagesBetaChatContextShim>
+      <Card className="grow h-full flex flex-col overflow-hidden">
+        <div className="shrink-0 border-b px-4 py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
+              {conversation.name?.slice(0, 2).toUpperCase() || "?"}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium leading-tight truncate">{conversation.name}</p>
+              <p className="text-[11px] text-muted-foreground capitalize">{conversation.platform}</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-medium leading-tight truncate">{conversation.name}</p>
-            <p className="text-[11px] text-muted-foreground capitalize">{conversation.platform}</p>
-          </div>
+          <MessagesBetaHeaderActions conversation={conversation} />
         </div>
-        <MessagesBetaHeaderActions conversation={conversation} />
-      </div>
 
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-3">
-        {loadingThisChat && (
-          <p className="text-xs text-muted-foreground py-4 text-center">Loading messages…</p>
-        )}
-        {!loadingThisChat && messages.length === 0 && (
-          <p className="text-xs text-muted-foreground py-4 text-center">No messages yet.</p>
-        )}
-        <ul className="flex flex-col gap-y-1.5">
-          {messages.map((message) => {
-            const sender = userMap.get(message.senderId) || {
-              id: message.senderId,
-              name: message.senderName || conversation.name,
-              status: "online",
-            };
-            const isByCurrentUser = message.senderId === CURRENT_USER.id;
-            return (
-              <MessageBubble
-                key={message.id}
-                sender={sender}
-                message={message}
-                isByCurrentUser={isByCurrentUser}
-                platform={conversation.platform}
-              />
-            );
-          })}
-        </ul>
-      </div>
+        <MessagesBetaThread conversation={conversation} currentUser={CURRENT_USER} />
 
-      <MessagesBetaComposer conversation={conversation} />
-    </Card>
+        <MessagesBetaComposer conversation={conversation} />
+      </Card>
+    </MessagesBetaChatContextShim>
   );
 }

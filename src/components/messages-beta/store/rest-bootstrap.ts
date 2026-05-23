@@ -171,11 +171,17 @@ interface UnifiedMessagesEnvelope {
  * step the existing /messages page does on chat select; the beta page only
  * fires this once per chat (the dirty-set / dirty-refetch dance is gone —
  * WS keeps us live after this).
+ *
+ * `fullHistory` swaps the default page_size (50, fast first paint) for a
+ * deeper fetch (500, matches legacy "Load older messages") so the user can
+ * scroll back through the entire thread.
  */
 export async function fetchMessagesForChat(
   chatId: string,
-  platform: BetaPlatform
+  platform: BetaPlatform,
+  options: { fullHistory?: boolean } = {}
 ): Promise<MessageType[]> {
+  const pageSize = options.fullHistory ? 500 : 50;
   // Endpoint shape is platform-specific; for PR2 we cover the social four.
   // Email is excluded from beta page MVP — its endpoint shape differs enough
   // that we want a dedicated PR for it.
@@ -185,7 +191,7 @@ export async function fetchMessagesForChat(
     const pageId = parts[1];
     const senderId = parts.slice(2).join("_");
     const res = await axios.get<UnifiedMessagesEnvelope>("/api/social/facebook-messages/", {
-      params: { page_id: pageId, sender_id: senderId, page_size: 50 },
+      params: { page_id: pageId, sender_id: senderId, page_size: pageSize },
     });
     return convertUnifiedMessagesToMessageType(res.data?.results || []);
   }
@@ -194,7 +200,7 @@ export async function fetchMessagesForChat(
     const accountId = parts[1];
     const senderId = parts.slice(2).join("_");
     const res = await axios.get<UnifiedMessagesEnvelope>("/api/social/instagram-messages/", {
-      params: { account_id: accountId, sender_id: senderId, page_size: 50 },
+      params: { account_id: accountId, sender_id: senderId, page_size: pageSize },
     });
     return convertUnifiedMessagesToMessageType(res.data?.results || []);
   }
@@ -203,7 +209,7 @@ export async function fetchMessagesForChat(
     const wabaId = parts[1];
     const number = parts.slice(2).join("_");
     const res = await axios.get<UnifiedMessagesEnvelope>("/api/social/whatsapp-messages/", {
-      params: { waba_id: wabaId, contact_number: number, page_size: 50 },
+      params: { waba_id: wabaId, contact_number: number, page_size: pageSize },
     });
     return convertUnifiedMessagesToMessageType(res.data?.results || []);
   }
@@ -212,7 +218,7 @@ export async function fetchMessagesForChat(
     const connectionId = parts[1];
     const sessionId = parts.slice(2).join("_");
     const res = await axios.get("/api/widget/admin/messages/", {
-      params: { session_id: sessionId, page_size: 50 },
+      params: { session_id: sessionId, page_size: pageSize },
     });
     const raw = (res.data?.results || res.data || []) as Array<Record<string, unknown>>;
     return convertUnifiedMessagesToMessageType(

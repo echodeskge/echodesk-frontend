@@ -138,6 +138,12 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
     source: messageData.source,
     isEcho: messageData.is_echo,
     sentByName: messageData.sent_by || messageData.sent_by_name,
+    // PR B: reply-quote thread-through. Legacy MessagesChat populates these
+    // fields from the WS payload (MessagesChat.tsx:395-396) so the
+    // MessageBubble's reply-preview UI renders. Keep parity here so quotes
+    // appear on /messages-beta the moment the echo lands.
+    replyToMessageId: messageData.reply_to_message_id,
+    replyToId: messageData.reply_to_id,
   };
 
   if (Array.isArray(messageData.attachments) && messageData.attachments.length > 0) {

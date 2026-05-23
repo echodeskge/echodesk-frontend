@@ -64,4 +64,14 @@ export interface MessagesBetaState {
   nextConversationsPage: number | null;
   /** True while a next-page fetch is in flight (prevents duplicate scrolls firing parallel requests). */
   isFetchingNextPage: boolean;
+
+  // --- PR B: thread slices ---
+  /** chatId → true once the full history has been fetched (deeper than the
+   *  default lazy-load page). Drives the "Load older messages" button's
+   *  visibility + prevents repeat fetches. */
+  fullHistoryLoadedByChatId: Record<string, boolean>;
+  /** True while the deeper-history fetch is in flight for the selected chat. */
+  isLoadingFullHistory: boolean;
+  /** Free-text query for the in-thread message search bar. */
+  messageSearchQuery: string;
 }
