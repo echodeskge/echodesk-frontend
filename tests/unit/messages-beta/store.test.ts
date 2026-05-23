@@ -278,6 +278,23 @@ describe("MessagesBetaStore – session ended", () => {
   });
 });
 
+describe("MessagesBetaStore – showClientPanel (PR E side rail)", () => {
+  it("defaults to false and flips with setShowClientPanel", () => {
+    const s = useMessagesBetaStore.getState();
+    expect(s.showClientPanel).toBe(false);
+    s.setShowClientPanel(true);
+    expect(useMessagesBetaStore.getState().showClientPanel).toBe(true);
+    useMessagesBetaStore.getState().setShowClientPanel(false);
+    expect(useMessagesBetaStore.getState().showClientPanel).toBe(false);
+  });
+
+  it("reset() wipes showClientPanel back to false", () => {
+    useMessagesBetaStore.getState().setShowClientPanel(true);
+    useMessagesBetaStore.getState().reset();
+    expect(useMessagesBetaStore.getState().showClientPanel).toBe(false);
+  });
+});
+
 describe("MessagesBetaStore – removeConversation (PR D delete flow)", () => {
   it("strips the row and every per-chat side slice; deselects if active", () => {
     const s = useMessagesBetaStore.getState();

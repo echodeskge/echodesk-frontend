@@ -79,4 +79,8 @@ export interface MessagesBetaState {
   /** When set, the next send threads through this message_id as a reply
    *  quote. Cleared on chat change + after a successful send. */
   replyingTo: { messageId: string; text?: string; senderName?: string } | null;
+
+  // --- PR E: customer profile side rail ---
+  /** Toggles the legacy ClientDetailPanel mount inside the beta chat box. */
+  showClientPanel: boolean;
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Archive,
   ArchiveRestore,
+  Contact,
   MoreVertical,
   PlayCircle,
   PowerOff,
@@ -69,6 +70,8 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   );
   const wsState = useMessagesBetaStore((s) => s.wsState);
   const setShowArchived = useMessagesBetaStore((s) => s.setShowArchived);
+  const showClientPanel = useMessagesBetaStore((s) => s.showClientPanel);
+  const setShowClientPanel = useMessagesBetaStore((s) => s.setShowClientPanel);
 
   const [busy, setBusy] = useState<"assign" | "unassign" | "archive" | "start" | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
@@ -236,6 +239,18 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           Assigned to {assignmentSlice?.assignedUserName || "another agent"}
         </span>
       )}
+
+      <Button
+        type="button"
+        variant={showClientPanel ? "secondary" : "ghost"}
+        size="sm"
+        onClick={() => setShowClientPanel(!showClientPanel)}
+        aria-label={showClientPanel ? "Hide profile" : "View profile"}
+        aria-pressed={showClientPanel}
+      >
+        <Contact className="h-4 w-4 mr-1" />
+        Profile
+      </Button>
 
       <Button
         type="button"

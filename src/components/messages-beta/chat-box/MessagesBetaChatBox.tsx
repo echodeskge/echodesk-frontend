@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import type { UserType } from "@/components/chat/types";
 
 import { MessagesBetaComposer } from "../composer/MessagesBetaComposer";
+import { MessagesBetaClientRail } from "../client-rail/MessagesBetaClientRail";
 import { MessagesBetaHeaderActions } from "./MessagesBetaHeaderActions";
 import { MessagesBetaThread } from "./MessagesBetaThread";
 import { MessagesBetaChatContextShim } from "../shims/ChatContextShim";
@@ -177,6 +178,12 @@ export function MessagesBetaChatBox() {
 
         <MessagesBetaComposer conversation={conversation} />
       </Card>
+
+      {/* PR E — Customer profile side rail. The legacy ClientDetailPanel is
+          a self-contained Sheet that overlays from the right; mounting it
+          as a sibling to the Card lets it slide in without competing for
+          the chat box's flex space. Beta store owns the open/close flag. */}
+      <MessagesBetaClientRail conversation={conversation} />
     </MessagesBetaChatContextShim>
   );
 }

@@ -101,6 +101,9 @@ export interface MessagesBetaActions {
   setReplyingTo: (
     reply: { messageId: string; text?: string; senderName?: string } | null
   ) => void;
+
+  // --- PR E: customer profile side rail ---
+  setShowClientPanel: (v: boolean) => void;
 }
 
 export type MessagesBetaStore = MessagesBetaState & MessagesBetaActions;
@@ -133,6 +136,9 @@ const initialState: MessagesBetaState = {
 
   // PR C composer slices.
   replyingTo: null,
+
+  // PR E side-rail slice — closed by default; user opens via header toggle.
+  showClientPanel: false,
 };
 
 /**
@@ -397,4 +403,7 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
 
   // --- PR C: composer actions ---
   setReplyingTo: (reply) => set({ replyingTo: reply }),
+
+  // --- PR E: side-rail action ---
+  setShowClientPanel: (v) => set({ showClientPanel: v }),
 }));
