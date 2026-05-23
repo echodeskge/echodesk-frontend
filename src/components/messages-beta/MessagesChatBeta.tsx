@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 
 import { MessagesBetaProvider } from "./MessagesBetaProvider";
@@ -8,6 +8,11 @@ import { MessagesBetaChatBox } from "./chat-box/MessagesBetaChatBox";
 import { MessagesBetaSidebar } from "./sidebar/MessagesBetaSidebar";
 import type { BetaPlatform } from "./store/types";
 import { useMessagesBetaStore } from "./store/useMessagesBetaStore";
+import {
+  readFiltersFromSearch,
+  snapshotsEqual,
+  writeFiltersToSearch,
+} from "./url-state";
 
 interface Props {
   platforms: BetaPlatform[];
@@ -26,6 +31,44 @@ export function MessagesChatBeta({ platforms }: Props) {
   const urlChatId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
   const selectedChatId = useMessagesBetaStore((s) => s.selectedChatId);
   const selectChat = useMessagesBetaStore((s) => s.selectChat);
+
+  // PR G — URL ↔ store sync for filter state (tab / view / platform).
+  const assignmentTab = useMessagesBetaStore((s) => s.assignmentTab);
+  const showArchived = useMessagesBetaStore((s) => s.showArchived);
+  const platformFilter = useMessagesBetaStore((s) => s.platformFilter);
+  const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
+  const setShowArchived = useMessagesBetaStore((s) => s.setShowArchived);
+  const setPlatformFilter = useMessagesBetaStore((s) => s.setPlatformFilter);
+
+  // One-shot hydration from the URL on first mount. We deliberately skip
+  // continuous URL→store mirroring because the store changes during normal
+  // UI interaction (tab clicks, platform picker) and we own the URL push
+  // in the other direction below.
+  const hydratedFromUrlRef = useRef(false);
+  useEffect(() => {
+    if (hydratedFromUrlRef.current) return;
+    hydratedFromUrlRef.current = true;
+    if (typeof window === "undefined") return;
+    const snapshot = readFiltersFromSearch(window.location.search);
+    if (snapshot.assignmentTab !== assignmentTab) setAssignmentTab(snapshot.assignmentTab);
+    if (snapshot.showArchived !== showArchived) setShowArchived(snapshot.showArchived);
+    if (snapshot.platformFilter !== platformFilter) setPlatformFilter(snapshot.platformFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Store → URL whenever the relevant slices change. Uses replaceState so
+  // we don't pile up history entries for every tab click — only the chat
+  // id change (handleSelectChat) creates a new history entry.
+  useEffect(() => {
+    if (!hydratedFromUrlRef.current) return;
+    if (typeof window === "undefined") return;
+    const next = { assignmentTab, showArchived, platformFilter };
+    const currentSnap = readFiltersFromSearch(window.location.search);
+    if (snapshotsEqual(currentSnap, next)) return;
+    const nextSearch = writeFiltersToSearch(window.location.search, next);
+    const url = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`;
+    window.history.replaceState(null, "", url);
+  }, [assignmentTab, showArchived, platformFilter]);
 
   // URL → store sync. Hydrate from the route, but ONLY when the URL has a
   // truthy chat id. Without this guard, the effect fights with sidebar
@@ -67,12 +110,25 @@ export function MessagesChatBeta({ platforms }: Props) {
     [selectChat, pathname, router]
   );
 
-  // Browser back/forward → store sync.
+  // Browser back/forward → store sync. Restores the chat id AND the
+  // filter slices so the prior URL view actually reproduces.
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
       const match = path.match(/\/messages-beta\/(.+)$/);
       selectChat(match ? match[1] : null);
+
+      const snapshot = readFiltersFromSearch(window.location.search);
+      const state = useMessagesBetaStore.getState();
+      if (snapshot.assignmentTab !== state.assignmentTab) {
+        state.setAssignmentTab(snapshot.assignmentTab);
+      }
+      if (snapshot.showArchived !== state.showArchived) {
+        state.setShowArchived(snapshot.showArchived);
+      }
+      if (snapshot.platformFilter !== state.platformFilter) {
+        state.setPlatformFilter(snapshot.platformFilter);
+      }
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
