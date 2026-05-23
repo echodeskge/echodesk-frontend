@@ -68,6 +68,11 @@ export interface MessagesBetaActions {
 
   selectChat: (chatId: string | null) => void;
 
+  /** Drop a conversation locally — used by the delete flow + (PR F) the
+   *  `conversation_deleted` WS handler. Wipes the row, its messages, and
+   *  every per-chat side slice. If the row was selected, deselects it. */
+  removeConversation: (chatId: string) => void;
+
   setWsState: (state: WsState) => void;
   touchWs: () => void;
 
@@ -324,6 +329,27 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
     })),
 
   selectChat: (chatId) => set({ selectedChatId: chatId }),
+
+  removeConversation: (chatId) =>
+    set((state) => {
+      const stripFromRecord = <T,>(rec: Record<string, T>): Record<string, T> => {
+        if (!(chatId in rec)) return rec;
+        const next = { ...rec };
+        delete next[chatId];
+        return next;
+      };
+      return {
+        conversations: state.conversations.filter((row) => row.id !== chatId),
+        messagesByChatId: stripFromRecord(state.messagesByChatId),
+        unreadByChatId: stripFromRecord(state.unreadByChatId),
+        assignmentByChatId: stripFromRecord(state.assignmentByChatId),
+        archivedByChatId: stripFromRecord(state.archivedByChatId),
+        readWatermarkByChatId: stripFromRecord(state.readWatermarkByChatId),
+        messagesLoaded: stripFromRecord(state.messagesLoaded),
+        fullHistoryLoadedByChatId: stripFromRecord(state.fullHistoryLoadedByChatId),
+        selectedChatId: state.selectedChatId === chatId ? null : state.selectedChatId,
+      };
+    }),
 
   setWsState: (wsState) => set({ wsState }),
 

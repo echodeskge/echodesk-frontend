@@ -277,3 +277,40 @@ describe("MessagesBetaStore – session ended", () => {
     expect(row.sessionEndedBy).toBe("visitor");
   });
 });
+
+describe("MessagesBetaStore – removeConversation (PR D delete flow)", () => {
+  it("strips the row and every per-chat side slice; deselects if active", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "a" }), makeRow({ id: "b" })]);
+    s.hydrateMessages("a", []);
+    s.patchAssignment("a", makeAssignment(7));
+    s.patchArchive("a", { archivedAt: "2024-06-01T10:00:00Z", byUserId: 7 });
+    s.setReadWatermark("a", "2024-06-01T10:00:00Z");
+    s.setFullHistoryForChat("a", []);
+    s.setUnread("a", 3);
+    s.selectChat("a");
+
+    s.removeConversation("a");
+
+    const after = useMessagesBetaStore.getState();
+    expect(after.conversations.map((r) => r.id)).toEqual(["b"]);
+    expect(after.messagesByChatId["a"]).toBeUndefined();
+    expect(after.assignmentByChatId["a"]).toBeUndefined();
+    expect(after.archivedByChatId["a"]).toBeUndefined();
+    expect(after.readWatermarkByChatId["a"]).toBeUndefined();
+    expect(after.messagesLoaded["a"]).toBeUndefined();
+    expect(after.fullHistoryLoadedByChatId["a"]).toBeUndefined();
+    expect(after.unreadByChatId["a"]).toBeUndefined();
+    expect(after.selectedChatId).toBeNull();
+  });
+
+  it("leaves selection alone when removing a non-selected chat", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "a" }), makeRow({ id: "b" })]);
+    s.selectChat("b");
+
+    s.removeConversation("a");
+
+    expect(useMessagesBetaStore.getState().selectedChatId).toBe("b");
+  });
+});

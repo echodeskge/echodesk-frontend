@@ -1,54 +1,95 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, UserPlus, UserX } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  MoreVertical,
+  PlayCircle,
+  PowerOff,
+  Trash2,
+  UserPlus,
+  UserX,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import axios from "@/api/axios";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { useStartSession } from "@/hooks/api/useSocial";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import type { ConversationRow } from "../store/types";
+import { MessagesBetaTransferDialog } from "./MessagesBetaTransferDialog";
+import { MessagesBetaEndSessionDialog } from "./MessagesBetaEndSessionDialog";
+import { MessagesBetaDeleteDialog } from "./MessagesBetaDeleteDialog";
 
 interface Props {
   conversation: ConversationRow;
 }
 
 /**
- * Minimal /messages-beta header action strip: Assign to me / Unassign +
- * Archive. Each button POSTs to the same REST endpoint the legacy page
- * uses; the backend's new assignment_update / archive_update broadcasts
- * (PR3) reconcile every other agent's UI without any extra work here.
+ * /messages-beta header actions. Mirrors the legacy chat-header-actions
+ * surface area for the four social platforms (FB / IG / WA / widget):
  *
- * Out of scope for this strip (additive later): Transfer (needs user
- * picker), End session w/ rating flow, Restore from history, full menu.
+ *   • Assign to me / Unassign (inline buttons)
+ *   • Archive / Restore        (inline button — Restore label when archived)
+ *   • Transfer                 (dialog with user picker)
+ *   • Start session            (when assignment.status === 'active')
+ *   • End session              (when assignment.status === 'in_session', or widget)
+ *   • Delete conversation      (admin only — confirm dialog)
+ *
+ * All backend mutations already broadcast the right WS frame (assignment_update
+ * / archive_update / read_state_update — PR3) so the store updates land
+ * cross-user without any extra plumbing here. Delete is the one exception
+ * that needs PR F's `conversation_deleted` broadcast for cross-agent live
+ * removal; locally we strip via `removeConversation`.
+ *
+ * Connection-status dot is rendered to the left of the menu and bound to
+ * `wsState` so agents can spot a broken socket at a glance.
  */
 export function MessagesBetaHeaderActions({ conversation }: Props) {
   const { user } = useAuth();
+  const { data: profile } = useUserProfile();
   const assignmentSlice = useMessagesBetaStore(
     (s) => s.assignmentByChatId[conversation.id] ?? null
   );
   const archiveMeta = useMessagesBetaStore(
     (s) => s.archivedByChatId[conversation.id] ?? null
   );
+  const wsState = useMessagesBetaStore((s) => s.wsState);
+  const setShowArchived = useMessagesBetaStore((s) => s.setShowArchived);
 
-  const [busy, setBusy] = useState<"assign" | "unassign" | "archive" | null>(null);
+  const [busy, setBusy] = useState<"assign" | "unassign" | "archive" | "start" | null>(null);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [endSessionOpen, setEndSessionOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
-  // chatId layout for the three social platforms + widget:
-  //   fb_<page>_<sender>   ig_<account>_<sender>
-  //   wa_<waba>_<number>   widget_<connection>_<session>
-  // The REST endpoints take (platform, conversation_id, account_id) keyed
-  // off the second + remainder underscore segments.
-  const parts = conversation.id.split("_");
-  if (parts.length < 3) return null;
-  const accountId = parts[1];
-  const conversationKey = parts.slice(2).join("_");
+  const startSession = useStartSession();
 
+  const isAdmin = !!profile?.is_staff;
   const isAssignedToMe = !!assignmentSlice && assignmentSlice.assignedUserId === user?.id;
   const isAssignedToOther =
     !!assignmentSlice && assignmentSlice.assignedUserId != null && !isAssignedToMe;
   const isArchived = !!archiveMeta;
+  const isActiveAssignment = assignmentSlice?.status === "active";
+  const isInSession = assignmentSlice?.status === "in_session";
+  const isWidget = conversation.platform === "widget";
+  // Widget conversations always have an implicit session; for the other
+  // platforms we surface End session only after Start session has flipped
+  // the assignment into `in_session`.
+  const canEndSession = isAssignedToMe && (isInSession || isWidget);
+  const canStartSession = isAssignedToMe && isActiveAssignment && !isWidget;
 
   const handleAssignToMe = async () => {
     if (busy) return;
@@ -56,9 +97,27 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
     try {
       await axios.post("/api/social/assignments/assign/", {
         platform: conversation.platform,
-        conversation_id: conversationKey,
-        account_id: accountId,
+        conversation_id: conversation.conversationKey,
+        account_id: conversation.accountId,
       });
+      // Mirror legacy: if the agent assigned from history view, also lift
+      // the archive flag so the chat reappears in their active inbox.
+      if (isArchived) {
+        await axios
+          .post("/api/social/conversations/unarchive/", {
+            conversations: [
+              {
+                platform: conversation.platform,
+                conversation_id: conversation.conversationKey,
+                account_id: conversation.accountId,
+              },
+            ],
+          })
+          .catch(() => {
+            /* archive failure is non-fatal here */
+          });
+        setShowArchived(false);
+      }
       toast.success("Assigned to you");
     } catch (err: any) {
       toast.error(err?.response?.data?.error || "Failed to assign");
@@ -73,8 +132,8 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
     try {
       await axios.post("/api/social/assignments/unassign/", {
         platform: conversation.platform,
-        conversation_id: conversationKey,
-        account_id: accountId,
+        conversation_id: conversation.conversationKey,
+        account_id: conversation.accountId,
       });
       toast.success("Unassigned");
     } catch (err: any) {
@@ -95,8 +154,8 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         conversations: [
           {
             platform: conversation.platform,
-            conversation_id: conversationKey,
-            account_id: accountId,
+            conversation_id: conversation.conversationKey,
+            account_id: conversation.accountId,
           },
         ],
       });
@@ -108,8 +167,46 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
     }
   };
 
+  const handleStartSession = async () => {
+    if (busy) return;
+    setBusy("start");
+    try {
+      await startSession.mutateAsync({
+        platform: conversation.platform,
+        conversation_id: conversation.conversationKey,
+        account_id: conversation.accountId,
+      });
+      toast.success("Session started");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to start session");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const wsDotTitle =
+    wsState === "open"
+      ? "Live connection: connected"
+      : wsState === "connecting" || wsState === "reconnecting"
+      ? "Live connection: reconnecting"
+      : "Live connection: offline";
+
   return (
     <div className="flex items-center gap-1">
+      {/* Connection-status dot — green when WS is open, amber while
+          reconnecting, red when down. Pure presentation, no clicks. */}
+      <span
+        className={cn(
+          "h-2 w-2 rounded-full mr-1 shrink-0",
+          wsState === "open" && "bg-emerald-500",
+          (wsState === "connecting" || wsState === "reconnecting") &&
+            "bg-amber-500 animate-pulse",
+          (wsState === "idle" || wsState === "down") && "bg-rose-500"
+        )}
+        title={wsDotTitle}
+        aria-label={wsDotTitle}
+      />
+
       {!isAssignedToMe && !isAssignedToOther && (
         <Button
           type="button"
@@ -139,6 +236,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           Assigned to {assignmentSlice?.assignedUserName || "another agent"}
         </span>
       )}
+
       <Button
         type="button"
         variant="ghost"
@@ -147,9 +245,78 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         disabled={busy !== null}
         aria-label={isArchived ? "Restore from archive" : "Archive"}
       >
-        <Archive className="h-4 w-4 mr-1" />
-        {isArchived ? "Restore" : "Archive"}
+        {isArchived ? (
+          <>
+            <ArchiveRestore className="h-4 w-4 mr-1" />
+            Restore
+          </>
+        ) : (
+          <>
+            <Archive className="h-4 w-4 mr-1" />
+            Archive
+          </>
+        )}
       </Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label="More actions"
+            className="px-2"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem onSelect={() => setTransferOpen(true)}>
+            <Users className="h-4 w-4 mr-2" />
+            Transfer to teammate
+          </DropdownMenuItem>
+          {canStartSession && (
+            <DropdownMenuItem onSelect={handleStartSession} disabled={busy === "start"}>
+              <PlayCircle className="h-4 w-4 mr-2" />
+              Start session
+            </DropdownMenuItem>
+          )}
+          {canEndSession && (
+            <DropdownMenuItem onSelect={() => setEndSessionOpen(true)}>
+              <PowerOff className="h-4 w-4 mr-2" />
+              End session
+            </DropdownMenuItem>
+          )}
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => setDeleteOpen(true)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete conversation
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <MessagesBetaTransferDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        conversation={conversation}
+      />
+      <MessagesBetaEndSessionDialog
+        open={endSessionOpen}
+        onOpenChange={setEndSessionOpen}
+        conversation={conversation}
+      />
+      <MessagesBetaDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        conversation={conversation}
+      />
     </div>
   );
 }
