@@ -2,8 +2,13 @@
 
 import type { TaskType } from "../types"
 
-import { CardContent, CardDescription, CardTitle } from "@/components/ui/card"
+import { CardContent, CardTitle } from "@/components/ui/card"
 import { MediaGrid } from "@/components/ui/media-grid"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 
 interface KanbanTaskItemContentProps {
   task: TaskType
@@ -24,9 +29,38 @@ export function KanbanTaskItemContent({ task }: KanbanTaskItemContentProps) {
         : ("IMAGE" as const),
     }))
 
+  const description = task.description?.trim() || ""
+  const hasDescription = description.length > 0
+
   return (
     <CardContent>
-      <CardTitle>{task.title}</CardTitle>
+      {hasDescription ? (
+        <HoverCard openDelay={300} closeDelay={100}>
+          <HoverCardTrigger asChild>
+            <div className="cursor-default">
+              <CardTitle className="text-sm leading-snug">
+                {task.title}
+              </CardTitle>
+              <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2 leading-snug whitespace-pre-line">
+                {description}
+              </p>
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent
+            side="top"
+            align="start"
+            className="w-80 max-h-72 overflow-y-auto"
+          >
+            <p className="text-sm font-medium leading-snug">{task.title}</p>
+            <p className="mt-2 text-xs text-muted-foreground whitespace-pre-line">
+              {description}
+            </p>
+          </HoverCardContent>
+        </HoverCard>
+      ) : (
+        <CardTitle className="text-sm leading-snug">{task.title}</CardTitle>
+      )}
+
       {/* Display media grid if there are attachments */}
       {mediaAttachments.length > 0 && (
         <MediaGrid data={mediaAttachments} className="mt-2" />

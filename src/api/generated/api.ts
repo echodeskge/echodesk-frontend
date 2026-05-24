@@ -213,6 +213,7 @@ import type {
   PromoValidateRequestRequest,
   PromoValidateResponse,
   QuickshipperQuoteRequestRequest,
+  QuickshipperQuoteGuestRequestRequest,
   StoreThemeResponse,
   ChangePasswordRequestRequest,
   ChangePasswordResponse,
@@ -4599,9 +4600,20 @@ export async function ecommerceClientOrdersCancelCreate(
   return response.data;
 }
 
+export async function getOrderByPublicToken(token: string): Promise<Order> {
+  const response = await axios.get(
+    `/api/ecommerce/client/orders/by-token/${(() => {
+      const parts = ['token=' + encodeURIComponent(token)].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
 export async function ecommerceClientProductsList(
   attr_Furniture?: string,
   attrColor?: string,
+  attrEbayRefurbishedState?: string,
   attrMaterial?: string,
   attrNumberOfLamps?: string,
   attrSubcategory?: string,
@@ -4623,6 +4635,10 @@ export async function ecommerceClientProductsList(
           ? 'attr_Furniture=' + encodeURIComponent(attr_Furniture)
           : null,
         attrColor ? 'attr_color=' + encodeURIComponent(attrColor) : null,
+        attrEbayRefurbishedState
+          ? 'attr_ebay_refurbished_state=' +
+            encodeURIComponent(attrEbayRefurbishedState)
+          : null,
         attrMaterial
           ? 'attr_material=' + encodeURIComponent(attrMaterial)
           : null,
@@ -4743,6 +4759,16 @@ export async function ecommerceQuickshipperQuote(
 ): Promise<any> {
   const response = await axios.post(
     `/api/ecommerce/client/shipping/quote/`,
+    data,
+  );
+  return response.data;
+}
+
+export async function ecommerceQuickshipperQuoteGuest(
+  data: QuickshipperQuoteGuestRequestRequest,
+): Promise<any> {
+  const response = await axios.post(
+    `/api/ecommerce/client/shipping/quote-guest/`,
     data,
   );
   return response.data;

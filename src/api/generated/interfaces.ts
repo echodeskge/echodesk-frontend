@@ -620,6 +620,10 @@ export interface ChangePasswordResponse {
   message: string;
 }
 
+export interface ChatWidgetConfigResponse {
+  token: string;
+}
+
 export interface ChecklistItem {
   id: number;
   ticket: number;
@@ -792,6 +796,10 @@ export interface DayOfWeekEnum {
   [key: string]: any;
 }
 
+export interface DeliveryMethodEnum {
+  [key: string]: any;
+}
+
 export interface Department {
   id: number;
   name: string;
@@ -904,6 +912,12 @@ export interface EcommerceSettings {
   has_bog_credentials: boolean;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
+  google_ads_conversion_id?: string;
+  google_ads_purchase_label?: string;
+  google_analytics_id?: string;
+  clarity_project_id?: string;
+  google_maps_api_key?: string;
+  allow_pickup?: boolean;
   tbc_client_id?: string;
   tbc_api_key?: string;
   tbc_use_production?: boolean;
@@ -968,6 +982,12 @@ export interface EcommerceSettingsRequest {
   bog_client_secret?: string;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
+  google_ads_conversion_id?: string;
+  google_ads_purchase_label?: string;
+  google_analytics_id?: string;
+  clarity_project_id?: string;
+  google_maps_api_key?: string;
+  allow_pickup?: boolean;
   tbc_client_id?: string;
   tbc_client_secret?: string;
   tbc_api_key?: string;
@@ -2491,6 +2511,7 @@ export interface NullEnum {
 export interface Order {
   id: number;
   order_number: string;
+  public_token: string;
   client: number;
   client_details: string;
   delivery_address: ClientAddress;
@@ -2537,6 +2558,7 @@ export interface OrderCreate {
   quickshipper_parcel_dimensions_id?: number;
   quickshipper_price?: string;
   quickshipper_provider_name?: string;
+  delivery_method?: DeliveryMethodEnum;
 }
 
 export interface OrderCreateRequest {
@@ -2551,6 +2573,7 @@ export interface OrderCreateRequest {
   quickshipper_parcel_dimensions_id?: number;
   quickshipper_price?: string;
   quickshipper_provider_name?: string;
+  delivery_method?: DeliveryMethodEnum;
 }
 
 export interface OrderItem {
@@ -3578,6 +3601,12 @@ export interface PatchedEcommerceSettingsRequest {
   bog_client_secret?: string;
   bog_return_url_success?: string;
   bog_return_url_fail?: string;
+  google_ads_conversion_id?: string;
+  google_ads_purchase_label?: string;
+  google_analytics_id?: string;
+  clarity_project_id?: string;
+  google_maps_api_key?: string;
+  allow_pickup?: boolean;
   tbc_client_id?: string;
   tbc_client_secret?: string;
   tbc_api_key?: string;
@@ -4580,8 +4609,8 @@ export interface ProductDetail {
   compare_at_price?: string;
   cost_price?: string;
   discount_percentage: number;
-  image?: string;
-  images: ProductImage[];
+  image: string;
+  images: string;
   track_inventory?: boolean;
   quantity?: number;
   low_stock_threshold?: number;
@@ -4614,7 +4643,6 @@ export interface ProductDetailRequest {
   price: string;
   compare_at_price?: string;
   cost_price?: string;
-  image?: string;
   track_inventory?: boolean;
   quantity?: number;
   low_stock_threshold?: number;
@@ -4649,7 +4677,8 @@ export interface ProductList {
   price: string;
   compare_at_price?: string;
   discount_percentage: number;
-  image?: string;
+  image: string;
+  images: string;
   quantity?: number;
   status?: StatusF43enum;
   is_featured?: boolean;
@@ -4669,7 +4698,6 @@ export interface ProductListRequest {
   short_description?: any;
   price: string;
   compare_at_price?: string;
-  image?: string;
   quantity?: number;
   status?: StatusF43enum;
   is_featured?: boolean;
@@ -4993,6 +5021,19 @@ export interface QuickReplyRequest {
   shortcut?: string;
   category?: string;
   position?: number;
+}
+
+export interface QuickshipperGuestItemRequest {
+  product_id: number;
+  quantity: number;
+}
+
+export interface QuickshipperQuoteGuestRequestRequest {
+  items: QuickshipperGuestItemRequest[];
+  to_lat: number;
+  to_lng: number;
+  to_street: string;
+  to_city: string;
 }
 
 export interface QuickshipperQuoteRequestRequest {
@@ -5542,6 +5583,7 @@ export interface StoreThemeResponse {
   radius: string;
   store_name: string;
   payment: PaymentConfigResponse;
+  chat_widget: ChatWidgetConfigResponse;
 }
 
 export interface StorefrontTemplateEnum {
@@ -6082,6 +6124,8 @@ export interface TicketFormSubmissionRequest {
 export interface TicketList {
   id: number;
   title: string;
+  description: string;
+  description_format: DescriptionFormatEnum;
   status: string;
   priority: PriorityEnum;
   is_closed: string;
@@ -6260,6 +6304,13 @@ export interface UnifiedConversation {
   account_name: string;
   account_id: string;
   subject?: string;
+  assigned_user_id?: number;
+  assigned_user_name?: string;
+  assignment_status?: string;
+  session_started_at?: string;
+  session_ended_at?: string;
+  is_archived?: boolean;
+  archived_at?: string;
 }
 
 export interface UnifiedConversationPlatformEnum {

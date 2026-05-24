@@ -46,7 +46,11 @@ function convertApiDataToKanbanFormat(kanbanBoardData: KanbanBoard): ColumnType[
         columnId: apiColumn.id.toString(),
         order: ticket.position_in_column || 0,
         title: ticket.title,
-        description: ticket.status || '',
+        // Was set to ticket.status (the workflow column name) which
+        // shadowed the actual ticket body. Use the real field — backend
+        // started returning it on TicketListSerializer in echodesk-back
+        // commit 6080ac6.
+        description: ticket.description || '',
         label: String(ticket.priority || 'low'),
         labels: ticket.tags?.map(tag => ({
           id: tag.id,
