@@ -11,7 +11,6 @@ import {
   PowerOff,
   Trash2,
   UserPlus,
-  UserX,
   Users,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -108,12 +107,11 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
     !!assignmentSlice && assignmentSlice.assignedUserId != null && !isAssignedToMe;
   const isArchived = !!archiveMeta;
   const isActiveAssignment = assignmentSlice?.status === "active";
-  const isInSession = assignmentSlice?.status === "in_session";
   const isWidget = conversation.platform === "widget";
-  // Widget conversations always have an implicit session; for the other
-  // platforms we surface End session only after Start session has flipped
-  // the assignment into `in_session`.
-  const canEndSession = isAssignedToMe && (isInSession || isWidget);
+  // End session is surfaced inline whenever the chat is assigned to me
+  // (assign auto-starts the session, so assigned-to-me always implies an
+  // active session for FB/IG/WA; widget has an implicit session). The
+  // backend rejects an end on a non-session assignment, so this is safe.
   const canStartSession = isAssignedToMe && isActiveAssignment && !isWidget;
 
   const handleAssignToMe = async () => {
@@ -171,31 +169,6 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
       // Roll back the optimistic patch on failure.
       patchAssignment(conversation.id, previousSlice);
       toast.error(err?.response?.data?.error || t("failedToAssign"));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleUnassign = async () => {
-    if (busy) return;
-    setBusy("unassign");
-
-    // Optimistic null-patch — the sidebar selector restores the chat to All
-    // and drops it from Assigned the moment the user clicks.
-    const previousSlice = assignmentSlice;
-    patchAssignment(conversation.id, null);
-    setAssignmentTab("all");
-
-    try {
-      await axios.post("/api/social/assignments/unassign/", {
-        platform: conversation.platform,
-        conversation_id: conversation.conversationKey,
-        account_id: conversation.accountId,
-      });
-      toast.success(t("unassigned"));
-    } catch (err: any) {
-      patchAssignment(conversation.id, previousSlice);
-      toast.error(err?.response?.data?.error || t("failedToUnassign"));
     } finally {
       setBusy(null);
     }
@@ -268,6 +241,16 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
 
   const handleEndedSession = () => {
     registerEndedChat(conversation.id);
+    // End session unassigns AND archives server-side. Optimistically mirror
+    // both so the actor's sidebar moves the chat into History immediately
+    // (the backend's assignment_update + archive_update WS frames reconcile
+    // every other agent). Without the local archive patch the chat would
+    // flash back into the All tab until the archive_update lands.
+    patchAssignment(conversation.id, null);
+    patchArchive(conversation.id, {
+      archivedAt: new Date().toISOString(),
+      byUserId: user?.id ?? null,
+    });
     if (useMessagesBetaStore.getState().selectedChatId === conversation.id) {
       selectChat(null);
     }
@@ -308,16 +291,21 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           {t("assignToMe")}
         </Button>
       )}
+      {/* End session replaces the old Unassign button. It unassigns AND
+          archives the chat (moves it to History) in one action — the
+          product's preferred close flow. Opening the confirm dialog keeps
+          the rating prompt + widget close behaviour intact. */}
       {isAssignedToMe && (
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          onClick={handleUnassign}
+          onClick={() => setEndSessionOpen(true)}
+          onMouseEnter={handleEndSessionHover}
           disabled={busy !== null}
         >
-          <UserX className="h-4 w-4 mr-1" />
-          {t("unassign")}
+          <PowerOff className="h-4 w-4 mr-1" />
+          {t("endSession")}
         </Button>
       )}
       {isAssignedToOther && (
@@ -394,15 +382,8 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
               {t("startSession")}
             </DropdownMenuItem>
           )}
-          {canEndSession && (
-            <DropdownMenuItem
-              onSelect={() => setEndSessionOpen(true)}
-              onMouseEnter={handleEndSessionHover}
-            >
-              <PowerOff className="h-4 w-4 mr-2" />
-              {t("endSession")}
-            </DropdownMenuItem>
-          )}
+          {/* End session lives inline now (replaces the old Unassign
+              button) — not duplicated here. */}
           {isAdmin && (
             <>
               <DropdownMenuSeparator />
