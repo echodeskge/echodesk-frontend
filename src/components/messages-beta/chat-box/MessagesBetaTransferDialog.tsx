@@ -21,6 +21,7 @@ import { useInfiniteUsers } from "@/hooks/api/useUsers";
 import { useTransferChat } from "@/hooks/api/useSocial";
 import { cn } from "@/lib/utils";
 
+import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import type { ConversationRow } from "../store/types";
 
 interface Props {
@@ -68,6 +69,7 @@ export function MessagesBetaTransferDialog({
   }, [open]);
 
   const transferChat = useTransferChat();
+  const patchAssignment = useMessagesBetaStore((s) => s.patchAssignment);
   const usersQuery = useInfiniteUsers({
     enabled: open,
     search: debouncedSearch || undefined,
@@ -96,6 +98,23 @@ export function MessagesBetaTransferDialog({
   };
 
   const handleTransfer = async (targetUserId: number, displayName: string) => {
+    // Optimistic local patch — flips the chat into the target user's
+    // assignment so the actor's Assigned tab drops it immediately. The
+    // backend's `assignment_update` WS broadcast carries the
+    // authoritative state to every other agent.
+    const previousSlice =
+      useMessagesBetaStore.getState().assignmentByChatId[conversation.id] ?? null;
+    patchAssignment(conversation.id, {
+      assignedUserId: targetUserId,
+      assignedUserName: displayName,
+      // Transferring preserves the active session per backend semantics;
+      // we don't know the exact state here, default to "active" which is
+      // safe — the WS frame will correct it within a tick.
+      status: "active",
+      sessionStartedAt: null,
+      sessionEndedAt: null,
+    });
+
     try {
       await transferChat.mutateAsync({
         platform: conversation.platform,
@@ -106,6 +125,8 @@ export function MessagesBetaTransferDialog({
       toast.success(t("transferredTo", { name: displayName }));
       onOpenChange(false);
     } catch (err: any) {
+      // Roll back so the chat reappears in the actor's Assigned tab.
+      patchAssignment(conversation.id, previousSlice);
       toast.error(err?.response?.data?.error || t("failedToTransfer"));
     }
   };

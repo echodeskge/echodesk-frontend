@@ -94,6 +94,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
   const showArchived = useMessagesBetaStore((s) => s.showArchived);
   const setShowArchived = useMessagesBetaStore((s) => s.setShowArchived);
   const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
+  const patchAssignment = useMessagesBetaStore((s) => s.patchAssignment);
   const { data: socialSettings } = useSocialSettings();
   const assignmentEnabled = socialSettings?.chat_assignment_enabled ?? false;
   const isAssigned = !!assignmentSlice && assignmentSlice.assignedUserId != null;
@@ -359,17 +360,31 @@ export function MessagesBetaComposer({ conversation }: Props) {
     }
 
     const handleAssignToMe = async () => {
+      if (!user?.id) return;
+      // Optimistic local patch — match the header's flow so the chat
+      // moves to the Assigned tab on click, without waiting for the WS
+      // `assignment_update` echo.
+      const displayName =
+        [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
+      const previousSlice = assignmentSlice;
+      patchAssignment(conversation.id, {
+        assignedUserId: user.id,
+        assignedUserName: displayName,
+        status: "active",
+        sessionStartedAt: null,
+        sessionEndedAt: null,
+      });
+      setAssignmentTab("assigned");
+      if (showArchived) setShowArchived(false);
+
       try {
         await assignChat.mutateAsync({
           platform: conversation.platform,
           conversation_id: conversation.conversationKey,
           account_id: conversation.accountId,
         });
-        // Switch the user into the Assigned tab so the chat doesn't appear
-        // to vanish (it was filtered out of All by the selector update).
-        setAssignmentTab("assigned");
-        if (showArchived) setShowArchived(false);
       } catch (err: any) {
+        patchAssignment(conversation.id, previousSlice);
         toast.error(err?.response?.data?.error || t("failedToAssign"));
       }
     };

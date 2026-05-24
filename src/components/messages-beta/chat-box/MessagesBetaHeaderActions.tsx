@@ -78,6 +78,9 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const selectChat = useMessagesBetaStore((s) => s.selectChat);
   const showClientPanel = useMessagesBetaStore((s) => s.showClientPanel);
   const setShowClientPanel = useMessagesBetaStore((s) => s.setShowClientPanel);
+  const patchAssignment = useMessagesBetaStore((s) => s.patchAssignment);
+  const patchArchive = useMessagesBetaStore((s) => s.patchArchive);
+  const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
 
   const [busy, setBusy] = useState<"assign" | "unassign" | "archive" | "start" | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
@@ -114,8 +117,31 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const canStartSession = isAssignedToMe && isActiveAssignment && !isWidget;
 
   const handleAssignToMe = async () => {
-    if (busy) return;
+    if (busy || !user?.id) return;
     setBusy("assign");
+
+    // Optimistic local patch — flips the sidebar selector immediately so the
+    // chat moves from All → Assigned without waiting for the WS
+    // `assignment_update` echo. Other agents still get the move via WS.
+    const displayName =
+      [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
+    const previousSlice = assignmentSlice;
+    patchAssignment(conversation.id, {
+      assignedUserId: user.id,
+      assignedUserName: displayName,
+      status: "active",
+      sessionStartedAt: null,
+      sessionEndedAt: null,
+    });
+    // Switch tabs so the user follows the chat into Assigned — without
+    // this the chat appears to vanish (the All tab hides MY chats when
+    // chat_assignment_enabled is on).
+    setAssignmentTab("assigned");
+    if (isArchived) {
+      patchArchive(conversation.id, null);
+      setShowArchived(false);
+    }
+
     try {
       await axios.post("/api/social/assignments/assign/", {
         platform: conversation.platform,
@@ -123,7 +149,8 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         account_id: conversation.accountId,
       });
       // Mirror legacy: if the agent assigned from history view, also lift
-      // the archive flag so the chat reappears in their active inbox.
+      // the archive flag on the server so the chat reappears in their
+      // active inbox after reload too.
       if (isArchived) {
         await axios
           .post("/api/social/conversations/unarchive/", {
@@ -138,10 +165,11 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           .catch(() => {
             /* archive failure is non-fatal here */
           });
-        setShowArchived(false);
       }
       toast.success(t("assignedToYou"));
     } catch (err: any) {
+      // Roll back the optimistic patch on failure.
+      patchAssignment(conversation.id, previousSlice);
       toast.error(err?.response?.data?.error || t("failedToAssign"));
     } finally {
       setBusy(null);
@@ -151,6 +179,13 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const handleUnassign = async () => {
     if (busy) return;
     setBusy("unassign");
+
+    // Optimistic null-patch — the sidebar selector restores the chat to All
+    // and drops it from Assigned the moment the user clicks.
+    const previousSlice = assignmentSlice;
+    patchAssignment(conversation.id, null);
+    setAssignmentTab("all");
+
     try {
       await axios.post("/api/social/assignments/unassign/", {
         platform: conversation.platform,
@@ -159,6 +194,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
       });
       toast.success(t("unassigned"));
     } catch (err: any) {
+      patchAssignment(conversation.id, previousSlice);
       toast.error(err?.response?.data?.error || t("failedToUnassign"));
     } finally {
       setBusy(null);
