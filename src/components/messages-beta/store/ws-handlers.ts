@@ -476,6 +476,38 @@ export function dispatchWsFrame(
       break;
     }
 
+    case "message_status": {
+      // Batch status pip update (delivered / read) on outgoing bubbles.
+      // Backend sends status as 'delivered'|'read'; map to the MessageType
+      // status enum the bubble renders.
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | null | undefined;
+      const conversationId = frame.conversation_id as string | undefined;
+      const messageIds = (frame.message_ids as Array<string | number> | undefined) || [];
+      const raw = frame.status as string | undefined;
+      const status = raw === "read" ? "READ" : raw === "delivered" ? "DELIVERED" : null;
+      if (!conversationId || !status || messageIds.length === 0) break;
+      const targets = resolveStoreChatIds(store, platform, accountId, conversationId);
+      for (const chatId of targets) store.setMessagesStatus(chatId, messageIds, status);
+      break;
+    }
+
+    case "reaction_update": {
+      // Reaction add/remove on a single message. Empty reaction_emoji
+      // clears it. WA matches by platform message id, FB/IG by DB id —
+      // the store action checks both.
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | null | undefined;
+      const conversationId = frame.conversation_id as string | undefined;
+      const messageId = frame.message_id as string | number | undefined;
+      if (!conversationId || messageId == null) break;
+      const targets = resolveStoreChatIds(store, platform, accountId, conversationId);
+      for (const chatId of targets) {
+        store.setMessageReaction(chatId, messageId, (frame.reaction_emoji as string) || "");
+      }
+      break;
+    }
+
     case "connection":
     case "pong":
       break;

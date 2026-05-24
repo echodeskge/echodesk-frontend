@@ -156,6 +156,10 @@ export function useMessagesWebSocket({
             case 'archive_update':
             case 'read_state_update':
             case 'conversation_deleted':
+            // message_status (delivered/read pips) + reaction_update were
+            // also dropped by the default branch before — route them too.
+            case 'message_status':
+            case 'reaction_update':
               onConversationUpdateRef.current?.(data);
               break;
 

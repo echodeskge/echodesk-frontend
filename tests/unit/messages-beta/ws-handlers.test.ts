@@ -628,3 +628,56 @@ describe("dispatchWsFrame – cross-user reactivity end-to-end", () => {
     expect(selectAssignedTabConversations(state, ctx)).toEqual([]);
   });
 });
+
+describe("dispatchWsFrame – message_status + reaction_update", () => {
+  it("message_status read frame upgrades the matching outgoing bubbles' pips", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_pageA_42", platform: "facebook", accountId: "pageA", conversationKey: "42" }),
+    ]);
+    useMessagesBetaStore.getState().hydrateMessages("fb_pageA_42", [
+      { id: "11", senderId: "business", text: "hi", status: "SENT", createdAt: new Date() },
+      { id: "12", senderId: "business", text: "yo", status: "SENT", createdAt: new Date() },
+    ] as never);
+
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "message_status",
+        platform: "facebook",
+        account_id: "pageA",
+        conversation_id: "42",
+        message_ids: ["11"],
+        status: "read",
+      },
+      Array.from(PLATFORMS)
+    );
+
+    const msgs = useMessagesBetaStore.getState().messagesByChatId.fb_pageA_42;
+    expect(msgs.find((m) => m.id === "11")?.status).toBe("READ");
+    expect(msgs.find((m) => m.id === "12")?.status).toBe("SENT");
+  });
+
+  it("reaction_update frame sets the bubble's reactionEmoji", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "wa_w1_995", platform: "whatsapp", accountId: "w1", conversationKey: "995" }),
+    ]);
+    useMessagesBetaStore.getState().hydrateMessages("wa_w1_995", [
+      { id: "1", senderId: "x", text: "hi", status: "DELIVERED", createdAt: new Date(), platformMessageId: "wamid.X" },
+    ] as never);
+
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "reaction_update",
+        platform: "whatsapp",
+        account_id: "w1",
+        conversation_id: "995",
+        message_id: "wamid.X",
+        reaction_emoji: "🔥",
+      },
+      Array.from(PLATFORMS)
+    );
+
+    expect(useMessagesBetaStore.getState().messagesByChatId["wa_w1_995"][0].reactionEmoji).toBe("🔥");
+  });
+});

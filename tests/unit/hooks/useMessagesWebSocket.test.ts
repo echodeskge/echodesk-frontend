@@ -261,6 +261,8 @@ describe("useMessagesWebSocket", () => {
       "archive_update",
       "read_state_update",
       "conversation_deleted",
+      "message_status",
+      "reaction_update",
     ])("routes %s through onConversationUpdate (cross-user reactivity)", (type) => {
       // Regression guard: these four additive event types previously fell
       // through to the no-op `default` branch and were silently dropped,

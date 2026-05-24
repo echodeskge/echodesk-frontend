@@ -424,3 +424,58 @@ describe("MessagesBetaStore – removeConversation (PR D delete flow)", () => {
     expect(useMessagesBetaStore.getState().selectedChatId).toBe("b");
   });
 });
+
+describe("MessagesBetaStore – setMessagesStatus (status pips)", () => {
+  it("upgrades matching messages by id and by platformMessageId", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "c" })]);
+    s.hydrateMessages("c", [
+      { id: "1", senderId: "business", text: "a", status: "SENT", createdAt: new Date(), platformMessageId: "mid_1" },
+      { id: "2", senderId: "business", text: "b", status: "SENT", createdAt: new Date() },
+    ] as any);
+
+    s.setMessagesStatus("c", ["1", "mid_999"], "DELIVERED");
+    s.setMessagesStatus("c", ["mid_1"], "READ"); // match by platformMessageId
+
+    const msgs = useMessagesBetaStore.getState().messagesByChatId.c;
+    expect(msgs.find((m) => m.id === "1")?.status).toBe("READ");
+    // msg 2 untouched.
+    expect(msgs.find((m) => m.id === "2")?.status).toBe("SENT");
+  });
+
+  it("never downgrades (late DELIVERED can't undo READ)", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "c" })]);
+    s.hydrateMessages("c", [
+      { id: "1", senderId: "business", text: "a", status: "READ", createdAt: new Date() },
+    ] as any);
+    s.setMessagesStatus("c", ["1"], "DELIVERED");
+    expect(useMessagesBetaStore.getState().messagesByChatId.c[0].status).toBe("READ");
+  });
+});
+
+describe("MessagesBetaStore – setMessageReaction", () => {
+  it("sets and clears a reaction by id", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "c" })]);
+    s.hydrateMessages("c", [
+      { id: "1", senderId: "x", text: "a", status: "DELIVERED", createdAt: new Date() },
+    ] as any);
+
+    s.setMessageReaction("c", "1", "👍");
+    expect(useMessagesBetaStore.getState().messagesByChatId.c[0].reactionEmoji).toBe("👍");
+
+    s.setMessageReaction("c", "1", ""); // remove
+    expect(useMessagesBetaStore.getState().messagesByChatId.c[0].reactionEmoji).toBeUndefined();
+  });
+
+  it("matches by platformMessageId (WhatsApp path)", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "c" })]);
+    s.hydrateMessages("c", [
+      { id: "1", senderId: "x", text: "a", status: "DELIVERED", createdAt: new Date(), platformMessageId: "wamid.ABC" },
+    ] as any);
+    s.setMessageReaction("c", "wamid.ABC", "❤️");
+    expect(useMessagesBetaStore.getState().messagesByChatId.c[0].reactionEmoji).toBe("❤️");
+  });
+});

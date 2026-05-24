@@ -51,6 +51,13 @@ export interface MessagesBetaActions {
    */
   clearAllUnreadForPlatform: (platform: ConversationRow["platform"]) => void;
   setReadWatermark: (chatId: string, isoTs: string) => void;
+  /** Upgrade the status pip (SENT→DELIVERED→READ) on the matching messages.
+   *  Matches by id OR platformMessageId; never downgrades. Driven by the
+   *  `message_status` WS frame. */
+  setMessagesStatus: (chatId: string, messageIds: Array<string | number>, status: string) => void;
+  /** Set/clear a message's reaction emoji. Empty string clears it. Matches
+   *  by id OR platformMessageId. Driven by the `reaction_update` WS frame. */
+  setMessageReaction: (chatId: string, messageRef: string | number, emoji: string) => void;
   /** Patch the archive slice for every conversation on the given platform.
    * Used to consume `archive_update` frames with conversation_id=null (the
    * bulk archive-all hint).
@@ -311,6 +318,49 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
     set((state) => ({
       readWatermarkByChatId: { ...state.readWatermarkByChatId, [chatId]: isoTs },
     })),
+
+  setMessagesStatus: (chatId, messageIds, status) =>
+    set((state) => {
+      const existing = state.messagesByChatId[chatId];
+      if (!existing || !existing.length) return {};
+      const idSet = new Set(messageIds.map((m) => String(m)));
+      // Rank guard so a late DELIVERED frame can't downgrade a READ pip.
+      const rank: Record<string, number> = { SENT: 0, DELIVERED: 1, READ: 2 };
+      const incomingRank = rank[status] ?? 0;
+      let changed = false;
+      const next = existing.map((m) => {
+        const matches =
+          idSet.has(String(m.id)) ||
+          (m.platformMessageId != null && idSet.has(String(m.platformMessageId)));
+        if (!matches) return m;
+        if ((rank[m.status] ?? 0) >= incomingRank) return m;
+        changed = true;
+        return { ...m, status };
+      });
+      return changed
+        ? { messagesByChatId: { ...state.messagesByChatId, [chatId]: next } }
+        : {};
+    }),
+
+  setMessageReaction: (chatId, messageRef, emoji) =>
+    set((state) => {
+      const existing = state.messagesByChatId[chatId];
+      if (!existing || !existing.length) return {};
+      const ref = String(messageRef);
+      let changed = false;
+      const next = existing.map((m) => {
+        const matches =
+          String(m.id) === ref ||
+          (m.platformMessageId != null && String(m.platformMessageId) === ref);
+        if (!matches) return m;
+        changed = true;
+        const value = emoji || undefined;
+        return { ...m, reactionEmoji: value, reaction: value };
+      });
+      return changed
+        ? { messagesByChatId: { ...state.messagesByChatId, [chatId]: next } }
+        : {};
+    }),
 
   bulkPatchArchiveForPlatform: (platform, archived, archivedAt) =>
     set((state) => {
