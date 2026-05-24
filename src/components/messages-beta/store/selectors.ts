@@ -14,11 +14,13 @@ export interface TabContext {
    *  instead). Mirrors legacy chat-sidebar-list.tsx:62. */
   assignmentEnabled: boolean;
   /** `social_settings.hide_assigned_chats`. When true, the All tab ALSO
-   *  hides chats assigned to OTHER agents (the backend enforces the same
-   *  rule for non-staff REST queries, but a WS broadcast can still
-   *  deliver an other-agent chat into the store mid-session). Mirrors
-   *  views.py:603-628. */
+   *  hides chats assigned to OTHER agents. Admins are exempt — they
+   *  always see every chat regardless of this flag, matching the backend
+   *  `is_superuser or is_staff` carve-out in views.py:5559. */
   hideAssignedChats: boolean;
+  /** True for staff / superuser. Skips the hide_assigned_chats filter so
+   *  admins can audit every conversation in the tenant. */
+  isAdmin: boolean;
 }
 
 /**
@@ -94,7 +96,9 @@ export function selectAllTabConversations(
     if (ctx.assignmentEnabled && isAssignedToMe(state, row.id, ctx.currentUserId)) {
       return false;
     }
-    if (ctx.hideAssignedChats && isAssignedToOther(state, row.id, ctx.currentUserId)) {
+    // Admins always see every chat (parity with backend's non-staff
+    // carve-out in unified_conversations).
+    if (!ctx.isAdmin && ctx.hideAssignedChats && isAssignedToOther(state, row.id, ctx.currentUserId)) {
       return false;
     }
     return matchesSearchAndPlatform(row, search, platformFilter);

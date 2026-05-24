@@ -374,10 +374,16 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuItem onSelect={() => setTransferOpen(true)}>
-            <Users className="h-4 w-4 mr-2" />
-            {t("transferToTeammate")}
-          </DropdownMenuItem>
+          {/* Transfer is admin-only — non-staff agents can only claim
+              chats for themselves (Assign to me) or release them
+              (Unassign). Mirrors the legacy invariant that hand-off
+              decisions belong to supervisors. */}
+          {isAdmin && (
+            <DropdownMenuItem onSelect={() => setTransferOpen(true)}>
+              <Users className="h-4 w-4 mr-2" />
+              {t("transferToTeammate")}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onSelect={handleMarkUnread} disabled={markUnread.isPending}>
             <MailOpen className="h-4 w-4 mr-2" />
             {t("markAsUnread")}

@@ -609,7 +609,7 @@ describe("dispatchWsFrame – cross-user reactivity end-to-end", () => {
     useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_1" })]);
     const ME = 1;
     const TEAMMATE = 2;
-    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: true };
+    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: true, isAdmin: false };
 
     dispatchWsFrame(
       useMessagesBetaStore.getState(),

@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialSettings } from "@/hooks/api/useSocial";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { cn } from "@/lib/utils";
 
 import {
@@ -52,6 +53,7 @@ const INFINITE_SCROLL_THRESHOLD_PX = 100;
 export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   const t = useTranslations("messagesBeta.sidebar");
   const { user } = useAuth();
+  const { data: profile } = useUserProfile();
   const { data: settings } = useSocialSettings();
 
   const selectedChatId = useMessagesBetaStore((s) => s.selectedChatId);
@@ -90,13 +92,18 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
     [setAssignmentTab]
   );
 
+  // Admins (is_staff or is_superuser) bypass the hide_assigned_chats
+  // filter so they can audit every conversation. Matches backend
+  // unified_conversations carve-out (views.py:5559).
+  const isAdmin = !!profile?.is_staff;
   const ctx = useMemo(
     () => ({
       currentUserId: user?.id ?? null,
       assignmentEnabled: settings?.chat_assignment_enabled ?? false,
       hideAssignedChats: settings?.hide_assigned_chats ?? false,
+      isAdmin,
     }),
-    [user?.id, settings?.chat_assignment_enabled, settings?.hide_assigned_chats]
+    [user?.id, settings?.chat_assignment_enabled, settings?.hide_assigned_chats, isAdmin]
   );
 
   const visibleRows = useMemo(() => {
