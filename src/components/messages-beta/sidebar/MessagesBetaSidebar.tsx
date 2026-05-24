@@ -58,6 +58,8 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
 
   const selectedChatId = useMessagesBetaStore((s) => s.selectedChatId);
   const bootstrapState = useMessagesBetaStore((s) => s.bootstrapState);
+  const archivedListState = useMessagesBetaStore((s) => s.archivedListState);
+  const setArchivedListState = useMessagesBetaStore((s) => s.setArchivedListState);
   const assignmentTab = useMessagesBetaStore((s) => s.assignmentTab);
   const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
   const showArchived = useMessagesBetaStore((s) => s.showArchived);
@@ -177,6 +179,50 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
     }
   }, [loadNextPage]);
 
+  // --- Lazy-load the server-side archived (History) list. ---
+  // The bootstrap only fetches the ACTIVE list (the backend hides archived
+  // conversations from it), so the History tab would otherwise show only
+  // chats archived live this session. Fetch the real archived list the
+  // first time the user opens History; live archive_update frames keep it
+  // fresh afterward. Once-per-session — reload to refresh.
+  useEffect(() => {
+    if (!showArchived) return;
+    if (archivedListState !== "pending") return;
+    setArchivedListState("loading");
+    fetchConversationsPage({ platforms: platformsRef.current, archived: true, pageSize: 100 })
+      .then(({ rows, assignments, archives }) => {
+        appendConversations(rows);
+        for (const [chatId, slice] of assignments) {
+          if (useMessagesBetaStore.getState().assignmentByChatId[chatId] === undefined) {
+            patchAssignment(chatId, slice);
+          }
+        }
+        // Every row here is archived — mark it so the History selector
+        // includes it (and the active tabs exclude it). Use the server's
+        // archived_at when present, else stamp now.
+        const archiveMap = new Map(archives);
+        for (const row of rows) {
+          const meta = archiveMap.get(row.id) ?? {
+            archivedAt: new Date().toISOString(),
+            byUserId: null,
+          };
+          patchArchive(row.id, meta);
+        }
+        setArchivedListState("ready");
+      })
+      .catch((err) => {
+        console.warn("[messages-beta] archived-list fetch failed:", err);
+        setArchivedListState("error");
+      });
+  }, [
+    showArchived,
+    archivedListState,
+    setArchivedListState,
+    appendConversations,
+    patchAssignment,
+    patchArchive,
+  ]);
+
   // --- Hover prefetch: warm a chat's messages so click feels instant. ---
   const prefetchedRef = useRef<Set<string>>(new Set());
   const handleHoverPrefetch = useCallback(
@@ -216,22 +262,38 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
           className="flex-1 min-h-0 overflow-auto p-2 space-y-1.5"
           onScroll={handleScroll}
         >
-          {bootstrapState === "loading" && (
-            <p className="text-xs text-muted-foreground p-3">{t("loadingConversations")}</p>
-          )}
-          {bootstrapState === "error" && (
-            <p className="text-xs text-destructive p-3">{t("failedToLoad")}</p>
-          )}
-          {bootstrapState === "ready" && visibleRows.length === 0 && (
-            <p className="text-xs text-muted-foreground p-3">
-              {hasFiltersActive
-                ? t("noConversationsMatch")
-                : tab === "assigned"
-                ? t("noAssignedConversations")
-                : tab === "archive"
-                ? t("noArchivedConversations")
-                : t("noConversationsYet")}
-            </p>
+          {/* In History view the active-list bootstrap state is irrelevant;
+              the archived list has its own load state. */}
+          {tab === "archive" ? (
+            <>
+              {archivedListState === "loading" && (
+                <p className="text-xs text-muted-foreground p-3">{t("loadingConversations")}</p>
+              )}
+              {archivedListState === "error" && (
+                <p className="text-xs text-destructive p-3">{t("failedToLoad")}</p>
+              )}
+              {archivedListState === "ready" && visibleRows.length === 0 && (
+                <p className="text-xs text-muted-foreground p-3">{t("noArchivedConversations")}</p>
+              )}
+            </>
+          ) : (
+            <>
+              {bootstrapState === "loading" && (
+                <p className="text-xs text-muted-foreground p-3">{t("loadingConversations")}</p>
+              )}
+              {bootstrapState === "error" && (
+                <p className="text-xs text-destructive p-3">{t("failedToLoad")}</p>
+              )}
+              {bootstrapState === "ready" && visibleRows.length === 0 && (
+                <p className="text-xs text-muted-foreground p-3">
+                  {hasFiltersActive
+                    ? t("noConversationsMatch")
+                    : tab === "assigned"
+                    ? t("noAssignedConversations")
+                    : t("noConversationsYet")}
+                </p>
+              )}
+            </>
           )}
           {visibleRows.map((row) => {
             const unread = unreadByChatId[row.id] || 0;

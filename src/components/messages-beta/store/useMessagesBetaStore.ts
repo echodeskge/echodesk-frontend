@@ -16,6 +16,7 @@ export interface MessagesBetaActions {
   reset: () => void;
 
   setBootstrapState: (state: MessagesBetaState["bootstrapState"]) => void;
+  setArchivedListState: (state: MessagesBetaState["archivedListState"]) => void;
   /** Bulk-set the conversation list from the REST bootstrap. */
   hydrateConversations: (rows: ConversationRow[]) => void;
   /** Bulk-set the assignment slice; used during bootstrap (REST) and on assignment_update (WS). */
@@ -130,6 +131,7 @@ const initialState: MessagesBetaState = {
   wsState: "idle",
   lastWsActivityAt: 0,
   bootstrapState: "pending",
+  archivedListState: "pending",
 
   // PR A sidebar slices — defaults match the legacy page's initial render.
   searchQuery: "",
@@ -173,6 +175,7 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
   reset: () => set(initialState),
 
   setBootstrapState: (bootstrapState) => set({ bootstrapState }),
+  setArchivedListState: (archivedListState) => set({ archivedListState }),
 
   hydrateConversations: (rows) =>
     set((state) => {

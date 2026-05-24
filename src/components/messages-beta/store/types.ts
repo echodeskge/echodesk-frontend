@@ -50,6 +50,10 @@ export interface MessagesBetaState {
   wsState: WsState;
   lastWsActivityAt: number;
   bootstrapState: BootstrapState;
+  /** Separate load state for the server-side archived (History) list.
+   *  The bootstrap only fetches the active list, so History is fetched
+   *  lazily the first time the user opens it. */
+  archivedListState: BootstrapState;
 
   // --- PR A: sidebar filter slices ---
   /** Free-text filter applied to the sidebar list (name / lastMessage / platform). Already-debounced upstream. */

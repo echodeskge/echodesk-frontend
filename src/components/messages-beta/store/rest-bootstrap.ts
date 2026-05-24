@@ -133,14 +133,20 @@ export async function fetchConversationsPage(opts: {
   platforms: BetaPlatform[];
   page?: number;
   pageSize?: number;
+  /** When true, requests the ARCHIVED (History) list. The backend hides
+   *  archived conversations from the default list, so the History view
+   *  must opt in explicitly — without this the History tab only ever shows
+   *  chats archived live during the current session. */
+  archived?: boolean;
 }): Promise<BetaConversationsPage> {
   const page = opts.page ?? 1;
   const pageSize = opts.pageSize ?? 50;
-  const params = {
+  const params: Record<string, string | number> = {
     page,
     page_size: pageSize,
     platforms: opts.platforms.join(","),
   };
+  if (opts.archived) params.archived = "true";
   const response = await axios.get<PaginatedConversations>("/api/social/conversations/", { params });
   const conversations = response.data?.results ?? [];
   const slices = mapApiPageToBetaSlices(conversations);

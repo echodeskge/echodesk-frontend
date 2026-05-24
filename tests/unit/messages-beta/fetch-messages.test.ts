@@ -61,3 +61,26 @@ describe("fetchMessagesForChat – facebook attribution", () => {
     expect(customerMsg?.senderId).not.toBe("business");
   });
 });
+
+describe("fetchConversationsPage – archived (History) list", () => {
+  it("sends ?archived=true when archived flag is set", async () => {
+    getMock.mockResolvedValue({ data: { results: [], next: null } });
+    const { fetchConversationsPage } = await import(
+      "@/components/messages-beta/store/rest-bootstrap"
+    );
+    await fetchConversationsPage({ platforms: ["facebook"], archived: true, pageSize: 100 });
+    const [, opts] = getMock.mock.calls[getMock.mock.calls.length - 1];
+    expect(opts.params.archived).toBe("true");
+    expect(opts.params.page_size).toBe(100);
+  });
+
+  it("omits archived param for the normal active list", async () => {
+    getMock.mockResolvedValue({ data: { results: [], next: null } });
+    const { fetchConversationsPage } = await import(
+      "@/components/messages-beta/store/rest-bootstrap"
+    );
+    await fetchConversationsPage({ platforms: ["facebook"] });
+    const [, opts] = getMock.mock.calls[getMock.mock.calls.length - 1];
+    expect(opts.params.archived).toBeUndefined();
+  });
+});
