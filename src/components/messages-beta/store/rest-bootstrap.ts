@@ -193,7 +193,18 @@ export async function fetchMessagesForChat(
     const res = await axios.get<UnifiedMessagesEnvelope>("/api/social/facebook-messages/", {
       params: { page_id: pageId, sender_id: senderId, page_size: pageSize },
     });
-    return convertUnifiedMessagesToMessageType(res.data?.results || []);
+    // The /facebook-messages/ endpoint returns FB's native `is_from_page`,
+    // but convertUnifiedMessagesToMessageType reads `is_from_business` to
+    // decide sender attribution. Without this remap, agent-sent messages
+    // (is_from_page=true) lose the business flag and render as INCOMING
+    // (customer side) for every viewer. Mirrors MessagesChat.tsx:632.
+    const rows = ((res.data?.results || []) as Array<Record<string, any>>).map((m) => ({
+      ...m,
+      is_from_business: m.is_from_business ?? m.is_from_page ?? false,
+    }));
+    return convertUnifiedMessagesToMessageType(
+      rows as unknown as Parameters<typeof convertUnifiedMessagesToMessageType>[0]
+    );
   }
 
   if (platform === "instagram" && parts.length >= 3) {
@@ -224,6 +235,10 @@ export async function fetchMessagesForChat(
     const proxied = raw.map((msg) => ({
       ...msg,
       waba_id: wabaId,
+      // WA rows key direction off from_number/to_number, not sender_id —
+      // give the adapter a sender_id so customer-vs-business attribution
+      // resolves (mirrors MessagesChat.tsx:710).
+      sender_id: msg.sender_id ?? (msg.is_from_business ? msg.to_number : msg.from_number),
       attachment_url: msg.attachments?.[0]?.media_id
         ? `${getApiUrl()}/api/social/whatsapp-media/${msg.attachments[0].media_id}/?waba_id=${wabaId}`
         : msg.media_url ?? msg.attachment_url,
