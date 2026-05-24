@@ -121,6 +121,61 @@ describe("dispatchWsFrame – new_message", () => {
     expect(useMessagesBetaStore.getState().unreadByChatId.fb_p_1).toBe(1);
   });
 
+  it("WhatsApp media: rewrites Meta CDN URL through /api/social/whatsapp-media proxy", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "wa_waba1_995551234567", platform: "whatsapp", accountId: "waba1" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "995551234567",
+        message: {
+          id: "m1",
+          platform: "whatsapp",
+          waba_id: "waba1",
+          from_number: "995551234567",
+          attachments: [
+            { type: "image", media_id: "META_MEDIA_999", url: "https://scontent.fbcdn.net/blocked.jpg" },
+          ],
+          timestamp: new Date().toISOString(),
+        },
+      },
+      Array.from(PLATFORMS)
+    );
+    const msgs = useMessagesBetaStore.getState().messagesByChatId.wa_waba1_995551234567;
+    expect(msgs[0].images).toBeDefined();
+    // Proxy URL — not the raw Meta CDN URL.
+    expect(msgs[0].images?.[0].url).toContain("/api/social/whatsapp-media/META_MEDIA_999/?waba_id=waba1");
+    expect(msgs[0].images?.[0].url).not.toContain("scontent.fbcdn.net");
+  });
+
+  it("video attachment lands in images[] with type:'video' (player route in MessageBubble)", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "wa_waba1_995551234567", platform: "whatsapp", accountId: "waba1" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "995551234567",
+        message: {
+          id: "m2",
+          platform: "whatsapp",
+          waba_id: "waba1",
+          from_number: "995551234567",
+          attachments: [{ type: "video", media_id: "VID_42", url: "ignored" }],
+          timestamp: new Date().toISOString(),
+        },
+      },
+      Array.from(PLATFORMS)
+    );
+    const msgs = useMessagesBetaStore.getState().messagesByChatId.wa_waba1_995551234567;
+    const vidMsg = msgs.find((m) => m.id === "m2");
+    expect(vidMsg?.images?.[0].type).toBe("video");
+    expect(vidMsg?.images?.[0].url).toContain("/api/social/whatsapp-media/VID_42/?waba_id=waba1");
+  });
+
   it("does NOT bump unread when the chat is currently selected", () => {
     useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_1" })]);
     useMessagesBetaStore.getState().selectChat("fb_p_1");

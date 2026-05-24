@@ -9,6 +9,7 @@
  * archive_update handlers land in PR3 + PR4 once the backend broadcasts
  * them.
  */
+import { getApiUrl } from "@/api/axios";
 import { parseTimestamp } from "@/lib/parseTimestamp";
 import { consumePendingMedia } from "@/lib/pendingMedia";
 
@@ -124,9 +125,6 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
       ? !messageData.is_from_visitor
       : messageData.is_from_page || messageData.is_from_business || false;
 
-  // For PR2 we render text-only + basic attachments. The full attachment
-  // logic (image proxy URLs, voice messages, file fallbacks) is in
-  // MessagesChat.tsx; we'll port that in PR4 along with the composer.
   const msg: MessageType = {
     id: messageData.id != null ? String(messageData.id) : String(messageData.message_id || ""),
     senderId: isFromBusiness ? "business" : messageData.sender_id || messageData.from_number || "",
@@ -139,37 +137,61 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
     source: messageData.source,
     isEcho: messageData.is_echo,
     sentByName: messageData.sent_by || messageData.sent_by_name,
-    // PR B: reply-quote thread-through. Legacy MessagesChat populates these
-    // fields from the WS payload (MessagesChat.tsx:395-396) so the
-    // MessageBubble's reply-preview UI renders. Keep parity here so quotes
-    // appear on /messages-beta the moment the echo lands.
+    // Reply-quote thread-through (PR B). Legacy MessagesChat populates these
+    // fields from the WS payload so MessageBubble's reply-preview renders.
     replyToMessageId: messageData.reply_to_message_id,
     replyToId: messageData.reply_to_id,
   };
 
-  if (Array.isArray(messageData.attachments) && messageData.attachments.length > 0) {
-    const first = messageData.attachments[0];
-    const type = first?.type || messageData.attachment_type;
-    if (type === "image" || type === "sticker") {
-      msg.images = messageData.attachments
-        .map((att: any) => ({
+  if (
+    (Array.isArray(messageData.attachments) && messageData.attachments.length > 0) ||
+    messageData.attachment_url
+  ) {
+    // WhatsApp media from Meta's CDN is ORB-blocked by browsers; legacy
+    // rewrites attachments through our proxy endpoint here. Mirrors
+    // MessagesChat.tsx:416-507.
+    const wabaId = messageData.waba_id || messageData.account_id;
+    const resolveUrl = (att: any): string | undefined => {
+      if (messageData.platform === "whatsapp" && att?.media_id && wabaId) {
+        return `${getApiUrl()}/api/social/whatsapp-media/${att.media_id}/?waba_id=${wabaId}`;
+      }
+      return att?.url || messageData.attachment_url;
+    };
+
+    const first = messageData.attachments?.[0];
+    const type =
+      first?.type || messageData.attachment_type || messageData.message_type || "";
+    const isImage = type === "image" || type === "sticker";
+    const isAudio = type === "audio";
+    const isVideo = type === "video";
+
+    if (isImage) {
+      const images = (
+        messageData.attachments?.map((att: any) => ({
           name: att?.type || "image",
-          url: att?.url || messageData.attachment_url,
+          url: resolveUrl(att),
           size: 0,
           type: "image",
-        }))
-        .filter((att: { url: unknown }) => att.url);
-    } else if (type === "audio") {
-      const url = first?.url || messageData.attachment_url;
+        })) || [{ name: "image", url: resolveUrl(null), size: 0, type: "image" }]
+      ).filter((img: { url: unknown }) => img.url);
+      if (images.length > 0) msg.images = images;
+    } else if (isAudio) {
+      const url = resolveUrl(first || null);
       if (url) msg.voiceMessage = { name: "audio", url, size: 0 };
+    } else if (isVideo) {
+      const url = resolveUrl(first || null);
+      // Legacy keeps videos in `images[]` with type:'video' so MessageBubble
+      // routes them through the lightbox player (chat-message-content.tsx).
+      if (url) msg.images = [{ name: "video", url, size: 0, type: "video" }];
     } else {
-      msg.files = messageData.attachments
-        .map((att: any) => ({
+      const files = (
+        messageData.attachments?.map((att: any) => ({
           name: att?.filename || "attachment",
-          url: att?.url || messageData.attachment_url,
+          url: resolveUrl(att),
           size: 0,
-        }))
-        .filter((att: { url: unknown }) => att.url);
+        })) || [{ name: "attachment", url: resolveUrl(null), size: 0 }]
+      ).filter((f: { url: unknown }) => f.url);
+      if (files.length > 0) msg.files = files;
     }
   }
 

@@ -5,7 +5,7 @@
  * from the live /messages page's view of the data. After bootstrap, all
  * state updates must come through the WS dispatcher — no polling here.
  */
-import axios from "@/api/axios";
+import axios, { getApiUrl } from "@/api/axios";
 
 import {
   convertApiConversationsToChatFormat,
@@ -207,11 +207,38 @@ export async function fetchMessagesForChat(
 
   if (platform === "whatsapp" && parts.length >= 3) {
     const wabaId = parts[1];
-    const number = parts.slice(2).join("_");
+    const fromNumber = parts.slice(2).join("_");
+    // Backend WhatsAppMessageViewSet expects `from_number` (it filters by
+    // (from_number=… OR to_number=…) bi-directionally). The previous
+    // `contact_number` param silently returned every WA message for the
+    // tenant — confirmed against social_integrations/views.py:7148.
     const res = await axios.get<UnifiedMessagesEnvelope>("/api/social/whatsapp-messages/", {
-      params: { waba_id: wabaId, contact_number: number, page_size: pageSize },
+      params: { waba_id: wabaId, from_number: fromNumber, page_size: pageSize },
     });
-    return convertUnifiedMessagesToMessageType(res.data?.results || []);
+    const raw = (res.data?.results || []) as Array<Record<string, any>>;
+    // WhatsApp media URLs from Meta's CDN are ORB-blocked by browsers, so
+    // rewrite them to our proxy endpoint here (mirrors MessagesChat.tsx:702-734).
+    // The adapter's `convertAttachments` already proxies when `waba_id` is
+    // present on the message object — set it explicitly + transform any
+    // attachment shape inline so both code paths converge.
+    const proxied = raw.map((msg) => ({
+      ...msg,
+      waba_id: wabaId,
+      attachment_url: msg.attachments?.[0]?.media_id
+        ? `${getApiUrl()}/api/social/whatsapp-media/${msg.attachments[0].media_id}/?waba_id=${wabaId}`
+        : msg.media_url ?? msg.attachment_url,
+      attachments: Array.isArray(msg.attachments)
+        ? msg.attachments.map((att: Record<string, any>) => ({
+            ...att,
+            url: att.media_id
+              ? `${getApiUrl()}/api/social/whatsapp-media/${att.media_id}/?waba_id=${wabaId}`
+              : att.url,
+          }))
+        : msg.attachments,
+    }));
+    return convertUnifiedMessagesToMessageType(
+      proxied as unknown as Parameters<typeof convertUnifiedMessagesToMessageType>[0]
+    );
   }
 
   if (platform === "widget" && parts.length >= 3) {
