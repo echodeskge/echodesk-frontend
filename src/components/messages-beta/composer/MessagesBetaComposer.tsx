@@ -18,6 +18,7 @@ import {
   Paperclip,
   Reply,
   Send,
+  UserPlus,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,7 +29,12 @@ import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { QuickReplySelector } from "@/components/social/QuickReplySelector";
 import TemplateSelector from "@/components/social/TemplateSelector";
-import { useSendWhatsAppTemplateMessage } from "@/hooks/api/useSocial";
+import {
+  useAssignChat,
+  useSendWhatsAppTemplateMessage,
+  useSocialSettings,
+  useStartSession,
+} from "@/hooks/api/useSocial";
 import { useTypingWebSocket } from "@/hooks/useTypingWebSocket";
 import { useAuth } from "@/contexts/AuthContext";
 import { addPendingMedia } from "@/lib/pendingMedia";
@@ -77,6 +83,26 @@ export function MessagesBetaComposer({ conversation }: Props) {
   const { user } = useAuth();
   const replyingTo = useMessagesBetaStore((s) => s.replyingTo);
   const setReplyingTo = useMessagesBetaStore((s) => s.setReplyingTo);
+
+  // --- Assignment gating (parity with legacy chat-box-footer-facebook.tsx) ---
+  const assignmentSlice = useMessagesBetaStore(
+    (s) => s.assignmentByChatId[conversation.id] ?? null
+  );
+  const showArchived = useMessagesBetaStore((s) => s.showArchived);
+  const setShowArchived = useMessagesBetaStore((s) => s.setShowArchived);
+  const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
+  const { data: socialSettings } = useSocialSettings();
+  const assignmentEnabled = socialSettings?.chat_assignment_enabled ?? false;
+  const isAssigned = !!assignmentSlice && assignmentSlice.assignedUserId != null;
+  const isAssignedToMe =
+    !!assignmentSlice && assignmentSlice.assignedUserId === user?.id;
+  const isInSession = assignmentSlice?.status === "in_session";
+  // Mirror legacy: send only when assignment mode is off, OR when assigned
+  // to me AND the session is active. `active` (assigned but not started)
+  // and `completed` (waiting for rating) both block sending.
+  const canSendMessages = !assignmentEnabled || (isAssignedToMe && isInSession);
+  const assignChat = useAssignChat();
+  const startSession = useStartSession();
 
   const [text, setText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -292,6 +318,108 @@ export function MessagesBetaComposer({ conversation }: Props) {
         <p className="text-xs text-muted-foreground">
           This conversation has ended. New messages will start a fresh session.
         </p>
+      </div>
+    );
+  }
+
+  // Assignment gating — when assignment mode is on and this user can't send,
+  // render the explanatory CTA stack instead of the composer. Mirrors the
+  // legacy chat-box-footer-facebook.tsx structure 1:1 so behaviour is
+  // identical across pages.
+  if (assignmentEnabled && !canSendMessages) {
+    // History view = read-only audit. Don't surface "Assign to me" here —
+    // legacy explicitly avoids it because assigning silently unarchives
+    // the conversation, which led to accidental reopens of old chats
+    // (amanati, 2026-04-23). The explicit path is "Restore" in the header.
+    if (showArchived) {
+      return (
+        <div className="shrink-0 border-t p-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            This conversation is in history (read-only).
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            To reply, use <span className="font-medium">Restore</span> in the chat header.
+          </p>
+        </div>
+      );
+    }
+
+    const handleAssignToMe = async () => {
+      try {
+        await assignChat.mutateAsync({
+          platform: conversation.platform,
+          conversation_id: conversation.conversationKey,
+          account_id: conversation.accountId,
+        });
+        // Switch the user into the Assigned tab so the chat doesn't appear
+        // to vanish (it was filtered out of All by the selector update).
+        setAssignmentTab("assigned");
+        if (showArchived) setShowArchived(false);
+      } catch (err: any) {
+        toast.error(err?.response?.data?.error || "Failed to assign");
+      }
+    };
+
+    const handleStartNewSession = async () => {
+      try {
+        await startSession.mutateAsync({
+          platform: conversation.platform,
+          conversation_id: conversation.conversationKey,
+          account_id: conversation.accountId,
+        });
+      } catch (err: any) {
+        toast.error(err?.response?.data?.error || "Failed to start session");
+      }
+    };
+
+    return (
+      <div className="shrink-0 border-t p-4 flex flex-col items-center justify-center gap-3 text-center">
+        {!isAssigned && (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Assign this chat to yourself to start messaging
+            </p>
+            <Button
+              type="button"
+              onClick={handleAssignToMe}
+              disabled={assignChat.isPending}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              {assignChat.isPending ? "Assigning…" : "Assign to me"}
+            </Button>
+          </>
+        )}
+
+        {isAssignedToMe && !isInSession && (
+          conversation.platform === "widget" ? (
+            // Widget skips the rating gate — visitor may have closed the
+            // tab, so requiring a rating before reopening would lock the
+            // conversation forever.
+            <>
+              <p className="text-sm text-muted-foreground">Session ended</p>
+              <Button
+                type="button"
+                onClick={handleStartNewSession}
+                disabled={startSession.isPending}
+              >
+                {startSession.isPending ? "Starting…" : "Start new session"}
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Session ended — waiting for customer rating
+            </p>
+          )
+        )}
+
+        {isAssigned && !isAssignedToMe && (
+          <p className="text-sm text-muted-foreground">
+            This chat is assigned to{" "}
+            <span className="font-medium">
+              {assignmentSlice?.assignedUserName || "another agent"}
+            </span>
+          </p>
+        )}
       </div>
     );
   }

@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe("selectors – search + platformFilter (PR A)", () => {
   const ME = 1;
-  const ctx = { currentUserId: ME, hideAssignedChats: false };
+  const ctx = { currentUserId: ME, assignmentEnabled: false, hideAssignedChats: false };
 
   it("All tab: searchQuery matches against name", () => {
     useMessagesBetaStore.getState().hydrateConversations([

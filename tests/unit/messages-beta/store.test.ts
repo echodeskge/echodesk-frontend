@@ -193,7 +193,7 @@ describe("MessagesBetaStore – patchAssignment + cross-user selectors", () => {
     useMessagesBetaStore.getState().patchAssignment("b", makeAssignment(TEAMMATE));
 
     const state = useMessagesBetaStore.getState();
-    const ctx = { currentUserId: ME, hideAssignedChats: true };
+    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: true };
     expect(selectAllTabConversations(state, ctx).map((r) => r.id)).toEqual(["a"]);
   });
 
@@ -204,7 +204,7 @@ describe("MessagesBetaStore – patchAssignment + cross-user selectors", () => {
     ]);
     useMessagesBetaStore.getState().patchAssignment("a", makeAssignment(ME));
     const state = useMessagesBetaStore.getState();
-    const ctx = { currentUserId: ME, hideAssignedChats: true };
+    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: true };
     expect(selectAllTabConversations(state, ctx).map((r) => r.id)).toEqual(["b"]);
   });
 
@@ -217,7 +217,7 @@ describe("MessagesBetaStore – patchAssignment + cross-user selectors", () => {
     useMessagesBetaStore.getState().patchAssignment("a", makeAssignment(ME));
     useMessagesBetaStore.getState().patchAssignment("b", makeAssignment(TEAMMATE));
     const state = useMessagesBetaStore.getState();
-    const ctx = { currentUserId: ME, hideAssignedChats: false };
+    const ctx = { currentUserId: ME, assignmentEnabled: false, hideAssignedChats: false };
     expect(selectAllTabConversations(state, ctx).map((r) => r.id).sort()).toEqual(["a", "b", "c"]);
   });
 
@@ -230,14 +230,14 @@ describe("MessagesBetaStore – patchAssignment + cross-user selectors", () => {
     useMessagesBetaStore.getState().patchAssignment("a", makeAssignment(ME));
     useMessagesBetaStore.getState().patchAssignment("b", makeAssignment(TEAMMATE));
     const state = useMessagesBetaStore.getState();
-    const ctx = { currentUserId: ME, hideAssignedChats: true };
+    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: true };
     expect(selectAssignedTabConversations(state, ctx).map((r) => r.id)).toEqual(["a"]);
   });
 
   it("Cross-user reactivity: patching assignmentByChatId reshuffles teammate's view", () => {
     // Initial state: chat X is unassigned. ME and TEAMMATE both see it in All.
     useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "x" })]);
-    const ctx = { currentUserId: ME, hideAssignedChats: true };
+    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: true };
     expect(selectAllTabConversations(useMessagesBetaStore.getState(), ctx).map((r) => r.id)).toEqual(["x"]);
 
     // TEAMMATE assigns X to themselves. We receive the assignment_update
@@ -254,6 +254,77 @@ describe("MessagesBetaStore – patchAssignment + cross-user selectors", () => {
   });
 });
 
+describe("MessagesBetaStore – assignmentEnabled vs hideAssignedChats (PR I)", () => {
+  const ME = 1;
+  const TEAMMATE = 2;
+
+  it("assignmentEnabled=true alone hides MY chat from All but keeps OTHERS' visible", () => {
+    // chat_assignment_enabled=true, hide_assigned_chats=false → matches the
+    // legacy frontend filter (hide my chats only). Backend still surfaces
+    // others' chats since hide_assigned_chats is off.
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "mine" }),
+      makeRow({ id: "theirs" }),
+      makeRow({ id: "unassigned" }),
+    ]);
+    useMessagesBetaStore.getState().patchAssignment("mine", makeAssignment(ME));
+    useMessagesBetaStore.getState().patchAssignment("theirs", makeAssignment(TEAMMATE));
+    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: false };
+    expect(
+      selectAllTabConversations(useMessagesBetaStore.getState(), ctx)
+        .map((r) => r.id)
+        .sort()
+    ).toEqual(["theirs", "unassigned"]);
+  });
+
+  it("hideAssignedChats=true alone hides OTHERS' chats but keeps MINE visible (defensive: backend should also gate)", () => {
+    // Mostly a defensive shape — in practice hide_assigned_chats implies
+    // chat_assignment_enabled at the settings UI level. But the slices are
+    // independent on the wire, and the selector should match each flag's
+    // semantics 1:1 so a malformed combination doesn't surprise us.
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "mine" }),
+      makeRow({ id: "theirs" }),
+    ]);
+    useMessagesBetaStore.getState().patchAssignment("mine", makeAssignment(ME));
+    useMessagesBetaStore.getState().patchAssignment("theirs", makeAssignment(TEAMMATE));
+    const ctx = { currentUserId: ME, assignmentEnabled: false, hideAssignedChats: true };
+    expect(
+      selectAllTabConversations(useMessagesBetaStore.getState(), ctx).map((r) => r.id)
+    ).toEqual(["mine"]);
+  });
+
+  it("both flags ON: All tab is the unassigned-only intersection", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "mine" }),
+      makeRow({ id: "theirs" }),
+      makeRow({ id: "unassigned" }),
+    ]);
+    useMessagesBetaStore.getState().patchAssignment("mine", makeAssignment(ME));
+    useMessagesBetaStore.getState().patchAssignment("theirs", makeAssignment(TEAMMATE));
+    const ctx = { currentUserId: ME, assignmentEnabled: true, hideAssignedChats: true };
+    expect(
+      selectAllTabConversations(useMessagesBetaStore.getState(), ctx).map((r) => r.id)
+    ).toEqual(["unassigned"]);
+  });
+
+  it("both flags OFF: All tab shows everything regardless of assignment", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "mine" }),
+      makeRow({ id: "theirs" }),
+      makeRow({ id: "unassigned" }),
+    ]);
+    useMessagesBetaStore.getState().patchAssignment("mine", makeAssignment(ME));
+    useMessagesBetaStore.getState().patchAssignment("theirs", makeAssignment(TEAMMATE));
+    const ctx = { currentUserId: ME, assignmentEnabled: false, hideAssignedChats: false };
+    expect(
+      selectAllTabConversations(useMessagesBetaStore.getState(), ctx)
+        .map((r) => r.id)
+        .sort()
+    ).toEqual(["mine", "theirs", "unassigned"]);
+  });
+});
+
 describe("MessagesBetaStore – archive", () => {
   it("Archive tab includes only archived rows; active inbox excludes them", () => {
     useMessagesBetaStore.getState().hydrateConversations([
@@ -262,7 +333,7 @@ describe("MessagesBetaStore – archive", () => {
     ]);
     useMessagesBetaStore.getState().patchArchive("b", { archivedAt: new Date().toISOString(), byUserId: 1 });
     const state = useMessagesBetaStore.getState();
-    const ctx = { currentUserId: 1, hideAssignedChats: false };
+    const ctx = { currentUserId: 1, assignmentEnabled: false, hideAssignedChats: false };
     expect(selectAllTabConversations(state, ctx).map((r) => r.id)).toEqual(["a"]);
     expect(selectArchivedConversations(state).map((r) => r.id)).toEqual(["b"]);
   });

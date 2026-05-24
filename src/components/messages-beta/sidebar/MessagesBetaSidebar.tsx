@@ -91,9 +91,10 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   const ctx = useMemo(
     () => ({
       currentUserId: user?.id ?? null,
+      assignmentEnabled: settings?.chat_assignment_enabled ?? false,
       hideAssignedChats: settings?.hide_assigned_chats ?? false,
     }),
-    [user?.id, settings?.hide_assigned_chats]
+    [user?.id, settings?.chat_assignment_enabled, settings?.hide_assigned_chats]
   );
 
   const visibleRows = useMemo(() => {

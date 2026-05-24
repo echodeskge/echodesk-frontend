@@ -9,6 +9,15 @@ import type { BetaPlatform, ConversationRow, MessagesBetaState } from "./types";
 
 export interface TabContext {
   currentUserId: number | null;
+  /** `social_settings.chat_assignment_enabled`. When true, the All tab
+   *  hides chats already assigned to ME (they live in the Assigned tab
+   *  instead). Mirrors legacy chat-sidebar-list.tsx:62. */
+  assignmentEnabled: boolean;
+  /** `social_settings.hide_assigned_chats`. When true, the All tab ALSO
+   *  hides chats assigned to OTHER agents (the backend enforces the same
+   *  rule for non-staff REST queries, but a WS broadcast can still
+   *  deliver an other-agent chat into the store mid-session). Mirrors
+   *  views.py:603-628. */
   hideAssignedChats: boolean;
 }
 
@@ -79,11 +88,14 @@ export function selectAllTabConversations(
   const platformFilter = state.platformFilter ?? null;
   return state.conversations.filter((row) => {
     if (isArchived(state, row.id)) return false;
-    // When hide_assigned_chats is on, drop chats owned by *other* agents.
-    // Chats owned by me also drop from All (they show in Assigned instead).
-    if (ctx.hideAssignedChats) {
-      if (isAssignedToOther(state, row.id, ctx.currentUserId)) return false;
-      if (isAssignedToMe(state, row.id, ctx.currentUserId)) return false;
+    // Match legacy: when assignment mode is on, MY assigned chats drop
+    // from All (they show in the Assigned tab). This is independent of
+    // hide_assigned_chats, which controls visibility of OTHERS' chats.
+    if (ctx.assignmentEnabled && isAssignedToMe(state, row.id, ctx.currentUserId)) {
+      return false;
+    }
+    if (ctx.hideAssignedChats && isAssignedToOther(state, row.id, ctx.currentUserId)) {
+      return false;
     }
     return matchesSearchAndPlatform(row, search, platformFilter);
   });
