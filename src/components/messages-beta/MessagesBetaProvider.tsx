@@ -46,7 +46,15 @@ export function MessagesBetaProvider({ platforms, children }: Props) {
   // Tracks the last time we were happily on a WS connection. Used by the
   // reconnect-fallback heuristic to decide whether a one-shot REST refresh
   // is needed when we come back online.
+  //
+  // `hasConnectedOnceRef` distinguishes the first successful connect (no
+  // resync needed — we already ran bootstrap on mount) from a real
+  // reconnect after a drop (gap-check decides whether to resync). Without
+  // this split, a connect-drop-reconnect flicker right at page load could
+  // either double-bootstrap (if the initial ref is Date.now) or skip the
+  // resync on the first real reconnect (if the initial ref is 0).
   const lastConnectedAtRef = useRef<number>(0);
+  const hasConnectedOnceRef = useRef(false);
   const RECONNECT_RESYNC_THRESHOLD_MS = 15_000;
 
   const runBootstrap = async () => {
@@ -90,14 +98,20 @@ export function MessagesBetaProvider({ platforms, children }: Props) {
       const now = Date.now();
       if (connected) {
         // Reconnect resync window: if we were disconnected long enough to
-        // miss frames the Channels layer might not have queued, refresh the
-        // list once. (When/if we add cursor replay this branch is deleted.)
-        const lastActivity = useMessagesBetaStore.getState().lastWsActivityAt;
-        const wasConnectedAt = lastConnectedAtRef.current;
-        const referenceTs = Math.max(lastActivity, wasConnectedAt);
-        const gap = referenceTs ? now - referenceTs : 0;
-        if (referenceTs && gap > RECONNECT_RESYNC_THRESHOLD_MS) {
-          void runBootstrap();
+        // miss frames the Channels layer might not have queued, refresh
+        // the list once. (When/if we add cursor replay this branch is
+        // deleted.) Skip on the FIRST connect because the mount-time
+        // bootstrap already covers it.
+        if (hasConnectedOnceRef.current) {
+          const lastActivity = useMessagesBetaStore.getState().lastWsActivityAt;
+          const wasConnectedAt = lastConnectedAtRef.current;
+          const referenceTs = Math.max(lastActivity, wasConnectedAt);
+          const gap = referenceTs ? now - referenceTs : Number.POSITIVE_INFINITY;
+          if (gap > RECONNECT_RESYNC_THRESHOLD_MS) {
+            void runBootstrap();
+          }
+        } else {
+          hasConnectedOnceRef.current = true;
         }
         lastConnectedAtRef.current = now;
         setWsState("open");

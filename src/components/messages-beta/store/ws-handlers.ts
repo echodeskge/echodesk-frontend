@@ -310,23 +310,37 @@ export function dispatchWsFrame(
     }
 
     case "conversation_update": {
-      const conversationId = frame.conversation_id as string | undefined;
+      // Backend can emit `conversation_id` either prefixed (`fb_<page>_<sender>`)
+      // or unprefixed depending on the call site. Resolve to the store's
+      // prefixed chatId(s) before patching so the lastMessage lands on the
+      // right row.
+      const platformConversationId = frame.conversation_id as string | undefined;
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | undefined;
       const last = (frame.last_message as Record<string, any>) || {};
-      if (!conversationId) return;
+      if (!platformConversationId) return;
+      const targets = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      if (targets.length === 0) break;
       if (last.text || last.timestamp) {
-        store.updateLastMessage(
-          conversationId,
-          String(last.text || ""),
-          String(last.timestamp || new Date().toISOString())
-        );
+        for (const chatId of targets) {
+          store.updateLastMessage(
+            chatId,
+            String(last.text || ""),
+            String(last.timestamp || new Date().toISOString())
+          );
+        }
       }
       break;
     }
 
     case "read_receipt": {
-      const conversationId = frame.conversation_id as string | undefined;
+      const platformConversationId = frame.conversation_id as string | undefined;
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | undefined;
       const ts = (frame.timestamp as string | undefined) || new Date().toISOString();
-      if (conversationId) store.setReadWatermark(conversationId, ts);
+      if (!platformConversationId) break;
+      const targets = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      for (const chatId of targets) store.setReadWatermark(chatId, ts);
       break;
     }
 
@@ -337,12 +351,16 @@ export function dispatchWsFrame(
     }
 
     case "session_ended": {
-      const conversationId = frame.conversation_id as string | undefined;
+      const platformConversationId = frame.conversation_id as string | undefined;
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | undefined;
       const endedBy = frame.ended_by as "visitor" | "agent" | "timeout" | undefined;
       const endedAt = (frame.ended_at as string | undefined) || new Date().toISOString();
-      if (conversationId) {
-        store.setSessionEnded(conversationId, endedAt, endedBy ?? null);
-        if (store.selectedChatId === conversationId) {
+      if (!platformConversationId) break;
+      const targets = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      for (const chatId of targets) {
+        store.setSessionEnded(chatId, endedAt, endedBy ?? null);
+        if (store.selectedChatId === chatId) {
           // Match /messages behaviour: drop the user out of the closed chat
           // so they can't compose into a dead session.
           store.selectChat(null);

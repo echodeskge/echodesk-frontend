@@ -220,6 +220,78 @@ describe("dispatchWsFrame – session_ended", () => {
     expect(state.conversations[0].sessionEndedBy).toBe("visitor");
     expect(state.selectedChatId).toBeNull();
   });
+
+  it("routes an UNPREFIXED conversation_id via (platform, account_id) → prefixed store key", () => {
+    // Backend sometimes emits the platform-side conversation key
+    // (sender_id, from_number, session_id) without the prefix the store
+    // uses. The handler must resolve to the prefixed chat id via
+    // (platform, account_id, conversation_id) so the row actually updates.
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "widget_5_sess-abc", platform: "widget", accountId: "5", conversationKey: "sess-abc" }),
+    ]);
+    useMessagesBetaStore.getState().selectChat("widget_5_sess-abc");
+
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "session_ended",
+        conversation_id: "sess-abc",
+        platform: "widget",
+        account_id: "5",
+        ended_by: "agent",
+        ended_at: "2024-06-01T11:30:00Z",
+      },
+      Array.from(PLATFORMS)
+    );
+
+    const state = useMessagesBetaStore.getState();
+    expect(state.conversations[0].sessionEndedAt).toBe("2024-06-01T11:30:00Z");
+    expect(state.conversations[0].sessionEndedBy).toBe("agent");
+    expect(state.selectedChatId).toBeNull();
+  });
+});
+
+describe("dispatchWsFrame – conversation_update + read_receipt routing", () => {
+  it("conversation_update lands on the prefixed chat id from (platform, account_id)", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_pageA_42", platform: "facebook", accountId: "pageA", conversationKey: "42" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "conversation_update",
+        conversation_id: "42",
+        platform: "facebook",
+        account_id: "pageA",
+        last_message: { text: "Patched preview", timestamp: "2024-06-01T12:00:00Z" },
+      },
+      Array.from(PLATFORMS)
+    );
+    const row = useMessagesBetaStore.getState().conversations[0];
+    expect(row.lastMessage?.content).toBe("Patched preview");
+    expect(row.lastMessage?.createdAt).toBe("2024-06-01T12:00:00Z");
+  });
+
+  it("read_receipt watermark lands on prefixed key, not raw conversation_id", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "fb_pageA_42", platform: "facebook", accountId: "pageA", conversationKey: "42" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "read_receipt",
+        conversation_id: "42",
+        platform: "facebook",
+        account_id: "pageA",
+        timestamp: "2024-06-01T12:05:00Z",
+      },
+      Array.from(PLATFORMS)
+    );
+    const watermarks = useMessagesBetaStore.getState().readWatermarkByChatId;
+    expect(watermarks.fb_pageA_42).toBe("2024-06-01T12:05:00Z");
+    // Crucially: NOT keyed by the raw "42".
+    expect(watermarks["42"]).toBeUndefined();
+  });
 });
 
 describe("dispatchWsFrame – unknown types", () => {
