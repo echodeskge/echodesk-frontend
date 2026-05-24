@@ -38,6 +38,7 @@ import {
 import { useTypingWebSocket } from "@/hooks/useTypingWebSocket";
 import { useAuth } from "@/contexts/AuthContext";
 import { addPendingMedia } from "@/lib/pendingMedia";
+import { TextMessageSchema } from "@/components/chat/schemas/text-message-schema";
 import type { WhatsAppMessageTemplate } from "@/api/generated";
 
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
@@ -275,6 +276,19 @@ export function MessagesBetaComposer({ conversation }: Props) {
     const message = text.trim();
     if (!message && files.length === 0) return;
     if (sending) return;
+
+    // Text-only sends go through the same zod schema legacy uses
+    // (chat/schemas/text-message-schema). When attachments are present,
+    // the platform itself enforces the caption rules so the schema is
+    // skipped. Schema enforces non-empty + 5000-char cap; future shape
+    // requirements (per-platform char limits etc.) extend it in one place.
+    if (message && files.length === 0) {
+      const parsed = TextMessageSchema.safeParse({ text: message });
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message || "Invalid message");
+        return;
+      }
+    }
 
     setSending(true);
     try {

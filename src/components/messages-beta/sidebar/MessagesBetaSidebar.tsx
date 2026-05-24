@@ -232,6 +232,7 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
             return (
               <button
                 key={row.id}
+                data-chat-id={row.id}
                 onClick={() => onSelectChat(row.id)}
                 onMouseEnter={() => handleHoverPrefetch(row)}
                 className={cn(

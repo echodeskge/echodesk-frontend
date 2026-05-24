@@ -20,6 +20,7 @@ import axios from "@/api/axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useMarkConversationUnread, useStartSession } from "@/hooks/api/useSocial";
+import { usePrefetchConversations, usePrefetchUnreadCount } from "@/hooks/api/usePrefetchSocial";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -84,6 +85,17 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const startSession = useStartSession();
   const markUnread = useMarkConversationUnread();
   const setUnread = useMessagesBetaStore((s) => s.setUnread);
+
+  // Prefetch the assigned-conversations + unread-count caches when the
+  // user hovers End Session — mirrors legacy chat-box-header.tsx:64-69.
+  // Cuts the perceived latency between clicking End Session and the
+  // sidebar/badge updating once the mutation lands.
+  const prefetchAssignedConversations = usePrefetchConversations("assigned");
+  const prefetchUnread = usePrefetchUnreadCount();
+  const handleEndSessionHover = () => {
+    prefetchAssignedConversations();
+    prefetchUnread();
+  };
 
   const isAdmin = !!profile?.is_staff;
   const isAssignedToMe = !!assignmentSlice && assignmentSlice.assignedUserId === user?.id;
@@ -337,7 +349,10 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
             </DropdownMenuItem>
           )}
           {canEndSession && (
-            <DropdownMenuItem onSelect={() => setEndSessionOpen(true)}>
+            <DropdownMenuItem
+              onSelect={() => setEndSessionOpen(true)}
+              onMouseEnter={handleEndSessionHover}
+            >
               <PowerOff className="h-4 w-4 mr-2" />
               End session
             </DropdownMenuItem>
