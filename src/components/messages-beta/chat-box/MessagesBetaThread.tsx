@@ -181,10 +181,11 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
     map.set(conversation.name || "customer", {
       id: conversation.name,
       name: conversation.name,
+      avatar: conversation.avatar,
       status: "online",
     });
     return map;
-  }, [currentUser, conversation.name]);
+  }, [currentUser, conversation.name, conversation.avatar]);
 
   const loadingThisChat = !messagesLoaded[selectedChatId];
 
@@ -254,16 +255,25 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
 
         <ul className="flex flex-col gap-y-1.5">
           {messages.map((message, idx) => {
-            const sender = userMap.get(message.senderId) || {
-              id: message.senderId,
-              name: message.senderName || conversation.name,
-              status: "online",
-            };
             const isByCurrentUser = message.senderId === currentUser.id;
+            // Fall back to the conversation-level avatar for any customer
+            // sender (incoming) so MessageBubble doesn't render initials
+            // when the row already knows the customer's profile picture.
+            // For business-sent messages we keep currentUser as the sender.
+            const sender =
+              userMap.get(message.senderId) ||
+              (isByCurrentUser
+                ? currentUser
+                : {
+                    id: message.senderId,
+                    name: message.senderName || conversation.name,
+                    avatar: conversation.avatar,
+                    status: "online",
+                  });
             const isHighlighted = matchingIndices[currentMatchIndex] === idx;
             return (
               <MessageBubble
-                key={`${message.id}-${idx}`}
+                key={message.id || `idx-${idx}`}
                 ref={(el) => {
                   if (el) messageRefs.current.set(idx, el);
                   else messageRefs.current.delete(idx);

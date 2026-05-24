@@ -241,9 +241,25 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
                 )}
               >
                 <div className="relative shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                    {row.name?.slice(0, 2).toUpperCase() || "?"}
-                  </div>
+                  {row.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={row.avatar}
+                      alt=""
+                      className="h-10 w-10 rounded-full object-cover bg-muted"
+                      onError={(e) => {
+                        // Customer profile pictures (Meta CDN) sometimes 403
+                        // after their signed URL expires. Hide the broken
+                        // image and fall back to the initials sibling below.
+                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  ) : null}
+                  {!row.avatar && (
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                      {row.name?.slice(0, 2).toUpperCase() || "?"}
+                    </div>
+                  )}
                   <div
                     className={cn(
                       "absolute -bottom-0.5 -right-0.5 rounded-full p-[3px] ring-2 ring-background",

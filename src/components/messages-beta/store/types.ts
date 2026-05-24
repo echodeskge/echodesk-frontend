@@ -83,4 +83,9 @@ export interface MessagesBetaState {
   // --- PR E: customer profile side rail ---
   /** Toggles the legacy ClientDetailPanel mount inside the beta chat box. */
   showClientPanel: boolean;
+
+  // --- Mobile sidebar drawer (parity with chat-sidebar/index.tsx Sheet) ---
+  /** Open state for the slide-in sidebar drawer on screens < md. Desktop
+   *  ignores this — sidebar is always visible there. */
+  isMobileSidebarOpen: boolean;
 }

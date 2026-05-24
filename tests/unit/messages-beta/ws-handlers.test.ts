@@ -384,6 +384,71 @@ describe("dispatchWsFrame – archive_update", () => {
   });
 });
 
+describe("dispatchWsFrame – end-session block window (60s)", () => {
+  it("suppresses a new_message echo that would fabricate a row for a recently-ended chat", async () => {
+    const { registerEndedChat, _resetEndSessionBlockRegistry } = await import(
+      "@/components/messages-beta/end-session-block"
+    );
+    _resetEndSessionBlockRegistry();
+
+    // Pre-condition: the chat is NOT in the conversation list (legacy
+    // simulates the End Session having already stripped the row + the
+    // server-side archive having propagated).
+    useMessagesBetaStore.getState().hydrateConversations([]);
+    registerEndedChat("fb_p_999");
+
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "999",
+        message: {
+          id: "rating_request",
+          platform: "facebook",
+          page_id: "p",
+          sender_id: "999",
+          message_text: "Thanks for chatting! How would you rate us?",
+          is_from_page: true,
+          timestamp: new Date().toISOString(),
+        },
+      },
+      Array.from(PLATFORMS)
+    );
+    expect(useMessagesBetaStore.getState().conversations).toEqual([]);
+    expect(useMessagesBetaStore.getState().messagesByChatId.fb_p_999).toBeUndefined();
+  });
+
+  it("still appends to an existing row even within the block window (chat re-resurrected by an in-flight reply is OK)", async () => {
+    const { registerEndedChat, _resetEndSessionBlockRegistry } = await import(
+      "@/components/messages-beta/end-session-block"
+    );
+    _resetEndSessionBlockRegistry();
+
+    useMessagesBetaStore.getState().hydrateConversations([makeRow({ id: "fb_p_999" })]);
+    registerEndedChat("fb_p_999");
+
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "999",
+        message: {
+          id: "m_late",
+          platform: "facebook",
+          page_id: "p",
+          sender_id: "999",
+          message_text: "wait one more thing",
+          timestamp: new Date().toISOString(),
+        },
+      },
+      Array.from(PLATFORMS)
+    );
+    // Existing row → block doesn't suppress; legacy treats this as the
+    // customer continuing the conversation past end-session.
+    expect(useMessagesBetaStore.getState().messagesByChatId.fb_p_999).toHaveLength(1);
+  });
+});
+
 describe("dispatchWsFrame – conversation_deleted (PR F)", () => {
   it("per-chat frame removes the matching row and leaves siblings alone", () => {
     useMessagesBetaStore.getState().hydrateConversations([

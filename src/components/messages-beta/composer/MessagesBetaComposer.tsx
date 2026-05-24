@@ -304,10 +304,14 @@ export function MessagesBetaComposer({ conversation }: Props) {
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
-        void submit();
-      }
+      // Match legacy text-message-form-facebook.tsx behaviour: plain Enter
+      // sends, Shift+Enter inserts a newline. Cmd/Ctrl+Enter also sends as
+      // a power-user shortcut. Every existing user has muscle memory for
+      // Enter-to-send, so reversing it on /messages-beta caused complaints.
+      if (e.key !== "Enter") return;
+      if (e.shiftKey) return; // newline
+      e.preventDefault();
+      void submit();
     },
     [submit]
   );

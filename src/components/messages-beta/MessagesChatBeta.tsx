@@ -1,7 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
+import { useMedia } from "react-use";
+
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 import { MessagesBetaProvider } from "./MessagesBetaProvider";
 import { MessagesBetaChatBox } from "./chat-box/MessagesBetaChatBox";
@@ -134,10 +143,47 @@ export function MessagesChatBeta({ platforms }: Props) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [selectChat]);
 
+  // Mobile sidebar drawer wiring (mirrors chat-sidebar/index.tsx). On
+  // screens < md we hide the inline sidebar and surface it via a slide-in
+  // Sheet; the chat box's hamburger opens it, selecting a chat closes it.
+  // `useMedia` returns false during SSR; ssr-fallback to desktop layout to
+  // avoid hydration mismatch flicker.
+  const isMobile = useMedia("(max-width: 767px)", false);
+  const isMobileSidebarOpen = useMessagesBetaStore((s) => s.isMobileSidebarOpen);
+  const setIsMobileSidebarOpen = useMessagesBetaStore((s) => s.setIsMobileSidebarOpen);
+
+  const handleSelectChatAndClose = useCallback(
+    (chatId: string) => {
+      handleSelectChat(chatId);
+      // Auto-close the drawer on mobile so the user lands directly in the
+      // chat — same UX as the legacy page.
+      if (isMobile) setIsMobileSidebarOpen(false);
+    },
+    [handleSelectChat, isMobile, setIsMobileSidebarOpen]
+  );
+
   return (
     <MessagesBetaProvider platforms={platforms}>
       <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
-        <MessagesBetaSidebar onSelectChat={handleSelectChat} platforms={platforms} />
+        {!isMobile && (
+          <MessagesBetaSidebar onSelectChat={handleSelectChatAndClose} platforms={platforms} />
+        )}
+        {isMobile && (
+          <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+            <SheetContent side="left" className="p-0 w-[90vw] max-w-sm">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Conversations</SheetTitle>
+                <SheetDescription>Pick a conversation to read or reply.</SheetDescription>
+              </SheetHeader>
+              <div className="h-full">
+                <MessagesBetaSidebar
+                  onSelectChat={handleSelectChatAndClose}
+                  platforms={platforms}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
         <MessagesBetaChatBox />
       </div>
     </MessagesBetaProvider>

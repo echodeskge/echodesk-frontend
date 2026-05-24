@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
+import { Menu } from "lucide-react";
+
 import axios from "@/api/axios";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { UserType } from "@/components/chat/types";
 
@@ -138,8 +141,24 @@ export function MessagesBetaChatBox() {
 
   if (!selectedChatId) {
     return (
-      <Card className="grow flex items-center justify-center h-full">
-        <p className="text-sm text-muted-foreground">Select a conversation to start reading.</p>
+      <Card className="grow flex flex-col items-center justify-center h-full gap-3 p-4">
+        <p className="text-sm text-muted-foreground text-center">
+          Select a conversation to start reading.
+        </p>
+        {/* Mobile: when the sidebar lives in a Sheet, the empty state needs
+            its own opener — otherwise the user is stranded on a blank card
+            with no nav. Desktop's persistent sidebar is right there so we
+            hide this. */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="md:hidden"
+          onClick={() => useMessagesBetaStore.getState().setIsMobileSidebarOpen(true)}
+        >
+          <Menu className="h-4 w-4 mr-2" />
+          Open conversations
+        </Button>
       </Card>
     );
   }
@@ -163,9 +182,33 @@ export function MessagesBetaChatBox() {
       <Card className="grow h-full flex flex-col overflow-hidden">
         <div className="shrink-0 border-b px-4 py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
-              {conversation.name?.slice(0, 2).toUpperCase() || "?"}
-            </div>
+            {/* Mobile-only hamburger — opens the sidebar drawer. Desktop's
+                persistent sidebar is always visible so the button hides. */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="md:hidden shrink-0"
+              aria-label="Open conversations"
+              onClick={() => useMessagesBetaStore.getState().setIsMobileSidebarOpen(true)}
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+            {conversation.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={conversation.avatar}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover bg-muted shrink-0"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium shrink-0">
+                {conversation.name?.slice(0, 2).toUpperCase() || "?"}
+              </div>
+            )}
             <div className="min-w-0">
               <p className="text-sm font-medium leading-tight truncate">{conversation.name}</p>
               <p className="text-[11px] text-muted-foreground capitalize">{conversation.platform}</p>

@@ -104,6 +104,9 @@ export interface MessagesBetaActions {
 
   // --- PR E: customer profile side rail ---
   setShowClientPanel: (v: boolean) => void;
+
+  // --- Mobile sidebar drawer ---
+  setIsMobileSidebarOpen: (v: boolean) => void;
 }
 
 export type MessagesBetaStore = MessagesBetaState & MessagesBetaActions;
@@ -139,6 +142,9 @@ const initialState: MessagesBetaState = {
 
   // PR E side-rail slice — closed by default; user opens via header toggle.
   showClientPanel: false,
+
+  // Mobile sidebar drawer — closed by default; opens via hamburger.
+  isMobileSidebarOpen: false,
 };
 
 /**
@@ -406,4 +412,7 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
 
   // --- PR E: side-rail action ---
   setShowClientPanel: (v) => set({ showClientPanel: v }),
+
+  // --- Mobile sidebar drawer ---
+  setIsMobileSidebarOpen: (v) => set({ isMobileSidebarOpen: v }),
 }));

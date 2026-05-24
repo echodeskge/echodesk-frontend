@@ -13,6 +13,8 @@ import { getApiUrl } from "@/api/axios";
 import { parseTimestamp } from "@/lib/parseTimestamp";
 import { consumePendingMedia } from "@/lib/pendingMedia";
 
+import { isInEndSessionBlockWindow } from "../end-session-block";
+
 import type { MessageType } from "@/components/chat/types";
 
 import type { MessagesBetaStore } from "./useMessagesBetaStore";
@@ -256,6 +258,19 @@ export function dispatchWsFrame(
 
       const chatId = buildChatId(messageData, conversationId);
       if (!chatId) return;
+
+      // End-session block window: legacy MessagesChat.tsx:270-330. When an
+      // agent just ended a session, the backend sends a rating-request
+      // `new_message` back to the customer. Without this guard, the echo
+      // would re-fabricate a row in the sidebar for the now-archived chat
+      // and it would briefly appear in the All tab until `archive_update`
+      // lands. 60s is the legacy threshold.
+      if (
+        isInEndSessionBlockWindow(chatId) &&
+        !store.conversations.some((r) => r.id === chatId)
+      ) {
+        return;
+      }
 
       const isFromBusiness =
         messageData.platform === "widget"

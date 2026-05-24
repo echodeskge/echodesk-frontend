@@ -5,6 +5,7 @@ import {
   Archive,
   ArchiveRestore,
   Contact,
+  MailOpen,
   MoreVertical,
   PlayCircle,
   PowerOff,
@@ -18,7 +19,7 @@ import { toast } from "sonner";
 import axios from "@/api/axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useStartSession } from "@/hooks/api/useSocial";
+import { useMarkConversationUnread, useStartSession } from "@/hooks/api/useSocial";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -31,6 +32,7 @@ import { cn } from "@/lib/utils";
 
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import type { ConversationRow } from "../store/types";
+import { registerEndedChat } from "../end-session-block";
 import { MessagesBetaTransferDialog } from "./MessagesBetaTransferDialog";
 import { MessagesBetaEndSessionDialog } from "./MessagesBetaEndSessionDialog";
 import { MessagesBetaDeleteDialog } from "./MessagesBetaDeleteDialog";
@@ -70,6 +72,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   );
   const wsState = useMessagesBetaStore((s) => s.wsState);
   const setShowArchived = useMessagesBetaStore((s) => s.setShowArchived);
+  const selectChat = useMessagesBetaStore((s) => s.selectChat);
   const showClientPanel = useMessagesBetaStore((s) => s.showClientPanel);
   const setShowClientPanel = useMessagesBetaStore((s) => s.setShowClientPanel);
 
@@ -79,6 +82,8 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const startSession = useStartSession();
+  const markUnread = useMarkConversationUnread();
+  const setUnread = useMessagesBetaStore((s) => s.setUnread);
 
   const isAdmin = !!profile?.is_staff;
   const isAssignedToMe = !!assignmentSlice && assignmentSlice.assignedUserId === user?.id;
@@ -187,6 +192,37 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
     }
   };
 
+  /**
+   * Called from MessagesBetaEndSessionDialog after the mutation resolves.
+   * Mirrors legacy chat-box-header.tsx:88-96 — strip the chat out of the
+   * active UI immediately rather than waiting for the WS `session_ended`
+   * frame to bounce back, AND register the chat in the 60s block window
+   * so the rating-request `new_message` echo can't resurrect it in the
+   * sidebar before `archive_update` catches up.
+   */
+  const handleMarkUnread = async () => {
+    try {
+      await markUnread.mutateAsync({
+        platform: conversation.platform,
+        conversation_id: conversation.conversationKey,
+      });
+      // Locally bump the unread badge so the sidebar reflects the action
+      // immediately. The `read_state_update` WS broadcast (PR3) reconciles
+      // every other agent's UI without an extra round trip.
+      setUnread(conversation.id, Math.max(1, conversation.unreadCount || 0));
+      toast.success("Marked as unread");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || "Failed to mark as unread");
+    }
+  };
+
+  const handleEndedSession = () => {
+    registerEndedChat(conversation.id);
+    if (useMessagesBetaStore.getState().selectedChatId === conversation.id) {
+      selectChat(null);
+    }
+  };
+
   const wsDotTitle =
     wsState === "open"
       ? "Live connection: connected"
@@ -290,6 +326,10 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
             <Users className="h-4 w-4 mr-2" />
             Transfer to teammate
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={handleMarkUnread} disabled={markUnread.isPending}>
+            <MailOpen className="h-4 w-4 mr-2" />
+            Mark as unread
+          </DropdownMenuItem>
           {canStartSession && (
             <DropdownMenuItem onSelect={handleStartSession} disabled={busy === "start"}>
               <PlayCircle className="h-4 w-4 mr-2" />
@@ -326,6 +366,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         open={endSessionOpen}
         onOpenChange={setEndSessionOpen}
         conversation={conversation}
+        onEnded={handleEndedSession}
       />
       <MessagesBetaDeleteDialog
         open={deleteOpen}
