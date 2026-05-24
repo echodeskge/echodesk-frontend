@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { Menu } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import axios from "@/api/axios";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ const CURRENT_USER: UserType = {
 };
 
 export function MessagesBetaChatBox() {
+  const t = useTranslations("messagesBeta.chatBox");
   const selectedChatId = useMessagesBetaStore((s) => s.selectedChatId);
   const conversations = useMessagesBetaStore((s) => s.conversations);
   const messagesLoaded = useMessagesBetaStore((s) => s.messagesLoaded);
@@ -143,7 +145,7 @@ export function MessagesBetaChatBox() {
     return (
       <Card className="grow flex flex-col items-center justify-center h-full gap-3 p-4">
         <p className="text-sm text-muted-foreground text-center">
-          Select a conversation to start reading.
+          {t("selectAConversation")}
         </p>
         {/* Mobile: when the sidebar lives in a Sheet, the empty state needs
             its own opener — otherwise the user is stranded on a blank card
@@ -157,7 +159,7 @@ export function MessagesBetaChatBox() {
           onClick={() => useMessagesBetaStore.getState().setIsMobileSidebarOpen(true)}
         >
           <Menu className="h-4 w-4 mr-2" />
-          Open conversations
+          {t("openConversations")}
         </Button>
       </Card>
     );
@@ -170,8 +172,8 @@ export function MessagesBetaChatBox() {
       <Card className="grow flex items-center justify-center h-full">
         <p className="text-sm text-muted-foreground">
           {bootstrapState === "ready"
-            ? "Conversation not found in this view."
-            : "Loading conversation…"}
+            ? t("conversationNotFound")
+            : t("loadingConversation")}
         </p>
       </Card>
     );
@@ -189,7 +191,7 @@ export function MessagesBetaChatBox() {
               variant="ghost"
               size="icon"
               className="md:hidden shrink-0"
-              aria-label="Open conversations"
+              aria-label={t("openConversations")}
               onClick={() => useMessagesBetaStore.getState().setIsMobileSidebarOpen(true)}
             >
               <Menu className="h-4 w-4" />

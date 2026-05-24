@@ -21,6 +21,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import axios from "@/api/axios";
@@ -81,6 +82,7 @@ const TYPING_DEBOUNCE_MS = 1500;
  * (avoids the duplicate-bubble class of bugs the legacy page has).
  */
 export function MessagesBetaComposer({ conversation }: Props) {
+  const t = useTranslations("messagesBeta.composer");
   const { user } = useAuth();
   const replyingTo = useMessagesBetaStore((s) => s.replyingTo);
   const setReplyingTo = useMessagesBetaStore((s) => s.setReplyingTo);
@@ -166,7 +168,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
     const accepted: File[] = [];
     for (const f of incoming) {
       if (f.size > MAX_FILE_SIZE_BYTES) {
-        toast.error(`"${f.name}" exceeds the 500 MB upload limit.`);
+        toast.error(t("fileSizeExceeded", { name: f.name }));
         continue;
       }
       accepted.push(f);
@@ -254,9 +256,9 @@ export function MessagesBetaComposer({ conversation }: Props) {
           to_number: recipientNumber,
           parameters,
         });
-        toast.success("Template sent");
+        toast.success(t("templateSent"));
       } catch (err: any) {
-        toast.error(err?.response?.data?.error || "Failed to send template");
+        toast.error(err?.response?.data?.error || t("failedToSendTemplate"));
       }
     },
     [conversation, sendTemplate]
@@ -285,7 +287,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
     if (message && files.length === 0) {
       const parsed = TextMessageSchema.safeParse({ text: message });
       if (!parsed.success) {
-        toast.error(parsed.error.issues[0]?.message || "Invalid message");
+        toast.error(parsed.error.issues[0]?.message || t("invalidMessage"));
         return;
       }
     }
@@ -308,13 +310,13 @@ export function MessagesBetaComposer({ conversation }: Props) {
       sendTypingStop();
     } catch (err: any) {
       const errMsg =
-        err?.response?.data?.error || err?.message || "Failed to send message";
+        err?.response?.data?.error || err?.message || t("failedToSend");
       console.error("[messages-beta] send failed:", err);
       toast.error(errMsg);
     } finally {
       setSending(false);
     }
-  }, [conversation, text, files, sending, replyingTo, setReplyingTo, sendTypingStop]);
+  }, [conversation, text, files, sending, replyingTo, setReplyingTo, sendTypingStop, t]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -333,9 +335,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
   if (widgetClosed) {
     return (
       <div className="shrink-0 border-t p-3 text-center">
-        <p className="text-xs text-muted-foreground">
-          This conversation has ended. New messages will start a fresh session.
-        </p>
+        <p className="text-xs text-muted-foreground">{t("conversationEnded")}</p>
       </div>
     );
   }
@@ -352,12 +352,8 @@ export function MessagesBetaComposer({ conversation }: Props) {
     if (showArchived) {
       return (
         <div className="shrink-0 border-t p-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            This conversation is in history (read-only).
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            To reply, use <span className="font-medium">Restore</span> in the chat header.
-          </p>
+          <p className="text-sm text-muted-foreground">{t("historyReadOnly")}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t("historyReadOnlyHint")}</p>
         </div>
       );
     }
@@ -374,7 +370,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
         setAssignmentTab("assigned");
         if (showArchived) setShowArchived(false);
       } catch (err: any) {
-        toast.error(err?.response?.data?.error || "Failed to assign");
+        toast.error(err?.response?.data?.error || t("failedToAssign"));
       }
     };
 
@@ -386,7 +382,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           account_id: conversation.accountId,
         });
       } catch (err: any) {
-        toast.error(err?.response?.data?.error || "Failed to start session");
+        toast.error(err?.response?.data?.error || t("failedToStartSession"));
       }
     };
 
@@ -394,16 +390,14 @@ export function MessagesBetaComposer({ conversation }: Props) {
       <div className="shrink-0 border-t p-4 flex flex-col items-center justify-center gap-3 text-center">
         {!isAssigned && (
           <>
-            <p className="text-sm text-muted-foreground">
-              Assign this chat to yourself to start messaging
-            </p>
+            <p className="text-sm text-muted-foreground">{t("assignToStartMessaging")}</p>
             <Button
               type="button"
               onClick={handleAssignToMe}
               disabled={assignChat.isPending}
             >
               <UserPlus className="h-4 w-4 mr-2" />
-              {assignChat.isPending ? "Assigning…" : "Assign to me"}
+              {assignChat.isPending ? t("assigning") : t("assignToMe")}
             </Button>
           </>
         )}
@@ -414,28 +408,25 @@ export function MessagesBetaComposer({ conversation }: Props) {
             // tab, so requiring a rating before reopening would lock the
             // conversation forever.
             <>
-              <p className="text-sm text-muted-foreground">Session ended</p>
+              <p className="text-sm text-muted-foreground">{t("sessionEnded")}</p>
               <Button
                 type="button"
                 onClick={handleStartNewSession}
                 disabled={startSession.isPending}
               >
-                {startSession.isPending ? "Starting…" : "Start new session"}
+                {startSession.isPending ? t("starting") : t("startNewSession")}
               </Button>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Session ended — waiting for customer rating
-            </p>
+            <p className="text-sm text-muted-foreground">{t("sessionEndedWaitingRating")}</p>
           )
         )}
 
         {isAssigned && !isAssignedToMe && (
           <p className="text-sm text-muted-foreground">
-            This chat is assigned to{" "}
-            <span className="font-medium">
-              {assignmentSlice?.assignedUserName || "another agent"}
-            </span>
+            {assignmentSlice?.assignedUserName
+              ? t("assignedToOther", { name: assignmentSlice.assignedUserName })
+              : t("assignedToOther", { name: t("anotherAgent") })}
           </p>
         )}
       </div>
@@ -456,7 +447,9 @@ export function MessagesBetaComposer({ conversation }: Props) {
             <Reply className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
             <div className="min-w-0">
               <p className="font-medium truncate">
-                {replyingTo.senderName ? `Replying to ${replyingTo.senderName}` : "Replying"}
+                {replyingTo.senderName
+                  ? t("replyingTo", { name: replyingTo.senderName })
+                  : t("replying")}
               </p>
               {replyingTo.text && (
                 <p className="truncate text-muted-foreground">{replyingTo.text}</p>
@@ -466,7 +459,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           <button
             type="button"
             onClick={() => setReplyingTo(null)}
-            aria-label="Cancel reply"
+            aria-label={t("cancelReply")}
             className="text-muted-foreground hover:text-foreground shrink-0"
           >
             <X className="h-3.5 w-3.5" />
@@ -502,7 +495,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
                 <button
                   type="button"
                   onClick={() => removeFile(i)}
-                  aria-label={`Remove ${f.name}`}
+                  aria-label={t("removeAttachment", { name: f.name })}
                   className="absolute top-0.5 right-0.5 rounded-full bg-background/80 p-0.5 text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <X className="h-3 w-3" />
@@ -524,11 +517,11 @@ export function MessagesBetaComposer({ conversation }: Props) {
           size="icon"
           onClick={() => fileInputRef.current?.click()}
           disabled={sending || conversation.platform === "widget"}
-          aria-label="Attach file"
+          aria-label={t("attachFile")}
           title={
             conversation.platform === "widget"
-              ? "Sending files to website visitors isn't supported yet"
-              : "Attach file"
+              ? t("attachFileWidgetUnsupported")
+              : t("attachFile")
           }
         >
           <Paperclip className="h-4 w-4" />
@@ -573,11 +566,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           }}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          placeholder={
-            isDragOver
-              ? "Drop to attach…"
-              : "Type a message…  (Cmd/Ctrl+Enter to send)"
-          }
+          placeholder={isDragOver ? t("placeholderDrop") : t("placeholder")}
           className="resize-none min-h-[40px] max-h-[160px]"
           rows={1}
           disabled={sending}
@@ -588,7 +577,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           onClick={() => void submit()}
           disabled={sending || (!text.trim() && files.length === 0)}
           className="shrink-0"
-          aria-label="Send message"
+          aria-label={t("sendMessage")}
         >
           {sending ? (
             <Loader2 className="h-4 w-4 animate-spin" />

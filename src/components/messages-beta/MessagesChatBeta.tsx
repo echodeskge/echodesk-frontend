@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useMedia } from "react-use";
 
 import {
@@ -33,6 +34,7 @@ interface Props {
  * Provider (bootstrap, WS) and the store (state + selectors).
  */
 export function MessagesChatBeta({ platforms }: Props) {
+  const t = useTranslations("messagesBeta.page");
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -172,8 +174,8 @@ export function MessagesChatBeta({ platforms }: Props) {
           <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
             <SheetContent side="left" className="p-0 w-[90vw] max-w-sm">
               <SheetHeader className="sr-only">
-                <SheetTitle>Conversations</SheetTitle>
-                <SheetDescription>Pick a conversation to read or reply.</SheetDescription>
+                <SheetTitle>{t("conversationsTitle")}</SheetTitle>
+                <SheetDescription>{t("conversationsDescription")}</SheetDescription>
               </SheetHeader>
               <div className="h-full">
                 <MessagesBetaSidebar

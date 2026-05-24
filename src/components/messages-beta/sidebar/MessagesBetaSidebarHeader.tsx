@@ -15,6 +15,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -37,17 +38,22 @@ interface Props {
   platforms: BetaPlatform[];
 }
 
+// Labels: brand names (Messenger / Instagram / WhatsApp / Email) are proper
+// nouns and stay untranslated; "widget" is the one descriptive label that
+// gets translated via `tPlatforms` below.
 const PLATFORM_OPTIONS: Array<{ value: BetaPlatform; label: string; icon: typeof Facebook }> = [
   { value: "facebook", label: "Messenger", icon: Facebook },
   { value: "instagram", label: "Instagram", icon: Instagram },
   { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
-  { value: "widget", label: "Website widget", icon: MessageCircle },
+  { value: "widget", label: "", icon: MessageCircle },
   { value: "email", label: "Email", icon: Mail },
 ];
 
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function MessagesBetaSidebarHeader({ platforms }: Props) {
+  const t = useTranslations("messagesBeta.sidebar");
+  const tPlatforms = useTranslations("messagesBeta.platforms");
   const { data: userProfile } = useUserProfile();
   const isAdmin = userProfile?.is_staff === true;
 
@@ -125,7 +131,7 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search conversations"
+            placeholder={t("searchPlaceholder")}
             className="pl-8 pr-8 h-9"
           />
           {searchInput && (
@@ -133,7 +139,7 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
               type="button"
               onClick={() => setSearchInput("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              aria-label="Clear search"
+              aria-label={t("clearSearch")}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -146,7 +152,7 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label="Filter by platform"
+                aria-label={t("filterByPlatform")}
                 className={cn("h-9 w-9", platformFilter && "text-primary")}
               >
                 <Filter className="h-4 w-4" />
@@ -155,22 +161,28 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
             <DropdownMenuContent align="end" className="min-w-40">
               <DropdownMenuItem onClick={() => handleSelectPlatform(null)}>
                 <MessageCircle className="mr-2 h-4 w-4" />
-                {platformFilter === null ? <strong>All platforms</strong> : "All platforms"}
+                {platformFilter === null ? <strong>{t("allPlatforms")}</strong> : t("allPlatforms")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {platformChoices.map(({ value, label, icon: Icon }) => (
-                <DropdownMenuItem key={value} onClick={() => handleSelectPlatform(value)}>
-                  <Icon className="mr-2 h-4 w-4" />
-                  {platformFilter === value ? <strong>{label}</strong> : label}
-                </DropdownMenuItem>
-              ))}
+              {platformChoices.map(({ value, label, icon: Icon }) => {
+                // "widget" has an empty static label and gets its display
+                // string from the platforms namespace; everything else uses
+                // the brand-name literal already on the option.
+                const display = value === "widget" ? tPlatforms("widget") : label;
+                return (
+                  <DropdownMenuItem key={value} onClick={() => handleSelectPlatform(value)}>
+                    <Icon className="mr-2 h-4 w-4" />
+                    {platformFilter === value ? <strong>{display}</strong> : display}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="More actions" className="h-9 w-9">
+            <Button variant="ghost" size="icon" aria-label={t("moreActions")} className="h-9 w-9">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -179,12 +191,12 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
               {showArchived ? (
                 <>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to chats
+                  {t("backToChats")}
                 </>
               ) : (
                 <>
                   <History className="mr-2 h-4 w-4" />
-                  View history
+                  {t("viewHistory")}
                 </>
               )}
             </DropdownMenuItem>
@@ -196,14 +208,14 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
                   disabled={markAllAsReadMutation.isPending}
                 >
                   <CheckCheck className="mr-2 h-4 w-4" />
-                  Mark all as read
+                  {t("markAllAsRead")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleArchiveAll}
                   disabled={archiveAllMutation.isPending}
                 >
                   <Archive className="mr-2 h-4 w-4" />
-                  Archive all
+                  {t("archiveAll")}
                 </DropdownMenuItem>
               </>
             )}
@@ -215,7 +227,7 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
         <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2 text-xs">
           <span className="flex items-center gap-2 text-muted-foreground">
             <History className="h-3.5 w-3.5" />
-            Viewing history
+            {t("viewingHistory")}
           </span>
           <Button
             type="button"
@@ -225,7 +237,7 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
             onClick={handleToggleHistory}
           >
             <ArrowLeft className="mr-1 h-3 w-3" />
-            Back
+            {t("back")}
           </Button>
         </div>
       )}

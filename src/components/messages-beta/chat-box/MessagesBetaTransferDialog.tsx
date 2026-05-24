@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Search, UserPlus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
@@ -46,6 +47,7 @@ export function MessagesBetaTransferDialog({
   onOpenChange,
   conversation,
 }: Props) {
+  const t = useTranslations("messagesBeta.transferDialog");
   const { user: currentUser } = useAuth();
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -101,10 +103,10 @@ export function MessagesBetaTransferDialog({
         account_id: conversation.accountId,
         target_user_id: targetUserId,
       });
-      toast.success(`Transferred to ${displayName}`);
+      toast.success(t("transferredTo", { name: displayName }));
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to transfer chat");
+      toast.error(err?.response?.data?.error || t("failedToTransfer"));
     }
   };
 
@@ -116,12 +118,9 @@ export function MessagesBetaTransferDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
-            Transfer chat
+            {t("title")}
           </DialogTitle>
-          <DialogDescription>
-            Hand this conversation to a teammate. They&apos;ll see it in their
-            Assigned tab immediately.
-          </DialogDescription>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
 
         <div className="relative">
@@ -129,7 +128,7 @@ export function MessagesBetaTransferDialog({
           <Input
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Search by name or email"
+            placeholder={t("searchPlaceholder")}
             className="pl-8"
             autoFocus
           />
@@ -147,7 +146,7 @@ export function MessagesBetaTransferDialog({
           )}
           {!isInitialLoading && flattened.length === 0 && (
             <p className="text-center text-sm text-muted-foreground py-6">
-              {debouncedSearch ? "No teammates match that search." : "No teammates available."}
+              {debouncedSearch ? t("noMatch") : t("noTeammates")}
             </p>
           )}
           {flattened.map((u) => {
@@ -188,7 +187,7 @@ export function MessagesBetaTransferDialog({
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("cancel")}
           </Button>
         </DialogFooter>
       </DialogContent>

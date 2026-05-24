@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
@@ -38,6 +39,7 @@ export function MessagesBetaDeleteDialog({
   onOpenChange,
   conversation,
 }: Props) {
+  const t = useTranslations("messagesBeta.deleteDialog");
   const deleteConversation = useDeleteConversation();
   const removeConversation = useMessagesBetaStore((s) => s.removeConversation);
 
@@ -51,10 +53,10 @@ export function MessagesBetaDeleteDialog({
       // other connected agent's store does the same. Until then, other
       // tabs catch up on their next REST refresh.
       removeConversation(conversation.id);
-      toast.success("Conversation deleted");
+      toast.success(t("conversationDeleted"));
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to delete conversation");
+      toast.error(err?.response?.data?.error || t("failedToDelete"));
     }
   };
 
@@ -62,16 +64,14 @@ export function MessagesBetaDeleteDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+          <AlertDialogTitle>{t("title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently removes the conversation and all its messages for
-            every agent. The customer's messages on {conversation.platform} are
-            not affected.
+            {t("description", { platform: conversation.platform })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleteConversation.isPending}>
-            Cancel
+            {t("cancel")}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
@@ -81,7 +81,7 @@ export function MessagesBetaDeleteDialog({
             {deleteConversation.isPending && (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             )}
-            Delete
+            {t("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -14,6 +14,7 @@ import {
   UserX,
   Users,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import axios from "@/api/axios";
@@ -63,6 +64,7 @@ interface Props {
  * `wsState` so agents can spot a broken socket at a glance.
  */
 export function MessagesBetaHeaderActions({ conversation }: Props) {
+  const t = useTranslations("messagesBeta.header");
   const { user } = useAuth();
   const { data: profile } = useUserProfile();
   const assignmentSlice = useMessagesBetaStore(
@@ -138,9 +140,9 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           });
         setShowArchived(false);
       }
-      toast.success("Assigned to you");
+      toast.success(t("assignedToYou"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to assign");
+      toast.error(err?.response?.data?.error || t("failedToAssign"));
     } finally {
       setBusy(null);
     }
@@ -155,9 +157,9 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         conversation_id: conversation.conversationKey,
         account_id: conversation.accountId,
       });
-      toast.success("Unassigned");
+      toast.success(t("unassigned"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to unassign");
+      toast.error(err?.response?.data?.error || t("failedToUnassign"));
     } finally {
       setBusy(null);
     }
@@ -179,9 +181,9 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           },
         ],
       });
-      toast.success(isArchived ? "Restored from archive" : "Archived");
+      toast.success(isArchived ? t("restoredFromArchive") : t("archived"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to archive");
+      toast.error(err?.response?.data?.error || t("failedToArchive"));
     } finally {
       setBusy(null);
     }
@@ -196,9 +198,9 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         conversation_id: conversation.conversationKey,
         account_id: conversation.accountId,
       });
-      toast.success("Session started");
+      toast.success(t("sessionStarted"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to start session");
+      toast.error(err?.response?.data?.error || t("failedToStartSession"));
     } finally {
       setBusy(null);
     }
@@ -222,9 +224,9 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
       // immediately. The `read_state_update` WS broadcast (PR3) reconciles
       // every other agent's UI without an extra round trip.
       setUnread(conversation.id, Math.max(1, conversation.unreadCount || 0));
-      toast.success("Marked as unread");
+      toast.success(t("markedAsUnread"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to mark as unread");
+      toast.error(err?.response?.data?.error || t("failedToMarkUnread"));
     }
   };
 
@@ -237,10 +239,10 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
 
   const wsDotTitle =
     wsState === "open"
-      ? "Live connection: connected"
+      ? t("wsConnected")
       : wsState === "connecting" || wsState === "reconnecting"
-      ? "Live connection: reconnecting"
-      : "Live connection: offline";
+      ? t("wsReconnecting")
+      : t("wsOffline");
 
   return (
     <div className="flex items-center gap-1">
@@ -267,7 +269,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           disabled={busy !== null}
         >
           <UserPlus className="h-4 w-4 mr-1" />
-          Assign to me
+          {t("assignToMe")}
         </Button>
       )}
       {isAssignedToMe && (
@@ -279,12 +281,14 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           disabled={busy !== null}
         >
           <UserX className="h-4 w-4 mr-1" />
-          Unassign
+          {t("unassign")}
         </Button>
       )}
       {isAssignedToOther && (
         <span className="text-xs text-muted-foreground px-2">
-          Assigned to {assignmentSlice?.assignedUserName || "another agent"}
+          {assignmentSlice?.assignedUserName
+            ? t("assignedToWho", { name: assignmentSlice.assignedUserName })
+            : t("assignedToAnotherAgent")}
         </span>
       )}
 
@@ -293,11 +297,11 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         variant={showClientPanel ? "secondary" : "ghost"}
         size="sm"
         onClick={() => setShowClientPanel(!showClientPanel)}
-        aria-label={showClientPanel ? "Hide profile" : "View profile"}
+        aria-label={showClientPanel ? t("hideProfile") : t("viewProfile")}
         aria-pressed={showClientPanel}
       >
         <Contact className="h-4 w-4 mr-1" />
-        Profile
+        {t("profile")}
       </Button>
 
       <Button
@@ -306,17 +310,17 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         size="sm"
         onClick={handleArchiveToggle}
         disabled={busy !== null}
-        aria-label={isArchived ? "Restore from archive" : "Archive"}
+        aria-label={isArchived ? t("restoreFromArchive") : t("archive")}
       >
         {isArchived ? (
           <>
             <ArchiveRestore className="h-4 w-4 mr-1" />
-            Restore
+            {t("restore")}
           </>
         ) : (
           <>
             <Archive className="h-4 w-4 mr-1" />
-            Archive
+            {t("archive")}
           </>
         )}
       </Button>
@@ -327,7 +331,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
             type="button"
             variant="ghost"
             size="sm"
-            aria-label="More actions"
+            aria-label={t("moreActions")}
             className="px-2"
           >
             <MoreVertical className="h-4 w-4" />
@@ -336,16 +340,16 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         <DropdownMenuContent align="end" className="w-52">
           <DropdownMenuItem onSelect={() => setTransferOpen(true)}>
             <Users className="h-4 w-4 mr-2" />
-            Transfer to teammate
+            {t("transferToTeammate")}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={handleMarkUnread} disabled={markUnread.isPending}>
             <MailOpen className="h-4 w-4 mr-2" />
-            Mark as unread
+            {t("markAsUnread")}
           </DropdownMenuItem>
           {canStartSession && (
             <DropdownMenuItem onSelect={handleStartSession} disabled={busy === "start"}>
               <PlayCircle className="h-4 w-4 mr-2" />
-              Start session
+              {t("startSession")}
             </DropdownMenuItem>
           )}
           {canEndSession && (
@@ -354,7 +358,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
               onMouseEnter={handleEndSessionHover}
             >
               <PowerOff className="h-4 w-4 mr-2" />
-              End session
+              {t("endSession")}
             </DropdownMenuItem>
           )}
           {isAdmin && (
@@ -365,7 +369,7 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
                 className="text-destructive focus:text-destructive"
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete conversation
+                {t("deleteConversation")}
               </DropdownMenuItem>
             </>
           )}

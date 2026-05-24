@@ -3,6 +3,7 @@
 import { ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
 import { Facebook, Instagram, Loader2, Mail, MessageCircle } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -49,6 +50,7 @@ const PLATFORM_BG: Record<ConversationRow["platform"], string> = {
 const INFINITE_SCROLL_THRESHOLD_PX = 100;
 
 export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
+  const t = useTranslations("messagesBeta.sidebar");
   const { user } = useAuth();
   const { data: settings } = useSocialSettings();
 
@@ -195,8 +197,8 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
           <div className="px-3 pt-2">
             <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
               <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="assigned">Assigned</TabsTrigger>
+                <TabsTrigger value="all">{t("tabAll")}</TabsTrigger>
+                <TabsTrigger value="assigned">{t("tabAssigned")}</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -208,22 +210,20 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
           onScroll={handleScroll}
         >
           {bootstrapState === "loading" && (
-            <p className="text-xs text-muted-foreground p-3">Loading conversations…</p>
+            <p className="text-xs text-muted-foreground p-3">{t("loadingConversations")}</p>
           )}
           {bootstrapState === "error" && (
-            <p className="text-xs text-destructive p-3">
-              Failed to load conversations. Refresh the page.
-            </p>
+            <p className="text-xs text-destructive p-3">{t("failedToLoad")}</p>
           )}
           {bootstrapState === "ready" && visibleRows.length === 0 && (
             <p className="text-xs text-muted-foreground p-3">
               {hasFiltersActive
-                ? "No conversations match the current filter."
+                ? t("noConversationsMatch")
                 : tab === "assigned"
-                ? "No conversations assigned to you."
+                ? t("noAssignedConversations")
                 : tab === "archive"
-                ? "No archived conversations."
-                : "No conversations yet."}
+                ? t("noArchivedConversations")
+                : t("noConversationsYet")}
             </p>
           )}
           {visibleRows.map((row) => {
@@ -290,7 +290,7 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
                         unread > 0 ? "text-foreground font-medium" : "text-muted-foreground"
                       )}
                     >
-                      {row.lastMessage?.content || "No messages yet…"}
+                      {row.lastMessage?.content || t("noMessagesYet")}
                     </span>
                     {unread > 0 && (
                       <Badge className="shrink-0 h-5 px-1.5 text-[10px]">{unread}</Badge>
@@ -308,7 +308,7 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
               {isFetchingNextPage ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <span>Scroll for more</span>
+                <span>{t("scrollForMore")}</span>
               )}
             </div>
           )}

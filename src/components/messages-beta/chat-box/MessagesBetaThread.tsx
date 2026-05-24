@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { History, Loader2, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { ChatMessageSearch } from "@/components/chat/chat-message-search";
@@ -39,6 +40,7 @@ const NEAR_BOTTOM_PX = 80;
  *     were already near it (matches legacy chat-box-content-list:44–48).
  */
 export function MessagesBetaThread({ conversation, currentUser }: Props) {
+  const t = useTranslations("messagesBeta.thread");
   const selectedChatId = conversation.id;
 
   const messagesByChatId = useMessagesBetaStore((s) => s.messagesByChatId);
@@ -197,7 +199,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
           variant="ghost"
           size="sm"
           onClick={() => setIsSearchOpen((v) => !v)}
-          aria-label="Search messages"
+          aria-label={t("searchMessages")}
           className="h-8"
         >
           <Search className="h-4 w-4" />
@@ -234,12 +236,12 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
               {isLoadingFullHistory ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading history…
+                  {t("loadingHistory")}
                 </>
               ) : (
                 <>
                   <History className="mr-2 h-4 w-4" />
-                  Load older messages
+                  {t("loadOlder")}
                 </>
               )}
             </Button>
@@ -247,10 +249,10 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
         )}
 
         {loadingThisChat && (
-          <p className="text-xs text-muted-foreground py-4 text-center">Loading messages…</p>
+          <p className="text-xs text-muted-foreground py-4 text-center">{t("loadingMessages")}</p>
         )}
         {!loadingThisChat && messages.length === 0 && (
-          <p className="text-xs text-muted-foreground py-4 text-center">No messages yet.</p>
+          <p className="text-xs text-muted-foreground py-4 text-center">{t("noMessages")}</p>
         )}
 
         <ul className="flex flex-col gap-y-1.5">

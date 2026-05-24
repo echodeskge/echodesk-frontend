@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 import {
@@ -42,6 +43,7 @@ export function MessagesBetaEndSessionDialog({
   conversation,
   onEnded,
 }: Props) {
+  const t = useTranslations("messagesBeta.endSessionDialog");
   const endSession = useEndSession();
   const endWidgetSession = useEndWidgetSession();
   const isWidget = conversation.platform === "widget";
@@ -52,7 +54,7 @@ export function MessagesBetaEndSessionDialog({
       if (isWidget) {
         const connectionId = Number(conversation.accountId);
         if (!Number.isFinite(connectionId)) {
-          toast.error("Invalid widget connection id");
+          toast.error(t("invalidWidgetId"));
           return;
         }
         const res = await endWidgetSession.mutateAsync({
@@ -60,9 +62,7 @@ export function MessagesBetaEndSessionDialog({
           session_id: conversation.conversationKey,
         });
         toast.success(
-          res.status === "already_ended"
-            ? "Already ended"
-            : "Conversation ended"
+          res.status === "already_ended" ? t("alreadyEnded") : t("conversationEnded")
         );
       } else {
         await endSession.mutateAsync({
@@ -70,12 +70,12 @@ export function MessagesBetaEndSessionDialog({
           conversation_id: conversation.conversationKey,
           account_id: conversation.accountId,
         });
-        toast.success("Session ended");
+        toast.success(t("sessionEnded"));
       }
       onOpenChange(false);
       onEnded?.();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || "Failed to end session");
+      toast.error(err?.response?.data?.error || t("failedToEnd"));
     }
   };
 
@@ -83,18 +83,16 @@ export function MessagesBetaEndSessionDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>End this session?</AlertDialogTitle>
+          <AlertDialogTitle>{t("title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {isWidget
-              ? "The visitor will see a rating prompt and the chat will close. They can start a new one any time."
-              : "The customer will be asked to rate the conversation. You'll need to re-assign if they reply."}
+            {isWidget ? t("widgetDescription") : t("socialDescription")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={handleConfirm} disabled={isPending}>
             {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            End session
+            {t("endSession")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
