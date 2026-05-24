@@ -144,6 +144,21 @@ export function useMessagesWebSocket({
               onConversationUpdateRef.current?.(data);
               break;
 
+            // Cross-user reactivity frames (PR3 + PR-F). These were
+            // previously falling through to the no-op `default` branch,
+            // which silently dropped every assignment / archive / read-state
+            // / delete broadcast — breaking the /messages-beta cross-user
+            // story (a chat assigned by one agent never hid for others).
+            // Route them through onConversationUpdate, which preserves
+            // `data.type` so the beta dispatcher handles each correctly.
+            // Legacy's handler is a no-op, so this is safe for /messages.
+            case 'assignment_update':
+            case 'archive_update':
+            case 'read_state_update':
+            case 'conversation_deleted':
+              onConversationUpdateRef.current?.(data);
+              break;
+
             case 'session_ended':
               onSessionEndedRef.current?.(data);
               break;

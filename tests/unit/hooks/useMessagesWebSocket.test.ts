@@ -256,6 +256,40 @@ describe("useMessagesWebSocket", () => {
       expect(onConversationUpdate).toHaveBeenCalledWith(deliveryData);
     });
 
+    it.each([
+      "assignment_update",
+      "archive_update",
+      "read_state_update",
+      "conversation_deleted",
+    ])("routes %s through onConversationUpdate (cross-user reactivity)", (type) => {
+      // Regression guard: these four additive event types previously fell
+      // through to the no-op `default` branch and were silently dropped,
+      // breaking /messages-beta cross-user updates (an assigned chat never
+      // hid for other agents). They must reach onConversationUpdate so the
+      // beta dispatcher (which preserves data.type) can handle them.
+      const onConversationUpdate = vi.fn();
+
+      renderHook(() => useMessagesWebSocket({ onConversationUpdate }));
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateOpen();
+      });
+
+      const frame = {
+        type,
+        platform: "facebook",
+        conversation_id: "sender-1",
+        account_id: "page-1",
+        assigned_user_id: 7,
+      };
+
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage(frame);
+      });
+
+      expect(onConversationUpdate).toHaveBeenCalledWith(frame);
+    });
+
     it("handles connection message silently", () => {
       const onNewMessage = vi.fn();
       const onConversationUpdate = vi.fn();
