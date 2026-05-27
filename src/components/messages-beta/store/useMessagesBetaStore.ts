@@ -297,10 +297,20 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
         unread[chatId] = (unread[chatId] || 0) + 1;
       }
 
+      // Auto-unarchive: an inbound (customer) message re-opens the conversation,
+      // so pull it out of History back into the active inbox — otherwise a
+      // reply after the agent ended the session never re-surfaces. Mirrors the
+      // backend's auto_unarchive_conversation. Our own echoes leave it as-is.
+      let archivedByChatId = state.archivedByChatId;
+      if (finalMessage.senderId !== "business" && archivedByChatId[chatId]) {
+        archivedByChatId = { ...archivedByChatId, [chatId]: null };
+      }
+
       return {
         messagesByChatId: nextMessages,
         conversations: sortConversations(updatedRows),
         unreadByChatId: unread,
+        ...(archivedByChatId !== state.archivedByChatId ? { archivedByChatId } : {}),
       };
     }),
 

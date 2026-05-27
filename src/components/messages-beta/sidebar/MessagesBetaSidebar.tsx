@@ -365,7 +365,7 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
                                   </div>
                                 </div>
                                 <div className="h-11 w-full grid grid-cols-[1fr_auto] gap-x-2">
-                                  <div className="min-w-0 grid">
+                                  <div className="min-w-0 grid text-left">
                                     <span className={cn("truncate", unread > 0 && "font-semibold")}>
                                       {row.name}
                                     </span>

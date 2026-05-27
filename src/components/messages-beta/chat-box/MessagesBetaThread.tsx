@@ -109,6 +109,11 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [flashIndex, setFlashIndex] = useState<number | null>(null);
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // True while a click-to-quote jump is animating. Suppresses the
+  // auto-scroll/stick-to-bottom machinery so it can't re-pin to the bottom
+  // mid-jump (the "needs a second click" bug).
+  const programmaticScrollRef = useRef(false);
+  const progScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // A reply-quote click whose target isn't in the loaded window yet — held
   // until full history loads, then resolved by the effect below handleLoadOlder.
   const [pendingQuote, setPendingQuote] = useState<{ id: string | null; mid?: string } | null>(
@@ -138,6 +143,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
   // there. Skip while search is open so the highlighted match stays put.
   useEffect(() => {
     if (isSearchOpen) return;
+    if (programmaticScrollRef.current) return;
     if (wasNearBottomRef.current) scrollToBottom("auto");
   }, [messages.length, isSearchOpen, scrollToBottom]);
 
@@ -150,6 +156,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
     if (!content) return;
     const ro = new ResizeObserver(() => {
       if (isSearchOpen) return;
+      if (programmaticScrollRef.current) return;
       if (!wasNearBottomRef.current) return;
       const el = scrollAreaRef.current;
       if (el) el.scrollTop = el.scrollHeight;
@@ -161,6 +168,9 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
   const handleScroll = useCallback(() => {
     const el = scrollAreaRef.current;
     if (!el) return;
+    // Don't let intermediate positions of a programmatic jump flip the
+    // stick-to-bottom flag back on.
+    if (programmaticScrollRef.current) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     const atBottom = distanceFromBottom < NEAR_BOTTOM_PX;
     wasNearBottomRef.current = atBottom;
@@ -170,10 +180,20 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
   const scrollToIndex = useCallback((idx: number) => {
     const node = messageRefs.current.get(idx);
     if (!node) return;
+    // Guard the whole jump: clear stick-to-bottom AND freeze the auto-scroll
+    // machinery until the smooth scroll settles, so the flash-highlight resize
+    // / scroll-through-the-bottom-zone can't re-pin us and cancel the jump.
+    programmaticScrollRef.current = true;
+    wasNearBottomRef.current = false;
+    setShowScrollButton(true);
     node.scrollIntoView({ behavior: "smooth", block: "center" });
     setFlashIndex(idx);
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     flashTimerRef.current = setTimeout(() => setFlashIndex(null), 1600);
+    if (progScrollTimerRef.current) clearTimeout(progScrollTimerRef.current);
+    progScrollTimerRef.current = setTimeout(() => {
+      programmaticScrollRef.current = false;
+    }, 700);
   }, []);
 
   // Clicking a reply-quote scrolls up to the quoted message and briefly
