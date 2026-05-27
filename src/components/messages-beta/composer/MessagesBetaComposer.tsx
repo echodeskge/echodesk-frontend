@@ -123,7 +123,11 @@ export function MessagesBetaComposer({ conversation }: Props) {
   // Some platforms don't support replies on send. Match the legacy matrix:
   // facebook + whatsapp + email do; instagram + widget don't.
   const platformSupportsReply = useMemo(() => {
-    return conversation.platform === "facebook" || conversation.platform === "whatsapp";
+    return (
+      conversation.platform === "facebook" ||
+      conversation.platform === "whatsapp" ||
+      conversation.platform === "instagram"
+    );
   }, [conversation.platform]);
 
   // Clear any pending reply / attachments when the active chat changes —
@@ -666,6 +670,9 @@ export async function sendForPlatform(
         form.append("recipient_id", targetId);
         form.append("instagram_account_id", accountId);
         form.append("message", text);
+        if (includeReplyTo && replyToMessageId) {
+          form.append("reply_to_message_id", replyToMessageId);
+        }
         form.append("media", file);
         await axios.post("/api/social/instagram/send-message/", form);
       } else {
@@ -673,6 +680,7 @@ export async function sendForPlatform(
           recipient_id: targetId,
           instagram_account_id: accountId,
           message: text,
+          reply_to_message_id: includeReplyTo ? replyToMessageId || "" : "",
         });
       }
       return;
