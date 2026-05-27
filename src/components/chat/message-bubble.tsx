@@ -246,13 +246,12 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
             onClick={onQuoteClick ? () => onQuoteClick(message) : undefined}
           />
         )}
-        {/* Message content with action button. The reply button sits on the
-            INNER side (toward the conversation centre): left of our own
-            right-aligned messages, right of incoming left-aligned ones. */}
-        <div className={cn(
-          "flex items-start gap-1 group",
-          !isByCurrentUser && "flex-row-reverse"
-        )}>
+        {/* Always row-reverse so the bubble packs flush-right within its
+            (alignment-controlled) column and the reply button sits to its
+            right. Outgoing messages stay right-aligned as before; incoming
+            messages now show the button just-right of the bubble instead of
+            on the far-left edge. */}
+        <div className="flex items-start gap-1 group flex-row-reverse">
           {/* Reply button - appears on hover */}
           <MessageActions
             message={message}

@@ -89,9 +89,17 @@ export function MessagesChatBeta({ platforms }: Props) {
   // undefined would then clobber the store back to null and the "Select a
   // conversation" empty state would render. Mirrors MessagesChat.tsx:111
   // which uses the same `if (initialChatId && ...)` guard.
+  const lastHydratedChatIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (urlChatId && urlChatId !== selectedChatId) {
-      selectChat(urlChatId);
+    // Only hydrate the store from the ROUTE param when it actually changes.
+    // Sidebar clicks switch chats via history.pushState (no Next navigation),
+    // which does NOT update useParams() — so urlChatId stays frozen at the
+    // deep-linked chat. Without this ref guard the effect re-fires on every
+    // selectedChatId change and reverts the click back to that stale route id,
+    // making it impossible to switch away from a URL-loaded conversation.
+    if (urlChatId && urlChatId !== lastHydratedChatIdRef.current) {
+      lastHydratedChatIdRef.current = urlChatId;
+      if (urlChatId !== selectedChatId) selectChat(urlChatId);
     }
   }, [urlChatId, selectedChatId, selectChat]);
 
