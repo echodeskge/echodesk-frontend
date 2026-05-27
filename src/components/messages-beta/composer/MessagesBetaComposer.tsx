@@ -29,10 +29,8 @@ import { Button } from "@/components/ui/button";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { QuickReplySelector } from "@/components/social/QuickReplySelector";
-import TemplateSelector from "@/components/social/TemplateSelector";
 import {
   useAssignChat,
-  useSendWhatsAppTemplateMessage,
   useSocialSettings,
   useStartSession,
 } from "@/hooks/api/useSocial";
@@ -40,7 +38,6 @@ import { useTypingWebSocket } from "@/hooks/useTypingWebSocket";
 import { useAuth } from "@/contexts/AuthContext";
 import { addPendingMedia } from "@/lib/pendingMedia";
 import { TextMessageSchema } from "@/components/chat/schemas/text-message-schema";
-import type { WhatsAppMessageTemplate } from "@/api/generated";
 
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import type { ConversationRow } from "../store/types";
@@ -68,8 +65,6 @@ const TYPING_DEBOUNCE_MS = 1500;
  *     ChatContextShim) populates it.
  *   • Emoji picker (legacy `EmojiPicker`).
  *   • Quick-reply selector (legacy `QuickReplySelector`).
- *   • WhatsApp template selector (legacy `TemplateSelector` +
- *     `useSendWhatsAppTemplateMessage`), only when platform === 'whatsapp'.
  *   • Drag-and-drop + paste-from-clipboard for images.
  *   • Outbound typing indicator via `useTypingWebSocket`.
  *   • Pending media blob URLs via `addPendingMedia` so sent images render
@@ -245,28 +240,6 @@ export function MessagesBetaComposer({ conversation }: Props) {
       }
     },
     [acceptFiles]
-  );
-
-  // --- WhatsApp template send. ---
-  const sendTemplate = useSendWhatsAppTemplateMessage();
-  const handleTemplateSelect = useCallback(
-    async (template: WhatsAppMessageTemplate, parameters: Record<string, string>) => {
-      if (conversation.platform !== "whatsapp") return;
-      try {
-        const wabaId = conversation.accountId || conversation.id.split("_")[1];
-        const recipientNumber = conversation.conversationKey || conversation.id.split("_").slice(2).join("_");
-        await sendTemplate.mutateAsync({
-          waba_id: wabaId,
-          template_id: template.id!,
-          to_number: recipientNumber,
-          parameters,
-        });
-        toast.success(t("templateSent"));
-      } catch (err: any) {
-        toast.error(err?.response?.data?.error || t("failedToSendTemplate"));
-      }
-    },
-    [conversation, sendTemplate]
   );
 
   // --- Quick-reply: insert into textarea, then autoresize. ---
@@ -571,10 +544,6 @@ export function MessagesBetaComposer({ conversation }: Props) {
           agentName={user?.first_name || user?.email || ""}
           onSelect={handleQuickReplySelect}
         />
-
-        {conversation.platform === "whatsapp" && (
-          <TemplateSelector onSelect={handleTemplateSelect} />
-        )}
 
         <Textarea
           ref={textareaRef}
