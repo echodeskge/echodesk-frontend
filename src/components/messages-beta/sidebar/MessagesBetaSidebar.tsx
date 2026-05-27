@@ -342,7 +342,9 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
                                 unread > 0 && "bg-muted/60",
                                 // Active chat gets a darker background (overrides unread)
                                 isActive && "bg-primary/20 hover:bg-primary/25",
-                                "h-fit w-full"
+                                // <button> defaults to text-align:center; the legacy
+                                // item is an <a> (left-aligned), so force it back.
+                                "h-fit w-full text-left"
                               )}
                             >
                               <div className="w-full flex items-center gap-2">

@@ -41,7 +41,7 @@ interface AttachmentResult {
  * Mutates msg.message_text to add placeholder text when no URL is available.
  * Shared by both convertFacebookMessagesToChatFormat and convertUnifiedMessagesToMessageType.
  */
-function convertAttachments(msg: UnifiedMessage): AttachmentResult {
+export function convertAttachments(msg: UnifiedMessage): AttachmentResult {
   let images: AttachmentResult['images'];
   let files: AttachmentResult['files'];
   let voiceMessage: AttachmentResult['voiceMessage'];
@@ -156,6 +156,22 @@ function convertAttachments(msg: UnifiedMessage): AttachmentResult {
   }
 
   return { images, files, voiceMessage };
+}
+
+/**
+ * One-line preview of a message, used for reply quotes. Prefers the text body,
+ * else a media label so a quoted photo/video/audio/file shows its content type
+ * (mirrors how WhatsApp/Messenger render replies to media).
+ */
+export function replyPreviewLabel(msg: MessageType): string {
+  if (msg.text && msg.text.trim()) return msg.text;
+  if (msg.voiceMessage) return '🎵 Audio';
+  if (msg.images?.length) return msg.images[0]?.type === 'video' ? '🎬 Video' : '📷 Photo';
+  if (msg.files?.length) {
+    const name = msg.files[0]?.name;
+    return name && name !== 'attachment' ? `📎 ${name}` : '📎 Attachment';
+  }
+  return '';
 }
 
 /**
@@ -319,7 +335,7 @@ export function convertFacebookMessagesToChatFormat(
       if (msg.replyToId) {
         const originalMsg = chatMessages.find((m) => m.id === String(msg.replyToId));
         if (originalMsg) {
-          msg.replyToText = originalMsg.text;
+          msg.replyToText = replyPreviewLabel(originalMsg);
           // Find the sender name from users
           const sender = originalMsg.senderId === businessUser.id ? businessUser : customerUser;
           msg.replyToSenderName = sender.name;
@@ -419,7 +435,7 @@ export function convertUnifiedMessagesToMessageType(messages: UnifiedMessage[]):
     if (msg.replyToId && !msg.replyToText) {
       const originalMsg = chatMessages.find((m) => m.id === String(msg.replyToId));
       if (originalMsg) {
-        msg.replyToText = originalMsg.text;
+        msg.replyToText = replyPreviewLabel(originalMsg);
         msg.replyToSenderName = originalMsg.senderName || (originalMsg.senderId === 'business' ? 'You' : undefined);
       }
     }

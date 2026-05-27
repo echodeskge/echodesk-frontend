@@ -206,6 +206,14 @@ export async function fetchMessagesForChat(
     // (customer side) for every viewer. Mirrors MessagesChat.tsx:632.
     const rows = ((res.data?.results || []) as Array<Record<string, any>>).map((m) => ({
       ...m,
+      // Stringify the id so the adapter's reply-resolution (m.id === String(
+      // reply_to_id)) matches — DRF serializes pks as numbers, and without
+      // this the quoted-message lookup silently fails (mirrors MessagesChat).
+      id: String(m.id),
+      // convertMessageFields reads `platform_message_id`; the raw row only has
+      // `message_id`. Without this the reply button (which needs
+      // platformMessageId) never renders on loaded messages.
+      platform_message_id: m.message_id,
       is_from_business: m.is_from_business ?? m.is_from_page ?? false,
     }));
     return convertUnifiedMessagesToMessageType(
@@ -219,7 +227,14 @@ export async function fetchMessagesForChat(
     const res = await axios.get<UnifiedMessagesEnvelope>("/api/social/instagram-messages/", {
       params: { account_id: accountId, sender_id: senderId, page_size: pageSize },
     });
-    return convertUnifiedMessagesToMessageType(res.data?.results || []);
+    const rows = ((res.data?.results || []) as Array<Record<string, any>>).map((m) => ({
+      ...m,
+      id: String(m.id), // see Facebook note above — reply-resolution needs string ids
+      platform_message_id: m.message_id, // enable the reply button on loaded messages
+    }));
+    return convertUnifiedMessagesToMessageType(
+      rows as unknown as Parameters<typeof convertUnifiedMessagesToMessageType>[0]
+    );
   }
 
   if (platform === "whatsapp" && parts.length >= 3) {
@@ -240,6 +255,8 @@ export async function fetchMessagesForChat(
     // attachment shape inline so both code paths converge.
     const proxied = raw.map((msg) => ({
       ...msg,
+      id: String(msg.id), // string ids so reply-resolution matches (see Facebook note)
+      platform_message_id: msg.message_id, // enable the reply button on loaded messages
       waba_id: wabaId,
       // WA rows key direction off from_number/to_number, not sender_id —
       // give the adapter a sender_id so customer-vs-business attribution

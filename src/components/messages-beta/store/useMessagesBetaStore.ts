@@ -1,5 +1,6 @@
 import { create } from "zustand";
 
+import { replyPreviewLabel } from "@/lib/chatAdapter";
 import type { MessageType } from "@/components/chat/types";
 
 import type {
@@ -220,15 +221,50 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
         if (dup) return {};
       }
 
-      const nextMessages = { ...state.messagesByChatId, [chatId]: [...existing, message] };
+      // Resolve a reply quote against the already-loaded thread when the frame
+      // only carried the id (the common live case). Mirrors the REST adapter's
+      // resolution in chatAdapter.ts (convertUnifiedMessagesToMessageType).
+      let finalMessage = message;
+      if ((message.replyToId || message.replyToMessageId) && !message.replyToText) {
+        // Match the quoted message by DB id (reply_to_id) OR platform message
+        // id (reply_to_message_id) — live frames sometimes carry only one.
+        const original = existing.find(
+          (m) =>
+            (message.replyToId != null && m.id === String(message.replyToId)) ||
+            (!!message.replyToMessageId && m.platformMessageId === message.replyToMessageId)
+        );
+        if (original) {
+          finalMessage = {
+            ...message,
+            replyToText: replyPreviewLabel(original),
+            replyToSenderName:
+              original.senderName || (original.senderId === "business" ? "You" : undefined),
+          };
+        }
+      }
+
+      const nextMessages = { ...state.messagesByChatId, [chatId]: [...existing, finalMessage] };
 
       // Update the conversation row's lastMessage + reorder to top so the
-      // sidebar reflects the WS push without re-fetching the list.
+      // sidebar reflects the WS push without re-fetching the list. Match the
+      // legacy attachment labels instead of bare "Image"/"File".
       const previewText =
-        message.text || (message.images && "Image") || (message.files && "File") || "";
+        finalMessage.text ||
+        (finalMessage.voiceMessage ? "🎵 Audio" : "") ||
+        (finalMessage.images?.length
+          ? finalMessage.images[0]?.type === "video"
+            ? "🎬 Video"
+            : "📷 Image"
+          : "") ||
+        (finalMessage.files?.length
+          ? finalMessage.files[0]?.name && finalMessage.files[0].name !== "attachment"
+            ? `📎 ${finalMessage.files[0].name}`
+            : "📎 Attachment"
+          : "") ||
+        "";
       const lastMessage = {
         content: previewText,
-        createdAt: message.createdAt.toISOString(),
+        createdAt: finalMessage.createdAt.toISOString(),
       };
 
       const rowExists = state.conversations.some((r) => r.id === chatId);

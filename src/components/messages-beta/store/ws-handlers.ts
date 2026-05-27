@@ -9,9 +9,9 @@
  * archive_update handlers land in PR3 + PR4 once the backend broadcasts
  * them.
  */
-import { getApiUrl } from "@/api/axios";
 import { parseTimestamp } from "@/lib/parseTimestamp";
 import { consumePendingMedia } from "@/lib/pendingMedia";
+import { convertAttachments } from "@/lib/chatAdapter";
 
 import { isInEndSessionBlockWindow } from "../end-session-block";
 
@@ -127,10 +127,29 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
       ? !messageData.is_from_visitor
       : messageData.is_from_page || messageData.is_from_business || false;
 
+  // Route attachments through the SAME shared adapter the REST path + the
+  // legacy page use, so live messages classify image/video/audio/file and
+  // derive filenames + "📷 Image sent" style placeholders identically —
+  // instead of the weaker hand-rolled mapping that mislabelled files as a bare
+  // "attachment". Seed `waba_id` so WhatsApp media URLs get rewritten to our
+  // proxy endpoint inside the adapter.
+  const attMsg: Record<string, any> = {
+    ...messageData,
+    waba_id: messageData.waba_id || messageData.account_id,
+  };
+  const { images, files, voiceMessage } = convertAttachments(
+    attMsg as unknown as Parameters<typeof convertAttachments>[0]
+  );
+
   const msg: MessageType = {
     id: messageData.id != null ? String(messageData.id) : String(messageData.message_id || ""),
     senderId: isFromBusiness ? "business" : messageData.sender_id || messageData.from_number || "",
-    text: messageData.message_text || "",
+    // convertAttachments sets a placeholder ("📷 Image sent") on attMsg when an
+    // attachment has no loadable URL — prefer it over an empty body.
+    text: attMsg.message_text || "",
+    images,
+    files,
+    voiceMessage,
     status: "DELIVERED",
     createdAt: parseTimestamp(messageData.timestamp),
     platformMessageId: messageData.message_id,
@@ -139,63 +158,14 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
     source: messageData.source,
     isEcho: messageData.is_echo,
     sentByName: messageData.sent_by || messageData.sent_by_name,
-    // Reply-quote thread-through (PR B). Legacy MessagesChat populates these
-    // fields from the WS payload so MessageBubble's reply-preview renders.
+    // Reply-quote thread-through. Map the API-provided reply text when present;
+    // appendMessage resolves it against the loaded thread when only the id is
+    // sent (the common case for live frames).
     replyToMessageId: messageData.reply_to_message_id,
     replyToId: messageData.reply_to_id,
+    replyToText: messageData.reply_to_text,
+    replyToSenderName: messageData.reply_to_sender_name,
   };
-
-  if (
-    (Array.isArray(messageData.attachments) && messageData.attachments.length > 0) ||
-    messageData.attachment_url
-  ) {
-    // WhatsApp media from Meta's CDN is ORB-blocked by browsers; legacy
-    // rewrites attachments through our proxy endpoint here. Mirrors
-    // MessagesChat.tsx:416-507.
-    const wabaId = messageData.waba_id || messageData.account_id;
-    const resolveUrl = (att: any): string | undefined => {
-      if (messageData.platform === "whatsapp" && att?.media_id && wabaId) {
-        return `${getApiUrl()}/api/social/whatsapp-media/${att.media_id}/?waba_id=${wabaId}`;
-      }
-      return att?.url || messageData.attachment_url;
-    };
-
-    const first = messageData.attachments?.[0];
-    const type =
-      first?.type || messageData.attachment_type || messageData.message_type || "";
-    const isImage = type === "image" || type === "sticker";
-    const isAudio = type === "audio";
-    const isVideo = type === "video";
-
-    if (isImage) {
-      const images = (
-        messageData.attachments?.map((att: any) => ({
-          name: att?.type || "image",
-          url: resolveUrl(att),
-          size: 0,
-          type: "image",
-        })) || [{ name: "image", url: resolveUrl(null), size: 0, type: "image" }]
-      ).filter((img: { url: unknown }) => img.url);
-      if (images.length > 0) msg.images = images;
-    } else if (isAudio) {
-      const url = resolveUrl(first || null);
-      if (url) msg.voiceMessage = { name: "audio", url, size: 0 };
-    } else if (isVideo) {
-      const url = resolveUrl(first || null);
-      // Legacy keeps videos in `images[]` with type:'video' so MessageBubble
-      // routes them through the lightbox player (chat-message-content.tsx).
-      if (url) msg.images = [{ name: "video", url, size: 0, type: "video" }];
-    } else {
-      const files = (
-        messageData.attachments?.map((att: any) => ({
-          name: att?.filename || "attachment",
-          url: resolveUrl(att),
-          size: 0,
-        })) || [{ name: "attachment", url: resolveUrl(null), size: 0 }]
-      ).filter((f: { url: unknown }) => f.url);
-      if (files.length > 0) msg.files = files;
-    }
-  }
 
   return msg;
 }

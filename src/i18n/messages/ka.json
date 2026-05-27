@@ -4876,7 +4876,8 @@
       "loadingHistory": "ისტორიის ჩატვირთვა…",
       "loadingMessages": "შეტყობინებების ჩატვირთვა…",
       "noMessages": "ჯერ შეტყობინებები არ არის.",
-      "searchMessages": "შეტყობინებების ძებნა"
+      "searchMessages": "შეტყობინებების ძებნა",
+    "scrollToBottom": "ბოლოში გადასვლა"
     },
     "composer": {
       "placeholder": "ჩაწერეთ შეტყობინება…",

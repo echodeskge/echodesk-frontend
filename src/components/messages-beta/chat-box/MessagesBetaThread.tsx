@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { History, Loader2, Search } from "lucide-react";
+import { ArrowDown, History, Loader2, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { ChatMessageSearch } from "@/components/chat/chat-message-search";
 import { MessageBubble } from "@/components/chat/message-bubble";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
-import type { UserType } from "@/components/chat/types";
+import type { MessageType, UserType } from "@/components/chat/types";
 import { useTypingWebSocket } from "@/hooks/useTypingWebSocket";
 
 import { fetchMessagesForChat } from "../store/rest-bootstrap";
@@ -98,44 +98,105 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
     );
   }, [matchingIndices.length]);
 
-  // --- Scroll behaviour: only stick to bottom when the user is already
-  //     near it. Avoids yanking them up when they're scrolling history. ---
+  // --- Scroll behaviour. Pin to the bottom while the user is reading the
+  //     latest messages; when they scroll up, stop auto-scrolling and surface
+  //     a "jump to latest" button instead. ---
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLUListElement>(null);
   const wasNearBottomRef = useRef(true);
   const messageRefs = useRef<Map<number, HTMLLIElement>>(new Map());
   const prevSelectedChatRef = useRef<string | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [flashIndex, setFlashIndex] = useState<number | null>(null);
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A reply-quote click whose target isn't in the loaded window yet — held
+  // until full history loads, then resolved by the effect below handleLoadOlder.
+  const [pendingQuote, setPendingQuote] = useState<{ id: string | null; mid?: string } | null>(
+    null
+  );
 
-  // When the user opens a different chat, force-scroll to the bottom so they
-  // land on the most recent message; preserve mid-thread scroll only within
-  // the SAME chat.
-  useEffect(() => {
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "auto") => {
     const el = scrollAreaRef.current;
     if (!el) return;
-    if (prevSelectedChatRef.current !== selectedChatId) {
-      el.scrollTop = el.scrollHeight;
-      wasNearBottomRef.current = true;
-      prevSelectedChatRef.current = selectedChatId;
-    }
-  }, [selectedChatId]);
+    el.scrollTo({ top: el.scrollHeight, behavior });
+    wasNearBottomRef.current = true;
+    setShowScrollButton(false);
+  }, []);
 
-  // On every message list change, scroll only if the user was already near
-  // the bottom. We also skip auto-scroll while a search is open so the
-  // highlighted match stays in view.
+  // When the user opens a different chat, jump to the most recent message;
+  // preserve mid-thread scroll only within the SAME chat.
+  useEffect(() => {
+    if (prevSelectedChatRef.current === selectedChatId) return;
+    prevSelectedChatRef.current = selectedChatId;
+    wasNearBottomRef.current = true;
+    setShowScrollButton(false);
+    // Defer to after paint so the freshly-rendered list has its full height.
+    requestAnimationFrame(() => scrollToBottom("auto"));
+  }, [selectedChatId, scrollToBottom]);
+
+  // On message-list growth, follow the bottom only if the user was already
+  // there. Skip while search is open so the highlighted match stays put.
   useEffect(() => {
     if (isSearchOpen) return;
-    const el = scrollAreaRef.current;
-    if (!el) return;
-    if (wasNearBottomRef.current) {
-      el.scrollTop = el.scrollHeight;
-    }
-  }, [messages.length, isSearchOpen]);
+    if (wasNearBottomRef.current) scrollToBottom("auto");
+  }, [messages.length, isSearchOpen, scrollToBottom]);
+
+  // Late-rendering media (images/video) grows the thread height AFTER the
+  // message count settled, which previously left the view "half scrolled".
+  // A ResizeObserver re-pins to the bottom whenever the content reflows — but
+  // only while the user is still parked at the bottom.
+  useEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+    const ro = new ResizeObserver(() => {
+      if (isSearchOpen) return;
+      if (!wasNearBottomRef.current) return;
+      const el = scrollAreaRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+    ro.observe(content);
+    return () => ro.disconnect();
+  }, [isSearchOpen, selectedChatId]);
 
   const handleScroll = useCallback(() => {
     const el = scrollAreaRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    wasNearBottomRef.current = distanceFromBottom < NEAR_BOTTOM_PX;
+    const atBottom = distanceFromBottom < NEAR_BOTTOM_PX;
+    wasNearBottomRef.current = atBottom;
+    setShowScrollButton(!atBottom);
   }, []);
+
+  const scrollToIndex = useCallback((idx: number) => {
+    const node = messageRefs.current.get(idx);
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+    setFlashIndex(idx);
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = setTimeout(() => setFlashIndex(null), 1600);
+  }, []);
+
+  // Clicking a reply-quote scrolls up to the quoted message and briefly
+  // highlights it. Resolves the target by DB id (reply_to_id) or platform
+  // message id (reply_to_message_id). When the quoted message is older than
+  // the loaded window, stash it and let the resolver effect pull full history.
+  const scrollToQuoted = useCallback(
+    (msg: MessageType) => {
+      const targetId = msg.replyToId != null ? String(msg.replyToId) : null;
+      const targetMid = msg.replyToMessageId;
+      const idx = messages.findIndex(
+        (m) =>
+          (!!targetId && m.id === targetId) ||
+          (!!targetMid && m.platformMessageId === targetMid)
+      );
+      if (idx >= 0) {
+        scrollToIndex(idx);
+        return;
+      }
+      setPendingQuote({ id: targetId, mid: targetMid });
+    },
+    [messages, scrollToIndex]
+  );
 
   // Scroll the highlighted search match into view when it changes.
   useEffect(() => {
@@ -177,6 +238,36 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
     messages,
   ]);
 
+  // Resolve a pending reply-quote: scroll once the target is in the loaded
+  // list; otherwise pull full history and retry on the next messages update.
+  useEffect(() => {
+    if (!pendingQuote) return;
+    const idx = messages.findIndex(
+      (m) =>
+        (!!pendingQuote.id && m.id === pendingQuote.id) ||
+        (!!pendingQuote.mid && m.platformMessageId === pendingQuote.mid)
+    );
+    if (idx >= 0) {
+      // Wait a frame so the freshly-rendered rows have their refs + height.
+      requestAnimationFrame(() => scrollToIndex(idx));
+      setPendingQuote(null);
+      return;
+    }
+    if (!isFullLoaded && !isLoadingFullHistory) {
+      void handleLoadOlder();
+    } else if (isFullLoaded) {
+      // Full history loaded and still not found — nothing more we can do.
+      setPendingQuote(null);
+    }
+  }, [
+    pendingQuote,
+    messages,
+    isFullLoaded,
+    isLoadingFullHistory,
+    handleLoadOlder,
+    scrollToIndex,
+  ]);
+
   const userMap = useMemo(() => {
     const map = new Map<string, UserType>();
     map.set(currentUser.id, currentUser);
@@ -192,7 +283,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
   const loadingThisChat = !messagesLoaded[selectedChatId];
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
+    <div className="relative flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-end px-3 py-1 border-b">
         <Button
           type="button"
@@ -255,7 +346,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
           <p className="text-xs text-muted-foreground py-4 text-center">{t("noMessages")}</p>
         )}
 
-        <ul className="flex flex-col gap-y-1.5">
+        <ul ref={contentRef} className="flex flex-col gap-y-1.5">
           {messages.map((message, idx) => {
             const isByCurrentUser = message.senderId === currentUser.id;
             // Fall back to the conversation-level avatar for any customer
@@ -272,7 +363,8 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
                     avatar: conversation.avatar,
                     status: "online",
                   });
-            const isHighlighted = matchingIndices[currentMatchIndex] === idx;
+            const isHighlighted =
+              matchingIndices[currentMatchIndex] === idx || idx === flashIndex;
             return (
               <MessageBubble
                 key={message.id || `idx-${idx}`}
@@ -286,6 +378,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
                 platform={conversation.platform}
                 isHighlighted={isHighlighted}
                 searchQuery={messageSearchQuery}
+                onQuoteClick={scrollToQuoted}
               />
             );
           })}
@@ -298,6 +391,21 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
             <TypingIndicator key={u.user_id} userName={u.user_name} />
           ))}
         </div>
+      )}
+
+      {/* "Jump to latest" — shown only when the user has scrolled up. Clicking
+          it smooth-scrolls back to the newest message. */}
+      {showScrollButton && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="icon"
+          onClick={() => scrollToBottom("smooth")}
+          aria-label={t("scrollToBottom")}
+          className="absolute bottom-4 right-4 z-10 h-9 w-9 rounded-full shadow-md"
+        >
+          <ArrowDown className="h-4 w-4" />
+        </Button>
       )}
     </div>
   );

@@ -4876,7 +4876,8 @@
       "loadingHistory": "Loading history…",
       "loadingMessages": "Loading messages…",
       "noMessages": "No messages yet.",
-      "searchMessages": "Search messages"
+      "searchMessages": "Search messages",
+    "scrollToBottom": "Scroll to latest"
     },
     "composer": {
       "placeholder": "Type a message…",

@@ -18,16 +18,32 @@ import { ChatContext } from "./contexts/chat-context"
 import { Button } from "@/components/ui/button"
 
 // Reply preview component
-function MessageReplyPreview({ replyToText, replyToSenderName, isByCurrentUser }: {
+function MessageReplyPreview({ replyToText, replyToSenderName, isByCurrentUser, onClick }: {
   replyToText?: string;
   replyToSenderName?: string;
   isByCurrentUser: boolean;
+  onClick?: () => void;
 }) {
   if (!replyToText && !replyToSenderName) return null
 
   return (
-    <div className={cn(
+    <div
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onClick()
+              }
+            }
+          : undefined
+      }
+      className={cn(
       "flex items-start gap-1.5 px-3 py-1.5 rounded-t-lg border-l-2 text-xs mb-0.5",
+      onClick && "cursor-pointer hover:brightness-95 transition",
       isByCurrentUser
         ? "bg-primary/10 border-primary/50"
         : "bg-muted/50 border-muted-foreground/30"
@@ -63,6 +79,9 @@ interface MessageBubbleProps {
   platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget"
   isHighlighted?: boolean
   searchQuery?: string
+  /** When provided, the reply-quote preview becomes clickable — used by
+   *  /messages-beta to scroll to the quoted message. */
+  onQuoteClick?: (message: MessageType) => void
 }
 
 // Message action buttons (reply only - reactions are not supported by Facebook for pages)
@@ -148,7 +167,7 @@ function MessageAuthorBadge({ sentByName }: { sentByName?: string }) {
 
 const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
   function MessageBubble(
-    { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery },
+    { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery, onQuoteClick },
     ref
   ) {
   // Read the chat context defensively so this component also works when
@@ -224,6 +243,7 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
             replyToText={message.replyToText}
             replyToSenderName={message.replyToSenderName}
             isByCurrentUser={isByCurrentUser}
+            onClick={onQuoteClick ? () => onQuoteClick(message) : undefined}
           />
         )}
         {/* Message content with action button */}
