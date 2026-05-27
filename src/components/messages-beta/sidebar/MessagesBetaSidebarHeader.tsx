@@ -124,25 +124,28 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-2 p-3 border-b">
+    <div className="flex flex-col space-y-2 p-3 border-b border-border">
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative grow">
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            type="search"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder={t("searchPlaceholder")}
-            className="pl-8 pr-8 h-9"
+            aria-label={t("searchPlaceholder")}
+            className="w-full bg-muted ps-9 pe-9"
           />
           {searchInput && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute end-1 top-1/2 h-6 w-6 -translate-y-1/2"
               onClick={() => setSearchInput("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               aria-label={t("clearSearch")}
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
+              <X className="h-3 w-3" />
+            </Button>
           )}
         </div>
 
@@ -153,7 +156,7 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
                 variant="ghost"
                 size="icon"
                 aria-label={t("filterByPlatform")}
-                className={cn("h-9 w-9", platformFilter && "text-primary")}
+                className={cn(platformFilter && "text-primary")}
               >
                 <Filter className="h-4 w-4" />
               </Button>
@@ -182,7 +185,7 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label={t("moreActions")} className="h-9 w-9">
+            <Button variant="ghost" size="icon" aria-label={t("moreActions")}>
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -224,22 +227,22 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
       </div>
 
       {showArchived && (
-        <div className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2 text-xs">
-          <span className="flex items-center gap-2 text-muted-foreground">
-            <History className="h-3.5 w-3.5" />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full justify-between bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+          onClick={handleToggleHistory}
+        >
+          <span className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+            <History className="h-4 w-4" />
             {t("viewingHistory")}
           </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={handleToggleHistory}
-          >
-            <ArrowLeft className="mr-1 h-3 w-3" />
+          <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+            <ArrowLeft className="h-3 w-3" />
             {t("back")}
-          </Button>
-        </div>
+          </span>
+        </Button>
       )}
     </div>
   );

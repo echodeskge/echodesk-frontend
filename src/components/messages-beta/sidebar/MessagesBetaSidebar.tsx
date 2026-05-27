@@ -6,12 +6,15 @@ import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChatAvatar } from "@/components/chat/chat-avatar";
+import { ChatListSkeleton } from "@/components/chat/chat-sidebar/ChatListSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialSettings } from "@/hooks/api/useSocial";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 
 import {
   selectAllTabConversations,
@@ -122,6 +125,23 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   }, [tab, conversations, assignmentByChatId, archivedByChatId, ctx, searchQuery, platformFilter]);
 
   const hasFiltersActive = !!searchQuery.trim() || !!platformFilter;
+
+  // Count of conversations assigned to the current user (ignores search /
+  // platform filters, matching the legacy sidebar's assigned-tab badge).
+  const assignedCount = useMemo(
+    () =>
+      selectAssignedTabConversations(
+        {
+          conversations,
+          assignmentByChatId,
+          archivedByChatId,
+          searchQuery: "",
+          platformFilter: null,
+        },
+        ctx
+      ).length,
+    [conversations, assignmentByChatId, archivedByChatId, ctx]
+  );
 
   // --- Infinite scroll: when the viewport nears the bottom, load page+1. ---
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -246,142 +266,157 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
       <Card className="h-full flex flex-col">
         <MessagesBetaSidebarHeader platforms={platforms} />
 
-        {!showArchived && (
-          <div className="px-3 pt-2">
+        {ctx.assignmentEnabled && !showArchived && (
+          <div className="px-3 py-2 border-b border-border">
             <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="all">{t("tabAll")}</TabsTrigger>
-                <TabsTrigger value="assigned">{t("tabAssigned")}</TabsTrigger>
+                <TabsTrigger value="assigned">
+                  {t("tabAssigned")}
+                  {assignedCount > 0 && (
+                    <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/20 px-1.5 text-xs font-medium">
+                      {assignedCount}
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         )}
 
-        <div
-          ref={scrollContainerRef}
-          className="flex-1 min-h-0 overflow-auto p-2 space-y-1.5"
-          onScroll={handleScroll}
-        >
-          {/* In History view the active-list bootstrap state is irrelevant;
-              the archived list has its own load state. */}
-          {tab === "archive" ? (
-            <>
-              {archivedListState === "loading" && (
-                <p className="text-xs text-muted-foreground p-3">{t("loadingConversations")}</p>
-              )}
-              {archivedListState === "error" && (
-                <p className="text-xs text-destructive p-3">{t("failedToLoad")}</p>
-              )}
-              {archivedListState === "ready" && visibleRows.length === 0 && (
-                <p className="text-xs text-muted-foreground p-3">{t("noArchivedConversations")}</p>
-              )}
-            </>
-          ) : (
-            <>
-              {bootstrapState === "loading" && (
-                <p className="text-xs text-muted-foreground p-3">{t("loadingConversations")}</p>
-              )}
-              {bootstrapState === "error" && (
-                <p className="text-xs text-destructive p-3">{t("failedToLoad")}</p>
-              )}
-              {bootstrapState === "ready" && visibleRows.length === 0 && (
-                <p className="text-xs text-muted-foreground p-3">
-                  {hasFiltersActive
-                    ? t("noConversationsMatch")
-                    : tab === "assigned"
-                    ? t("noAssignedConversations")
-                    : t("noConversationsYet")}
-                </p>
-              )}
-            </>
-          )}
-          {visibleRows.map((row) => {
-            const unread = unreadByChatId[row.id] || 0;
-            const isActive = selectedChatId === row.id;
-            return (
-              <button
-                key={row.id}
-                data-chat-id={row.id}
-                onClick={() => onSelectChat(row.id)}
-                onMouseEnter={() => handleHoverPrefetch(row)}
-                className={cn(
-                  "w-full text-left rounded-md p-2 flex items-center gap-2 hover:bg-muted transition-colors",
-                  unread > 0 && !isActive && "bg-muted/60",
-                  isActive && "bg-primary/15 hover:bg-primary/20"
-                )}
-              >
-                <div className="relative shrink-0">
-                  {row.avatar ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={row.avatar}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover bg-muted"
-                      onError={(e) => {
-                        // Customer profile pictures (Meta CDN) sometimes 403
-                        // after their signed URL expires. Hide the broken
-                        // image and fall back to the initials sibling below.
-                        (e.currentTarget as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  ) : null}
-                  {!row.avatar && (
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                      {row.name?.slice(0, 2).toUpperCase() || "?"}
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      "absolute -bottom-0.5 -right-0.5 rounded-full p-[3px] ring-2 ring-background",
-                      PLATFORM_BG[row.platform]
-                    )}
-                  >
-                    {PLATFORM_ICON[row.platform]}
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={cn("truncate text-sm", unread > 0 && "font-semibold")}
-                    >
-                      {row.name}
-                    </span>
-                    {row.lastMessage?.createdAt && (
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(new Date(row.lastMessage.createdAt), { addSuffix: true })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={cn(
-                        "truncate text-xs",
-                        unread > 0 ? "text-foreground font-medium" : "text-muted-foreground"
-                      )}
-                    >
-                      {row.lastMessage?.content || t("noMessagesYet")}
-                    </span>
-                    {unread > 0 && (
-                      <Badge className="shrink-0 h-5 px-1.5 text-[10px]">{unread}</Badge>
-                    )}
-                  </div>
-                </div>
-              </button>
-            );
-          })}
+        {(() => {
+          // Collapse the active-list vs archived-list state machines into one
+          // set of booleans so the list renders with the legacy structure:
+          // a paddingless scroll container + a padded <ul> (or the skeleton,
+          // which carries its own padding) — matching chat-sidebar-list.tsx.
+          const listLoading =
+            tab === "archive"
+              ? archivedListState === "loading"
+              : bootstrapState === "loading";
+          const listError =
+            tab === "archive"
+              ? archivedListState === "error"
+              : bootstrapState === "error";
+          const listReady =
+            tab === "archive"
+              ? archivedListState === "ready"
+              : bootstrapState === "ready";
+          const emptyMessage =
+            tab === "archive"
+              ? t("noArchivedConversations")
+              : hasFiltersActive
+              ? t("noConversationsMatch")
+              : tab === "assigned"
+              ? t("noAssignedConversations")
+              : t("noConversationsYet");
 
-          {/* Infinite-scroll footer: shows a spinner while fetching, or a
-              "scroll for more" hint when we know there are more pages. */}
-          {nextConversationsPage != null && visibleRows.length > 0 && (
-            <div className="flex justify-center py-3 text-xs text-muted-foreground">
-              {isFetchingNextPage ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+          return (
+            <div
+              ref={scrollContainerRef}
+              className="flex-1 min-h-0 overflow-auto"
+              onScroll={handleScroll}
+            >
+              {listLoading ? (
+                <ChatListSkeleton />
+              ) : listError ? (
+                <p className="text-center text-destructive py-8">{t("failedToLoad")}</p>
               ) : (
-                <span>{t("scrollForMore")}</span>
+                <ul className="p-3 space-y-1.5">
+                  {listReady && visibleRows.length === 0 ? (
+                    <li className="text-center text-muted-foreground py-8">{emptyMessage}</li>
+                  ) : (
+                    <>
+                      {visibleRows.map((row) => {
+                        const unread = unreadByChatId[row.id] || 0;
+                        const isActive = selectedChatId === row.id;
+                        return (
+                          <li key={row.id} data-chat-id={row.id}>
+                            <button
+                              type="button"
+                              onClick={() => onSelectChat(row.id)}
+                              onMouseEnter={() => handleHoverPrefetch(row)}
+                              aria-current={isActive ? "true" : undefined}
+                              className={cn(
+                                buttonVariants({ variant: "ghost" }),
+                                // Unread chats get a muted background (lighter)
+                                unread > 0 && "bg-muted/60",
+                                // Active chat gets a darker background (overrides unread)
+                                isActive && "bg-primary/20 hover:bg-primary/25",
+                                "h-fit w-full"
+                              )}
+                            >
+                              <div className="w-full flex items-center gap-2">
+                                <div className="relative shrink-0">
+                                  <ChatAvatar
+                                    src={row.avatar}
+                                    fallback={getInitials(row.name)}
+                                    size={2.5}
+                                    className="shrink-0"
+                                  />
+                                  <div
+                                    className={cn(
+                                      "absolute -bottom-0.5 -right-0.5 rounded-full p-[3px] ring-2 ring-background",
+                                      PLATFORM_BG[row.platform]
+                                    )}
+                                  >
+                                    {PLATFORM_ICON[row.platform]}
+                                  </div>
+                                </div>
+                                <div className="h-11 w-full grid grid-cols-[1fr_auto] gap-x-2">
+                                  <div className="min-w-0 grid">
+                                    <span className={cn("truncate", unread > 0 && "font-semibold")}>
+                                      {row.name}
+                                    </span>
+                                    <span
+                                      className={cn(
+                                        "text-xs truncate",
+                                        unread > 0
+                                          ? "text-foreground font-medium"
+                                          : "text-muted-foreground font-semibold"
+                                      )}
+                                    >
+                                      {row.lastMessage?.content?.replace(/\n+/g, " ") ||
+                                        t("noMessagesYet")}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col items-end gap-1">
+                                    <span className="text-xs text-muted-foreground font-semibold whitespace-nowrap">
+                                      {formatDistanceToNow(
+                                        new Date(row.lastMessage?.createdAt ?? Date.now()),
+                                        { addSuffix: true }
+                                      )}
+                                    </span>
+                                    {unread > 0 && (
+                                      <Badge className="hover:bg-primary">{unread}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })}
+
+                      {/* Infinite-scroll footer: spinner while fetching, or a
+                          "scroll for more" hint when more pages exist. */}
+                      {nextConversationsPage != null && visibleRows.length > 0 && (
+                        <li className="flex justify-center py-4">
+                          {isFetchingNextPage ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {t("scrollForMore")}
+                            </span>
+                          )}
+                        </li>
+                      )}
+                    </>
+                  )}
+                </ul>
               )}
             </div>
-          )}
-        </div>
+          );
+        })()}
       </Card>
     </aside>
   );

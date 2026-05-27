@@ -335,7 +335,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
 
   if (widgetClosed) {
     return (
-      <div className="shrink-0 border-t p-3 text-center">
+      <div className="shrink-0 border-t border-border px-6 py-4 text-center">
         <p className="text-xs text-muted-foreground">{t("conversationEnded")}</p>
       </div>
     );
@@ -352,7 +352,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
     // (amanati, 2026-04-23). The explicit path is "Restore" in the header.
     if (showArchived) {
       return (
-        <div className="shrink-0 border-t p-4 text-center">
+        <div className="shrink-0 border-t border-border px-6 py-4 text-center">
           <p className="text-sm text-muted-foreground">{t("historyReadOnly")}</p>
           <p className="text-xs text-muted-foreground mt-1">{t("historyReadOnlyHint")}</p>
         </div>
@@ -402,7 +402,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
     };
 
     return (
-      <div className="shrink-0 border-t p-4 flex flex-col items-center justify-center gap-3 text-center">
+      <div className="shrink-0 border-t border-border px-6 py-4 flex flex-col items-center justify-center gap-3 text-center">
         {!isAssigned && (
           <>
             <p className="text-sm text-muted-foreground">{t("assignToStartMessaging")}</p>
@@ -450,7 +450,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
 
   return (
     <div
-      className="shrink-0 border-t p-3 flex flex-col gap-2"
+      className="shrink-0 border-t border-border px-6 py-3 flex flex-col gap-2"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
