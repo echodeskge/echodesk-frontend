@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useEffect, useState } from "react"
 import type { ComponentProps, MouseEvent } from "react"
 import Lightbox from "yet-another-react-lightbox"
@@ -30,17 +29,6 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
   limit?: number
   onMoreButtonClick?: (event: MouseEvent<HTMLButtonElement>) => void
   onMediaClick?: (event: MouseEvent<HTMLButtonElement>) => void
-}
-
-// Check if URL should bypass Next.js Image optimization (external CDNs, proxy URLs, blob URLs).
-// Chat/social attachments arrive from arbitrary CDNs we can't enumerate in
-// next.config (Meta, giphy, tenor, … — e.g. Instagram GIF stickers come from
-// giphy.com). So treat ANY absolute URL (and blob: previews) as external and
-// render it with a plain <img>, instead of an allowlist that next/image would
-// otherwise reject ("hostname not configured").
-function isExternalUrl(src: string | undefined | null): boolean {
-  if (!src) return false
-  return /^https?:\/\//i.test(src) || src.startsWith("blob:") || src.includes("/api/social/whatsapp-media/")
 }
 
 // Check if URL requires authenticated fetch (e.g. WhatsApp media proxy)
@@ -165,24 +153,14 @@ export function MediaGrid({
   }
 
   const renderImage = (item: MediaType) => {
-    const isAuth = needsAuthFetch(item.src)
-    if (isAuth) {
+    if (needsAuthFetch(item.src)) {
       return <AuthenticatedImage src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
     }
-    const isExternal = isExternalUrl(item.src)
-    if (isExternal) {
-      // eslint-disable-next-line @next/next/no-img-element
-      return <img src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
-    }
-    return (
-      <Image
-        src={item.src}
-        alt={item.alt}
-        className="object-cover rounded-lg"
-        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        fill
-      />
-    )
+    // Always a plain <img>: chat/social attachments come from arbitrary CDNs
+    // (Meta, giphy, tenor, …) that next/image can't be host-configured for, and
+    // there's nothing to optimize on third-party ephemeral media anyway.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
   }
 
   const renderVideoInline = (item: MediaType) => (
