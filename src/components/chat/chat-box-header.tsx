@@ -39,6 +39,8 @@ export function ChatBoxHeader({ chat, isConnected = false, onSearchClick }: Chat
   // Determine base route from current pathname
   const getBaseRoute = useCallback(() => {
     if (pathname.startsWith('/email/messages')) return '/email/messages'
+    if (pathname.startsWith('/social/messages-legacy')) return '/social/messages-legacy'
+    if (pathname.startsWith('/messages-legacy')) return '/messages-legacy'
     if (pathname.startsWith('/social/messages')) return '/social/messages'
     return '/messages'
   }, [pathname])

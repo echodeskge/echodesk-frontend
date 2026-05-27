@@ -110,10 +110,9 @@ export function MessagesChatBeta({ platforms }: Props) {
     (chatId: string) => {
       selectChat(chatId);
       const base = pathname.replace(/\/[^/]*$/, "");
-      const root =
-        pathname.startsWith("/social/messages-beta")
-          ? "/social/messages-beta"
-          : "/messages-beta";
+      const root = pathname.startsWith("/social/messages")
+        ? "/social/messages"
+        : "/messages";
       // We use pushState (not router.push) to avoid a Next.js navigation
       // round-trip on every chat click. Falls back to the router if the
       // browser API isn't available (SSR/edge cases).
@@ -134,7 +133,7 @@ export function MessagesChatBeta({ platforms }: Props) {
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
-      const match = path.match(/\/messages-beta\/(.+)$/);
+      const match = path.match(/\/messages(?:-beta)?\/(.+)$/);
       selectChat(match ? match[1] : null);
 
       const snapshot = readFiltersFromSearch(window.location.search);

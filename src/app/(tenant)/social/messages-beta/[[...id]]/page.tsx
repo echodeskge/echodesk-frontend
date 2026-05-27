@@ -1,16 +1,14 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { notFound } from "next/navigation";
-
-import { MessagesChatBeta } from "@/components/messages-beta/MessagesChatBeta";
-import { useMessagesBetaEnabled } from "@/hooks/useMessagesBetaEnabled";
-
-export default function SocialMessagesBetaPage() {
-  const enabled = useMessagesBetaEnabled();
-
-  if (!enabled) {
-    notFound();
-  }
-
-  return <MessagesChatBeta key="social-messages-beta" platforms={["facebook", "instagram", "whatsapp", "widget"]} />;
+// The socket inbox is now the default at /social/messages. This route is kept
+// only so old "Messages (Beta)" bookmarks/links land on the new default
+// (preserving the open chat id when present).
+export default async function SocialMessagesBetaRedirect({
+  params,
+}: {
+  params: Promise<{ id?: string[] }>;
+}) {
+  const { id } = await params;
+  const chat = id?.[0];
+  redirect(chat ? `/social/messages/${chat}` : "/social/messages");
 }

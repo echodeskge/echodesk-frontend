@@ -1,19 +1,12 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { notFound } from "next/navigation";
-
-import { MessagesChatBeta } from "@/components/messages-beta/MessagesChatBeta";
-import { useMessagesBetaEnabled } from "@/hooks/useMessagesBetaEnabled";
-
-export default function MessagesBetaPage() {
-  const enabled = useMessagesBetaEnabled();
-
-  if (!enabled) {
-    // 404 keeps the route invisible to anyone without the feature key. We
-    // deliberately don't redirect to /messages — accidental redirects from
-    // a half-rolled-out feature are noisy to debug.
-    notFound();
-  }
-
-  return <MessagesChatBeta key="messages-beta" platforms={["facebook", "instagram", "whatsapp", "widget"]} />;
+// Old beta route — redirect to the canonical default inbox.
+export default async function MessagesBetaRedirect({
+  params,
+}: {
+  params: Promise<{ id?: string[] }>;
+}) {
+  const { id } = await params;
+  const chat = id?.[0];
+  redirect(chat ? `/social/messages/${chat}` : "/social/messages");
 }

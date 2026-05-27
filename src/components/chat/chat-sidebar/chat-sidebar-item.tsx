@@ -19,6 +19,8 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
   // Determine base route from current pathname (e.g., /email/messages or /messages or /social/messages)
   const getBaseRoute = useCallback(() => {
     if (pathname.startsWith('/email/messages')) return '/email/messages'
+    if (pathname.startsWith('/social/messages-legacy')) return '/social/messages-legacy'
+    if (pathname.startsWith('/messages-legacy')) return '/messages-legacy'
     if (pathname.startsWith('/social/messages')) return '/social/messages'
     return '/messages'
   }, [pathname])

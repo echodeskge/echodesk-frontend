@@ -302,7 +302,7 @@ export function AppSidebar({
                       <span className={`text-sm ${isLocked ? 'text-gray-400' : ''}`}>{item.icon}</span>
                     )}
                     <span className={isLocked ? 'text-gray-500' : ''}>{item.label}</span>
-                    {(item.id === 'social/messages' || item.id === 'social/messages-beta') && socialUnread > 0 && (
+                    {item.id === 'social/messages' && socialUnread > 0 && (
                       <Badge
                         variant="destructive"
                         className="ml-auto h-5 min-w-5 flex items-center justify-center px-1 text-xs"

@@ -83,6 +83,8 @@ export function ChatBoxFooterFacebook({ onMessageSent }: ChatBoxFooterFacebookPr
           if (showArchived) {
             // Navigate to the same chat with ?tab=assigned, without ?view=history
             const base = pathname.startsWith('/email/messages') ? '/email/messages'
+              : pathname.startsWith('/social/messages-legacy') ? '/social/messages-legacy'
+              : pathname.startsWith('/messages-legacy') ? '/messages-legacy'
               : pathname.startsWith('/social/messages') ? '/social/messages'
               : '/messages';
             const chatPath = chatIdParam ? `${base}/${chatIdParam}` : base;
