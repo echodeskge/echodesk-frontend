@@ -32,19 +32,15 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
   onMediaClick?: (event: MouseEvent<HTMLButtonElement>) => void
 }
 
-// Check if URL should bypass Next.js Image optimization (external CDNs, proxy URLs, blob URLs)
+// Check if URL should bypass Next.js Image optimization (external CDNs, proxy URLs, blob URLs).
+// Chat/social attachments arrive from arbitrary CDNs we can't enumerate in
+// next.config (Meta, giphy, tenor, … — e.g. Instagram GIF stickers come from
+// giphy.com). So treat ANY absolute URL (and blob: previews) as external and
+// render it with a plain <img>, instead of an allowlist that next/image would
+// otherwise reject ("hostname not configured").
 function isExternalUrl(src: string | undefined | null): boolean {
   if (!src) return false
-  const externalPatterns = [
-    "fbcdn.net",
-    "cdninstagram.com",
-    "whatsapp.net",
-    "fbsbx.com",
-    "digitaloceanspaces.com",
-    "/api/social/whatsapp-media/",
-    "blob:",
-  ]
-  return externalPatterns.some((pattern) => src.includes(pattern))
+  return /^https?:\/\//i.test(src) || src.startsWith("blob:") || src.includes("/api/social/whatsapp-media/")
 }
 
 // Check if URL requires authenticated fetch (e.g. WhatsApp media proxy)
