@@ -150,6 +150,9 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
     images,
     files,
     voiceMessage,
+    // Shared location (WhatsApp type:'location') → message.location so the
+    // bubble renders the "Open in Maps" card. Same extractor as the REST path.
+    location: extractLocation({ attachments: messageData.attachments }),
     status: "DELIVERED",
     createdAt: parseTimestamp(messageData.timestamp),
     platformMessageId: messageData.message_id,
