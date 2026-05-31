@@ -16,7 +16,14 @@ interface KanbanColumnProps {
 export function KanbanColumnItem({ column, index }: KanbanColumnProps) {
   return (
     <Draggable
-      draggableId={column.id} // A unique identifier for this column, which helps the library track and move the item
+      // Namespaced so a column draggableId can never collide with a TASK
+      // draggableId (task.id). @hello-pangea/dnd requires every draggableId
+      // in the context to be globally unique across BOTH columns and tasks.
+      // When a ticket's id equalled a column's id (ticket 11 vs column 11 on
+      // amanati board 2), grabbing that ticket matched the column draggable
+      // and dragged the WHOLE column. handleDragDrop keys columns off
+      // type==="Column" + index (never this id), so the prefix is safe.
+      draggableId={`col-${column.id}`}
       index={index} // The position of this column in the root, used for reordering columns when drag-and-drop occurs
     >
       {/* A render callback function that provides the necessary props
