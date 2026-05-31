@@ -1,5 +1,6 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
 import { parseTimestamp } from "@/lib/parseTimestamp";
+
 /**
  * Strips HTML tags from a string and decodes HTML entities
  */
@@ -41,14 +42,11 @@ interface AttachmentResult {
 }
 
 /**
- * Converts a UnifiedMessage's attachments into images/files/voiceMessage.
- * Mutates msg.message_text to add placeholder text when no URL is available.
- * Shared by both convertFacebookMessagesToChatFormat and convertUnifiedMessagesToMessageType.
+ * Pull a shared-location out of the attachments array (WhatsApp
+ * type:'location'). Returns undefined when there's no location, so the
+ * bubble only renders the maps card for actual location messages. Exported
+ * so the beta WS path (ws-handlers) shares one implementation.
  */
-// Pull a shared-location out of the attachments array (WhatsApp
-// type:'location'). Returns undefined when there's no location, so the
-// bubble only renders the maps card for actual location messages.
-// Exported so the beta WS path (ws-handlers) shares one implementation.
 export function extractLocation(
   msg: { attachments?: Attachment[] }
 ): MessageType["location"] | undefined {
@@ -67,6 +65,11 @@ export function extractLocation(
   };
 }
 
+/**
+ * Converts a UnifiedMessage's attachments into images/files/voiceMessage.
+ * Mutates msg.message_text to add placeholder text when no URL is available.
+ * Shared by both convertFacebookMessagesToChatFormat and convertUnifiedMessagesToMessageType.
+ */
 export function convertAttachments(msg: UnifiedMessage): AttachmentResult {
   let images: AttachmentResult['images'];
   let files: AttachmentResult['files'];
@@ -138,9 +141,8 @@ export function convertAttachments(msg: UnifiedMessage): AttachmentResult {
       if (audioAtts.length > 0) {
         voiceMessage = { name: 'audio', url: resolveAttUrl(audioAtts[0]), size: 0 };
       }
-      // Everything else as files
-      // 'location' excluded — surfaced via message.location as an
-      // "Open in Maps" card, not as a file attachment.
+      // Everything else as files. 'location' excluded — surfaced via
+      // message.location as an "Open in Maps" card, not a file attachment.
       const knownTypes = [...imgTypes, 'video', 'audio', 'location'];
       const fileAtts = msg.attachments.filter((a) => resolveAttUrl(a) && !knownTypes.includes(a.type || attachmentType));
       if (fileAtts.length > 0 && !images && !voiceMessage) {
@@ -150,9 +152,13 @@ export function convertAttachments(msg: UnifiedMessage): AttachmentResult {
       }
     }
 
-    // Fallback to attachment_url if no media resolved from attachments array
+    // Fallback to attachment_url if no media resolved from attachments array.
+    // Skip location attachments — their `url` is a maps link, not media, and
+    // they're surfaced via message.location instead.
     if (!images && !files && !voiceMessage) {
-      const attachmentUrl = msg.attachment_url || msg.attachments?.find((a) => a.url)?.url;
+      const attachmentUrl =
+        msg.attachment_url ||
+        msg.attachments?.find((a) => a.url && a.type !== 'location')?.url;
       if (attachmentUrl) {
         if (isImageType) {
           images = [{ name: attachmentType, url: attachmentUrl, size: 0, type: 'image' }];
