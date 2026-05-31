@@ -118,10 +118,29 @@ describe("sendForPlatform – instagram", () => {
       "hi",
       []
     );
+    // Instagram replies were enabled (commit 8b996d3) — the IG send now
+    // carries reply_to_message_id like FB/WA. Empty string when no reply
+    // is active; the backend instagram_send_message view reads the field.
     expect(postMock).toHaveBeenCalledWith("/api/social/instagram/send-message/", {
       recipient_id: "recip1",
       instagram_account_id: "acctA",
       message: "hi",
+      reply_to_message_id: "",
+    });
+  });
+
+  it("threads reply_to_message_id when provided", async () => {
+    await sendForPlatform(
+      makeRow({ id: "ig_acctA_recip1", platform: "instagram", accountId: "acctA" }),
+      "thanks",
+      [],
+      "ig_mid_original"
+    );
+    expect(postMock).toHaveBeenCalledWith("/api/social/instagram/send-message/", {
+      recipient_id: "recip1",
+      instagram_account_id: "acctA",
+      message: "thanks",
+      reply_to_message_id: "ig_mid_original",
     });
   });
 });
