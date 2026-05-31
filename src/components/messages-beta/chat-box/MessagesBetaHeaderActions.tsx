@@ -362,11 +362,12 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          {/* Transfer is admin-only — non-staff agents can only claim
-              chats for themselves (Assign to me) or release them
-              (Unassign). Mirrors the legacy invariant that hand-off
-              decisions belong to supervisors. */}
-          {isAdmin && (
+          {/* Transfer (reassign): any agent can hand off a chat assigned
+              to THEM to a teammate — matches legacy chat-header-actions
+              (shown when isAssignedToMe). Admins can additionally reassign
+              a chat owned by another agent. Mirrors the backend
+              transfer_chat permission (assigned_user == me OR staff). */}
+          {(isAssignedToMe || (isAdmin && isAssignedToOther)) && (
             <DropdownMenuItem onSelect={() => setTransferOpen(true)}>
               <Users className="h-4 w-4 mr-2" />
               {t("transferToTeammate")}
