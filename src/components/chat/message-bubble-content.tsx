@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { useMemo, useState, useEffect, useRef } from "react"
 import DOMPurify from "dompurify"
+import { MapPin } from "lucide-react"
 import type { MessageType } from "@/components/chat/types"
 import axios from "@/api/axios"
 
