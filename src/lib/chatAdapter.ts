@@ -1,6 +1,5 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
 import { parseTimestamp } from "@/lib/parseTimestamp";
-
 /**
  * Strips HTML tags from a string and decodes HTML entities
  */
@@ -27,6 +26,11 @@ interface Attachment {
   media_id?: string;
   mime_type?: string;
   filename?: string;
+  // Shared-location (WhatsApp type:'location')
+  latitude?: number;
+  longitude?: number;
+  name?: string;
+  address?: string;
 }
 
 // Shared attachment conversion result
@@ -41,6 +45,28 @@ interface AttachmentResult {
  * Mutates msg.message_text to add placeholder text when no URL is available.
  * Shared by both convertFacebookMessagesToChatFormat and convertUnifiedMessagesToMessageType.
  */
+// Pull a shared-location out of the attachments array (WhatsApp
+// type:'location'). Returns undefined when there's no location, so the
+// bubble only renders the maps card for actual location messages.
+// Exported so the beta WS path (ws-handlers) shares one implementation.
+export function extractLocation(
+  msg: { attachments?: Attachment[] }
+): MessageType["location"] | undefined {
+  const att = (msg.attachments || []).find(
+    (a) => a.type === "location" && a.latitude != null && a.longitude != null
+  );
+  if (!att) return undefined;
+  const lat = att.latitude as number;
+  const lng = att.longitude as number;
+  return {
+    latitude: lat,
+    longitude: lng,
+    name: att.name || undefined,
+    address: att.address || undefined,
+    url: att.url || `https://www.google.com/maps?q=${lat},${lng}`,
+  };
+}
+
 export function convertAttachments(msg: UnifiedMessage): AttachmentResult {
   let images: AttachmentResult['images'];
   let files: AttachmentResult['files'];
@@ -113,7 +139,9 @@ export function convertAttachments(msg: UnifiedMessage): AttachmentResult {
         voiceMessage = { name: 'audio', url: resolveAttUrl(audioAtts[0]), size: 0 };
       }
       // Everything else as files
-      const knownTypes = [...imgTypes, 'video', 'audio'];
+      // 'location' excluded — surfaced via message.location as an
+      // "Open in Maps" card, not as a file attachment.
+      const knownTypes = [...imgTypes, 'video', 'audio', 'location'];
       const fileAtts = msg.attachments.filter((a) => resolveAttUrl(a) && !knownTypes.includes(a.type || attachmentType));
       if (fileAtts.length > 0 && !images && !voiceMessage) {
         files = fileAtts.map((a) => ({
@@ -226,6 +254,7 @@ function convertMessageFields(msg: UnifiedMessage, senderId: string): MessageTyp
     reactionEmoji: msg.reaction_emoji,
     reactedBy: msg.reacted_by,
     reactedAt: msg.reacted_at ? new Date(msg.reacted_at) : undefined,
+    location: extractLocation(msg),
   };
 }
 

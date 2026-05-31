@@ -114,6 +114,14 @@ export interface MessageType {
   reactionEmoji?: string
   reactedBy?: string
   reactedAt?: Date
+  // Shared location (WhatsApp). Rendered as an "Open in Maps" card.
+  location?: {
+    latitude: number
+    longitude: number
+    name?: string
+    address?: string
+    url?: string
+  }
 }
 
 export type NewMessageType = Omit<

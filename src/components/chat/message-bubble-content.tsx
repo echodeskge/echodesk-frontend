@@ -107,6 +107,31 @@ export function MessageBubbleContent({
   // Collect all content parts - messages can have text AND attachments
   const contentParts: ReactNode[] = []
 
+  // Shared location (WhatsApp) — "Open in Maps" card
+  if (message.location) {
+    const loc = message.location
+    contentParts.push(
+      <a
+        key="location"
+        href={loc.url || `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-start gap-2 rounded-md border bg-background/60 px-3 py-2 hover:bg-background transition-colors max-w-[260px] no-underline"
+      >
+        <MapPin className="h-4 w-4 mt-0.5 shrink-0 text-rose-500" />
+        <span className="min-w-0">
+          <span className="block text-sm font-medium truncate">
+            {loc.name || "Shared location"}
+          </span>
+          <span className="block text-xs opacity-70 truncate">
+            {loc.address || `${loc.latitude.toFixed(5)}, ${loc.longitude.toFixed(5)}`}
+          </span>
+          <span className="block text-xs underline mt-0.5">Open in Maps</span>
+        </span>
+      </a>
+    )
+  }
+
   // Add images if present
   if (message.images && message.images.length > 0) {
     contentParts.push(

@@ -681,3 +681,36 @@ describe("dispatchWsFrame – message_status + reaction_update", () => {
     expect(useMessagesBetaStore.getState().messagesByChatId["wa_w1_995"][0].reactionEmoji).toBe("🔥");
   });
 });
+
+describe("dispatchWsFrame – WhatsApp location", () => {
+  it("new_message location frame surfaces message.location (Open in Maps)", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({ id: "wa_w1_995", platform: "whatsapp", accountId: "w1", conversationKey: "995" }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "995",
+        message: {
+          id: "loc1",
+          platform: "whatsapp",
+          waba_id: "w1",
+          from_number: "995",
+          message_text: "Home",
+          attachments: [
+            { type: "location", latitude: 41.73, longitude: 44.77, name: "Home" },
+          ],
+          timestamp: new Date().toISOString(),
+        },
+      },
+      Array.from(PLATFORMS)
+    );
+    const msgs = useMessagesBetaStore.getState().messagesByChatId["wa_w1_995"];
+    const m = msgs.find((x) => x.id === "loc1");
+    expect(m?.location?.latitude).toBeCloseTo(41.73);
+    expect(m?.location?.url).toContain("google.com/maps?q=41.73,44.77");
+    // No bogus file attachment.
+    expect(m?.files ?? []).toHaveLength(0);
+  });
+});

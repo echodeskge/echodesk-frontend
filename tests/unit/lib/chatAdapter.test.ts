@@ -835,3 +835,38 @@ describe("convertApiConversationsToChatFormat", () => {
     expect(result).toEqual([]);
   });
 });
+
+describe("convertUnifiedMessagesToMessageType – location", () => {
+  it("maps a WhatsApp location attachment to message.location", () => {
+    const out = convertUnifiedMessagesToMessageType([
+      makeUnifiedMessage({
+        message_text: "Home",
+        attachments: [
+          {
+            type: "location",
+            latitude: 41.7326622,
+            longitude: 44.7706069,
+            name: "Home",
+            address: "Tbilisi",
+            url: "https://www.google.com/maps?q=41.7326622,44.7706069",
+          },
+        ],
+      }),
+    ]);
+    expect(out[0].location).toBeDefined();
+    expect(out[0].location?.latitude).toBeCloseTo(41.7326622);
+    expect(out[0].location?.longitude).toBeCloseTo(44.7706069);
+    expect(out[0].location?.url).toContain("google.com/maps?q=41.7326622");
+    // Location must NOT leak into files.
+    expect(out[0].files ?? []).toHaveLength(0);
+  });
+
+  it("falls back to a maps URL when the attachment has no url", () => {
+    const out = convertUnifiedMessagesToMessageType([
+      makeUnifiedMessage({
+        attachments: [{ type: "location", latitude: 10, longitude: 20 }],
+      }),
+    ]);
+    expect(out[0].location?.url).toBe("https://www.google.com/maps?q=10,20");
+  });
+});

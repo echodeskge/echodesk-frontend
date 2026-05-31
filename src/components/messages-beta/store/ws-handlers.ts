@@ -11,7 +11,7 @@
  */
 import { parseTimestamp } from "@/lib/parseTimestamp";
 import { consumePendingMedia } from "@/lib/pendingMedia";
-import { convertAttachments } from "@/lib/chatAdapter";
+import { convertAttachments, extractLocation } from "@/lib/chatAdapter";
 
 import { isInEndSessionBlockWindow } from "../end-session-block";
 
