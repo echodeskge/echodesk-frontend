@@ -1,0 +1,46 @@
+# Production image using Next.js standalone output (next.config.ts: output: 'standalone').
+# NEXT_PUBLIC_* values are inlined into the bundle at build time and must be
+# passed as build args (see echodesk-infra/docker-compose.yml).
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ARG NEXT_PUBLIC_MAIN_DOMAIN
+ARG NEXT_PUBLIC_API_DOMAIN
+ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_DEFAULT_LANGUAGE
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_FACEBOOK_APP_ID
+ARG NEXT_PUBLIC_CLARITY_PROJECT_ID
+ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
+ARG NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+ARG NEXT_PUBLIC_PADDLE_ENVIRONMENT
+ARG NEXT_PUBLIC_WIDGET_API_URL
+ARG NEXT_PUBLIC_WIDGET_HOST
+# Optional: enables Sentry source-map upload when set
+ARG SENTRY_AUTH_TOKEN
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+FROM node:20-alpine AS run
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+COPY --from=build /app/public ./public
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+
+USER node
+EXPOSE 3000
+CMD ["node", "server.js"]

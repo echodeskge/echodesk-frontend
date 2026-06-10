@@ -234,6 +234,12 @@ const nextConfig: NextConfig = {
         hostname: 'echodesk-spaces.fra1.digitaloceanspaces.com',
         pathname: '/**',
       },
+      // Hetzner Object Storage (tenant logos and media after migration)
+      {
+        protocol: 'https',
+        hostname: 'echodesk-media.fsn1.your-objectstorage.com',
+        pathname: '/**',
+      },
       // WhatsApp media domains
       {
         protocol: 'https',
