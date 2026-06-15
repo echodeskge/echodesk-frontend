@@ -9,6 +9,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import { stripHtml } from "@/lib/stripHtml"
 
 interface KanbanTaskItemContentProps {
   task: TaskType
@@ -29,7 +30,10 @@ export function KanbanTaskItemContent({ task }: KanbanTaskItemContentProps) {
         : ("IMAGE" as const),
     }))
 
-  const description = task.description?.trim() || ""
+  // Ticket descriptions are HTML when description_format === "html" (the
+  // default). Strip tags + decode entities here so the kanban card and its
+  // hover preview render readable plain text instead of "<p>…</p>" literals.
+  const description = stripHtml(task.description)
   const hasDescription = description.length > 0
 
   return (
