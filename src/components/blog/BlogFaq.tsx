@@ -21,7 +21,12 @@ export function BlogFaq({ items, locale, heading }: Props) {
   const pickQ = (item: BlogFaqItem) => (locale === 'ka' ? item.question_ka : item.question_en);
   const pickA = (item: BlogFaqItem) => (locale === 'ka' ? item.answer_ka : item.answer_en);
 
-  const filtered = items.filter((item) => pickQ(item) && pickA(item));
+  // The blog API has been observed returning a non-array for `items` (Firefox
+  // event in Sentry: "a.filter is not a function" at /[slug]). Guard at the
+  // boundary so a malformed payload renders an empty FAQ section rather than
+  // crashing the whole post.
+  const safeItems = Array.isArray(items) ? items : [];
+  const filtered = safeItems.filter((item) => pickQ(item) && pickA(item));
 
   if (filtered.length === 0) return null;
 
