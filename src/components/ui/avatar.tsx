@@ -81,6 +81,7 @@ interface AvatarStackProps
     VariantProps<typeof avatarStackVariants> {
   avatars: { src?: string; alt: string; href?: string }[]
   avatarClassName?: string
+  fallbackClassName?: string
   limit?: number
   onMoreButtonClick?: (event: MouseEvent<HTMLButtonElement>) => void
 }
@@ -92,6 +93,7 @@ export function AvatarStack({
   onMoreButtonClick,
   className,
   avatarClassName,
+  fallbackClassName,
   ...props
 }: AvatarStackProps) {
   const limitedAvatars = avatars.slice(0, limit)
@@ -118,7 +120,9 @@ export function AvatarStack({
                       src={avatar.src}
                       className="border-2 border-background"
                     />
-                    <AvatarFallback className="border-2 border-background">
+                    <AvatarFallback
+                      className={cn("border-2 border-background", fallbackClassName)}
+                    >
                       {getInitials(avatar.alt)}
                     </AvatarFallback>
                   </Avatar>
@@ -131,7 +135,9 @@ export function AvatarStack({
                     src={avatar.src}
                     className="border-2 border-background"
                   />
-                  <AvatarFallback className="border-2 border-background">
+                  <AvatarFallback
+                    className={cn("border-2 border-background", fallbackClassName)}
+                  >
                     {getInitials(avatar.alt)}
                   </AvatarFallback>
                 </Avatar>

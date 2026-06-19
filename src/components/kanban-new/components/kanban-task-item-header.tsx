@@ -33,7 +33,7 @@ export function KanbanTaskItemHeader({
   const priorityColor = getPriorityColor(task.label);
 
   return (
-    <CardHeader className="flex-row items-center space-y-0 gap-x-1.5 px-3 py-3.5">
+    <CardHeader className="flex-row items-center space-y-0 gap-x-1.5 px-3 py-2">
       <Badge
         style={{
           backgroundColor: `${priorityColor}20`,

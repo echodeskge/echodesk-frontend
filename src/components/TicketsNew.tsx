@@ -15,77 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search } from "lucide-react";
 import { BoardCreateSheet } from "./BoardCreateSheet";
-import type { ColumnType, TaskType, UserType } from "./kanban-new/types";
-import type { KanbanBoard, TicketList, TicketColumn, Board } from "@/api/generated/interfaces";
-
-// Helper to convert API data to Kanban format
-function convertApiDataToKanbanFormat(kanbanBoardData: KanbanBoard): ColumnType[] {
-  const columns: ColumnType[] = [];
-
-  // Parse tickets_by_column if it's a string
-  const ticketsByColumn = typeof kanbanBoardData.tickets_by_column === 'string'
-    ? JSON.parse(kanbanBoardData.tickets_by_column)
-    : kanbanBoardData.tickets_by_column;
-
-  // Convert each column
-  kanbanBoardData.columns.forEach((apiColumn: TicketColumn) => {
-    const columnTasks: TaskType[] = [];
-    const ticketsForColumn = ticketsByColumn[apiColumn.id] || [];
-
-    // Convert tickets to tasks
-    ticketsForColumn.forEach((ticket: TicketList) => {
-      const assignedUsers: UserType[] = ticket.assigned_users?.map(user => ({
-        id: user.id.toString(),
-        username: user.email,
-        name: `${user.first_name} ${user.last_name}`.trim() || user.email,
-        avatar: undefined,
-      })) || [];
-
-      const task: TaskType = {
-        id: ticket.id.toString(),
-        columnId: apiColumn.id.toString(),
-        order: ticket.position_in_column || 0,
-        title: ticket.title,
-        // Was set to ticket.status (the workflow column name) which
-        // shadowed the actual ticket body. Use the real field — backend
-        // started returning it on TicketListSerializer in echodesk-back
-        // commit 6080ac6.
-        description: ticket.description || '',
-        label: String(ticket.priority || 'low'),
-        labels: ticket.tags?.map(tag => ({
-          id: tag.id,
-          name: tag.name,
-          color: tag.color || '#6B7280',
-          description: tag.description
-        })) || [],
-        comments: [],
-        assigned: assignedUsers,
-        dueDate: ticket.created_at ? new Date(ticket.created_at) : new Date(),
-        attachments: [],
-      };
-
-      columnTasks.push(task);
-    });
-
-    // Sort tasks by position
-    columnTasks.sort((a, b) => a.order - b.order);
-
-    const column: ColumnType = {
-      id: apiColumn.id.toString(),
-      order: apiColumn.position || 0,
-      title: apiColumn.name,
-      color: apiColumn.color,
-      tasks: columnTasks,
-    };
-
-    columns.push(column);
-  });
-
-  // Sort columns by position
-  columns.sort((a, b) => a.order - b.order);
-
-  return columns;
-}
+import { convertApiDataToKanbanFormat } from "./kanban-new/convert";
+import type { Board } from "@/api/generated/interfaces";
 
 interface TicketsNewProps {
   selectedBoardId: number | null;

@@ -337,6 +337,7 @@
     "description": "აღწერა",
     "priorityLabel": "პრიორიტეტი",
     "assignedTo": "პასუხისმგებელი",
+    "unassigned": "მინიჭებული არ არის",
     "createdBy": "შემქმნელი",
     "createdAt": "შექმნის თარიღი",
     "updatedAt": "განახლების თარიღი",
