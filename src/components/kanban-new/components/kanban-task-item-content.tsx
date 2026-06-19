@@ -37,7 +37,7 @@ export function KanbanTaskItemContent({ task }: KanbanTaskItemContentProps) {
   const hasDescription = description.length > 0
 
   return (
-    <CardContent>
+    <CardContent className="px-3 pb-0 pt-0">
       {hasDescription ? (
         <HoverCard openDelay={300} closeDelay={100}>
           <HoverCardTrigger asChild>

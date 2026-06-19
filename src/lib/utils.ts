@@ -26,6 +26,10 @@ export function formatDateShort(value: string | number | Date) {
   return format(value, "MMM dd")
 }
 
+export function formatDateTime(value: string | number | Date) {
+  return format(value, "MMM d, h:mm a") // e.g. "Jun 19, 2:30 PM"
+}
+
 export function ensureWithSuffix(value: string, suffix: string) {
   return value.endsWith(suffix) ? value : `${value}${suffix}`
 }

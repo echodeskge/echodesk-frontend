@@ -36,6 +36,7 @@ export interface TaskType {
   comments: CommentType[]
   assigned: UserType[]
   dueDate: Date
+  createdAt?: Date
   attachments: FileType[]
 }
 

@@ -494,6 +494,7 @@
     "description": "Description",
     "priorityLabel": "Priority",
     "assignedTo": "Assigned To",
+    "unassigned": "Unassigned",
     "createdBy": "Created By",
     "createdAt": "Created At",
     "updatedAt": "Updated At",

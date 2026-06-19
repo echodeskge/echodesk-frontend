@@ -1,79 +1,16 @@
 /**
- * Tests for kanban data conversion logic from TicketsNew.tsx.
+ * Tests for kanban data conversion logic used by TicketsNew.tsx.
  *
  * Tests:
  * - convertApiDataToKanbanFormat: API response -> kanban ColumnType[]
+ *   (imported from the real module so this never drifts from production)
  * - Search filtering on kanban data (title match, description match, no match)
  */
 
 import { describe, it, expect } from "vitest";
 import type { KanbanBoard, TicketColumn, TicketList } from "@/api/generated/interfaces";
-import type { ColumnType, TaskType } from "@/components/kanban-new/types";
-
-// ---------------------------------------------------------------------------
-// Extracted from TicketsNew.tsx (convertApiDataToKanbanFormat)
-// ---------------------------------------------------------------------------
-
-function convertApiDataToKanbanFormat(kanbanBoardData: KanbanBoard): ColumnType[] {
-  const columns: ColumnType[] = [];
-
-  const ticketsByColumn =
-    typeof kanbanBoardData.tickets_by_column === "string"
-      ? JSON.parse(kanbanBoardData.tickets_by_column)
-      : kanbanBoardData.tickets_by_column;
-
-  kanbanBoardData.columns.forEach((apiColumn: TicketColumn) => {
-    const columnTasks: TaskType[] = [];
-    const ticketsForColumn = ticketsByColumn[apiColumn.id] || [];
-
-    ticketsForColumn.forEach((ticket: TicketList) => {
-      const assignedUsers = ticket.assigned_users?.map((user) => ({
-        id: user.id.toString(),
-        username: user.email,
-        name: `${user.first_name} ${user.last_name}`.trim() || user.email,
-        avatar: undefined,
-      })) || [];
-
-      const task: TaskType = {
-        id: ticket.id.toString(),
-        columnId: apiColumn.id.toString(),
-        order: ticket.position_in_column || 0,
-        title: ticket.title,
-        description: ticket.status || "",
-        label: String(ticket.priority || "low"),
-        labels:
-          ticket.tags?.map((tag) => ({
-            id: tag.id,
-            name: tag.name,
-            color: tag.color || "#6B7280",
-            description: tag.description,
-          })) || [],
-        comments: [],
-        assigned: assignedUsers,
-        dueDate: ticket.created_at ? new Date(ticket.created_at) : new Date(),
-        attachments: [],
-      };
-
-      columnTasks.push(task);
-    });
-
-    columnTasks.sort((a, b) => a.order - b.order);
-
-    const column: ColumnType = {
-      id: apiColumn.id.toString(),
-      order: apiColumn.position || 0,
-      title: apiColumn.name,
-      color: apiColumn.color,
-      tasks: columnTasks,
-    };
-
-    columns.push(column);
-  });
-
-  columns.sort((a, b) => a.order - b.order);
-
-  return columns;
-}
+import type { ColumnType } from "@/components/kanban-new/types";
+import { convertApiDataToKanbanFormat } from "@/components/kanban-new/convert";
 
 // ---------------------------------------------------------------------------
 // Extracted from TicketsNew.tsx (search filter logic)
@@ -123,7 +60,8 @@ function makeTicket(overrides: Partial<TicketList> = {}): TicketList {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     created_by: { id: 1, email: "admin@test.com", first_name: "Admin", last_name: "User" } as TicketList["created_by"],
-    assigned_to: { id: 2, email: "agent@test.com", first_name: "Agent", last_name: "User" } as TicketList["assigned_to"],
+    // Unassigned by default so each test opts into assigned_to / assigned_users explicitly.
+    assigned_to: null as unknown as TicketList["assigned_to"],
     assigned_users: [],
     assigned_groups: [],
     assignments: [],
@@ -225,6 +163,60 @@ describe("convertApiDataToKanbanFormat", () => {
     expect(result[0].tasks[0].assigned[0].id).toBe("10");
     expect(result[0].tasks[0].assigned[0].name).toBe("John Doe");
     expect(result[0].tasks[0].assigned[0].username).toBe("john@test.com");
+  });
+
+  it("includes the primary assigned_to when assigned_users is empty", () => {
+    const col = makeColumn({ id: 1 });
+    const ticket = makeTicket({
+      id: 1,
+      assigned_to: { id: 7, email: "lead@test.com", first_name: "Lead", last_name: "Dev" } as TicketList["assigned_to"],
+      assigned_users: [],
+    });
+    const board = makeKanbanBoard([col], { 1: [ticket] });
+    const result = convertApiDataToKanbanFormat(board);
+
+    expect(result[0].tasks[0].assigned).toHaveLength(1);
+    expect(result[0].tasks[0].assigned[0].id).toBe("7");
+    expect(result[0].tasks[0].assigned[0].name).toBe("Lead Dev");
+  });
+
+  it("merges assigned_to + assigned_users, deduped with primary first", () => {
+    const col = makeColumn({ id: 1 });
+    const ticket = makeTicket({
+      id: 1,
+      assigned_to: { id: 5, email: "primary@test.com", first_name: "Pri", last_name: "Mary" } as TicketList["assigned_to"],
+      assigned_users: [
+        // id 5 duplicates the primary assignee and must be deduped
+        { id: 5, email: "primary@test.com", first_name: "Pri", last_name: "Mary" } as TicketList["assigned_users"][0],
+        { id: 8, email: "second@test.com", first_name: "Sec", last_name: "Ond" } as TicketList["assigned_users"][0],
+      ],
+    });
+    const board = makeKanbanBoard([col], { 1: [ticket] });
+    const result = convertApiDataToKanbanFormat(board);
+
+    const assigned = result[0].tasks[0].assigned;
+    expect(assigned).toHaveLength(2);
+    expect(assigned[0].id).toBe("5"); // primary first
+    expect(assigned[1].id).toBe("8");
+  });
+
+  it("parses createdAt from created_at", () => {
+    const col = makeColumn({ id: 1 });
+    const ticket = makeTicket({ id: 1, created_at: "2024-03-15T10:30:00Z" });
+    const board = makeKanbanBoard([col], { 1: [ticket] });
+    const result = convertApiDataToKanbanFormat(board);
+
+    expect(result[0].tasks[0].createdAt).toBeInstanceOf(Date);
+    expect(result[0].tasks[0].createdAt?.toISOString()).toBe("2024-03-15T10:30:00.000Z");
+  });
+
+  it("leaves createdAt undefined when created_at is missing", () => {
+    const col = makeColumn({ id: 1 });
+    const ticket = makeTicket({ id: 1, created_at: "" });
+    const board = makeKanbanBoard([col], { 1: [ticket] });
+    const result = convertApiDataToKanbanFormat(board);
+
+    expect(result[0].tasks[0].createdAt).toBeUndefined();
   });
 
   it("falls back to email when first/last names are empty", () => {
