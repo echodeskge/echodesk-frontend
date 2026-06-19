@@ -32,7 +32,7 @@ export function KanbanAddNewTaskButton({ column }: KanbanTaskListProps) {
       onClick={handleClick}
     >
       <Plus className="me-2 size-4 text-muted-foreground" />
-      {t('addNewTask')}
+      {t('add')}
     </Button>
   )
 }

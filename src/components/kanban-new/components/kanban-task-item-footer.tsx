@@ -1,6 +1,6 @@
 "use client"
 
-import { Clock, MessageCircleMore, Paperclip, UserRound } from "lucide-react"
+import { Clock, MessageCircleMore, UserRound } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 import type { TaskType } from "../types"
@@ -33,23 +33,17 @@ export function KanbanTaskItemFooter({ task }: KanbanTaskItemFooterProps) {
             fallbackClassName="bg-primary/10 text-primary font-medium"
           />
         ) : (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="flex size-7 items-center justify-center rounded-full border border-dashed border-muted-foreground/40">
-              <UserRound className="size-3.5" />
-            </span>
-            {t("unassigned")}
+          <span
+            className="flex size-7 items-center justify-center rounded-full border border-dashed border-muted-foreground/40 text-muted-foreground"
+            title={t("unassigned")}
+          >
+            <UserRound className="size-3.5" />
           </span>
         )}
-        <div className="flex items-center">
-          <Button variant="ghost" size="sm">
-            <MessageCircleMore className="me-1.5 size-3.5 text-muted-foreground" />
-            {task.comments.length}
-          </Button>
-          <Button variant="ghost" size="sm">
-            <Paperclip className="me-1.5 size-3.5 text-muted-foreground" />
-            {task.attachments.length}
-          </Button>
-        </div>
+        <Button variant="ghost" size="sm">
+          <MessageCircleMore className="me-1.5 size-3.5 text-muted-foreground" />
+          {task.comments.length}
+        </Button>
       </div>
       {task.createdAt && (
         <div
