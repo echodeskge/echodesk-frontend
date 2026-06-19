@@ -60,7 +60,7 @@ export function KanbanTaskItemActions({ task }: KanbanTaskItemActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="flex h-8 w-8 p-0 ms-auto data-[state=open]:bg-muted"
+            className="flex h-6 w-6 shrink-0 p-0 data-[state=open]:bg-muted"
             aria-label="More actions"
           >
             <EllipsisVertical className="h-4 w-4" />

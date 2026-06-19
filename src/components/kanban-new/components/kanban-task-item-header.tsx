@@ -4,6 +4,7 @@ import type { TaskType } from "../types"
 
 import { Badge } from "@/components/ui/badge"
 import { CardHeader } from "@/components/ui/card"
+import { formatDateTime } from "@/lib/utils"
 import { KanbanTaskItemActions } from "./kanban-task-item-actions"
 
 interface KanbanTaskItemHeaderProps {
@@ -61,7 +62,14 @@ export function KanbanTaskItemHeader({
           ))}
         </div>
       )}
-      <KanbanTaskItemActions task={task} />
+      <div className="ms-auto flex items-center gap-x-1">
+        {task.createdAt && (
+          <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">
+            {formatDateTime(task.createdAt)}
+          </span>
+        )}
+        <KanbanTaskItemActions task={task} />
+      </div>
     </CardHeader>
   )
 }

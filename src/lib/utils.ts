@@ -27,7 +27,7 @@ export function formatDateShort(value: string | number | Date) {
 }
 
 export function formatDateTime(value: string | number | Date) {
-  return format(value, "MMM d, h:mm a") // e.g. "Jun 19, 2:30 PM"
+  return format(value, "dd/MM/yyyy, HH:mm") // e.g. "19/06/2026, 14:30"
 }
 
 export function ensureWithSuffix(value: string, suffix: string) {
