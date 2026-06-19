@@ -22,12 +22,15 @@ export function KanbanTaskItemFooter({ task }: KanbanTaskItemFooterProps) {
   }))
 
   return (
-    <CardFooter className="items-center justify-between gap-2 px-3 pb-3 pt-0">
+    <CardFooter className="items-center justify-between gap-2 px-3 pb-3 pt-3">
       {avatars.length > 0 ? (
         <AvatarStack
           avatars={avatars}
           limit={3}
           size="sm"
+          // Cancel AvatarStack's internal -ms-1 on the first avatar so the
+          // avatars' left gap matches the card's px-3 (and the pb-3 below).
+          className="ms-1"
           fallbackClassName="bg-primary/10 text-primary font-medium"
         />
       ) : (
