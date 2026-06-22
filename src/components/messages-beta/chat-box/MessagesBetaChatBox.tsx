@@ -19,6 +19,7 @@ import { MessagesBetaThread } from "./MessagesBetaThread";
 import { MessagesBetaChatContextShim } from "../shims/ChatContextShim";
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import { fetchMessagesForChat } from "../store/rest-bootstrap";
+import { PLACEHOLDER_CONVERSATION_NAME } from "../store/types";
 import type { BetaPlatform, ConversationRow } from "../store/types";
 
 /**
@@ -47,7 +48,7 @@ function placeholderFromChatId(chatId: string): Omit<ConversationRow, "lastMessa
     platform,
     accountId,
     conversationKey,
-    name: "Loading…",
+    name: PLACEHOLDER_CONVERSATION_NAME,
   };
 }
 

@@ -2,6 +2,14 @@ import type { MessageType } from "@/components/chat/types";
 
 export type BetaPlatform = "facebook" | "instagram" | "whatsapp" | "email" | "widget";
 
+/**
+ * Placeholder name for a deep-linked conversation row whose real metadata
+ * isn't in the current user's bootstrap list (e.g. assigned to another agent,
+ * or past page 1). The store backfills the real name from the loaded thread in
+ * hydrateMessages — otherwise the row stays stuck on this label forever.
+ */
+export const PLACEHOLDER_CONVERSATION_NAME = "Loading…";
+
 export interface ConversationRow {
   id: string; // platform-prefixed id (e.g. `fb_<page>_<sender>`)
   platform: BetaPlatform;

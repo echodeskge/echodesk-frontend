@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { replyPreviewLabel } from "@/lib/chatAdapter";
 import type { MessageType } from "@/components/chat/types";
 
+import { PLACEHOLDER_CONVERSATION_NAME } from "./types";
 import type {
   ArchiveMeta,
   AssignmentTab,
@@ -199,10 +200,36 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
     })),
 
   hydrateMessages: (chatId, messages) =>
-    set((state) => ({
-      messagesByChatId: { ...state.messagesByChatId, [chatId]: messages },
-      messagesLoaded: { ...state.messagesLoaded, [chatId]: true },
-    })),
+    set((state) => {
+      const next = {
+        messagesByChatId: { ...state.messagesByChatId, [chatId]: messages },
+        messagesLoaded: { ...state.messagesLoaded, [chatId]: true },
+      };
+
+      // Backfill a deep-link placeholder row's name from the loaded thread.
+      // A conversation that isn't in the current user's list (assigned to
+      // another agent, or past page 1) is opened via URL as a "Loading…"
+      // placeholder by ensureConversationRow. The REST hydrate is the only
+      // signal we get for it — without resolving the customer's name here it
+      // stays "Loading…" forever (the live WS appendMessage path backfills the
+      // name, but a deep-linked historical thread never receives a WS frame).
+      const row = state.conversations.find((r) => r.id === chatId);
+      if (row && (!row.name || row.name === PLACEHOLDER_CONVERSATION_NAME)) {
+        const customerMsg = messages.find(
+          (m) => m.senderId !== "business" && !!m.senderName
+        );
+        if (customerMsg?.senderName) {
+          return {
+            ...next,
+            conversations: state.conversations.map((r) =>
+              r.id === chatId ? { ...r, name: customerMsg.senderName as string } : r
+            ),
+          };
+        }
+      }
+
+      return next;
+    }),
 
   appendMessage: (chatId, message, isSelected, seedRow) =>
     set((state) => {

@@ -13,6 +13,7 @@ import {
   selectAssignedTabConversations,
 } from "@/components/messages-beta/store/selectors";
 import { useMessagesBetaStore } from "@/components/messages-beta/store/useMessagesBetaStore";
+import { PLACEHOLDER_CONVERSATION_NAME } from "@/components/messages-beta/store/types";
 import type {
   ConversationRow,
   ChatAssignmentSlice,
@@ -451,6 +452,46 @@ describe("MessagesBetaStore – setMessagesStatus (status pips)", () => {
     ] as any);
     s.setMessagesStatus("c", ["1"], "DELIVERED");
     expect(useMessagesBetaStore.getState().messagesByChatId.c[0].status).toBe("READ");
+  });
+});
+
+describe("MessagesBetaStore – hydrateMessages name backfill (deep-link 'Loading…')", () => {
+  it("backfills a placeholder row's name from the first customer message", () => {
+    const s = useMessagesBetaStore.getState();
+    // A deep-linked conversation the user can't see in their list: placeholder row.
+    s.hydrateConversations([makeRow({ id: "fb_p_99", name: PLACEHOLDER_CONVERSATION_NAME })]);
+
+    s.hydrateMessages("fb_p_99", [
+      { id: "1", senderId: "business", senderName: "Me", text: "hello", status: "READ", createdAt: new Date() },
+      { id: "2", senderId: "cust_99", senderName: "Liza Khukhunaishvili", text: "hi", status: "DELIVERED", createdAt: new Date() },
+    ] as any);
+
+    const row = useMessagesBetaStore.getState().conversations.find((r) => r.id === "fb_p_99");
+    expect(row?.name).toBe("Liza Khukhunaishvili");
+  });
+
+  it("does NOT overwrite an already-resolved name (admins keep the list name)", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "fb_p_1", name: "Alice" })]);
+
+    s.hydrateMessages("fb_p_1", [
+      { id: "1", senderId: "cust_1", senderName: "Bob", text: "hi", status: "DELIVERED", createdAt: new Date() },
+    ] as any);
+
+    expect(useMessagesBetaStore.getState().conversations.find((r) => r.id === "fb_p_1")?.name).toBe("Alice");
+  });
+
+  it("leaves the placeholder when no customer message carries a name", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "fb_p_7", name: PLACEHOLDER_CONVERSATION_NAME })]);
+
+    s.hydrateMessages("fb_p_7", [
+      { id: "1", senderId: "business", senderName: "Me", text: "any update?", status: "READ", createdAt: new Date() },
+    ] as any);
+
+    expect(useMessagesBetaStore.getState().conversations.find((r) => r.id === "fb_p_7")?.name).toBe(
+      PLACEHOLDER_CONVERSATION_NAME
+    );
   });
 });
 
