@@ -138,6 +138,7 @@ export default function UserForm({
         await onSubmit(createData);
       } else {
         const updateData: any = {
+          email: formData.email,
           first_name: formData.first_name,
           last_name: formData.last_name,
           status: formData.status as any,
@@ -191,13 +192,19 @@ export default function UserForm({
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
-                disabled={mode === "edit"}
                 placeholder="user@example.com"
                 className={errors.email ? "border-destructive" : ""}
               />
               {errors.email && (
                 <p className="text-sm text-destructive">{errors.email}</p>
               )}
+              {mode === "edit" &&
+                formData.email !== (fullUserData?.email ?? user?.email ?? "") && (
+                  <p className="text-xs text-muted-foreground">
+                    Changing the email generates a new password and emails it to
+                    the new address.
+                  </p>
+                )}
             </div>
 
             <div className="space-y-2">

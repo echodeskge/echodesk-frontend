@@ -1172,6 +1172,8 @@ export interface FacebookMessage {
   reacted_at: string;
   reply_to_message_id: string;
   reply_to_id: number;
+  reply_to_text: string;
+  reply_to_sender_name: string;
   source: FacebookMessageSourceEnum;
   is_echo: boolean;
   sent_by: number;
@@ -1635,6 +1637,10 @@ export interface InstagramMessage {
   account_id: string;
   account_username: string;
   created_at: string;
+  reply_to_message_id: string;
+  reply_to_id: number;
+  reply_to_text: string;
+  reply_to_sender_name: string;
   source: InstagramMessageSourceEnum;
   is_echo: boolean;
   sent_by: number;
@@ -4375,6 +4381,7 @@ export interface PatchedUserPhoneAssignmentRequest {
 }
 
 export interface PatchedUserUpdateRequest {
+  email?: string;
   first_name?: string;
   last_name?: string;
   role?: Role6b8enum;
@@ -6430,6 +6437,7 @@ export interface UserRequest {
 }
 
 export interface UserUpdate {
+  email?: string;
   first_name?: string;
   last_name?: string;
   role?: Role6b8enum;
@@ -6443,6 +6451,7 @@ export interface UserUpdate {
 }
 
 export interface UserUpdateRequest {
+  email?: string;
   first_name?: string;
   last_name?: string;
   role?: Role6b8enum;
@@ -6568,6 +6577,8 @@ export interface WhatsAppMessage {
   sent_by_name: string;
   reply_to_message_id: string;
   reply_to_id: number;
+  reply_to_text: string;
+  reply_to_sender_name: string;
   created_at: string;
 }
 
