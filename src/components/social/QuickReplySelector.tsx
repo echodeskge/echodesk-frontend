@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -166,18 +165,20 @@ export function QuickReplySelector({
           handleSelect(reply);
         }
       }}
-      className="group relative flex w-full cursor-pointer items-start gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group relative flex w-full cursor-pointer items-start gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-medium">{reply.title}</span>
           {reply.shortcut && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="shrink-0 text-xs">
               /{reply.shortcut}
             </Badge>
           )}
         </div>
-        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{reply.message}</p>
+        <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">
+          {reply.message}
+        </p>
         {reply.platforms.length > 0 && reply.platforms[0] !== "all" && (
           <div className="mt-2 flex flex-wrap gap-1">
             {reply.platforms.map((p) => (
@@ -190,7 +191,7 @@ export function QuickReplySelector({
       </div>
 
       {/* Inline actions — revealed on hover/focus (always visible on touch). */}
-      <div className="flex items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+      <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
         <Button
           variant="ghost"
           size="icon"
@@ -227,8 +228,8 @@ export function QuickReplySelector({
           <Zap className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[85vh] flex-col gap-3 overflow-hidden sm:max-w-lg">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <MessageSquareText className="h-5 w-5" />
             Quick Replies
@@ -243,21 +244,28 @@ export function QuickReplySelector({
         </DialogHeader>
 
         {isEditing ? (
-          <div className="space-y-3">
-            <Button variant="ghost" size="sm" className="-ml-2 h-8 gap-1 px-2" onClick={closeForm}>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="-ml-2 mb-2 h-8 shrink-0 justify-start gap-1 px-2"
+              onClick={closeForm}
+            >
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            <QuickReplyForm
-              editingReply={editingReply}
-              onSuccess={handleFormSuccess}
-              onCancel={closeForm}
-            />
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <QuickReplyForm
+                editingReply={editingReply}
+                onSuccess={handleFormSuccess}
+                onCancel={closeForm}
+              />
+            </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
             {/* Toolbar: search + New */}
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -267,14 +275,14 @@ export function QuickReplySelector({
                   className="pl-9"
                 />
               </div>
-              <Button onClick={() => setIsCreating(true)} className="flex-shrink-0 gap-1">
+              <Button onClick={() => setIsCreating(true)} className="shrink-0 gap-1">
                 <Plus className="h-4 w-4" />
                 New
               </Button>
             </div>
 
             {/* List */}
-            <ScrollArea className="h-[340px] pr-2">
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -310,7 +318,7 @@ export function QuickReplySelector({
                   ))}
                 </div>
               )}
-            </ScrollArea>
+            </div>
           </div>
         )}
       </DialogContent>
