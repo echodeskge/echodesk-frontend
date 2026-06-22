@@ -4884,6 +4884,8 @@
     "composer": {
       "placeholder": "ჩაწერეთ შეტყობინება…",
       "placeholderDrop": "მიამაგრეთ აქ…",
+      "savedReply": "შენახული პასუხი",
+      "clickToInsert": "დააწკაპუნეთ ჩასასმელად",
       "sendMessage": "გაგზავნა",
       "attachFile": "ფაილის მიმაგრება",
       "attachFileWidgetUnsupported": "ვებსაიტის სტუმრებთან ფაილების გაგზავნა ჯერ არ არის მხარდაჭერილი",

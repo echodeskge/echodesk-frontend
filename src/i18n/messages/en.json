@@ -4884,6 +4884,8 @@
     "composer": {
       "placeholder": "Type a message…",
       "placeholderDrop": "Drop to attach…",
+      "savedReply": "Saved reply",
+      "clickToInsert": "Click to insert",
       "sendMessage": "Send message",
       "attachFile": "Attach file",
       "attachFileWidgetUnsupported": "Sending files to website visitors isn't supported yet",

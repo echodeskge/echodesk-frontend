@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { QuickReplySelector } from "@/components/social/QuickReplySelector";
+import { QuickReplySuggestions } from "./QuickReplySuggestions";
 import {
   useAssignChat,
   useSocialSettings,
@@ -107,6 +108,9 @@ export function MessagesBetaComposer({ conversation }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  // Hides the inline quick-reply suggestion bar until the next edit (Esc, or
+  // after a suggestion is inserted).
+  const [suggestDismissed, setSuggestDismissed] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -302,6 +306,12 @@ export function MessagesBetaComposer({ conversation }: Props) {
       // sends, Shift+Enter inserts a newline. Cmd/Ctrl+Enter also sends as
       // a power-user shortcut. Every existing user has muscle memory for
       // Enter-to-send, so reversing it on /messages-beta caused complaints.
+      // Esc dismisses the inline quick-reply suggestion bar without touching
+      // the message (re-opens on the next edit).
+      if (e.key === "Escape") {
+        setSuggestDismissed(true);
+        return;
+      }
       if (e.key !== "Enter") return;
       if (e.shiftKey) return; // newline
       e.preventDefault();
@@ -498,6 +508,27 @@ export function MessagesBetaComposer({ conversation }: Props) {
         </div>
       )}
 
+      {/* Inline saved-reply suggestions — match as the agent types, click to insert */}
+      {!suggestDismissed && (
+        <QuickReplySuggestions
+          query={text}
+          platform={
+            conversation.platform === "widget" ? "all" : conversation.platform
+          }
+          customerName={conversation.name}
+          agentName={user?.first_name || user?.email || ""}
+          onSelect={(msg) => {
+            setText(msg);
+            setSuggestDismissed(true);
+            requestAnimationFrame(() => {
+              const el = textareaRef.current;
+              el?.focus();
+              if (el) el.selectionStart = el.selectionEnd = el.value.length;
+            });
+          }}
+        />
+      )}
+
       <div
         className={`flex items-end gap-1 rounded-md border ${
           isDragOver ? "border-primary bg-primary/5" : "border-transparent"
@@ -550,6 +581,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           value={text}
           onChange={(e) => {
             setText(e.target.value);
+            setSuggestDismissed(false);
             notifyTyping();
           }}
           onKeyDown={handleKeyDown}

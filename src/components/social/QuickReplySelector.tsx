@@ -30,6 +30,7 @@ import {
   QuickReplyPlatform,
 } from "@/hooks/api/useSocial";
 import { QuickReplyForm } from "./QuickReplyForm";
+import { processQuickReplyMessage } from "@/lib/quickReply";
 
 interface QuickReplySelectorProps {
   platform: QuickReplyPlatform;
@@ -87,22 +88,8 @@ export function QuickReplySelector({
     return named;
   }, [filteredReplies]);
 
-  // Replace variables in message
-  const processMessage = (message: string): string => {
-    let processed = message;
-    if (customerName) processed = processed.replace(/\{\{customer_name\}\}/g, customerName);
-    if (agentName) processed = processed.replace(/\{\{agent_name\}\}/g, agentName);
-    if (companyName) processed = processed.replace(/\{\{company_name\}\}/g, companyName);
-    processed = processed.replace(/\{\{current_date\}\}/g, new Date().toLocaleDateString());
-    processed = processed.replace(
-      /\{\{current_time\}\}/g,
-      new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
-    return processed;
-  };
-
   const handleSelect = (reply: QuickReply) => {
-    onSelect(processMessage(reply.message));
+    onSelect(processQuickReplyMessage(reply.message, { customerName, agentName, companyName }));
     setOpen(false);
     setSearchQuery("");
   };
