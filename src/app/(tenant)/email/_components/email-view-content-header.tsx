@@ -19,8 +19,11 @@ interface EmailViewContentHeaderProps {
 export function EmailViewContentHeader({ email }: EmailViewContentHeaderProps) {
   const senderName = email.from_name || email.from_email;
   const t = useTranslations("email.view");
+  // Always show the recipient's email address (not the display name): the To
+  // name is set by each sender's own address book, so it's inconsistent across
+  // messages — some carry a label, some don't. The address is stable.
   const toList = email.to_emails
-    .map((t: { name?: string; email: string }) => t.name || t.email)
+    .map((t: { email: string }) => t.email)
     .join(", ");
 
   return (
