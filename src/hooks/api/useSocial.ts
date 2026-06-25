@@ -2663,7 +2663,7 @@ export function useReorderQuickReplies() {
 
 export interface RecentConversation {
   id: string; // Full conversation ID (e.g., fb_pageId_senderId)
-  platform: 'facebook' | 'instagram' | 'whatsapp';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
   conversationId: string;
   accountId: string;
   senderName: string;
@@ -2709,7 +2709,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
 
     return data.results.slice(0, limit).map((conv) => ({
       id: conv.conversation_id,
-      platform: String(conv.platform) as 'facebook' | 'instagram' | 'whatsapp',
+      platform: String(conv.platform) as RecentConversation['platform'],
       conversationId: conv.sender_id,
       accountId: conv.account_id,
       senderName: conv.sender_name,
