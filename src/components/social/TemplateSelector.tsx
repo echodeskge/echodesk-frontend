@@ -35,6 +35,8 @@ interface TemplateSelectorProps {
   trigger?: React.ReactNode;
   recipientNumber?: string;
   disabled?: boolean;
+  /** WABA whose templates to list. Defaults to the first connected account. */
+  wabaId?: string;
 }
 
 interface WhatsAppStatus {
@@ -56,6 +58,7 @@ export default function TemplateSelector({
   trigger,
   recipientNumber,
   disabled = false,
+  wabaId: wabaIdProp,
 }: TemplateSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,7 +69,7 @@ export default function TemplateSelector({
   // Fetch WhatsApp status to get WABA ID
   const { data: whatsappStatusData } = useWhatsAppStatus();
   const whatsappStatus = whatsappStatusData as WhatsAppStatus | undefined;
-  const wabaId = whatsappStatus?.accounts?.[0]?.waba_id || "";
+  const wabaId = wabaIdProp ?? (whatsappStatus?.accounts?.[0]?.waba_id || "");
 
   // Fetch templates
   const { data: templates, isLoading } = useWhatsAppTemplates(wabaId);

@@ -3137,13 +3137,6 @@ export interface PaginatedQueueMemberList {
   results: QueueMember[];
 }
 
-export interface PaginatedQuickReplyList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: QuickReply[];
-}
-
 export interface PaginatedRecurringBookingList {
   count: number;
   next?: string;
@@ -6635,6 +6628,7 @@ export interface WhatsAppTemplateSendRequest {
   template_id: number;
   to_number: string;
   parameters?: Record<string, any>;
+  opt_in_confirmed?: boolean;
 }
 
 export interface WidgetConnection {

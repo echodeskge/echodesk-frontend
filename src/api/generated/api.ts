@@ -426,9 +426,8 @@ import type {
   PaginatedInstagramMessageList,
   InstagramMessage,
   InstagramSendMessageRequest,
-  PaginatedQuickReplyList,
-  QuickReplyRequest,
   QuickReply,
+  QuickReplyRequest,
   PatchedQuickReplyRequest,
   SocialIntegrationSettings,
   SocialIntegrationSettingsRequest,
@@ -8615,16 +8614,12 @@ export async function socialPublicRatingSubmitCreate(
 
 export async function socialQuickRepliesList(
   ordering?: string,
-  page?: number,
-  pageSize?: number,
   search?: string,
-): Promise<PaginatedQuickReplyList> {
+): Promise<QuickReply[]> {
   const response = await axios.get(
     `/api/social/quick-replies/${(() => {
       const parts = [
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';

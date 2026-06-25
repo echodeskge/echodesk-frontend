@@ -757,8 +757,11 @@ export function useSendWhatsAppTemplateMessage() {
   return useMutation({
     mutationFn: (data: WhatsAppTemplateSendRequest) => socialWhatsappTemplatesSendCreate(data),
     onSuccess: () => {
-      // Invalidate messages to show the newly sent template message
+      // Invalidate messages to show the newly sent template message, and the
+      // unified conversation list so a freshly initiated thread appears even if
+      // the live WebSocket frame is missed.
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
     },
   });
 }

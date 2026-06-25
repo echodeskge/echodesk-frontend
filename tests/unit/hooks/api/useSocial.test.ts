@@ -51,8 +51,12 @@ import {
   useFacebookMessages,
   useSendFacebookMessage,
   useSendEmail,
+  useSendWhatsAppTemplateMessage,
 } from "@/hooks/api/useSocial";
 import type { UnreadMessagesCount } from "@/hooks/api/useSocial";
+import { socialWhatsappTemplatesSendCreate } from "@/api/generated";
+
+const mockSendTemplate = vi.mocked(socialWhatsappTemplatesSendCreate);
 import axiosInstance from "@/api/axios";
 
 const mockAxiosGet = vi.mocked(axiosInstance.get);
@@ -322,6 +326,37 @@ describe("useSocial", () => {
       const sentFile = fd.get("attachments") as File;
       expect(sentFile).toBeInstanceOf(File);
       expect(sentFile.name).toBe("doc.pdf");
+    });
+  });
+
+  describe("useSendWhatsAppTemplateMessage", () => {
+    it("invalidates both whatsapp messages and the unified conversations on success", async () => {
+      mockSendTemplate.mockResolvedValue({ id: 1 } as never);
+      const invalidateSpy = vi.spyOn(QueryClient.prototype, "invalidateQueries");
+
+      const { result } = renderHook(() => useSendWhatsAppTemplateMessage(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          waba_id: "waba1",
+          template_id: 7,
+          to_number: "+15551234567",
+          parameters: { param1: "Ann" },
+          opt_in_confirmed: true,
+        });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      const invalidatedKeys = invalidateSpy.mock.calls
+        .map((c) => JSON.stringify((c[0] as { queryKey?: unknown })?.queryKey ?? ""))
+        .join("|");
+      expect(invalidatedKeys).toContain("messages");
+      expect(invalidatedKeys).toContain("conversations");
+
+      invalidateSpy.mockRestore();
     });
   });
 });

@@ -13,6 +13,7 @@ import {
   MessageCircle,
   MoreVertical,
   Search,
+  SquarePen,
   X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -26,11 +27,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { useMarkAllAsRead, useArchiveAllConversations } from "@/hooks/api/useSocial";
+import {
+  useMarkAllAsRead,
+  useArchiveAllConversations,
+  useWhatsAppStatus,
+} from "@/hooks/api/useSocial";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { cn } from "@/lib/utils";
 
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
+import { NewWhatsAppMessageDialog } from "./NewWhatsAppMessageDialog";
 import type { BetaPlatform } from "../store/types";
 
 interface Props {
@@ -87,6 +93,14 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
 
   const markAllAsReadMutation = useMarkAllAsRead();
   const archiveAllMutation = useArchiveAllConversations();
+
+  // "New WhatsApp message" compose entry point — only when this page renders
+  // WhatsApp AND there's at least one active WhatsApp Business Account to send from.
+  const { data: waStatusData } = useWhatsAppStatus();
+  const waStatus = waStatusData as { accounts?: Array<{ is_active: boolean }> } | undefined;
+  const showCompose =
+    platforms.includes("whatsapp") && !!waStatus?.accounts?.some((a) => a.is_active);
+  const [composeOpen, setComposeOpen] = useState(false);
 
   // Filter the platform options to only what this page actually supports.
   const platformChoices = useMemo(
@@ -148,6 +162,17 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
             </Button>
           )}
         </div>
+
+        {showCompose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("newWhatsAppMessage")}
+            onClick={() => setComposeOpen(true)}
+          >
+            <SquarePen className="h-4 w-4" />
+          </Button>
+        )}
 
         {platformChoices.length > 1 && (
           <DropdownMenu>
@@ -243,6 +268,10 @@ export function MessagesBetaSidebarHeader({ platforms }: Props) {
             {t("back")}
           </span>
         </Button>
+      )}
+
+      {showCompose && (
+        <NewWhatsAppMessageDialog open={composeOpen} onOpenChange={setComposeOpen} />
       )}
     </div>
   );

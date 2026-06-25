@@ -4849,6 +4849,7 @@
       "searchPlaceholder": "Search conversations...",
       "clearSearch": "Clear search",
       "filterByPlatform": "Filter by platform",
+      "newWhatsAppMessage": "New WhatsApp message",
       "moreActions": "More actions",
       "allPlatforms": "All platforms",
       "viewHistory": "View history",
@@ -4867,6 +4868,32 @@
       "noConversationsYet": "No conversations yet",
       "noMessagesYet": "No messages yet...",
       "scrollForMore": "Scroll for more"
+    },
+    "newWhatsApp": {
+      "title": "New WhatsApp message",
+      "description": "Start a conversation by sending an approved template to a phone number.",
+      "account": "Send from",
+      "quality": "Quality rating",
+      "lowQualityWarning": "This number's quality rating is low — messages may be limited or delayed.",
+      "phone": "Recipient phone number",
+      "phoneInvalid": "Enter a valid phone number in international format (e.g. +995555123456).",
+      "optInConfirm": "I confirm this recipient has opted in to receive WhatsApp messages from this business.",
+      "chooseTemplate": "Choose template & send",
+      "gateHint": "Enter a valid phone number and confirm opt-in to choose a template.",
+      "sent": "Message sent",
+      "sentDescription": "Your WhatsApp message has been sent.",
+      "sendFailed": "Couldn't send message",
+      "sendErrors": {
+        "OPT_IN_REQUIRED": "Confirm the recipient has opted in before starting a new conversation.",
+        "RECIPIENT_NOT_OPTED_IN": "The recipient hasn't opted in, or the messaging window is closed.",
+        "INVALID_WHATSAPP_NUMBER": "This number isn't a valid WhatsApp user.",
+        "TEMPLATE_PAUSED_OR_DISABLED": "This template is paused or disabled due to quality. Pick another template.",
+        "TEMPLATE_NOT_APPROVED": "This template hasn't been approved yet.",
+        "RATE_OR_TIER_LIMIT": "Messaging limit reached for this number. Try again later.",
+        "US_MARKETING_PAUSED": "WhatsApp has paused marketing templates to US numbers. Use a utility template.",
+        "TEMPLATE_PARAM_MISMATCH": "The template parameters don't match the template.",
+        "SEND_FAILED_GENERIC": "Couldn't send the message. Please try again or contact support."
+      }
     },
     "chatBox": {
       "selectAConversation": "Select a chat to start a conversation.",
