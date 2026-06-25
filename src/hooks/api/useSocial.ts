@@ -1727,6 +1727,7 @@ export interface EmailSendRequest {
   body_html?: string;
   reply_to_message_id?: number;
   connection_id?: number;  // Optional: send from specific email account
+  attachments?: File[];    // Optional: files to attach (sent as multipart/form-data)
 }
 
 export interface EmailActionRequest {
@@ -1930,7 +1931,30 @@ export function useSendEmail() {
 
   return useMutation({
     mutationFn: async (data: EmailSendRequest) => {
-      const response = await axios.post('/api/social/email/send/', data);
+      const { attachments, ...rest } = data;
+
+      // No attachments → keep the simple JSON path (unchanged behaviour).
+      if (!attachments || attachments.length === 0) {
+        const response = await axios.post('/api/social/email/send/', rest);
+        return response.data;
+      }
+
+      // Attachments present → multipart/form-data so the files ride along.
+      // The backend email_send view reads them via request.FILES.getlist('attachments').
+      // Array fields must be sent as repeated keys so DRF's ListField parses
+      // them via getlist() (a single JSON string would fail validation).
+      const formData = new FormData();
+      rest.to_emails.forEach((email) => formData.append('to_emails', email));
+      rest.cc_emails?.forEach((email) => formData.append('cc_emails', email));
+      rest.bcc_emails?.forEach((email) => formData.append('bcc_emails', email));
+      if (rest.subject !== undefined) formData.append('subject', rest.subject);
+      if (rest.body_text !== undefined) formData.append('body_text', rest.body_text);
+      if (rest.body_html !== undefined) formData.append('body_html', rest.body_html);
+      if (rest.connection_id !== undefined) formData.append('connection_id', String(rest.connection_id));
+      if (rest.reply_to_message_id !== undefined) formData.append('reply_to_message_id', String(rest.reply_to_message_id));
+      attachments.forEach((file) => formData.append('attachments', file));
+
+      const response = await axios.post('/api/social/email/send/', formData);
       return response.data;
     },
     onSuccess: () => {

@@ -371,4 +371,76 @@ describe("EmailComposerForm", () => {
       expect(screen.queryByText("From")).not.toBeInTheDocument();
     });
   });
+
+  // -----------------------------------------------------------------------
+  // Attachments
+  // -----------------------------------------------------------------------
+
+  describe("attachments", () => {
+    it("renders the attachment dropzone", () => {
+      render(<EmailComposerForm />);
+
+      expect(
+        screen.getByText(/Drag & drop files here/i)
+      ).toBeInTheDocument();
+    });
+
+    it("includes selected files in the send payload", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<EmailComposerForm />);
+
+      await user.type(
+        screen.getByPlaceholderText("Add recipients..."),
+        "alice@example.com{Enter}"
+      );
+      await user.type(screen.getByPlaceholderText("Subject"), "Hello");
+      await user.type(
+        screen.getByPlaceholderText("Write your message..."),
+        "Body text"
+      );
+
+      const fileInput = container.querySelector(
+        'input[type="file"]'
+      ) as HTMLInputElement;
+      expect(fileInput).not.toBeNull();
+
+      const file = new File(["data"], "report.pdf", {
+        type: "application/pdf",
+      });
+      await user.upload(fileInput, file);
+
+      expect(screen.getByText(/1 file selected/i)).toBeInTheDocument();
+
+      await user.click(screen.getByText("Send").closest("button")!);
+
+      await waitFor(() =>
+        expect(mockMutateAsync).toHaveBeenCalledWith(
+          expect.objectContaining({ attachments: [file] })
+        )
+      );
+    });
+
+    it("sends no attachments when none are selected", async () => {
+      const user = userEvent.setup();
+      render(<EmailComposerForm />);
+
+      await user.type(
+        screen.getByPlaceholderText("Add recipients..."),
+        "alice@example.com{Enter}"
+      );
+      await user.type(screen.getByPlaceholderText("Subject"), "Hello");
+      await user.type(
+        screen.getByPlaceholderText("Write your message..."),
+        "Body text"
+      );
+
+      await user.click(screen.getByText("Send").closest("button")!);
+
+      await waitFor(() =>
+        expect(mockMutateAsync).toHaveBeenCalledWith(
+          expect.objectContaining({ attachments: undefined })
+        )
+      );
+    });
+  });
 });

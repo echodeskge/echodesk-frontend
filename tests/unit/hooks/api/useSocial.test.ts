@@ -50,6 +50,7 @@ import {
   useFacebookPages,
   useFacebookMessages,
   useSendFacebookMessage,
+  useSendEmail,
 } from "@/hooks/api/useSocial";
 import type { UnreadMessagesCount } from "@/hooks/api/useSocial";
 import axiosInstance from "@/api/axios";
@@ -245,6 +246,82 @@ describe("useSocial", () => {
           expect.stringContaining("search=hello")
         )
       );
+    });
+  });
+
+  describe("useSendEmail", () => {
+    it("sends JSON (no FormData) when there are no attachments", async () => {
+      mockAxiosPost.mockResolvedValue({ data: { status: "success" } });
+
+      const { result } = renderHook(() => useSendEmail(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          to_emails: ["alice@example.com"],
+          subject: "Hi",
+          body_text: "Hello",
+          body_html: "<div>Hello</div>",
+        });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
+      const [url, payload] = mockAxiosPost.mock.calls[0];
+      expect(url).toBe("/api/social/email/send/");
+      // Plain object body, NOT FormData, and no attachments key leaks through.
+      expect(payload).not.toBeInstanceOf(FormData);
+      expect(payload).toMatchObject({
+        to_emails: ["alice@example.com"],
+        subject: "Hi",
+      });
+      expect((payload as Record<string, unknown>).attachments).toBeUndefined();
+    });
+
+    it("sends multipart/form-data with files and repeated array fields when attachments are present", async () => {
+      mockAxiosPost.mockResolvedValue({ data: { status: "success" } });
+
+      const file = new File(["hello"], "doc.pdf", { type: "application/pdf" });
+
+      const { result } = renderHook(() => useSendEmail(), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        result.current.mutate({
+          to_emails: ["alice@example.com", "bob@example.com"],
+          cc_emails: ["cc@example.com"],
+          subject: "With file",
+          body_text: "See attached",
+          body_html: "<div>See attached</div>",
+          connection_id: 7,
+          reply_to_message_id: 42,
+          attachments: [file],
+        });
+      });
+
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
+      const [url, payload] = mockAxiosPost.mock.calls[0];
+      expect(url).toBe("/api/social/email/send/");
+      expect(payload).toBeInstanceOf(FormData);
+
+      const fd = payload as FormData;
+      // Array fields are appended as repeated keys so DRF ListField.getlist() works.
+      expect(fd.getAll("to_emails")).toEqual([
+        "alice@example.com",
+        "bob@example.com",
+      ]);
+      expect(fd.getAll("cc_emails")).toEqual(["cc@example.com"]);
+      expect(fd.get("subject")).toBe("With file");
+      expect(fd.get("connection_id")).toBe("7");
+      expect(fd.get("reply_to_message_id")).toBe("42");
+      const sentFile = fd.get("attachments") as File;
+      expect(sentFile).toBeInstanceOf(File);
+      expect(sentFile.name).toBe("doc.pdf");
     });
   });
 });

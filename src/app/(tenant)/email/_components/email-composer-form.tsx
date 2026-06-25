@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { FileDropzone } from "@/components/FileDropzone";
 import {
   Select,
   SelectContent,
@@ -83,6 +84,7 @@ export function EmailComposerForm() {
   const [toInput, setToInput] = useState("");
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   const connections = emailStatus?.connections || [];
 
@@ -114,6 +116,7 @@ export function EmailComposerForm() {
       setBccInput("");
       setShowCcBcc(false);
       setQuotedText("");
+      setAttachments([]);
     }
   }, [replyToId, forwardId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -246,6 +249,7 @@ export function EmailComposerForm() {
         body_html: bodyHtml,
         connection_id: data.connection_id,
         reply_to_message_id: replyToId ? Number(replyToId) : undefined,
+        attachments: attachments.length > 0 ? attachments : undefined,
       });
 
       toast({
@@ -253,6 +257,7 @@ export function EmailComposerForm() {
         description: t("sentDescription"),
       });
 
+      setAttachments([]);
       router.push("/email/INBOX");
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: string } } };
@@ -526,6 +531,22 @@ export function EmailComposerForm() {
               />
             </div>
           )}
+
+          {/* Attachments */}
+          <div className="space-y-2">
+            <FormLabel>{t("attachments")}</FormLabel>
+            <FileDropzone
+              onFilesSelected={(files) =>
+                setAttachments((prev) => [...prev, ...files])
+              }
+              files={attachments.map((file) => ({ file }))}
+              onRemoveFile={(index) =>
+                setAttachments((prev) => prev.filter((_, i) => i !== index))
+              }
+              maxFiles={10}
+              maxSize={25 * 1024 * 1024}
+            />
+          </div>
         </div>
 
         <div className="flex justify-between items-center p-3 border-t border-border">
@@ -538,6 +559,7 @@ export function EmailComposerForm() {
               setToInput("");
               setCcInput("");
               setBccInput("");
+              setAttachments([]);
             }}
           >
             <ListRestart className="h-4 w-4" />

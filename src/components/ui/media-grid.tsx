@@ -95,6 +95,77 @@ function AuthenticatedImage({ src, alt, className }: { src: string; alt: string;
   return <img src={blobUrl} alt={alt} className={className} />
 }
 
+/**
+ * Component that fetches a video via authenticated axios request and renders
+ * it from a blob URL. WhatsApp media proxy URLs require the auth token (added
+ * by the axios interceptor), which a bare <video src> can't send — so the
+ * request 401s and nothing plays. We fetch the bytes ourselves and hand the
+ * <video> a local blob URL, mirroring AuthenticatedImage.
+ */
+function AuthenticatedVideo({ src, className }: { src: string; className?: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setBlobUrl(null)
+    setError(false)
+
+    axios
+      .get(src, { responseType: "blob" })
+      .then((res) => {
+        if (!cancelled) {
+          setBlobUrl(URL.createObjectURL(res.data))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setError(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [src])
+
+  // Cleanup blob URL on unmount or change
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+    }
+  }, [blobUrl])
+
+  if (error) {
+    return (
+      <div
+        className={cn(
+          "bg-muted flex items-center justify-center text-xs text-muted-foreground rounded-lg",
+          className
+        )}
+        style={{ minHeight: 60 }}
+      >
+        Failed to load video
+      </div>
+    )
+  }
+
+  if (!blobUrl) {
+    return <div className={cn("animate-pulse bg-muted rounded-lg", className)} style={{ minHeight: 100 }} />
+  }
+
+  return (
+    <video
+      src={blobUrl}
+      className={className}
+      controls
+      playsInline
+      preload="metadata"
+      // The tile wraps the video in a button that opens the lightbox; stop the
+      // click here so the native controls are usable for inline playback.
+      onClick={(e) => e.stopPropagation()}
+    />
+  )
+}
+
 export function MediaGrid({
   data,
   limit = 4,
@@ -163,15 +234,23 @@ export function MediaGrid({
     return <img src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
   }
 
-  const renderVideoInline = (item: MediaType) => (
-    <video
-      src={item.src}
-      className="rounded-lg object-cover w-full h-full"
-      controls
-      playsInline
-      preload="metadata"
-    />
-  )
+  const renderVideoInline = (item: MediaType) => {
+    // Auth-protected URLs (WhatsApp media proxy) can't load as a plain
+    // <video src>; fetch them via axios and present a blob URL instead.
+    if (needsAuthFetch(item.src)) {
+      return <AuthenticatedVideo src={item.src} className="rounded-lg object-cover w-full h-full" />
+    }
+    return (
+      <video
+        src={item.src}
+        className="rounded-lg object-cover w-full h-full"
+        controls
+        playsInline
+        preload="metadata"
+        onClick={(e) => e.stopPropagation()}
+      />
+    )
+  }
 
   // For single media item, use larger display
   const isSingleMedia = validData.length === 1
@@ -252,7 +331,21 @@ export function MediaGrid({
         // them via axios and presents a blob URL.
         render={{
           slide: ({ slide }: RenderSlideProps) => {
-            if ((slide as { type?: string }).type === "video") return undefined
+            if ((slide as { type?: string }).type === "video") {
+              // Proxy-hosted videos need the authenticated blob fetch too; the
+              // Video plugin's plain <video> can't send the auth token. Direct
+              // (non-proxy) videos fall through to the plugin.
+              const videoSrc = (slide as { sources?: Array<{ src: string }> }).sources?.[0]?.src
+              if (!needsAuthFetch(videoSrc)) return undefined
+              return (
+                <div className="flex items-center justify-center h-full w-full">
+                  <AuthenticatedVideo
+                    src={videoSrc as string}
+                    className="max-h-[90vh] max-w-[90vw] object-contain"
+                  />
+                </div>
+              )
+            }
             const src = (slide as SlideImage).src
             if (!needsAuthFetch(src)) return undefined
             return (

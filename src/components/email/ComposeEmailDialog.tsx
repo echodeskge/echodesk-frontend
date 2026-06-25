@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { FileDropzone } from "@/components/FileDropzone";
 import { useSendEmail, useEmailStatus, useEmailSignature } from "@/hooks/api/useSocial";
 
 const emailSchema = z.object({
@@ -62,6 +63,7 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
   const [toInput, setToInput] = useState("");
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   const form = useForm<EmailFormData>({
     resolver: zodResolver(emailSchema),
@@ -90,6 +92,7 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
       setCcInput("");
       setBccInput("");
       setShowCcBcc(false);
+      setAttachments([]);
     }
   }, [open, emailStatus?.connections, form]);
 
@@ -149,8 +152,8 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
   const onSubmit = async (data: EmailFormData) => {
     try {
       // Construct the email body (signature is appended by the backend)
-      let bodyText = data.body_text;
-      let bodyHtml = `<div>${data.body_text.replace(/\n/g, "<br/>")}</div>`;
+      const bodyText = data.body_text;
+      const bodyHtml = `<div>${data.body_text.replace(/\n/g, "<br/>")}</div>`;
 
       await sendEmail.mutateAsync({
         to_emails: data.to_emails,
@@ -160,6 +163,7 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
         body_text: bodyText,
         body_html: bodyHtml,
         connection_id: data.connection_id,
+        attachments: attachments.length > 0 ? attachments : undefined,
       });
 
       toast({
@@ -167,6 +171,7 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
         description: "Your email has been sent successfully.",
       });
 
+      setAttachments([]);
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
@@ -385,6 +390,20 @@ export function ComposeEmailDialog({ open, onOpenChange, onSuccess }: ComposeEma
                 />
               </div>
             )}
+
+            {/* Attachments */}
+            <div className="space-y-2">
+              <FormLabel>Attachments</FormLabel>
+              <FileDropzone
+                onFilesSelected={(files) => setAttachments((prev) => [...prev, ...files])}
+                files={attachments.map((file) => ({ file }))}
+                onRemoveFile={(index) =>
+                  setAttachments((prev) => prev.filter((_, i) => i !== index))
+                }
+                maxFiles={10}
+                maxSize={25 * 1024 * 1024}
+              />
+            </div>
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-4">
