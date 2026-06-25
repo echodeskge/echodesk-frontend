@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Send } from "lucide-react";
 import type { WhatsAppMessageTemplate } from "@/api/generated";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +22,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   useWhatsAppStatus,
   useSendWhatsAppTemplateMessage,
+  useSendWhatsAppMessage,
+  useMessagingWindow,
 } from "@/hooks/api/useSocial";
 import { useToast } from "@/hooks/use-toast";
 import TemplateSelector from "@/components/social/TemplateSelector";
@@ -44,7 +47,7 @@ interface WhatsAppStatus {
   accounts: WhatsAppAccount[];
 }
 
-// Stable error codes the backend can return (mirrors services/whatsapp_errors.py).
+// Stable error codes the template endpoint can return (services/whatsapp_errors.py).
 const SEND_ERROR_CODES = [
   "OPT_IN_REQUIRED",
   "RECIPIENT_NOT_OPTED_IN",
@@ -66,10 +69,12 @@ interface Props {
 }
 
 /**
- * Start a brand-new WhatsApp conversation with a number that hasn't messaged
- * us. WhatsApp only allows this via an approved template to an opted-in number,
- * so the flow is: pick account → enter E.164 phone → confirm opt-in → pick an
- * approved template + fill params → send → navigate to the new thread.
+ * Start a WhatsApp conversation from the inbox.
+ *
+ * WhatsApp only delivers a free-form message inside the 24-hour customer-service
+ * window (the recipient messaged within the last 24h). For a number with an open
+ * window we show a free-form composer; otherwise (a brand-new / cold number, where
+ * Meta requires it) we require an approved template + an opt-in confirmation.
  */
 export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
   const t = useTranslations("messagesBeta.newWhatsApp");
@@ -83,31 +88,69 @@ export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
 
   const [wabaId, setWabaId] = useState("");
   const [phone, setPhone] = useState("");
+  const [debouncedPhone, setDebouncedPhone] = useState("");
   const [optIn, setOptIn] = useState(false);
+  const [freeText, setFreeText] = useState("");
 
   const sendTemplate = useSendWhatsAppTemplateMessage();
+  const sendFreeform = useSendWhatsAppMessage();
 
   const effectiveWabaId = wabaId || accounts[0]?.waba_id || "";
   const selectedAccount = accounts.find((a) => a.waba_id === effectiveWabaId);
   const quality = (selectedAccount?.quality_rating || "").toUpperCase();
   const lowQuality = quality === "RED" || quality === "LOW";
 
-  const isPhoneValid = PHONE_RE.test(phone.trim());
-  const canPickTemplate =
-    isPhoneValid && optIn && !!effectiveWabaId && !sendTemplate.isPending;
+  const trimmedPhone = phone.trim();
+  const isPhoneValid = PHONE_RE.test(trimmedPhone);
+
+  // Debounce the phone used for the window lookup so we don't query on every keystroke.
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedPhone(trimmedPhone), 300);
+    return () => clearTimeout(id);
+  }, [trimmedPhone]);
+
+  const windowEnabled =
+    open && PHONE_RE.test(debouncedPhone) && !!effectiveWabaId;
+  const windowQuery = useMessagingWindow(
+    "whatsapp",
+    debouncedPhone.replace(/^\+/, ""),
+    effectiveWabaId,
+    { enabled: windowEnabled }
+  );
+
+  // Only branch once we have a definitive window answer for the *current* number.
+  const windowResolved =
+    isPhoneValid && debouncedPhone === trimmedPhone && windowQuery.isSuccess;
+  const windowOpen = windowResolved && windowQuery.data?.window_open === true;
+  const checkingWindow = isPhoneValid && !!effectiveWabaId && !windowResolved;
 
   const resetAndClose = () => {
     setPhone("");
+    setDebouncedPhone("");
     setOptIn(false);
     setWabaId("");
+    setFreeText("");
     onOpenChange(false);
+  };
+
+  const navigateToChat = (to: string) => {
+    // chatId must match ws-handlers' buildChatId: wa_{waba}_{bareNumber}
+    const chatId = `wa_${effectiveWabaId}_${to.replace(/^\+/, "")}`;
+    useMessagesBetaStore.getState().selectChat(chatId);
+    window.history.pushState(
+      null,
+      "",
+      `/social/messages/${chatId}${window.location.search}`
+    );
+    toast({ title: t("sent"), description: t("sentDescription") });
+    resetAndClose();
   };
 
   const handleTemplateSelected = (
     template: WhatsAppMessageTemplate,
     parameters: Record<string, string>
   ) => {
-    const to = phone.trim();
+    const to = trimmedPhone;
     sendTemplate.mutate(
       {
         waba_id: effectiveWabaId,
@@ -117,18 +160,7 @@ export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
         opt_in_confirmed: true,
       },
       {
-        onSuccess: () => {
-          // chatId must match ws-handlers' buildChatId: wa_{waba}_{bareNumber}
-          const chatId = `wa_${effectiveWabaId}_${to.replace(/^\+/, "")}`;
-          useMessagesBetaStore.getState().selectChat(chatId);
-          window.history.pushState(
-            null,
-            "",
-            `/social/messages/${chatId}${window.location.search}`
-          );
-          toast({ title: t("sent"), description: t("sentDescription") });
-          resetAndClose();
-        },
+        onSuccess: () => navigateToChat(to),
         onError: (error: unknown) => {
           const err = error as { response?: { data?: { error_code?: string } } };
           const code = err.response?.data?.error_code;
@@ -145,6 +177,26 @@ export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
       }
     );
   };
+
+  const handleSendFreeform = () => {
+    const to = trimmedPhone;
+    sendFreeform.mutate(
+      { to_number: to, message: freeText.trim(), waba_id: effectiveWabaId },
+      {
+        onSuccess: () => navigateToChat(to),
+        onError: (error: unknown) => {
+          const err = error as { response?: { data?: { error?: string } } };
+          toast({
+            title: t("sendFailed"),
+            description: err.response?.data?.error || t("sendErrors.SEND_FAILED_GENERIC"),
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
+  const canPickTemplate = optIn && !!effectiveWabaId && !sendTemplate.isPending;
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? onOpenChange(true) : resetAndClose())}>
@@ -188,29 +240,59 @@ export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
             )}
           </div>
 
-          <label className="flex items-start gap-2 text-sm">
-            <Checkbox
-              checked={optIn}
-              onCheckedChange={(v) => setOptIn(v === true)}
-              className="mt-0.5"
-            />
-            <span className="text-muted-foreground">{t("optInConfirm")}</span>
-          </label>
+          {/* Branch on the 24h window once we know the recipient. */}
+          {checkingWindow && (
+            <p className="text-xs text-muted-foreground">{t("checkingWindow")}</p>
+          )}
 
-          <TemplateSelector
-            wabaId={effectiveWabaId}
-            recipientNumber={phone.trim()}
-            disabled={!canPickTemplate}
-            onSelect={handleTemplateSelected}
-            trigger={
-              <Button className="w-full" disabled={!canPickTemplate}>
+          {windowOpen && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t("windowOpenHint")}</p>
+              <Textarea
+                placeholder={t("messagePlaceholder")}
+                className="min-h-[100px] resize-y"
+                value={freeText}
+                onChange={(e) => setFreeText(e.target.value)}
+              />
+              <Button
+                className="w-full"
+                disabled={!freeText.trim() || sendFreeform.isPending}
+                onClick={handleSendFreeform}
+              >
                 <Send className="mr-2 h-4 w-4" />
-                {t("chooseTemplate")}
+                {t("send")}
               </Button>
-            }
-          />
-          {!canPickTemplate && (
-            <p className="text-xs text-muted-foreground">{t("gateHint")}</p>
+            </div>
+          )}
+
+          {windowResolved && !windowOpen && (
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground">{t("windowClosedHint")}</p>
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox
+                  checked={optIn}
+                  onCheckedChange={(v) => setOptIn(v === true)}
+                  className="mt-0.5"
+                />
+                <span className="text-muted-foreground">{t("optInConfirm")}</span>
+              </label>
+
+              <TemplateSelector
+                wabaId={effectiveWabaId}
+                recipientNumber={trimmedPhone}
+                disabled={!canPickTemplate}
+                onSelect={handleTemplateSelected}
+                trigger={
+                  <Button className="w-full" disabled={!canPickTemplate}>
+                    <Send className="mr-2 h-4 w-4" />
+                    {t("chooseTemplate")}
+                  </Button>
+                }
+              />
+              {!canPickTemplate && (
+                <p className="text-xs text-muted-foreground">{t("gateHint")}</p>
+              )}
+            </div>
           )}
         </div>
       </DialogContent>

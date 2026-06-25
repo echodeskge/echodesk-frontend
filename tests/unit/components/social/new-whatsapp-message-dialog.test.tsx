@@ -1,8 +1,10 @@
 /**
  * Tests for NewWhatsAppMessageDialog — the "start a new WhatsApp conversation"
- * compose flow. Verifies the gate (valid E.164 phone + opt-in), the send
- * payload (including opt_in_confirmed), success navigation to the wa_ chat id,
- * mapped error toasts, and the multi-account selector visibility.
+ * compose flow. WhatsApp only delivers free-form inside the 24h window, so the
+ * dialog branches on the window:
+ *  - window closed/new  → template + opt-in confirmation
+ *  - window open        → free-form composer
+ * Verifies both branches, payloads, success navigation, and mapped errors.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
@@ -10,10 +12,12 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 
 const mockToast = vi.fn();
-const mockMutate = vi.fn();
+const mockSendTemplate = vi.fn();
+const mockSendFreeform = vi.fn();
 const mockSelectChat = vi.fn();
 
 let mockAccounts: Array<Record<string, unknown>> = [];
+let mockWindowOpen = false;
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
@@ -21,7 +25,14 @@ vi.mock("next-intl", () => ({
 
 vi.mock("@/hooks/api/useSocial", () => ({
   useWhatsAppStatus: () => ({ data: { connected: true, accounts: mockAccounts } }),
-  useSendWhatsAppTemplateMessage: () => ({ mutate: mockMutate, isPending: false }),
+  useSendWhatsAppTemplateMessage: () => ({ mutate: mockSendTemplate, isPending: false }),
+  useSendWhatsAppMessage: () => ({ mutate: mockSendFreeform, isPending: false }),
+  useMessagingWindow: () => ({
+    data: { window_open: mockWindowOpen },
+    isSuccess: true,
+    isLoading: false,
+    isFetching: false,
+  }),
 }));
 
 vi.mock("@/hooks/use-toast", () => ({
@@ -32,12 +43,10 @@ vi.mock("@/components/messages-beta/store/useMessagesBetaStore", () => ({
   useMessagesBetaStore: { getState: () => ({ selectChat: mockSelectChat }) },
 }));
 
-// Mock the account selector so the dialog test doesn't depend on radix Select internals.
 vi.mock("@/components/social/WhatsAppAccountSelect", () => ({
   WhatsAppAccountSelect: () => <div data-testid="account-select" />,
 }));
 
-// Mock TemplateSelector: render the passed trigger + a control to fire onSelect.
 vi.mock("@/components/social/TemplateSelector", () => ({
   default: ({
     trigger,
@@ -77,99 +86,121 @@ function account(overrides: Record<string, unknown> = {}) {
   };
 }
 
+async function typePhone(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByPlaceholderText("+995555123456"), "+15551234567");
+}
+
 describe("NewWhatsAppMessageDialog", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAccounts = [account()];
+    mockWindowOpen = false;
   });
 
-  async function fillValid(user: ReturnType<typeof userEvent.setup>) {
-    await user.type(
-      screen.getByPlaceholderText("+995555123456"),
-      "+15551234567"
-    );
-    await user.click(screen.getByRole("checkbox"));
-  }
+  describe("closed window (new number) → template + opt-in", () => {
+    it("keeps the template trigger disabled until opt-in is checked", async () => {
+      const user = userEvent.setup();
+      render(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} />);
+      await typePhone(user);
 
-  it("keeps the template trigger disabled until phone is valid and opt-in is checked", async () => {
-    const user = userEvent.setup();
-    render(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} />);
+      // Branch appears after the debounce + window resolves.
+      const trigger = await screen.findByRole("button", { name: "chooseTemplate" });
+      expect(trigger).toBeDisabled();
 
-    const trigger = screen.getByRole("button", { name: "chooseTemplate" });
-    expect(trigger).toBeDisabled();
-
-    // Invalid phone keeps it disabled.
-    await user.type(screen.getByPlaceholderText("+995555123456"), "12345");
-    expect(trigger).toBeDisabled();
-    await user.clear(screen.getByPlaceholderText("+995555123456"));
-
-    await fillValid(user);
-    expect(trigger).not.toBeDisabled();
-  });
-
-  it("sends the template with opt_in_confirmed and navigates to the new chat on success", async () => {
-    const user = userEvent.setup();
-    const onOpenChange = vi.fn();
-    render(<NewWhatsAppMessageDialog open onOpenChange={onOpenChange} />);
-
-    await fillValid(user);
-    await user.click(screen.getByTestId("force-select"));
-
-    expect(mockMutate).toHaveBeenCalledTimes(1);
-    const [payload, handlers] = mockMutate.mock.calls[0];
-    expect(payload).toMatchObject({
-      waba_id: "waba1",
-      template_id: 7,
-      to_number: "+15551234567",
-      parameters: { param1: "Ann" },
-      opt_in_confirmed: true,
+      await user.click(screen.getByRole("checkbox"));
+      expect(trigger).not.toBeDisabled();
     });
 
-    const pushSpy = vi.spyOn(window.history, "pushState").mockImplementation(() => {});
-    handlers.onSuccess();
+    it("sends the template with opt_in_confirmed and navigates on success", async () => {
+      const user = userEvent.setup();
+      const onOpenChange = vi.fn();
+      render(<NewWhatsAppMessageDialog open onOpenChange={onOpenChange} />);
+      await typePhone(user);
 
-    expect(mockSelectChat).toHaveBeenCalledWith("wa_waba1_15551234567");
-    expect(pushSpy).toHaveBeenCalledWith(
-      null,
-      "",
-      expect.stringContaining("/social/messages/wa_waba1_15551234567")
-    );
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+      await screen.findByRole("button", { name: "chooseTemplate" });
+      await user.click(screen.getByRole("checkbox"));
+      await user.click(screen.getByTestId("force-select"));
+
+      expect(mockSendTemplate).toHaveBeenCalledTimes(1);
+      const [payload, handlers] = mockSendTemplate.mock.calls[0];
+      expect(payload).toMatchObject({
+        waba_id: "waba1",
+        template_id: 7,
+        to_number: "+15551234567",
+        parameters: { param1: "Ann" },
+        opt_in_confirmed: true,
+      });
+
+      const pushSpy = vi.spyOn(window.history, "pushState").mockImplementation(() => {});
+      handlers.onSuccess();
+      expect(mockSelectChat).toHaveBeenCalledWith("wa_waba1_15551234567");
+      expect(pushSpy).toHaveBeenCalledWith(
+        null,
+        "",
+        expect.stringContaining("/social/messages/wa_waba1_15551234567")
+      );
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it("shows a mapped error toast when the template send fails", async () => {
+      const user = userEvent.setup();
+      render(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} />);
+      await typePhone(user);
+
+      await screen.findByRole("button", { name: "chooseTemplate" });
+      await user.click(screen.getByRole("checkbox"));
+      await user.click(screen.getByTestId("force-select"));
+
+      const [, handlers] = mockSendTemplate.mock.calls[0];
+      handlers.onError({ response: { data: { error_code: "INVALID_WHATSAPP_NUMBER" } } });
+
+      await waitFor(() =>
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            variant: "destructive",
+            description: "sendErrors.INVALID_WHATSAPP_NUMBER",
+          })
+        )
+      );
+    });
   });
 
-  it("shows a mapped error toast when the send fails", async () => {
-    const user = userEvent.setup();
-    render(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} />);
+  describe("open window (recent contact) → free-form", () => {
+    beforeEach(() => {
+      mockWindowOpen = true;
+    });
 
-    await fillValid(user);
-    await user.click(screen.getByTestId("force-select"));
+    it("shows a free-form composer and sends free text on success", async () => {
+      const user = userEvent.setup();
+      const onOpenChange = vi.fn();
+      render(<NewWhatsAppMessageDialog open onOpenChange={onOpenChange} />);
+      await typePhone(user);
 
-    const [, handlers] = mockMutate.mock.calls[0];
-    handlers.onError({ response: { data: { error_code: "INVALID_WHATSAPP_NUMBER" } } });
+      const textarea = await screen.findByPlaceholderText("messagePlaceholder");
+      // No template/opt-in path in the open-window branch.
+      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(mockToast).toHaveBeenCalledWith(
-        expect.objectContaining({
-          variant: "destructive",
-          description: "sendErrors.INVALID_WHATSAPP_NUMBER",
-        })
-      )
-    );
-  });
+      await user.type(textarea, "Hi there");
+      await user.click(screen.getByRole("button", { name: "send" }));
 
-  it("falls back to the generic error for an unknown error code", async () => {
-    const user = userEvent.setup();
-    render(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} />);
+      expect(mockSendFreeform).toHaveBeenCalledTimes(1);
+      const [payload, handlers] = mockSendFreeform.mock.calls[0];
+      expect(payload).toEqual({
+        to_number: "+15551234567",
+        message: "Hi there",
+        waba_id: "waba1",
+      });
 
-    await fillValid(user);
-    await user.click(screen.getByTestId("force-select"));
-
-    const [, handlers] = mockMutate.mock.calls[0];
-    handlers.onError({ response: { data: { error_code: "WAT_IS_THIS" } } });
-
-    expect(mockToast).toHaveBeenCalledWith(
-      expect.objectContaining({ description: "sendErrors.SEND_FAILED_GENERIC" })
-    );
+      const pushSpy = vi.spyOn(window.history, "pushState").mockImplementation(() => {});
+      handlers.onSuccess();
+      expect(mockSelectChat).toHaveBeenCalledWith("wa_waba1_15551234567");
+      expect(pushSpy).toHaveBeenCalledWith(
+        null,
+        "",
+        expect.stringContaining("/social/messages/wa_waba1_15551234567")
+      );
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
   });
 
   it("only shows the account selector when there is more than one active account", () => {

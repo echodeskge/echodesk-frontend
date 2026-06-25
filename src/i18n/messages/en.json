@@ -4871,7 +4871,12 @@
     },
     "newWhatsApp": {
       "title": "New WhatsApp message",
-      "description": "Start a conversation by sending an approved template to a phone number.",
+      "description": "Start a WhatsApp conversation with a phone number.",
+      "checkingWindow": "Checking…",
+      "windowOpenHint": "This number messaged recently — you can send a free-form message.",
+      "windowClosedHint": "First contact requires an approved template (WhatsApp doesn't deliver free-form text to numbers that haven't messaged you).",
+      "messagePlaceholder": "Type your message…",
+      "send": "Send",
       "account": "Send from",
       "quality": "Quality rating",
       "lowQualityWarning": "This number's quality rating is low — messages may be limited or delayed.",
