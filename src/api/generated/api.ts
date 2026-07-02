@@ -1039,7 +1039,7 @@ export async function boardsDefaultRetrieve(): Promise<Board> {
 }
 
 export async function bookingsAdminAvailabilityList(
-  dayOfWeek?: number,
+  dayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6,
   isAvailable?: boolean,
   ordering?: string,
   page?: number,
@@ -9277,8 +9277,10 @@ export async function teamChatMessagesList(
   return response.data;
 }
 
-export async function teamChatMessagesCreate(): Promise<TeamChatMessage> {
-  const response = await axios.post(`/api/team-chat/messages/`);
+export async function teamChatMessagesCreate(
+  data: FormData,
+): Promise<TeamChatMessage> {
+  const response = await axios.post(`/api/team-chat/messages/`, data);
   return response.data;
 }
 
@@ -9291,15 +9293,17 @@ export async function teamChatMessagesRetrieve(
 
 export async function teamChatMessagesUpdate(
   id: string,
+  data: FormData,
 ): Promise<TeamChatMessage> {
-  const response = await axios.put(`/api/team-chat/messages/${id}/`);
+  const response = await axios.put(`/api/team-chat/messages/${id}/`, data);
   return response.data;
 }
 
 export async function teamChatMessagesPartialUpdate(
   id: string,
+  data: FormData,
 ): Promise<TeamChatMessage> {
-  const response = await axios.patch(`/api/team-chat/messages/${id}/`);
+  const response = await axios.patch(`/api/team-chat/messages/${id}/`, data);
   return response.data;
 }
 
@@ -9310,8 +9314,12 @@ export async function teamChatMessagesDestroy(id: string): Promise<any> {
 
 export async function teamChatMessagesMarkReadCreate(
   id: string,
+  data: FormData,
 ): Promise<TeamChatMessage> {
-  const response = await axios.post(`/api/team-chat/messages/${id}/mark_read/`);
+  const response = await axios.post(
+    `/api/team-chat/messages/${id}/mark_read/`,
+    data,
+  );
   return response.data;
 }
 
@@ -9502,11 +9510,11 @@ export async function tenantSettingsRemoveLogo(): Promise<{
   return response.data;
 }
 
-export async function tenantSettingsUploadLogo(): Promise<{
+export async function tenantSettingsUploadLogo(data: FormData): Promise<{
   logo_url?: string;
   message?: string;
 }> {
-  const response = await axios.post(`/api/tenant-settings/upload-logo/`);
+  const response = await axios.post(`/api/tenant-settings/upload-logo/`, data);
   return response.data;
 }
 
@@ -9979,11 +9987,11 @@ export async function trunksDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function uploadImage(): Promise<{
+export async function uploadImage(data: FormData): Promise<{
   url?: string;
   message?: string;
 }> {
-  const response = await axios.post(`/api/upload/image/`);
+  const response = await axios.post(`/api/upload/image/`, data);
   return response.data;
 }
 

@@ -3,9 +3,7 @@
  * DO NOT EDIT MANUALLY
  */
 
-export interface ActionEnum {
-  [key: string]: any;
-}
+export type ActionEnum = 'approve' | 'reject';
 
 export interface AddDomainRequestRequest {
   domain: string;
@@ -37,9 +35,7 @@ export interface AddNewCardResponse {
   currency: string;
 }
 
-export interface ApproverRoleEnum {
-  [key: string]: any;
-}
+export type ApproverRoleEnum = 'manager' | 'hr' | 'admin';
 
 export interface AttributeDefinition {
   id: number;
@@ -68,13 +64,9 @@ export interface AttributeDefinitionRequest {
   is_active?: boolean;
 }
 
-export interface AttributeTypeEnum {
-  [key: string]: any;
-}
+export type AttributeTypeEnum = 'multiselect' | 'number';
 
-export interface BlankEnum {
-  [key: string]: any;
-}
+export type BlankEnum = '';
 
 export interface BlogCategoryAdmin {
   id: number;
@@ -353,9 +345,7 @@ export interface BookingStaffRequest {
   is_active_for_bookings?: boolean;
 }
 
-export interface BookingTypeEnum {
-  [key: string]: any;
-}
+export type BookingTypeEnum = 'fixed_slots' | 'duration_based';
 
 export interface BookingUserMinimal {
   id: number;
@@ -379,9 +369,7 @@ export interface BulkUpdateStatusRequestRequest {
   status: Status0faEnum;
 }
 
-export interface CalculationMethodEnum {
-  [key: string]: any;
-}
+export type CalculationMethodEnum = 'annual' | 'accrual' | 'manual';
 
 export interface CallEvent {
   id: number;
@@ -525,9 +513,13 @@ export interface CallRecording {
   updated_at: string;
 }
 
-export interface CallRecordingStatusEnum {
-  [key: string]: any;
-}
+export type CallRecordingStatusEnum =
+  | 'pending'
+  | 'recording'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'deleted';
 
 export interface CallStatusUpdateRequest {
   status: Status6efEnum;
@@ -536,13 +528,9 @@ export interface CallStatusUpdateRequest {
   recording_url?: string;
 }
 
-export interface CallTypeEnum {
-  [key: string]: any;
-}
+export type CallTypeEnum = 'voice' | 'video' | 'conference';
 
-export interface CancelledByEnum {
-  [key: string]: any;
-}
+export type CancelledByEnum = 'client' | 'staff' | 'admin';
 
 export interface CarryForwardRequestRequest {
   from_year: number;
@@ -615,9 +603,13 @@ export interface CartRequest {
   notes?: string;
 }
 
-export interface CategoryAf8enum {
-  [key: string]: any;
-}
+export type CategoryAf8enum =
+  | 'core'
+  | 'integration'
+  | 'analytics'
+  | 'communication'
+  | 'support'
+  | 'limits';
 
 export interface ChangePasswordRequestRequest {
   current_password: string;
@@ -750,9 +742,12 @@ export interface ContactSubmissionAdminRequest {
   handled_by?: number;
 }
 
-export interface ContactSubmissionAdminStatusEnum {
-  [key: string]: any;
-}
+export type ContactSubmissionAdminStatusEnum =
+  | 'new'
+  | 'contacted'
+  | 'qualified'
+  | 'closed_won'
+  | 'closed_lost';
 
 export interface ContactSubmissionCreateRequest {
   name: string;
@@ -769,13 +764,9 @@ export interface ContactSubmitResponse {
   id: number;
 }
 
-export interface ContactTypeEnum {
-  [key: string]: any;
-}
+export type ContactTypeEnum = 'USER' | 'BUSINESS';
 
-export interface ContentTypeEnum {
-  [key: string]: any;
-}
+export type ContentTypeEnum = 'video' | 'article' | 'guide' | 'faq';
 
 export interface DashboardAppearanceSettings {
   primary_color?: string;
@@ -800,13 +791,9 @@ export interface DashboardAppearanceSettingsRequest {
   sidebar_order?: any;
 }
 
-export interface DayOfWeekEnum {
-  [key: string]: any;
-}
+export type DayOfWeekEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export interface DeliveryMethodEnum {
-  [key: string]: any;
-}
+export type DeliveryMethodEnum = 'courier' | 'pickup';
 
 export interface Department {
   id: number;
@@ -838,29 +825,26 @@ export interface DeploymentResponse {
   project_name: string;
 }
 
-export interface DeploymentStatusEnum {
-  [key: string]: any;
-}
+export type DeploymentStatusEnum =
+  | 'pending'
+  | 'deploying'
+  | 'deployed'
+  | 'failed';
 
-export interface DescriptionFormatEnum {
-  [key: string]: any;
-}
+export type DescriptionFormatEnum = 'plain' | 'html' | 'delta';
 
-export interface DestinationTypeEnum {
-  [key: string]: any;
-}
+export type DestinationTypeEnum =
+  | 'queue'
+  | 'extension'
+  | 'voicemail'
+  | 'ivr_custom'
+  | 'hangup';
 
-export interface DirectionEnum {
-  [key: string]: any;
-}
+export type DirectionEnum = 'inbound' | 'outbound';
 
-export interface DiscountTypeEnum {
-  [key: string]: any;
-}
+export type DiscountTypeEnum = 'percentage' | 'fixed';
 
-export interface DisplayModeEnum {
-  [key: string]: any;
-}
+export type DisplayModeEnum = 'slider' | 'grid' | 'single' | 'list';
 
 export interface DomainsListResponse {
   success: boolean;
@@ -907,9 +891,7 @@ export interface EcommerceClientRequest {
   is_active?: boolean;
 }
 
-export interface EcommercePaymentProviderEnum {
-  [key: string]: any;
-}
+export type EcommercePaymentProviderEnum = 'bog' | 'tbc' | 'flitt' | 'paddle';
 
 export interface EcommerceSettings {
   id: number;
@@ -1149,9 +1131,24 @@ export interface EmailVerificationResponse {
   refresh: string;
 }
 
-export interface EventTypeEnum {
-  [key: string]: any;
-}
+export type EventTypeEnum =
+  | 'initiated'
+  | 'ringing'
+  | 'answered'
+  | 'hold'
+  | 'unhold'
+  | 'transfer_initiated'
+  | 'transfer_completed'
+  | 'recording_started'
+  | 'recording_stopped'
+  | 'muted'
+  | 'unmuted'
+  | 'dtmf'
+  | 'quality_change'
+  | 'ended'
+  | 'failed'
+  | 'error'
+  | 'conference_started';
 
 export interface FacebookMessage {
   id: number;
@@ -1189,13 +1186,18 @@ export interface FacebookMessage {
   recipient_name: string;
 }
 
-export interface FacebookMessageAttachmentTypeEnum {
-  [key: string]: any;
-}
+export type FacebookMessageAttachmentTypeEnum =
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'file'
+  | 'location'
+  | 'fallback';
 
-export interface FacebookMessageSourceEnum {
-  [key: string]: any;
-}
+export type FacebookMessageSourceEnum =
+  | 'echodesk'
+  | 'facebook_app'
+  | 'messenger_app';
 
 export interface FacebookPageConnection {
   id: number;
@@ -1298,13 +1300,16 @@ export interface FeatureRequest {
   is_active?: boolean;
 }
 
-export interface FieldTypeEnum {
-  [key: string]: any;
-}
+export type FieldTypeEnum =
+  | 'string'
+  | 'text'
+  | 'number'
+  | 'date'
+  | 'boolean'
+  | 'select'
+  | 'multiselect';
 
-export interface FrequencyEnum {
-  [key: string]: any;
-}
+export type FrequencyEnum = 'weekly' | 'biweekly' | 'monthly';
 
 export interface Group {
   id: number;
@@ -1566,9 +1571,12 @@ export interface HomepageSectionRequest {
   text_color?: string;
 }
 
-export interface HomepageVariantEnum {
-  [key: string]: any;
-}
+export type HomepageVariantEnum =
+  | 'classic'
+  | 'modern'
+  | 'minimal'
+  | 'boutique'
+  | 'marketplace';
 
 export interface InboundRoute {
   id: number;
@@ -1656,13 +1664,16 @@ export interface InstagramMessage {
   recipient_name: string;
 }
 
-export interface InstagramMessageAttachmentTypeEnum {
-  [key: string]: any;
-}
+export type InstagramMessageAttachmentTypeEnum =
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'file'
+  | 'share'
+  | 'story_mention'
+  | 'story_reply';
 
-export interface InstagramMessageSourceEnum {
-  [key: string]: any;
-}
+export type InstagramMessageSourceEnum = 'echodesk' | 'instagram_app';
 
 export interface InstagramSendMessageRequest {
   recipient_id: string;
@@ -1818,9 +1829,12 @@ export interface InvoicePayment {
   recorded_by: number;
 }
 
-export interface InvoicePaymentPaymentMethodEnum {
-  [key: string]: any;
-}
+export type InvoicePaymentPaymentMethodEnum =
+  | 'card'
+  | 'cash'
+  | 'bank_transfer'
+  | 'check'
+  | 'other';
 
 export interface InvoicePaymentRequest {
   payment_date?: string;
@@ -1965,13 +1979,9 @@ export interface ItemListRequest {
   custom_fields_schema?: any;
 }
 
-export interface ItemSourceEnum {
-  [key: string]: any;
-}
+export type ItemSourceEnum = 'product' | 'list_item' | 'manual';
 
-export interface JoinemptyEnum {
-  [key: string]: any;
-}
+export type JoinemptyEnum = 'yes' | 'no' | 'strict' | 'loose';
 
 export interface KanbanBoard {
   columns: TicketColumn[];
@@ -2080,13 +2090,12 @@ export interface LandingTopicAdminRequest {
   notes?: string;
 }
 
-export interface LandingTopicSeedItemPageTypeEnum {
-  [key: string]: any;
-}
+export type LandingTopicSeedItemPageTypeEnum =
+  | 'feature'
+  | 'vertical'
+  | 'comparison';
 
-export interface LandingTopicSeedItemPrimaryLanguageEnum {
-  [key: string]: any;
-}
+export type LandingTopicSeedItemPrimaryLanguageEnum = 'ka' | 'en';
 
 export interface LandingTopicSeedItemRequest {
   slug: string;
@@ -2401,9 +2410,7 @@ export interface LeaveTypeListRequest {
   sort_order?: number;
 }
 
-export interface LeavewhenemptyEnum {
-  [key: string]: any;
-}
+export type LeavewhenemptyEnum = 'yes' | 'no' | 'strict' | 'loose';
 
 export interface ListItem {
   id: number;
@@ -2446,9 +2453,7 @@ export interface ListItemRequest {
   custom_data?: any;
 }
 
-export interface LocaleEnum {
-  [key: string]: any;
-}
+export type LocaleEnum = 'ka' | 'en';
 
 export interface MergeConferenceRequest {
   consultation_log_id: number;
@@ -2514,13 +2519,31 @@ export interface NotificationRequest {
   is_read?: boolean;
 }
 
-export interface NotificationTypeEnum {
-  [key: string]: any;
-}
+export type NotificationTypeEnum =
+  | 'ticket_assigned'
+  | 'ticket_mentioned'
+  | 'ticket_commented'
+  | 'ticket_status_changed'
+  | 'ticket_updated'
+  | 'sub_ticket_created'
+  | 'ticket_due_soon'
+  | 'bug_report_update'
+  | 'message_received'
+  | 'message_assigned'
+  | 'invoice_created'
+  | 'invoice_paid'
+  | 'invoice_overdue'
+  | 'leave_request_submitted'
+  | 'leave_request_approved'
+  | 'leave_request_rejected'
+  | 'booking_confirmed'
+  | 'booking_cancelled'
+  | 'booking_reminder'
+  | 'call_missed'
+  | 'call_voicemail'
+  | 'email_sync_disabled';
 
-export interface NullEnum {
-  [key: string]: any;
-}
+export type NullEnum = 'null';
 
 export interface Order {
   id: number;
@@ -2658,9 +2681,7 @@ export interface OrderRequest {
   cancelled_at?: string;
 }
 
-export interface PageTypeBd2enum {
-  [key: string]: any;
-}
+export type PageTypeBd2enum = 'feature' | 'vertical' | 'comparison';
 
 export interface PaginatedAttributeDefinitionList {
   count: number;
@@ -4430,17 +4451,21 @@ export interface PaymentConfigResponse {
   tax_inclusive?: boolean;
 }
 
-export interface PaymentStatus2d4enum {
-  [key: string]: any;
-}
+export type PaymentStatus2d4enum =
+  | 'pending'
+  | 'paid'
+  | 'failed'
+  | 'refunded'
+  | 'partially_refunded';
 
-export interface PaymentStatusD7dEnum {
-  [key: string]: any;
-}
+export type PaymentStatusD7dEnum =
+  | 'pending'
+  | 'deposit_paid'
+  | 'fully_paid'
+  | 'failed'
+  | 'refunded';
 
-export interface PaymentTypeEnum {
-  [key: string]: any;
-}
+export type PaymentTypeEnum = 'full' | 'deposit';
 
 export interface PbxServer {
   id: number;
@@ -4489,9 +4514,12 @@ export interface PbxServerRequest {
   notes?: string;
 }
 
-export interface PbxServerStatusEnum {
-  [key: string]: any;
-}
+export type PbxServerStatusEnum =
+  | 'pending'
+  | 'provisioning'
+  | 'active'
+  | 'error'
+  | 'revoked';
 
 export interface Permission {
   id: number;
@@ -4507,37 +4535,26 @@ export interface PermissionRequest {
   content_type: number;
 }
 
-export interface PlanEnum {
-  [key: string]: any;
-}
+export type PlanEnum = 'basic' | 'premium' | 'enterprise';
 
-export interface PlatformTypeEnum {
-  [key: string]: any;
-}
+export type PlatformTypeEnum = 'CLOUD_API' | 'ON_PREMISE' | 'SMB';
 
-export interface PositionEnum {
-  [key: string]: any;
-}
+export type PositionEnum = 'bottom-right' | 'bottom-left';
 
-export interface PostTypeEnum {
-  [key: string]: any;
-}
+export type PostTypeEnum =
+  | 'comparison'
+  | 'how_to'
+  | 'use_case'
+  | 'announcement'
+  | 'thought_leadership';
 
-export interface PreferredDayOfWeekEnum {
-  [key: string]: any;
-}
+export type PreferredDayOfWeekEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
-export interface PreferredLanguage0bbEnum {
-  [key: string]: any;
-}
+export type PreferredLanguage0bbEnum = 'en' | 'ru' | 'ka';
 
-export interface PricingModelEnum {
-  [key: string]: any;
-}
+export type PricingModelEnum = 'agent' | 'crm';
 
-export interface PriorityEnum {
-  [key: string]: any;
-}
+export type PriorityEnum = 'low' | 'medium' | 'high' | 'critical';
 
 export interface ProductAttributeValue {
   id: number;
@@ -5094,9 +5111,11 @@ export interface RecurringBookingRequest {
   max_occurrences?: number;
 }
 
-export interface RecurringBookingStatusEnum {
-  [key: string]: any;
-}
+export type RecurringBookingStatusEnum =
+  | 'active'
+  | 'paused'
+  | 'cancelled'
+  | 'completed';
 
 export interface RemoveDomainRequestRequest {
   domain: string;
@@ -5111,17 +5130,23 @@ export interface ResendVerificationCodeResponse {
   message: string;
 }
 
-export interface Role6b8enum {
-  [key: string]: any;
-}
+export type Role6b8enum = 'admin' | 'manager' | 'agent' | 'viewer';
 
-export interface SectionTypeEnum {
-  [key: string]: any;
-}
+export type SectionTypeEnum =
+  | 'hero_banner'
+  | 'featured_products'
+  | 'category_grid'
+  | 'product_by_attribute'
+  | 'statistics'
+  | 'branches'
+  | 'custom_content';
 
-export interface SenderRoleEnum {
-  [key: string]: any;
-}
+export type SenderRoleEnum =
+  | 'BUYER'
+  | 'CUSTOMER_SERVICE'
+  | 'SHOP'
+  | 'SYSTEM'
+  | 'ROBOT';
 
 export interface ServiceCategory {
   id: number;
@@ -5330,9 +5355,13 @@ export interface SocialAccount {
   is_auto_created?: boolean;
 }
 
-export interface SocialAccountPlatformEnum {
-  [key: string]: any;
-}
+export type SocialAccountPlatformEnum =
+  | 'facebook'
+  | 'instagram'
+  | 'whatsapp'
+  | 'email'
+  | 'tiktok'
+  | 'widget';
 
 export interface SocialAccountRequest {
   platform: SocialAccountPlatformEnum;
@@ -5541,49 +5570,74 @@ export interface StaffExceptionRequest {
   reason?: string;
 }
 
-export interface Status0faEnum {
-  [key: string]: any;
-}
+export type Status0faEnum =
+  | 'pending'
+  | 'confirmed'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded';
 
-export interface Status2c9enum {
-  [key: string]: any;
-}
+export type Status2c9enum = 'active' | 'abandoned' | 'converted';
 
-export interface Status61dEnum {
-  [key: string]: any;
-}
+export type Status61dEnum =
+  | 'draft'
+  | 'review'
+  | 'scheduled'
+  | 'published'
+  | 'archived';
 
-export interface Status6efEnum {
-  [key: string]: any;
-}
+export type Status6efEnum =
+  | 'initiated'
+  | 'ringing'
+  | 'answered'
+  | 'missed'
+  | 'busy'
+  | 'no_answer'
+  | 'failed'
+  | 'cancelled'
+  | 'transferred'
+  | 'ended'
+  | 'recording'
+  | 'on_hold';
 
-export interface Status711enum {
-  [key: string]: any;
-}
+export type Status711enum = 'active' | 'inactive' | 'coming_soon';
 
-export interface Status873enum {
-  [key: string]: any;
-}
+export type Status873enum =
+  | 'pending'
+  | 'drafting'
+  | 'drafted'
+  | 'published'
+  | 'skipped';
 
-export interface StatusC7aEnum {
-  [key: string]: any;
-}
+export type StatusC7aEnum =
+  | 'pending'
+  | 'manager_approved'
+  | 'hr_approved'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled';
 
-export interface StatusD46enum {
-  [key: string]: any;
-}
+export type StatusD46enum = 'active' | 'inactive' | 'suspended' | 'pending';
 
-export interface StatusDf1enum {
-  [key: string]: any;
-}
+export type StatusDf1enum =
+  | 'draft'
+  | 'sent'
+  | 'viewed'
+  | 'partially_paid'
+  | 'paid'
+  | 'overdue'
+  | 'cancelled';
 
-export interface StatusF43enum {
-  [key: string]: any;
-}
+export type StatusF43enum = 'draft' | 'active' | 'inactive' | 'out_of_stock';
 
-export interface StatusF46enum {
-  [key: string]: any;
-}
+export type StatusF46enum =
+  | 'pending'
+  | 'confirmed'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
 
 export interface StoreThemeResponse {
   preset: string;
@@ -5594,21 +5648,25 @@ export interface StoreThemeResponse {
   chat_widget: ChatWidgetConfigResponse;
 }
 
-export interface StorefrontTemplateEnum {
-  [key: string]: any;
-}
+export type StorefrontTemplateEnum = 'classic' | 'voltage';
 
-export interface StrategyEnum {
-  [key: string]: any;
-}
+export type StrategyEnum =
+  | 'ringall'
+  | 'rrmemory'
+  | 'leastrecent'
+  | 'fewestcalls'
+  | 'random'
+  | 'linear'
+  | 'wrandom';
 
-export interface SubjectEnum {
-  [key: string]: any;
-}
+export type SubjectEnum =
+  | 'sales'
+  | 'demo'
+  | 'support'
+  | 'partnership'
+  | 'other';
 
-export interface SyncStatusEnum {
-  [key: string]: any;
-}
+export type SyncStatusEnum = 'pending' | 'syncing' | 'completed' | 'failed';
 
 export interface Tag {
   id: number;
@@ -5663,9 +5721,11 @@ export interface TeamChatMessage {
   created_at: string;
 }
 
-export interface TeamChatMessageMessageTypeEnum {
-  [key: string]: any;
-}
+export type TeamChatMessageMessageTypeEnum =
+  | 'text'
+  | 'image'
+  | 'file'
+  | 'voice';
 
 export interface TeamChatMessageRequest {
   conversation: number;
@@ -5905,9 +5965,12 @@ export interface TestimonialAdminRequest {
   rating?: number;
 }
 
-export interface ThemePresetEnum {
-  [key: string]: any;
-}
+export type ThemePresetEnum =
+  | 'default'
+  | 'rounded'
+  | 'sharp'
+  | 'soft'
+  | 'custom';
 
 export interface Ticket {
   id: number;
@@ -5960,9 +6023,11 @@ export interface TicketAssignmentRequest {
   role?: TicketAssignmentRoleEnum;
 }
 
-export interface TicketAssignmentRoleEnum {
-  [key: string]: any;
-}
+export type TicketAssignmentRoleEnum =
+  | 'primary'
+  | 'collaborator'
+  | 'reviewer'
+  | 'observer';
 
 export interface TicketAttachment {
   id: number;
@@ -6162,9 +6227,14 @@ export interface TicketPayment {
   processed_at: string;
 }
 
-export interface TicketPaymentPaymentMethodEnum {
-  [key: string]: any;
-}
+export type TicketPaymentPaymentMethodEnum =
+  | 'cash'
+  | 'card'
+  | 'bank_transfer'
+  | 'paypal'
+  | 'stripe'
+  | 'manual'
+  | 'other';
 
 export interface TicketPaymentRequest {
   ticket: number;
@@ -6236,9 +6306,19 @@ export interface TikTokMessage {
   created_at: string;
 }
 
-export interface TikTokMessageMessageTypeEnum {
-  [key: string]: any;
-}
+export type TikTokMessageMessageTypeEnum =
+  | 'TEXT'
+  | 'IMAGE'
+  | 'VIDEO'
+  | 'PRODUCT_CARD'
+  | 'ORDER_CARD'
+  | 'EMOTICONS'
+  | 'COUPON_CARD'
+  | 'LOGISTICS_CARD'
+  | 'RETURN_REFUND_CARD'
+  | 'NOTIFICATION'
+  | 'ALLOCATED_SERVICE'
+  | 'OTHER';
 
 export interface TimeTrackingSummary {
   period_days: number;
@@ -6251,9 +6331,7 @@ export interface TimeTrackingSummary {
   active_sessions: TicketTimeLog[];
 }
 
-export interface TransferTypeEnum {
-  [key: string]: any;
-}
+export type TransferTypeEnum = 'blind' | 'attended';
 
 export interface Trunk {
   id: number;
@@ -6321,9 +6399,12 @@ export interface UnifiedConversation {
   archived_at?: string;
 }
 
-export interface UnifiedConversationPlatformEnum {
-  [key: string]: any;
-}
+export type UnifiedConversationPlatformEnum =
+  | 'facebook'
+  | 'instagram'
+  | 'whatsapp'
+  | 'email'
+  | 'widget';
 
 export interface User {
   id: number;
@@ -6475,25 +6556,26 @@ export interface VerifyDomainResponse {
   verification: Record<string, any>[];
 }
 
-export interface VoltageColorModeEnum {
-  [key: string]: any;
-}
+export type VoltageColorModeEnum = 'light' | 'dark';
 
-export interface VoltageDensityEnum {
-  [key: string]: any;
-}
+export type VoltageDensityEnum = 'compact' | 'cozy' | 'comfortable';
 
-export interface VoltageFontPairEnum {
-  [key: string]: any;
-}
+export type VoltageFontPairEnum =
+  | 'bricolage-inter'
+  | 'space-dm'
+  | 'serif-inter'
+  | 'mono-inter';
 
-export interface VoltageRadiusEnum {
-  [key: string]: any;
-}
+export type VoltageRadiusEnum = 'sharp' | 'soft' | 'rounded';
 
-export interface VoltageThemePresetEnum {
-  [key: string]: any;
-}
+export type VoltageThemePresetEnum =
+  | 'refurb'
+  | 'cobalt'
+  | 'ember'
+  | 'forest'
+  | 'violet'
+  | 'mono'
+  | 'rose';
 
 export interface WhatsAppBusinessAccount {
   id: number;
@@ -6583,17 +6665,24 @@ export interface WhatsAppMessage {
   created_at: string;
 }
 
-export interface WhatsAppMessageMessageTypeEnum {
-  [key: string]: any;
-}
+export type WhatsAppMessageMessageTypeEnum =
+  | 'text'
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'document'
+  | 'sticker'
+  | 'location'
+  | 'contacts'
+  | 'interactive';
 
-export interface WhatsAppMessageSourceEnum {
-  [key: string]: any;
-}
+export type WhatsAppMessageSourceEnum = 'cloud_api' | 'business_app' | 'synced';
 
-export interface WhatsAppMessageStatusEnum {
-  [key: string]: any;
-}
+export type WhatsAppMessageStatusEnum =
+  | 'sent'
+  | 'delivered'
+  | 'read'
+  | 'failed';
 
 export interface WhatsAppMessageTemplate {
   id: number;
@@ -6611,17 +6700,20 @@ export interface WhatsAppMessageTemplate {
   updated_at: string;
 }
 
-export interface WhatsAppMessageTemplateCategoryEnum {
-  [key: string]: any;
-}
+export type WhatsAppMessageTemplateCategoryEnum =
+  | 'MARKETING'
+  | 'UTILITY'
+  | 'AUTHENTICATION';
 
-export interface WhatsAppMessageTemplateStatusEnum {
-  [key: string]: any;
-}
+export type WhatsAppMessageTemplateStatusEnum =
+  | 'PENDING'
+  | 'APPROVED'
+  | 'REJECTED';
 
-export interface WhatsAppTemplateCreateCategoryEnum {
-  [key: string]: any;
-}
+export type WhatsAppTemplateCreateCategoryEnum =
+  | 'MARKETING'
+  | 'UTILITY'
+  | 'AUTHENTICATION';
 
 export interface WhatsAppTemplateCreateRequest {
   waba_id: string;

@@ -23,7 +23,7 @@ export default function TemplateCard({
   isDeleting = false,
 }: TemplateCardProps) {
   const getStatusBadge = (status?: WhatsAppMessageTemplateStatusEnum | string) => {
-    const statusStr = typeof status === 'string' ? status : status?.toString();
+    const statusStr = status;
     switch (statusStr) {
       case "APPROVED":
         return (
@@ -52,7 +52,7 @@ export default function TemplateCard({
   };
 
   const getCategoryBadge = (category?: WhatsAppMessageTemplateCategoryEnum | string) => {
-    const categoryStr = typeof category === 'string' ? category : category?.toString();
+    const categoryStr = category;
     const categoryColors: Record<string, string> = {
       MARKETING: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
       UTILITY: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
