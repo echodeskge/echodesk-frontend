@@ -323,7 +323,7 @@ export interface BookingListRequest {
 
 export interface BookingStaff {
   id: number;
-  user: UserMinimal;
+  user: BookingUserMinimal;
   bio?: string;
   profile_image?: string;
   average_rating: string;
@@ -355,6 +355,14 @@ export interface BookingStaffRequest {
 
 export interface BookingTypeEnum {
   [key: string]: any;
+}
+
+export interface BookingUserMinimal {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
 }
 
 export interface BulkProductUpdateRequestRequest {
@@ -4610,7 +4618,7 @@ export interface ProductDetail {
   cost_price?: string;
   discount_percentage: number;
   image: string;
-  images: string;
+  images: ProductImage[];
   track_inventory?: boolean;
   quantity?: number;
   low_stock_threshold?: number;
@@ -4678,7 +4686,7 @@ export interface ProductList {
   compare_at_price?: string;
   discount_percentage: number;
   image: string;
-  images: string;
+  images: ProductImage[];
   quantity?: number;
   status?: StatusF43enum;
   is_featured?: boolean;
