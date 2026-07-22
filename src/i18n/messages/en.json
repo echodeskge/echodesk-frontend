@@ -4904,6 +4904,7 @@
       "optInConfirm": "I confirm this recipient has opted in to receive WhatsApp messages from this business.",
       "chooseTemplate": "Choose template & send",
       "gateHint": "Enter a valid phone number and confirm opt-in to choose a template.",
+      "manageTemplates": "Manage templates",
       "sent": "Message sent",
       "sentDescription": "Your WhatsApp message has been sent.",
       "sendFailed": "Couldn't send message",

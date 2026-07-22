@@ -212,6 +212,14 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     requiredFeatureKey: "social_integrations",
     isPremium: true,
   },
+  {
+    // WhatsApp message templates — create/sync approved templates used to
+    // start conversations with numbers that never messaged us.
+    id: "social/templates",
+    icon: "FileText",
+    requiredFeatureKey: "social_integrations",
+    isPremium: true,
+  },
   // social/connections, auto-posting, rating-statistics moved to /settings/social
   {
     id: "settings",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Send } from "lucide-react";
 import type { WhatsAppMessageTemplate } from "@/api/generated";
@@ -292,6 +293,13 @@ export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
               {!canPickTemplate && (
                 <p className="text-xs text-muted-foreground">{t("gateHint")}</p>
               )}
+              <Link
+                href="/social/templates"
+                className="block text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                onClick={() => onOpenChange(false)}
+              >
+                {t("manageTemplates")}
+              </Link>
             </div>
           )}
         </div>

@@ -18,9 +18,9 @@ import {
   FileText,
   AlertCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import TemplateCard from "./TemplateCard";
+import { NewWhatsAppMessageDialog } from "@/components/messages-beta/sidebar/NewWhatsAppMessageDialog";
 import { cn } from "@/lib/utils";
 
 interface WhatsAppStatus {
@@ -40,8 +40,8 @@ interface WhatsAppStatus {
 export default function WhatsAppTemplatesList() {
   const t = useTranslations("social");
   const tCommon = useTranslations("common");
-  const router = useRouter();
   const [error, setError] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
 
   // Fetch WhatsApp status to get WABA ID
   const { data: whatsappStatusData, isLoading: statusLoading } = useWhatsAppStatus();
@@ -176,16 +176,19 @@ export default function WhatsAppTemplatesList() {
             <TemplateCard
               key={template.id}
               template={template}
-              onView={(id) => router.push(`/social/templates/${id}`)}
-              onSend={(id) => {
-                // TODO: Implement send template message dialog
-              }}
+              // No onView: the /social/templates/{id} detail page doesn't exist.
+              onSend={() => setComposeOpen(true)}
               onDelete={handleDelete}
               isDeleting={deleteTemplate.isPending}
             />
           ))}
         </div>
       )}
+
+      {/* Same compose flow as the ✏️ button in /social/messages: window
+          check, then approved template + opt-in for numbers that never
+          messaged us. */}
+      <NewWhatsAppMessageDialog open={composeOpen} onOpenChange={setComposeOpen} />
     </div>
   );
 }
