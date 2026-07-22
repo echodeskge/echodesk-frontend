@@ -1120,6 +1120,7 @@ export interface EmailMessage {
   is_answered: boolean;
   is_draft?: boolean;
   labels?: any;
+  has_business_reply: boolean;
   is_read_by_staff?: boolean;
   read_by_staff_at?: string;
   is_deleted?: boolean;

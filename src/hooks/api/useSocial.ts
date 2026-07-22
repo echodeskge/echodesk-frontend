@@ -1684,6 +1684,8 @@ export interface EmailMessage {
   is_read: boolean;
   is_starred: boolean;
   is_answered: boolean;
+  /** True if the business has replied at least once in this thread (from EchoDesk or an external email client). */
+  has_business_reply?: boolean;
   is_draft: boolean;
   labels: string[];
   is_read_by_staff: boolean;

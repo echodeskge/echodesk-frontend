@@ -9,6 +9,7 @@ import type { EmailMessage } from "@/hooks/api/useSocial";
 import { cn, formatDate } from "@/lib/utils";
 import { useEmailAction } from "@/hooks/api/useSocial";
 import { useEmailContext } from "../_hooks/use-email-context";
+import { EmailAnsweredBadge } from "./email-answered-badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -72,9 +73,12 @@ export function EmailListContentItemMobile({
         aria-label={t("selectEmail")}
       />
       <div className="flex-1 px-2">
-        <span className="font-bold line-clamp-1 break-all">
-          {email.subject || t("noSubject")}
-        </span>
+        <div className="flex items-center gap-2">
+          <EmailAnsweredBadge email={email} />
+          <span className="font-bold line-clamp-1 break-all">
+            {email.subject || t("noSubject")}
+          </span>
+        </div>
         <span className="text-muted-foreground line-clamp-1 break-all">
           {t("from")} {email.from_name || email.from_email}
         </span>

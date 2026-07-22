@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
+import { EmailAnsweredBadge } from "./email-answered-badge";
 
 interface EmailListRowDesktopProps {
   email: EmailMessage;
@@ -108,9 +109,12 @@ export function EmailListRowDesktop({
         </div>
       </TableCell>
       <TableCell>
-        <span className="text-muted-foreground line-clamp-1 break-all">
-          {email.subject || t("noSubject")}
-        </span>
+        <div className="flex items-center gap-2">
+          <EmailAnsweredBadge email={email} />
+          <span className="text-muted-foreground line-clamp-1 break-all">
+            {email.subject || t("noSubject")}
+          </span>
+        </div>
       </TableCell>
       <TableCell className="w-28">
         <span className="text-sm text-muted-foreground">

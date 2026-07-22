@@ -4425,6 +4425,8 @@
       "unstarEmail": "Unstar email",
       "moreActions": "More actions",
       "noSubject": "(No subject)",
+      "answered": "Answered",
+      "new": "New",
       "from": "From",
       "notFound": "No emails found. Try a different filter or compose a new email."
     },

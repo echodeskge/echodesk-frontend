@@ -27,6 +27,8 @@ vi.mock("next-intl", () => ({
       markAsRead: "Mark as read",
       markAsUnread: "Mark as unread",
       delete: "Delete",
+      answered: "Answered",
+      new: "New",
     };
     return translations[key] || key;
   },
@@ -183,6 +185,39 @@ describe("EmailListRowDesktop", () => {
 
       // getInitials("test@example.com") returns "TE" (first 2 chars of single word)
       expect(screen.getByText("TE")).toBeInTheDocument();
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // Answered / New tag
+  // -----------------------------------------------------------------------
+
+  describe("answered/new tag", () => {
+    it("shows 'New' for an unanswered incoming email", () => {
+      renderRow({ has_business_reply: false, is_answered: false });
+
+      expect(screen.getByText("New")).toBeInTheDocument();
+      expect(screen.queryByText("Answered")).not.toBeInTheDocument();
+    });
+
+    it("shows 'Answered' when the thread has a business reply", () => {
+      renderRow({ has_business_reply: true });
+
+      expect(screen.getByText("Answered")).toBeInTheDocument();
+      expect(screen.queryByText("New")).not.toBeInTheDocument();
+    });
+
+    it("shows 'Answered' when the IMAP answered flag is set", () => {
+      renderRow({ has_business_reply: false, is_answered: true });
+
+      expect(screen.getByText("Answered")).toBeInTheDocument();
+    });
+
+    it("shows no tag on business-sent emails", () => {
+      renderRow({ is_from_business: true, has_business_reply: true });
+
+      expect(screen.queryByText("Answered")).not.toBeInTheDocument();
+      expect(screen.queryByText("New")).not.toBeInTheDocument();
     });
   });
 
