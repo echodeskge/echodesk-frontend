@@ -90,6 +90,12 @@ vi.mock("@/hooks/useUserProfile", () => ({
   }),
 }));
 
+let mockSidebarOpen = false;
+
+vi.mock("@/contexts/IncomingCallSidebarContext", () => ({
+  useIncomingCallSidebar: () => ({ isOpen: mockSidebarOpen }),
+}));
+
 // Mock the DialpadPopup (heavy component we don't need to test here)
 vi.mock("@/components/calls/DialpadPopup", () => ({
   DialpadPopup: ({ onClose }: { onClose: () => void }) => (
@@ -155,6 +161,7 @@ describe("DialpadWidget", () => {
     mockAuthUser.is_staff = false;
     mockAuthUser.is_superuser = false;
     mockUserProfile = null;
+    mockSidebarOpen = false;
   });
 
   // -----------------------------------------------------------------------
@@ -437,6 +444,15 @@ describe("DialpadWidget", () => {
       render(<DialpadWidget />);
 
       expect(screen.getByTestId("dialpad-popup")).toBeInTheDocument();
+    });
+
+    it("suppresses DialpadPopup while the incoming-call sidebar is open", () => {
+      mockCallContextValue.isDialpadOpen = true;
+      mockSidebarOpen = true;
+
+      render(<DialpadWidget />);
+
+      expect(screen.queryByTestId("dialpad-popup")).not.toBeInTheDocument();
     });
 
     it("does not show DialpadPopup when dialpad is closed", () => {

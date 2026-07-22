@@ -252,10 +252,27 @@ describe("UserForm", () => {
       expect(screen.getByDisplayValue("Me")).toBeInTheDocument();
     });
 
-    it("disables email field in edit mode", () => {
+    it("email field is editable in edit mode and shows the new-password hint on change", async () => {
+      // Email editing was intentionally enabled for admins (commit 7a11974):
+      // changing it generates a new password and emails it to the new address.
+      const { usersRetrieve } = await import("@/api/generated/api");
+      const user = userEvent.setup();
       renderForm({ mode: "edit", user: editUser });
 
-      expect(screen.getByDisplayValue("edit@test.com")).toBeDisabled();
+      // Let the usersRetrieve hydration settle first — its effect repopulates
+      // the form and would clobber anything typed before it resolves.
+      await waitFor(() => expect(usersRetrieve).toHaveBeenCalled());
+
+      const emailInput = screen.getByDisplayValue("edit@test.com");
+      expect(emailInput).toBeEnabled();
+
+      await user.clear(emailInput);
+      await user.type(emailInput, "new@test.com");
+
+      expect(screen.getByDisplayValue("new@test.com")).toBeEnabled();
+      expect(
+        screen.getByText(/Changing the email generates a new password/)
+      ).toBeInTheDocument();
     });
 
     it("shows status selector in edit mode", () => {

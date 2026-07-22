@@ -55,10 +55,10 @@ import { VariantManager } from "./VariantManager";
 import { Trash2 } from "lucide-react";
 
 /**
- * The generated Status711enum is typed as `{ [key: string]: any }` (an object)
- * instead of a proper string union, because the OpenAPI generator cannot resolve
- * the Django enum. We cast status string literals through `Status711enum` using
- * this helper to avoid bare `as any`.
+ * StatusF43enum is the generated union for ProductCreateUpdateRequest.status
+ * (draft/published/…). The form state is Partial<ProductCreateUpdateRequest>,
+ * so string literals from UI handlers are funneled through this cast instead
+ * of bare `as any`.
  */
 import type { StatusF43enum } from "@/api/generated/interfaces";
 const asStatus = (v: string) => v as unknown as StatusF43enum;

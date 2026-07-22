@@ -12,6 +12,9 @@ export const GLOBAL_NAMESPACES = [
   'notificationList',
   'notificationPreferences',
   'notifications',
+  // Stale assigned-chats reminder popup — mounted globally in the tenant
+  // layout (like notifications), so its strings must ship on every route.
+  'staleReminder',
   'notFound',
   'subscription',
   'calls',
