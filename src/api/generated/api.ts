@@ -394,6 +394,7 @@ import type {
   SipConfiguration,
   SipConfigurationDetail,
   PatchedSipConfigurationRequest,
+  AssignmentStatusResponse,
   PaginatedSocialClientListList,
   SocialClientCreateRequest,
   SocialClientCreate,
@@ -7808,8 +7809,21 @@ export async function socialAssignmentsStartSessionCreate(): Promise<any> {
   return response.data;
 }
 
-export async function socialAssignmentsStatusRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/assignments/status/`);
+export async function socialAssignmentsStatusRetrieve(
+  accountId: string,
+  conversationId: string,
+  platform: string,
+): Promise<AssignmentStatusResponse> {
+  const response = await axios.get(
+    `/api/social/assignments/status/${(() => {
+      const parts = [
+        'account_id=' + encodeURIComponent(accountId),
+        'conversation_id=' + encodeURIComponent(conversationId),
+        'platform=' + encodeURIComponent(platform),
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 

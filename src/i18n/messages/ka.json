@@ -4904,7 +4904,9 @@
       "selectAConversation": "დასაწყებად აირჩიეთ საუბარი.",
       "openConversations": "საუბრების გახსნა",
       "conversationNotFound": "ამ ხედში საუბარი ვერ მოიძებნა.",
-      "loadingConversation": "საუბრის ჩატვირთვა…"
+      "loadingConversation": "საუბრის ჩატვირთვა…",
+      "movedToHistory": "ეს საუბარი ისტორიაში გადავიდა.",
+      "movedToHistoryHint": "აქ ღია რჩება — მოგვიანებით იპოვით ისტორიის ხედში."
     },
     "thread": {
       "loadOlder": "ძველი შეტყობინებების ჩატვირთვა",

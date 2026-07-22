@@ -14,10 +14,12 @@ import type { UserType } from "@/components/chat/types";
 
 import { MessagesBetaComposer } from "../composer/MessagesBetaComposer";
 import { MessagesBetaClientRail } from "../client-rail/MessagesBetaClientRail";
+import { MessagesBetaArchivedNotice } from "./MessagesBetaArchivedNotice";
 import { MessagesBetaHeaderActions } from "./MessagesBetaHeaderActions";
 import { MessagesBetaThread } from "./MessagesBetaThread";
 import { MessagesBetaChatContextShim } from "../shims/ChatContextShim";
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
+import { resolveDeepLinkArchiveState } from "../store/archive-status";
 import { fetchMessagesForChat } from "../store/rest-bootstrap";
 import { PLACEHOLDER_CONVERSATION_NAME } from "../store/types";
 import type { BetaPlatform, ConversationRow } from "../store/types";
@@ -86,6 +88,21 @@ export function MessagesBetaChatBox() {
     () => conversations.find((c) => c.id === selectedChatId) || null,
     [conversations, selectedChatId]
   );
+
+  // Deep-link archive check: archived chats are excluded from the active
+  // bootstrap list, so only deep-linked rows have no archive state yet
+  // (`undefined`, vs explicit `null` for every list-fetched row). Resolve
+  // it once per chat so a History chat lands in the History view instead
+  // of masquerading as active in the All tab.
+  const archiveCheckRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!conversation || !selectedChatId) return;
+    if (bootstrapState !== "ready") return;
+    if (useMessagesBetaStore.getState().archivedByChatId[selectedChatId] !== undefined) return;
+    if (archiveCheckRef.current.has(selectedChatId)) return;
+    archiveCheckRef.current.add(selectedChatId);
+    void resolveDeepLinkArchiveState(selectedChatId, conversation);
+  }, [conversation, selectedChatId, bootstrapState]);
 
   // Lazy-load the thread once per chat — never re-fetch after that. WS keeps
   // it live. The dirty-set song-and-dance the legacy page does to plug holes
@@ -210,6 +227,8 @@ export function MessagesBetaChatBox() {
             <MessagesBetaHeaderActions conversation={conversation} />
           </div>
         </CardHeader>
+
+        <MessagesBetaArchivedNotice chatId={conversation.id} />
 
         <MessagesBetaThread conversation={conversation} currentUser={CURRENT_USER} />
 

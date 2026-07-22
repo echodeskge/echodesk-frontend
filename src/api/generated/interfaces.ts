@@ -37,6 +37,21 @@ export interface AddNewCardResponse {
 
 export type ApproverRoleEnum = 'manager' | 'hr' | 'admin';
 
+export interface AssignmentSettingsFlags {
+  chat_assignment_enabled: boolean;
+  session_management_enabled: boolean;
+  hide_assigned_chats: boolean;
+  collect_customer_rating: boolean;
+}
+
+export interface AssignmentStatusResponse {
+  assignment: ChatAssignment;
+  settings: AssignmentSettingsFlags;
+  is_archived: boolean;
+  archived_at: string;
+  archived_by_id: number;
+}
+
 export interface AttributeDefinition {
   id: number;
   name: any;
@@ -105,7 +120,7 @@ export interface BlogPostAdmin {
   meta_title?: any;
   meta_description?: any;
   keywords?: any;
-  hero_image_url?: string;
+  hero_image_url?: string | string;
   faq_items?: any;
   competitor_name?: string;
   comparison_matrix?: any;
@@ -138,7 +153,7 @@ export interface BlogPostAdminRequest {
   meta_title?: any;
   meta_description?: any;
   keywords?: any;
-  hero_image_url?: string;
+  hero_image_url?: string | string;
   faq_items?: any;
   competitor_name?: string;
   comparison_matrix?: any;
@@ -222,7 +237,7 @@ export interface BoardRequest {
 
 export interface BookingClient {
   id: number;
-  email?: string;
+  email?: string | string;
   phone_number: string;
   first_name?: string;
   last_name?: string;
@@ -233,7 +248,7 @@ export interface BookingClient {
 }
 
 export interface BookingClientRequest {
-  email?: string;
+  email?: string | string;
   first_name?: string;
   last_name?: string;
 }
@@ -269,7 +284,7 @@ export interface BookingDetail {
   paid_amount?: string;
   remaining_amount: string;
   bog_order_id?: string;
-  payment_url?: string;
+  payment_url?: string | string;
   client_notes?: string;
   staff_notes?: string;
   rating?: number;
@@ -498,7 +513,7 @@ export interface CallRecording {
   id: number;
   recording_id: string;
   file_path?: string;
-  file_url?: string;
+  file_url?: string | string;
   file_size?: number;
   file_size_display: string;
   duration?: string;
@@ -525,7 +540,7 @@ export interface CallStatusUpdateRequest {
   status: Status6efEnum;
   notes?: string;
   call_quality_score?: number;
-  recording_url?: string;
+  recording_url?: string | string;
 }
 
 export type CallTypeEnum = 'voice' | 'video' | 'conference';
@@ -619,6 +634,24 @@ export interface ChangePasswordRequestRequest {
 export interface ChangePasswordResponse {
   message: string;
 }
+
+export interface ChatAssignment {
+  id: number;
+  platform: Platform896enum;
+  conversation_id: string;
+  account_id: string;
+  full_conversation_id: string;
+  assigned_user?: number;
+  assigned_user_name: string;
+  assigned_user_email: string;
+  status?: ChatAssignmentStatusEnum;
+  session_started_at?: string;
+  session_ended_at?: string;
+  assigned_at: string;
+  updated_at: string;
+}
+
+export type ChatAssignmentStatusEnum = 'active' | 'in_session' | 'completed';
 
 export interface ChatWidgetConfigResponse {
   token: string;
@@ -900,8 +933,8 @@ export interface EcommerceSettings {
   active_payment_providers?: any;
   bog_client_id?: string;
   has_bog_credentials: boolean;
-  bog_return_url_success?: string;
-  bog_return_url_fail?: string;
+  bog_return_url_success?: string | string;
+  bog_return_url_fail?: string | string;
   google_ads_conversion_id?: string;
   google_ads_purchase_label?: string;
   google_analytics_id?: string;
@@ -932,7 +965,7 @@ export interface EcommerceSettings {
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
-  store_email?: string;
+  store_email?: string | string;
   store_phone?: string;
   ecommerce_frontend_url: string;
   deployment_status: DeploymentStatusEnum;
@@ -970,8 +1003,8 @@ export interface EcommerceSettingsRequest {
   active_payment_providers?: any;
   bog_client_id?: string;
   bog_client_secret?: string;
-  bog_return_url_success?: string;
-  bog_return_url_fail?: string;
+  bog_return_url_success?: string | string;
+  bog_return_url_fail?: string | string;
   google_ads_conversion_id?: string;
   google_ads_purchase_label?: string;
   google_analytics_id?: string;
@@ -1001,7 +1034,7 @@ export interface EcommerceSettingsRequest {
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
-  store_email?: string;
+  store_email?: string | string;
   store_phone?: string;
   theme_preset?: ThemePresetEnum;
   theme_primary_color?: string;
@@ -1073,7 +1106,7 @@ export interface EmailMessage {
   to_emails?: any;
   cc_emails?: any;
   bcc_emails?: any;
-  reply_to?: string;
+  reply_to?: string | string;
   subject?: string;
   body_text?: string;
   body_html?: string;
@@ -1104,7 +1137,7 @@ export interface EmailMessageRequest {
   to_emails?: any;
   cc_emails?: any;
   bcc_emails?: any;
-  reply_to?: string;
+  reply_to?: string | string;
   subject?: string;
   body_text?: string;
   body_html?: string;
@@ -1155,10 +1188,10 @@ export interface FacebookMessage {
   message_id: string;
   sender_id: string;
   sender_name?: string;
-  profile_pic_url?: string;
+  profile_pic_url?: string | string;
   message_text?: string;
   attachment_type?: FacebookMessageAttachmentTypeEnum | BlankEnum;
-  attachment_url?: string;
+  attachment_url?: string | string;
   attachments?: any;
   timestamp: string;
   is_from_page?: boolean;
@@ -1365,8 +1398,8 @@ export interface HelpArticleAdmin {
   summary?: any;
   content_type?: ContentTypeEnum;
   content?: any;
-  video_url?: string;
-  video_thumbnail?: string;
+  video_url?: string | string;
+  video_thumbnail?: string | string;
   video_duration?: string;
   guide_steps?: any;
   faq_items?: any;
@@ -1391,8 +1424,8 @@ export interface HelpArticleAdminRequest {
   summary?: any;
   content_type?: ContentTypeEnum;
   content?: any;
-  video_url?: string;
-  video_thumbnail?: string;
+  video_url?: string | string;
+  video_thumbnail?: string | string;
   video_duration?: string;
   guide_steps?: any;
   faq_items?: any;
@@ -1416,8 +1449,8 @@ export interface HelpArticleDetail {
   summary: string;
   content_type?: ContentTypeEnum;
   content: string;
-  video_url?: string;
-  video_thumbnail?: string;
+  video_url?: string | string;
+  video_thumbnail?: string | string;
   video_duration?: string;
   guide_steps: string;
   faq_items: string;
@@ -1440,7 +1473,7 @@ export interface HelpArticleList {
   slug: string;
   summary: string;
   content_type?: ContentTypeEnum;
-  video_thumbnail?: string;
+  video_thumbnail?: string | string;
   video_duration?: string;
   position?: number;
   is_active?: boolean;
@@ -1529,7 +1562,7 @@ export interface HomepageSection {
   display_mode_display: string;
   settings?: any;
   background_color?: string;
-  background_image_url?: string;
+  background_image_url?: string | string;
   text_color?: string;
   created_at: string;
   updated_at: string;
@@ -1544,7 +1577,7 @@ export interface HomepageSectionPublic {
   display_mode?: DisplayModeEnum;
   settings?: any;
   background_color?: string;
-  background_image_url?: string;
+  background_image_url?: string | string;
   text_color?: string;
   attribute_key?: string;
   attribute_value?: string;
@@ -1567,7 +1600,7 @@ export interface HomepageSectionRequest {
   display_mode?: DisplayModeEnum;
   settings?: any;
   background_color?: string;
-  background_image_url?: string;
+  background_image_url?: string | string;
   text_color?: string;
 }
 
@@ -1617,7 +1650,7 @@ export interface InstagramAccountConnection {
   id: number;
   instagram_account_id: string;
   username: string;
-  profile_picture_url?: string;
+  profile_picture_url?: string | string;
   is_active?: boolean;
   facebook_page_name: string;
   created_at: string;
@@ -1627,7 +1660,7 @@ export interface InstagramAccountConnection {
 export interface InstagramAccountConnectionRequest {
   instagram_account_id: string;
   username: string;
-  profile_picture_url?: string;
+  profile_picture_url?: string | string;
   is_active?: boolean;
 }
 
@@ -1637,10 +1670,10 @@ export interface InstagramMessage {
   sender_id: string;
   sender_name?: string;
   sender_username?: string;
-  sender_profile_pic?: string;
+  sender_profile_pic?: string | string;
   message_text?: string;
   attachment_type?: InstagramMessageAttachmentTypeEnum | BlankEnum;
-  attachment_url?: string;
+  attachment_url?: string | string;
   attachments?: any;
   timestamp: string;
   is_from_business?: boolean;
@@ -1853,8 +1886,8 @@ export interface InvoiceSettings {
   registration_number?: string;
   address?: string;
   phone?: string;
-  email?: string;
-  website?: string;
+  email?: string | string;
+  website?: string | string;
   logo?: string;
   badge?: string;
   signature?: string;
@@ -1864,7 +1897,7 @@ export interface InvoiceSettings {
   default_tax_rate?: string;
   default_due_days?: number;
   bank_accounts?: any;
-  email_from?: string;
+  email_from?: string | string;
   email_from_name?: string;
   email_cc?: string;
   email_subject_template?: string;
@@ -1883,8 +1916,8 @@ export interface InvoiceSettingsRequest {
   registration_number?: string;
   address?: string;
   phone?: string;
-  email?: string;
-  website?: string;
+  email?: string | string;
+  website?: string | string;
   logo?: string;
   badge?: string;
   signature?: string;
@@ -1894,7 +1927,7 @@ export interface InvoiceSettingsRequest {
   default_tax_rate?: string;
   default_due_days?: number;
   bank_accounts?: any;
-  email_from?: string;
+  email_from?: string | string;
   email_from_name?: string;
   email_cc?: string;
   email_subject_template?: string;
@@ -2232,7 +2265,7 @@ export interface LeaveRequestCreate {
   start_date: string;
   end_date: string;
   reason?: string;
-  attachment?: string;
+  attachment?: string | string;
 }
 
 export interface LeaveRequestCreateRequest {
@@ -2240,7 +2273,7 @@ export interface LeaveRequestCreateRequest {
   start_date: string;
   end_date: string;
   reason?: string;
-  attachment?: string;
+  attachment?: string | string;
 }
 
 export interface LeaveRequestDetail {
@@ -2274,7 +2307,7 @@ export interface LeaveRequestDetail {
   rejection_reason?: string;
   cancelled_at?: string;
   cancellation_reason?: string;
-  attachment?: string;
+  attachment?: string | string;
   created_at: string;
   updated_at: string;
 }
@@ -2298,14 +2331,14 @@ export interface LeaveRequestUpdate {
   start_date: string;
   end_date: string;
   reason?: string;
-  attachment?: string;
+  attachment?: string | string;
 }
 
 export interface LeaveRequestUpdateRequest {
   start_date: string;
   end_date: string;
   reason?: string;
-  attachment?: string;
+  attachment?: string | string;
 }
 
 export interface LeaveSettings {
@@ -3469,7 +3502,7 @@ export interface PatchedBlogPostAdminRequest {
   meta_title?: any;
   meta_description?: any;
   keywords?: any;
-  hero_image_url?: string;
+  hero_image_url?: string | string;
   faq_items?: any;
   competitor_name?: string;
   comparison_matrix?: any;
@@ -3545,7 +3578,7 @@ export interface PatchedCallStatusUpdateRequest {
   status?: Status6efEnum;
   notes?: string;
   call_quality_score?: number;
-  recording_url?: string;
+  recording_url?: string | string;
 }
 
 export interface PatchedCartItemCreateRequest {
@@ -3627,8 +3660,8 @@ export interface PatchedEcommerceSettingsRequest {
   active_payment_providers?: any;
   bog_client_id?: string;
   bog_client_secret?: string;
-  bog_return_url_success?: string;
-  bog_return_url_fail?: string;
+  bog_return_url_success?: string | string;
+  bog_return_url_fail?: string | string;
   google_ads_conversion_id?: string;
   google_ads_purchase_label?: string;
   google_analytics_id?: string;
@@ -3658,7 +3691,7 @@ export interface PatchedEcommerceSettingsRequest {
   enable_cash_on_delivery?: boolean;
   enable_card_payment?: boolean;
   store_name?: string;
-  store_email?: string;
+  store_email?: string | string;
   store_phone?: string;
   theme_preset?: ThemePresetEnum;
   theme_primary_color?: string;
@@ -3720,8 +3753,8 @@ export interface PatchedHelpArticleAdminRequest {
   summary?: any;
   content_type?: ContentTypeEnum;
   content?: any;
-  video_url?: string;
-  video_thumbnail?: string;
+  video_url?: string | string;
+  video_thumbnail?: string | string;
   video_duration?: string;
   guide_steps?: any;
   faq_items?: any;
@@ -3762,7 +3795,7 @@ export interface PatchedHomepageSectionRequest {
   display_mode?: DisplayModeEnum;
   settings?: any;
   background_color?: string;
-  background_image_url?: string;
+  background_image_url?: string | string;
   text_color?: string;
 }
 
@@ -3781,7 +3814,7 @@ export interface PatchedInboundRouteRequest {
 export interface PatchedInstagramAccountConnectionRequest {
   instagram_account_id?: string;
   username?: string;
-  profile_picture_url?: string;
+  profile_picture_url?: string | string;
   is_active?: boolean;
 }
 
@@ -3825,8 +3858,8 @@ export interface PatchedInvoiceSettingsRequest {
   registration_number?: string;
   address?: string;
   phone?: string;
-  email?: string;
-  website?: string;
+  email?: string | string;
+  website?: string | string;
   logo?: string;
   badge?: string;
   signature?: string;
@@ -3836,7 +3869,7 @@ export interface PatchedInvoiceSettingsRequest {
   default_tax_rate?: string;
   default_due_days?: number;
   bank_accounts?: any;
-  email_from?: string;
+  email_from?: string | string;
   email_from_name?: string;
   email_cc?: string;
   email_subject_template?: string;
@@ -3924,7 +3957,7 @@ export interface PatchedLeaveRequestUpdateRequest {
   start_date?: string;
   end_date?: string;
   reason?: string;
-  attachment?: string;
+  attachment?: string | string;
 }
 
 export interface PatchedLeaveSettingsRequest {
@@ -4011,8 +4044,8 @@ export interface PatchedPbxServerRequest {
   ami_port?: number;
   ami_username?: string;
   ami_password?: string;
-  wss_url?: string;
-  recording_base_url?: string;
+  wss_url?: string | string;
+  recording_base_url?: string | string;
   use_tenant_prefix?: boolean;
   notes?: string;
 }
@@ -4058,7 +4091,7 @@ export interface PatchedProductVariantRequest {
   name?: any;
   price?: string;
   quantity?: number;
-  image?: string;
+  image?: string | string;
   is_active?: boolean;
   sort_order?: number;
 }
@@ -4170,10 +4203,10 @@ export interface PatchedSipConfigurationRequest {
 
 export interface PatchedSocialClientCreateRequest {
   name?: string;
-  email?: string;
+  email?: string | string;
   phone?: string;
   notes?: string;
-  profile_picture?: string;
+  profile_picture?: string | string;
   custom_fields?: Record<string, any>;
   first_name?: string;
   last_name?: string;
@@ -4201,7 +4234,7 @@ export interface PatchedSocialIntegrationSettingsRequest {
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
-  post_review_redirect_url?: string;
+  post_review_redirect_url?: string | string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -4277,7 +4310,7 @@ export interface PatchedTenantRequest {
   max_users?: number;
   max_storage?: number;
   preferred_language?: PreferredLanguage0bbEnum;
-  frontend_url?: string;
+  frontend_url?: string | string;
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   min_users_per_ticket?: number;
@@ -4292,8 +4325,8 @@ export interface PatchedTestimonialAdminRequest {
   author_role_ka?: string;
   author_role_en?: string;
   company_name?: string;
-  logo_url?: string;
-  avatar_url?: string;
+  logo_url?: string | string;
+  avatar_url?: string | string;
   quote_ka?: string;
   quote_en?: string;
   rating?: number;
@@ -4480,8 +4513,8 @@ export interface PbxServer {
   ami_host?: string;
   ami_port?: number;
   ami_username?: string;
-  wss_url?: string;
-  recording_base_url?: string;
+  wss_url?: string | string;
+  recording_base_url?: string | string;
   status: PbxServerStatusEnum;
   asterisk_version: string;
   last_seen_at: string;
@@ -4508,8 +4541,8 @@ export interface PbxServerRequest {
   ami_port?: number;
   ami_username?: string;
   ami_password?: string;
-  wss_url?: string;
-  recording_base_url?: string;
+  wss_url?: string | string;
+  recording_base_url?: string | string;
   use_tenant_prefix?: boolean;
   notes?: string;
 }
@@ -4536,6 +4569,14 @@ export interface PermissionRequest {
 }
 
 export type PlanEnum = 'basic' | 'premium' | 'enterprise';
+
+export type Platform896enum =
+  | 'facebook'
+  | 'instagram'
+  | 'whatsapp'
+  | 'email'
+  | 'tiktok'
+  | 'widget';
 
 export type PlatformTypeEnum = 'CLOUD_API' | 'ON_PREMISE' | 'SMB';
 
@@ -4769,7 +4810,7 @@ export interface ProductVariant {
   price?: string;
   effective_price: string;
   quantity?: number;
-  image?: string;
+  image?: string | string;
   is_active?: boolean;
   sort_order?: number;
   attribute_values: ProductVariantAttributeValue[];
@@ -4793,7 +4834,7 @@ export interface ProductVariantRequest {
   name: any;
   price?: string;
   quantity?: number;
-  image?: string;
+  image?: string | string;
   is_active?: boolean;
   sort_order?: number;
 }
@@ -4854,7 +4895,7 @@ export interface PublicBlogPostDetail {
   title: string;
   summary: string;
   category: PublicBlogCategory;
-  hero_image_url?: string;
+  hero_image_url?: string | string;
   published_at?: string;
   reading_time_minutes?: number;
   is_featured?: boolean;
@@ -4876,7 +4917,7 @@ export interface PublicBlogPostList {
   title: string;
   summary: string;
   category: PublicBlogCategory;
-  hero_image_url?: string;
+  hero_image_url?: string | string;
   published_at?: string;
   reading_time_minutes?: number;
   is_featured?: boolean;
@@ -5343,33 +5384,25 @@ export interface SmsReviewResponse {
 
 export interface SocialAccount {
   id: number;
-  platform: SocialAccountPlatformEnum;
+  platform: Platform896enum;
   platform_id: string;
   account_connection_id: string;
   display_name?: string;
   username?: string;
-  profile_pic_url?: string;
+  profile_pic_url?: string | string;
   first_seen_at: string;
   last_seen_at: string;
   last_message_at?: string;
   is_auto_created?: boolean;
 }
 
-export type SocialAccountPlatformEnum =
-  | 'facebook'
-  | 'instagram'
-  | 'whatsapp'
-  | 'email'
-  | 'tiktok'
-  | 'widget';
-
 export interface SocialAccountRequest {
-  platform: SocialAccountPlatformEnum;
+  platform: Platform896enum;
   platform_id: string;
   account_connection_id: string;
   display_name?: string;
   username?: string;
-  profile_pic_url?: string;
+  profile_pic_url?: string | string;
   last_message_at?: string;
   is_auto_created?: boolean;
 }
@@ -5377,10 +5410,10 @@ export interface SocialAccountRequest {
 export interface SocialClient {
   id: number;
   name: string;
-  email?: string;
+  email?: string | string;
   phone?: string;
   notes?: string;
-  profile_picture?: string;
+  profile_picture?: string | string;
   social_accounts: SocialAccount[];
   custom_fields: string;
   created_by: number;
@@ -5398,10 +5431,10 @@ export interface SocialClient {
 
 export interface SocialClientCreate {
   name: string;
-  email?: string;
+  email?: string | string;
   phone?: string;
   notes?: string;
-  profile_picture?: string;
+  profile_picture?: string | string;
   custom_fields?: Record<string, any>;
   first_name?: string;
   last_name?: string;
@@ -5410,10 +5443,10 @@ export interface SocialClientCreate {
 
 export interface SocialClientCreateRequest {
   name: string;
-  email?: string;
+  email?: string | string;
   phone?: string;
   notes?: string;
-  profile_picture?: string;
+  profile_picture?: string | string;
   custom_fields?: Record<string, any>;
   first_name?: string;
   last_name?: string;
@@ -5469,10 +5502,10 @@ export interface SocialClientList {
 
 export interface SocialClientRequest {
   name: string;
-  email?: string;
+  email?: string | string;
   phone?: string;
   notes?: string;
-  profile_picture?: string;
+  profile_picture?: string | string;
   first_name?: string;
   last_name?: string;
   is_booking_enabled?: boolean;
@@ -5490,7 +5523,7 @@ export interface SocialIntegrationSettings {
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
-  post_review_redirect_url?: string;
+  post_review_redirect_url?: string | string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -5515,7 +5548,7 @@ export interface SocialIntegrationSettingsRequest {
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
-  post_review_redirect_url?: string;
+  post_review_redirect_url?: string | string;
   notification_sound_facebook?: string;
   notification_sound_instagram?: string;
   notification_sound_whatsapp?: string;
@@ -5769,7 +5802,7 @@ export interface Tenant {
   max_users?: number;
   max_storage?: number;
   preferred_language?: PreferredLanguage0bbEnum;
-  frontend_url?: string;
+  frontend_url?: string | string;
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   created_on: string;
@@ -5913,7 +5946,7 @@ export interface TenantRequest {
   max_users?: number;
   max_storage?: number;
   preferred_language?: PreferredLanguage0bbEnum;
-  frontend_url?: string;
+  frontend_url?: string | string;
   deployment_status?: DeploymentStatusEnum;
   is_active?: boolean;
   min_users_per_ticket?: number;
@@ -5925,8 +5958,8 @@ export interface Testimonial {
   author_name: string;
   role: string;
   company_name?: string;
-  logo_url?: string;
-  avatar_url?: string;
+  logo_url?: string | string;
+  avatar_url?: string | string;
   quote: string;
   rating?: number;
   position?: number;
@@ -5941,8 +5974,8 @@ export interface TestimonialAdmin {
   author_role_ka?: string;
   author_role_en?: string;
   company_name?: string;
-  logo_url?: string;
-  avatar_url?: string;
+  logo_url?: string | string;
+  avatar_url?: string | string;
   quote_ka: string;
   quote_en?: string;
   rating?: number;
@@ -5958,8 +5991,8 @@ export interface TestimonialAdminRequest {
   author_role_ka?: string;
   author_role_en?: string;
   company_name?: string;
-  logo_url?: string;
-  avatar_url?: string;
+  logo_url?: string | string;
+  avatar_url?: string | string;
   quote_ka: string;
   quote_en?: string;
   rating?: number;
@@ -6627,10 +6660,10 @@ export interface WhatsAppMessage {
   from_number: string;
   to_number: string;
   contact_name?: string;
-  profile_pic_url?: string;
+  profile_pic_url?: string | string;
   message_text?: string;
   message_type?: WhatsAppMessageMessageTypeEnum;
-  media_url?: string;
+  media_url?: string | string;
   media_mime_type?: string;
   attachments?: any;
   timestamp: string;

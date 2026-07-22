@@ -4904,7 +4904,9 @@
       "selectAConversation": "Select a chat to start a conversation.",
       "openConversations": "Open conversations",
       "conversationNotFound": "Conversation not found in this view.",
-      "loadingConversation": "Loading conversation…"
+      "loadingConversation": "Loading conversation…",
+      "movedToHistory": "This chat has been moved to History.",
+      "movedToHistoryHint": "It stays open here — you can find it later in the History view."
     },
     "thread": {
       "loadOlder": "Load older messages",
