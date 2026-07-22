@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail, ExternalLink } from "lucide-react";
+import { Bell, BellRing, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -683,6 +683,10 @@ function ChatManagementTab({
   setHideAssignedChats,
   collectCustomerRating,
   setCollectCustomerRating,
+  staleReminderEnabled,
+  setStaleReminderEnabled,
+  staleReminderMinutes,
+  setStaleReminderMinutes,
   linkBasedRatingEnabled,
   setLinkBasedRatingEnabled,
   ratingRequestMessageKa,
@@ -701,6 +705,10 @@ function ChatManagementTab({
   setHideAssignedChats: (v: boolean) => void;
   collectCustomerRating: boolean;
   setCollectCustomerRating: (v: boolean) => void;
+  staleReminderEnabled: boolean;
+  setStaleReminderEnabled: (v: boolean) => void;
+  staleReminderMinutes: number;
+  setStaleReminderMinutes: (v: number) => void;
   linkBasedRatingEnabled: boolean;
   setLinkBasedRatingEnabled: (v: boolean) => void;
   ratingRequestMessageKa: string;
@@ -763,6 +771,47 @@ function ChatManagementTab({
               onCheckedChange={setHideAssignedChats}
             />
           </div>
+
+          <Separator />
+
+          {/* Stale Assignment Reminder Toggle */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="stale-reminder" className="flex items-center gap-2">
+                <BellRing className="h-4 w-4 text-purple-500" />
+                {t("settingsPage.chatManagement.staleReminder") || "Remind agents about inactive assigned chats"}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t("settingsPage.chatManagement.staleReminderDescription") || "Agents see a popup when a chat assigned to them has had no activity for the set time."}
+              </p>
+            </div>
+            <Switch
+              id="stale-reminder"
+              checked={staleReminderEnabled}
+              onCheckedChange={setStaleReminderEnabled}
+            />
+          </div>
+
+          {/* Threshold (shown when reminders are enabled) */}
+          {staleReminderEnabled && (
+            <div className="space-y-2 pl-6 border-l-2 border-muted">
+              <Label htmlFor="stale-reminder-minutes">
+                {t("settingsPage.chatManagement.staleReminderMinutes") || "Inactivity threshold (minutes)"}
+              </Label>
+              <Input
+                id="stale-reminder-minutes"
+                type="number"
+                min={5}
+                max={10080}
+                className="w-32"
+                value={staleReminderMinutes}
+                onChange={(e) => setStaleReminderMinutes(Number(e.target.value))}
+              />
+              <p className="text-sm text-muted-foreground">
+                {t("settingsPage.chatManagement.staleReminderMinutesDescription") || "How long a chat can be quiet before the reminder appears (5–10080)."}
+              </p>
+            </div>
+          )}
 
           <Separator />
 
@@ -1108,6 +1157,8 @@ export default function SocialSettingsPage() {
   const [chatAssignmentEnabled, setChatAssignmentEnabled] = useState(false);
   const [hideAssignedChats, setHideAssignedChats] = useState(false);
   const [collectCustomerRating, setCollectCustomerRating] = useState(false);
+  const [staleReminderEnabled, setStaleReminderEnabled] = useState(false);
+  const [staleReminderMinutes, setStaleReminderMinutes] = useState(60);
   const [linkBasedRatingEnabled, setLinkBasedRatingEnabled] = useState(false);
   const [ratingRequestMessageKa, setRatingRequestMessageKa] = useState("გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
   const [ratingRequestMessageEn, setRatingRequestMessageEn] = useState("Thank you for chatting with us! Please rate your experience: {link}");
@@ -1138,6 +1189,9 @@ export default function SocialSettingsPage() {
       setChatAssignmentEnabled(settings.chat_assignment_enabled ?? false);
       setHideAssignedChats(settings.hide_assigned_chats ?? false);
       setCollectCustomerRating(settings.collect_customer_rating ?? false);
+      // Stale assignment reminders
+      setStaleReminderEnabled(settings.stale_assignment_reminder_enabled ?? false);
+      setStaleReminderMinutes(settings.stale_assignment_reminder_minutes ?? 60);
       // Link-based rating settings
       setLinkBasedRatingEnabled(settings.link_based_rating_enabled ?? false);
       setRatingRequestMessageKa(settings.rating_request_message_template_ka || "გმადლობთ ჩვენთან საუბრისთვის! გთხოვთ შეაფასოთ თქვენი გამოცდილება: {link}");
@@ -1183,6 +1237,9 @@ export default function SocialSettingsPage() {
       session_management_enabled: Boolean(chatAssignmentEnabled),
       hide_assigned_chats: Boolean(hideAssignedChats),
       collect_customer_rating: Boolean(collectCustomerRating),
+      // Stale assignment reminders
+      stale_assignment_reminder_enabled: Boolean(staleReminderEnabled),
+      stale_assignment_reminder_minutes: Math.min(10080, Math.max(5, Number(staleReminderMinutes) || 60)),
       // Link-based rating settings
       link_based_rating_enabled: Boolean(linkBasedRatingEnabled),
       rating_request_message_template_ka: ratingRequestMessageKa,
@@ -1306,6 +1363,10 @@ export default function SocialSettingsPage() {
               setHideAssignedChats={setHideAssignedChats}
               collectCustomerRating={collectCustomerRating}
               setCollectCustomerRating={setCollectCustomerRating}
+              staleReminderEnabled={staleReminderEnabled}
+              setStaleReminderEnabled={setStaleReminderEnabled}
+              staleReminderMinutes={staleReminderMinutes}
+              setStaleReminderMinutes={setStaleReminderMinutes}
               linkBasedRatingEnabled={linkBasedRatingEnabled}
               setLinkBasedRatingEnabled={setLinkBasedRatingEnabled}
               ratingRequestMessageKa={ratingRequestMessageKa}

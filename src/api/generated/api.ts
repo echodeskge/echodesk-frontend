@@ -8064,6 +8064,9 @@ export async function socialClientsCustomFieldsReorderCreate(
 }
 
 export async function socialConversationsRetrieve(
+  archived?: boolean,
+  assigned?: boolean,
+  connectionId?: number,
   folder?: string,
   page?: number,
   pageSize?: number,
@@ -8073,6 +8076,11 @@ export async function socialConversationsRetrieve(
   const response = await axios.get(
     `/api/social/conversations/${(() => {
       const parts = [
+        archived ? 'archived=' + encodeURIComponent(archived) : null,
+        assigned ? 'assigned=' + encodeURIComponent(assigned) : null,
+        connectionId
+          ? 'connection_id=' + encodeURIComponent(connectionId)
+          : null,
         folder ? 'folder=' + encodeURIComponent(folder) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,

@@ -4231,6 +4231,8 @@ export interface PatchedSocialIntegrationSettingsRequest {
   session_management_enabled?: boolean;
   hide_assigned_chats?: boolean;
   collect_customer_rating?: boolean;
+  stale_assignment_reminder_enabled?: boolean;
+  stale_assignment_reminder_minutes?: number;
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
@@ -5520,6 +5522,8 @@ export interface SocialIntegrationSettings {
   session_management_enabled?: boolean;
   hide_assigned_chats?: boolean;
   collect_customer_rating?: boolean;
+  stale_assignment_reminder_enabled?: boolean;
+  stale_assignment_reminder_minutes?: number;
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;
@@ -5545,6 +5549,8 @@ export interface SocialIntegrationSettingsRequest {
   session_management_enabled?: boolean;
   hide_assigned_chats?: boolean;
   collect_customer_rating?: boolean;
+  stale_assignment_reminder_enabled?: boolean;
+  stale_assignment_reminder_minutes?: number;
   link_based_rating_enabled?: boolean;
   rating_request_message_template_ka?: string;
   rating_request_message_template_en?: string;

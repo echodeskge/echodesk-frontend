@@ -44,6 +44,7 @@ export const socialKeys = {
   conversations: () => [...socialKeys.all, 'conversations'] as const,
   conversationsList: (filters: { platforms?: string; search?: string; folder?: string; assigned?: boolean; archived?: boolean; connectionId?: number | null }) =>
     [...socialKeys.conversations(), filters] as const,
+  staleReminder: () => [...socialKeys.all, 'stale-reminder'] as const,
   assignments: () => [...socialKeys.all, 'assignments'] as const,
   myAssignments: () => [...socialKeys.assignments(), 'my'] as const,
   allAssignments: () => [...socialKeys.assignments(), 'all'] as const,
@@ -874,6 +875,9 @@ export interface SocialSettings {
   session_management_enabled: boolean;
   hide_assigned_chats: boolean;
   collect_customer_rating: boolean;
+  // Stale assignment reminders
+  stale_assignment_reminder_enabled?: boolean;
+  stale_assignment_reminder_minutes?: number;
   // Link-based rating settings
   link_based_rating_enabled: boolean;
   rating_request_message_template_ka: string;
@@ -919,6 +923,8 @@ export function useUpdateSocialSettings() {
       | 'session_management_enabled'
       | 'hide_assigned_chats'
       | 'collect_customer_rating'
+      | 'stale_assignment_reminder_enabled'
+      | 'stale_assignment_reminder_minutes'
       | 'notification_sound_facebook'
       | 'notification_sound_instagram'
       | 'notification_sound_whatsapp'

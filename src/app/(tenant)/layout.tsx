@@ -39,6 +39,7 @@ const TeamChatWidget = dynamic(() => import("@/components/TeamChat").then(m => (
 const DialpadWidget = dynamic(() => import("@/components/calls/DialpadWidget"), { ssr: false });
 const IncomingCallSidebar = dynamic(() => import("@/components/calls/IncomingCallSidebar").then(m => ({ default: m.IncomingCallSidebar })), { ssr: false });
 const PushNotificationPrompt = dynamic(() => import("@/components/PushNotificationPrompt").then(m => ({ default: m.PushNotificationPrompt })), { ssr: false });
+const StaleAssignmentReminder = dynamic(() => import("@/components/social/StaleAssignmentReminder"), { ssr: false });
 import {
   SubscriptionProvider,
   useSubscription,
@@ -806,6 +807,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Push notification permission prompt */}
       <PushNotificationPrompt />
+
+      {/* Stale assigned-chats reminder (admin-gated via social settings) */}
+      {userProfile?.id && <StaleAssignmentReminder />}
 
       {/* Team Chat Widget */}
       {userProfile?.id && (

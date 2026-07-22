@@ -1900,6 +1900,10 @@
         "enableAssignmentDescription": "Allow users to claim chats and manage sessions. Only the assigned user will receive notifications for that chat.",
         "hideAssigned": "Hide assigned chats from others",
         "hideAssignedDescription": "When enabled, assigned chats are hidden from other users (admins can still see all)",
+        "staleReminder": "Remind agents about inactive assigned chats",
+        "staleReminderDescription": "Agents see a popup when a chat assigned to them has had no activity for the set time.",
+        "staleReminderMinutes": "Inactivity threshold (minutes)",
+        "staleReminderMinutesDescription": "How long a chat can be quiet before the reminder appears (5–10080).",
         "collectRating": "Collect customer rating",
         "collectRatingDescription": "Send rating request (1-5) to customer when session ends",
         "linkBasedRating": "Use link-based rating",
@@ -4836,6 +4840,19 @@
       "advancedTitle": "Advanced",
       "installBlocked": "Install endpoint is not available until the form is saved."
     }
+  },
+  "staleReminder": {
+    "title": "Assigned chats need attention",
+    "description": "These chats are assigned to you and have been inactive for more than {minutes} minutes.",
+    "lastActivity": "Last activity {time}",
+    "openChat": "Open chat",
+    "endSession": "End session",
+    "unassign": "Unassign",
+    "snooze": "Remind me in 15 minutes",
+    "dismiss": "Dismiss",
+    "sessionEnded": "Session ended",
+    "chatUnassigned": "Chat unassigned",
+    "actionFailed": "Action failed"
   },
   "messagesBeta": {
     "page": {
