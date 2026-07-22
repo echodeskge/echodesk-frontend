@@ -1,8 +1,7 @@
 /**
  * Tests for QuickReplySuggestions — the inline "Saved reply · Click to insert"
- * bar above the composer. Focuses on the eye-toggle preview: long messages are
- * truncated to one line, and the eye button expands the row to show the full
- * message without inserting it.
+ * bar above the composer. The eye button on long replies opens the full
+ * message in an edit popup (QuickReplyForm) instead of inserting it.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -11,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import type { QuickReply } from "@/hooks/api/useSocial";
 
 let mockReplies: QuickReply[] = [];
+let lastFormProps: { editingReply: QuickReply | null; onCancel: () => void } | null = null;
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
@@ -18,6 +18,13 @@ vi.mock("next-intl", () => ({
 
 vi.mock("@/hooks/api/useSocial", () => ({
   useQuickReplies: () => ({ data: mockReplies }),
+}));
+
+vi.mock("@/components/social/QuickReplyForm", () => ({
+  QuickReplyForm: (props: { editingReply: QuickReply | null; onCancel: () => void }) => {
+    lastFormProps = props;
+    return <div data-testid="quick-reply-form" />;
+  },
 }));
 
 import { QuickReplySuggestions } from "@/components/messages-beta/composer/QuickReplySuggestions";
@@ -55,16 +62,18 @@ function renderBar(onSelect = vi.fn()) {
   return onSelect;
 }
 
-describe("QuickReplySuggestions eye toggle", () => {
+describe("QuickReplySuggestions eye popup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockReplies = [];
+    lastFormProps = null;
   });
 
   it("shows the eye button only for long or multi-line messages", () => {
     mockReplies = [
       makeQuickReply({ id: 1, title: "Greeting long", message: LONG_MESSAGE }),
       makeQuickReply({ id: 2, title: "Greeting short", message: "Hi!" }),
+      makeQuickReply({ id: 3, title: "Greeting multiline", message: "Hi\nthere" }),
     ];
     renderBar();
 
@@ -72,26 +81,40 @@ describe("QuickReplySuggestions eye toggle", () => {
       screen.getByRole("button", { name: "showFullMessage: Greeting long" })
     ).toBeInTheDocument();
     expect(
+      screen.getByRole("button", { name: "showFullMessage: Greeting multiline" })
+    ).toBeInTheDocument();
+    expect(
       screen.queryByRole("button", { name: "showFullMessage: Greeting short" })
     ).not.toBeInTheDocument();
   });
 
-  it("expands and collapses the full message without inserting it", async () => {
-    mockReplies = [makeQuickReply({ id: 1, title: "Greeting", message: LONG_MESSAGE })];
+  it("opens the edit popup for the clicked reply without inserting it", async () => {
+    mockReplies = [makeQuickReply({ id: 7, title: "Greeting", message: LONG_MESSAGE })];
     const user = userEvent.setup();
     const onSelect = renderBar();
 
-    const message = screen.getByText(LONG_MESSAGE);
-    expect(message).toHaveClass("truncate");
+    expect(screen.queryByTestId("quick-reply-form")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "showFullMessage: Greeting" }));
-    expect(message).not.toHaveClass("truncate");
-    expect(message).toHaveClass("whitespace-pre-wrap");
-    expect(onSelect).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "hideFullMessage: Greeting" }));
-    expect(message).toHaveClass("truncate");
+    expect(screen.getByTestId("quick-reply-form")).toBeInTheDocument();
+    expect(lastFormProps?.editingReply?.id).toBe(7);
+    expect(lastFormProps?.editingReply?.message).toBe(LONG_MESSAGE);
     expect(onSelect).not.toHaveBeenCalled();
+  });
+
+  it("closes the popup when the form cancels", async () => {
+    mockReplies = [makeQuickReply({ id: 7, title: "Greeting", message: LONG_MESSAGE })];
+    const user = userEvent.setup();
+    renderBar();
+
+    await user.click(screen.getByRole("button", { name: "showFullMessage: Greeting" }));
+    expect(screen.getByTestId("quick-reply-form")).toBeInTheDocument();
+
+    lastFormProps?.onCancel();
+    await vi.waitFor(() => {
+      expect(screen.queryByTestId("quick-reply-form")).not.toBeInTheDocument();
+    });
   });
 
   it("still inserts the message when the suggestion itself is clicked", async () => {
