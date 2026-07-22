@@ -10,6 +10,8 @@ import {
   Loader2,
   Zap,
   ArrowLeft,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Dialog,
@@ -42,6 +44,9 @@ interface QuickReplySelectorProps {
 
 const UNCATEGORIZED = "__uncategorized__";
 
+// Rough point where a message no longer fits the row's two clamped lines.
+const LONG_MESSAGE_THRESHOLD = 100;
+
 export function QuickReplySelector({
   platform,
   onSelect,
@@ -54,6 +59,7 @@ export function QuickReplySelector({
   const [searchQuery, setSearchQuery] = useState("");
   const [editingReply, setEditingReply] = useState<QuickReply | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const { data: quickReplies, isLoading } = useQuickReplies({ platform });
   const deleteQuickReply = useDeleteQuickReply();
@@ -113,6 +119,16 @@ export function QuickReplySelector({
     setEditingReply(reply);
   };
 
+  const toggleExpanded = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleFormSuccess = () => {
     setEditingReply(null);
     setIsCreating(false);
@@ -140,7 +156,12 @@ export function QuickReplySelector({
     }
   };
 
-  const renderRow = (reply: QuickReply) => (
+  const renderRow = (reply: QuickReply) => {
+    const isExpanded = expandedIds.has(reply.id);
+    const isLongMessage =
+      reply.message.length > LONG_MESSAGE_THRESHOLD || reply.message.includes("\n");
+
+    return (
     <div
       key={reply.id}
       role="button"
@@ -163,7 +184,11 @@ export function QuickReplySelector({
             </Badge>
           )}
         </div>
-        <p className="mt-1 line-clamp-2 break-words text-sm text-muted-foreground">
+        <p
+          className={`mt-1 break-words text-sm text-muted-foreground ${
+            isExpanded ? "whitespace-pre-wrap" : "line-clamp-2"
+          }`}
+        >
           {reply.message}
         </p>
         {reply.platforms.length > 0 && reply.platforms[0] !== "all" && (
@@ -179,6 +204,19 @@ export function QuickReplySelector({
 
       {/* Inline actions — revealed on hover/focus (always visible on touch). */}
       <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+        {isLongMessage && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            aria-label={
+              isExpanded ? `Hide full message of ${reply.title}` : `Show full message of ${reply.title}`
+            }
+            onClick={(e) => toggleExpanded(e, reply.id)}
+          >
+            {isExpanded ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -200,14 +238,18 @@ export function QuickReplySelector({
         </Button>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (!o) closeForm();
+        if (!o) {
+          closeForm();
+          setExpandedIds(new Set());
+        }
       }}
     >
       <DialogTrigger asChild>
