@@ -82,11 +82,8 @@ export function TicketDetailMain({ ticket, onUpdate }: TicketDetailMainProps) {
 
   return (
     <div className="space-y-6">
-      {/* Description */}
+      {/* Description — renders its own "აღწერა" header with the edit button */}
       <div className="rounded-lg border bg-card p-6">
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">
-          {t("description")}
-        </h3>
         <TicketDescription ticket={ticket} onUpdate={onUpdate} />
       </div>
 

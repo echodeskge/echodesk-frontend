@@ -1,9 +1,10 @@
 /**
- * Tests for TicketDescription click-to-edit component.
+ * Tests for TicketDescription.
  *
  * Covers:
- * - Renders description HTML (sanitized)
- * - Clicking activates edit mode
+ * - Renders description HTML (sanitized) as plain selectable text
+ * - The pencil button next to the title activates edit mode
+ * - Clicking the text does NOT activate edit mode (so it stays copyable)
  * - Empty description shows placeholder
  */
 
@@ -20,6 +21,7 @@ import type { Ticket } from "@/api/generated/interfaces";
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
+      "description": "Description",
       "ticketDetail.noDescription": "No description provided",
       "ticketDetail.clickToEdit": "Click to edit",
       "ticketUpdatedSuccess": "Ticket updated",
@@ -129,7 +131,15 @@ describe("TicketDescription", () => {
     expect(screen.getByText("No description provided")).toBeInTheDocument();
   });
 
-  it("clicking activates edit mode with textarea", async () => {
+  it("renders the section title with the edit button next to it", () => {
+    const ticket = makeTicket({ rich_description: "<p>Hello</p>" });
+    render(<TicketDescription ticket={ticket} onUpdate={mockOnUpdate} />);
+
+    expect(screen.getByRole("heading", { name: "Description" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Click to edit" })).toBeInTheDocument();
+  });
+
+  it("the pencil button activates edit mode with textarea", async () => {
     const user = userEvent.setup();
     const ticket = makeTicket({
       description: "Some description text",
@@ -138,14 +148,27 @@ describe("TicketDescription", () => {
 
     render(<TicketDescription ticket={ticket} onUpdate={mockOnUpdate} />);
 
-    // Click to enter edit mode
-    await user.click(screen.getByText("Some description text"));
+    await user.click(screen.getByRole("button", { name: "Click to edit" }));
 
-    // Textarea should appear
     await waitFor(() => {
       const textarea = screen.getByRole("textbox");
       expect(textarea).toBeInTheDocument();
     });
+  });
+
+  it("clicking the description text does NOT activate edit mode", async () => {
+    const user = userEvent.setup();
+    const ticket = makeTicket({
+      description: "Some description text",
+      rich_description: "<p>Some description text</p>",
+    });
+
+    render(<TicketDescription ticket={ticket} onUpdate={mockOnUpdate} />);
+
+    await user.click(screen.getByText("Some description text"));
+
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.getByText("Some description text")).toBeInTheDocument();
   });
 
   it("textarea contains stripped text (no HTML) when entering edit mode", async () => {
@@ -157,8 +180,7 @@ describe("TicketDescription", () => {
 
     render(<TicketDescription ticket={ticket} onUpdate={mockOnUpdate} />);
 
-    // Click to edit
-    await user.click(screen.getByText(/Plain/));
+    await user.click(screen.getByRole("button", { name: "Click to edit" }));
 
     await waitFor(() => {
       const textarea = screen.getByRole("textbox");
