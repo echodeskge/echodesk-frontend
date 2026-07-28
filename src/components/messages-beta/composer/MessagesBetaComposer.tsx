@@ -7,6 +7,7 @@ import {
   KeyboardEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -53,6 +54,10 @@ interface Props {
 const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
 
 const TYPING_DEBOUNCE_MS = 1500;
+
+// Must match the Textarea's max-h class; beyond this the composer scrolls
+// internally instead of growing further.
+const COMPOSER_MAX_HEIGHT_PX = 160;
 
 /**
  * /messages-beta composer with feature parity for the social platforms.
@@ -114,6 +119,18 @@ export function MessagesBetaComposer({ conversation }: Props) {
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-grow the composer with its content (Shift+Enter lines, long text,
+  // quick-reply inserts) up to the max height, then scroll internally —
+  // Messenger-style. Keyed on `text` so every mutation path is covered,
+  // including the post-send clear which shrinks it back to one line.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const next = Math.min(el.scrollHeight, COMPOSER_MAX_HEIGHT_PX);
+    if (next > 0) el.style.height = `${next}px`;
+  }, [text]);
 
   // Widget sessions that have been closed by either side: composer hidden.
   const widgetClosed =
@@ -587,7 +604,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           placeholder={isDragOver ? t("placeholderDrop") : t("placeholder")}
-          className="resize-none min-h-[40px] max-h-[160px]"
+          className="resize-none overflow-y-auto min-h-[40px] max-h-[160px]"
           rows={1}
           disabled={sending}
         />
