@@ -83,4 +83,40 @@ describe("fetchConversationsPage – archived (History) list", () => {
     const [, opts] = getMock.mock.calls[getMock.mock.calls.length - 1];
     expect(opts.params.archived).toBeUndefined();
   });
+
+  // Regression guard: History infinite scroll was broken because the initial
+  // archived fetch discarded nextPage — the list capped at the first 100
+  // conversations and deeper pages were never requested.
+  it("requests deeper archived pages with page + archived + page_size", async () => {
+    getMock.mockResolvedValue({ data: { results: [], next: "https://x/page=4" } });
+    const { fetchConversationsPage } = await import(
+      "@/components/messages-beta/store/rest-bootstrap"
+    );
+    const result = await fetchConversationsPage({
+      platforms: ["facebook"],
+      page: 3,
+      archived: true,
+      pageSize: 100,
+    });
+    const [, opts] = getMock.mock.calls[getMock.mock.calls.length - 1];
+    expect(opts.params.page).toBe(3);
+    expect(opts.params.archived).toBe("true");
+    expect(opts.params.page_size).toBe(100);
+    // Cursor continues while the server reports another page…
+    expect(result.nextPage).toBe(4);
+  });
+
+  it("returns null nextPage on the last archived page", async () => {
+    getMock.mockResolvedValue({ data: { results: [], next: null } });
+    const { fetchConversationsPage } = await import(
+      "@/components/messages-beta/store/rest-bootstrap"
+    );
+    const result = await fetchConversationsPage({
+      platforms: ["facebook"],
+      page: 7,
+      archived: true,
+      pageSize: 100,
+    });
+    expect(result.nextPage).toBeNull();
+  });
 });

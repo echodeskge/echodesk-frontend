@@ -53,6 +53,11 @@ const PLATFORM_BG: Record<ConversationRow["platform"], string> = {
 // pixels of the bottom. Matches legacy chat-sidebar-list.tsx:32 (100 px).
 const INFINITE_SCROLL_THRESHOLD_PX = 100;
 
+// Page size for the ARCHIVED (History) list. Every History page must use the
+// same size — DRF page numbers are relative to page_size, so mixing sizes
+// would skip or repeat conversations.
+const ARCHIVED_PAGE_SIZE = 100;
+
 export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   const t = useTranslations("messagesBeta.sidebar");
   const { user } = useAuth();
@@ -63,6 +68,8 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   const bootstrapState = useMessagesBetaStore((s) => s.bootstrapState);
   const archivedListState = useMessagesBetaStore((s) => s.archivedListState);
   const setArchivedListState = useMessagesBetaStore((s) => s.setArchivedListState);
+  const archivedNextPage = useMessagesBetaStore((s) => s.archivedNextPage);
+  const setArchivedNextPage = useMessagesBetaStore((s) => s.setArchivedNextPage);
   const assignmentTab = useMessagesBetaStore((s) => s.assignmentTab);
   const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
   const showArchived = useMessagesBetaStore((s) => s.showArchived);
@@ -190,14 +197,68 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
     patchArchive,
   ]);
 
+  // Same as loadNextPage but for the ARCHIVED (History) list, which
+  // paginates independently: same page_size as the initial History fetch
+  // so DRF page numbers line up. Rows are stamped as archived so the
+  // History selector includes them.
+  const loadNextArchivedPage = useCallback(async () => {
+    if (archivedNextPage == null) return;
+    if (isFetchingNextPage) return;
+    setIsFetchingNextPage(true);
+    try {
+      const { rows, assignments, archives, nextPage } = await fetchConversationsPage({
+        platforms: platformsRef.current,
+        page: archivedNextPage,
+        archived: true,
+        pageSize: ARCHIVED_PAGE_SIZE,
+      });
+      appendConversations(rows);
+      for (const [chatId, slice] of assignments) {
+        const current = useMessagesBetaStore.getState().assignmentByChatId[chatId];
+        if (current === undefined) patchAssignment(chatId, slice);
+      }
+      const archiveMap = new Map(archives);
+      for (const row of rows) {
+        const current = useMessagesBetaStore.getState().archivedByChatId[row.id];
+        if (current === undefined) {
+          patchArchive(
+            row.id,
+            archiveMap.get(row.id) ?? { archivedAt: new Date().toISOString(), byUserId: null }
+          );
+        }
+      }
+      setArchivedNextPage(nextPage);
+    } catch (err) {
+      // Leave archivedNextPage intact so a later scroll can retry.
+      console.warn("[messages-beta] archived next-page fetch failed:", err);
+    } finally {
+      setIsFetchingNextPage(false);
+    }
+  }, [
+    archivedNextPage,
+    isFetchingNextPage,
+    setIsFetchingNextPage,
+    setArchivedNextPage,
+    appendConversations,
+    patchAssignment,
+    patchArchive,
+  ]);
+
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     if (distanceFromBottom < INFINITE_SCROLL_THRESHOLD_PX) {
-      void loadNextPage();
+      // History paginates through its own cursor; the active tabs through
+      // the bootstrap list's. Branching here is what makes History's
+      // infinite scroll actually fetch archived pages 2…N.
+      if (showArchived) {
+        void loadNextArchivedPage();
+      } else {
+        void loadNextPage();
+      }
     }
-  }, [loadNextPage]);
+  }, [loadNextPage, loadNextArchivedPage, showArchived]);
 
   // --- Lazy-load the server-side archived (History) list. ---
   // The bootstrap only fetches the ACTIVE list (the backend hides archived
@@ -209,8 +270,9 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
     if (!showArchived) return;
     if (archivedListState !== "pending") return;
     setArchivedListState("loading");
-    fetchConversationsPage({ platforms: platformsRef.current, archived: true, pageSize: 100 })
-      .then(({ rows, assignments, archives }) => {
+    fetchConversationsPage({ platforms: platformsRef.current, archived: true, pageSize: ARCHIVED_PAGE_SIZE })
+      .then(({ rows, assignments, archives, nextPage }) => {
+        setArchivedNextPage(nextPage);
         appendConversations(rows);
         for (const [chatId, slice] of assignments) {
           if (useMessagesBetaStore.getState().assignmentByChatId[chatId] === undefined) {
@@ -238,6 +300,7 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
     showArchived,
     archivedListState,
     setArchivedListState,
+    setArchivedNextPage,
     appendConversations,
     patchAssignment,
     patchArchive,

@@ -62,6 +62,10 @@ export interface MessagesBetaState {
    *  The bootstrap only fetches the active list, so History is fetched
    *  lazily the first time the user opens it. */
   archivedListState: BootstrapState;
+  /** Next page number for the server-side archived (History) list, or null
+   *  once every archived page has been fetched. Drives the History tab's
+   *  infinite scroll, mirroring nextConversationsPage for the active list. */
+  archivedNextPage: number | null;
 
   // --- PR A: sidebar filter slices ---
   /** Free-text filter applied to the sidebar list (name / lastMessage / platform). Already-debounced upstream. */

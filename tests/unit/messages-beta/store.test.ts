@@ -520,3 +520,23 @@ describe("MessagesBetaStore – setMessageReaction", () => {
     expect(useMessagesBetaStore.getState().messagesByChatId.c[0].reactionEmoji).toBe("❤️");
   });
 });
+
+describe("MessagesBetaStore – archived (History) pagination cursor", () => {
+  beforeEach(() => {
+    useMessagesBetaStore.getState().reset();
+  });
+
+  it("defaults to null and round-trips through setArchivedNextPage", () => {
+    expect(useMessagesBetaStore.getState().archivedNextPage).toBeNull();
+    useMessagesBetaStore.getState().setArchivedNextPage(2);
+    expect(useMessagesBetaStore.getState().archivedNextPage).toBe(2);
+    useMessagesBetaStore.getState().setArchivedNextPage(null); // last page reached
+    expect(useMessagesBetaStore.getState().archivedNextPage).toBeNull();
+  });
+
+  it("reset() clears the archived cursor", () => {
+    useMessagesBetaStore.getState().setArchivedNextPage(5);
+    useMessagesBetaStore.getState().reset();
+    expect(useMessagesBetaStore.getState().archivedNextPage).toBeNull();
+  });
+});
