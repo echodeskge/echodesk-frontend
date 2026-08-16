@@ -1,6 +1,10 @@
 import type { ChatType, MessageType, UserType, LastMessageType } from "@/components/chat/types";
 import { parseTimestamp } from "@/lib/parseTimestamp";
 
+// Facebook's default 👍 Like sticker (the Messenger like button). Its CDN
+// image URL expires, so it's rendered as a text 👍 instead of an image.
+export const LIKE_STICKER_ID = "369239263222822";
+
 /**
  * Strips HTML tags from a string and decodes HTML entities
  */
@@ -115,6 +119,18 @@ export function convertAttachments(msg: UnifiedMessage): AttachmentResult {
     const isImageType = imgTypes.includes(attachmentType);
     const isVideoType = attachmentType === 'video';
     const isAudioType = attachmentType === 'audio';
+
+    // Messenger's 👍 Like button arrives as a sticker whose fbcdn image URL
+    // EXPIRES (403 after a while) — old likes render as broken images.
+    // Render it as text instead of depending on the dead URL. Other stickers
+    // keep their image while the URL is fresh.
+    const likeSticker = msg.attachments?.find(
+      (a) => String(a.sticker_id || '') === LIKE_STICKER_ID
+    );
+    if (likeSticker) {
+      if (!msg.message_text) msg.message_text = '👍';
+      return { images: undefined, files: undefined, voiceMessage: undefined };
+    }
 
     // Resolve URL — for WhatsApp use proxy when media_id is available
     const resolveAttUrl = (a: Attachment) => {

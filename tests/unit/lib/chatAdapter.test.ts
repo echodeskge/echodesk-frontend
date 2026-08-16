@@ -561,6 +561,44 @@ describe("convertUnifiedMessagesToMessageType", () => {
     expect(result.images![0].type).toBe("image");
   });
 
+  // Regression guard: Messenger's 👍 Like button arrives as sticker id
+  // 369239263222822 with an fbcdn URL that EXPIRES (403) — reported live on
+  // amanati as broken images. It must render as text, never via the URL.
+  it("renders the Like sticker as 👍 text instead of the expiring image", () => {
+    const msg = makeUnifiedMessage({
+      message_text: "",
+      attachment_type: "image",
+      attachment_url: "https://scontent.xx.fbcdn.net/v/t39.1997-6/expired.png",
+      attachments: [
+        {
+          type: "image",
+          url: "https://scontent.xx.fbcdn.net/v/t39.1997-6/expired.png",
+          sticker_id: "369239263222822",
+        },
+      ],
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.text).toBe("👍");
+    expect(result.images).toBeUndefined();
+    expect(result.files).toBeUndefined();
+  });
+
+  it("keeps non-Like stickers as images while their URL is fresh", () => {
+    const msg = makeUnifiedMessage({
+      message_text: "",
+      attachment_type: "image",
+      attachments: [
+        { type: "sticker", url: "https://example.com/other-sticker.png", sticker_id: "111222333" },
+      ],
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.images).toHaveLength(1);
+  });
+
   it("handles audio as voiceMessage", () => {
     const msg = makeUnifiedMessage({
       attachment_type: "audio",
