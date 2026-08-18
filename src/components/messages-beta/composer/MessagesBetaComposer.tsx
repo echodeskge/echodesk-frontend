@@ -314,6 +314,10 @@ export function MessagesBetaComposer({ conversation }: Props) {
       toast.error(errMsg);
     } finally {
       setSending(false);
+      // The textarea is disabled while sending, which drops focus — return
+      // it so the agent can keep typing without clicking back into the box.
+      // rAF waits for React to re-enable the textarea first.
+      requestAnimationFrame(() => textareaRef.current?.focus());
     }
   }, [conversation, text, files, sending, replyingTo, setReplyingTo, sendTypingStop, t]);
 

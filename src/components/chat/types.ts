@@ -122,6 +122,9 @@ export interface MessageType {
     address?: string
     url?: string
   }
+  // Delivery failure detail (status === "FAILED") — e.g. WhatsApp's
+  // "Re-engagement message" when replying outside the 24h window.
+  failureReason?: string
 }
 
 export type NewMessageType = Omit<

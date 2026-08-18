@@ -317,6 +317,26 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
           <span className="text-xs font-normal text-muted-foreground">
             {formatDistanceToNow(message.createdAt, { addSuffix: true })}
           </span>
+          {isByCurrentUser && message.status === "FAILED" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-xs font-medium text-destructive cursor-default">
+                    Not delivered
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs max-w-[240px]">
+                  {message.failureReason || "The platform rejected delivery."}
+                  {message.platform === "whatsapp" && (
+                    <p className="text-muted-foreground">
+                      WhatsApp only allows free-form replies within 24h of the
+                      customer&apos;s last message — use a template instead.
+                    </p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {isByCurrentUser && (
             <MessageBubbleStatusIcon status={message.status} />
           )}

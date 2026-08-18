@@ -540,3 +540,25 @@ describe("MessagesBetaStore – archived (History) pagination cursor", () => {
     expect(useMessagesBetaStore.getState().archivedNextPage).toBeNull();
   });
 });
+
+describe("MessagesBetaStore – FAILED status rank", () => {
+  beforeEach(() => {
+    useMessagesBetaStore.getState().reset();
+  });
+
+  it("FAILED overrides SENT and resists delivered/read downgrades", () => {
+    const s = useMessagesBetaStore.getState();
+    s.hydrateConversations([makeRow({ id: "c" })]);
+    s.hydrateMessages("c", [
+      { id: "1", senderId: "business", text: "x", status: "SENT", createdAt: new Date() },
+    ] as any);
+
+    s.setMessagesStatus("c", ["1"], "FAILED");
+    expect(useMessagesBetaStore.getState().messagesByChatId.c[0].status).toBe("FAILED");
+
+    // A stray delivered/read frame must not un-fail the message.
+    s.setMessagesStatus("c", ["1"], "DELIVERED");
+    s.setMessagesStatus("c", ["1"], "READ");
+    expect(useMessagesBetaStore.getState().messagesByChatId.c[0].status).toBe("FAILED");
+  });
+});

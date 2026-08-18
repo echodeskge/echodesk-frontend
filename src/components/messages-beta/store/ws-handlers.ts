@@ -458,7 +458,11 @@ export function dispatchWsFrame(
       const conversationId = frame.conversation_id as string | undefined;
       const messageIds = (frame.message_ids as Array<string | number> | undefined) || [];
       const raw = frame.status as string | undefined;
-      const status = raw === "read" ? "READ" : raw === "delivered" ? "DELIVERED" : null;
+      const status =
+        raw === "read" ? "READ"
+        : raw === "delivered" ? "DELIVERED"
+        : raw === "failed" ? "FAILED"
+        : null;
       if (!conversationId || !status || messageIds.length === 0) break;
       const targets = resolveStoreChatIds(store, platform, accountId, conversationId);
       for (const chatId of targets) store.setMessagesStatus(chatId, messageIds, status);

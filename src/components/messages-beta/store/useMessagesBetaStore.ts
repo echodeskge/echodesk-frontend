@@ -404,7 +404,9 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
       if (!existing || !existing.length) return {};
       const idSet = new Set(messageIds.map((m) => String(m)));
       // Rank guard so a late DELIVERED frame can't downgrade a READ pip.
-      const rank: Record<string, number> = { SENT: 0, DELIVERED: 1, READ: 2 };
+      // FAILED is terminal: it must override SENT and never be downgraded
+      // by stray delivered/read frames.
+      const rank: Record<string, number> = { SENT: 0, DELIVERED: 1, READ: 2, FAILED: 3 };
       const incomingRank = rank[status] ?? 0;
       let changed = false;
       const next = existing.map((m) => {

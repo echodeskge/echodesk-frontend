@@ -1,4 +1,4 @@
-import { Check, CheckCheck, LoaderCircle } from "lucide-react"
+import { Check, CheckCheck, CircleAlert, LoaderCircle } from "lucide-react"
 
 import type { MessageType } from "@/components/chat/types"
 
@@ -8,6 +8,10 @@ export function MessageBubbleStatusIcon({
   status: MessageType["status"]
 }) {
   switch (status) {
+    case "FAILED":
+      return (
+        <CircleAlert className="size-3.5 text-destructive" aria-label={status} />
+      )
     case "SENT":
       return (
         <Check className="size-3.5 text-muted-foreground" aria-label={status} />

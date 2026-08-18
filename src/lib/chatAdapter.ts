@@ -231,8 +231,15 @@ export function replyPreviewLabel(msg: MessageType): string {
 function convertMessageFields(msg: UnifiedMessage, senderId: string): MessageType {
   // Calculate status for messages sent by business only
   let status = "SENT";
+  let failureReason: string | undefined;
   if (msg.is_from_business) {
-    if (msg.is_read) {
+    if (msg.status === "failed") {
+      // Platform rejected delivery (e.g. WhatsApp outside the 24h window).
+      // Surface it — rendering this as a normal sent message hides that
+      // the customer never received the reply.
+      status = "FAILED";
+      failureReason = msg.error_message || "Not delivered";
+    } else if (msg.is_read) {
       status = "READ";
     } else if (msg.is_delivered) {
       status = "DELIVERED";
@@ -253,6 +260,7 @@ function convertMessageFields(msg: UnifiedMessage, senderId: string): MessageTyp
     files,
     voiceMessage,
     status,
+    failureReason,
     createdAt: parseTimestamp(msg.timestamp),
     platformMessageId: msg.platform_message_id,
     senderName: effectiveSenderName,
@@ -299,6 +307,9 @@ interface UnifiedMessage {
   delivered_at?: string;
   is_read?: boolean;
   read_at?: string;
+  // Delivery status from the platform (WhatsApp: sent/delivered/read/failed)
+  status?: string;
+  error_message?: string;
   page_name?: string;
   conversation_id: string;
   platform_message_id: string;

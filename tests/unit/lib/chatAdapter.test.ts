@@ -908,3 +908,49 @@ describe("convertUnifiedMessagesToMessageType – location", () => {
     expect(out[0].location?.url).toBe("https://www.google.com/maps?q=10,20");
   });
 });
+
+// ---------------------------------------------------------------------------
+// FAILED delivery status (WhatsApp 24h window rejections)
+// ---------------------------------------------------------------------------
+
+describe("failed delivery status", () => {
+  // Regression guard: WA messages rejected outside the 24h window were
+  // rendered as normal sent messages — agents believed customers were
+  // answered when Meta never delivered (reported live on amanati).
+  it("maps status=failed to FAILED with the error as failureReason", () => {
+    const msg = makeUnifiedMessage({
+      is_from_business: true,
+      status: "failed",
+      error_message: "Re-engagement message",
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.status).toBe("FAILED");
+    expect(result.failureReason).toBe("Re-engagement message");
+  });
+
+  it("failed beats is_delivered/is_read flags", () => {
+    const msg = makeUnifiedMessage({
+      is_from_business: true,
+      status: "failed",
+      is_delivered: true,
+      is_read: true,
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.status).toBe("FAILED");
+  });
+
+  it("incoming customer messages never get FAILED", () => {
+    const msg = makeUnifiedMessage({
+      is_from_business: false,
+      status: "failed",
+    });
+
+    const [result] = convertUnifiedMessagesToMessageType([msg]);
+
+    expect(result.status).toBe("SENT");
+  });
+});
