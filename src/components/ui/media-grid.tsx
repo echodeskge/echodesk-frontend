@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { ComponentProps, MouseEvent } from "react"
 import Lightbox from "yet-another-react-lightbox"
 import Captions from "yet-another-react-lightbox/plugins/captions"
@@ -177,6 +177,45 @@ export function MediaGrid({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
+  // Blob URLs for auth-proxied images (WhatsApp media). Prefetched when the
+  // lightbox opens so those slides become PLAIN image slides — slides that go
+  // through render.slide bypass the Zoom plugin entirely, so without this
+  // proxy-hosted images could not zoom at all.
+  const [authBlobs, setAuthBlobs] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (!lightboxOpen) return
+    let cancelled = false
+    const targets = data.filter(
+      (item) => item.src && item.type !== "VIDEO" && needsAuthFetch(item.src) && !authBlobs[item.src]
+    )
+    for (const item of targets) {
+      axios
+        .get(item.src, { responseType: "blob" })
+        .then((res) => {
+          if (cancelled) return
+          setAuthBlobs((prev) =>
+            prev[item.src] ? prev : { ...prev, [item.src]: URL.createObjectURL(res.data) }
+          )
+        })
+        .catch(() => {
+          // render.slide's AuthenticatedImage stays as the fallback path
+        })
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [lightboxOpen, data, authBlobs])
+
+  // Revoke created blob URLs when the grid unmounts.
+  const authBlobsRef = useRef(authBlobs)
+  authBlobsRef.current = authBlobs
+  useEffect(
+    () => () => {
+      for (const url of Object.values(authBlobsRef.current)) URL.revokeObjectURL(url)
+    },
+    []
+  )
+
   // Filter out items with no src (e.g. sent attachments with no URL yet)
   const validData = data.filter((item) => item.src)
   if (validData.length === 0) return null
@@ -198,7 +237,9 @@ export function MediaGrid({
       }
     }
     return {
-      src: item.src,
+      // Auth-proxied images swap to their prefetched blob URL so the Zoom
+      // plugin can handle them natively (see the authBlobs effect above).
+      src: authBlobs[item.src] ?? item.src,
       alt: item.alt,
       // Captions plugin reads `title` / `description`. We don't have a
       // description, but a per-image title helps when there are many.
@@ -361,7 +402,9 @@ export function MediaGrid({
         }}
         carousel={{ finite: true }}
         thumbnails={{ position: "bottom", width: 80, height: 60 }}
-        zoom={{ maxZoomPixelRatio: 3 }}
+        // scrollToZoom is off by default — without it the mouse wheel does
+        // nothing and zoom is only reachable via the tiny toolbar buttons.
+        zoom={{ maxZoomPixelRatio: 5, scrollToZoom: true, doubleClickMaxStops: 3 }}
         counter={{ container: { style: { top: 0 } } }}
       />
     </>
