@@ -1786,7 +1786,8 @@
         "email": "ელ-ფოსტა",
         "widget": "ვებსაიტის ვიჯეტი",
         "teamChat": "გუნდური ჩატი",
-        "system": "სისტემური"
+        "system": "სისტემური",
+        "telegram": "Telegram"
       },
       "tabs": {
         "notifications": "შეტყობინებები",
@@ -2055,6 +2056,43 @@
         "description": "ასე ხედავენ ვიჯეტს ვიზიტორები.",
         "noToken": "ხედი გამოჩნდება ვიჯეტის შექმნის შემდეგ."
       }
+    },
+    "telegram": {
+      "title": "Telegram",
+      "notConnected": "Telegram ანგარიში არ არის დაკავშირებული",
+      "accountsConnected": "დაკავშირებული ანგარიში",
+      "badgeConnected": "დაკავშირებულია",
+      "badgeNotConnected": "არ არის დაკავშირებული",
+      "connect": "Telegram ანგარიშის დაკავშირება",
+      "connectAnother": "სხვა ანგარიშის დაკავშირება",
+      "refreshStatus": "სტატუსის განახლება",
+      "howItWorks": "დააკავშირეთ თქვენი ბიზნესის Telegram ანგარიში ტელეფონის ნომრით. შემომავალი პირადი შეტყობინებები გამოჩნდება საერთო შემოსულებში და აგენტები უპასუხებენ EchoDesk-იდან.",
+      "connectedAccounts": "დაკავშირებული Telegram ანგარიშები",
+      "active": "აქტიური",
+      "inactive": "არააქტიური",
+      "disconnect": "გათიშვა",
+      "confirmDisconnect": "გავთიშოთ ეს Telegram ანგარიში? სესია გაუქმდება და შეტყობინებები აღარ სინქრონდება.",
+      "connectedSuccess": "Telegram ანგარიში დაკავშირდა",
+      "disconnectedSuccess": "Telegram ანგარიში გაითიშა",
+      "codeSent": "კოდი გაიგზავნა — შეამოწმეთ Telegram აპი ან SMS",
+      "loginExpired": "სესიის ვადა ამოიწურა, დაიწყეთ თავიდან",
+      "floodWait": "ძალიან ბევრი მცდელობა — სცადეთ {seconds} წამში",
+      "genericError": "დაფიქსირდა შეცდომა, სცადეთ თავიდან",
+      "wizardPhoneTitle": "Telegram-ის დაკავშირება",
+      "wizardPhoneDescription": "შეიყვანეთ დასაკავშირებელი Telegram ანგარიშის ტელეფონის ნომერი.",
+      "wizardCodeTitle": "შეიყვანეთ კოდი",
+      "wizardCodeDescription": "შესვლის კოდი გავაგზავნეთ {phone}-ზე Telegram-ით (ან SMS-ით).",
+      "wizardPasswordTitle": "ორსაფეხურიანი დადასტურება",
+      "wizardPasswordDescription": "ამ ანგარიშს აქვს 2FA პაროლი. შეიყვანეთ დასასრულებლად.",
+      "phoneLabel": "ტელეფონის ნომერი",
+      "phoneHint": "საერთაშორისო ფორმატით, მაგ. +995599123456",
+      "codeLabel": "შესვლის კოდი",
+      "codeHint": "5-ნიშნა კოდი Telegram აპიდან (შეამოწმეთ სხვა შესული მოწყობილობები) ან SMS-იდან",
+      "passwordLabel": "2FA პაროლი",
+      "passwordHint": "Telegram-ის კონფიდენციალურობის პარამეტრებში დაყენებული cloud პაროლი",
+      "sendCode": "კოდის გაგზავნა",
+      "verify": "დადასტურება",
+      "cancel": "გაუქმება"
     }
   },
   "timeTracking": {
@@ -4935,7 +4973,7 @@
       "loadingMessages": "შეტყობინებების ჩატვირთვა…",
       "noMessages": "ჯერ შეტყობინებები არ არის.",
       "searchMessages": "შეტყობინებების ძებნა",
-    "scrollToBottom": "ბოლოში გადასვლა"
+      "scrollToBottom": "ბოლოში გადასვლა"
     },
     "composer": {
       "placeholder": "ჩაწერეთ შეტყობინება…",

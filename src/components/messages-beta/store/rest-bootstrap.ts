@@ -305,5 +305,28 @@ export async function fetchMessagesForChat(
     );
   }
 
+  if (platform === "telegram" && parts.length >= 3) {
+    const accountId = parts[1];
+    const peerId = parts.slice(2).join("_");
+    const res = await axios.get("/api/social/telegram-messages/", {
+      params: { account_id: accountId, peer_id: peerId, page_size: pageSize },
+    });
+    const raw = (res.data?.results || []) as Array<Record<string, unknown>>;
+    return convertUnifiedMessagesToMessageType(
+      raw.map((msg) => ({
+        ...msg,
+        // String ids for reply resolution; keep the platform message id so
+        // the Reply button can thread on it.
+        id: String(msg.id),
+        platform: "telegram" as const,
+        sender_id: String(msg.peer_id ?? peerId),
+        sender_name: String(msg.peer_name || msg.peer_username || "Telegram user"),
+        conversation_id: chatId,
+        platform_message_id: String(msg.message_id || msg.id),
+        account_id: accountId,
+      })) as never
+    );
+  }
+
   return [];
 }

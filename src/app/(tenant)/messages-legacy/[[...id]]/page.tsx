@@ -7,7 +7,7 @@ export default function MessagesLegacyPage() {
   return (
     <MessagesChat
       key="messages-legacy"
-      platforms={["facebook", "instagram", "whatsapp", "widget"]}
+      platforms={["facebook", "instagram", "whatsapp", "widget", "telegram"]}
     />
   );
 }

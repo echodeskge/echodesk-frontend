@@ -637,7 +637,7 @@ export interface ChangePasswordResponse {
 
 export interface ChatAssignment {
   id: number;
-  platform: Platform896enum;
+  platform: Platform5b7enum;
   conversation_id: string;
   account_id: string;
   full_conversation_id: string;
@@ -825,6 +825,13 @@ export interface DashboardAppearanceSettingsRequest {
 }
 
 export type DayOfWeekEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+
+export type DeactivationReasonEnum =
+  | 'manual'
+  | 'session_revoked'
+  | 'flood_wait'
+  | 'auth_error'
+  | 'api_error';
 
 export type DeliveryMethodEnum = 'courier' | 'pickup';
 
@@ -3284,6 +3291,13 @@ export interface PaginatedTeamChatMessageList {
   results: TeamChatMessage[];
 }
 
+export interface PaginatedTelegramMessageList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: TelegramMessage[];
+}
+
 export interface PaginatedTenantFeatureList {
   count: number;
   next?: string;
@@ -4243,6 +4257,7 @@ export interface PatchedSocialIntegrationSettingsRequest {
   notification_sound_whatsapp?: string;
   notification_sound_email?: string;
   notification_sound_widget?: string;
+  notification_sound_telegram?: string;
   notification_sound_team_chat?: string;
   notification_sound_system?: string;
   timezone?: string;
@@ -4573,13 +4588,14 @@ export interface PermissionRequest {
 
 export type PlanEnum = 'basic' | 'premium' | 'enterprise';
 
-export type Platform896enum =
+export type Platform5b7enum =
   | 'facebook'
   | 'instagram'
   | 'whatsapp'
   | 'email'
   | 'tiktok'
-  | 'widget';
+  | 'widget'
+  | 'telegram';
 
 export type PlatformTypeEnum = 'CLOUD_API' | 'ON_PREMISE' | 'SMB';
 
@@ -5387,7 +5403,7 @@ export interface SmsReviewResponse {
 
 export interface SocialAccount {
   id: number;
-  platform: Platform896enum;
+  platform: Platform5b7enum;
   platform_id: string;
   account_connection_id: string;
   display_name?: string;
@@ -5400,7 +5416,7 @@ export interface SocialAccount {
 }
 
 export interface SocialAccountRequest {
-  platform: Platform896enum;
+  platform: Platform5b7enum;
   platform_id: string;
   account_connection_id: string;
   display_name?: string;
@@ -5534,6 +5550,7 @@ export interface SocialIntegrationSettings {
   notification_sound_whatsapp?: string;
   notification_sound_email?: string;
   notification_sound_widget?: string;
+  notification_sound_telegram?: string;
   notification_sound_team_chat?: string;
   notification_sound_system?: string;
   timezone?: string;
@@ -5561,6 +5578,7 @@ export interface SocialIntegrationSettingsRequest {
   notification_sound_whatsapp?: string;
   notification_sound_email?: string;
   notification_sound_widget?: string;
+  notification_sound_telegram?: string;
   notification_sound_team_chat?: string;
   notification_sound_system?: string;
   timezone?: string;
@@ -5620,6 +5638,8 @@ export type Status0faEnum =
   | 'refunded';
 
 export type Status2c9enum = 'active' | 'abandoned' | 'converted';
+
+export type Status3acEnum = 'sent' | 'delivered' | 'read' | 'failed';
 
 export type Status61dEnum =
   | 'draft'
@@ -5796,6 +5816,127 @@ export interface TeamChatUserRequest {
   first_name?: string;
   last_name?: string;
 }
+
+export interface TelegramAccount {
+  id: number;
+  telegram_user_id: number;
+  phone_number: string;
+  first_name: string;
+  last_name: string;
+  username: string;
+  profile_pic_url: string;
+  is_active: boolean;
+  deactivated_at: string;
+  deactivation_reason: DeactivationReasonEnum | NullEnum;
+  auto_disabled_at: string;
+  last_seen_at: string;
+  connected_by_email: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TelegramConnectRequestRequest {
+  phone_number: string;
+}
+
+export interface TelegramConnectResponse {
+  status: TelegramConnectResponseStatusEnum;
+  login_token: string;
+}
+
+export type TelegramConnectResponseStatusEnum = 'code_sent';
+
+export interface TelegramDisconnectRequestRequest {
+  account_id: number;
+}
+
+export interface TelegramMessage {
+  id: number;
+  message_id: string;
+  telegram_msg_id: number;
+  peer_id: number;
+  peer_name: string;
+  peer_username: string;
+  profile_pic_url: string;
+  message_text: string;
+  message_type: TelegramMessageMessageTypeEnum;
+  media_url: string;
+  media_mime_type: string;
+  attachments: any;
+  timestamp: string;
+  is_from_business: boolean;
+  status: Status3acEnum;
+  is_delivered: boolean;
+  delivered_at: string;
+  is_read: boolean;
+  read_at: string;
+  is_read_by_staff: boolean;
+  read_by_staff_at: string;
+  error_message: string;
+  source: TelegramMessageSourceEnum;
+  is_echo: boolean;
+  sent_by: number;
+  sent_by_name: string;
+  is_edited: boolean;
+  edited_at: string;
+  original_text: string;
+  is_revoked: boolean;
+  revoked_at: string;
+  reaction_emoji: string;
+  reacted_by: string;
+  reacted_at: string;
+  reply_to_message_id: string;
+  reply_to_id: number;
+  reply_to_text: string;
+  reply_to_sender_name: string;
+  account_username: string;
+  account_id: string;
+  created_at: string;
+}
+
+export type TelegramMessageMessageTypeEnum =
+  | 'text'
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'voice'
+  | 'document'
+  | 'sticker';
+
+export type TelegramMessageSourceEnum = 'echodesk' | 'telegram_app' | 'synced';
+
+export interface TelegramSendMessageRequest {
+  account_id: string;
+  peer_id: string;
+  message?: string;
+  reply_to_message_id?: string;
+}
+
+export interface TelegramSendMessageResponse {
+  success: boolean;
+  message?: TelegramMessage;
+  error?: string;
+}
+
+export interface TelegramStatus {
+  connected: boolean;
+  accounts: TelegramAccount[];
+}
+
+export interface TelegramVerifyRequestRequest {
+  login_token: string;
+  code?: string;
+  password?: string;
+}
+
+export interface TelegramVerifyResponse {
+  status: TelegramVerifyResponseStatusEnum;
+  account?: TelegramAccount;
+}
+
+export type TelegramVerifyResponseStatusEnum =
+  | 'connected'
+  | 'password_required';
 
 export interface Tenant {
   id: number;
@@ -6444,7 +6585,8 @@ export type UnifiedConversationPlatformEnum =
   | 'instagram'
   | 'whatsapp'
   | 'email'
-  | 'widget';
+  | 'widget'
+  | 'telegram';
 
 export interface User {
   id: number;
@@ -6675,7 +6817,7 @@ export interface WhatsAppMessage {
   attachments?: any;
   timestamp: string;
   is_from_business?: boolean;
-  status: WhatsAppMessageStatusEnum;
+  status: Status3acEnum;
   is_delivered: boolean;
   delivered_at: string;
   is_read: boolean;
@@ -6717,12 +6859,6 @@ export type WhatsAppMessageMessageTypeEnum =
   | 'interactive';
 
 export type WhatsAppMessageSourceEnum = 'cloud_api' | 'business_app' | 'synced';
-
-export type WhatsAppMessageStatusEnum =
-  | 'sent'
-  | 'delivered'
-  | 'read'
-  | 'failed';
 
 export interface WhatsAppMessageTemplate {
   id: number;

@@ -113,3 +113,10 @@ describe("snapshotsEqual", () => {
     expect(snapshotsEqual(base, { ...base, platformFilter: "facebook" })).toBe(false);
   });
 });
+
+describe("telegram platform deep link", () => {
+  it("accepts ?platform=telegram (guards the BETA_PLATFORMS set)", () => {
+    const snap = readFiltersFromSearch("?platform=telegram");
+    expect(snap.platformFilter).toBe("telegram");
+  });
+});

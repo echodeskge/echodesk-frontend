@@ -42,6 +42,7 @@ interface TenantSoundFields {
   notification_sound_whatsapp?: string;
   notification_sound_email?: string;
   notification_sound_widget?: string;
+  notification_sound_telegram?: string;
   notification_sound_team_chat?: string;
   notification_sound_system?: string;
 }
@@ -65,7 +66,7 @@ export function UserNotificationSoundsCard() {
   useEffect(() => {
     const mgr = getNotificationSound();
     const next: Partial<Record<NotificationPlatform, string>> = {};
-    (["facebook", "instagram", "whatsapp", "email", "widget", "team_chat", "system"] as NotificationPlatform[]).forEach(
+    (["facebook", "instagram", "whatsapp", "email", "widget", "telegram", "team_chat", "system"] as NotificationPlatform[]).forEach(
       (platform) => {
         const override = mgr.getUserSoundForPlatform(platform);
         if (override) next[platform] = override;
@@ -135,6 +136,12 @@ export function UserNotificationSoundsCard() {
       label: t("settingsPage.notificationSounds.widget") || "Website widget",
       dotColor: "text-indigo-600",
       tenantField: "notification_sound_widget",
+    },
+    {
+      key: "telegram",
+      label: t("settingsPage.notificationSounds.telegram") || "Telegram",
+      dotColor: "text-sky-500",
+      tenantField: "notification_sound_telegram",
     },
     {
       key: "team_chat",

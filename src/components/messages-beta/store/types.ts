@@ -1,6 +1,6 @@
 import type { MessageType } from "@/components/chat/types";
 
-export type BetaPlatform = "facebook" | "instagram" | "whatsapp" | "email" | "widget";
+export type BetaPlatform = "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "telegram";
 
 /**
  * Placeholder name for a deep-linked conversation row whose real metadata

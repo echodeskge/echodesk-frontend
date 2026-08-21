@@ -1943,7 +1943,8 @@
         "email": "Email",
         "widget": "Website widget",
         "teamChat": "Team Chat",
-        "system": "System"
+        "system": "System",
+        "telegram": "Telegram"
       },
       "tabs": {
         "notifications": "Notifications",
@@ -2212,6 +2213,43 @@
         "description": "This is how visitors see your widget.",
         "noToken": "Preview will appear once the widget is created."
       }
+    },
+    "telegram": {
+      "title": "Telegram",
+      "notConnected": "No Telegram account connected",
+      "accountsConnected": "account(s) connected",
+      "badgeConnected": "Connected",
+      "badgeNotConnected": "Not Connected",
+      "connect": "Connect Telegram Account",
+      "connectAnother": "Connect Another Account",
+      "refreshStatus": "Refresh Status",
+      "howItWorks": "Connect your business's Telegram account with its phone number. Incoming direct messages will appear in the unified inbox and agents can reply from EchoDesk.",
+      "connectedAccounts": "Connected Telegram Accounts",
+      "active": "Active",
+      "inactive": "Inactive",
+      "disconnect": "Disconnect",
+      "confirmDisconnect": "Disconnect this Telegram account? The session will be revoked and messages will stop syncing.",
+      "connectedSuccess": "Telegram account connected",
+      "disconnectedSuccess": "Telegram account disconnected",
+      "codeSent": "Code sent — check your Telegram app or SMS",
+      "loginExpired": "Login session expired, please start over",
+      "floodWait": "Too many attempts — try again in {seconds} seconds",
+      "genericError": "Something went wrong, please try again",
+      "wizardPhoneTitle": "Connect Telegram",
+      "wizardPhoneDescription": "Enter the phone number of the Telegram account to connect.",
+      "wizardCodeTitle": "Enter the code",
+      "wizardCodeDescription": "We sent a login code to {phone} via Telegram (or SMS).",
+      "wizardPasswordTitle": "Two-step verification",
+      "wizardPasswordDescription": "This account has a 2FA password. Enter it to finish connecting.",
+      "phoneLabel": "Phone number",
+      "phoneHint": "International format, e.g. +995599123456",
+      "codeLabel": "Login code",
+      "codeHint": "The 5-digit code from your Telegram app (check other logged-in devices) or SMS",
+      "passwordLabel": "2FA password",
+      "passwordHint": "The cloud password you set in Telegram's privacy settings",
+      "sendCode": "Send Code",
+      "verify": "Verify",
+      "cancel": "Cancel"
     }
   },
   "timeTracking": {
@@ -4935,7 +4973,7 @@
       "loadingMessages": "Loading messages…",
       "noMessages": "No messages yet.",
       "searchMessages": "Search messages",
-    "scrollToBottom": "Scroll to latest"
+      "scrollToBottom": "Scroll to latest"
     },
     "composer": {
       "placeholder": "Type a message…",

@@ -212,3 +212,49 @@ describe("sendForPlatform – unsupported prefix", () => {
     expect(postMock).not.toHaveBeenCalled();
   });
 });
+
+describe("sendForPlatform – telegram", () => {
+  it("text-only POSTs JSON with account + peer + reply id", async () => {
+    await sendForPlatform(
+      makeRow({ id: "tg_777000111_555000222", platform: "telegram", accountId: "777000111" }),
+      "hello from support",
+      [],
+      "777000111_42"
+    );
+    expect(postMock).toHaveBeenCalledWith("/api/social/telegram/send-message/", {
+      account_id: "777000111",
+      peer_id: "555000222",
+      message: "hello from support",
+      reply_to_message_id: "777000111_42",
+    });
+  });
+
+  it("file send uses FormData with media", async () => {
+    const file = new File(["x"], "photo.png", { type: "image/png" });
+    await sendForPlatform(
+      makeRow({ id: "tg_777000111_555000222", platform: "telegram", accountId: "777000111" }),
+      "caption",
+      [file]
+    );
+    const [url, body] = postMock.mock.calls[0];
+    expect(url).toBe("/api/social/telegram/send-message/");
+    expect(body).toBeInstanceOf(FormData);
+    expect((body as FormData).get("account_id")).toBe("777000111");
+    expect((body as FormData).get("peer_id")).toBe("555000222");
+    expect((body as FormData).get("message")).toBe("caption");
+    expect((body as FormData).get("media")).toBe(file);
+  });
+
+  it("multi-file fan-out: first call carries the text", async () => {
+    const f1 = new File(["a"], "a.png", { type: "image/png" });
+    const f2 = new File(["b"], "b.png", { type: "image/png" });
+    await sendForPlatform(
+      makeRow({ id: "tg_777000111_555000222", platform: "telegram", accountId: "777000111" }),
+      "two photos",
+      [f1, f2]
+    );
+    expect(postMock).toHaveBeenCalledTimes(2);
+    expect((postMock.mock.calls[0][1] as FormData).get("message")).toBe("two photos");
+    expect((postMock.mock.calls[1][1] as FormData).get("message")).toBe("");
+  });
+});

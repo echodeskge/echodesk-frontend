@@ -21,6 +21,7 @@ import {
   socialEmailDraftsPartialUpdate,
   socialEmailDraftsDestroy,
   socialConversationsRetrieve,
+  socialTelegramStatusRetrieve,
 } from '@/api/generated';
 import type {
   EmailMessage as GeneratedEmailMessage,
@@ -33,6 +34,9 @@ import type {
   WidgetConnection,
   WidgetConnectionRequest,
   PatchedWidgetConnectionRequest,
+  TelegramStatus,
+  TelegramConnectResponse,
+  TelegramVerifyResponse,
 } from '@/api/generated';
 import axios from '@/api/axios';
 
@@ -79,6 +83,8 @@ export const socialKeys = {
   emailDrafts: () => [...socialKeys.email(), 'drafts'] as const,
   tiktok: () => [...socialKeys.all, 'tiktok'] as const,
   tiktokStatus: () => [...socialKeys.tiktok(), 'status'] as const,
+  telegram: () => [...socialKeys.all, 'telegram'] as const,
+  telegramStatus: () => [...socialKeys.telegram(), 'status'] as const,
   tiktokMessages: () => [...socialKeys.tiktok(), 'messages'] as const,
   tiktokMessagesList: (filters: Record<string, any>) => [...socialKeys.tiktokMessages(), filters] as const,
   widget: () => [...socialKeys.all, 'widget'] as const,
@@ -95,6 +101,8 @@ export interface UnreadMessagesCount {
   instagram: number;
   whatsapp: number;
   email: number;
+  widget?: number;
+  telegram?: number;
 }
 
 export function useUnreadMessagesCount(options?: { refetchInterval?: number | false; enabled?: boolean }) {
@@ -115,7 +123,7 @@ export function useMarkConversationRead() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram'; conversation_id: string }) => {
       const response = await axios.post('/api/social/mark-read/', data);
       return response.data;
     },
@@ -181,7 +189,7 @@ export function useMarkConversationUnread() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram'; conversation_id: string }) => {
       const response = await axios.post('/api/social/mark-unread/', data);
       return response.data;
     },
@@ -241,7 +249,7 @@ export function useDeleteConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget'; conversation_id: string }) => {
+    mutationFn: async (data: { platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram'; conversation_id: string }) => {
       const response = await axios.delete('/api/social/delete-conversation/', { data });
       return response.data;
     },
@@ -957,7 +965,7 @@ export function useUpdateSocialSettings() {
 // CHAT ASSIGNMENT HOOKS
 // ============================================================================
 
-export type ChatAssignmentPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
+export type ChatAssignmentPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram';
 export type ChatAssignmentStatus = 'active' | 'in_session' | 'completed';
 
 export interface ChatAssignment {
@@ -1033,7 +1041,7 @@ export interface BulkAssignmentStatusResponse {
   settings: ChatAssignmentStatusResponse['settings'];
 }
 
-const DEFAULT_BULK_PLATFORMS = 'facebook,instagram,whatsapp,email,widget';
+const DEFAULT_BULK_PLATFORMS = 'facebook,instagram,whatsapp,email,widget,telegram';
 
 /**
  * Single shared query that loads every active / in-session / completed
@@ -1546,7 +1554,7 @@ export function useRatingStatistics(startDate?: string, endDate?: string, source
 // User chat sessions for investigation
 export interface ChatSession {
   id: number;
-  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'phone_sms' | 'phone_callback';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram' | 'phone_sms' | 'phone_callback';
   conversation_id: string;
   account_id: string;
   customer_name: string;
@@ -2291,6 +2299,69 @@ export function useTikTokStatus() {
   });
 }
 
+// ============================================================================
+// TELEGRAM HOOKS
+// ============================================================================
+
+export function useTelegramStatus() {
+  return useQuery<TelegramStatus>({
+    queryKey: socialKeys.telegramStatus(),
+    queryFn: socialTelegramStatusRetrieve,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
+/** Step 1 of Telegram login: send the auth code to the phone. */
+export function useTelegramSendCode() {
+  return useMutation({
+    mutationFn: async (phoneNumber: string) => {
+      const response = await axios.post<TelegramConnectResponse>(
+        '/api/social/telegram/connect/',
+        { phone_number: phoneNumber }
+      );
+      return response.data;
+    },
+  });
+}
+
+/** Step 2: verify the code (and 2FA password when required). */
+export function useTelegramVerify() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: { login_token: string; code?: string; password?: string }) => {
+      const response = await axios.post<TelegramVerifyResponse>(
+        '/api/social/telegram/verify/',
+        data
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      if (data.status === 'connected') {
+        queryClient.invalidateQueries({ queryKey: socialKeys.telegramStatus() });
+      }
+    },
+  });
+}
+
+export function useDisconnectTelegram() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (accountId: number) => {
+      const response = await axios.post('/api/social/telegram/disconnect/', {
+        account_id: accountId,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.telegramStatus() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.conversations() });
+    },
+  });
+}
+
 // TikTok OAuth Start
 export function useConnectTikTok() {
   const queryClient = useQueryClient();
@@ -2494,7 +2565,7 @@ export function useUpdateEmailSyncSettings() {
 // QUICK REPLY HOOKS
 // ============================================================================
 
-export type QuickReplyPlatform = 'all' | 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'tiktok';
+export type QuickReplyPlatform = 'all' | 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'tiktok' | 'telegram';
 
 export interface QuickReply {
   id: number;
@@ -2674,7 +2745,7 @@ export function useReorderQuickReplies() {
 
 export interface RecentConversation {
   id: string; // Full conversation ID (e.g., fb_pageId_senderId)
-  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram';
   conversationId: string;
   accountId: string;
   senderName: string;
@@ -2705,7 +2776,7 @@ export function useRecentConversations(options?: { enabled?: boolean; limit?: nu
         params: {
           page: 1,
           page_size: limit,
-          platforms: 'facebook,instagram,whatsapp,email,widget',
+          platforms: 'facebook,instagram,whatsapp,email,widget,telegram',
         },
       });
       return response.data;
@@ -2764,7 +2835,7 @@ export interface UseUnifiedConversationsOptions {
  */
 export function useUnifiedConversations(options: UseUnifiedConversationsOptions = {}) {
   const {
-    platforms = 'facebook,instagram,whatsapp,email,widget',
+    platforms = 'facebook,instagram,whatsapp,email,widget,telegram',
     search = '',
     folder = 'INBOX',
     pageSize = 50,
@@ -2866,6 +2937,8 @@ export function useMarkAllAsRead() {
           instagram: 0,
           whatsapp: 0,
           email: 0,
+          widget: 0,
+          telegram: 0,
         });
       }
 

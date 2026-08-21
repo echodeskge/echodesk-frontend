@@ -15,6 +15,7 @@ import {
   Search,
   SquarePen,
   X,
+  Send,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -53,6 +54,7 @@ const PLATFORM_OPTIONS: Array<{ value: BetaPlatform; label: string; icon: typeof
   { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
   { value: "widget", label: "", icon: MessageCircle },
   { value: "email", label: "Email", icon: Mail },
+  { value: "telegram", label: "Telegram", icon: Send },
 ];
 
 const SEARCH_DEBOUNCE_MS = 300;

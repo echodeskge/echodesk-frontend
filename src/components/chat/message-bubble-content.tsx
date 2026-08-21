@@ -77,7 +77,7 @@ function processEmailHtml(html: string): string {
   )
 }
 
-function getPlatformBgClass(platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget") {
+function getPlatformBgClass(platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "telegram") {
   switch (platform) {
     case "facebook":
       return "bg-[#1877F2]" // Facebook blue
@@ -85,6 +85,8 @@ function getPlatformBgClass(platform?: "facebook" | "instagram" | "whatsapp" | "
       return "bg-[#8C2FF5]" // Instagram purple
     case "whatsapp":
       return "bg-[#25D366]" // WhatsApp green
+    case "telegram":
+      return "bg-[#229ED9]" // Telegram blue
     case "email":
       return "bg-white border border-gray-200" // Email - white with border for better HTML rendering
     case "widget":
@@ -103,7 +105,7 @@ export function MessageBubbleContent({
 }: {
   message: MessageType
   isByCurrentUser: boolean
-  platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget"
+  platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "telegram"
 }) {
   // Collect all content parts - messages can have text AND attachments
   const contentParts: ReactNode[] = []

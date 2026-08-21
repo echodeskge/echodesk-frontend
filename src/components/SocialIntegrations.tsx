@@ -40,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
 import { EmailConnection } from "@/components/EmailConnection";
 import { TikTokConnection } from "@/components/TikTokConnection";
+import { TelegramConnection, TelegramIcon } from "@/components/TelegramConnection";
 import { WidgetConnection } from "@/components/WidgetConnection";
 
 // WhatsApp icon component
@@ -210,6 +211,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
     { value: "email", label: "Email", icon: Mail, color: "text-red-600" },
     { value: "widget", label: "Website widget", icon: MessageCircle, color: "text-indigo-600" },
     { value: "tiktok", label: "TikTok", icon: TikTokIcon, color: "text-black" },
+    { value: "telegram", label: "Telegram", icon: TelegramIcon, color: "text-[#229ED9]" },
   ];
 
   return (
@@ -597,6 +599,10 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
         </TabsContent>
 
         {/* TikTok Tab */}
+        <TabsContent value="telegram">
+          <TelegramConnection />
+        </TabsContent>
+
         <TabsContent value="tiktok">
           <TikTokConnection />
         </TabsContent>

@@ -714,3 +714,80 @@ describe("dispatchWsFrame – WhatsApp location", () => {
     expect(m?.files ?? []).toHaveLength(0);
   });
 });
+
+describe("dispatchWsFrame – telegram", () => {
+  it("routes a telegram new_message to tg_<account>_<peer> and seeds the row", () => {
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "555000222",
+        message: {
+          id: "901",
+          platform: "telegram",
+          telegram_account_id: "777000111",
+          account_id: "777000111",
+          sender_id: "555000222",
+          sender_name: "Nino",
+          message_text: "გამარჯობა",
+          timestamp: new Date().toISOString(),
+        },
+      },
+      ["facebook", "telegram"]
+    );
+    const state = useMessagesBetaStore.getState();
+    expect(state.messagesByChatId["tg_777000111_555000222"]).toHaveLength(1);
+    const row = state.conversations.find((r) => r.id === "tg_777000111_555000222");
+    expect(row?.platform).toBe("telegram");
+    expect(row?.accountId).toBe("777000111");
+  });
+
+  it("is gated by enabledPlatforms", () => {
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "555000222",
+        message: {
+          id: "902",
+          platform: "telegram",
+          telegram_account_id: "777000111",
+          sender_id: "555000222",
+          message_text: "hi",
+          timestamp: new Date().toISOString(),
+        },
+      },
+      ["facebook"] // telegram not enabled
+    );
+    expect(
+      useMessagesBetaStore.getState().messagesByChatId["tg_777000111_555000222"]
+    ).toBeUndefined();
+  });
+
+  it("archive_update broadcast resolves the tg chat id", () => {
+    useMessagesBetaStore.getState().hydrateConversations([
+      makeRow({
+        id: "tg_777000111_555000222",
+        platform: "telegram",
+        accountId: "777000111",
+        conversationKey: "555000222",
+      }),
+    ]);
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "archive_update",
+        platform: "telegram",
+        account_id: "777000111",
+        conversation_id: "555000222",
+        archived: true,
+        archived_at: new Date().toISOString(),
+        archived_by: null,
+      },
+      ["telegram"]
+    );
+    expect(
+      useMessagesBetaStore.getState().archivedByChatId["tg_777000111_555000222"]
+    ).toBeTruthy();
+  });
+});

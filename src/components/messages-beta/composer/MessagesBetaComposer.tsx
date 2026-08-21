@@ -142,7 +142,8 @@ export function MessagesBetaComposer({ conversation }: Props) {
     return (
       conversation.platform === "facebook" ||
       conversation.platform === "whatsapp" ||
-      conversation.platform === "instagram"
+      conversation.platform === "instagram" ||
+      conversation.platform === "telegram"
     );
   }, [conversation.platform]);
 
@@ -740,6 +741,28 @@ export async function sendForPlatform(
         session_id: targetId,
         message_text: text,
       });
+      return;
+    }
+
+    if (prefix === "tg") {
+      if (file) {
+        const form = new FormData();
+        form.append("account_id", accountId);
+        form.append("peer_id", targetId);
+        form.append("message", text);
+        if (includeReplyTo && replyToMessageId) {
+          form.append("reply_to_message_id", replyToMessageId);
+        }
+        form.append("media", file);
+        await axios.post("/api/social/telegram/send-message/", form);
+      } else {
+        await axios.post("/api/social/telegram/send-message/", {
+          account_id: accountId,
+          peer_id: targetId,
+          message: text,
+          reply_to_message_id: includeReplyTo ? replyToMessageId || "" : "",
+        });
+      }
       return;
     }
 

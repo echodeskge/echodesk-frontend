@@ -42,6 +42,7 @@ function placeholderFromChatId(chatId: string): Omit<ConversationRow, "lastMessa
     wa: "whatsapp",
     widget: "widget",
     email: "email",
+    tg: "telegram",
   };
   const platform = PREFIX_TO_PLATFORM[prefix];
   if (!platform) return null;

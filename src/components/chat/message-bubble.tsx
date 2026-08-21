@@ -76,7 +76,7 @@ interface MessageBubbleProps {
   sender: UserType
   message: MessageType
   isByCurrentUser: boolean
-  platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget"
+  platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "telegram"
   isHighlighted?: boolean
   searchQuery?: string
   /** When provided, the reply-quote preview becomes clickable — used by
@@ -95,7 +95,7 @@ function MessageActions({
   onReply: () => void
 }) {
   // Only show for Facebook/Instagram/WhatsApp messages (not email)
-  if (platform !== 'facebook' && platform !== 'instagram' && platform !== 'whatsapp') return null
+  if (platform !== 'facebook' && platform !== 'instagram' && platform !== 'whatsapp' && platform !== 'telegram') return null
   if (!message.platformMessageId) return null
 
   return (

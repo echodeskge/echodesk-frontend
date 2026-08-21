@@ -433,6 +433,16 @@ import type {
   SocialIntegrationSettings,
   SocialIntegrationSettingsRequest,
   PatchedSocialIntegrationSettingsRequest,
+  PaginatedTelegramMessageList,
+  TelegramMessage,
+  TelegramConnectRequestRequest,
+  TelegramConnectResponse,
+  TelegramDisconnectRequestRequest,
+  TelegramStatus,
+  TelegramSendMessageRequest,
+  TelegramSendMessageResponse,
+  TelegramVerifyRequestRequest,
+  TelegramVerifyResponse,
   PaginatedTikTokMessageList,
   TikTokMessage,
   PaginatedWhatsAppBusinessAccountList,
@@ -8743,6 +8753,66 @@ export async function socialSettingsPartialUpdate(
   data: PatchedSocialIntegrationSettingsRequest,
 ): Promise<SocialIntegrationSettings> {
   const response = await axios.patch(`/api/social/settings/`, data);
+  return response.data;
+}
+
+export async function socialTelegramMessagesList(
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+): Promise<PaginatedTelegramMessageList> {
+  const response = await axios.get(
+    `/api/social/telegram-messages/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialTelegramMessagesRetrieve(
+  id: number,
+): Promise<TelegramMessage> {
+  const response = await axios.get(`/api/social/telegram-messages/${id}/`);
+  return response.data;
+}
+
+export async function socialTelegramConnectCreate(
+  data: TelegramConnectRequestRequest,
+): Promise<TelegramConnectResponse> {
+  const response = await axios.post(`/api/social/telegram/connect/`, data);
+  return response.data;
+}
+
+export async function socialTelegramDisconnectCreate(
+  data: TelegramDisconnectRequestRequest,
+): Promise<TelegramStatus> {
+  const response = await axios.post(`/api/social/telegram/disconnect/`, data);
+  return response.data;
+}
+
+export async function socialTelegramSendMessageCreate(
+  data: TelegramSendMessageRequest,
+): Promise<TelegramSendMessageResponse> {
+  const response = await axios.post(`/api/social/telegram/send-message/`, data);
+  return response.data;
+}
+
+export async function socialTelegramStatusRetrieve(): Promise<TelegramStatus> {
+  const response = await axios.get(`/api/social/telegram/status/`);
+  return response.data;
+}
+
+export async function socialTelegramVerifyCreate(
+  data: TelegramVerifyRequestRequest,
+): Promise<TelegramVerifyResponse> {
+  const response = await axios.post(`/api/social/telegram/verify/`, data);
   return response.data;
 }
 

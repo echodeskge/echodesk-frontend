@@ -39,6 +39,8 @@ export function parseChatId(chatId: string, platform?: string): ParsedChatId | n
     parsedPlatform = 'email';
   } else if (prefix === 'widget') {
     parsedPlatform = 'widget';
+  } else if (prefix === 'tg') {
+    parsedPlatform = 'telegram';
   } else {
     return null;
   }

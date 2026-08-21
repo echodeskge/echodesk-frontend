@@ -7,7 +7,7 @@ export default function MessagesPage() {
   return (
     <MessagesChatBeta
       key="messages"
-      platforms={["facebook", "instagram", "whatsapp", "widget"]}
+      platforms={["facebook", "instagram", "whatsapp", "widget", "telegram"]}
     />
   );
 }

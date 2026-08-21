@@ -1,7 +1,7 @@
 import { usePathname } from "next/navigation"
 import { useCallback } from "react"
 import { formatDistanceToNow } from "date-fns"
-import { Facebook, Instagram, MessageCircle, Mail } from "lucide-react"
+import { Facebook, Instagram, MessageCircle, Mail, Send } from "lucide-react"
 
 import type { ChatType } from "@/components/chat/types"
 
@@ -81,6 +81,8 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
                 ? "bg-red-600"
                 : chat.platform === "widget"
                 ? "bg-indigo-600"
+                : chat.platform === "telegram"
+                ? "bg-sky-500"
                 : "bg-green-600"
             )}>
               {chat.platform === "facebook" ? (
@@ -89,6 +91,8 @@ export function ChatSidebarItem({ chat }: { chat: ChatType }) {
                 <Instagram className="h-3 w-3 text-white" />
               ) : chat.platform === "email" ? (
                 <Mail className="h-3 w-3 text-white" />
+              ) : chat.platform === "telegram" ? (
+                <Send className="h-3 w-3 text-white" />
               ) : (
                 <MessageCircle className="h-3 w-3 text-white" />
               )}

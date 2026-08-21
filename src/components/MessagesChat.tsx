@@ -63,7 +63,7 @@ interface UnifiedMessage {
   reply_to_id?: number;
 }
 
-type Platform = "facebook" | "instagram" | "whatsapp" | "email" | "widget";
+type Platform = "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "telegram";
 
 interface MessagesChatProps {
   platforms?: Platform[];

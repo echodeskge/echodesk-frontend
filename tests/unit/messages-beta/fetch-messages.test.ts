@@ -120,3 +120,33 @@ describe("fetchConversationsPage – archived (History) list", () => {
     expect(result.nextPage).toBeNull();
   });
 });
+
+describe("fetchMessagesForChat – telegram", () => {
+  it("hits /telegram-messages/ with account + peer params and normalizes ids", async () => {
+    getMock.mockResolvedValue({
+      data: {
+        results: [
+          {
+            id: 7,
+            message_id: "777000111_42",
+            peer_id: 555000222,
+            peer_name: "Nino",
+            message_text: "hello",
+            is_from_business: false,
+            timestamp: "2026-08-21T10:00:00Z",
+          },
+        ],
+      },
+    });
+
+    const msgs = await fetchMessagesForChat("tg_777000111_555000222", "telegram");
+
+    const [url, opts] = getMock.mock.calls[getMock.mock.calls.length - 1];
+    expect(url).toBe("/api/social/telegram-messages/");
+    expect(opts.params.account_id).toBe("777000111");
+    expect(opts.params.peer_id).toBe("555000222");
+    expect(msgs).toHaveLength(1);
+    expect(msgs[0].id).toBe("7"); // stringified for reply resolution
+    expect(msgs[0].platformMessageId).toBe("777000111_42");
+  });
+});

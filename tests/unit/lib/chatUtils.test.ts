@@ -123,3 +123,14 @@ describe("chatUtils - parseChatId", () => {
     });
   });
 });
+
+describe("parseChatId – telegram", () => {
+  it("parses tg_ prefix into telegram platform", () => {
+    const parsed = parseChatId("tg_777000111_555000222");
+    expect(parsed).toEqual({
+      platform: "telegram",
+      accountId: "777000111",
+      conversationId: "555000222",
+    });
+  });
+});

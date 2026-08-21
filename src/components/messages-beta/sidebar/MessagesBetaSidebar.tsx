@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
-import { Facebook, Instagram, Loader2, Mail, MessageCircle } from "lucide-react";
+import { Facebook, Instagram, Loader2, Mail, MessageCircle , Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslations } from "next-intl";
 
@@ -39,6 +39,7 @@ const PLATFORM_ICON: Record<ConversationRow["platform"], ReactNode> = {
   whatsapp: <MessageCircle className="h-3 w-3 text-white" />,
   email: <Mail className="h-3 w-3 text-white" />,
   widget: <MessageCircle className="h-3 w-3 text-white" />,
+  telegram: <Send className="h-3 w-3 text-white" />,
 };
 
 const PLATFORM_BG: Record<ConversationRow["platform"], string> = {
@@ -47,6 +48,7 @@ const PLATFORM_BG: Record<ConversationRow["platform"], string> = {
   whatsapp: "bg-green-600",
   email: "bg-red-600",
   widget: "bg-indigo-600",
+  telegram: "bg-sky-500",
 };
 
 // Trigger the next-page fetch when the scroll viewport is within this many

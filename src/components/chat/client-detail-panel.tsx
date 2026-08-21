@@ -55,6 +55,7 @@ const platformColors: Record<string, string> = {
   whatsapp: "bg-green-600",
   email: "bg-gray-600",
   tiktok: "bg-black",
+  telegram: "bg-sky-500",
 };
 
 const platformLabels: Record<string, string> = {
@@ -63,6 +64,7 @@ const platformLabels: Record<string, string> = {
   whatsapp: "WhatsApp",
   email: "Email",
   tiktok: "TikTok",
+  telegram: "Telegram",
 };
 
 function getInitials(name: string): string {

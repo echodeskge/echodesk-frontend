@@ -29,6 +29,7 @@ const BETA_PLATFORMS: ReadonlySet<BetaPlatform> = new Set([
   "whatsapp",
   "email",
   "widget",
+  "telegram",
 ]);
 
 /**

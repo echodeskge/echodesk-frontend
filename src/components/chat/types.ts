@@ -103,7 +103,7 @@ export interface MessageType {
   // Email fields
   bodyHtml?: string
   subject?: string
-  platform?: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget'
+  platform?: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram'
   // Reply fields (Facebook Messenger)
   replyToMessageId?: string
   replyToId?: number
@@ -158,7 +158,7 @@ export interface ChatType {
   users: UserType[]
   typingUsers: UserType[]
   unreadCount?: number
-  platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget"
+  platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "telegram"
   // Lazy loading - if true, messages need to be fetched when chat is selected
   messagesLoaded?: boolean
   // Widget-only: when set, the visitor session is closed. Composer is

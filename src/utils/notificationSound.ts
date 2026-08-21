@@ -35,7 +35,7 @@ export const NOTIFICATION_SOUNDS = [
   { value: 'mixkit-sci-fi-reject-notification-896.wav', label: 'Sci-Fi Reject' },
 ] as const;
 
-export type NotificationPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'team_chat' | 'system';
+export type NotificationPlatform = 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram' | 'team_chat' | 'system';
 
 // Legacy type for backwards compatibility
 export type SoundType = 'message' | 'teamChat' | 'notification';
@@ -49,6 +49,7 @@ const DEFAULT_SOUNDS: Record<NotificationPlatform, string> = {
   // Widget shares Facebook's default until tenants pick their own — PR 5
   // (agent polish) will expose a widget-specific selector in settings.
   widget: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
+  telegram: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
   team_chat: 'mixkit-happy-bells-notification-937.wav',
   system: 'mixkit-confirmation-tone-2867.wav',
 };
@@ -59,6 +60,7 @@ interface NotificationSoundSettings {
   notification_sound_whatsapp: string;
   notification_sound_email: string;
   notification_sound_widget?: string;
+  notification_sound_telegram?: string;
   notification_sound_team_chat: string;
   notification_sound_system: string;
 }
@@ -194,6 +196,7 @@ class NotificationSoundManager {
       whatsapp: settings.notification_sound_whatsapp || DEFAULT_SOUNDS.whatsapp,
       email: settings.notification_sound_email || DEFAULT_SOUNDS.email,
       widget: settings.notification_sound_widget || DEFAULT_SOUNDS.widget,
+      telegram: settings.notification_sound_telegram || DEFAULT_SOUNDS.telegram,
       team_chat: settings.notification_sound_team_chat || DEFAULT_SOUNDS.team_chat,
       system: settings.notification_sound_system || DEFAULT_SOUNDS.system,
     };

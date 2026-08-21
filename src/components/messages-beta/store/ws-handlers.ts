@@ -58,6 +58,10 @@ function buildChatId(messageData: Record<string, any>, dataConversationId?: stri
   if (platform === "widget" && messageData.connection_id && messageData.session_id) {
     return `widget_${messageData.connection_id}_${messageData.session_id}`;
   }
+  if (platform === "telegram" && (messageData.telegram_account_id || messageData.account_id)) {
+    const tgAccount = messageData.telegram_account_id || messageData.account_id;
+    return `tg_${tgAccount}_${conversationId}`;
+  }
   return messageData.chat_id || dataConversationId;
 }
 
@@ -85,6 +89,7 @@ function buildChatIdFromBroadcast(
     return `wa_${accountId}_${number}`;
   }
   if (platform === "widget" && accountId) return `widget_${accountId}_${conversationId}`;
+  if (platform === "telegram" && accountId) return `tg_${accountId}_${conversationId}`;
   if (platform === "email") return conversationId; // already prefixed (email_...)
   return null;
 }
@@ -262,6 +267,7 @@ export function dispatchWsFrame(
       // is left intact and just gets its lastMessage refreshed.
       const accountId =
         messageData.page_id ||
+        messageData.telegram_account_id ||
         messageData.account_id ||
         messageData.waba_id ||
         messageData.connection_id ||
