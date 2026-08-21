@@ -317,25 +317,29 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
               )}
 
               <div className="flex flex-col sm:flex-row gap-3">
-                {!isConnected ? (
-                  <Button
-                    onClick={handleConnectFacebook}
-                    disabled={loading || connectFacebook.isPending}
-                    className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-                  >
-                    {loading || connectFacebook.isPending ? (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        {t("connecting")}
-                      </>
-                    ) : (
-                      <>
-                        <Facebook className="mr-2 h-4 w-4" />
-                        {t("connectFacebookPages")}
-                      </>
-                    )}
-                  </Button>
-                ) : (
+                {/* The Facebook Login button must ALWAYS be visible — App
+                    Review rejected the app ("Unable to Locate Facebook
+                    Login", Platform Term 7.a) because it disappeared once a
+                    page was connected. It also lets tenants connect more
+                    pages without disconnecting existing ones. */}
+                <Button
+                  onClick={handleConnectFacebook}
+                  disabled={loading || connectFacebook.isPending}
+                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                >
+                  {loading || connectFacebook.isPending ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      {t("connecting")}
+                    </>
+                  ) : (
+                    <>
+                      <Facebook className="mr-2 h-4 w-4" />
+                      {isConnected ? t("connectMorePages") : t("connectFacebookPages")}
+                    </>
+                  )}
+                </Button>
+                {isConnected && (
                   <Button
                     onClick={handleDisconnectFacebook}
                     disabled={loading || disconnectFacebook.isPending}

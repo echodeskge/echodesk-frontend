@@ -1700,6 +1700,7 @@
     "accountsConnected": "ანგარიში დაკავშირებულია",
     "totalMessages": "ჯამური შეტყობინებები მიღებულია",
     "connectFacebookPages": "Facebook გვერდების დაკავშირება",
+    "connectMorePages": "მეტი გვერდის დაკავშირება",
     "disconnectAllPages": "ყველა გვერდის გათიშვა",
     "disconnectAllAccounts": "ყველა ანგარიშის გათიშვა",
     "connecting": "მიმდინარეობს დაკავშირება...",
