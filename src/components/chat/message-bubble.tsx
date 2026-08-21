@@ -246,12 +246,19 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
             onClick={onQuoteClick ? () => onQuoteClick(message) : undefined}
           />
         )}
-        {/* Always row-reverse so the bubble packs flush-right within its
-            (alignment-controlled) column and the reply button sits to its
-            right. Outgoing messages stay right-aligned as before; incoming
-            messages now show the button just-right of the bubble instead of
-            on the far-left edge. */}
-        <div className="flex items-start gap-1 group flex-row-reverse">
+        {/* Row-reverse keeps the reply button just-right of the bubble in
+            both directions. Packing differs: outgoing hugs the right edge
+            (default justify-start in a reversed row); incoming needs
+            justify-end so the bubble hugs the LEFT edge — without it, a
+            timestamp row wider than a short bubble stretches the column
+            and the bubble drifts right by the difference (the "weirdly
+            aligned messages" bug). */}
+        <div
+          className={cn(
+            "flex items-start gap-1 group flex-row-reverse",
+            !isByCurrentUser && "justify-end"
+          )}
+        >
           {/* Reply button - appears on hover */}
           <MessageActions
             message={message}
