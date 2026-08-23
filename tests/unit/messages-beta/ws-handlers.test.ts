@@ -791,3 +791,110 @@ describe("dispatchWsFrame – telegram", () => {
     ).toBeTruthy();
   });
 });
+
+describe("pending media queue (phantom attachment regression)", () => {
+  it("echo WITH a real media URL discards the pending blob instead of leaving it queued", async () => {
+    const { addPendingMedia } = await import("@/lib/pendingMedia");
+    addPendingMedia("tg_777_555", "blob:pending-1", true, "photo.png");
+
+    // Telegram media echo: URL already on the message (worker uploads first)
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "555",
+        message: {
+          id: "m-media",
+          platform: "telegram",
+          telegram_account_id: "777",
+          sender_id: "555",
+          is_from_business: true,
+          message_text: "",
+          message_type: "image",
+          attachments: [{ type: "image", url: "https://storage.test/x.jpg" }],
+          timestamp: new Date().toISOString(),
+        },
+      },
+      ["telegram"]
+    );
+    const mediaMsg = useMessagesBetaStore.getState().messagesByChatId["tg_777_555"]?.at(-1);
+    expect(mediaMsg?.images?.[0]?.url).toBe("https://storage.test/x.jpg");
+
+    // Next TEXT message must NOT inherit the stale blob.
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "555",
+        message: {
+          id: "m-text",
+          platform: "telegram",
+          telegram_account_id: "777",
+          sender_id: "555",
+          is_from_business: true,
+          message_text: "just text",
+          timestamp: new Date().toISOString(),
+        },
+      },
+      ["telegram"]
+    );
+    const textMsg = useMessagesBetaStore.getState().messagesByChatId["tg_777_555"]?.at(-1);
+    expect(textMsg?.text).toBe("just text");
+    expect(textMsg?.images).toBeUndefined();
+    expect(textMsg?.files).toBeUndefined();
+  });
+
+  it("pure-text echo never consumes the queue (blob stays for the real media echo)", async () => {
+    const { addPendingMedia, consumePendingMedia } = await import("@/lib/pendingMedia");
+    addPendingMedia("fb_p_9", "blob:pending-2", true, "pic.png");
+
+    // A text echo arrives first (e.g. caption sent as separate message)
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "9",
+        message: {
+          id: "t1",
+          platform: "facebook",
+          page_id: "p",
+          sender_id: "9",
+          is_from_page: true,
+          message_text: "caption first",
+          timestamp: new Date().toISOString(),
+        },
+      },
+      ["facebook"]
+    );
+    const msg = useMessagesBetaStore.getState().messagesByChatId["fb_p_9"]?.at(-1);
+    expect(msg?.images).toBeUndefined();
+    // Queue still holds the entry for the media echo that follows.
+    expect(consumePendingMedia("fb_p_9")?.blobUrl).toBe("blob:pending-2");
+  });
+
+  it("media echo WITHOUT a URL still swaps in the pending blob (WhatsApp path)", async () => {
+    const { addPendingMedia } = await import("@/lib/pendingMedia");
+    addPendingMedia("wa_w_100", "blob:pending-3", true, "img.jpg");
+
+    dispatchWsFrame(
+      useMessagesBetaStore.getState(),
+      {
+        type: "new_message",
+        conversation_id: "100",
+        message: {
+          id: "w1",
+          platform: "whatsapp",
+          waba_id: "w",
+          to_number: "100",
+          is_from_business: true,
+          message_text: "",
+          attachment_type: "image",
+          timestamp: new Date().toISOString(),
+        },
+      },
+      ["whatsapp"]
+    );
+    const msg = useMessagesBetaStore.getState().messagesByChatId["wa_w_100"]?.at(-1);
+    expect(msg?.images?.[0]?.url).toBe("blob:pending-3");
+  });
+});

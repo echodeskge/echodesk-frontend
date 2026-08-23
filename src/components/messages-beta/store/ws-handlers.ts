@@ -192,13 +192,32 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
 function applyPendingMediaIfNeeded(
   chatId: string,
   message: MessageType,
-  isFromBusiness: boolean
+  isFromBusiness: boolean,
+  rawData: Record<string, any>
 ): void {
   if (!isFromBusiness) return;
+  // Only media-bearing echoes participate: each media send queues exactly
+  // one pending entry, so pure-text echoes must not touch the queue —
+  // otherwise a stale entry gets glued onto the next unrelated message.
+  const expectsMedia = Boolean(
+    (message.images && message.images.length > 0) ||
+    (message.files && message.files.length > 0) ||
+    message.voiceMessage ||
+    rawData.attachment_type ||
+    (Array.isArray(rawData.attachments) && rawData.attachments.length > 0) ||
+    (rawData.message_type && rawData.message_type !== "text")
+  );
+  if (!expectsMedia) return;
   const hasImageUrl = message.images?.some((i) => i.url);
   const hasFileUrl = message.files?.some((f) => f.url);
-  // Only consume pending media when the echo arrived WITHOUT a usable URL.
-  if (hasImageUrl || hasFileUrl) return;
+  if (hasImageUrl || hasFileUrl || message.voiceMessage?.url) {
+    // Echo already carries a real URL (e.g. Telegram uploads to our storage
+    // before broadcasting) — the send is fulfilled, so DISCARD the pending
+    // blob instead of leaving it queued for the next message.
+    const fulfilled = consumePendingMedia(chatId);
+    if (fulfilled) URL.revokeObjectURL(fulfilled.blobUrl);
+    return;
+  }
   const pending = consumePendingMedia(chatId);
   if (!pending) return;
   if (pending.isImage) {
@@ -258,7 +277,7 @@ export function dispatchWsFrame(
       const message = frameToMessage(messageData);
       // If this is our own send echoing back, swap in the pending blob URL
       // for instant-render. Matches legacy MessagesChat behaviour.
-      applyPendingMediaIfNeeded(chatId, message, isFromBusiness);
+      applyPendingMediaIfNeeded(chatId, message, isFromBusiness, messageData);
       const isSelected = store.selectedChatId === chatId;
 
       // Seed metadata so a brand-new sender (no row in the bootstrap list)
