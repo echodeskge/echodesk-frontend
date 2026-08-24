@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
-import { Menu, MessageCircleDashed } from "lucide-react";
+import { Bot, Menu, MessageCircleDashed } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import axios from "@/api/axios";
@@ -230,6 +230,23 @@ export function MessagesBetaChatBox() {
         </CardHeader>
 
         <MessagesBetaArchivedNotice chatId={conversation.id} />
+
+        {/* AI companion escalation banner — the bot asked a human to take
+            over (includes "customer wants a call" requests, carried in the
+            reason). Resume/pause actions live in the header dropdown. */}
+        {conversation.aiState === "needs_human" && (
+          <div className="flex items-start gap-2 px-4 py-2 text-sm bg-amber-500/15 text-amber-900 dark:text-amber-200 border-b border-border">
+            <Bot className="h-4 w-4 mt-0.5 shrink-0" />
+            <div className="min-w-0">
+              <span className="font-medium">{t("aiNeedsHuman")}</span>
+              {conversation.aiReason ? (
+                <span className="block text-xs opacity-80 truncate">
+                  {conversation.aiReason}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        )}
 
         <MessagesBetaThread conversation={conversation} currentUser={CURRENT_USER} />
 

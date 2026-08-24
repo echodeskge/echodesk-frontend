@@ -25,6 +25,7 @@ export type SubscriptionFeature =
   | 'leave_management'
   | 'invoice_management'
   | 'user_management'
+  | 'ai_companion'
   | 'settings';
 
 export interface SubscriptionPackage {
@@ -42,6 +43,7 @@ export interface SubscriptionDetails {
 }
 
 export interface SubscriptionFeatures {
+  ai_companion?: boolean;
   ticket_management: boolean;
   email_integration: boolean;
   ip_calling: boolean;

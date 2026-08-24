@@ -3,6 +3,47 @@
  * DO NOT EDIT MANUALLY
  */
 
+export interface AicompanionChannel {
+  platform: AicompanionChannelPlatformEnum;
+  account_id?: string;
+  enabled?: boolean;
+  guidance_prompt?: string;
+}
+
+export type AicompanionChannelPlatformEnum =
+  | 'facebook'
+  | 'instagram'
+  | 'whatsapp'
+  | 'telegram'
+  | 'widget';
+
+export interface AicompanionChannelRequest {
+  platform: AicompanionChannelPlatformEnum;
+  account_id?: string;
+  enabled?: boolean;
+  guidance_prompt?: string;
+}
+
+export interface AicompanionSettings {
+  is_enabled?: boolean;
+  provider?: ProviderEnum;
+  model?: string;
+  has_api_key: string;
+  guidance_prompt?: string;
+  escalation_instructions?: string;
+  language?: string;
+  max_replies_per_conversation_per_day?: number;
+  max_replies_per_day?: number;
+  updated_at: string;
+}
+
+export interface AistateUpdateRequest {
+  platform: Platform3a0enum;
+  conversation_id: string;
+  account_id: string;
+  mode: ModeEnum;
+}
+
 export type ActionEnum = 'approve' | 'reject';
 
 export interface AddDomainRequestRequest {
@@ -800,6 +841,24 @@ export interface ContactSubmitResponse {
 export type ContactTypeEnum = 'USER' | 'BUSINESS';
 
 export type ContentTypeEnum = 'video' | 'article' | 'guide' | 'faq';
+
+export interface ConversationSummary {
+  id: number;
+  platform: string;
+  account_id: string;
+  conversation_id: string;
+  summary_text: string;
+  provider?: string;
+  model?: string;
+  created_at: string;
+  requested_by_name: string;
+}
+
+export interface ConversationTripleRequest {
+  platform: Platform3a0enum;
+  conversation_id: string;
+  account_id: string;
+}
 
 export interface DashboardAppearanceSettings {
   primary_color?: string;
@@ -2507,6 +2566,8 @@ export interface MergeConferenceResponse {
   channels_redirected: string[];
 }
 
+export type ModeEnum = 'ai' | 'off';
+
 export interface NewsletterSubscribeRequest {
   email: string;
   locale?: LocaleEnum;
@@ -2571,6 +2632,7 @@ export type NotificationTypeEnum =
   | 'bug_report_update'
   | 'message_received'
   | 'message_assigned'
+  | 'ai_handoff_requested'
   | 'invoice_created'
   | 'invoice_paid'
   | 'invoice_overdue'
@@ -3482,6 +3544,19 @@ export interface PasswordResetConfirmRequest {
 
 export interface PasswordResetRequestRequest {
   email: string;
+}
+
+export interface PatchedAicompanionSettingsRequest {
+  is_enabled?: boolean;
+  provider?: ProviderEnum;
+  model?: string;
+  api_key?: string;
+  guidance_prompt?: string;
+  escalation_instructions?: string;
+  language?: string;
+  max_replies_per_conversation_per_day?: number;
+  max_replies_per_day?: number;
+  channels?: AicompanionChannelRequest[];
 }
 
 export interface PatchedAttributeDefinitionRequest {
@@ -4588,6 +4663,14 @@ export interface PermissionRequest {
 
 export type PlanEnum = 'basic' | 'premium' | 'enterprise';
 
+export type Platform3a0enum =
+  | 'facebook'
+  | 'instagram'
+  | 'whatsapp'
+  | 'telegram'
+  | 'widget'
+  | 'email';
+
 export type Platform5b7enum =
   | 'facebook'
   | 'instagram'
@@ -4895,6 +4978,8 @@ export interface PromoValidateResponse {
   discount_value?: string;
   message: string;
 }
+
+export type ProviderEnum = 'anthropic' | 'openai';
 
 export interface PublicBlogCategory {
   id: number;
@@ -6561,7 +6646,7 @@ export interface TrunkRequest {
 
 export interface UnifiedConversation {
   conversation_id: string;
-  platform: UnifiedConversationPlatformEnum;
+  platform: Platform3a0enum;
   sender_id: string;
   sender_name: string;
   profile_pic_url?: string;
@@ -6578,15 +6663,8 @@ export interface UnifiedConversation {
   session_ended_at?: string;
   is_archived?: boolean;
   archived_at?: string;
+  ai_state?: string;
 }
-
-export type UnifiedConversationPlatformEnum =
-  | 'facebook'
-  | 'instagram'
-  | 'whatsapp'
-  | 'email'
-  | 'widget'
-  | 'telegram';
 
 export interface User {
   id: number;

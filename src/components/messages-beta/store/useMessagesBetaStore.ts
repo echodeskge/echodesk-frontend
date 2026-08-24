@@ -5,6 +5,7 @@ import type { MessageType } from "@/components/chat/types";
 
 import { PLACEHOLDER_CONVERSATION_NAME } from "./types";
 import type {
+  AiConversationState,
   ArchiveMeta,
   AssignmentTab,
   BetaPlatform,
@@ -25,6 +26,9 @@ export interface MessagesBetaActions {
   /** Bulk-set the assignment slice; used during bootstrap (REST) and on assignment_update (WS). */
   patchAssignment: (chatId: string, slice: ChatAssignmentSlice | null) => void;
   patchArchive: (chatId: string, meta: ArchiveMeta | null) => void;
+  /** Patch a row's AI companion mode; `null` clears the badge/banner.
+   *  Driven by `ai_state_update` WS frames + the pause/resume mutations. */
+  setAiState: (chatId: string, aiState: AiConversationState, aiReason?: string | null) => void;
 
   hydrateMessages: (chatId: string, messages: MessageType[]) => void;
   /**
@@ -200,6 +204,13 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
   patchArchive: (chatId, meta) =>
     set((state) => ({
       archivedByChatId: { ...state.archivedByChatId, [chatId]: meta },
+    })),
+
+  setAiState: (chatId, aiState, aiReason = null) =>
+    set((state) => ({
+      conversations: state.conversations.map((row) =>
+        row.id === chatId ? { ...row, aiState, aiReason } : row
+      ),
     })),
 
   hydrateMessages: (chatId, messages) =>

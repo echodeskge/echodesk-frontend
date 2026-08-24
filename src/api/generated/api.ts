@@ -394,6 +394,11 @@ import type {
   SipConfiguration,
   SipConfigurationDetail,
   PatchedSipConfigurationRequest,
+  AicompanionSettings,
+  PatchedAicompanionSettingsRequest,
+  AistateUpdateRequest,
+  ConversationSummary,
+  ConversationTripleRequest,
   AssignmentStatusResponse,
   PaginatedSocialClientListList,
   SocialClientCreateRequest,
@@ -7786,6 +7791,63 @@ export async function sipConfigurationsWebrtcConfigRetrieve(
 
 export async function sipConfigurationsMyConfigRetrieve(): Promise<SipConfiguration> {
   const response = await axios.get(`/api/sip-configurations/my_config/`);
+  return response.data;
+}
+
+export async function socialAiSettingsRetrieve(): Promise<AicompanionSettings> {
+  const response = await axios.get(`/api/social/ai/settings/`);
+  return response.data;
+}
+
+export async function socialAiSettingsPartialUpdate(
+  data: PatchedAicompanionSettingsRequest,
+): Promise<AicompanionSettings> {
+  const response = await axios.patch(`/api/social/ai/settings/`, data);
+  return response.data;
+}
+
+export async function socialAiStateRetrieve(): Promise<any> {
+  const response = await axios.get(`/api/social/ai/state/`);
+  return response.data;
+}
+
+export async function socialAiStateCreate(
+  data: AistateUpdateRequest,
+): Promise<any> {
+  const response = await axios.post(`/api/social/ai/state/`, data);
+  return response.data;
+}
+
+export async function socialAiSummariesList(
+  accountId: string,
+  conversationId: string,
+  platform: string,
+): Promise<ConversationSummary[]> {
+  const response = await axios.get(
+    `/api/social/ai/summaries/${(() => {
+      const parts = [
+        'account_id=' + encodeURIComponent(accountId),
+        'conversation_id=' + encodeURIComponent(conversationId),
+        'platform=' + encodeURIComponent(platform),
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function socialAiSummarizeCreate(
+  data: ConversationTripleRequest,
+): Promise<ConversationSummary> {
+  const response = await axios.post(`/api/social/ai/summarize/`, data);
+  return response.data;
+}
+
+export async function socialAiTestCreate(data: {
+  message: string;
+  guidance_prompt?: string;
+}): Promise<any> {
+  const response = await axios.post(`/api/social/ai/test/`, data);
   return response.data;
 }
 

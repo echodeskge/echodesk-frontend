@@ -3227,3 +3227,157 @@ export function useDeleteWidgetConnection() {
 // Re-export types for convenience
 export type { UnifiedConversation, PaginatedUnifiedConversation };
 export type { WidgetConnection, WidgetConnectionRequest, PatchedWidgetConnectionRequest };
+
+// ============================================================================
+// AI COMPANION (auto-answers + conversation summaries)
+// ============================================================================
+
+export const aiCompanionKeys = {
+  all: ['aiCompanion'] as const,
+  settings: () => [...aiCompanionKeys.all, 'settings'] as const,
+  summaries: (platform: string, conversationId: string, accountId: string) =>
+    [...aiCompanionKeys.all, 'summaries', platform, conversationId, accountId] as const,
+  state: (platform: string, conversationId: string, accountId: string) =>
+    [...aiCompanionKeys.all, 'state', platform, conversationId, accountId] as const,
+};
+
+export interface AICompanionChannel {
+  platform: 'facebook' | 'instagram' | 'whatsapp' | 'telegram' | 'widget';
+  account_id: string;
+  enabled: boolean;
+  guidance_prompt: string;
+}
+
+export interface AICompanionSettings {
+  is_enabled: boolean;
+  provider: 'anthropic' | 'openai';
+  model: string;
+  has_api_key: boolean;
+  guidance_prompt: string;
+  escalation_instructions: string;
+  language: string;
+  max_replies_per_conversation_per_day: number;
+  max_replies_per_day: number;
+  channels: AICompanionChannel[];
+  updated_at?: string;
+}
+
+export interface AICompanionSettingsUpdate
+  extends Partial<Omit<AICompanionSettings, 'has_api_key' | 'updated_at'>> {
+  /** Write-only: set to store a tenant key, empty string to clear it. */
+  api_key?: string;
+}
+
+export interface AIConversationSummary {
+  id: number;
+  platform: string;
+  account_id: string;
+  conversation_id: string;
+  summary_text: string;
+  provider: string;
+  model: string;
+  created_at: string;
+  requested_by_name: string | null;
+}
+
+export interface AIConversationTriple {
+  platform: string;
+  conversation_id: string;
+  account_id: string;
+}
+
+export interface AIConversationStateInfo {
+  mode: 'ai' | 'needs_human' | 'off';
+  reason: string;
+  last_ai_reply_at: string | null;
+  updated_at: string | null;
+}
+
+export function useAICompanionSettings(options?: { enabled?: boolean }) {
+  return useQuery<AICompanionSettings>({
+    queryKey: aiCompanionKeys.settings(),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/ai/settings/');
+      return response.data;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useUpdateAICompanionSettings() {
+  const queryClient = useQueryClient();
+  return useMutation<AICompanionSettings, unknown, AICompanionSettingsUpdate>({
+    mutationFn: async (data) => {
+      const response = await axios.patch('/api/social/ai/settings/', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: aiCompanionKeys.settings() });
+    },
+  });
+}
+
+export function useSummarizeConversation() {
+  const queryClient = useQueryClient();
+  return useMutation<AIConversationSummary, unknown, AIConversationTriple>({
+    mutationFn: async (triple) => {
+      // A summary call runs an LLM over the whole transcript — allow well
+      // past the axios default 30s before giving up.
+      const response = await axios.post('/api/social/ai/summarize/', triple, {
+        timeout: 90_000,
+      });
+      return response.data.summary as AIConversationSummary;
+    },
+    onSuccess: (_summary, triple) => {
+      queryClient.invalidateQueries({
+        queryKey: aiCompanionKeys.summaries(
+          triple.platform, triple.conversation_id, triple.account_id
+        ),
+      });
+    },
+  });
+}
+
+export function useConversationSummaries(
+  triple: AIConversationTriple,
+  options?: { enabled?: boolean }
+) {
+  return useQuery<AIConversationSummary[]>({
+    queryKey: aiCompanionKeys.summaries(
+      triple.platform, triple.conversation_id, triple.account_id
+    ),
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        platform: triple.platform,
+        conversation_id: triple.conversation_id,
+        account_id: triple.account_id,
+      });
+      const response = await axios.get(`/api/social/ai/summaries/?${params}`);
+      return response.data.results || [];
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useSetAIConversationState() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    AIConversationStateInfo,
+    unknown,
+    AIConversationTriple & { mode: 'ai' | 'off' }
+  >({
+    mutationFn: async (data) => {
+      const response = await axios.post('/api/social/ai/state/', data);
+      return response.data;
+    },
+    onSuccess: (_state, vars) => {
+      queryClient.invalidateQueries({
+        queryKey: aiCompanionKeys.state(
+          vars.platform, vars.conversation_id, vars.account_id
+        ),
+      });
+    },
+  });
+}

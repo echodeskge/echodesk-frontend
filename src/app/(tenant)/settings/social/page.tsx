@@ -9,13 +9,14 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, BellRing, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail, ExternalLink } from "lucide-react";
+import { Bell, BellRing, User, Loader2, Users, EyeOff, Star, Play, Volume2, Clock, MessageSquare, Globe, Settings2, Wrench, Link, Trash2, Mail, ExternalLink, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialSettings, useUpdateSocialSettings, useClearPlatformHistory, useEmailStatus, AutoReplySettings, AwayHoursSchedule, PlatformAutoReplySettings } from "@/hooks/api/useSocial";
 import { EmailSyncDebug } from "@/components/social/EmailSyncDebug";
+import { AICompanionTab } from "./AICompanionTab";
 import { NOTIFICATION_SOUNDS, getNotificationSound } from "@/utils/notificationSound";
 
 // Common timezones
@@ -1287,6 +1288,7 @@ export default function SocialSettingsPage() {
     ...(isSuperAdmin ? [{ value: "chat-management", label: t("settingsPage.tabs.chatManagement"), icon: Users }] : []),
     ...(isSuperAdmin ? [{ value: "email", label: t("settingsPage.tabs.email"), icon: Mail }] : []),
     ...(isSuperAdmin ? [{ value: "advanced", label: t("settingsPage.tabs.advanced"), icon: Wrench }] : []),
+    ...(isSuperAdmin ? [{ value: "ai-companion", label: t("settingsPage.tabs.aiCompanion"), icon: Sparkles }] : []),
   ];
 
   return (
@@ -1391,6 +1393,12 @@ export default function SocialSettingsPage() {
         {isSuperAdmin && (
           <TabsContent value="advanced" className="mt-0">
             <AdvancedTab />
+          </TabsContent>
+        )}
+
+        {isSuperAdmin && (
+          <TabsContent value="ai-companion" className="mt-0">
+            <AICompanionTab />
           </TabsContent>
         )}
       </Tabs>

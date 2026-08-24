@@ -160,6 +160,8 @@ export function useMessagesWebSocket({
             // also dropped by the default branch before — route them too.
             case 'message_status':
             case 'reaction_update':
+            // AI companion mode changes (handoff / pause / resume).
+            case 'ai_state_update':
               onConversationUpdateRef.current?.(data);
               break;
 

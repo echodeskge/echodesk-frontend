@@ -38,6 +38,8 @@ interface ApiUnifiedConversation {
   session_started_at?: string | null;
   is_archived?: boolean;
   archived_at?: string | null;
+  /** AI companion mode: 'needs_human' | 'off' when escalated/paused, null otherwise. */
+  ai_state?: string | null;
 }
 
 interface PaginatedConversations {
@@ -97,6 +99,11 @@ function mapApiPageToBetaSlices(
       unreadCount: chat.unreadCount || 0,
       sessionEndedAt: chat.sessionEndedAt || null,
       sessionEndedBy: chat.sessionEndedBy || null,
+      aiState:
+        apiRow?.ai_state === "needs_human" || apiRow?.ai_state === "off"
+          ? apiRow.ai_state
+          : null,
+      aiReason: null,
     };
   });
 

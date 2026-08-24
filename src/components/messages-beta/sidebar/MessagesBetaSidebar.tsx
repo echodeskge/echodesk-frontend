@@ -456,6 +456,14 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
                                     {unread > 0 && (
                                       <Badge className="hover:bg-primary">{unread}</Badge>
                                     )}
+                                    {row.aiState === "needs_human" && (
+                                      <Badge
+                                        variant="outline"
+                                        className="border-amber-500 text-amber-600 dark:text-amber-400 whitespace-nowrap"
+                                      >
+                                        {t("aiNeedsHuman")}
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
                               </div>

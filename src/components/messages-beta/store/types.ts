@@ -10,6 +10,10 @@ export type BetaPlatform = "facebook" | "instagram" | "whatsapp" | "email" | "wi
  */
 export const PLACEHOLDER_CONVERSATION_NAME = "Loading…";
 
+/** AI companion escalation modes surfaced in the UI. `null` = AI active
+ *  (or the feature unused) — no badge/banner. */
+export type AiConversationState = "needs_human" | "off" | null;
+
 export interface ConversationRow {
   id: string; // platform-prefixed id (e.g. `fb_<page>_<sender>`)
   platform: BetaPlatform;
@@ -23,6 +27,12 @@ export interface ConversationRow {
   // the sidebar can dim closed sessions without an extra lookup.
   sessionEndedAt?: string | null;
   sessionEndedBy?: "visitor" | "agent" | "timeout" | null;
+  /** AI companion mode (badge/banner driver). Hydrated from the unified
+   *  list's `ai_state`, live-patched by `ai_state_update` WS frames. */
+  aiState?: AiConversationState;
+  /** Why the AI escalated (e.g. "Customer asked for a call"). Only known
+   *  after a WS frame or a state fetch; list bootstrap leaves it null. */
+  aiReason?: string | null;
 }
 
 export interface ChatAssignmentSlice {

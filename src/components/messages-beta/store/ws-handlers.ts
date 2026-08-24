@@ -367,6 +367,21 @@ export function dispatchWsFrame(
       break;
     }
 
+    case "ai_state_update": {
+      // AI companion mode change (handoff escalation, manual pause/resume).
+      // mode 'ai' clears the badge/banner; 'needs_human'/'off' show it.
+      const platformConversationId = frame.conversation_id as string | undefined;
+      const platform = frame.platform as string | undefined;
+      const accountId = frame.account_id as string | undefined;
+      if (!platformConversationId) break;
+      const mode = frame.mode as string | undefined;
+      const aiState = mode === "needs_human" || mode === "off" ? mode : null;
+      const reason = (frame.reason as string | undefined) || null;
+      const targets = resolveStoreChatIds(store, platform, accountId, platformConversationId);
+      for (const chatId of targets) store.setAiState(chatId, aiState, reason);
+      break;
+    }
+
     case "assignment_update": {
       // Cross-user reactivity — patches the assignment slice for one chat.
       // Every connected agent on the tenant receives this frame.

@@ -4,11 +4,13 @@ import { useState } from "react";
 import {
   Archive,
   ArchiveRestore,
+  Bot,
   Contact,
   MailOpen,
   MoreVertical,
   PlayCircle,
   PowerOff,
+  Sparkles,
   Trash2,
   UserPlus,
   Users,
@@ -19,7 +21,11 @@ import { toast } from "sonner";
 import axios from "@/api/axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useMarkConversationUnread, useStartSession } from "@/hooks/api/useSocial";
+import {
+  useMarkConversationUnread,
+  useSetAIConversationState,
+  useStartSession,
+} from "@/hooks/api/useSocial";
 import { usePrefetchConversations, usePrefetchUnreadCount } from "@/hooks/api/usePrefetchSocial";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,6 +43,7 @@ import { registerEndedChat } from "../end-session-block";
 import { MessagesBetaTransferDialog } from "./MessagesBetaTransferDialog";
 import { MessagesBetaEndSessionDialog } from "./MessagesBetaEndSessionDialog";
 import { MessagesBetaDeleteDialog } from "./MessagesBetaDeleteDialog";
+import { MessagesBetaSummaryDialog } from "./MessagesBetaSummaryDialog";
 
 interface Props {
   conversation: ConversationRow;
@@ -85,10 +92,51 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const [transferOpen, setTransferOpen] = useState(false);
   const [endSessionOpen, setEndSessionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const startSession = useStartSession();
   const markUnread = useMarkConversationUnread();
   const setUnread = useMessagesBetaStore((s) => s.setUnread);
+  const setAiState = useMessagesBetaStore((s) => s.setAiState);
+  const setAiMode = useSetAIConversationState();
+
+  // Feature gate for the AI companion surfaces (summary button + AI pause/
+  // resume). Mirrors settings-sidebar's hasFeatureAccess merge: explicit
+  // feature_keys win; staff with no keys pass; otherwise hidden.
+  const featureKeys: string[] = (() => {
+    const raw = (profile as any)?.feature_keys;
+    if (!raw) return [];
+    try {
+      return typeof raw === "string" ? JSON.parse(raw) : raw;
+    } catch {
+      return [];
+    }
+  })();
+  const isStaffOrAdmin = !!(user?.is_staff || user?.is_superuser);
+  const hasAiCompanion =
+    featureKeys.length > 0
+      ? featureKeys.includes("ai_companion")
+      : isStaffOrAdmin;
+  // The AI can answer these platforms; email is summary-only.
+  const aiReplyablePlatform = conversation.platform !== "email";
+  const aiPaused = conversation.aiState === "off";
+
+  const handleSetAiMode = async (mode: "ai" | "off") => {
+    try {
+      await setAiMode.mutateAsync({
+        platform: conversation.platform,
+        conversation_id: conversation.conversationKey,
+        account_id: conversation.accountId,
+        mode,
+      });
+      // Optimistic local patch; the ai_state_update WS echo reconciles
+      // every other agent's UI.
+      setAiState(conversation.id, mode === "ai" ? null : "off", null);
+      toast.success(mode === "ai" ? t("aiResumed") : t("aiPaused"));
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error || t("aiModeFailed"));
+    }
+  };
 
   // Prefetch the assigned-conversations + unread-count caches when the
   // user hovers End Session — mirrors legacy chat-box-header.tsx:64-69.
@@ -316,6 +364,20 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         </span>
       )}
 
+      {hasAiCompanion && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setSummaryOpen(true)}
+          aria-label={t("aiSummary")}
+          title={t("aiSummary")}
+          className="px-2"
+        >
+          <Sparkles className="h-4 w-4" />
+        </Button>
+      )}
+
       <Button
         type="button"
         variant={showClientPanel ? "secondary" : "ghost"}
@@ -383,6 +445,20 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
               {t("startSession")}
             </DropdownMenuItem>
           )}
+          {/* AI companion pause/resume for this conversation. Resume also
+              clears a needs_human escalation, putting the bot back in
+              charge. Hidden for email (the AI never answers email). */}
+          {hasAiCompanion && aiReplyablePlatform && (
+            <DropdownMenuItem
+              onSelect={() => void handleSetAiMode(aiPaused || conversation.aiState === "needs_human" ? "ai" : "off")}
+              disabled={setAiMode.isPending}
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              {aiPaused || conversation.aiState === "needs_human"
+                ? t("resumeAi")
+                : t("pauseAi")}
+            </DropdownMenuItem>
+          )}
           {/* End session lives inline now (replaces the old Unassign
               button) — not duplicated here. */}
           {isAdmin && (
@@ -414,6 +490,11 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
       <MessagesBetaDeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
+        conversation={conversation}
+      />
+      <MessagesBetaSummaryDialog
+        open={summaryOpen}
+        onOpenChange={setSummaryOpen}
         conversation={conversation}
       />
     </div>

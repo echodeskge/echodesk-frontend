@@ -1951,7 +1951,8 @@
         "autoReply": "Auto-Reply",
         "chatManagement": "Chat Management",
         "advanced": "Advanced",
-        "email": "Email"
+        "email": "Email",
+        "aiCompanion": "AI Companion"
       },
       "email": {
         "selectConnection": "Email Connection",
@@ -2040,7 +2041,41 @@
       "settingsSaved": "Settings saved",
       "settingsSavedDescription": "Your social media settings have been updated successfully.",
       "errorSaving": "Error saving settings",
-      "errorSavingDescription": "Failed to update settings. Please try again."
+      "errorSavingDescription": "Failed to update settings. Please try again.",
+      "aiCompanion": {
+        "title": "AI Companion",
+        "description": "An AI assistant that automatically answers incoming customer messages following your instructions, and hands the chat to your team when a human is needed.",
+        "enabled": "Enable AI companion",
+        "enabledHint": "Master switch — nothing is answered automatically while this is off.",
+        "guidancePrompt": "Instructions for the AI",
+        "guidancePromptPlaceholder": "Example: You answer for Tasty Cakes bakery. We sell custom cakes and pizza. Orders need 2 days notice. Delivery in Tbilisi only. Be friendly and concise.",
+        "guidancePromptHint": "Describe your business and how the assistant should answer — products, prices, tone, what it must never promise.",
+        "escalationInstructions": "When to hand off to a human",
+        "escalationPlaceholder": "Example: hand off when the customer asks about refunds or complains.",
+        "escalationHint": "Extra rules for when the AI should stop and ask your team to take over. Requests for a human or a call always hand off.",
+        "provider": "AI provider",
+        "model": "Model",
+        "modelPlaceholder": "Leave empty for the default model",
+        "apiKey": "API key (optional)",
+        "apiKeySet": "A key is saved — type to replace it",
+        "apiKeyPlaceholder": "Uses the platform key when empty",
+        "apiKeyHint": "Optional: your own provider API key. Leave blank to use the built-in one.",
+        "language": "Reply language",
+        "perConversationCap": "Replies per chat / day",
+        "dailyCap": "Total replies / day",
+        "channels": "Active platforms",
+        "channelsHint": "The assistant only answers on platforms you enable here.",
+        "platforms": {
+          "telegram": "Telegram",
+          "facebook": "Facebook Messenger",
+          "instagram": "Instagram",
+          "whatsapp": "WhatsApp",
+          "widget": "Website widget"
+        },
+        "save": "Save AI settings",
+        "saved": "AI companion settings saved",
+        "saveError": "Failed to save AI companion settings"
+      }
     },
     "tiktok": {
       "title": "TikTok Shop",
@@ -4925,7 +4960,8 @@
       "noArchivedConversations": "No archived conversations",
       "noConversationsYet": "No conversations yet",
       "noMessagesYet": "No messages yet...",
-      "scrollForMore": "Scroll for more"
+      "scrollForMore": "Scroll for more",
+      "aiNeedsHuman": "Needs human"
     },
     "newWhatsApp": {
       "title": "New WhatsApp message",
@@ -4965,7 +5001,8 @@
       "conversationNotFound": "Conversation not found in this view.",
       "loadingConversation": "Loading conversation…",
       "movedToHistory": "This chat has been moved to History.",
-      "movedToHistoryHint": "It stays open here — you can find it later in the History view."
+      "movedToHistoryHint": "It stays open here — you can find it later in the History view.",
+      "aiNeedsHuman": "The AI assistant asked for a human to take over"
     },
     "thread": {
       "loadOlder": "Load older messages",
@@ -5039,7 +5076,13 @@
       "wsConnected": "Live connection: connected",
       "wsReconnecting": "Live connection: reconnecting",
       "wsOffline": "Live connection: offline",
-      "openConversations": "Open conversations"
+      "openConversations": "Open conversations",
+      "aiSummary": "AI summary",
+      "resumeAi": "Resume AI assistant",
+      "pauseAi": "Pause AI assistant",
+      "aiResumed": "AI assistant resumed",
+      "aiPaused": "AI assistant paused",
+      "aiModeFailed": "Failed to update AI assistant"
     },
     "transferDialog": {
       "title": "Transfer chat",
@@ -5070,6 +5113,16 @@
       "delete": "Delete",
       "conversationDeleted": "Conversation deleted",
       "failedToDelete": "Failed to delete conversation"
+    },
+    "summaryDialog": {
+      "title": "Chat summary",
+      "generating": "Generating summary…",
+      "regenerate": "Regenerate",
+      "retry": "Try again",
+      "empty": "No summary yet.",
+      "error": "Could not generate the summary. Please try again.",
+      "generatedAt": "Generated {time}",
+      "previousSummaries": "Previous summaries"
     }
   }
 }
