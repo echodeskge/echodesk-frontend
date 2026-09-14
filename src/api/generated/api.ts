@@ -4632,8 +4632,6 @@ export async function ecommerceClientProductsList(
   attrMaterial?: string,
   attrNumberOfLamps?: string,
   attrSubcategory?: string,
-  attr?: string,
-  attr?: string,
   isFeatured?: boolean,
   language?: string,
   maxPrice?: number,
@@ -4664,8 +4662,6 @@ export async function ecommerceClientProductsList(
         attrSubcategory
           ? 'attr_subcategory=' + encodeURIComponent(attrSubcategory)
           : null,
-        attr ? 'attr_ფერი=' + encodeURIComponent(attr) : null,
-        attr ? 'attr_წითელი=' + encodeURIComponent(attr) : null,
         isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
         language ? 'language=' + encodeURIComponent(language) : null,
         maxPrice ? 'max_price=' + encodeURIComponent(maxPrice) : null,
