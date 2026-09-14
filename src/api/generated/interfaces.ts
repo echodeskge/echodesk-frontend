@@ -1437,6 +1437,8 @@ export interface GuestAddressRequest {
   address: string;
   city: string;
   label?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface GuestCheckoutItemRequest {
@@ -1456,6 +1458,12 @@ export interface GuestCheckoutRequestRequest {
   shipping_method_id?: number;
   promo_code?: string;
   notes?: string;
+  delivery_method?: DeliveryMethodEnum;
+  quickshipper_provider_id?: number;
+  quickshipper_provider_fee_id?: string;
+  quickshipper_parcel_dimensions_id?: number;
+  quickshipper_price?: string;
+  quickshipper_provider_name?: string;
 }
 
 export interface HelpArticleAdmin {
