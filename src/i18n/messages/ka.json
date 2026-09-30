@@ -1464,6 +1464,7 @@
       "phone": "ტელეფონი",
       "payment": "გადახდა",
       "method": "მეთოდი",
+      "provider": "პროვაიდერი",
       "bogOrderId": "BOG შეკვეთის ID",
       "markAsPaid": "მონიშნე გადახდილად",
       "deliveryAddress": "მიტანის მისამართი",

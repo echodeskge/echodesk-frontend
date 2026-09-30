@@ -1621,6 +1621,7 @@
       "phone": "Phone",
       "payment": "Payment",
       "method": "Method",
+      "provider": "Provider",
       "bogOrderId": "BOG Order ID",
       "markAsPaid": "Mark as Paid",
       "deliveryAddress": "Delivery Address",

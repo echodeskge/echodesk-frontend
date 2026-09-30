@@ -55,6 +55,13 @@ export const PAYMENT_STATUS_ICONS: Record<string, typeof Clock> = {
   partially_refunded: AlertCircle,
 }
 
+// Card gateway an order was charged through (Order.payment_provider).
+export const PAYMENT_PROVIDER_LABELS: Record<string, string> = {
+  bog: "BOG",
+  tbc: "TBC",
+  flitt: "Flitt (TBC)",
+}
+
 export const STATUS_OPTIONS = [
   "all",
   "pending",

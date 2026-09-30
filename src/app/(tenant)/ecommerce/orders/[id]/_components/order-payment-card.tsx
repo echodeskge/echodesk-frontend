@@ -4,7 +4,11 @@ import { CreditCard, RotateCcw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PAYMENT_STATUS_COLORS, PAYMENT_STATUS_ICONS } from "../../_data/constants"
+import {
+  PAYMENT_PROVIDER_LABELS,
+  PAYMENT_STATUS_COLORS,
+  PAYMENT_STATUS_ICONS,
+} from "../../_data/constants"
 import { OrderDetail } from "../../_types"
 
 interface OrderPaymentCardProps {
@@ -45,6 +49,16 @@ export function OrderPaymentCard({
             {t(`detail.paymentMethod.${order.payment_method || "unknown"}`)}
           </span>
         </div>
+        {order.payment_provider && (
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">
+              {t("detail.provider")}
+            </span>
+            <span className="text-sm font-medium">
+              {PAYMENT_PROVIDER_LABELS[order.payment_provider] || order.payment_provider}
+            </span>
+          </div>
+        )}
         <div className="flex justify-between items-center">
           <span className="text-sm text-muted-foreground">
             {t("table.status")}
