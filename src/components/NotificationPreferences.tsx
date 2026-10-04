@@ -146,6 +146,8 @@ const NOTIFICATION_TYPE_MAP: Record<string, { category: keyof NotificationPrefer
   leave_request_rejected: { category: 'leave', subType: 'rejected' },
 
   // Bookings
+  // booking_created / booking_rescheduled (online bookings by customers)
+  // are not mapped: they are always shown.
   booking_confirmed: { category: 'bookings', subType: 'confirmed' },
   booking_cancelled: { category: 'bookings', subType: 'cancelled' },
   booking_reminder: { category: 'bookings', subType: 'reminder' },

@@ -31,6 +31,8 @@ interface BookingSettings {
   public_description: Record<string, string>
   public_address: string
   public_phone: string
+  has_bog_client_id?: boolean
+  has_bog_client_secret?: boolean
 }
 
 export default function SettingsPage() {
@@ -38,6 +40,9 @@ export default function SettingsPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  // If the settings couldn't be loaded, saving would overwrite the real ones
+  // with this form's defaults — so saving is blocked until a load succeeds.
+  const [loadFailed, setLoadFailed] = useState(false)
   const [showSecret, setShowSecret] = useState(false)
   const [settings, setSettings] = useState<BookingSettings>({
     require_deposit: false,
@@ -88,11 +93,14 @@ export default function SettingsPage() {
       const response = await axios.get("/api/bookings/admin/settings/")
       setSettings({
         ...response.data,
-        bog_client_secret: "", // Don't show existing secret
+        // Stored credentials are never sent back; empty = "keep what's saved"
+        bog_client_id: "",
+        bog_client_secret: "",
       })
+      setLoadFailed(false)
     } catch (error) {
       console.error("Failed to fetch settings:", error)
-      // Settings might not exist yet, use defaults
+      setLoadFailed(true)
     } finally {
       setLoading(false)
     }
@@ -101,17 +109,14 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true)
-      const dataToSend = { ...settings }
-      // Only send bog_client_secret if it was changed
-      if (!dataToSend.bog_client_secret) {
-        delete dataToSend.bog_client_secret
-      }
+      const { id: _id, has_bog_client_id: _hasId, has_bog_client_secret: _hasSecret, ...dataToSend } = settings
+      // Only send credentials the user actually typed
+      if (!dataToSend.bog_client_id) delete (dataToSend as Partial<BookingSettings>).bog_client_id
+      if (!dataToSend.bog_client_secret) delete dataToSend.bog_client_secret
 
-      if (settings.id) {
-        await axios.patch("/api/bookings/admin/settings/", dataToSend)
-      } else {
-        await axios.put("/api/bookings/admin/settings/", dataToSend)
-      }
+      // The API creates the settings row on first read, so PATCH always applies.
+      const response = await axios.patch("/api/bookings/admin/settings/", dataToSend)
+      setSettings({ ...response.data, bog_client_id: "", bog_client_secret: "" })
       toast({ title: t("success"), description: t("settingsSaved") })
     } catch (error) {
       console.error("Failed to save settings:", error)
@@ -280,11 +285,13 @@ export default function SettingsPage() {
                 <Label htmlFor="bog_client_id">{t("bogSettings.clientId")}</Label>
                 <Input
                   id="bog_client_id"
-                  value={settings.bog_client_id}
+                  value={settings.bog_client_id || ""}
                   onChange={(e) =>
                     setSettings({ ...settings, bog_client_id: e.target.value })
                   }
-                  placeholder={t("bogSettings.clientIdPlaceholder")}
+                  placeholder={
+                    settings.has_bog_client_id ? t("bogSettings.savedPlaceholder") : t("bogSettings.clientIdPlaceholder")
+                  }
                 />
               </div>
               <div className="grid gap-2">
@@ -297,7 +304,11 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setSettings({ ...settings, bog_client_secret: e.target.value })
                     }
-                    placeholder={t("bogSettings.clientSecretPlaceholder")}
+                    placeholder={
+                      settings.has_bog_client_secret
+                        ? t("bogSettings.savedPlaceholder")
+                        : t("bogSettings.clientSecretPlaceholder")
+                    }
                   />
                   <Button
                     type="button"
@@ -438,7 +449,8 @@ export default function SettingsPage() {
         </Card>
 
         <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving}>
+          {loadFailed && <p className="mr-4 self-center text-sm text-destructive">{t("loadFailed")}</p>}
+          <Button onClick={handleSave} disabled={saving || loadFailed}>
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (

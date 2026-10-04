@@ -16,6 +16,8 @@ interface MonthCalendarProps {
   /** First and last selectable day, YYYY-MM-DD (inclusive) */
   min: string
   max: string
+  /** Today on the business's clock, YYYY-MM-DD (marked in the grid) */
+  today?: string
 }
 
 /** Days of a month laid out Monday-first, padded with nulls. */
@@ -29,7 +31,7 @@ export function monthGrid(year: number, month: number): (Date | null)[] {
   return cells
 }
 
-export function MonthCalendar({ value, onChange, min, max }: MonthCalendarProps) {
+export function MonthCalendar({ value, onChange, min, max, today }: MonthCalendarProps) {
   const locale = useLocale()
   const t = useTranslations("publicBooking")
   const initial = fromIsoDate(value || min)
@@ -60,7 +62,7 @@ export function MonthCalendar({ value, onChange, min, max }: MonthCalendarProps)
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-10 w-10"
           disabled={!canGoBack}
           onClick={() => shift(-1)}
           aria-label={t("calendar.previousMonth")}
@@ -72,7 +74,7 @@ export function MonthCalendar({ value, onChange, min, max }: MonthCalendarProps)
           type="button"
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-10 w-10"
           disabled={!canGoForward}
           onClick={() => shift(1)}
           aria-label={t("calendar.nextMonth")}
@@ -97,14 +99,17 @@ export function MonthCalendar({ value, onChange, min, max }: MonthCalendarProps)
               type="button"
               disabled={disabled}
               aria-pressed={selected}
+              aria-label={format(date, "EEEE, d MMMM yyyy", { locale: dateFnsLocale(locale) })}
+              aria-current={iso === today ? "date" : undefined}
               onClick={() => onChange(iso)}
               className={cn(
-                "aspect-square rounded-md text-sm transition-colors",
+                "aspect-square min-h-10 rounded-md text-sm transition-colors",
                 selected
                   ? "bg-primary font-semibold text-primary-foreground"
                   : disabled
                     ? "text-muted-foreground/40"
-                    : "hover:bg-accent"
+                    : "hover:bg-accent",
+                iso === today && !selected && "font-semibold underline underline-offset-4"
               )}
             >
               {date.getDate()}

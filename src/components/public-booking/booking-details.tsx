@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl"
 import { Badge } from "@/components/ui/badge"
-import { CustomerBooking, formatMoney, shortTime } from "@/lib/booking-api"
+import { CustomerBooking, formatMoney, shortTime, staffName } from "@/lib/booking-api"
 import { formatLongDate } from "./salon-context"
 
 const STATUS_STYLES: Record<string, string> = {
@@ -36,7 +36,7 @@ export function BookingDetails({ booking }: { booking: CustomerBooking }) {
       `${formatLongDate(booking.date, locale)}, ${shortTime(booking.start_time)}–${shortTime(booking.end_time)}`,
     ],
   ]
-  if (booking.staff) rows.push([t("summary.staff"), booking.staff.user.full_name || booking.staff.user.first_name])
+  if (staffName(booking.staff)) rows.push([t("summary.staff"), staffName(booking.staff)])
   rows.push([t("summary.price"), Number(booking.total_amount) ? formatMoney(booking.total_amount) : t("services.free")])
   if (paid > 0) {
     rows.push([t("summary.paid"), formatMoney(paid)])

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
@@ -20,7 +20,9 @@ import {
   bookingApi,
   formatMoney,
   paymentOptionsFor,
+  staffName,
 } from "@/lib/booking-api"
+import { useErrorMessage } from "./errors"
 import { formatLongDate, useBookingSession, useSalon } from "./salon-context"
 import { SlotPicker } from "./slot-picker"
 
@@ -44,6 +46,19 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
   const [payment, setPayment] = useState<PaymentOption | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [slotReloadKey, setSlotReloadKey] = useState(0)
+  const slotSectionRef = useRef<HTMLElement>(null)
+  const errorMessage = useErrorMessage()
+
+  // Coming back from the bank with the browser's Back button restores this
+  // page from the back/forward cache with the button still "submitting".
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) setSubmitting(false)
+    }
+    window.addEventListener("pageshow", onPageShow)
+    return () => window.removeEventListener("pageshow", onPageShow)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -88,7 +103,16 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
       if (guest.email.trim() && !/^\S+@\S+\.\S+$/.test(guest.email.trim())) next.email = t("wizard.errors.email")
     }
     setErrors(next)
-    return Object.keys(next).length === 0
+    const firstInvalid = Object.keys(next)[0]
+    if (firstInvalid) {
+      // On a phone the invalid field is usually off-screen above the button:
+      // say what's wrong and bring it into view.
+      toast.error(next[firstInvalid])
+      const target = firstInvalid === "slot" ? slotSectionRef.current : document.getElementById(firstInvalid)
+      target?.scrollIntoView({ behavior: "smooth", block: "center" })
+      if (firstInvalid !== "slot") (target as HTMLElement | null)?.focus({ preventScroll: true })
+    }
+    return !firstInvalid
   }
 
   const submit = async () => {
@@ -124,19 +148,26 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
       router.push(`/${salon}/booking/${booking.manage_token}`)
     } catch (error) {
       setSubmitting(false)
-      if (error instanceof BookingApiError) {
-        if (error.status === 401) {
-          toast.error(t("wizard.errors.sessionExpired"))
-          return
-        }
-        setErrors(error.fields)
-        // Most failures here mean the slot was taken meanwhile: drop it so the
-        // list reloads and the customer picks again.
-        if (!Object.keys(error.fields).some((f) => f in EMPTY_GUEST || f === "payment_type")) setTime(null)
-        toast.error(error.message || t("wizard.errors.generic"))
-      } else {
-        toast.error(t("wizard.errors.generic"))
+      if (error instanceof BookingApiError && error.status === 401) {
+        toast.error(t("wizard.errors.sessionExpired"))
+        return
       }
+      if (error instanceof BookingApiError && error.status === 400) {
+        // Server-side field problems (the form already checks the common ones)
+        const fieldErrors: Record<string, string> = {}
+        for (const field of Object.keys(error.fields)) {
+          if (field in EMPTY_GUEST) fieldErrors[field] = t("wizard.errors.invalidValue")
+        }
+        setErrors(fieldErrors)
+        if (error.code === "slot_unavailable" || error.code === "outside_booking_window") {
+          // The time was taken (or became too soon) meanwhile: clear it and
+          // reload the list so it is no longer offered.
+          setTime(null)
+          setSlotReloadKey((key) => key + 1)
+          slotSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+        }
+      }
+      toast.error(errorMessage(error))
     }
   }
 
@@ -167,7 +198,12 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
           <h2 className="font-medium">{t("wizard.staffTitle")}</h2>
           <div className="flex flex-wrap gap-2">
             {[{ id: null as number | null, label: t("wizard.anyStaff") }]
-              .concat(service.staff_members.map((s) => ({ id: s.id, label: s.user.full_name || s.user.first_name })))
+              .concat(
+                service.staff_members.map((s, index) => ({
+                  id: s.id,
+                  label: staffName(s) || t("wizard.staffNumber", { number: index + 1 }),
+                }))
+              )
               .map((option) => (
                 <button
                   key={option.id ?? "any"}
@@ -192,20 +228,25 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
       )}
 
       {/* 2. Date and time */}
-      <section className="space-y-2">
+      <section className="space-y-2" ref={slotSectionRef}>
         <h2 className="font-medium">{t("wizard.timeTitle")}</h2>
         <SlotPicker
           serviceId={service.id}
           staffId={staffId}
           date={date}
           time={time}
+          reloadKey={slotReloadKey}
           onChange={(nextDate, nextTime) => {
             setDate(nextDate)
             setTime(nextTime)
             setErrors((prev) => ({ ...prev, slot: "" }))
           }}
         />
-        {errors.slot && <p className="text-sm text-destructive">{errors.slot}</p>}
+        {errors.slot && (
+          <p role="alert" className="text-sm text-destructive">
+            {errors.slot}
+          </p>
+        )}
       </section>
 
       {/* 3. Who is booking */}
@@ -301,7 +342,6 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
               </label>
             ))}
           </div>
-          {errors.payment_type && <p className="text-sm text-destructive">{errors.payment_type}</p>}
         </section>
       )}
 
@@ -320,9 +360,14 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {dueNow > 0 ? t("wizard.submitAndPay") : t("wizard.submit")}
         </Button>
-        <p className="text-center text-xs text-muted-foreground">
-          {t("wizard.cancellationNote", { hours: info.cancellation_hours_before })}
-        </p>
+        {info.cancellation_hours_before > 0 && (
+          <p className="text-center text-xs text-muted-foreground">
+            {t("wizard.cancellationNote", { hours: info.cancellation_hours_before })}
+          </p>
+        )}
+        {!session && (
+          <p className="text-center text-xs text-muted-foreground">{t("wizard.privacyNote", { name: info.name })}</p>
+        )}
       </section>
     </div>
   )
@@ -365,11 +410,14 @@ function Field({
         value={value}
         autoComplete={autoComplete}
         aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
         className={error ? "border-destructive" : undefined}
         onChange={(e) => onChange(e.target.value)}
       />
       {error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
       ) : hint ? (
         <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}

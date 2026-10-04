@@ -749,9 +749,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
               <MessengerBell />
               <NotificationBell
                 onNotificationClick={(notification) => {
-                  // Navigate to ticket if ticket_id exists
+                  // Navigate to ticket if ticket_id exists, else to the
+                  // notification's own link (e.g. an online booking)
+                  const linkUrl = (notification as { link_url?: string }).link_url;
                   if (notification.ticket_id) {
                     router.push(`/tickets/${notification.ticket_id}`);
+                  } else if (linkUrl && linkUrl.startsWith('/')) {
+                    router.push(linkUrl);
                   }
                 }}
               />

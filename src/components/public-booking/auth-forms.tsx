@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { BookingApiError, bookingApi } from "@/lib/booking-api"
+import { useErrorMessage } from "./errors"
 import { useSalon } from "./salon-context"
 
 /** Only same-site paths under this salon are accepted as a post-login target. */
@@ -76,9 +77,8 @@ function SubmitButton({ busy, children }: { busy: boolean; children: React.React
 }
 
 function useErrorToast() {
-  const t = useTranslations("publicBooking")
-  return (error: unknown) =>
-    toast.error((error instanceof BookingApiError && error.message) || t("wizard.errors.generic"))
+  const errorMessage = useErrorMessage()
+  return (error: unknown) => toast.error(errorMessage(error))
 }
 
 // ---------------------------------------------------------------------------
@@ -86,6 +86,7 @@ function useErrorToast() {
 export function LoginForm() {
   const { salon } = useSalon()
   const t = useTranslations("publicBooking")
+  const locale = useLocale()
   const router = useRouter()
   const nextPath = useNextPath()
   const showError = useErrorToast()
@@ -102,6 +103,9 @@ export function LoginForm() {
     } catch (error) {
       setBusy(false)
       if (error instanceof BookingApiError && error.code === "email_not_verified") {
+        // The code from registration may have expired: send a fresh one so
+        // the next page's "we sent you a code" is true.
+        bookingApi.resendVerification(salon, email.trim(), locale).catch(() => {})
         router.push(`/${salon}/verify?email=${encodeURIComponent(email.trim())}&next=${encodeURIComponent(nextPath)}`)
         return
       }
@@ -175,8 +179,17 @@ export function RegisterForm() {
       router.push(`/${salon}/verify?email=${encodeURIComponent(form.email.trim())}&next=${encodeURIComponent(nextPath)}`)
     } catch (error) {
       setBusy(false)
-      if (error instanceof BookingApiError && Object.keys(error.fields).length) setErrors(error.fields)
-      else showError(error)
+      if (error instanceof BookingApiError && error.code === "account_exists") {
+        setErrors({ email: t("errors.account_exists") })
+      } else if (error instanceof BookingApiError && error.status === 400 && Object.keys(error.fields).length) {
+        const fieldErrors: Record<string, string> = {}
+        for (const field of Object.keys(error.fields)) {
+          fieldErrors[field] = field === "password" ? t("auth.passwordRule") : t("wizard.errors.invalidValue")
+        }
+        setErrors(fieldErrors)
+      } else {
+        showError(error)
+      }
     }
   }
 

@@ -278,7 +278,8 @@ async function refreshAccess(salon: string, session: BookingSession): Promise<Bo
     method: 'POST',
     body: { refresh: session.refresh },
   });
-  if (!response.ok) return null;
+  if (response.status === 400 || response.status === 401) return null; // refresh token no longer valid
+  if (!response.ok) throw new BookingApiError(response.status, ''); // throttled / server trouble: keep the session
   const data = (await response.json()) as { access: string; refresh: string };
   const next = { ...session, access: data.access, refresh: data.refresh || session.refresh };
   saveSession(salon, next);
@@ -444,6 +445,28 @@ export function amountDueNow(option: PaymentOption, service: Pick<BookingService
   if (option === 'cash') return 0;
   if (option === 'deposit') return Number(service.deposit_amount) || 0;
   return Number(service.base_price) || 0;
+}
+
+/** A staff member's display name; empty when the business hasn't entered one. */
+export function staffName(staff: Pick<BookingStaffMember, 'user'> | null | undefined): string {
+  if (!staff) return '';
+  return (staff.user.full_name || `${staff.user.first_name || ''} ${staff.user.last_name || ''}`).trim();
+}
+
+/** Today's date (YYYY-MM-DD) on the business's clock, not the visitor's. */
+export function todayInTimezone(timeZone: string): string {
+  try {
+    // en-CA formats as YYYY-MM-DD
+    return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  } catch {
+    return toIsoDate(new Date());
+  }
+}
+
+export function addDays(isoDate: string, days: number): string {
+  const date = fromIsoDate(isoDate);
+  date.setDate(date.getDate() + days);
+  return toIsoDate(date);
 }
 
 /** YYYY-MM-DD in local calendar terms (no timezone shifting). */

@@ -3831,7 +3831,8 @@
       "clientSecretPlaceholder": "Enter new secret to update",
       "clientSecretHelp": "Leave empty to keep existing secret",
       "productionMode": "Production Mode",
-      "productionModeDesc": "Use production BOG API (uncheck for test environment)"
+      "productionModeDesc": "Use production BOG API (uncheck for test environment)",
+      "savedPlaceholder": "Saved — type to replace"
     },
     "bookingRules": {
       "title": "Booking Rules",
@@ -3863,19 +3864,20 @@
     },
     "publicPage": {
       "title": "Online booking page",
-      "description": "A public page where your customers pick a service and time and book by themselves.",
+      "description": "A public page where your clients pick a service and time and book by themselves.",
       "enabled": "Accept online bookings",
-      "enabledDesc": "When off, the page shows as not found and customers cannot book online.",
-      "link": "Your booking link",
-      "linkDesc": "Share this link with customers: put it on your social pages, website or messages.",
+      "enabledDesc": "When off, the page is unavailable and clients can't book online.",
+      "link": "Your online booking link",
+      "linkDesc": "Share this link with clients: put it on your social pages, website or messages.",
       "copy": "Copy",
       "open": "Open",
       "linkCopied": "Link copied",
       "descriptionKa": "About your business (Georgian)",
       "descriptionEn": "About your business (English)",
       "address": "Address",
-      "phone": "Phone for customers"
-    }
+      "phone": "Phone for clients"
+    },
+    "loadFailed": "Settings could not be loaded. Reload the page before saving."
   },
   "bookingsDashboard": {
     "title": "Booking Management",
@@ -4038,7 +4040,8 @@
     "deleteFailed": "Failed to delete staff member",
     "confirmDelete": "Are you sure you want to remove this staff member?",
     "userRequired": "Please select a user",
-    "servicesRequired": "At least one service must be selected"
+    "servicesRequired": "At least one service must be selected",
+    "workingHours": "Working hours"
   },
   "bookingsBookings": {
     "title": "Bookings",
@@ -4122,7 +4125,9 @@
     "review": "Review",
     "noRating": "Not rated yet",
     "paymentUrl": "Payment Link",
-    "bogOrderId": "Order ID"
+    "bogOrderId": "Order ID",
+    "clientEmail": "Email",
+    "clientPhone": "Phone"
   },
   "bookingsCalendar": {
     "title": "Booking Calendar",
@@ -4554,7 +4559,8 @@
     "error": "Error",
     "dayOff": "Day Off",
     "working": "Working",
-    "confirmDeleteException": "Delete this exception?"
+    "confirmDeleteException": "Delete this exception?",
+    "status": "Status"
   },
   "shippingMethods": {
     "title": "Shipping Methods",
@@ -5394,11 +5400,11 @@
     },
     "home": {
       "title": "Online booking",
-      "description": "Open the booking link you received from the business to make an appointment."
+      "description": "Open the booking link you received to make an appointment."
     },
     "notFound": {
       "title": "Booking page not found",
-      "description": "This link is not valid, or the business has turned off online booking."
+      "description": "This link is not valid, or online booking is currently turned off."
     },
     "header": {
       "signIn": "Sign in",
@@ -5418,54 +5424,57 @@
       "loadFailed": "Could not load the services. Refresh the page to try again."
     },
     "slots": {
-      "pickDate": "Pick a day to see free times.",
+      "pickDate": "Choose a day to see free times.",
       "loading": "Loading free times…",
       "none": "No free times on this day. Try another day.",
-      "loadFailed": "Could not load free times. Pick the day again."
+      "loadFailed": "Could not load free times. Choose the day again."
     },
     "wizard": {
       "backToServices": "All services",
-      "serviceNotFound": "This service is not available for online booking.",
-      "staffTitle": "With whom",
-      "anyStaff": "Anyone available",
-      "timeTitle": "Day and time",
+      "serviceNotFound": "This service can't be booked online right now.",
+      "staffTitle": "Choose a specialist",
+      "anyStaff": "Any specialist",
+      "timeTitle": "Date and time",
       "detailsTitle": "Your details",
       "bookingAs": "Booking as {name}",
       "firstName": "First name",
       "lastName": "Last name",
       "phone": "Phone",
       "email": "Email",
-      "emailHint": "Optional. We send the confirmation here.",
+      "emailHint": "Optional — we'll send your confirmation here.",
       "haveAccount": "Already have an account?",
-      "notes": "Note for the business (optional)",
+      "notes": "Additional note (optional)",
       "paymentTitle": "Payment",
       "payment": {
-        "cash": "Pay at the venue",
+        "cash": "Pay on site",
         "deposit": "Pay a deposit by card",
         "full": "Pay in full by card",
         "payLater": "Nothing to pay now",
         "payNow": "{amount} now"
       },
-      "submit": "Book",
-      "submitAndPay": "Book and pay",
-      "cancellationNote": "You can cancel free of charge up to {hours} hours before the appointment.",
+      "submit": "Confirm booking",
+      "submitAndPay": "Confirm and pay",
+      "cancellationNote": "You can cancel online up to {hours, plural, one {# hour} other {# hours}} before the appointment.",
       "errors": {
-        "pickTime": "Pick a day and a time.",
+        "pickTime": "Choose a day and a time.",
         "required": "Required",
         "phone": "Enter a valid phone number.",
         "email": "Enter a valid email address.",
         "generic": "Something went wrong. Please try again.",
-        "sessionExpired": "Your session expired. Sign in again or book as a guest."
-      }
+        "sessionExpired": "Your session expired. Sign in again or book as a guest.",
+        "invalidValue": "Check this field."
+      },
+      "staffNumber": "Specialist {number}",
+      "privacyNote": "Your name and contact details are shared with {name} to arrange your appointment."
     },
     "summary": {
       "service": "Service",
-      "when": "When",
+      "when": "Date and time",
       "staff": "With",
       "price": "Price",
       "dueNow": "To pay now",
       "paid": "Paid",
-      "payAtVenue": "To pay at the venue",
+      "payAtVenue": "To pay on site",
       "number": "Booking number",
       "notChosen": "Not chosen yet"
     },
@@ -5479,9 +5488,9 @@
     "manage": {
       "notFound": "We could not find this booking. Check the link.",
       "requestReceived": "Booking request sent",
-      "requestReceivedDetail": "The business will confirm your appointment. The status on this page will change when they do.",
+      "requestReceivedDetail": "Your appointment will be confirmed shortly. The status on this page will change when it is.",
       "confirmedTitle": "Booking confirmed",
-      "confirmedDetail": "See you then.",
+      "confirmedDetail": "See you then!",
       "completedTitle": "Appointment completed",
       "cancelledTitle": "Booking cancelled",
       "refunded": "Your payment is being refunded to your card.",
@@ -5493,12 +5502,16 @@
       "cancelBooking": "Cancel booking",
       "cancelConfirm": "Cancel this booking?",
       "cancelYes": "Yes, cancel",
-      "cancelNo": "Keep it",
+      "cancelNo": "Keep booking",
       "cancelled": "Booking cancelled",
-      "cannotCancel": "Bookings can be cancelled online up to {hours} hours before the appointment.",
+      "cannotCancel": "Bookings can be cancelled or changed online up to {hours, plural, one {# hour} other {# hours}} before the appointment.",
       "callUs": "To change it now, call {phone}.",
-      "keepLink": "Keep this page's link: it is how you view or cancel this booking.",
-      "bookAnother": "Book another appointment"
+      "keepLink": "Save this link — you'll need it to view or cancel your booking.",
+      "bookAnother": "Book another appointment",
+      "inProgressTitle": "Your appointment is in progress",
+      "cancelledUnpaid": "The online payment was not completed, so the time was released. You can book again.",
+      "loadFailed": "Could not load your booking. Check your connection and try again.",
+      "retry": "Try again"
     },
     "auth": {
       "signInTitle": "Sign in",
@@ -5510,7 +5523,7 @@
       "passwordRule": "At least 8 characters, including a number.",
       "forgotPassword": "Forgot password?",
       "createAccount": "Create account",
-      "noAccountNeeded": "You do not need an account to book. An account lets you see and change all your bookings in one place.",
+      "noAccountNeeded": "You don't need an account to book. An account lets you see and change all your bookings in one place.",
       "verifyIntro": "We sent a 6-digit code to your email. Enter it to finish creating your account.",
       "code": "Code",
       "verify": "Verify",
@@ -5530,12 +5543,38 @@
       "empty": "You have no bookings yet.",
       "loadFailed": "Could not load your bookings. Refresh the page to try again.",
       "reschedule": "Change time",
-      "confirmNewTime": "Move booking",
-      "rescheduled": "Booking moved",
+      "confirmNewTime": "Confirm new time",
+      "rescheduled": "Booking rescheduled",
       "rate": "Rate your visit",
       "reviewPlaceholder": "Tell us how it went (optional)",
-      "sendRating": "Send rating",
-      "rated": "Thank you for your rating"
+      "sendRating": "Submit rating",
+      "rated": "Thank you for your rating",
+      "close": "Close",
+      "stars": "{count, plural, one {# star} other {# stars}}"
+    },
+    "unavailable": {
+      "title": "Booking is temporarily unavailable",
+      "description": "Please try again in a few minutes."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "pageTitle": "Something went wrong",
+      "network": "No connection. Check your internet and try again.",
+      "throttled": "Too many attempts. Please wait a few minutes and try again.",
+      "slot_unavailable": "This time is no longer available. Please choose another.",
+      "outside_booking_window": "This time can't be booked. Book at least {hours, plural, one {# hour} other {# hours}} ahead and no more than {days} days in advance.",
+      "payment_option_unavailable": "This payment option is not available. Please choose another.",
+      "payment_unavailable": "Online payment is unavailable right now. Try again or choose to pay on site.",
+      "booking_limit": "You already have several upcoming bookings. Cancel one or contact us to book more.",
+      "cannot_cancel": "This booking can no longer be cancelled online.",
+      "cannot_change": "This booking can no longer be changed online.",
+      "cannot_rate": "This booking can't be rated.",
+      "invalid_credentials": "Wrong email or password.",
+      "invalid_code": "The code is wrong or has expired. Request a new one.",
+      "account_exists": "An account with this email already exists. Sign in instead.",
+      "weak_password": "The password needs at least 8 characters, including a number.",
+      "service_unavailable": "This service can't be booked online right now.",
+      "not_found": "We could not find this booking."
     }
   }
 }

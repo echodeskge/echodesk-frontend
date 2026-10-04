@@ -94,8 +94,11 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
           message: notification.message,
           type: notification.notification_type,
           onClick: () => {
+            const linkUrl = (notification as { link_url?: string }).link_url
             if (ticketId) {
               router.push(`/tickets/${ticketId}`)
+            } else if (linkUrl && linkUrl.startsWith('/')) {
+              router.push(linkUrl)
             }
           },
         })

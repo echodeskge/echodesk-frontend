@@ -10,15 +10,17 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
-import { BookingApiError, CustomerBooking, bookingApi, toIsoDate } from "@/lib/booking-api"
+import { BookingApiError, CustomerBooking, bookingApi, todayInTimezone } from "@/lib/booking-api"
 import { BookingDetails, BookingStatusBadge } from "./booking-details"
+import { useErrorMessage } from "./errors"
 import { useBookingSession, useSalon } from "./salon-context"
 import { SlotPicker } from "./slot-picker"
 
 type OpenPanel = { id: number; kind: "cancel" | "reschedule" | "rate" } | null
 
 export function AccountBookings() {
-  const { salon } = useSalon()
+  const { salon, info } = useSalon()
+  const errorMessage = useErrorMessage()
   const { session, ready } = useBookingSession()
   const locale = useLocale()
   const router = useRouter()
@@ -68,7 +70,7 @@ export function AccountBookings() {
       setPanel(null)
       toast.success(successMessage)
     } catch (error) {
-      toast.error((error instanceof BookingApiError && error.message) || t("wizard.errors.generic"))
+      toast.error(errorMessage(error))
     } finally {
       setBusy(false)
     }
@@ -76,7 +78,7 @@ export function AccountBookings() {
 
   if (!ready || !session) return <Skeleton className="h-40 w-full" />
 
-  const today = toIsoDate(new Date())
+  const today = todayInTimezone(info.timezone)
   const isUpcoming = (b: CustomerBooking) => b.date >= today && !["cancelled", "completed"].includes(b.status)
   const upcoming = (bookings || []).filter(isUpcoming).sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time))
   const past = (bookings || []).filter((b) => !isUpcoming(b))
@@ -108,8 +110,18 @@ export function AccountBookings() {
           </div>
         )}
         {isUpcoming(booking) && !booking.can_cancel && (
-          <p className="text-xs text-muted-foreground">{booking.cancel_blocked_reason}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("manage.cannotCancel", { hours: info.cancellation_hours_before })}
+          </p>
         )}
+        {isUpcoming(booking) &&
+          booking.payment_method === "card" &&
+          booking.payment_status === "pending" &&
+          booking.payment_url && (
+            <Button asChild size="sm">
+              <a href={booking.payment_url}>{t("manage.payNow")}</a>
+            </Button>
+          )}
         {booking.status === "completed" && !booking.rating && !active && (
           <Button variant="outline" size="sm" onClick={() => open(booking.id, "rate")}>
             {t("account.rate")}
@@ -160,7 +172,7 @@ export function AccountBookings() {
                 {t("account.confirmNewTime")}
               </Button>
               <Button variant="outline" size="sm" disabled={busy} onClick={() => setPanel(null)}>
-                {t("manage.cancelNo")}
+                {t("account.close")}
               </Button>
             </div>
           </div>
@@ -175,7 +187,8 @@ export function AccountBookings() {
                   type="button"
                   role="radio"
                   aria-checked={rating === value}
-                  aria-label={String(value)}
+                  aria-label={t("account.stars", { count: value })}
+                  className="p-1"
                   onClick={() => setRating(value)}
                 >
                   <Star className={cn("h-7 w-7", value <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40")} />
@@ -193,7 +206,7 @@ export function AccountBookings() {
                 {t("account.sendRating")}
               </Button>
               <Button variant="outline" size="sm" disabled={busy} onClick={() => setPanel(null)}>
-                {t("manage.cancelNo")}
+                {t("account.close")}
               </Button>
             </div>
           </div>

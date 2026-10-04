@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { useTranslations } from "next-intl"
 import {
   bookingsAdminStaffList,
@@ -21,7 +22,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Search, UserCheck, Mail, Phone, Plus, Edit, Trash2 } from "lucide-react"
+import { Search, UserCheck, Mail, Phone, Plus, Edit, Trash2, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface AvailableUser {
@@ -195,9 +196,18 @@ export default function StaffPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
+        </div>
+        {/* Staff can only be booked online during their working hours */}
+        <Button asChild variant="outline">
+          <Link href="/bookings/staff/availability">
+            <Clock className="mr-2 h-4 w-4" />
+            {t("workingHours")}
+          </Link>
+        </Button>
       </div>
 
       <Card>

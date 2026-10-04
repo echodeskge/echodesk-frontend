@@ -13,6 +13,10 @@ function isBookingHost(hostname: string, mainDomain: string): boolean {
   return host === `${BOOKING_SUBDOMAIN}.${mainDomain}` || host === `${BOOKING_SUBDOMAIN}.localhost`;
 }
 
+// Next's file-based metadata routes: they exist at the app root, so on the
+// booking host they must not be mistaken for a salon called "icon".
+const ROOT_METADATA_ROUTES = /^\/(icon|apple-icon|opengraph-image|twitter-image|pwa-icon-\d+)(\/|$)/;
+
 function detectTenantSubdomain(hostname: string, mainDomain: string): string | null {
   // Strip port and normalize
   const host = hostname.split(':')[0];
@@ -42,12 +46,31 @@ export function middleware(request: NextRequest) {
   }
 
   if (isBookingHost(hostname, mainDomain)) {
+    if (ROOT_METADATA_ROUTES.test(pathname)) {
+      return NextResponse.next();
+    }
+
+    // One public URL per page: book.echodesk.ge/<salon>, never the internal
+    // /book-site/<salon> form.
+    if (pathname === BOOKING_ROUTE_PREFIX || pathname.startsWith(`${BOOKING_ROUTE_PREFIX}/`)) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname.slice(BOOKING_ROUTE_PREFIX.length) || '/';
+      return NextResponse.redirect(url, 308);
+    }
+
+    // Salon names are lowercase; a link typed or auto-capitalised as
+    // /Nitchiani should still work.
+    const [, salonSegment = '', ...restSegments] = pathname.split('/');
+    if (salonSegment && salonSegment !== salonSegment.toLowerCase()) {
+      const url = request.nextUrl.clone();
+      url.pathname = ['', salonSegment.toLowerCase(), ...restSegments].join('/');
+      return NextResponse.redirect(url, 308);
+    }
+
     // book.echodesk.ge/<salon>/… → /book-site/<salon>/…  (URL in the browser
     // stays as typed). x-pathname carries the internal path so the root
     // layout can skip the dashboard providers for this tree.
-    const internalPath = pathname.startsWith(BOOKING_ROUTE_PREFIX)
-      ? pathname
-      : `${BOOKING_ROUTE_PREFIX}${pathname === '/' ? '' : pathname}`;
+    const internalPath = `${BOOKING_ROUTE_PREFIX}${pathname === '/' ? '' : pathname}`;
     const bookingHeaders = new Headers(request.headers);
     bookingHeaders.set('x-pathname', internalPath);
     const url = request.nextUrl.clone();
@@ -90,6 +113,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api/|_next/static|_next/image|favicon.ico).*)',
   ],
 };

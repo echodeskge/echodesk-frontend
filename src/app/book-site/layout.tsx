@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { Geist } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -17,9 +18,14 @@ import '../globals.css';
  */
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: 'Online booking',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('publicBooking');
+  return {
+    title: { absolute: t('home.title') },
+    // Not the EchoDesk dashboard's PWA manifest
+    manifest: null,
+  };
+}
 
 export const viewport: Viewport = {
   width: 'device-width',

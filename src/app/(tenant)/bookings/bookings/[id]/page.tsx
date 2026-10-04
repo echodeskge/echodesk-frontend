@@ -365,13 +365,13 @@ export default function BookingDetailPage() {
                 </div>
                 {booking.client.email && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="text-sm text-muted-foreground">{t("clientEmail")}</p>
                     <p className="font-medium">{booking.client.email}</p>
                   </div>
                 )}
                 {booking.client.phone_number && (
                   <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="text-sm text-muted-foreground">{t("clientPhone")}</p>
                     <p className="font-medium">{booking.client.phone_number}</p>
                   </div>
                 )}

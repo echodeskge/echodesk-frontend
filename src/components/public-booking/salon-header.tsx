@@ -39,21 +39,21 @@ export function SalonHeader() {
           <span className="truncate text-lg font-semibold">{info.name}</span>
         </Link>
         <div className="flex shrink-0 items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={switchLocale} aria-label={t("header.switchLanguage")}>
+          <Button variant="ghost" size="sm" className="h-9" onClick={switchLocale} aria-label={t("header.switchLanguage")}>
             {locale === "ka" ? "EN" : "ქარ"}
           </Button>
           {ready &&
             (session ? (
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="h-9">
                 <Link href={`/${salon}/account`}>
-                  <CalendarCheck className="mr-2 h-4 w-4" />
+                  <CalendarCheck className="h-4 w-4 sm:mr-2" />
                   <span className="max-sm:sr-only">{t("header.myBookings")}</span>
                 </Link>
               </Button>
             ) : (
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="h-9">
                 <Link href={`/${salon}/login`}>
-                  <LogIn className="mr-2 h-4 w-4" />
+                  <LogIn className="h-4 w-4 sm:mr-2" />
                   <span className="max-sm:sr-only">{t("header.signIn")}</span>
                 </Link>
               </Button>
