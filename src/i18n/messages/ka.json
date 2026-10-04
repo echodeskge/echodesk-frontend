@@ -5408,7 +5408,8 @@
       "failedToSend": "შეტყობინების გაგზავნა ვერ მოხერხდა",
       "invalidMessage": "შეტყობინება არასწორია",
       "failedToAssign": "მინიჭება ვერ მოხერხდა",
-      "failedToStartSession": "სესიის დაწყება ვერ მოხერხდა"
+      "failedToStartSession": "სესიის დაწყება ვერ მოხერხდა",
+      "outsideMessagingWindow": "მომხმარებელმა ბოლოს 24 საათზე მეტი ხნის წინ მოგწერათ და Facebook/Instagram პასუხის გაგზავნას აღარ უშვებს. პასუხს შეძლებთ, როცა ის ხელახლა მოგწერთ."
     },
     "header": {
       "assignToMe": "მე მივინიჭო",

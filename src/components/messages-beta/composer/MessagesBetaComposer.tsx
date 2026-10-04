@@ -309,8 +309,12 @@ export function MessagesBetaComposer({ conversation }: Props) {
       if (fileInputRef.current) fileInputRef.current.value = "";
       sendTypingStop();
     } catch (err: any) {
-      const errMsg =
-        err?.response?.data?.error || err?.message || t("failedToSend");
+      const rawError: string = err?.response?.data?.error || err?.message || "";
+      // Meta refuses replies sent more than 24 hours after the customer's last
+      // message ("(#10) This message is sent outside of allowed window"). Say
+      // that plainly instead of showing Meta's developer-facing text.
+      const outsideWindow = /outside of allowed window|\(#10\)/i.test(rawError);
+      const errMsg = outsideWindow ? t("outsideMessagingWindow") : rawError || t("failedToSend");
       console.error("[messages-beta] send failed:", err);
       toast.error(errMsg);
     } finally {

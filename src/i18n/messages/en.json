@@ -5408,7 +5408,8 @@
       "failedToSend": "Failed to send message",
       "invalidMessage": "Invalid message",
       "failedToAssign": "Failed to assign",
-      "failedToStartSession": "Failed to start session"
+      "failedToStartSession": "Failed to start session",
+      "outsideMessagingWindow": "This customer last wrote more than 24 hours ago, and Facebook/Instagram no longer allow a reply. You can answer once they write again."
     },
     "header": {
       "assignToMe": "Assign to me",
