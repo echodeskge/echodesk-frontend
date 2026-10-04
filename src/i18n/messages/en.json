@@ -3860,6 +3860,21 @@
       "onDepositDesc": "Automatically confirm booking when deposit is paid",
       "onFullPayment": "Auto Confirm on Full Payment",
       "onFullPaymentDesc": "Automatically confirm booking when fully paid"
+    },
+    "publicPage": {
+      "title": "Online booking page",
+      "description": "A public page where your customers pick a service and time and book by themselves.",
+      "enabled": "Accept online bookings",
+      "enabledDesc": "When off, the page shows as not found and customers cannot book online.",
+      "link": "Your booking link",
+      "linkDesc": "Share this link with customers: put it on your social pages, website or messages.",
+      "copy": "Copy",
+      "open": "Open",
+      "linkCopied": "Link copied",
+      "descriptionKa": "About your business (Georgian)",
+      "descriptionEn": "About your business (English)",
+      "address": "Address",
+      "phone": "Phone for customers"
     }
   },
   "bookingsDashboard": {
@@ -5370,6 +5385,157 @@
       "error": "Could not generate the summary. Please try again.",
       "generatedAt": "Generated {time}",
       "previousSummaries": "Previous summaries"
+    }
+  },
+  "publicBooking": {
+    "meta": {
+      "title": "{name} — online booking",
+      "description": "Book an appointment at {name} online."
+    },
+    "home": {
+      "title": "Online booking",
+      "description": "Open the booking link you received from the business to make an appointment."
+    },
+    "notFound": {
+      "title": "Booking page not found",
+      "description": "This link is not valid, or the business has turned off online booking."
+    },
+    "header": {
+      "signIn": "Sign in",
+      "myBookings": "My bookings",
+      "switchLanguage": "Switch language"
+    },
+    "calendar": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month"
+    },
+    "services": {
+      "title": "Choose a service",
+      "book": "Book",
+      "free": "Free",
+      "minutes": "{count} min",
+      "empty": "No services can be booked online yet.",
+      "loadFailed": "Could not load the services. Refresh the page to try again."
+    },
+    "slots": {
+      "pickDate": "Pick a day to see free times.",
+      "loading": "Loading free times…",
+      "none": "No free times on this day. Try another day.",
+      "loadFailed": "Could not load free times. Pick the day again."
+    },
+    "wizard": {
+      "backToServices": "All services",
+      "serviceNotFound": "This service is not available for online booking.",
+      "staffTitle": "With whom",
+      "anyStaff": "Anyone available",
+      "timeTitle": "Day and time",
+      "detailsTitle": "Your details",
+      "bookingAs": "Booking as {name}",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phone": "Phone",
+      "email": "Email",
+      "emailHint": "Optional. We send the confirmation here.",
+      "haveAccount": "Already have an account?",
+      "notes": "Note for the business (optional)",
+      "paymentTitle": "Payment",
+      "payment": {
+        "cash": "Pay at the venue",
+        "deposit": "Pay a deposit by card",
+        "full": "Pay in full by card",
+        "payLater": "Nothing to pay now",
+        "payNow": "{amount} now"
+      },
+      "submit": "Book",
+      "submitAndPay": "Book and pay",
+      "cancellationNote": "You can cancel free of charge up to {hours} hours before the appointment.",
+      "errors": {
+        "pickTime": "Pick a day and a time.",
+        "required": "Required",
+        "phone": "Enter a valid phone number.",
+        "email": "Enter a valid email address.",
+        "generic": "Something went wrong. Please try again.",
+        "sessionExpired": "Your session expired. Sign in again or book as a guest."
+      }
+    },
+    "summary": {
+      "service": "Service",
+      "when": "When",
+      "staff": "With",
+      "price": "Price",
+      "dueNow": "To pay now",
+      "paid": "Paid",
+      "payAtVenue": "To pay at the venue",
+      "number": "Booking number",
+      "notChosen": "Not chosen yet"
+    },
+    "status": {
+      "pending": "Waiting for confirmation",
+      "confirmed": "Confirmed",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "manage": {
+      "notFound": "We could not find this booking. Check the link.",
+      "requestReceived": "Booking request sent",
+      "requestReceivedDetail": "The business will confirm your appointment. The status on this page will change when they do.",
+      "confirmedTitle": "Booking confirmed",
+      "confirmedDetail": "See you then.",
+      "completedTitle": "Appointment completed",
+      "cancelledTitle": "Booking cancelled",
+      "refunded": "Your payment is being refunded to your card.",
+      "checkingPayment": "Checking your payment…",
+      "paymentNeeded": "Payment not completed",
+      "paymentNeededDetail": "The time is held for 30 minutes. Complete the payment to keep it.",
+      "payNow": "Pay now",
+      "bankTransferTitle": "You can also pay by bank transfer",
+      "cancelBooking": "Cancel booking",
+      "cancelConfirm": "Cancel this booking?",
+      "cancelYes": "Yes, cancel",
+      "cancelNo": "Keep it",
+      "cancelled": "Booking cancelled",
+      "cannotCancel": "Bookings can be cancelled online up to {hours} hours before the appointment.",
+      "callUs": "To change it now, call {phone}.",
+      "keepLink": "Keep this page's link: it is how you view or cancel this booking.",
+      "bookAnother": "Book another appointment"
+    },
+    "auth": {
+      "signInTitle": "Sign in",
+      "registerTitle": "Create an account",
+      "verifyTitle": "Verify your email",
+      "resetTitle": "Reset your password",
+      "password": "Password",
+      "newPassword": "New password",
+      "passwordRule": "At least 8 characters, including a number.",
+      "forgotPassword": "Forgot password?",
+      "createAccount": "Create account",
+      "noAccountNeeded": "You do not need an account to book. An account lets you see and change all your bookings in one place.",
+      "verifyIntro": "We sent a 6-digit code to your email. Enter it to finish creating your account.",
+      "code": "Code",
+      "verify": "Verify",
+      "resendCode": "Send the code again",
+      "codeSent": "If the account exists, a new code was sent.",
+      "resetIntro": "Enter your email and we will send you a code to set a new password.",
+      "sendCode": "Send code",
+      "resetCodeSent": "If the account exists, we sent a code to its email. Enter it with your new password.",
+      "changePassword": "Change password",
+      "passwordChanged": "Password changed. Sign in with the new one.",
+      "backToSignIn": "Back to sign in"
+    },
+    "account": {
+      "signOut": "Sign out",
+      "upcoming": "Upcoming",
+      "past": "Past and cancelled",
+      "empty": "You have no bookings yet.",
+      "loadFailed": "Could not load your bookings. Refresh the page to try again.",
+      "reschedule": "Change time",
+      "confirmNewTime": "Move booking",
+      "rescheduled": "Booking moved",
+      "rate": "Rate your visit",
+      "reviewPlaceholder": "Tell us how it went (optional)",
+      "sendRating": "Send rating",
+      "rated": "Thank you for your rating"
     }
   }
 }

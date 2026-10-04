@@ -18,6 +18,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: [
           '/api/',
+          '/book-site/', // internal path of the booking site; public URL is book.<domain>/<salon>
           '/registration?*', // bare page is fine; pre-filled deep-links aren't useful
         ],
       },

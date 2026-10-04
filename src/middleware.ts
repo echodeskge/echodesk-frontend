@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'mail', 'admin']);
+const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'mail', 'admin', 'book']);
+
+// The public booking site lives on its own host (book.echodesk.ge/<salon>)
+// and is served from the internal /book-site route tree.
+const BOOKING_SUBDOMAIN = 'book';
+const BOOKING_ROUTE_PREFIX = '/book-site';
+
+function isBookingHost(hostname: string, mainDomain: string): boolean {
+  const host = hostname.split(':')[0];
+  return host === `${BOOKING_SUBDOMAIN}.${mainDomain}` || host === `${BOOKING_SUBDOMAIN}.localhost`;
+}
 
 function detectTenantSubdomain(hostname: string, mainDomain: string): string | null {
   // Strip port and normalize
@@ -29,6 +39,25 @@ export function middleware(request: NextRequest) {
     pathname.includes('.')
   ) {
     return NextResponse.next();
+  }
+
+  if (isBookingHost(hostname, mainDomain)) {
+    // book.echodesk.ge/<salon>/… → /book-site/<salon>/…  (URL in the browser
+    // stays as typed). x-pathname carries the internal path so the root
+    // layout can skip the dashboard providers for this tree.
+    const internalPath = pathname.startsWith(BOOKING_ROUTE_PREFIX)
+      ? pathname
+      : `${BOOKING_ROUTE_PREFIX}${pathname === '/' ? '' : pathname}`;
+    const bookingHeaders = new Headers(request.headers);
+    bookingHeaders.set('x-pathname', internalPath);
+    const url = request.nextUrl.clone();
+    url.pathname = internalPath;
+    return NextResponse.rewrite(url, { request: { headers: bookingHeaders } });
+  }
+
+  // The booking route tree is only reachable through the booking host.
+  if (pathname === BOOKING_ROUTE_PREFIX || pathname.startsWith(`${BOOKING_ROUTE_PREFIX}/`)) {
+    return new NextResponse(null, { status: 404 });
   }
 
   const subdomain = detectTenantSubdomain(hostname, mainDomain);

@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Save, Loader2, Eye, EyeOff } from "lucide-react"
+import { Save, Loader2, Eye, EyeOff, Copy, ExternalLink } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import axios from "@/api/axios"
 
@@ -26,6 +27,10 @@ interface BookingSettings {
   auto_confirm_on_full_payment: boolean
   min_hours_before_booking: number
   max_days_advance_booking: number
+  public_page_enabled: boolean
+  public_description: Record<string, string>
+  public_address: string
+  public_phone: string
 }
 
 export default function SettingsPage() {
@@ -47,7 +52,31 @@ export default function SettingsPage() {
     auto_confirm_on_full_payment: true,
     min_hours_before_booking: 2,
     max_days_advance_booking: 60,
+    public_page_enabled: true,
+    public_description: {},
+    public_address: "",
+    public_phone: "",
   })
+
+  // book.echodesk.ge/<tenant> — the tenant is the dashboard's subdomain.
+  const [bookingLink, setBookingLink] = useState("")
+  useEffect(() => {
+    const mainDomain = process.env.NEXT_PUBLIC_MAIN_DOMAIN || "echodesk.ge"
+    const host = window.location.hostname
+    const tenant = host.endsWith(`.${mainDomain}`)
+      ? host.slice(0, -(mainDomain.length + 1))
+      : window.localStorage.getItem("dev_tenant") || ""
+    if (tenant) setBookingLink(`https://book.${mainDomain}/${tenant}`)
+  }, [])
+
+  const copyBookingLink = async () => {
+    try {
+      await navigator.clipboard.writeText(bookingLink)
+      toast({ title: t("publicPage.linkCopied") })
+    } catch {
+      toast({ title: t("error"), description: bookingLink, variant: "destructive" })
+    }
+  }
 
   useEffect(() => {
     fetchSettings()
@@ -108,6 +137,93 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("publicPage.title")}</CardTitle>
+            <CardDescription>{t("publicPage.description")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
+              <div className="space-y-0.5">
+                <Label>{t("publicPage.enabled")}</Label>
+                <p className="text-sm text-muted-foreground">{t("publicPage.enabledDesc")}</p>
+              </div>
+              <Switch
+                checked={settings.public_page_enabled}
+                onCheckedChange={(checked) =>
+                  setSettings({ ...settings, public_page_enabled: checked })
+                }
+              />
+            </div>
+            {bookingLink && (
+              <div className="space-y-2">
+                <Label htmlFor="booking_link">{t("publicPage.link")}</Label>
+                <div className="flex gap-2">
+                  <Input id="booking_link" readOnly value={bookingLink} className="min-w-0 font-mono text-sm" />
+                  <Button type="button" variant="outline" onClick={copyBookingLink}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    {t("publicPage.copy")}
+                  </Button>
+                  <Button type="button" variant="outline" asChild>
+                    <a href={bookingLink} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      {t("publicPage.open")}
+                    </a>
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">{t("publicPage.linkDesc")}</p>
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="public_description_ka">{t("publicPage.descriptionKa")}</Label>
+                <Textarea
+                  id="public_description_ka"
+                  rows={3}
+                  value={settings.public_description?.ka || ""}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      public_description: { ...settings.public_description, ka: e.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="public_description_en">{t("publicPage.descriptionEn")}</Label>
+                <Textarea
+                  id="public_description_en"
+                  rows={3}
+                  value={settings.public_description?.en || ""}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      public_description: { ...settings.public_description, en: e.target.value },
+                    })
+                  }
+                />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="public_address">{t("publicPage.address")}</Label>
+                <Input
+                  id="public_address"
+                  value={settings.public_address || ""}
+                  onChange={(e) => setSettings({ ...settings, public_address: e.target.value })}
+                />
+              </div>
+              <div className="min-w-0 space-y-2">
+                <Label htmlFor="public_phone">{t("publicPage.phone")}</Label>
+                <Input
+                  id="public_phone"
+                  type="tel"
+                  value={settings.public_phone || ""}
+                  onChange={(e) => setSettings({ ...settings, public_phone: e.target.value })}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>{t("paymentSettings.title")}</CardTitle>

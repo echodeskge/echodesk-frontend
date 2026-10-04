@@ -6,7 +6,8 @@
  * the marketing site.
  */
 
-const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'mail', 'admin']);
+// `book` is the public booking site (book.echodesk.ge), not a tenant.
+const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'mail', 'admin', 'book']);
 
 export function extractTenantSubdomainFromHost(
   host: string | null,

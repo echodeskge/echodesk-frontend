@@ -139,6 +139,12 @@ export default async function RootLayout({
   if (pathname.startsWith('/widget/embed')) {
     return <>{children}</>;
   }
+  // The public booking site (book.echodesk.ge → /book-site) is used by
+  // tenants' customers, not staff: no dashboard auth/tenant/subscription
+  // providers, and its own <html>/<body> in src/app/book-site/layout.tsx.
+  if (pathname === '/book-site' || pathname.startsWith('/book-site/')) {
+    return <>{children}</>;
+  }
 
   const allMessages = await getMessages();
   const messages = pickMessages(allMessages as Record<string, unknown>, GLOBAL_NAMESPACES);
