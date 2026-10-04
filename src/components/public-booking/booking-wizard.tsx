@@ -366,7 +366,17 @@ export function BookingWizard({ serviceId }: { serviceId: string }) {
           </p>
         )}
         {!session && (
-          <p className="text-center text-xs text-muted-foreground">{t("wizard.privacyNote", { name: info.name })}</p>
+          <p className="text-center text-xs text-muted-foreground">
+            {t("wizard.privacyNote", { name: info.name })}{" "}
+            <a
+              href={`https://${process.env.NEXT_PUBLIC_MAIN_DOMAIN || "echodesk.ge"}/privacy-policy`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              {t("wizard.privacyLink")}
+            </a>
+          </p>
         )}
       </section>
     </div>

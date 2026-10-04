@@ -31,8 +31,43 @@ interface BookingSettings {
   public_description: Record<string, string>
   public_address: string
   public_phone: string
+  timezone: string
   has_bog_client_id?: boolean
   has_bog_client_secret?: boolean
+}
+
+// Time zones a business here is likely to be in. Booking times, "today",
+// lead time and the cancellation deadline are all judged on this clock.
+const TIMEZONES = [
+  "Asia/Tbilisi",
+  "Asia/Yerevan",
+  "Asia/Baku",
+  "Europe/Istanbul",
+  "Europe/Kyiv",
+  "Europe/Warsaw",
+  "Europe/Berlin",
+  "Europe/London",
+  "Asia/Dubai",
+  "Asia/Almaty",
+  "America/New_York",
+  "UTC",
+]
+
+/** The list, plus the saved zone if it isn't one of the common ones. */
+function timezoneOptions(current?: string): string[] {
+  return current && !TIMEZONES.includes(current) ? [current, ...TIMEZONES] : TIMEZONES
+}
+
+/** "Asia/Tbilisi (GMT+4)" — offset computed for now, so it follows DST. */
+function timezoneLabel(zone: string): string {
+  try {
+    const offset = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: "shortOffset" })
+      .formatToParts(new Date())
+      .find((part) => part.type === "timeZoneName")?.value
+    return offset ? `${zone.replace(/_/g, " ")} (${offset})` : zone
+  } catch {
+    return zone
+  }
 }
 
 export default function SettingsPage() {
@@ -61,6 +96,7 @@ export default function SettingsPage() {
     public_description: {},
     public_address: "",
     public_phone: "",
+    timezone: "Asia/Tbilisi",
   })
 
   // book.echodesk.ge/<tenant> — the tenant is the dashboard's subdomain.
@@ -224,6 +260,25 @@ export default function SettingsPage() {
                   value={settings.public_phone || ""}
                   onChange={(e) => setSettings({ ...settings, public_phone: e.target.value })}
                 />
+              </div>
+              <div className="min-w-0 space-y-2 sm:col-span-2">
+                <Label htmlFor="booking_timezone">{t("publicPage.timezone")}</Label>
+                <Select
+                  value={settings.timezone || "Asia/Tbilisi"}
+                  onValueChange={(value) => setSettings({ ...settings, timezone: value })}
+                >
+                  <SelectTrigger id="booking_timezone" className="sm:max-w-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timezoneOptions(settings.timezone).map((zone) => (
+                      <SelectItem key={zone} value={zone}>
+                        {timezoneLabel(zone)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">{t("publicPage.timezoneDesc")}</p>
               </div>
             </div>
           </CardContent>

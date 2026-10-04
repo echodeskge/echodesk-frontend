@@ -82,3 +82,55 @@ describe("monthGrid", () => {
     expect(cells.filter(Boolean).length).toBe(31);
   });
 });
+
+import { nextFocusDate } from "@/components/public-booking/month-calendar";
+import { addDays, todayInTimezone } from "@/lib/booking-api";
+
+describe("calendar keyboard navigation", () => {
+  const min = "2026-10-04";
+  const max = "2026-12-03";
+
+  it("moves by day and by week", () => {
+    expect(nextFocusDate("ArrowRight", "2026-10-07", min, max)).toBe("2026-10-08");
+    expect(nextFocusDate("ArrowLeft", "2026-10-07", min, max)).toBe("2026-10-06");
+    expect(nextFocusDate("ArrowDown", "2026-10-07", min, max)).toBe("2026-10-14");
+    expect(nextFocusDate("ArrowUp", "2026-10-14", min, max)).toBe("2026-10-07");
+  });
+
+  it("crosses month boundaries", () => {
+    expect(nextFocusDate("ArrowRight", "2026-10-31", min, max)).toBe("2026-11-01");
+    expect(nextFocusDate("ArrowDown", "2026-10-28", min, max)).toBe("2026-11-04");
+    expect(nextFocusDate("PageDown", "2026-10-31", min, max)).toBe("2026-11-30"); // November has 30 days
+    expect(nextFocusDate("PageUp", "2026-11-15", min, max)).toBe("2026-10-15");
+  });
+
+  it("goes to the start and end of the week (Monday first)", () => {
+    // 2026-10-07 is a Wednesday
+    expect(nextFocusDate("Home", "2026-10-07", min, max)).toBe("2026-10-05");
+    expect(nextFocusDate("End", "2026-10-07", min, max)).toBe("2026-10-11");
+  });
+
+  it("never leaves the bookable range", () => {
+    expect(nextFocusDate("ArrowLeft", min, min, max)).toBe(min);
+    expect(nextFocusDate("ArrowUp", "2026-10-06", min, max)).toBe(min);
+    expect(nextFocusDate("ArrowRight", max, min, max)).toBe(max);
+    expect(nextFocusDate("PageDown", "2026-11-20", min, max)).toBe(max);
+  });
+
+  it("ignores other keys", () => {
+    expect(nextFocusDate("Enter", "2026-10-07", min, max)).toBeNull();
+    expect(nextFocusDate("a", "2026-10-07", min, max)).toBeNull();
+  });
+});
+
+describe("business-clock dates", () => {
+  it("adds days across months and years", () => {
+    expect(addDays("2026-12-30", 3)).toBe("2027-01-02");
+    expect(addDays("2026-03-01", -1)).toBe("2026-02-28");
+  });
+
+  it("gives a YYYY-MM-DD date for a timezone and survives a bad one", () => {
+    expect(todayInTimezone("Asia/Tbilisi")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(todayInTimezone("Not/AZone")).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});

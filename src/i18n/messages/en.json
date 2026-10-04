@@ -3875,7 +3875,9 @@
       "descriptionKa": "About your business (Georgian)",
       "descriptionEn": "About your business (English)",
       "address": "Address",
-      "phone": "Phone for clients"
+      "phone": "Phone for clients",
+      "timezone": "Time zone",
+      "timezoneDesc": "Booking times, lead time and the cancellation deadline follow this clock."
     },
     "loadFailed": "Settings could not be loaded. Reload the page before saving."
   },
@@ -5465,7 +5467,8 @@
         "invalidValue": "Check this field."
       },
       "staffNumber": "Specialist {number}",
-      "privacyNote": "Your name and contact details are shared with {name} to arrange your appointment."
+      "privacyNote": "Your name and contact details are shared with {name} to arrange your appointment.",
+      "privacyLink": "Privacy policy"
     },
     "summary": {
       "service": "Service",
