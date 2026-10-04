@@ -28,13 +28,17 @@ export function processQuickReplyMessage(message: string, vars: QuickReplyVars =
  * Rank quick replies against what the agent has typed, for the inline
  * "Saved reply · Click to insert" suggestion bar.
  *
- * - A leading "/" matches shortcuts by prefix only (the advertised /shortcut UX).
+ * - A bare "/" lists the saved replies; "/abc" matches shortcuts by prefix
+ *   (falling back to titles when no shortcut matches).
  * - Otherwise the query (min 2 chars) must appear in the shortcut, title, or
  *   message; prefix hits rank above substring hits, and shortcut > title >
  *   message within the same kind.
  * - A reply whose message exactly equals the query is excluded — it's already
  *   fully typed, so there's nothing to complete.
  */
+/** How many replies a bare "/" lists. */
+const SLASH_MENU_LIMIT = 6;
+
 export function matchQuickReplies(
   replies: QuickReply[] | undefined | null,
   query: string,
@@ -44,13 +48,23 @@ export function matchQuickReplies(
   const raw = query.trim().toLowerCase();
   if (!raw) return [];
 
-  // "/shortcut" → shortcut prefix match only.
+  // "/" opens the saved replies; "/shortcut" narrows them by shortcut prefix.
   if (raw.startsWith("/")) {
     const sc = raw.slice(1);
-    if (sc.length < 1) return [];
-    return list
-      .filter((r) => r.shortcut && r.shortcut.toLowerCase().startsWith(sc))
-      .slice(0, limit);
+    // A shortcut may have been saved with or without its leading slash.
+    const shortcutOf = (r: QuickReply) => (r.shortcut || "").toLowerCase().replace(/^\/+/, "");
+    if (sc.length < 1) {
+      // Just "/": list what's available (replies with a shortcut first), a
+      // few more than usual since nothing has narrowed the list yet.
+      return [...list]
+        .sort((a, b) => Number(!!shortcutOf(b)) - Number(!!shortcutOf(a)))
+        .slice(0, Math.max(limit, SLASH_MENU_LIMIT));
+    }
+    const byShortcut = list.filter((r) => shortcutOf(r).startsWith(sc));
+    if (byShortcut.length > 0) return byShortcut.slice(0, limit);
+    // No shortcut starts with it — fall back to titles, so "/price" still
+    // finds a reply titled "Price list" that has no shortcut.
+    return list.filter((r) => (r.title || "").toLowerCase().startsWith(sc)).slice(0, limit);
   }
 
   if (raw.length < 2) return [];

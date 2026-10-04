@@ -1150,7 +1150,46 @@
     "transferring": "Transferring...",
     "transfer": "Transfer",
     "cancel": "Cancel",
-    "searchMembers": "Search members..."
+    "searchMembers": "Search members...",
+    "quickReplies": {
+      "title": "Quick replies",
+      "description": "Shared team templates — click one to insert it into your reply.",
+      "editDescription": "Edit this shared template.",
+      "createDescription": "Create a new shared template.",
+      "searchPlaceholder": "Search quick replies...",
+      "new": "New",
+      "back": "Back",
+      "edit": "Edit",
+      "delete": "Delete",
+      "showFull": "Show full message",
+      "hideFull": "Hide full message",
+      "noMatches": "No quick replies match your search.",
+      "empty": "No quick replies yet.",
+      "createFirst": "Create your first one",
+      "error": "Error",
+      "required": "Title and message are required.",
+      "created": "Quick reply created",
+      "updated": "Quick reply updated",
+      "deleted": "Quick reply deleted",
+      "createFailed": "Could not create the quick reply.",
+      "updateFailed": "Could not update the quick reply.",
+      "deleteFailed": "Could not delete the quick reply.",
+      "fieldTitle": "Title",
+      "fieldTitlePlaceholder": "e.g. Greeting, Thank you, Order status",
+      "fieldMessage": "Message",
+      "fieldMessagePlaceholder": "Hi '{{customer_name}}', thank you for reaching out!",
+      "variables": "Available variables:",
+      "fieldShortcut": "Shortcut (optional)",
+      "shortcutExample": "shortcut",
+      "shortcutHint": "Type /{shortcut} in the message box to quickly insert this reply",
+      "fieldCategory": "Category (optional)",
+      "fieldCategoryPlaceholder": "e.g. Greetings, Support, Sales",
+      "fieldPlatforms": "Platforms",
+      "allPlatforms": "All platforms",
+      "cancel": "Cancel",
+      "create": "Create",
+      "update": "Update"
+    }
   },
   "ratingStatistics": {
     "title": "Rating Statistics",
@@ -2034,7 +2073,7 @@
         "awayMessage": "Away Message",
         "awayMessageDescription": "Sent during away hours (based on schedule above)",
         "availableVariables": "Available variables:",
-        "variableHint": "Use <code>{{customer_name}}</code> to include the customer's name in your message.",
+        "variableHint": "Use <code>'{{customer_name}}'</code> to include the customer's name in your message.",
         "available": "Available",
         "awayActive": "Away (auto-reply active)",
         "days": {
@@ -2530,6 +2569,34 @@
       "deleting": "Deleting...",
       "saving": "Saving...",
       "saveChanges": "Save Changes"
+    },
+    "variants": {
+      "title": "Variants ({count})",
+      "add": "Add variant",
+      "addShort": "Add",
+      "update": "Update",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "empty": "No variants yet. Add one to offer different options for this product.",
+      "basePrice": "Product price",
+      "qty": "Qty: {count}",
+      "toggleActive": "Active",
+      "deleteTitle": "Delete variant",
+      "deleteConfirm": "Delete this variant? This cannot be undone.",
+      "sku": "SKU",
+      "skuRequired": "SKU is required",
+      "name": "Name",
+      "namePlaceholder": "Variant name",
+      "price": "Price (₾)",
+      "quantity": "Quantity",
+      "created": "Variant added",
+      "updated": "Variant updated",
+      "deleted": "Variant deleted",
+      "createFailed": "Could not add the variant",
+      "updateFailed": "Could not update the variant",
+      "deleteFailed": "Could not delete the variant"
     }
   },
   "clients": {
@@ -4312,7 +4379,12 @@
       "oneTime": "One-time",
       "allEmployees": "All Employees",
       "specificDepartments": "Specific Departments",
-      "confirmDelete": "Are you sure you want to delete this holiday?"
+      "confirmDelete": "Are you sure you want to delete this holiday?",
+      "created": "Holiday created",
+      "updated": "Holiday updated",
+      "deleted": "Holiday deleted",
+      "saveFailed": "Could not save the holiday",
+      "deleteFailed": "Could not delete the holiday"
     },
     "leaveTypes": {
       "title": "Leave Types",
@@ -4362,7 +4434,13 @@
       "inactiveStatus": "Inactive",
       "days": "days",
       "none": "None",
-      "confirmDelete": "Are you sure you want to delete this leave type?"
+      "confirmDelete": "Are you sure you want to delete this leave type?",
+      "created": "Leave type created",
+      "updated": "Leave type updated",
+      "deleted": "Leave type deleted",
+      "saveFailed": "Could not save the leave type",
+      "deleteFailed": "Could not delete the leave type",
+      "deleteFailedInUse": "It may be in use by existing leave requests."
     },
     "settings": {
       "title": "Leave Settings",
@@ -4417,7 +4495,8 @@
       "cancel": "Cancel",
       "leaveRequests": "Leave Requests",
       "noLeaveRequests": "No leave requests",
-      "used": "Used"
+      "used": "Used",
+      "loadFailed": "Could not load data"
     },
     "overview": {
       "links": {
@@ -4468,7 +4547,16 @@
       "submitRequest": "Submit Request",
       "cardDescription": "All your leave requests and their approval status",
       "emptyDescription": "You haven't submitted any leave requests yet",
-      "createFirst": "Create Your First Request"
+      "createFirst": "Create Your First Request",
+      "submitted": "Leave request submitted",
+      "submitFailed": "Could not submit the leave request",
+      "leaveTypeRequired": "Please select a leave type",
+      "leaveTypesLoadFailed": "Could not load leave types",
+      "noLeaveTypesAvailable": "No leave types available",
+      "cancelRequest": "Cancel request",
+      "confirmCancel": "Are you sure you want to cancel this leave request?",
+      "cancelled": "Leave request cancelled",
+      "cancelFailed": "Could not cancel the leave request"
     },
     "myBalance": {
       "title": "My Leave Balance",
@@ -4509,7 +4597,14 @@
       "commentsOptional": "Comments (Optional)",
       "commentsPlaceholder": "Add your comments here...",
       "confirmApproval": "Confirm Approval",
-      "confirmRejection": "Confirm Rejection"
+      "confirmRejection": "Confirm Rejection",
+      "approvedSuccess": "Leave request approved",
+      "rejectedSuccess": "Leave request rejected",
+      "approveFailed": "Could not approve the leave request",
+      "rejectFailed": "Could not reject the leave request",
+      "commentsRequired": "Comments (required)",
+      "rejectCommentsRequired": "Please add a comment explaining the rejection",
+      "detailsLoadFailed": "Could not load the request details"
     },
     "allRequests": {
       "title": "All Leave Requests",

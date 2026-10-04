@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslations } from "next-intl";
 import {
   useCreateQuickReply,
   useUpdateQuickReply,
@@ -39,6 +40,7 @@ const PLATFORMS: { value: QuickReplyPlatform; label: string }[] = [
 
 export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReplyFormProps) {
   const { toast } = useToast();
+  const t = useTranslations("chat.quickReplies");
   const createQuickReply = useCreateQuickReply();
   const updateQuickReply = useUpdateQuickReply();
   const { data: variables } = useQuickReplyVariables();
@@ -89,8 +91,8 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
   const handleSubmit = () => {
     if (!title.trim() || !message.trim()) {
       toast({
-        title: "Validation error",
-        description: "Title and message are required.",
+        title: t("error"),
+        description: t("required"),
         variant: "destructive",
       });
       return;
@@ -111,15 +113,14 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
         {
           onSuccess: () => {
             toast({
-              title: "Quick reply updated",
-              description: "Your changes have been saved.",
+              title: t("updated"),
             });
             onSuccess();
           },
           onError: () => {
             toast({
-              title: "Error",
-              description: "Failed to update quick reply.",
+              title: t("error"),
+              description: t("updateFailed"),
               variant: "destructive",
             });
           },
@@ -129,15 +130,14 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
       createQuickReply.mutate(data, {
         onSuccess: () => {
           toast({
-            title: "Quick reply created",
-            description: "Your new quick reply is ready to use.",
+            title: t("created"),
           });
           onSuccess();
         },
         onError: () => {
           toast({
-            title: "Error",
-            description: "Failed to create quick reply.",
+            title: t("error"),
+            description: t("createFailed"),
             variant: "destructive",
           });
         },
@@ -151,10 +151,10 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
     <div className="space-y-4">
       {/* Title */}
       <div className="space-y-2">
-        <Label htmlFor="title">Title *</Label>
+        <Label htmlFor="title">{t("fieldTitle")} *</Label>
         <Input
           id="title"
-          placeholder="e.g., Greeting, Thank you, Order status"
+          placeholder={t("fieldTitlePlaceholder")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
@@ -163,7 +163,7 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
       {/* Message */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label htmlFor="message">Message *</Label>
+          <Label htmlFor="message">{t("fieldMessage")} *</Label>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -172,7 +172,7 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left" className="max-w-xs">
-                <p className="font-medium mb-1">Available variables:</p>
+                <p className="font-medium mb-1">{t("variables")}</p>
                 <ul className="text-xs space-y-1">
                   {variables?.map((v) => (
                     <li key={v.name}>
@@ -186,7 +186,7 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
         </div>
         <Textarea
           id="message"
-          placeholder="Hi {{customer_name}}, thank you for reaching out!"
+          placeholder={t("fieldMessagePlaceholder")}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           className="min-h-[100px]"
@@ -210,7 +210,7 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
 
       {/* Shortcut */}
       <div className="space-y-2">
-        <Label htmlFor="shortcut">Shortcut (optional)</Label>
+        <Label htmlFor="shortcut">{t("fieldShortcut")}</Label>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">/</span>
           <Input
@@ -222,16 +222,16 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Type /{shortcut || "shortcut"} in the message box to quickly insert this reply
+          {t("shortcutHint", { shortcut: shortcut || t("shortcutExample") })}
         </p>
       </div>
 
       {/* Category */}
       <div className="space-y-2">
-        <Label htmlFor="category">Category (optional)</Label>
+        <Label htmlFor="category">{t("fieldCategory")}</Label>
         <Input
           id="category"
-          placeholder="e.g., Greetings, Support, Sales"
+          placeholder={t("fieldCategoryPlaceholder")}
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         />
@@ -239,7 +239,7 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
 
       {/* Platforms */}
       <div className="space-y-2">
-        <Label>Platforms</Label>
+        <Label>{t("fieldPlatforms")}</Label>
         <div className="flex flex-wrap gap-3">
           {PLATFORMS.map((platform) => (
             <label
@@ -250,7 +250,7 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
                 checked={selectedPlatforms.includes(platform.value)}
                 onCheckedChange={() => handlePlatformToggle(platform.value)}
               />
-              <span className="text-sm">{platform.label}</span>
+              <span className="text-sm">{platform.value === "all" ? t("allPlatforms") : platform.label}</span>
             </label>
           ))}
         </div>
@@ -259,11 +259,11 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
       {/* Actions */}
       <div className="flex justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel} disabled={isPending}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button onClick={handleSubmit} disabled={isPending}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {editingReply ? "Update" : "Create"}
+          {editingReply ? t("update") : t("create")}
         </Button>
       </div>
     </div>

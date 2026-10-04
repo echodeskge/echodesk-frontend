@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+import {
+  leaveAdminSettingsCreate,
+  leaveAdminSettingsList,
+  leaveAdminSettingsPartialUpdate,
+} from "@/api/generated/api"
+import { getApiErrorMessage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,12 +19,21 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 interface LeaveSettings {
   id: number
-  require_manager_approval: boolean
-  require_hr_approval: boolean
-  allow_negative_balance: boolean
-  max_negative_days: number
-  working_days_per_week: number
-  weekend_days: number[]
+  require_manager_approval?: boolean
+  require_hr_approval?: boolean
+  allow_negative_balance?: boolean
+  max_negative_days?: number
+  working_days_per_week?: number
+  weekend_days?: unknown
+}
+
+// The API treats an empty `weekend_days` list as Saturday + Sunday.
+const DEFAULT_WEEKEND_DAYS = [5, 6]
+
+function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[]
+  const results = (data as { results?: unknown } | null | undefined)?.results
+  return Array.isArray(results) ? (results as T[]) : []
 }
 
 export default function LeaveSettingsPage() {
@@ -25,6 +41,9 @@ export default function LeaveSettingsPage() {
   const [settings, setSettings] = useState<LeaveSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  // When loading fails we do not know whether a settings row exists, so
+  // saving is blocked (creating a second row for the tenant is an error).
+  const [loadFailed, setLoadFailed] = useState(false)
   const [formData, setFormData] = useState({
     require_manager_approval: true,
     require_hr_approval: false,
@@ -48,11 +67,34 @@ export default function LeaveSettingsPage() {
     fetchSettings()
   }, [])
 
+  const applySettings = (data: LeaveSettings) => {
+    const weekendDays = Array.isArray(data.weekend_days)
+      ? data.weekend_days.filter((day): day is number => typeof day === "number")
+      : []
+    setSettings(data)
+    setFormData({
+      require_manager_approval: data.require_manager_approval ?? true,
+      require_hr_approval: data.require_hr_approval ?? false,
+      allow_negative_balance: data.allow_negative_balance ?? false,
+      max_negative_days: data.max_negative_days ?? 0,
+      working_days_per_week: data.working_days_per_week ?? 5,
+      weekend_days: weekendDays.length > 0 ? weekendDays : DEFAULT_WEEKEND_DAYS,
+    })
+  }
+
   const fetchSettings = async () => {
     try {
-      // TODO: Replace with actual API call
+      // The settings endpoint is a list with at most one row per tenant.
+      const response = await leaveAdminSettingsList()
+      const existing = unwrapList<LeaveSettings>(response)[0]
+      if (existing) applySettings(existing)
+      setLoadFailed(false)
     } catch (error) {
       console.error("Failed to fetch settings:", error)
+      setLoadFailed(true)
+      toast.error(t("shared.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     } finally {
       setLoading(false)
     }
@@ -60,14 +102,34 @@ export default function LeaveSettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (saving || loadFailed) return
     setSaving(true)
 
     try {
-      // TODO: Replace with actual API call
-      alert(t("settings.savedSuccess"))
+      const payload = {
+        require_manager_approval: formData.require_manager_approval,
+        require_hr_approval: formData.require_hr_approval,
+        allow_negative_balance: formData.allow_negative_balance,
+        max_negative_days: Number.isFinite(formData.max_negative_days)
+          ? formData.max_negative_days
+          : 0,
+        working_days_per_week: Number.isFinite(formData.working_days_per_week)
+          ? formData.working_days_per_week
+          : 5,
+        weekend_days: [...formData.weekend_days].sort((a, b) => a - b),
+      }
+
+      // No row yet for this tenant -> create it; otherwise update in place.
+      const saved = settings
+        ? await leaveAdminSettingsPartialUpdate(String(settings.id), payload)
+        : await leaveAdminSettingsCreate(payload)
+      applySettings(saved)
+      toast.success(t("settings.savedSuccess"))
     } catch (error) {
       console.error("Failed to save settings:", error)
-      alert(t("settings.savedError"))
+      toast.error(t("settings.savedError"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     } finally {
       setSaving(false)
     }
@@ -155,7 +217,7 @@ export default function LeaveSettingsPage() {
                   id="max_negative_days"
                   type="number"
                   min="0"
-                  value={formData.max_negative_days}
+                  value={Number.isNaN(formData.max_negative_days) ? "" : formData.max_negative_days}
                   onChange={(e) => setFormData({ ...formData, max_negative_days: parseInt(e.target.value) })}
                 />
                 <p className="text-sm text-muted-foreground">{t("settings.maxNegativeDaysDesc")}</p>
@@ -177,7 +239,7 @@ export default function LeaveSettingsPage() {
                 type="number"
                 min="1"
                 max="7"
-                value={formData.working_days_per_week}
+                value={Number.isNaN(formData.working_days_per_week) ? "" : formData.working_days_per_week}
                 onChange={(e) => setFormData({ ...formData, working_days_per_week: parseInt(e.target.value) })}
               />
             </div>
@@ -204,7 +266,7 @@ export default function LeaveSettingsPage() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || loadFailed}>
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

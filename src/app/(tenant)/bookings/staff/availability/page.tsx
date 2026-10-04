@@ -113,7 +113,11 @@ export default function StaffAvailabilityPage() {
 
   const fetchAvailability = async () => {
     try {
-      const response = await bookingsAdminAvailabilityList(undefined, undefined, undefined, parseInt(selectedStaffId))
+      // (dayOfWeek, isAvailable, ordering, page, pageSize, search, staff) — the staff
+      // filter is the LAST argument; passing it 4th asked for "page <id>" instead.
+      const response = await bookingsAdminAvailabilityList(
+        undefined, undefined, undefined, undefined, 100, undefined, parseInt(selectedStaffId)
+      )
       setAvailability((response.results || response) as StaffAvailability[])
     } catch {
       setAvailability([])
@@ -122,7 +126,10 @@ export default function StaffAvailabilityPage() {
 
   const fetchExceptions = async () => {
     try {
-      const response = await bookingsAdminExceptionsList(undefined, undefined, undefined, parseInt(selectedStaffId))
+      // (isAvailable, ordering, page, pageSize, search, staff)
+      const response = await bookingsAdminExceptionsList(
+        undefined, undefined, undefined, 100, undefined, parseInt(selectedStaffId)
+      )
       setExceptions((response.results || response) as StaffException[])
     } catch {
       setExceptions([])

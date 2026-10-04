@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { localizedName } from "@/lib/utils"
+import { toast } from "sonner"
+import axios from "@/api/axios"
+import {
+  leaveManagerTeamRequestsApproveCreate,
+  leaveManagerTeamRequestsRejectCreate,
+  leaveManagerTeamRequestsRetrieve,
+} from "@/api/generated/api"
+import { getApiErrorMessage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -26,25 +33,32 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
+// Shape of LeaveRequestListSerializer: flat ids/names. `reason` and the
+// employee e-mail only exist on the detail endpoint and are loaded when the
+// approve/reject dialog opens.
 interface LeaveRequest {
   id: number
-  employee: {
-    id: number
-    first_name: string
-    last_name: string
-    email: string
-  }
-  leave_type: {
-    id: number
-    name: { en: string; ka: string }
-    color: string
-  }
+  employee: number
+  employee_name: string
+  leave_type: number
+  leave_type_name: string
+  leave_type_color?: string
   start_date: string
   end_date: string
   total_days: string
-  reason: string
   status: string
   created_at: string
+}
+
+interface LeaveRequestExtra {
+  reason?: string
+  employee_email?: string
+}
+
+function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[]
+  const results = (data as { results?: unknown } | null | undefined)?.results
+  return Array.isArray(results) ? (results as T[]) : []
 }
 
 export default function TeamRequestsPage() {
@@ -55,6 +69,9 @@ export default function TeamRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null)
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null)
   const [comments, setComments] = useState("")
+  const [totalCount, setTotalCount] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+  const [selectedExtra, setSelectedExtra] = useState<LeaveRequestExtra | null>(null)
 
   useEffect(() => {
     fetchRequests()
@@ -62,39 +79,85 @@ export default function TeamRequestsPage() {
 
   const fetchRequests = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await leaveManagerTeamRequestsList()
-      setRequests([])
+      // Direct call: the generated list function cannot send `lang`, which the
+      // API uses to localise `leave_type_name`.
+      const response = await axios.get("/api/leave/manager/team-requests/", {
+        params: { lang: locale, page_size: 100 },
+      })
+      const list = unwrapList<LeaveRequest>(response.data)
+      setRequests(list)
+      const count = (response.data as { count?: unknown } | null)?.count
+      setTotalCount(typeof count === "number" ? count : list.length)
     } catch (error) {
+      // Non-managers get 403 here: show the empty state and say why.
       console.error("Failed to fetch requests:", error)
+      setRequests([])
+      setTotalCount(0)
+      toast.error(t("shared.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleAction = async () => {
-    if (!selectedRequest || !actionType) return
+  const closeDialog = () => {
+    setSelectedRequest(null)
+    setActionType(null)
+    setComments("")
+    setSelectedExtra(null)
+  }
 
+  const handleAction = async () => {
+    if (!selectedRequest || !actionType || submitting) return
+
+    const trimmed = comments.trim()
+    // The API rejects a rejection without comments.
+    if (actionType === "reject" && !trimmed) {
+      toast.error(t("teamRequests.rejectCommentsRequired"))
+      return
+    }
+
+    setSubmitting(true)
     try {
-      // TODO: Replace with actual API call
+      const id = String(selectedRequest.id)
       if (actionType === "approve") {
-        // await leaveManagerTeamRequestsApprove(selectedRequest.id, { comments })
+        await leaveManagerTeamRequestsApproveCreate(id, { action: "approve", comments: trimmed })
+        toast.success(t("teamRequests.approvedSuccess"))
       } else {
-        // await leaveManagerTeamRequestsReject(selectedRequest.id, { comments })
+        await leaveManagerTeamRequestsRejectCreate(id, { action: "reject", comments: trimmed })
+        toast.success(t("teamRequests.rejectedSuccess"))
       }
-      setSelectedRequest(null)
-      setActionType(null)
-      setComments("")
-      fetchRequests()
+      closeDialog()
+      await fetchRequests()
     } catch (error) {
+      // Keep the dialog open so the user sees the reason and can retry.
       console.error(`Failed to ${actionType} request:`, error)
+      toast.error(
+        actionType === "approve" ? t("teamRequests.approveFailed") : t("teamRequests.rejectFailed"),
+        { description: getApiErrorMessage(error) || undefined }
+      )
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const openActionDialog = (request: LeaveRequest, action: "approve" | "reject") => {
+  const openActionDialog = async (request: LeaveRequest, action: "approve" | "reject") => {
     setSelectedRequest(request)
     setActionType(action)
     setComments("")
+    setSelectedExtra(null)
+
+    // The list has no `reason`; load it so the approver can read it.
+    try {
+      const detail = await leaveManagerTeamRequestsRetrieve(String(request.id))
+      setSelectedExtra({ reason: detail.reason, employee_email: detail.employee_email })
+    } catch (error) {
+      console.error("Failed to load request details:", error)
+      toast.error(t("teamRequests.detailsLoadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -149,7 +212,7 @@ export default function TeamRequestsPage() {
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{requests.length}</div>
+            <div className="text-2xl font-bold">{totalCount}</div>
             <p className="text-xs text-muted-foreground">{t("teamRequests.fromYourTeam")}</p>
           </CardContent>
         </Card>
@@ -194,7 +257,6 @@ export default function TeamRequestsPage() {
                   <TableHead>{t("shared.endDate")}</TableHead>
                   <TableHead>{t("shared.days")}</TableHead>
                   <TableHead>{t("shared.statusLabel")}</TableHead>
-                  <TableHead>{t("shared.reason")}</TableHead>
                   <TableHead>{t("shared.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -202,21 +264,14 @@ export default function TeamRequestsPage() {
                 {requests.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {request.employee.first_name} {request.employee.last_name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {request.employee.email}
-                        </div>
-                      </div>
+                      <div className="font-medium">{request.employee_name}</div>
                     </TableCell>
                     <TableCell>
                       <Badge
-                        style={{ backgroundColor: request.leave_type.color }}
+                        style={{ backgroundColor: request.leave_type_color || undefined }}
                         className="text-white"
                       >
-                        {localizedName(request.leave_type.name, locale)}
+                        {request.leave_type_name}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -227,9 +282,6 @@ export default function TeamRequestsPage() {
                     </TableCell>
                     <TableCell>{request.total_days}</TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {request.reason || "-"}
-                    </TableCell>
                     <TableCell>
                       {request.status === "pending" && (
                         <div className="flex gap-2">
@@ -262,10 +314,8 @@ export default function TeamRequestsPage() {
 
       <Dialog
         open={selectedRequest !== null}
-        onOpenChange={() => {
-          setSelectedRequest(null)
-          setActionType(null)
-          setComments("")
+        onOpenChange={(open) => {
+          if (!open) closeDialog()
         }}
       >
         <DialogContent>
@@ -273,34 +323,40 @@ export default function TeamRequestsPage() {
             <DialogTitle>
               {actionType === "approve" ? t("teamRequests.approveDialogTitle") : t("teamRequests.rejectDialogTitle")}
             </DialogTitle>
-            <DialogDescription>
-              {selectedRequest && (
-                <div className="space-y-2 mt-2">
-                  <p>
-                    <strong>{t("shared.employee")}:</strong> {selectedRequest.employee.first_name}{" "}
-                    {selectedRequest.employee.last_name}
-                  </p>
-                  <p>
-                    <strong>{t("shared.leaveType")}:</strong> {localizedName(selectedRequest.leave_type.name, locale)}
-                  </p>
-                  <p>
-                    <strong>{t("teamRequests.duration")}:</strong>{" "}
-                    {new Date(selectedRequest.start_date).toLocaleDateString()} -{" "}
-                    {new Date(selectedRequest.end_date).toLocaleDateString()} (
-                    {t("teamRequests.totalDays", { count: selectedRequest.total_days })})
-                  </p>
-                  {selectedRequest.reason && (
+            <DialogDescription asChild>
+              <div className="text-sm text-muted-foreground">
+                {selectedRequest && (
+                  <div className="space-y-2 mt-2">
                     <p>
-                      <strong>{t("shared.reason")}:</strong> {selectedRequest.reason}
+                      <strong>{t("shared.employee")}:</strong> {selectedRequest.employee_name}
+                      {selectedExtra?.employee_email ? ` (${selectedExtra.employee_email})` : ""}
                     </p>
-                  )}
-                </div>
-              )}
+                    <p>
+                      <strong>{t("shared.leaveType")}:</strong> {selectedRequest.leave_type_name}
+                    </p>
+                    <p>
+                      <strong>{t("teamRequests.duration")}:</strong>{" "}
+                      {new Date(selectedRequest.start_date).toLocaleDateString()} -{" "}
+                      {new Date(selectedRequest.end_date).toLocaleDateString()} (
+                      {t("teamRequests.totalDays", { count: selectedRequest.total_days })})
+                    </p>
+                    {selectedExtra?.reason && (
+                      <p>
+                        <strong>{t("shared.reason")}:</strong> {selectedExtra.reason}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="comments">{t("teamRequests.commentsOptional")}</Label>
+              <Label htmlFor="comments">
+                {actionType === "reject"
+                  ? t("teamRequests.commentsRequired")
+                  : t("teamRequests.commentsOptional")}
+              </Label>
               <Textarea
                 id="comments"
                 placeholder={t("teamRequests.commentsPlaceholder")}
@@ -311,19 +367,13 @@ export default function TeamRequestsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSelectedRequest(null)
-                setActionType(null)
-                setComments("")
-              }}
-            >
+            <Button variant="outline" onClick={closeDialog}>
               {t("shared.cancel")}
             </Button>
             <Button
               variant={actionType === "approve" ? "default" : "destructive"}
               onClick={handleAction}
+              disabled={submitting}
             >
               {actionType === "approve" ? (
                 <>

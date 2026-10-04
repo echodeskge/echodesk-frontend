@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Plus, Pencil, Trash2, X, Check } from "lucide-react";
 import {
   ecommerceAdminVariantsList,
@@ -38,6 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface VariantManagerProps {
   productId: number;
@@ -52,6 +54,7 @@ interface VariantManagerProps {
 type VariantCreatePayload = ProductVariantRequest & { product: number };
 
 export function VariantManager({ productId }: VariantManagerProps) {
+  const t = useTranslations("products.variants");
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingVariantId, setEditingVariantId] = useState<number | null>(null);
@@ -82,11 +85,11 @@ export function VariantManager({ productId }: VariantManagerProps) {
       ecommerceAdminVariantsCreate(data as unknown as ProductVariantRequest),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-variants", productId] });
-      toast.success("Variant created successfully");
+      toast.success(t("created"));
       setShowAddForm(false);
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to create variant");
+      toast.error(getApiErrorMessage(error, t("createFailed")));
     },
   });
 
@@ -96,11 +99,11 @@ export function VariantManager({ productId }: VariantManagerProps) {
       ecommerceAdminVariantsPartialUpdate(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-variants", productId] });
-      toast.success("Variant updated successfully");
+      toast.success(t("updated"));
       setEditingVariantId(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update variant");
+      toast.error(getApiErrorMessage(error, t("updateFailed")));
     },
   });
 
@@ -109,11 +112,11 @@ export function VariantManager({ productId }: VariantManagerProps) {
     mutationFn: (id: number) => ecommerceAdminVariantsDestroy(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-variants", productId] });
-      toast.success("Variant deleted successfully");
+      toast.success(t("deleted"));
       setDeleteVariantId(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to delete variant");
+      toast.error(getApiErrorMessage(error, t("deleteFailed")));
     },
   });
 
@@ -141,7 +144,7 @@ export function VariantManager({ productId }: VariantManagerProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Variants ({variants.length})</h3>
+        <h3 className="text-sm font-semibold">{t("title", { count: variants.length })}</h3>
         {!showAddForm && (
           <Button
             type="button"
@@ -150,7 +153,7 @@ export function VariantManager({ productId }: VariantManagerProps) {
             onClick={() => setShowAddForm(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
-            Add Variant
+            {t("add")}
           </Button>
         )}
       </div>
@@ -169,7 +172,7 @@ export function VariantManager({ productId }: VariantManagerProps) {
       {/* Variants List */}
       {variants.length === 0 && !showAddForm && (
         <p className="text-sm text-muted-foreground py-2">
-          No variants yet. Add one to offer different options for this product.
+          {t("empty")}
         </p>
       )}
 
@@ -200,16 +203,16 @@ export function VariantManager({ productId }: VariantManagerProps) {
                     : variant.name || "--"}
                 </span>
                 <span className="text-right">
-                  {variant.price ? `${variant.price} GEL` : "Base price"}
+                  {variant.price ? `${variant.price} ₾` : t("basePrice")}
                 </span>
                 <span className="text-right text-muted-foreground">
-                  Qty: {variant.quantity ?? 0}
+                  {t("qty", { count: variant.quantity ?? 0 })}
                 </span>
               </div>
               <Switch
                 checked={variant.is_active !== false}
                 onCheckedChange={() => handleToggleActive(variant)}
-                aria-label="Toggle active"
+                aria-label={t("toggleActive")}
               />
               <Button
                 type="button"
@@ -243,18 +246,18 @@ export function VariantManager({ productId }: VariantManagerProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Variant</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this variant? This action cannot be undone.
+              {t("deleteConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {deleteVariant.isPending ? "Deleting..." : "Delete"}
+              {deleteVariant.isPending ? t("deleting") : t("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -273,6 +276,7 @@ interface VariantFormProps {
 }
 
 function VariantForm({ initialData, onSubmit, onCancel, isPending }: VariantFormProps) {
+  const t = useTranslations("products.variants");
   const form = useForm<ProductVariantRequest>({
     defaultValues: {
       sku: initialData?.sku ?? "",
@@ -284,20 +288,42 @@ function VariantForm({ initialData, onSubmit, onCancel, isPending }: VariantForm
   });
 
   const handleFormSubmit = (data: ProductVariantRequest) => {
-    onSubmit(data);
+    onSubmit({
+      ...data,
+      sku: (data.sku || "").trim(),
+      // An empty price means "use the product's price" — the API wants null,
+      // not an empty string.
+      price: data.price === "" || data.price == null ? null : data.price,
+    } as ProductVariantRequest);
   };
+
+  const submit = form.handleSubmit(handleFormSubmit);
 
   return (
     <div className="rounded-md border p-4 bg-muted/30">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-3">
+        {/* Not a <form>: this sits inside the product's own form, and a form
+            nested in a form submits the outer one (the page reloaded with the
+            variant fields in the URL). Enter in a field saves the variant. */}
+        <div
+          role="group"
+          className="space-y-3"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && (event.target as HTMLElement).tagName === "INPUT") {
+              event.preventDefault();
+              event.stopPropagation();
+              submit();
+            }
+          }}
+        >
           <div className="grid grid-cols-2 gap-3">
             <FormField
               control={form.control}
               name="sku"
+              rules={{ validate: (value) => !!String(value || "").trim() || t("skuRequired") }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">SKU *</FormLabel>
+                  <FormLabel className="text-xs">{t("sku")} *</FormLabel>
                   <FormControl>
                     <Input placeholder="VARIANT-SKU" {...field} className="h-8 text-sm" />
                   </FormControl>
@@ -311,10 +337,10 @@ function VariantForm({ initialData, onSubmit, onCancel, isPending }: VariantForm
               name={"name" as keyof ProductVariantRequest}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Name</FormLabel>
+                  <FormLabel className="text-xs">{t("name")}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Variant name"
+                      placeholder={t("namePlaceholder")}
                       value={
                         typeof field.value === "object" && field.value !== null
                           ? (field.value as Record<string, string>).en || ""
@@ -341,7 +367,7 @@ function VariantForm({ initialData, onSubmit, onCancel, isPending }: VariantForm
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Price (GEL)</FormLabel>
+                  <FormLabel className="text-xs">{t("price")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -360,7 +386,7 @@ function VariantForm({ initialData, onSubmit, onCancel, isPending }: VariantForm
               name="quantity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Quantity</FormLabel>
+                  <FormLabel className="text-xs">{t("quantity")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -384,14 +410,14 @@ function VariantForm({ initialData, onSubmit, onCancel, isPending }: VariantForm
               disabled={isPending}
             >
               <X className="h-4 w-4 mr-1" />
-              Cancel
+              {t("cancel")}
             </Button>
-            <Button type="submit" size="sm" disabled={isPending}>
+            <Button type="button" size="sm" disabled={isPending} onClick={() => submit()}>
               <Check className="h-4 w-4 mr-1" />
-              {isPending ? "Saving..." : initialData ? "Update" : "Add"}
+              {isPending ? t("saving") : initialData ? t("update") : t("addShort")}
             </Button>
           </div>
-        </form>
+        </div>
       </Form>
     </div>
   );

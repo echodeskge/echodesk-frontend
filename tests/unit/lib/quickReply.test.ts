@@ -49,7 +49,8 @@ describe("matchQuickReplies", () => {
     const a = makeQR({ id: 1, title: "Thanks", message: "Thank you", shortcut: "thanks" });
     const b = makeQR({ id: 2, title: "Other", message: "no", shortcut: "thx" });
     expect(matchQuickReplies([a, b], "/than").map((r) => r.id)).toEqual([1]);
-    expect(matchQuickReplies([a, b], "/")).toEqual([]); // slash with no body
+    // A bare slash opens the list of saved replies
+    expect(matchQuickReplies([a, b], "/").length).toBe(2);
   });
 
   it("excludes a reply whose message is already fully typed", () => {

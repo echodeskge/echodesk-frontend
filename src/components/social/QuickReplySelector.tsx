@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslations } from "next-intl";
 import {
   useQuickReplies,
   useDeleteQuickReply,
@@ -55,6 +56,7 @@ export function QuickReplySelector({
   companyName,
 }: QuickReplySelectorProps) {
   const { toast } = useToast();
+  const t = useTranslations("chat.quickReplies");
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingReply, setEditingReply] = useState<QuickReply | null>(null);
@@ -104,11 +106,11 @@ export function QuickReplySelector({
     e.stopPropagation();
     deleteQuickReply.mutate(id, {
       onSuccess: () =>
-        toast({ title: "Quick reply deleted", description: "The quick reply has been removed." }),
+        toast({ title: t("deleted") }),
       onError: () =>
         toast({
-          title: "Error",
-          description: "Failed to delete quick reply.",
+          title: t("error"),
+          description: t("deleteFailed"),
           variant: "destructive",
         }),
     });
@@ -212,7 +214,7 @@ export function QuickReplySelector({
             size="icon"
             className="h-7 w-7"
             aria-label={
-              isExpanded ? `Hide full message of ${reply.title}` : `Show full message of ${reply.title}`
+              isExpanded ? `${t("hideFull")}: ${reply.title}` : `${t("showFull")}: ${reply.title}`
             }
             onClick={(e) => toggleExpanded(e, reply.id)}
           >
@@ -223,7 +225,7 @@ export function QuickReplySelector({
           variant="ghost"
           size="icon"
           className="h-7 w-7"
-          aria-label={`Edit ${reply.title}`}
+          aria-label={`${t("edit")}: ${reply.title}`}
           onClick={(e) => handleEdit(e, reply)}
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -232,7 +234,7 @@ export function QuickReplySelector({
           variant="ghost"
           size="icon"
           className="h-7 w-7 text-destructive hover:text-destructive"
-          aria-label={`Delete ${reply.title}`}
+          aria-label={`${t("delete")}: ${reply.title}`}
           disabled={deleteQuickReply.isPending}
           onClick={(e) => handleDelete(e, reply.id)}
         >
@@ -255,7 +257,7 @@ export function QuickReplySelector({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" title="Quick Replies">
+        <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0" title={t("title")}>
           <Zap className="h-4 w-4" />
         </Button>
       </DialogTrigger>
@@ -263,14 +265,14 @@ export function QuickReplySelector({
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <MessageSquareText className="h-5 w-5" />
-            Quick Replies
+            {t("title")}
           </DialogTitle>
           <DialogDescription>
             {isEditing
               ? editingReply
-                ? "Edit this shared template."
-                : "Create a new shared template."
-              : "Shared team templates — click one to insert it into your reply."}
+                ? t("editDescription")
+                : t("createDescription")
+              : t("description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -283,7 +285,7 @@ export function QuickReplySelector({
               onClick={closeForm}
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("back")}
             </Button>
             <div className="min-h-0 flex-1 overflow-y-auto pr-1">
               <QuickReplyForm
@@ -300,7 +302,7 @@ export function QuickReplySelector({
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search quick replies..."
+                  placeholder={t("searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -308,7 +310,7 @@ export function QuickReplySelector({
               </div>
               <Button onClick={() => setIsCreating(true)} className="shrink-0 gap-1">
                 <Plus className="h-4 w-4" />
-                New
+                {t("new")}
               </Button>
             </div>
 
@@ -325,13 +327,13 @@ export function QuickReplySelector({
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {searchQuery
-                      ? "No quick replies match your search."
-                      : "No quick replies yet."}
+                      ? t("noMatches")
+                      : t("empty")}
                   </p>
                   {!searchQuery && (
                     <Button variant="outline" size="sm" onClick={() => setIsCreating(true)}>
                       <Plus className="mr-1 h-4 w-4" />
-                      Create your first one
+                      {t("createFirst")}
                     </Button>
                   )}
                 </div>

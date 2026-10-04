@@ -2,26 +2,40 @@
 
 import { useState, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { localizedName } from "@/lib/utils"
+import { toast } from "sonner"
+import axios from "@/api/axios"
+import { getApiErrorMessage } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Loader2, TrendingUp, TrendingDown } from "lucide-react"
 
+// Shape of LeaveBalanceListSerializer: `leave_type` is an id, the name/code
+// are flat fields and the remaining days are called `available_days`.
+// All day counts are decimal strings.
 interface LeaveBalance {
   id: number
-  leave_type: {
-    id: number
-    name: { en: string; ka: string }
-    code: string
-    color: string
-  }
+  leave_type: number
+  leave_type_name: string
+  leave_type_code: string
   year: number
   allocated_days: string
   used_days: string
   carried_forward_days: string
   pending_days: string
-  remaining_days: string
+  available_days: string
+  total_allocated: string
+}
+
+function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[]
+  const results = (data as { results?: unknown } | null | undefined)?.results
+  return Array.isArray(results) ? (results as T[]) : []
+}
+
+const toNumber = (value: string | number | null | undefined) => {
+  const parsed = parseFloat(String(value ?? ""))
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 export default function MyBalancePage() {
@@ -37,30 +51,37 @@ export default function MyBalancePage() {
 
   const fetchBalances = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await leaveEmployeeMyBalanceList({ year: currentYear })
-      setBalances([])
+      // Direct call: the generated list function has no `year` / `lang` params.
+      const response = await axios.get("/api/leave/employee/my-balance/", {
+        params: { year: currentYear, lang: locale, page_size: 100 },
+      })
+      setBalances(unwrapList<LeaveBalance>(response.data))
     } catch (error) {
       console.error("Failed to fetch balances:", error)
+      setBalances([])
+      toast.error(t("shared.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const calculatePercentage = (used: string, total: string) => {
-    const usedNum = parseFloat(used)
-    const totalNum = parseFloat(total)
-    if (totalNum === 0) return 0
-    return Math.round((usedNum / totalNum) * 100)
+    const usedNum = toNumber(used)
+    const totalNum = toNumber(total)
+    if (totalNum <= 0) return 0
+    return Math.min(100, Math.round((usedNum / totalNum) * 100))
   }
 
   const getTotalStats = () => {
     const total = balances.reduce(
       (acc, balance) => {
-        acc.allocated += parseFloat(balance.allocated_days)
-        acc.used += parseFloat(balance.used_days)
-        acc.pending += parseFloat(balance.pending_days)
-        acc.remaining += parseFloat(balance.remaining_days)
+        // Allocation for the year includes days carried forward.
+        acc.allocated += toNumber(balance.total_allocated)
+        acc.used += toNumber(balance.used_days)
+        acc.pending += toNumber(balance.pending_days)
+        acc.remaining += toNumber(balance.available_days)
         return acc
       },
       { allocated: 0, used: 0, pending: 0, remaining: 0 }
@@ -150,25 +171,17 @@ export default function MyBalancePage() {
           {balances.map((balance) => {
             const percentage = calculatePercentage(
               balance.used_days,
-              balance.allocated_days
+              balance.total_allocated
             )
-            const remaining = parseFloat(balance.remaining_days)
+            const remaining = toNumber(balance.available_days)
 
             return (
               <Card key={balance.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: balance.leave_type.color }}
-                      />
-                      <div>
-                        <CardTitle>{localizedName(balance.leave_type.name, locale)}</CardTitle>
-                        <CardDescription>
-                          {balance.leave_type.code}
-                        </CardDescription>
-                      </div>
+                    <div>
+                      <CardTitle>{balance.leave_type_name}</CardTitle>
+                      <CardDescription>{balance.leave_type_code}</CardDescription>
                     </div>
                     <Badge
                       variant={remaining > 0 ? "default" : "secondary"}
@@ -183,7 +196,7 @@ export default function MyBalancePage() {
                     <div className="flex justify-between text-sm">
                       <span>{t("myBalance.usage")}</span>
                       <span className="font-medium">
-                        {t("myBalance.usageValue", { used: balance.used_days, allocated: balance.allocated_days })}
+                        {t("myBalance.usageValue", { used: balance.used_days, allocated: balance.total_allocated })}
                       </span>
                     </div>
                     <Progress value={percentage} className="h-2" />

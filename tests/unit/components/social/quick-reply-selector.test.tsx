@@ -15,6 +15,16 @@ const mockDelete = vi.fn();
 
 let mockReplies: QuickReply[] = [];
 
+// Real English strings, so the test reads the labels a user sees.
+vi.mock("next-intl", async () => {
+  const messages = (await import("@/i18n/messages/en.json")).default as unknown as {
+    chat: { quickReplies: Record<string, string> };
+  };
+  return {
+    useTranslations: () => (key: string) => messages.chat.quickReplies[key] ?? key,
+  };
+});
+
 vi.mock("@/hooks/api/useSocial", () => ({
   useQuickReplies: () => ({ data: mockReplies, isLoading: false }),
   useDeleteQuickReply: () => ({ mutate: mockDelete, isPending: false }),
@@ -73,13 +83,13 @@ describe("QuickReplySelector eye toggle", () => {
     await openDialog(user);
 
     expect(
-      screen.getByRole("button", { name: "Show full message of Long" })
+      screen.getByRole("button", { name: "Show full message: Long" })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Show full message of Multiline" })
+      screen.getByRole("button", { name: "Show full message: Multiline" })
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Show full message of Short" })
+      screen.queryByRole("button", { name: "Show full message: Short" })
     ).not.toBeInTheDocument();
   });
 
@@ -93,12 +103,12 @@ describe("QuickReplySelector eye toggle", () => {
     const message = screen.getByText(LONG_MESSAGE);
     expect(message).toHaveClass("line-clamp-2");
 
-    await user.click(screen.getByRole("button", { name: "Show full message of Long" }));
+    await user.click(screen.getByRole("button", { name: "Show full message: Long" }));
     expect(message).not.toHaveClass("line-clamp-2");
     expect(message).toHaveClass("whitespace-pre-wrap");
     expect(onSelect).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Hide full message of Long" }));
+    await user.click(screen.getByRole("button", { name: "Hide full message: Long" }));
     expect(message).toHaveClass("line-clamp-2");
     expect(onSelect).not.toHaveBeenCalled();
   });

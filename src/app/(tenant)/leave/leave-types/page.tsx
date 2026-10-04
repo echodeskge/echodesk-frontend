@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { localizedName } from "@/lib/utils"
+import { toast } from "sonner"
+import { getApiErrorMessage, localizedName } from "@/lib/utils"
+import {
+  leaveAdminLeaveTypesCreate,
+  leaveAdminLeaveTypesDestroy,
+  leaveAdminLeaveTypesList,
+  leaveAdminLeaveTypesRetrieve,
+  leaveAdminLeaveTypesUpdate,
+} from "@/api/generated/api"
+import type { CalculationMethodEnum } from "@/api/generated/interfaces"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -26,7 +35,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import {
   Select,
@@ -36,21 +44,41 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+type LocalizedText = { en?: string; ka?: string } | string | null | undefined
+
+// The list endpoint (LeaveTypeListSerializer) returns only the first block of
+// fields; the allocation fields come from the detail endpoint and are merged
+// in after the list loads.
 interface LeaveType {
   id: number
-  name: { en: string; ka: string }
+  name: LocalizedText
+  name_display?: string
   code: string
-  description: { en: string; ka: string }
-  is_paid: boolean
-  requires_approval: boolean
-  calculation_method: string
-  default_days_per_year: string
-  accrual_rate_per_month: string
-  max_carry_forward_days: number
-  carry_forward_expiry_months: number
-  color: string
-  is_active: boolean
-  sort_order: number
+  is_paid?: boolean
+  requires_approval?: boolean
+  color?: string
+  is_active?: boolean
+  sort_order?: number
+  description?: LocalizedText
+  calculation_method?: CalculationMethodEnum
+  default_days_per_year?: string
+  accrual_rate_per_month?: string
+  max_carry_forward_days?: number
+  carry_forward_expiry_months?: number
+}
+
+const DEFAULT_COLOR = "#3B82F6"
+
+function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[]
+  const results = (data as { results?: unknown } | null | undefined)?.results
+  return Array.isArray(results) ? (results as T[]) : []
+}
+
+function textPart(value: LocalizedText, key: "en" | "ka"): string {
+  if (!value) return ""
+  if (typeof value === "string") return value
+  return value[key] || ""
 }
 
 export default function LeaveTypesPage() {
@@ -60,6 +88,8 @@ export default function LeaveTypesPage() {
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingType, setEditingType] = useState<LeaveType | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [busyId, setBusyId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     name_en: "",
     name_ka: "",
@@ -68,7 +98,7 @@ export default function LeaveTypesPage() {
     description_ka: "",
     is_paid: true,
     requires_approval: true,
-    calculation_method: "annual",
+    calculation_method: "annual" as CalculationMethodEnum,
     default_days_per_year: "0",
     accrual_rate_per_month: "0",
     max_carry_forward_days: 0,
@@ -84,11 +114,34 @@ export default function LeaveTypesPage() {
 
   const fetchLeaveTypes = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await leaveAdminLeaveTypesList()
-      setLeaveTypes([])
+      // Positional: (ordering, page, pageSize, search)
+      const response = await leaveAdminLeaveTypesList(undefined, undefined, 100)
+      const list = unwrapList<LeaveType>(response)
+
+      // The list omits calculation method / day allocations; load each detail.
+      let detailFailure: unknown = null
+      const details = await Promise.all(
+        list.map((item) =>
+          leaveAdminLeaveTypesRetrieve(String(item.id)).catch((error: unknown) => {
+            detailFailure = error
+            return null
+          })
+        )
+      )
+      setLeaveTypes(list.map((item, index) => (details[index] as LeaveType | null) ?? item))
+
+      if (detailFailure) {
+        console.error("Failed to fetch leave type details:", detailFailure)
+        toast.error(t("shared.loadFailed"), {
+          description: getApiErrorMessage(detailFailure) || undefined,
+        })
+      }
     } catch (error) {
       console.error("Failed to fetch leave types:", error)
+      setLeaveTypes([])
+      toast.error(t("shared.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     } finally {
       setLoading(false)
     }
@@ -96,56 +149,84 @@ export default function LeaveTypesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
     try {
-      const payload: any = {
-        name: { en: formData.name_en, ka: formData.name_ka },
-        code: formData.code,
+      const payload = {
+        name: { en: formData.name_en.trim(), ka: formData.name_ka.trim() },
+        code: formData.code.trim(),
         description: { en: formData.description_en, ka: formData.description_ka },
         is_paid: formData.is_paid,
         requires_approval: formData.requires_approval,
         calculation_method: formData.calculation_method,
-        default_days_per_year: formData.default_days_per_year,
-        accrual_rate_per_month: formData.accrual_rate_per_month,
-        max_carry_forward_days: formData.max_carry_forward_days,
-        carry_forward_expiry_months: formData.carry_forward_expiry_months,
-        color: formData.color,
+        default_days_per_year: formData.default_days_per_year || "0",
+        accrual_rate_per_month: formData.accrual_rate_per_month || "0",
+        max_carry_forward_days: formData.max_carry_forward_days || 0,
+        carry_forward_expiry_months: formData.carry_forward_expiry_months || 0,
+        color: formData.color || DEFAULT_COLOR,
         is_active: formData.is_active,
-        sort_order: formData.sort_order,
+        sort_order: formData.sort_order || 0,
       }
 
       if (editingType) {
-        // await leaveAdminLeaveTypesUpdate(editingType.id, payload)
+        await leaveAdminLeaveTypesUpdate(String(editingType.id), payload)
+        toast.success(t("leaveTypes.updated"))
       } else {
-        // await leaveAdminLeaveTypesCreate(payload)
+        await leaveAdminLeaveTypesCreate(payload)
+        toast.success(t("leaveTypes.created"))
       }
 
       setIsDialogOpen(false)
       setEditingType(null)
-      fetchLeaveTypes()
       resetForm()
+      await fetchLeaveTypes()
     } catch (error) {
+      // Keep the dialog open so the user can fix the input and retry.
       console.error("Failed to save leave type:", error)
+      toast.error(t("leaveTypes.saveFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const handleEdit = (leaveType: LeaveType) => {
+  const handleEdit = async (row: LeaveType) => {
+    let leaveType = row
+    // A row without allocation fields means its detail did not load; a full
+    // update (PUT) needs them, so fetch before opening the form.
+    if (row.calculation_method === undefined) {
+      setBusyId(row.id)
+      try {
+        leaveType = (await leaveAdminLeaveTypesRetrieve(String(row.id))) as LeaveType
+      } catch (error) {
+        console.error("Failed to load leave type:", error)
+        toast.error(t("shared.loadFailed"), {
+          description: getApiErrorMessage(error) || undefined,
+        })
+        return
+      } finally {
+        setBusyId(null)
+      }
+    }
+
     setEditingType(leaveType)
     setFormData({
-      name_en: leaveType.name.en,
-      name_ka: leaveType.name.ka,
+      name_en: textPart(leaveType.name, "en"),
+      name_ka: textPart(leaveType.name, "ka"),
       code: leaveType.code,
-      description_en: leaveType.description.en || "",
-      description_ka: leaveType.description.ka || "",
-      is_paid: leaveType.is_paid,
-      requires_approval: leaveType.requires_approval,
-      calculation_method: leaveType.calculation_method,
-      default_days_per_year: leaveType.default_days_per_year,
-      accrual_rate_per_month: leaveType.accrual_rate_per_month,
-      max_carry_forward_days: leaveType.max_carry_forward_days,
-      carry_forward_expiry_months: leaveType.carry_forward_expiry_months,
-      color: leaveType.color,
-      is_active: leaveType.is_active,
-      sort_order: leaveType.sort_order,
+      description_en: textPart(leaveType.description, "en"),
+      description_ka: textPart(leaveType.description, "ka"),
+      is_paid: leaveType.is_paid ?? true,
+      requires_approval: leaveType.requires_approval ?? true,
+      calculation_method: leaveType.calculation_method ?? "annual",
+      default_days_per_year: leaveType.default_days_per_year ?? "0",
+      accrual_rate_per_month: leaveType.accrual_rate_per_month ?? "0",
+      max_carry_forward_days: leaveType.max_carry_forward_days ?? 0,
+      carry_forward_expiry_months: leaveType.carry_forward_expiry_months ?? 0,
+      color: leaveType.color || DEFAULT_COLOR,
+      is_active: leaveType.is_active ?? true,
+      sort_order: leaveType.sort_order ?? 0,
     })
     setIsDialogOpen(true)
   }
@@ -153,12 +234,31 @@ export default function LeaveTypesPage() {
   const handleDelete = async (id: number) => {
     if (!confirm(t("leaveTypes.confirmDelete"))) return
 
+    setBusyId(id)
     try {
-      // await leaveAdminLeaveTypesDelete(id)
-      fetchLeaveTypes()
+      await leaveAdminLeaveTypesDestroy(String(id))
+      toast.success(t("leaveTypes.deleted"))
+      await fetchLeaveTypes()
     } catch (error) {
       console.error("Failed to delete leave type:", error)
+      toast.error(t("leaveTypes.deleteFailed"), {
+        description: getApiErrorMessage(error, t("leaveTypes.deleteFailedInUse")),
+      })
+    } finally {
+      setBusyId(null)
     }
+  }
+
+  const typeName = (type: LeaveType) =>
+    typeof type.name === "string"
+      ? type.name
+      : localizedName(type.name, locale) || type.name_display || type.code
+
+  const methodLabel = (method?: string) => {
+    if (method === "annual") return t("leaveTypes.annualAllocation")
+    if (method === "accrual") return t("leaveTypes.accrualBased")
+    if (method === "manual") return t("leaveTypes.manualAssignment")
+    return "-"
   }
 
   const resetForm = () => {
@@ -260,6 +360,7 @@ export default function LeaveTypesPage() {
                         setFormData({ ...formData, code: e.target.value })
                       }
                       placeholder={t("leaveTypes.codePlaceholder")}
+                      maxLength={20}
                       required
                     />
                   </div>
@@ -281,7 +382,10 @@ export default function LeaveTypesPage() {
                   <Select
                     value={formData.calculation_method}
                     onValueChange={(value) =>
-                      setFormData({ ...formData, calculation_method: value })
+                      setFormData({
+                        ...formData,
+                        calculation_method: value as CalculationMethodEnum,
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -304,6 +408,8 @@ export default function LeaveTypesPage() {
                       id="default_days_per_year"
                       type="number"
                       step="0.5"
+                      min="0.5"
+                      required
                       value={formData.default_days_per_year}
                       onChange={(e) =>
                         setFormData({
@@ -324,6 +430,8 @@ export default function LeaveTypesPage() {
                       id="accrual_rate_per_month"
                       type="number"
                       step="0.01"
+                      min="0.01"
+                      required
                       value={formData.accrual_rate_per_month}
                       onChange={(e) =>
                         setFormData({
@@ -343,11 +451,12 @@ export default function LeaveTypesPage() {
                     <Input
                       id="max_carry_forward_days"
                       type="number"
+                      min="0"
                       value={formData.max_carry_forward_days}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          max_carry_forward_days: parseInt(e.target.value),
+                          max_carry_forward_days: parseInt(e.target.value) || 0,
                         })
                       }
                     />
@@ -359,11 +468,12 @@ export default function LeaveTypesPage() {
                     <Input
                       id="carry_forward_expiry_months"
                       type="number"
+                      min="0"
                       value={formData.carry_forward_expiry_months}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          carry_forward_expiry_months: parseInt(e.target.value),
+                          carry_forward_expiry_months: parseInt(e.target.value) || 0,
                         })
                       }
                     />
@@ -415,7 +525,8 @@ export default function LeaveTypesPage() {
                 >
                   {t("leaveTypes.cancel")}
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={submitting}>
+                  {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {editingType ? t("leaveTypes.update") : t("leaveTypes.create")} {t("leaveTypes.leaveType")}
                 </Button>
               </DialogFooter>
@@ -466,20 +577,18 @@ export default function LeaveTypesPage() {
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: type.color }}
+                          style={{ backgroundColor: type.color || DEFAULT_COLOR }}
                         />
-                        {localizedName(type.name, locale)}
+                        {typeName(type)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{type.code}</Badge>
                     </TableCell>
-                    <TableCell className="capitalize">
-                      {type.calculation_method}
-                    </TableCell>
-                    <TableCell>{type.default_days_per_year}</TableCell>
+                    <TableCell>{methodLabel(type.calculation_method)}</TableCell>
+                    <TableCell>{type.default_days_per_year ?? "-"}</TableCell>
                     <TableCell>
-                      {type.max_carry_forward_days > 0
+                      {(type.max_carry_forward_days ?? 0) > 0
                         ? `${type.max_carry_forward_days} ${t("leaveTypes.days")}`
                         : t("leaveTypes.none")}
                     </TableCell>
@@ -505,6 +614,7 @@ export default function LeaveTypesPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={busyId === type.id}
                           onClick={() => handleEdit(type)}
                         >
                           <Edit className="h-4 w-4" />
@@ -512,6 +622,7 @@ export default function LeaveTypesPage() {
                         <Button
                           size="sm"
                           variant="destructive"
+                          disabled={busyId === type.id}
                           onClick={() => handleDelete(type.id)}
                         >
                           <Trash2 className="h-4 w-4" />

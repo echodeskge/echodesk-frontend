@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { localizedName } from "@/lib/utils"
+import { toast } from "sonner"
+import { getApiErrorMessage, localizedName } from "@/lib/utils"
+import {
+  leaveAdminPublicHolidaysCreate,
+  leaveAdminPublicHolidaysDestroy,
+  leaveAdminPublicHolidaysList,
+  leaveAdminPublicHolidaysRetrieve,
+  leaveAdminPublicHolidaysUpdate,
+} from "@/api/generated/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -28,12 +36,28 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 
+type LocalizedText = { en?: string; ka?: string } | string | null | undefined
+
+// Shape of PublicHolidayListSerializer. `applies_to_all` is only returned by
+// the detail endpoint, so it is fetched when a holiday is opened for editing.
 interface PublicHoliday {
   id: number
-  name: { en: string; ka: string }
+  name: LocalizedText
+  name_display?: string
   date: string
-  is_recurring: boolean
-  applies_to_all: boolean
+  is_recurring?: boolean
+}
+
+function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[]
+  const results = (data as { results?: unknown } | null | undefined)?.results
+  return Array.isArray(results) ? (results as T[]) : []
+}
+
+function textPart(value: LocalizedText, key: "en" | "ka"): string {
+  if (!value) return ""
+  if (typeof value === "string") return value
+  return value[key] || ""
 }
 
 export default function PublicHolidaysPage() {
@@ -43,6 +67,8 @@ export default function PublicHolidaysPage() {
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingHoliday, setEditingHoliday] = useState<PublicHoliday | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [busyId, setBusyId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     name_en: "",
     name_ka: "",
@@ -57,11 +83,15 @@ export default function PublicHolidaysPage() {
 
   const fetchHolidays = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await leaveAdminPublicHolidaysList()
-      setHolidays([])
+      // Positional: (ordering, page, pageSize)
+      const response = await leaveAdminPublicHolidaysList("date", undefined, 100)
+      setHolidays(unwrapList<PublicHoliday>(response))
     } catch (error) {
       console.error("Failed to fetch holidays:", error)
+      setHolidays([])
+      toast.error(t("shared.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     } finally {
       setLoading(false)
     }
@@ -69,51 +99,85 @@ export default function PublicHolidaysPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
     try {
-      const payload: any = {
-        name: { en: formData.name_en, ka: formData.name_ka },
+      const payload = {
+        name: { en: formData.name_en.trim(), ka: formData.name_ka.trim() },
         date: formData.date,
         is_recurring: formData.is_recurring,
         applies_to_all: formData.applies_to_all,
       }
 
       if (editingHoliday) {
-        // await leaveAdminPublicHolidaysUpdate(editingHoliday.id, payload)
+        await leaveAdminPublicHolidaysUpdate(String(editingHoliday.id), payload)
+        toast.success(t("publicHolidays.updated"))
       } else {
-        // await leaveAdminPublicHolidaysCreate(payload)
+        await leaveAdminPublicHolidaysCreate(payload)
+        toast.success(t("publicHolidays.created"))
       }
 
       setIsDialogOpen(false)
       setEditingHoliday(null)
-      fetchHolidays()
       resetForm()
+      await fetchHolidays()
     } catch (error) {
+      // Keep the dialog open so the user can fix the input and retry.
       console.error("Failed to save holiday:", error)
+      toast.error(t("publicHolidays.saveFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const handleEdit = (holiday: PublicHoliday) => {
-    setEditingHoliday(holiday)
-    setFormData({
-      name_en: holiday.name.en,
-      name_ka: holiday.name.ka,
-      date: holiday.date,
-      is_recurring: holiday.is_recurring,
-      applies_to_all: holiday.applies_to_all,
-    })
-    setIsDialogOpen(true)
+  const handleEdit = async (holiday: PublicHoliday) => {
+    setBusyId(holiday.id)
+    try {
+      // The list does not include `applies_to_all`; load the full record.
+      const detail = await leaveAdminPublicHolidaysRetrieve(String(holiday.id))
+      setEditingHoliday(holiday)
+      setFormData({
+        name_en: textPart(detail.name, "en"),
+        name_ka: textPart(detail.name, "ka"),
+        date: detail.date,
+        is_recurring: !!detail.is_recurring,
+        applies_to_all: detail.applies_to_all ?? true,
+      })
+      setIsDialogOpen(true)
+    } catch (error) {
+      console.error("Failed to load holiday:", error)
+      toast.error(t("shared.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    } finally {
+      setBusyId(null)
+    }
   }
 
   const handleDelete = async (id: number) => {
     if (!confirm(t("publicHolidays.confirmDelete"))) return
 
+    setBusyId(id)
     try {
-      // await leaveAdminPublicHolidaysDelete(id)
-      fetchHolidays()
+      await leaveAdminPublicHolidaysDestroy(String(id))
+      toast.success(t("publicHolidays.deleted"))
+      await fetchHolidays()
     } catch (error) {
       console.error("Failed to delete holiday:", error)
+      toast.error(t("publicHolidays.deleteFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    } finally {
+      setBusyId(null)
     }
   }
+
+  const holidayName = (holiday: PublicHoliday) =>
+    typeof holiday.name === "string"
+      ? holiday.name
+      : localizedName(holiday.name, locale) || holiday.name_display || ""
 
   const resetForm = () => {
     setFormData({
@@ -242,7 +306,8 @@ export default function PublicHolidaysPage() {
                 >
                   {t("publicHolidays.cancel")}
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={submitting}>
+                  {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {editingHoliday ? t("publicHolidays.update") : t("publicHolidays.create")} {t("publicHolidays.holiday")}
                 </Button>
               </DialogFooter>
@@ -278,14 +343,13 @@ export default function PublicHolidaysPage() {
                   <TableHead>{t("publicHolidays.tableName")}</TableHead>
                   <TableHead>{t("publicHolidays.tableDate")}</TableHead>
                   <TableHead>{t("publicHolidays.tableRecurring")}</TableHead>
-                  <TableHead>{t("publicHolidays.tableAppliesTo")}</TableHead>
                   <TableHead>{t("publicHolidays.tableActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {holidays.map((holiday) => (
                   <TableRow key={holiday.id}>
-                    <TableCell>{localizedName(holiday.name, locale)}</TableCell>
+                    <TableCell>{holidayName(holiday)}</TableCell>
                     <TableCell>
                       {new Date(holiday.date).toLocaleDateString()}
                     </TableCell>
@@ -297,13 +361,11 @@ export default function PublicHolidaysPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {holiday.applies_to_all ? t("publicHolidays.allEmployees") : t("publicHolidays.specificDepartments")}
-                    </TableCell>
-                    <TableCell>
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="outline"
+                          disabled={busyId === holiday.id}
                           onClick={() => handleEdit(holiday)}
                         >
                           <Edit className="h-4 w-4" />
@@ -311,6 +373,7 @@ export default function PublicHolidaysPage() {
                         <Button
                           size="sm"
                           variant="destructive"
+                          disabled={busyId === holiday.id}
                           onClick={() => handleDelete(holiday.id)}
                         >
                           <Trash2 className="h-4 w-4" />

@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { localizedName } from "@/lib/utils"
+import { toast } from "sonner"
+import axios from "@/api/axios"
+import {
+  leaveEmployeeLeaveTypesList,
+  leaveEmployeeMyRequestsCancelCreate,
+  leaveEmployeeMyRequestsCreate,
+} from "@/api/generated/api"
+import { getApiErrorMessage, localizedName } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -35,27 +42,35 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+// Shape of LeaveRequestListSerializer: flat ids/names, no nested objects and
+// no `reason` (that is only on the detail endpoint).
 interface LeaveRequest {
   id: number
-  leave_type: {
-    id: number
-    name: { en: string; ka: string }
-    color: string
-  }
+  leave_type: number
+  leave_type_name: string
+  leave_type_color?: string
   start_date: string
   end_date: string
   total_days: string
-  reason: string
   status: string
   created_at: string
 }
 
 interface LeaveType {
   id: number
-  name: { en: string; ka: string }
+  name: { en?: string; ka?: string } | string | null
+  name_display?: string
   code: string
-  color: string
-  is_active: boolean
+  color?: string
+}
+
+// Statuses the API lets an employee cancel (see CanCancelLeave).
+const CANCELLABLE_STATUSES = ["pending", "manager_approved", "hr_approved"]
+
+function unwrapList<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[]
+  const results = (data as { results?: unknown } | null | undefined)?.results
+  return Array.isArray(results) ? (results as T[]) : []
 }
 
 export default function MyRequestsPage() {
@@ -65,6 +80,8 @@ export default function MyRequestsPage() {
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [cancellingId, setCancellingId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
     leave_type: "",
     start_date: "",
@@ -79,11 +96,18 @@ export default function MyRequestsPage() {
 
   const fetchRequests = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await leaveEmployeeMyRequestsList()
-      setRequests([])
+      // Direct call: the generated list function cannot send `lang`, which the
+      // API uses to localise `leave_type_name`.
+      const response = await axios.get("/api/leave/employee/my-requests/", {
+        params: { lang: locale, page_size: 100 },
+      })
+      setRequests(unwrapList<LeaveRequest>(response.data))
     } catch (error) {
       console.error("Failed to fetch requests:", error)
+      setRequests([])
+      toast.error(t("shared.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     } finally {
       setLoading(false)
     }
@@ -91,31 +115,80 @@ export default function MyRequestsPage() {
 
   const fetchLeaveTypes = async () => {
     try {
-      // TODO: Replace with actual API call
-      // const response = await leaveEmployeeLeaveTypesList()
-      setLeaveTypes([])
+      // Positional: (ordering, page, pageSize)
+      const response = await leaveEmployeeLeaveTypesList(undefined, undefined, 100)
+      setLeaveTypes(unwrapList<LeaveType>(response))
     } catch (error) {
       console.error("Failed to fetch leave types:", error)
+      setLeaveTypes([])
+      toast.error(t("myRequests.leaveTypesLoadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
     }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      leave_type: "",
+      start_date: "",
+      end_date: "",
+      reason: "",
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    if (!formData.leave_type) {
+      toast.error(t("myRequests.leaveTypeRequired"))
+      return
+    }
+
+    setSubmitting(true)
     try {
-      // TODO: Replace with actual API call
-      // await leaveEmployeeMyRequestsCreate({ ...formData })
-      setIsDialogOpen(false)
-      fetchRequests()
-      setFormData({
-        leave_type: "",
-        start_date: "",
-        end_date: "",
-        reason: "",
+      await leaveEmployeeMyRequestsCreate({
+        leave_type: Number(formData.leave_type),
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        reason: formData.reason,
       })
+      toast.success(t("myRequests.submitted"))
+      setIsDialogOpen(false)
+      resetForm()
+      await fetchRequests()
     } catch (error) {
+      // Keep the dialog open so the user can fix the input and retry.
       console.error("Failed to create request:", error)
+      toast.error(t("myRequests.submitFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    } finally {
+      setSubmitting(false)
     }
   }
+
+  const handleCancel = async (id: number) => {
+    if (!confirm(t("myRequests.confirmCancel"))) return
+
+    setCancellingId(id)
+    try {
+      await leaveEmployeeMyRequestsCancelCreate(String(id), {})
+      toast.success(t("myRequests.cancelled"))
+      await fetchRequests()
+    } catch (error) {
+      console.error("Failed to cancel request:", error)
+      toast.error(t("myRequests.cancelFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    } finally {
+      setCancellingId(null)
+    }
+  }
+
+  const typeName = (type: LeaveType) =>
+    typeof type.name === "string"
+      ? type.name
+      : localizedName(type.name, locale) || type.name_display || type.code
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
@@ -183,9 +256,14 @@ export default function MyRequestsPage() {
                       <SelectValue placeholder={t("myRequests.selectLeaveType")} />
                     </SelectTrigger>
                     <SelectContent>
+                      {leaveTypes.length === 0 && (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          {t("myRequests.noLeaveTypesAvailable")}
+                        </div>
+                      )}
                       {leaveTypes.map((type) => (
                         <SelectItem key={type.id} value={String(type.id)}>
-                          {localizedName(type.name, locale)}
+                          {typeName(type)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -208,6 +286,7 @@ export default function MyRequestsPage() {
                   <Input
                     id="end_date"
                     type="date"
+                    min={formData.start_date || undefined}
                     value={formData.end_date}
                     onChange={(e) =>
                       setFormData({ ...formData, end_date: e.target.value })
@@ -236,7 +315,10 @@ export default function MyRequestsPage() {
                 >
                   {t("shared.cancel")}
                 </Button>
-                <Button type="submit">{t("myRequests.submitRequest")}</Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {t("myRequests.submitRequest")}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -272,8 +354,8 @@ export default function MyRequestsPage() {
                   <TableHead>{t("shared.endDate")}</TableHead>
                   <TableHead>{t("shared.days")}</TableHead>
                   <TableHead>{t("shared.statusLabel")}</TableHead>
-                  <TableHead>{t("shared.reason")}</TableHead>
                   <TableHead>{t("shared.submitted")}</TableHead>
+                  <TableHead>{t("shared.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -281,10 +363,10 @@ export default function MyRequestsPage() {
                   <TableRow key={request.id}>
                     <TableCell>
                       <Badge
-                        style={{ backgroundColor: request.leave_type.color }}
+                        style={{ backgroundColor: request.leave_type_color || undefined }}
                         className="text-white"
                       >
-                        {localizedName(request.leave_type.name, locale)}
+                        {request.leave_type_name}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -295,11 +377,25 @@ export default function MyRequestsPage() {
                     </TableCell>
                     <TableCell>{request.total_days}</TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {request.reason || "-"}
-                    </TableCell>
                     <TableCell>
                       {new Date(request.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {CANCELLABLE_STATUSES.includes(request.status) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={cancellingId === request.id}
+                          onClick={() => handleCancel(request.id)}
+                        >
+                          {cancellingId === request.id ? (
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                          ) : (
+                            <XCircle className="h-4 w-4 mr-1" />
+                          )}
+                          {t("myRequests.cancelRequest")}
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
