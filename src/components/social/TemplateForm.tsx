@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { WhatsAppTemplateCreateRequest, WhatsAppTemplateCreateCategoryEnum } from "@/api/generated";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,8 @@ export default function TemplateForm({
   isSubmitting = false,
   error,
 }: TemplateFormProps) {
+  const t = useTranslations("social.templates");
+  const tCommon = useTranslations("common");
   const [name, setName] = useState("");
   const [language, setLanguage] = useState("en");
   const [category, setCategory] = useState<string>("UTILITY");
@@ -71,15 +74,15 @@ export default function TemplateForm({
   const validateName = (value: string) => {
     const namePattern = /^[a-z0-9_]+$/;
     if (!value) {
-      setNameError("Template name is required");
+      setNameError(t("form.nameRequired"));
       return false;
     }
     if (!namePattern.test(value)) {
-      setNameError("Template name must be lowercase alphanumeric with underscores only (no spaces)");
+      setNameError(t("form.nameInvalid"));
       return false;
     }
     if (value.length < 1 || value.length > 512) {
-      setNameError("Template name must be 1-512 characters");
+      setNameError(t("form.nameLength"));
       return false;
     }
     setNameError("");
@@ -212,12 +215,12 @@ export default function TemplateForm({
       {/* Basic Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Basic Information</CardTitle>
-          <CardDescription>Configure the template's basic settings</CardDescription>
+          <CardTitle>{t("form.basicInfo")}</CardTitle>
+          <CardDescription>{t("form.basicInfoDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Template Name *</Label>
+            <Label htmlFor="name">{t("form.templateName")} *</Label>
             <Input
               id="name"
               value={name}
@@ -227,44 +230,44 @@ export default function TemplateForm({
             />
             {nameError && <p className="text-sm text-destructive">{nameError}</p>}
             <p className="text-xs text-muted-foreground">
-              Lowercase letters, numbers, and underscores only. No spaces.
+              {t("form.nameHint")}
             </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
+              <Label htmlFor="language">{t("form.language")}</Label>
               <Select value={language} onValueChange={setLanguage}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English (en)</SelectItem>
-                  <SelectItem value="ka">Georgian (ka)</SelectItem>
-                  <SelectItem value="ru">Russian (ru)</SelectItem>
-                  <SelectItem value="es">Spanish (es)</SelectItem>
-                  <SelectItem value="fr">French (fr)</SelectItem>
-                  <SelectItem value="de">German (de)</SelectItem>
+                  <SelectItem value="en">{t("form.languages.en")} (en)</SelectItem>
+                  <SelectItem value="ka">{t("form.languages.ka")} (ka)</SelectItem>
+                  <SelectItem value="ru">{t("form.languages.ru")} (ru)</SelectItem>
+                  <SelectItem value="es">{t("form.languages.es")} (es)</SelectItem>
+                  <SelectItem value="fr">{t("form.languages.fr")} (fr)</SelectItem>
+                  <SelectItem value="de">{t("form.languages.de")} (de)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="category">{t("form.category")} *</Label>
               <Select value={category} onValueChange={(value: any) => setCategory(value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="UTILITY">Utility</SelectItem>
-                  <SelectItem value="MARKETING">Marketing</SelectItem>
-                  <SelectItem value="AUTHENTICATION">Authentication</SelectItem>
+                  <SelectItem value="UTILITY">{t("category.UTILITY")}</SelectItem>
+                  <SelectItem value="MARKETING">{t("category.MARKETING")}</SelectItem>
+                  <SelectItem value="AUTHENTICATION">{t("category.AUTHENTICATION")}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {category === "MARKETING" && "Promotional content, newsletters"}
-                {category === "UTILITY" && "Account updates, order notifications"}
-                {category === "AUTHENTICATION" && "OTP codes, verification"}
+                {category === "MARKETING" && t("form.categoryHint.MARKETING")}
+                {category === "UTILITY" && t("form.categoryHint.UTILITY")}
+                {category === "AUTHENTICATION" && t("form.categoryHint.AUTHENTICATION")}
               </p>
             </div>
           </div>
@@ -276,8 +279,8 @@ export default function TemplateForm({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Message Components</CardTitle>
-              <CardDescription>Build your template structure</CardDescription>
+              <CardTitle>{t("form.messageComponents")}</CardTitle>
+              <CardDescription>{t("form.messageComponentsDescription")}</CardDescription>
             </div>
             <div className="flex gap-2">
               {!hasComponent("HEADER") && (
@@ -288,7 +291,7 @@ export default function TemplateForm({
                   onClick={() => addComponent("HEADER")}
                 >
                   <Plus className="w-3 h-3 mr-1" />
-                  Header
+                  {t("form.componentType.HEADER")}
                 </Button>
               )}
               {!hasComponent("FOOTER") && (
@@ -299,7 +302,7 @@ export default function TemplateForm({
                   onClick={() => addComponent("FOOTER")}
                 >
                   <Plus className="w-3 h-3 mr-1" />
-                  Footer
+                  {t("form.componentType.FOOTER")}
                 </Button>
               )}
               <Button
@@ -309,7 +312,7 @@ export default function TemplateForm({
                 onClick={() => addComponent("BUTTONS")}
               >
                 <Plus className="w-3 h-3 mr-1" />
-                Buttons
+                {t("form.componentType.BUTTONS")}
               </Button>
             </div>
           </div>
@@ -324,9 +327,9 @@ export default function TemplateForm({
                     {component.type === "BODY" && <FileText className="w-4 h-4" />}
                     {component.type === "FOOTER" && <AlignLeft className="w-4 h-4" />}
                     {component.type === "BUTTONS" && <MessageSquare className="w-4 h-4" />}
-                    <CardTitle className="text-sm">{component.type}</CardTitle>
+                    <CardTitle className="text-sm">{t(`form.componentType.${component.type}`)}</CardTitle>
                     {component.type === "BODY" && (
-                      <Badge variant="secondary" className="text-xs">Required</Badge>
+                      <Badge variant="secondary" className="text-xs">{t("form.required")}</Badge>
                     )}
                   </div>
                   {component.type !== "BODY" && (
@@ -345,7 +348,7 @@ export default function TemplateForm({
                 {component.type === "HEADER" && (
                   <>
                     <div className="space-y-2">
-                      <Label>Format</Label>
+                      <Label>{t("form.format")}</Label>
                       <Select
                         value={component.format}
                         onValueChange={(value: HeaderFormat) =>
@@ -356,24 +359,24 @@ export default function TemplateForm({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="TEXT">Text</SelectItem>
-                          <SelectItem value="IMAGE">Image</SelectItem>
-                          <SelectItem value="VIDEO">Video</SelectItem>
-                          <SelectItem value="DOCUMENT">Document</SelectItem>
+                          <SelectItem value="TEXT">{t("form.formats.TEXT")}</SelectItem>
+                          <SelectItem value="IMAGE">{t("form.formats.IMAGE")}</SelectItem>
+                          <SelectItem value="VIDEO">{t("form.formats.VIDEO")}</SelectItem>
+                          <SelectItem value="DOCUMENT">{t("form.formats.DOCUMENT")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     {component.format === "TEXT" && (
                       <div className="space-y-2">
-                        <Label>Header Text</Label>
+                        <Label>{t("form.headerText")}</Label>
                         <Input
                           value={component.text || ""}
                           onChange={(e) => updateComponent(index, { text: e.target.value })}
-                          placeholder="Enter header text..."
+                          placeholder={t("form.headerTextPlaceholder")}
                           maxLength={60}
                         />
                         <p className="text-xs text-muted-foreground">
-                          Max 60 characters. {component.text?.length || 0}/60
+                          {t("form.maxCharacters", { max: 60 })}. {component.text?.length || 0}/60
                         </p>
                       </div>
                     )}
@@ -382,14 +385,14 @@ export default function TemplateForm({
 
                 {(component.type === "BODY" || component.type === "FOOTER") && (
                   <div className="space-y-2">
-                    <Label>{component.type === "BODY" ? "Body Text *" : "Footer Text"}</Label>
+                    <Label>{component.type === "BODY" ? `${t("form.bodyText")} *` : t("form.footerText")}</Label>
                     <Textarea
                       value={component.text || ""}
                       onChange={(e) => updateComponent(index, { text: e.target.value })}
                       placeholder={
                         component.type === "BODY"
-                          ? "Enter your message... Use {{1}}, {{2}} for dynamic content"
-                          : "Enter footer text..."
+                          ? t("form.bodyPlaceholder")
+                          : t("form.footerPlaceholder")
                       }
                       rows={component.type === "BODY" ? 4 : 2}
                       maxLength={component.type === "BODY" ? 1024 : 60}
@@ -398,8 +401,8 @@ export default function TemplateForm({
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>
                         {component.type === "BODY"
-                          ? `Use {{1}}, {{2}}, etc. for parameters. Current: ${getParameterCount(component.text || "")}`
-                          : "Max 60 characters"}
+                          ? t("form.bodyHint", { count: getParameterCount(component.text || "") })
+                          : t("form.maxCharacters", { max: 60 })}
                       </span>
                       <span>{component.text?.length || 0}/{component.type === "BODY" ? 1024 : 60}</span>
                     </div>
@@ -411,7 +414,7 @@ export default function TemplateForm({
                     {component.buttons?.map((button, buttonIndex) => (
                       <div key={buttonIndex} className="border rounded-md p-3 space-y-3">
                         <div className="flex items-center justify-between">
-                          <Label className="text-xs">Button {buttonIndex + 1}</Label>
+                          <Label className="text-xs">{t("form.buttonNumber", { number: buttonIndex + 1 })}</Label>
                           <Button
                             type="button"
                             variant="ghost"
@@ -431,9 +434,9 @@ export default function TemplateForm({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="QUICK_REPLY">Quick Reply</SelectItem>
-                            <SelectItem value="URL">URL</SelectItem>
-                            <SelectItem value="PHONE_NUMBER">Phone Number</SelectItem>
+                            <SelectItem value="QUICK_REPLY">{t("form.buttonTypes.QUICK_REPLY")}</SelectItem>
+                            <SelectItem value="URL">{t("form.buttonTypes.URL")}</SelectItem>
+                            <SelectItem value="PHONE_NUMBER">{t("form.buttonTypes.PHONE_NUMBER")}</SelectItem>
                           </SelectContent>
                         </Select>
                         <Input
@@ -441,7 +444,7 @@ export default function TemplateForm({
                           onChange={(e) =>
                             updateButton(index, buttonIndex, { text: e.target.value })
                           }
-                          placeholder="Button text"
+                          placeholder={t("form.buttonTextPlaceholder")}
                           maxLength={25}
                         />
                         {button.type === "URL" && (
@@ -473,7 +476,7 @@ export default function TemplateForm({
                         className="w-full"
                       >
                         <Plus className="w-3 h-3 mr-1" />
-                        Add Button
+                        {t("form.addButton")}
                       </Button>
                     )}
                   </div>
@@ -488,11 +491,11 @@ export default function TemplateForm({
       <div className="flex gap-2 justify-end">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
+            {tCommon("cancel")}
           </Button>
         )}
         <Button type="submit" disabled={isSubmitting || !!nameError}>
-          {isSubmitting ? "Creating..." : "Create Template"}
+          {isSubmitting ? t("form.creating") : t("createTemplate")}
         </Button>
       </div>
     </form>

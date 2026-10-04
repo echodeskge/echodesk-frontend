@@ -201,6 +201,13 @@ export function SettingsSidebar() {
     return true
   })
 
+  // Only one item is active: the one with the longest matching href. A plain
+  // prefix match would light up "/settings/social" together with its
+  // sub-pages ("/settings/social/connections", …).
+  const activeId = visibleItems
+    .filter((item) => pathname === item.href || pathname.startsWith(item.href + "/"))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.id
+
   return (
     <nav className="hidden md:block w-56 flex-shrink-0 border-r bg-muted/30 overflow-y-auto">
       <div className="p-4 pb-2">
@@ -211,7 +218,7 @@ export function SettingsSidebar() {
       <div className="px-2 pb-4 space-y-0.5">
         {visibleItems.map((item) => {
           const Icon = item.icon
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          const isActive = item.id === activeId
 
           return (
             <Link

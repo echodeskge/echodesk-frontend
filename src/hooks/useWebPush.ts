@@ -307,8 +307,32 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
     setError(null)
 
     try {
-      const response = await axios.post('/notifications/test/')
-      return true
+      try {
+        await axios.post('/notifications/test/')
+        return true
+      } catch (firstErr) {
+        // The server has no working subscription for this user — typically the
+        // browser's push subscription expired while the UI still shows it as
+        // active. Replace it with a fresh one and try once more.
+        if (!serviceWorkerRef.current) {
+          serviceWorkerRef.current = await navigator.serviceWorker.ready
+        }
+        const pushManager = serviceWorkerRef.current.pushManager
+        const stale = await pushManager.getSubscription()
+        if (stale) {
+          await stale.unsubscribe()
+        }
+        const vapidPublicKey = await getVapidPublicKey()
+        const fresh = await pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        })
+        await axios.post('/notifications/subscribe/', {
+          subscription: fresh.toJSON(),
+        })
+        await axios.post('/notifications/test/')
+        return true
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to send test notification')
       console.error('[useWebPush] Test notification failed:', error)
@@ -318,7 +342,7 @@ export function useWebPush(options: UseWebPushOptions = {}): UseWebPushReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isSubscribed, onError])
+  }, [isSubscribed, onError, getVapidPublicKey])
 
   // Auto-subscribe if enabled - will request permission if needed
   useEffect(() => {

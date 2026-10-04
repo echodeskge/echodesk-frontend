@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, CalendarCheck, Clock, CheckCircle2, XCircle, CalendarDays, Users, FileText } from "lucide-react"
 
 export default function LeaveDashboard() {
+  const t = useTranslations("leave")
   const [stats, setStats] = useState({
     myPendingRequests: 0,
     myApprovedRequests: 0,
@@ -33,29 +35,29 @@ export default function LeaveDashboard() {
 
   const quickLinks = [
     {
-      title: "My Requests",
-      description: "View and manage your leave requests",
+      title: t("overview.links.myRequests.title"),
+      description: t("overview.links.myRequests.description"),
       href: "/leave/my-requests",
       icon: FileText,
       color: "text-blue-600",
     },
     {
-      title: "My Balance",
-      description: "Check your leave balance",
+      title: t("overview.links.myBalance.title"),
+      description: t("overview.links.myBalance.description"),
       href: "/leave/my-balance",
       icon: CalendarDays,
       color: "text-green-600",
     },
     {
-      title: "Team Requests",
-      description: "Approve team leave requests",
+      title: t("overview.links.teamRequests.title"),
+      description: t("overview.links.teamRequests.description"),
       href: "/leave/team-requests",
       icon: Users,
       color: "text-purple-600",
     },
     {
-      title: "All Requests",
-      description: "Manage all leave requests",
+      title: t("overview.links.allRequests.title"),
+      description: t("overview.links.allRequests.description"),
       href: "/leave/all-requests",
       icon: CalendarCheck,
       color: "text-orange-600",
@@ -65,54 +67,54 @@ export default function LeaveDashboard() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Leave Management</h1>
+        <h1 className="text-3xl font-bold">{t("overview.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Overview of your leave management system
+          {t("overview.description")}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("overview.pendingRequests")}</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.myPendingRequests}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
+            <p className="text-xs text-muted-foreground">{t("overview.awaitingApproval")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved Leaves</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("overview.approvedLeaves")}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.myApprovedRequests}</div>
-            <p className="text-xs text-muted-foreground">This year</p>
+            <p className="text-xs text-muted-foreground">{t("overview.thisYear")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Leave Balance</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("overview.leaveBalance")}</CardTitle>
             <CalendarDays className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.myTotalBalance}</div>
-            <p className="text-xs text-muted-foreground">Days remaining</p>
+            <p className="text-xs text-muted-foreground">{t("overview.daysRemaining")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team on Leave</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("overview.teamOnLeave")}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.teamOnLeaveToday}</div>
-            <p className="text-xs text-muted-foreground">Today</p>
+            <p className="text-xs text-muted-foreground">{t("overview.today")}</p>
           </CardContent>
         </Card>
       </div>
@@ -120,39 +122,39 @@ export default function LeaveDashboard() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Team Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("overview.teamPending")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.teamPendingRequests}</div>
-            <p className="text-xs text-muted-foreground">Require your approval</p>
+            <p className="text-xs text-muted-foreground">{t("overview.requireYourApproval")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Leave Types</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("overview.leaveTypes")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalLeaveTypes}</div>
-            <p className="text-xs text-muted-foreground">Active leave types</p>
+            <p className="text-xs text-muted-foreground">{t("overview.activeLeaveTypes")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Upcoming Holidays</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("overview.upcomingHolidays")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.upcomingHolidays}</div>
-            <p className="text-xs text-muted-foreground">Next 30 days</p>
+            <p className="text-xs text-muted-foreground">{t("overview.next30Days")}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Navigate to different sections</CardDescription>
+          <CardTitle>{t("overview.quickActions")}</CardTitle>
+          <CardDescription>{t("overview.quickActionsDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           {quickLinks.map((link) => {

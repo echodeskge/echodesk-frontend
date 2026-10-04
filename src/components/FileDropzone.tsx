@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { useTranslations } from 'next-intl'
 import { Upload, X, File, FileText, FileImage, FileArchive } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -55,6 +56,7 @@ export function FileDropzone({
   className,
   disabled = false
 }: FileDropzoneProps) {
+  const t = useTranslations('common.dropzone')
   const [error, setError] = useState<string | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -63,22 +65,22 @@ export function FileDropzone({
     if (rejectedFiles.length > 0) {
       const rejection = rejectedFiles[0]
       if (rejection.errors[0]?.code === 'file-too-large') {
-        setError(`File is too large. Maximum size is ${formatFileSize(maxSize)}`)
+        setError(t('tooLarge', { maxSize: formatFileSize(maxSize) }))
       } else if (rejection.errors[0]?.code === 'file-invalid-type') {
-        setError('File type is not supported')
+        setError(t('invalidType'))
       } else {
-        setError('File upload failed')
+        setError(t('uploadFailed'))
       }
       return
     }
 
     if (files.length + acceptedFiles.length > maxFiles) {
-      setError(`Maximum ${maxFiles} files allowed`)
+      setError(t('tooMany', { maxFiles }))
       return
     }
 
     onFilesSelected(acceptedFiles)
-  }, [files.length, maxFiles, maxSize, onFilesSelected])
+  }, [files.length, maxFiles, maxSize, onFilesSelected, t])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -108,12 +110,12 @@ export function FileDropzone({
         )} />
 
         {isDragActive ? (
-          <p className="text-primary font-medium">Drop files here...</p>
+          <p className="text-primary font-medium">{t('dropHere')}</p>
         ) : (
           <div className="space-y-2">
-            <p className="font-medium">Drag & drop files here, or click to select</p>
+            <p className="font-medium">{t('dragOrClick')}</p>
             <p className="text-sm text-muted-foreground">
-              Maximum {maxFiles} files, up to {formatFileSize(maxSize)} each
+              {t('limits', { maxFiles, maxSize: formatFileSize(maxSize) })}
             </p>
           </div>
         )}
@@ -128,7 +130,7 @@ export function FileDropzone({
       {files.length > 0 && (
         <div className="space-y-2">
           <p className="text-sm font-medium">
-            {files.length} file{files.length > 1 ? 's' : ''} selected
+            {t('filesSelected', { count: files.length })}
           </p>
           <div className="space-y-2">
             {files.map((uploadedFile, index) => {

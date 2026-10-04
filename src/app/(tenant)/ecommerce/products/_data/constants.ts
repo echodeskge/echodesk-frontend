@@ -15,3 +15,11 @@ export const PRODUCT_STATUS_BADGE_VARIANTS: Record<
   inactive: "outline",
   out_of_stock: "destructive",
 }
+
+// Translation key (in the "products" namespace) for each status value.
+export const PRODUCT_STATUS_LABEL_KEYS: Record<string, string> = {
+  active: "active",
+  draft: "draft",
+  inactive: "inactive",
+  out_of_stock: "outOfStock",
+}

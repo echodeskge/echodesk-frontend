@@ -2,6 +2,7 @@
 
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
 import { Settings2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import type { Table } from "@tanstack/react-table"
 
@@ -21,16 +22,18 @@ interface DataTableViewOptionsProps<TData> {
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
+  const t = useTranslations("common.table")
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="h-9">
           <Settings2 className="me-2 h-3.5 w-3.5" />
-          View
+          {t("view")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("toggleColumns")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()

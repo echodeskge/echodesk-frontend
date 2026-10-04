@@ -154,12 +154,17 @@ export default function AppearanceSettingsPage() {
     groups: "groups",
     social: "social",
     settings: "settings",
+    "report-bug": "reportBug",
+    help: "help",
   };
 
   // Get top-level sidebar items for ordering
   const sidebarItems = useMemo(() => {
     return navigationConfig
       .filter(item => !item.id.includes('/')) // Only top-level items
+      // "preferences" is the fallback entry for users WITHOUT settings access;
+      // anyone on this page has it, so listing it just duplicates "Settings".
+      .filter(item => item.excludeFeatureKey !== 'settings')
       .map(item => ({
         id: item.id,
         label: tNav(translationKeyMap[item.id] || item.id),

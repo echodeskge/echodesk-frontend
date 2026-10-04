@@ -28,7 +28,7 @@ interface WhatsAppStatus {
 
 export default function CreateTemplatePage() {
   const router = useRouter();
-  const t = useTranslations("social");
+  const t = useTranslations("social.templates");
   const tCommon = useTranslations("common");
   const [error, setError] = useState("");
 
@@ -48,7 +48,7 @@ export default function CreateTemplatePage() {
       await createTemplate.mutateAsync(data);
       router.push("/social/templates");
     } catch (err: any) {
-      const errorMessage = err.response?.data?.error || err.response?.data?.message || "Failed to create template";
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || t("create.createFailed");
       setError(errorMessage);
       console.error("Failed to create template:", err);
     }
@@ -72,12 +72,12 @@ export default function CreateTemplatePage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please connect your WhatsApp Business Account first to create templates.
+            {t("create.connectFirst")}
           </AlertDescription>
         </Alert>
         <div className="mt-4">
           <Link href="/social/connections">
-            <Button>Go to Connections</Button>
+            <Button>{t("goToConnections")}</Button>
           </Link>
         </div>
       </div>
@@ -91,12 +91,12 @@ export default function CreateTemplatePage() {
         <Link href="/social/templates">
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Templates
+            {t("create.backToTemplates")}
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold tracking-tight">Create WhatsApp Template</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t("create.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Create a new message template for {businessName}
+          {t("create.subtitle", { businessName })}
         </p>
       </div>
 
@@ -104,12 +104,12 @@ export default function CreateTemplatePage() {
       <Alert className="mb-6">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          <p className="font-medium mb-2">Important Notes:</p>
+          <p className="font-medium mb-2">{t("create.importantNotes")}</p>
           <ul className="list-disc list-inside space-y-1 text-sm">
-            <li>Templates must be approved by Meta before use (usually 24-48 hours)</li>
-            <li>Template names cannot be changed after creation</li>
-            <li>{"Use parameters ({{1}}, {{2}}) for dynamic content in the body"}</li>
-            <li>Marketing templates require opt-in from recipients</li>
+            <li>{t("create.noteApproval")}</li>
+            <li>{t("create.noteNameImmutable")}</li>
+            <li>{t("create.noteParameters")}</li>
+            <li>{t("create.noteMarketingOptIn")}</li>
           </ul>
         </AlertDescription>
       </Alert>

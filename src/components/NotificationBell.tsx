@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/popover'
 import { Badge } from '@/components/ui/badge'
 import { NotificationList } from '@/components/NotificationList'
-import { NotificationToastContainer } from '@/components/NotificationToast'
+import { showNotificationToast } from '@/components/NotificationToast'
 import { notificationsList } from '@/api/generated/api'
 import type { Notification as NotificationData } from '@/api/generated/interfaces'
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
@@ -31,13 +31,6 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationData[]>([])
   const [loading, setLoading] = useState(false)
-  const [toasts, setToasts] = useState<Array<{
-    id: number
-    title: string
-    message: string
-    type?: string
-    ticketId?: number
-  }>>([])
   const [shouldPulse, setShouldPulse] = useState(false)
   const previousUnreadCount = useRef(0)
   const { showNotification, canShowNotifications, requestPermission } = useBrowserNotifications()
@@ -94,13 +87,18 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
 
       // Show toast notification (in-app popup) based on preference
       if (pref.inApp) {
-        setToasts(prev => [...prev, {
+        const ticketId = notification.ticket_id
+        showNotificationToast({
           id: notification.id,
           title: notification.title,
           message: notification.message,
           type: notification.notification_type,
-          ticketId: notification.ticket_id
-        }])
+          onClick: () => {
+            if (ticketId) {
+              router.push(`/tickets/${ticketId}`)
+            }
+          },
+        })
       }
 
       // Show browser notification based on preference
@@ -210,16 +208,6 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
     fetchNotifications()
   }
 
-  const handleRemoveToast = (id: number) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
-
-  const handleToastClick = (ticketId?: number) => {
-    if (ticketId) {
-      router.push(`/tickets/${ticketId}`)
-    }
-  }
-
   return (
     <>
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -272,13 +260,6 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
         />
       </PopoverContent>
     </Popover>
-
-    {/* Toast notifications container */}
-    <NotificationToastContainer
-      toasts={toasts}
-      onRemove={handleRemoveToast}
-      onToastClick={handleToastClick}
-    />
     </>
   )
 }

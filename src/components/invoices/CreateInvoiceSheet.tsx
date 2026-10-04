@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { useCreateInvoice, useInvoiceClients, useInvoiceMaterials } from "@/hooks/useInvoices";
 import { useToast } from "@/hooks/use-toast";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface LineItem {
   tempId: string;
@@ -63,7 +64,7 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
     { ...defaultLineItem(), tempId: "1" },
   ]);
 
-  const { register, handleSubmit, setValue, reset, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setValue, setError, clearErrors, reset, formState: { errors, isSubmitting } } = useForm({
     defaultValues: {
       client: "",
       issue_date: new Date().toISOString().split("T")[0],
@@ -157,6 +158,13 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
   };
 
   const onSubmit = async (data: any) => {
+    // The client select isn't a registered input, so validate it here —
+    // otherwise the request goes out without a client and comes back as a 400.
+    if (!data.client) {
+      setError("client", { type: "required", message: t("form.required") })
+      return
+    }
+
     try {
       const payload: any = {
         client: parseInt(data.client),
@@ -192,7 +200,7 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
     } catch (error: any) {
       toast({
         title: t("errors.createFailed"),
-        description: error.message || t("errors.createFailedDesc"),
+        description: getApiErrorMessage(error, t("errors.createFailedDesc")),
         variant: "destructive",
       });
     }
@@ -215,7 +223,7 @@ export function CreateInvoiceSheet({ open, onOpenChange }: CreateInvoiceSheetPro
             <Label htmlFor="client">{t("form.client")} *</Label>
             <Select
               key={`client-select-${clients.length}`}
-              onValueChange={(value) => setValue("client", value)}
+              onValueChange={(value) => { setValue("client", value); clearErrors("client") }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t("form.selectClient")} />

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
+import { localizedName } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -54,6 +55,7 @@ interface LeaveType {
 
 export default function LeaveTypesPage() {
   const t = useTranslations("leave")
+  const locale = useLocale()
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -466,7 +468,7 @@ export default function LeaveTypesPage() {
                           className="w-3 h-3 rounded-full"
                           style={{ backgroundColor: type.color }}
                         />
-                        {type.name.en}
+                        {localizedName(type.name, locale)}
                       </div>
                     </TableCell>
                     <TableCell>

@@ -4,6 +4,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -34,17 +35,18 @@ export function DataTableServerPagination({
   const pageCount = Math.max(1, Math.ceil(totalCount / pageSize))
   const canPreviousPage = page > 1
   const canNextPage = page < pageCount
+  const t = useTranslations("common.table")
 
   return (
     <div className="flex flex-col items-center justify-between gap-2 md:flex-row">
       <div className="flex-1 text-sm text-muted-foreground">
         {selectedCount > 0
-          ? `${selectedCount} of ${totalCount} row(s) selected.`
-          : `${totalCount} row(s) total.`}
+          ? t("rowsSelected", { selected: selectedCount, total: totalCount })
+          : t("rowsTotal", { count: totalCount })}
       </div>
       <div className="flex items-center gap-x-6">
         <div className="hidden items-center gap-x-2 md:flex">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">{t("rowsPerPage")}</p>
           <Select
             value={`${pageSize}`}
             onValueChange={(value) => {
@@ -68,8 +70,8 @@ export function DataTableServerPagination({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-24 items-center justify-center text-sm font-medium">
-          Page {page} of {pageCount}
+        <div className="flex min-w-24 items-center justify-center whitespace-nowrap text-sm font-medium">
+          {t("pageOf", { page, pageCount })}
         </div>
         <div className="flex items-center gap-x-2 rtl:[&>button>svg]:-scale-100">
           <Button
@@ -77,7 +79,7 @@ export function DataTableServerPagination({
             className="h-8 w-8 p-0"
             onClick={() => onPageChange(1)}
             disabled={!canPreviousPage}
-            aria-label="Go to first page"
+            aria-label={t("firstPage")}
           >
             <ChevronsLeft className="h-4 w-4" />
           </Button>
@@ -86,7 +88,7 @@ export function DataTableServerPagination({
             className="h-8 w-8 p-0"
             onClick={() => onPageChange(page - 1)}
             disabled={!canPreviousPage}
-            aria-label="Go to previous page"
+            aria-label={t("previousPage")}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -95,7 +97,7 @@ export function DataTableServerPagination({
             className="h-8 w-8 p-0"
             onClick={() => onPageChange(page + 1)}
             disabled={!canNextPage}
-            aria-label="Go to next page"
+            aria-label={t("nextPage")}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -104,7 +106,7 @@ export function DataTableServerPagination({
             className="h-8 w-8 p-0"
             onClick={() => onPageChange(pageCount)}
             disabled={!canNextPage}
-            aria-label="Go to last page"
+            aria-label={t("lastPage")}
           >
             <ChevronsRight className="h-4 w-4" />
           </Button>

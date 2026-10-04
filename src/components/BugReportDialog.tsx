@@ -145,7 +145,7 @@ export function BugReportDialog() {
           <DialogTitle>{t("title")}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2" onPaste={handlePaste}>
+        <div className="min-w-0 space-y-4 py-2" onPaste={handlePaste}>
           <div className="space-y-2">
             <Label htmlFor="bug-title">{t("fieldTitle")} *</Label>
             <Input

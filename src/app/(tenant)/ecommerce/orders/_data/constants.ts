@@ -70,4 +70,5 @@ export const STATUS_OPTIONS = [
   "shipped",
   "delivered",
   "cancelled",
+  "refunded",
 ] as const

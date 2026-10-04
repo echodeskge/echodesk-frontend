@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
+import { localizedName } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -37,6 +38,7 @@ interface PublicHoliday {
 
 export default function PublicHolidaysPage() {
   const t = useTranslations("leave")
+  const locale = useLocale()
   const [holidays, setHolidays] = useState<PublicHoliday[]>([])
   const [loading, setLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -283,7 +285,7 @@ export default function PublicHolidaysPage() {
               <TableBody>
                 {holidays.map((holiday) => (
                   <TableRow key={holiday.id}>
-                    <TableCell>{holiday.name.en}</TableCell>
+                    <TableCell>{localizedName(holiday.name, locale)}</TableCell>
                     <TableCell>
                       {new Date(holiday.date).toLocaleDateString()}
                     </TableCell>

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/ui/data-table/data-table-column-header"
 import { ProductList } from "@/api/generated/interfaces"
-import { PRODUCT_STATUS_BADGE_VARIANTS } from "../_data/constants"
+import { PRODUCT_STATUS_BADGE_VARIANTS, PRODUCT_STATUS_LABEL_KEYS } from "../_data/constants"
 import { ProductsTableRowActions } from "./products-table-row-actions"
 
 interface ColumnOptions {
@@ -152,7 +152,7 @@ export function getProductColumns({
       cell: ({ row }) => {
         const status = String(row.original.status || "draft")
         const variant = PRODUCT_STATUS_BADGE_VARIANTS[status] || "secondary"
-        return <Badge variant={variant}>{t(status)}</Badge>
+        return <Badge variant={variant}>{t(PRODUCT_STATUS_LABEL_KEYS[status] || status)}</Badge>
       },
     },
     {

@@ -79,7 +79,7 @@ export function OrdersTableToolbar({
       <DataTableViewOptions table={table} />
       <Button variant="outline" size="sm" className="h-9" onClick={onExportAll}>
         <Download className="me-2 h-3.5 w-3.5" />
-        Export CSV
+        {t("exportCsv")}
       </Button>
     </div>
   )

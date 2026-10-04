@@ -16,10 +16,12 @@ import { formatCurrency, formatDate } from "../_lib/utils"
 
 interface ColumnOptions {
   t: (key: string) => string
+  locale?: string
 }
 
 export function getOrderColumns({
   t,
+  locale,
 }: ColumnOptions): ColumnDef<OrderListItem>[] {
   return [
     {
@@ -81,7 +83,7 @@ export function getOrderColumns({
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground">
-          {formatDate(row.original.created_at)}
+          {formatDate(row.original.created_at, locale)}
         </span>
       ),
     },

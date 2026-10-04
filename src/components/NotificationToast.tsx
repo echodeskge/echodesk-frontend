@@ -1,12 +1,12 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { X, Bell } from 'lucide-react'
+import { toast as sonnerToast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 interface NotificationToastProps {
-  id: number
   title: string
   message: string
   type?: string
@@ -16,7 +16,6 @@ interface NotificationToastProps {
 }
 
 export function NotificationToast({
-  id,
   title,
   message,
   type = 'default',
@@ -24,28 +23,7 @@ export function NotificationToast({
   onClick,
   duration = 5000
 }: NotificationToastProps) {
-  const [isVisible, setIsVisible] = useState(false)
-  const [isExiting, setIsExiting] = useState(false)
-
-  // Slide in animation
-  useEffect(() => {
-    // Trigger enter animation after mount
-    setTimeout(() => setIsVisible(true), 10)
-
-    // Auto-dismiss after duration
-    const timer = setTimeout(() => {
-      handleClose()
-    }, duration)
-
-    return () => clearTimeout(timer)
-  }, [duration])
-
-  const handleClose = () => {
-    setIsExiting(true)
-    setTimeout(() => {
-      onClose()
-    }, 300) // Match animation duration
-  }
+  const handleClose = onClose
 
   const getTypeColor = () => {
     switch (type) {
@@ -65,13 +43,7 @@ export function NotificationToast({
   }
 
   return (
-    <div
-      className={cn(
-        'fixed bottom-4 right-4 z-50 w-96 max-w-[calc(100vw-2rem)]',
-        'transform transition-all duration-300 ease-out',
-        isVisible && !isExiting ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
-      )}
-    >
+    <div className="w-[356px] max-w-[calc(100vw-2rem)]">
       <div
         className={cn(
           'relative overflow-hidden rounded-lg border-l-4 shadow-lg',
@@ -143,46 +115,39 @@ export function NotificationToast({
   )
 }
 
-// Container for managing multiple toasts
-interface NotificationToastContainerProps {
-  toasts: Array<{
-    id: number
-    title: string
-    message: string
-    type?: string
-    ticketId?: number
-  }>
-  onRemove: (id: number) => void
-  onToastClick: (ticketId?: number) => void
+interface ShowNotificationToastOptions {
+  id: number
+  title: string
+  message: string
+  type?: string
+  onClick: () => void
+  duration?: number
 }
 
-export function NotificationToastContainer({
-  toasts,
-  onRemove,
-  onToastClick
-}: NotificationToastContainerProps) {
-  return (
-    <div className="fixed bottom-0 right-0 z-50 pointer-events-none">
-      <div className="flex flex-col-reverse gap-2 p-4 pointer-events-auto">
-        {toasts.map((toast, index) => (
-          <div
-            key={toast.id}
-            style={{
-              transform: `translateY(${index * -8}px)`,
-              transition: 'transform 0.3s ease-out'
-            }}
-          >
-            <NotificationToast
-              id={toast.id}
-              title={toast.title}
-              message={toast.message}
-              type={toast.type}
-              onClose={() => onRemove(toast.id)}
-              onClick={() => onToastClick(toast.ticketId)}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
+/**
+ * Show a realtime notification in the app's single toast stack (sonner), so it
+ * queues with success/error toasts instead of being drawn on top of them.
+ */
+export function showNotificationToast({
+  id,
+  title,
+  message,
+  type,
+  onClick,
+  duration = 5000,
+}: ShowNotificationToastOptions) {
+  const toastId = `notification-${id}`
+  sonnerToast.custom(
+    () => (
+      <NotificationToast
+        title={title}
+        message={message}
+        type={type}
+        duration={duration}
+        onClick={onClick}
+        onClose={() => sonnerToast.dismiss(toastId)}
+      />
+    ),
+    { id: toastId, duration }
   )
 }

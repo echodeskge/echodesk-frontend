@@ -299,7 +299,7 @@ export default function ServicesPage() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
+              <div className="grid min-w-0 grid-cols-1 gap-2">
                 <Label htmlFor="type">{t("bookingType")}</Label>
                 <Select
                   value={formData.booking_type}
@@ -314,7 +314,7 @@ export default function ServicesPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid gap-2">
+              <div className="grid min-w-0 grid-cols-1 gap-2">
                 <Label htmlFor="status">{t("statusLabel")}</Label>
                 <Select
                   value={formData.status}

@@ -381,7 +381,7 @@ describe("EmailComposerForm", () => {
       render(<EmailComposerForm />);
 
       expect(
-        screen.getByText(/Drag & drop files here/i)
+        screen.getByText("dragOrClick")
       ).toBeInTheDocument();
     });
 
@@ -409,7 +409,7 @@ describe("EmailComposerForm", () => {
       });
       await user.upload(fileInput, file);
 
-      expect(screen.getByText(/1 file selected/i)).toBeInTheDocument();
+      expect(screen.getByText("filesSelected")).toBeInTheDocument();
 
       await user.click(screen.getByText("Send").closest("button")!);
 

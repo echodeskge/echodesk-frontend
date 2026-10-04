@@ -49,3 +49,51 @@ export function formatFileSize(bytes: number, decimals: number = 2) {
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i]
 }
+
+/**
+ * Pull a human-readable reason out of a failed API call. DRF returns
+ * `{detail}` / `{error}` or a map of field → messages (possibly nested, e.g.
+ * `line_items: [{quantity: ["…"]}]`); axios' own message is only
+ * "Request failed with status code 400", which tells the user nothing.
+ */
+export function getApiErrorMessage(error: unknown, fallback = ""): string {
+  const data = (error as { response?: { data?: unknown } })?.response?.data
+
+  const firstMessage = (value: unknown, label?: string): string | null => {
+    if (typeof value === "string") {
+      // Skip HTML error pages (e.g. a proxy 502).
+      if (!value.trim() || value.trim().startsWith("<")) return null
+      return label ? `${label}: ${value}` : value
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = firstMessage(item, label)
+        if (found) return found
+      }
+      return null
+    }
+    if (value && typeof value === "object") {
+      const record = value as Record<string, unknown>
+      for (const key of ["detail", "error", "message", "non_field_errors"]) {
+        const found = firstMessage(record[key], label)
+        if (found) return found
+      }
+      for (const [key, inner] of Object.entries(record)) {
+        const found = firstMessage(inner, key)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  return firstMessage(data) || fallback || (error instanceof Error ? error.message : "")
+}
+
+/** Pick the name for the active locale from an API `{en, ka}` name object, falling back to the other language. */
+export function localizedName(
+  name: { en?: string; ka?: string } | null | undefined,
+  locale: string
+): string {
+  if (!name) return ""
+  return (locale === "ka" ? name.ka || name.en : name.en || name.ka) || ""
+}

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Clock, Eye, Send, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface TemplateCardProps {
   template: WhatsAppMessageTemplate;
@@ -22,6 +23,7 @@ export default function TemplateCard({
   onDelete,
   isDeleting = false,
 }: TemplateCardProps) {
+  const t = useTranslations("social.templates");
   const getStatusBadge = (status?: WhatsAppMessageTemplateStatusEnum | string) => {
     const statusStr = status;
     switch (statusStr) {
@@ -29,21 +31,21 @@ export default function TemplateCard({
         return (
           <Badge variant="default" className="bg-green-500 hover:bg-green-600">
             <CheckCircle className="w-3 h-3 mr-1" />
-            Approved
+            {t("status.APPROVED")}
           </Badge>
         );
       case "PENDING":
         return (
           <Badge variant="secondary">
             <Clock className="w-3 h-3 mr-1" />
-            Pending
+            {t("status.PENDING")}
           </Badge>
         );
       case "REJECTED":
         return (
           <Badge variant="destructive">
             <XCircle className="w-3 h-3 mr-1" />
-            Rejected
+            {t("status.REJECTED")}
           </Badge>
         );
       default:
@@ -63,7 +65,7 @@ export default function TemplateCard({
 
     return (
       <Badge variant="outline" className={cn(categoryColors[categoryStr])}>
-        {categoryStr}
+        {categoryColors[categoryStr] ? t(`category.${categoryStr}`) : categoryStr}
       </Badge>
     );
   };
@@ -75,7 +77,7 @@ export default function TemplateCard({
           <div className="space-y-1 flex-1">
             <CardTitle className="text-lg">{template.name}</CardTitle>
             <CardDescription className="text-xs">
-              {template.language?.toUpperCase()} • Created by {template.created_by_name || "Unknown"}
+              {template.language?.toUpperCase()} • {t("createdBy", { name: template.created_by_name || t("unknown") })}
             </CardDescription>
           </div>
           {getStatusBadge(template.status)}
@@ -89,7 +91,7 @@ export default function TemplateCard({
 
         {/* Components Preview */}
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Components:</p>
+          <p className="text-xs font-medium text-muted-foreground">{t("components")}</p>
           <div className="bg-muted/50 rounded-md p-3 space-y-2 text-sm">
             {template.components && Array.isArray(template.components) && template.components.map((component: any, index: number) => (
               <div key={index} className="text-xs">
@@ -110,7 +112,7 @@ export default function TemplateCard({
               onClick={() => onView(template.id!)}
             >
               <Eye className="w-3 h-3 mr-1" />
-              View
+              {t("view")}
             </Button>
           )}
           {onSend && (
@@ -122,7 +124,7 @@ export default function TemplateCard({
               disabled={template.status?.toString() !== "APPROVED"}
             >
               <Send className="w-3 h-3 mr-1" />
-              Send
+              {t("send")}
             </Button>
           )}
           {onDelete && (

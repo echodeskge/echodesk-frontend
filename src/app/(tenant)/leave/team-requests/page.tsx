@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useLocale, useTranslations } from "next-intl"
+import { localizedName } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -46,6 +48,8 @@ interface LeaveRequest {
 }
 
 export default function TeamRequestsPage() {
+  const t = useTranslations("leave")
+  const locale = useLocale()
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null)
@@ -95,12 +99,12 @@ export default function TeamRequestsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: any }> = {
-      pending: { label: "Pending", variant: "outline" },
-      manager_approved: { label: "Manager Approved", variant: "secondary" },
-      hr_approved: { label: "HR Approved", variant: "secondary" },
-      approved: { label: "Approved", variant: "default" },
-      rejected: { label: "Rejected", variant: "destructive" },
-      cancelled: { label: "Cancelled", variant: "outline" },
+      pending: { label: t("shared.status.pending"), variant: "outline" },
+      manager_approved: { label: t("shared.status.manager_approved"), variant: "secondary" },
+      hr_approved: { label: t("shared.status.hr_approved"), variant: "secondary" },
+      approved: { label: t("shared.status.approved"), variant: "default" },
+      rejected: { label: t("shared.status.rejected"), variant: "destructive" },
+      cancelled: { label: t("shared.status.cancelled"), variant: "outline" },
     }
 
     const config = statusConfig[status] || statusConfig.pending
@@ -121,77 +125,77 @@ export default function TeamRequestsPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Team Leave Requests</h1>
+        <h1 className="text-3xl font-bold">{t("teamRequests.title")}</h1>
         <p className="text-muted-foreground mt-1">
-          Approve or reject leave requests from your team members
+          {t("teamRequests.description")}
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("teamRequests.pendingApproval")}</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingRequests.length}</div>
-            <p className="text-xs text-muted-foreground">Require your action</p>
+            <p className="text-xs text-muted-foreground">{t("teamRequests.requireYourAction")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("teamRequests.totalRequests")}</CardTitle>
             <User className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{requests.length}</div>
-            <p className="text-xs text-muted-foreground">From your team</p>
+            <p className="text-xs text-muted-foreground">{t("teamRequests.fromYourTeam")}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("shared.status.approved")}</CardTitle>
             <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {requests.filter((r) => r.status.includes("approved")).length}
             </div>
-            <p className="text-xs text-muted-foreground">This period</p>
+            <p className="text-xs text-muted-foreground">{t("teamRequests.thisPeriod")}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Leave Requests</CardTitle>
+          <CardTitle>{t("shared.leaveRequests")}</CardTitle>
           <CardDescription>
-            Manage leave requests from your direct reports
+            {t("teamRequests.cardDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {requests.length === 0 ? (
             <div className="text-center py-12">
               <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No team requests</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("teamRequests.noRequestsTitle")}</h3>
               <p className="text-muted-foreground">
-                There are no leave requests from your team members yet
+                {t("teamRequests.noRequestsDescription")}
               </p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t("shared.employee")}</TableHead>
+                  <TableHead>{t("shared.leaveType")}</TableHead>
+                  <TableHead>{t("shared.startDate")}</TableHead>
+                  <TableHead>{t("shared.endDate")}</TableHead>
+                  <TableHead>{t("shared.days")}</TableHead>
+                  <TableHead>{t("shared.statusLabel")}</TableHead>
+                  <TableHead>{t("shared.reason")}</TableHead>
+                  <TableHead>{t("shared.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -212,7 +216,7 @@ export default function TeamRequestsPage() {
                         style={{ backgroundColor: request.leave_type.color }}
                         className="text-white"
                       >
-                        {request.leave_type.name.en}
+                        {localizedName(request.leave_type.name, locale)}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -235,7 +239,7 @@ export default function TeamRequestsPage() {
                             onClick={() => openActionDialog(request, "approve")}
                           >
                             <CheckCircle2 className="h-4 w-4 mr-1" />
-                            Approve
+                            {t("teamRequests.approve")}
                           </Button>
                           <Button
                             size="sm"
@@ -243,7 +247,7 @@ export default function TeamRequestsPage() {
                             onClick={() => openActionDialog(request, "reject")}
                           >
                             <XCircle className="h-4 w-4 mr-1" />
-                            Reject
+                            {t("teamRequests.reject")}
                           </Button>
                         </div>
                       )}
@@ -267,27 +271,27 @@ export default function TeamRequestsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {actionType === "approve" ? "Approve" : "Reject"} Leave Request
+              {actionType === "approve" ? t("teamRequests.approveDialogTitle") : t("teamRequests.rejectDialogTitle")}
             </DialogTitle>
             <DialogDescription>
               {selectedRequest && (
                 <div className="space-y-2 mt-2">
                   <p>
-                    <strong>Employee:</strong> {selectedRequest.employee.first_name}{" "}
+                    <strong>{t("shared.employee")}:</strong> {selectedRequest.employee.first_name}{" "}
                     {selectedRequest.employee.last_name}
                   </p>
                   <p>
-                    <strong>Leave Type:</strong> {selectedRequest.leave_type.name.en}
+                    <strong>{t("shared.leaveType")}:</strong> {localizedName(selectedRequest.leave_type.name, locale)}
                   </p>
                   <p>
-                    <strong>Duration:</strong>{" "}
+                    <strong>{t("teamRequests.duration")}:</strong>{" "}
                     {new Date(selectedRequest.start_date).toLocaleDateString()} -{" "}
                     {new Date(selectedRequest.end_date).toLocaleDateString()} (
-                    {selectedRequest.total_days} days)
+                    {t("teamRequests.totalDays", { count: selectedRequest.total_days })})
                   </p>
                   {selectedRequest.reason && (
                     <p>
-                      <strong>Reason:</strong> {selectedRequest.reason}
+                      <strong>{t("shared.reason")}:</strong> {selectedRequest.reason}
                     </p>
                   )}
                 </div>
@@ -296,10 +300,10 @@ export default function TeamRequestsPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="comments">Comments (Optional)</Label>
+              <Label htmlFor="comments">{t("teamRequests.commentsOptional")}</Label>
               <Textarea
                 id="comments"
-                placeholder="Add your comments here..."
+                placeholder={t("teamRequests.commentsPlaceholder")}
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 rows={4}
@@ -315,7 +319,7 @@ export default function TeamRequestsPage() {
                 setComments("")
               }}
             >
-              Cancel
+              {t("shared.cancel")}
             </Button>
             <Button
               variant={actionType === "approve" ? "default" : "destructive"}
@@ -324,12 +328,12 @@ export default function TeamRequestsPage() {
               {actionType === "approve" ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Confirm Approval
+                  {t("teamRequests.confirmApproval")}
                 </>
               ) : (
                 <>
                   <XCircle className="h-4 w-4 mr-2" />
-                  Confirm Rejection
+                  {t("teamRequests.confirmRejection")}
                 </>
               )}
             </Button>

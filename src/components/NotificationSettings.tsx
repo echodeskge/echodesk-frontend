@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { getNotificationSound } from '@/utils/notificationSound'
 import { useWebPush } from '@/hooks/useWebPush'
 import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
 
 export function NotificationSettings() {
   const t = useTranslations('notificationPreferences')
@@ -64,7 +65,12 @@ export function NotificationSettings() {
   }
 
   const handleTestPush = async () => {
-    await sendTestNotification()
+    const sent = await sendTestNotification()
+    if (sent) {
+      toast.success(t('settings.testPushSent'))
+    } else {
+      toast.error(t('settings.testPushFailed'))
+    }
   }
 
   return (

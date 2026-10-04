@@ -9,6 +9,7 @@ import {
   TimelineItem,
   TimelineLine,
 } from "@/components/ui/timeline"
+import { useLocale } from "next-intl"
 import { formatDateWithTime } from "../../_lib/utils"
 import { OrderDetail } from "../../_types"
 
@@ -24,6 +25,7 @@ interface TimelineEntry {
 }
 
 export function OrderTimelineCard({ order, t }: OrderTimelineCardProps) {
+  const locale = useLocale()
   const raw = order as unknown as Record<string, unknown>
   const entries: TimelineEntry[] = []
 
@@ -96,7 +98,7 @@ export function OrderTimelineCard({ order, t }: OrderTimelineCardProps) {
                 <TimelineHeading>{entry.label}</TimelineHeading>
                 <TimelineContent>
                   <p className="text-xs text-muted-foreground">
-                    {formatDateWithTime(entry.date)}
+                    {formatDateWithTime(entry.date, locale)}
                   </p>
                   <p className="text-sm">{entry.description}</p>
                 </TimelineContent>

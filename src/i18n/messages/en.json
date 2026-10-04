@@ -196,7 +196,29 @@
     "confirm": "Confirm",
     "yes": "Yes",
     "no": "No",
-    "optional": "optional"
+    "optional": "optional",
+    "table": {
+      "view": "View",
+      "toggleColumns": "Toggle columns",
+      "rowsPerPage": "Rows per page",
+      "pageOf": "Page {page} of {pageCount}",
+      "rowsTotal": "{count} row(s) total.",
+      "rowsSelected": "{selected} of {total} row(s) selected.",
+      "firstPage": "Go to first page",
+      "previousPage": "Go to previous page",
+      "nextPage": "Go to next page",
+      "lastPage": "Go to last page"
+    },
+    "dropzone": {
+      "dropHere": "Drop files here...",
+      "dragOrClick": "Drag & drop files here, or click to select",
+      "limits": "Maximum {maxFiles} files, up to {maxSize} each",
+      "filesSelected": "{count, plural, one {# file selected} other {# files selected}}",
+      "tooLarge": "File is too large. Maximum size is {maxSize}",
+      "tooMany": "Maximum {maxFiles} files allowed",
+      "invalidType": "File type is not supported",
+      "uploadFailed": "File upload failed"
+    }
   },
   "nav": {
     "tickets": "Boards",
@@ -1565,7 +1587,8 @@
       "processing": "Processing",
       "shipped": "Shipped",
       "delivered": "Delivered",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "refunded": "Refunded"
     },
     "table": {
       "orderNumber": "Order #",
@@ -1666,7 +1689,8 @@
       "cancel": "Cancel",
       "success": "Order has been refunded successfully",
       "error": "Failed to refund order"
-    }
+    },
+    "exportCsv": "Export CSV"
   },
   "ecommerceAnalytics": {
     "title": "Ecommerce Dashboard",
@@ -2286,6 +2310,103 @@
       "sendCode": "Send Code",
       "verify": "Verify",
       "cancel": "Cancel"
+    },
+    "templates": {
+      "title": "WhatsApp Message Templates",
+      "subtitle": "Manage message templates for {businessName}",
+      "syncFromMeta": "Sync from Meta",
+      "createTemplate": "Create Template",
+      "noTemplates": "No templates found",
+      "noTemplatesDescription": "Create your first message template or sync from Meta to get started.",
+      "connectFirst": "Please connect your WhatsApp Business Account first to manage templates.",
+      "goToConnections": "Go to Connections",
+      "syncFailed": "Failed to sync templates",
+      "deleteFailed": "Failed to delete template",
+      "confirmDelete": "Are you sure you want to delete this template?",
+      "status": {
+        "APPROVED": "Approved",
+        "PENDING": "Pending",
+        "REJECTED": "Rejected"
+      },
+      "category": {
+        "MARKETING": "Marketing",
+        "UTILITY": "Utility",
+        "AUTHENTICATION": "Authentication"
+      },
+      "createdBy": "Created by {name}",
+      "unknown": "Unknown",
+      "components": "Components:",
+      "view": "View",
+      "send": "Send",
+      "create": {
+        "connectFirst": "Please connect your WhatsApp Business Account first to create templates.",
+        "backToTemplates": "Back to Templates",
+        "title": "Create WhatsApp Template",
+        "subtitle": "Create a new message template for {businessName}",
+        "importantNotes": "Important Notes:",
+        "noteApproval": "Templates must be approved by Meta before use (usually 24-48 hours)",
+        "noteNameImmutable": "Template names cannot be changed after creation",
+        "noteParameters": "Use parameters ('{{1}}', '{{2}}') for dynamic content in the body",
+        "noteMarketingOptIn": "Marketing templates require opt-in from recipients",
+        "createFailed": "Failed to create template"
+      },
+      "form": {
+        "nameRequired": "Template name is required",
+        "nameInvalid": "Template name must be lowercase alphanumeric with underscores only (no spaces)",
+        "nameLength": "Template name must be 1-512 characters",
+        "basicInfo": "Basic Information",
+        "basicInfoDescription": "Configure the template's basic settings",
+        "templateName": "Template Name",
+        "nameHint": "Lowercase letters, numbers, and underscores only. No spaces.",
+        "language": "Language",
+        "languages": {
+          "en": "English",
+          "ka": "Georgian",
+          "ru": "Russian",
+          "es": "Spanish",
+          "fr": "French",
+          "de": "German"
+        },
+        "category": "Category",
+        "categoryHint": {
+          "MARKETING": "Promotional content, newsletters",
+          "UTILITY": "Account updates, order notifications",
+          "AUTHENTICATION": "OTP codes, verification"
+        },
+        "messageComponents": "Message Components",
+        "messageComponentsDescription": "Build your template structure",
+        "componentType": {
+          "HEADER": "Header",
+          "BODY": "Body",
+          "FOOTER": "Footer",
+          "BUTTONS": "Buttons"
+        },
+        "required": "Required",
+        "format": "Format",
+        "formats": {
+          "TEXT": "Text",
+          "IMAGE": "Image",
+          "VIDEO": "Video",
+          "DOCUMENT": "Document"
+        },
+        "headerText": "Header Text",
+        "headerTextPlaceholder": "Enter header text...",
+        "maxCharacters": "Max {max} characters",
+        "bodyText": "Body Text",
+        "footerText": "Footer Text",
+        "bodyPlaceholder": "Enter your message... Use '{{1}}', '{{2}}' for dynamic content",
+        "footerPlaceholder": "Enter footer text...",
+        "bodyHint": "Use '{{1}}', '{{2}}', etc. for parameters. Current: {count}",
+        "buttonNumber": "Button {number}",
+        "buttonTypes": {
+          "QUICK_REPLY": "Quick Reply",
+          "URL": "URL",
+          "PHONE_NUMBER": "Phone Number"
+        },
+        "buttonTextPlaceholder": "Button text",
+        "addButton": "Add Button",
+        "creating": "Creating..."
+      }
     }
   },
   "timeTracking": {
@@ -4134,7 +4255,9 @@
       "pushBlockedDesc": "Please enable notifications in your browser settings",
       "pushDefaultDesc": "Click the toggle to enable push notifications",
       "sending": "Sending...",
-      "testPush": "Send Test Push Notification"
+      "testPush": "Send Test Push Notification",
+      "testPushSent": "Test notification sent. It should appear in a few seconds.",
+      "testPushFailed": "Could not send the test notification. Turn push notifications off and on again, then retry."
     }
   },
   "leave": {
@@ -4250,6 +4373,129 @@
       "saveSettings": "Save Settings",
       "savedSuccess": "Settings saved successfully!",
       "savedError": "Failed to save settings"
+    },
+    "shared": {
+      "status": {
+        "pending": "Pending",
+        "manager_approved": "Manager Approved",
+        "hr_approved": "HR Approved",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled"
+      },
+      "leaveType": "Leave Type",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "days": "Days",
+      "statusLabel": "Status",
+      "reason": "Reason",
+      "submitted": "Submitted",
+      "employee": "Employee",
+      "actions": "Actions",
+      "cancel": "Cancel",
+      "leaveRequests": "Leave Requests",
+      "noLeaveRequests": "No leave requests",
+      "used": "Used"
+    },
+    "overview": {
+      "links": {
+        "myRequests": {
+          "title": "My Requests",
+          "description": "View and manage your leave requests"
+        },
+        "myBalance": {
+          "title": "My Balance",
+          "description": "Check your leave balance"
+        },
+        "teamRequests": {
+          "title": "Team Requests",
+          "description": "Approve team leave requests"
+        },
+        "allRequests": {
+          "title": "All Requests",
+          "description": "Manage all leave requests"
+        }
+      },
+      "title": "Leave Management",
+      "description": "Overview of your leave management system",
+      "pendingRequests": "Pending Requests",
+      "awaitingApproval": "Awaiting approval",
+      "approvedLeaves": "Approved Leaves",
+      "thisYear": "This year",
+      "leaveBalance": "Leave Balance",
+      "daysRemaining": "Days remaining",
+      "teamOnLeave": "Team on Leave",
+      "today": "Today",
+      "teamPending": "Team Pending",
+      "requireYourApproval": "Require your approval",
+      "leaveTypes": "Leave Types",
+      "activeLeaveTypes": "Active leave types",
+      "upcomingHolidays": "Upcoming Holidays",
+      "next30Days": "Next 30 days",
+      "quickActions": "Quick Actions",
+      "quickActionsDescription": "Navigate to different sections"
+    },
+    "myRequests": {
+      "title": "My Leave Requests",
+      "description": "View and manage your leave requests",
+      "newRequest": "New Request",
+      "createTitle": "Create Leave Request",
+      "createDescription": "Submit a new leave request for approval",
+      "selectLeaveType": "Select leave type",
+      "reasonPlaceholder": "Enter reason for leave...",
+      "submitRequest": "Submit Request",
+      "cardDescription": "All your leave requests and their approval status",
+      "emptyDescription": "You haven't submitted any leave requests yet",
+      "createFirst": "Create Your First Request"
+    },
+    "myBalance": {
+      "title": "My Leave Balance",
+      "description": "Overview of your leave balance for {year}",
+      "totalAllocated": "Total Allocated",
+      "daysAllocatedThisYear": "Days allocated this year",
+      "daysTakenSoFar": "Days taken so far",
+      "daysInPendingRequests": "Days in pending requests",
+      "remaining": "Remaining",
+      "daysAvailable": "Days available",
+      "noBalanceTitle": "No leave balance data",
+      "noBalanceLine1": "Your leave balance has not been allocated yet.",
+      "noBalanceLine2": "Please contact your HR department.",
+      "daysLeft": "{count} days left",
+      "usage": "Usage",
+      "usageValue": "{used} / {allocated} days",
+      "percentUsed": "{percentage}% of allocated leave used",
+      "allocated": "Allocated",
+      "carriedForward": "Carried Forward"
+    },
+    "teamRequests": {
+      "title": "Team Leave Requests",
+      "description": "Approve or reject leave requests from your team members",
+      "pendingApproval": "Pending Approval",
+      "requireYourAction": "Require your action",
+      "totalRequests": "Total Requests",
+      "fromYourTeam": "From your team",
+      "thisPeriod": "This period",
+      "cardDescription": "Manage leave requests from your direct reports",
+      "noRequestsTitle": "No team requests",
+      "noRequestsDescription": "There are no leave requests from your team members yet",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approveDialogTitle": "Approve Leave Request",
+      "rejectDialogTitle": "Reject Leave Request",
+      "duration": "Duration",
+      "totalDays": "{count} days",
+      "commentsOptional": "Comments (Optional)",
+      "commentsPlaceholder": "Add your comments here...",
+      "confirmApproval": "Confirm Approval",
+      "confirmRejection": "Confirm Rejection"
+    },
+    "allRequests": {
+      "title": "All Leave Requests",
+      "description": "View and manage all leave requests across the organization",
+      "filterByStatus": "Filter by status",
+      "filterAll": "All Requests",
+      "cardDescription": "Complete list of all leave requests",
+      "noMatchDescription": "No leave requests match the selected filter"
     }
   },
   "bookingsAvailability": {

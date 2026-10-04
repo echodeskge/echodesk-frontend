@@ -32,6 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataTableServerPagination } from "@/components/ui/data-table/data-table-pagination"
 import { OrderListItem } from "../_types"
+import { useLocale } from "next-intl"
 import { getOrderColumns } from "./orders-table-columns"
 import { OrdersTableToolbar } from "./orders-table-toolbar"
 
@@ -74,9 +75,11 @@ export function OrdersTable({
 
   const router = useRouter()
 
+  const locale = useLocale()
+
   const columns = useMemo(
-    () => getOrderColumns({ t }),
-    [t]
+    () => getOrderColumns({ t, locale }),
+    [t, locale]
   )
 
   const table = useReactTable({

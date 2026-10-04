@@ -15,6 +15,7 @@ import {
   PAYMENT_BADGE_VARIANTS,
   PAYMENT_STATUS_ICONS,
 } from "../../_data/constants"
+import { useLocale } from "next-intl"
 import { formatDate } from "../../_lib/utils"
 import { OrderDetail } from "../../_types"
 
@@ -31,6 +32,7 @@ export function OrderHeaderCard({
   onStatusChange,
   t,
 }: OrderHeaderCardProps) {
+  const locale = useLocale()
   const status = String(order.status || "pending")
   const paymentStatus = String(order.payment_status || "pending")
   const StatusIcon = STATUS_ICONS[status] || STATUS_ICONS.pending
@@ -43,7 +45,7 @@ export function OrderHeaderCard({
         <div className="flex items-center justify-between">
           <CardTitle>#{order.order_number}</CardTitle>
           <span className="text-sm text-muted-foreground">
-            {formatDate(order.created_at)}
+            {formatDate(order.created_at, locale)}
           </span>
         </div>
       </CardHeader>

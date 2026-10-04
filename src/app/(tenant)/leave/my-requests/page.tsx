@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useLocale, useTranslations } from "next-intl"
+import { localizedName } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -57,6 +59,8 @@ interface LeaveType {
 }
 
 export default function MyRequestsPage() {
+  const t = useTranslations("leave")
+  const locale = useLocale()
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
   const [loading, setLoading] = useState(true)
@@ -115,12 +119,12 @@ export default function MyRequestsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
-      pending: { label: "Pending", variant: "outline", icon: Clock },
-      manager_approved: { label: "Manager Approved", variant: "secondary", icon: CheckCircle2 },
-      hr_approved: { label: "HR Approved", variant: "secondary", icon: CheckCircle2 },
-      approved: { label: "Approved", variant: "default", icon: CheckCircle2 },
-      rejected: { label: "Rejected", variant: "destructive", icon: XCircle },
-      cancelled: { label: "Cancelled", variant: "outline", icon: XCircle },
+      pending: { label: t("shared.status.pending"), variant: "outline", icon: Clock },
+      manager_approved: { label: t("shared.status.manager_approved"), variant: "secondary", icon: CheckCircle2 },
+      hr_approved: { label: t("shared.status.hr_approved"), variant: "secondary", icon: CheckCircle2 },
+      approved: { label: t("shared.status.approved"), variant: "default", icon: CheckCircle2 },
+      rejected: { label: t("shared.status.rejected"), variant: "destructive", icon: XCircle },
+      cancelled: { label: t("shared.status.cancelled"), variant: "outline", icon: XCircle },
     }
 
     const config = statusConfig[status] || statusConfig.pending
@@ -146,29 +150,29 @@ export default function MyRequestsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">My Leave Requests</h1>
+          <h1 className="text-3xl font-bold">{t("myRequests.title")}</h1>
           <p className="text-muted-foreground mt-1">
-            View and manage your leave requests
+            {t("myRequests.description")}
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              New Request
+              {t("myRequests.newRequest")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
-                <DialogTitle>Create Leave Request</DialogTitle>
+                <DialogTitle>{t("myRequests.createTitle")}</DialogTitle>
                 <DialogDescription>
-                  Submit a new leave request for approval
+                  {t("myRequests.createDescription")}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="leave_type">Leave Type</Label>
+                  <Label htmlFor="leave_type">{t("shared.leaveType")}</Label>
                   <Select
                     value={formData.leave_type}
                     onValueChange={(value) =>
@@ -176,19 +180,19 @@ export default function MyRequestsPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select leave type" />
+                      <SelectValue placeholder={t("myRequests.selectLeaveType")} />
                     </SelectTrigger>
                     <SelectContent>
                       {leaveTypes.map((type) => (
                         <SelectItem key={type.id} value={String(type.id)}>
-                          {type.name.en}
+                          {localizedName(type.name, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="start_date">Start Date</Label>
+                  <Label htmlFor="start_date">{t("shared.startDate")}</Label>
                   <Input
                     id="start_date"
                     type="date"
@@ -200,7 +204,7 @@ export default function MyRequestsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="end_date">End Date</Label>
+                  <Label htmlFor="end_date">{t("shared.endDate")}</Label>
                   <Input
                     id="end_date"
                     type="date"
@@ -212,10 +216,10 @@ export default function MyRequestsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="reason">Reason</Label>
+                  <Label htmlFor="reason">{t("shared.reason")}</Label>
                   <Textarea
                     id="reason"
-                    placeholder="Enter reason for leave..."
+                    placeholder={t("myRequests.reasonPlaceholder")}
                     value={formData.reason}
                     onChange={(e) =>
                       setFormData({ ...formData, reason: e.target.value })
@@ -230,9 +234,9 @@ export default function MyRequestsPage() {
                   variant="outline"
                   onClick={() => setIsDialogOpen(false)}
                 >
-                  Cancel
+                  {t("shared.cancel")}
                 </Button>
-                <Button type="submit">Submit Request</Button>
+                <Button type="submit">{t("myRequests.submitRequest")}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -241,35 +245,35 @@ export default function MyRequestsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Leave Requests</CardTitle>
+          <CardTitle>{t("shared.leaveRequests")}</CardTitle>
           <CardDescription>
-            All your leave requests and their approval status
+            {t("myRequests.cardDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {requests.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No leave requests</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("shared.noLeaveRequests")}</h3>
               <p className="text-muted-foreground mb-4">
-                You haven&apos;t submitted any leave requests yet
+                {t("myRequests.emptyDescription")}
               </p>
               <Button onClick={() => setIsDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Your First Request
+                {t("myRequests.createFirst")}
               </Button>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Submitted</TableHead>
+                  <TableHead>{t("shared.leaveType")}</TableHead>
+                  <TableHead>{t("shared.startDate")}</TableHead>
+                  <TableHead>{t("shared.endDate")}</TableHead>
+                  <TableHead>{t("shared.days")}</TableHead>
+                  <TableHead>{t("shared.statusLabel")}</TableHead>
+                  <TableHead>{t("shared.reason")}</TableHead>
+                  <TableHead>{t("shared.submitted")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -280,7 +284,7 @@ export default function MyRequestsPage() {
                         style={{ backgroundColor: request.leave_type.color }}
                         className="text-white"
                       >
-                        {request.leave_type.name.en}
+                        {localizedName(request.leave_type.name, locale)}
                       </Badge>
                     </TableCell>
                     <TableCell>

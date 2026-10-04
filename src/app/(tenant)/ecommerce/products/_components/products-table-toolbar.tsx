@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { DataTableViewOptions } from "@/components/ui/data-table/data-table-column-toggle"
-import { PRODUCT_STATUS_OPTIONS } from "../_data/constants"
+import { PRODUCT_STATUS_LABEL_KEYS, PRODUCT_STATUS_OPTIONS } from "../_data/constants"
 import { ProductList } from "@/api/generated/interfaces"
 
 interface ProductsTableToolbarProps {
@@ -76,7 +76,7 @@ export function ProductsTableToolbar({
         <SelectContent>
           {PRODUCT_STATUS_OPTIONS.map((status) => (
             <SelectItem key={status} value={status}>
-              {status === "all" ? t("allStatus") : t(status)}
+              {status === "all" ? t("allStatus") : t(PRODUCT_STATUS_LABEL_KEYS[status] || status)}
             </SelectItem>
           ))}
         </SelectContent>

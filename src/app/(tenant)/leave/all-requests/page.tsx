@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useLocale, useTranslations } from "next-intl"
+import { localizedName } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -42,6 +44,8 @@ interface LeaveRequest {
 }
 
 export default function AllRequestsPage() {
+  const t = useTranslations("leave")
+  const locale = useLocale()
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -64,12 +68,12 @@ export default function AllRequestsPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; variant: any }> = {
-      pending: { label: "Pending", variant: "outline" },
-      manager_approved: { label: "Manager Approved", variant: "secondary" },
-      hr_approved: { label: "HR Approved", variant: "secondary" },
-      approved: { label: "Approved", variant: "default" },
-      rejected: { label: "Rejected", variant: "destructive" },
-      cancelled: { label: "Cancelled", variant: "outline" },
+      pending: { label: t("shared.status.pending"), variant: "outline" },
+      manager_approved: { label: t("shared.status.manager_approved"), variant: "secondary" },
+      hr_approved: { label: t("shared.status.hr_approved"), variant: "secondary" },
+      approved: { label: t("shared.status.approved"), variant: "default" },
+      rejected: { label: t("shared.status.rejected"), variant: "destructive" },
+      cancelled: { label: t("shared.status.cancelled"), variant: "outline" },
     }
 
     const config = statusConfig[status] || statusConfig.pending
@@ -89,53 +93,53 @@ export default function AllRequestsPage() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">All Leave Requests</h1>
+          <h1 className="text-3xl font-bold">{t("allRequests.title")}</h1>
           <p className="text-muted-foreground mt-1">
-            View and manage all leave requests across the organization
+            {t("allRequests.description")}
           </p>
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
+            <SelectValue placeholder={t("allRequests.filterByStatus")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Requests</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">{t("allRequests.filterAll")}</SelectItem>
+            <SelectItem value="pending">{t("shared.status.pending")}</SelectItem>
+            <SelectItem value="approved">{t("shared.status.approved")}</SelectItem>
+            <SelectItem value="rejected">{t("shared.status.rejected")}</SelectItem>
+            <SelectItem value="cancelled">{t("shared.status.cancelled")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Leave Requests</CardTitle>
+          <CardTitle>{t("shared.leaveRequests")}</CardTitle>
           <CardDescription>
-            Complete list of all leave requests
+            {t("allRequests.cardDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {requests.length === 0 ? (
             <div className="text-center py-12">
               <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No leave requests</h3>
+              <h3 className="text-lg font-semibold mb-2">{t("shared.noLeaveRequests")}</h3>
               <p className="text-muted-foreground">
-                No leave requests match the selected filter
+                {t("allRequests.noMatchDescription")}
               </p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Employee</TableHead>
-                  <TableHead>Leave Type</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Days</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reason</TableHead>
-                  <TableHead>Submitted</TableHead>
+                  <TableHead>{t("shared.employee")}</TableHead>
+                  <TableHead>{t("shared.leaveType")}</TableHead>
+                  <TableHead>{t("shared.startDate")}</TableHead>
+                  <TableHead>{t("shared.endDate")}</TableHead>
+                  <TableHead>{t("shared.days")}</TableHead>
+                  <TableHead>{t("shared.statusLabel")}</TableHead>
+                  <TableHead>{t("shared.reason")}</TableHead>
+                  <TableHead>{t("shared.submitted")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -156,7 +160,7 @@ export default function AllRequestsPage() {
                         style={{ backgroundColor: request.leave_type.color }}
                         className="text-white"
                       >
-                        {request.leave_type.name.en}
+                        {localizedName(request.leave_type.name, locale)}
                       </Badge>
                     </TableCell>
                     <TableCell>
