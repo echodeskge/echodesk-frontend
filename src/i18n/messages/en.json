@@ -4272,7 +4272,16 @@
       "save": "Save booking",
       "fillRequired": "Fill in the specialist, service, date and time.",
       "created": "Booking added",
-      "createFailed": "Could not add the booking"
+      "createFailed": "Could not add the booking",
+      "pickCustomer": "Choose a customer or add a new one.",
+      "changeCustomer": "Change customer",
+      "newCustomer": "New customer",
+      "searchCustomer": "Find or add a customer…",
+      "searchCustomerHint": "Name, phone or email",
+      "addNew": "Add new customer",
+      "addNamed": "Add new customer “{name}”",
+      "noCustomers": "No customers found",
+      "newCustomerSaved": "The customer is saved to your customer list together with the booking."
     }
   },
   "autoPosting": {

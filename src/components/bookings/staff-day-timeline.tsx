@@ -23,7 +23,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Input } from "@/components/ui/input"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast"
 import { cn, getApiErrorMessage, localizedName } from "@/lib/utils"
@@ -191,7 +193,7 @@ export function StaffDayTimeline() {
           <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setDate(shiftDate(date, -1))} aria-label={t("timeline.previousDay")}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Input type="date" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} className="h-9 w-[150px]" />
+          <DatePicker value={date} onChange={setDate} className="h-9 w-[190px]" />
           <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setDate(shiftDate(date, 1))} aria-label={t("timeline.nextDay")}>
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -304,9 +306,12 @@ export function StaffDayTimeline() {
                       const status = String(booking.status || "pending")
                       return (
                         <Popover key={booking.id} open={openId === booking.id} onOpenChange={(open) => setOpenId(open ? booking.id : null)}>
+                          <Tooltip delayDuration={150}>
+                          <TooltipTrigger asChild>
                           <PopoverTrigger asChild>
                             <button
                               type="button"
+                              data-booking={booking.id}
                               onClick={(e) => e.stopPropagation()}
                               className={cn(
                                 "absolute top-1.5 bottom-1.5 overflow-hidden rounded-md border-l-4 px-2 text-left text-xs shadow-sm transition-opacity hover:opacity-90",
@@ -314,17 +319,26 @@ export function StaffDayTimeline() {
                                 !matches && "opacity-25"
                               )}
                               style={{ left: (start - range.start) * ppm, width: Math.max(28, (end - start) * ppm - 2) }}
-                              title={`${booking.start_time.slice(0, 5)}–${booking.end_time.slice(0, 5)} ${booking.client.full_name}`}
                             >
                               <span className="block truncate font-semibold">
                                 {booking.client.full_name}
                                 {booking.client.phone_number ? ` · ${booking.client.phone_number}` : ""}
                               </span>
                               <span className="block truncate opacity-80">
-                                {booking.start_time.slice(0, 5)} {localizedName(booking.service.name, locale)}
+                                {booking.start_time.slice(0, 5)}–{booking.end_time.slice(0, 5)} {localizedName(booking.service.name, locale)}
                               </span>
                             </button>
                           </PopoverTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="px-3 py-2">
+                            <p className="text-sm font-semibold tabular-nums">
+                              {booking.start_time.slice(0, 5)} – {booking.end_time.slice(0, 5)}
+                              <span className="ml-2 font-normal opacity-80">{t("timeline.minutes", { n: end - start })}</span>
+                            </p>
+                            <p className="text-xs">{booking.client.full_name}{booking.client.phone_number ? ` · ${booking.client.phone_number}` : ""}</p>
+                            <p className="text-xs opacity-80">{localizedName(booking.service.name, locale)} · {money(booking.total_amount)}</p>
+                          </TooltipContent>
+                          </Tooltip>
                           <PopoverContent className="w-80" align="start" onClick={(e) => e.stopPropagation()}>
                             <div className="space-y-3">
                               <div className="flex items-start justify-between gap-2">
