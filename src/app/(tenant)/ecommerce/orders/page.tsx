@@ -44,6 +44,7 @@ export default function EcommerceOrdersPage() {
         undefined,
         page,
         pageSize,
+        undefined, // payment provider
         searchQuery || undefined,
         statusParam
       )

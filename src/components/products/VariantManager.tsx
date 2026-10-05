@@ -15,7 +15,8 @@ import {
 import type {
   ProductVariant,
   ProductVariantRequest,
-  PatchedProductVariantRequest,
+  ProductVariantAdminRequest,
+  PatchedProductVariantAdminRequest,
 } from "@/api/generated/interfaces";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +83,7 @@ export function VariantManager({ productId }: VariantManagerProps) {
   // Create mutation
   const createVariant = useMutation({
     mutationFn: (data: VariantCreatePayload) =>
-      ecommerceAdminVariantsCreate(data as unknown as ProductVariantRequest),
+      ecommerceAdminVariantsCreate(data as unknown as ProductVariantAdminRequest),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-variants", productId] });
       toast.success(t("created"));
@@ -95,7 +96,7 @@ export function VariantManager({ productId }: VariantManagerProps) {
 
   // Update mutation
   const updateVariant = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: PatchedProductVariantRequest }) =>
+    mutationFn: ({ id, data }: { id: number; data: PatchedProductVariantAdminRequest }) =>
       ecommerceAdminVariantsPartialUpdate(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["product-variants", productId] });

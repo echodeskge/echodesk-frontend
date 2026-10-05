@@ -55,13 +55,13 @@ import { VariantManager } from "./VariantManager";
 import { Trash2 } from "lucide-react";
 
 /**
- * StatusF43enum is the generated union for ProductCreateUpdateRequest.status
+ * Status956enum is the generated union for ProductCreateUpdateRequest.status
  * (draft/published/…). The form state is Partial<ProductCreateUpdateRequest>,
  * so string literals from UI handlers are funneled through this cast instead
  * of bare `as any`.
  */
-import type { StatusF43enum } from "@/api/generated/interfaces";
-const asStatus = (v: string) => v as unknown as StatusF43enum;
+import type { Status956enum } from "@/api/generated/interfaces";
+const asStatus = (v: string) => v as unknown as Status956enum;
 
 interface EditProductSheetProps {
   open: boolean;

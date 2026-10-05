@@ -2,7 +2,9 @@ import { TenantConfig, Tenant } from '@/types/tenant';
 
 // Domain configuration from environment
 const API_DOMAIN = process.env.NEXT_PUBLIC_API_DOMAIN || 'api.echodesk.ge';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `https://${API_DOMAIN}`;
+// 'http' only for a local backend (e.g. NEXT_PUBLIC_API_DOMAIN=api.lvh.me:8000)
+const API_PROTOCOL = process.env.NEXT_PUBLIC_API_PROTOCOL || 'https';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `${API_PROTOCOL}://${API_DOMAIN}`;
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge';
 
 class TenantService {
@@ -26,7 +28,7 @@ class TenantService {
   private getTenantApiUrl(subdomain?: string): string {
     if (subdomain) {
       // Use tenant-specific API subdomain: subdomain.api.echodesk.cloud
-      return `https://${subdomain}.${API_DOMAIN}`;
+      return `${API_PROTOCOL}://${subdomain}.${API_DOMAIN}`;
     }
     
     // Fallback to main API for non-tenant requests

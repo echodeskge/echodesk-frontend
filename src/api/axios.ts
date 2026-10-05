@@ -2,8 +2,10 @@ import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 
 
 // Domain configuration from environment
 const API_DOMAIN = process.env.NEXT_PUBLIC_API_DOMAIN || 'api.echodesk.ge';
+// 'http' only for a local backend (e.g. NEXT_PUBLIC_API_DOMAIN=api.lvh.me:8000)
+const API_PROTOCOL = process.env.NEXT_PUBLIC_API_PROTOCOL || 'https';
 const MAIN_DOMAIN = process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `https://${API_DOMAIN}`;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || `${API_PROTOCOL}://${API_DOMAIN}`;
 
 // Function to get the API URL based on current subdomain
 const getApiUrl = (): string => {
@@ -16,13 +18,13 @@ const getApiUrl = (): string => {
   // On localhost, use dev_tenant from localStorage or default to "groot"
   if (hostname.includes('localhost')) {
     const devTenant = localStorage.getItem('dev_tenant') || 'groot';
-    return `https://${devTenant}.${API_DOMAIN}`;
+    return `${API_PROTOCOL}://${devTenant}.${API_DOMAIN}`;
   }
 
   // Check if we're on a subdomain of the main domain (production)
   if (hostname.endsWith(`.${MAIN_DOMAIN}`) && hostname !== MAIN_DOMAIN) {
     const subdomain = hostname.split('.')[0];
-    return `https://${subdomain}.${API_DOMAIN}`;
+    return `${API_PROTOCOL}://${subdomain}.${API_DOMAIN}`;
   }
 
   // Default fallback to main API

@@ -15,6 +15,7 @@ import interactionPlugin from "@fullcalendar/interaction"
 import listPlugin from "@fullcalendar/list"
 import type { EventInput } from "@fullcalendar/core/index.js"
 import type { EventImpl } from "@fullcalendar/core/internal"
+import { StaffDayTimeline } from "@/components/bookings/staff-day-timeline"
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "hsl(var(--chart-1))",
@@ -30,7 +31,8 @@ export default function BookingCalendarPage() {
   const { toast } = useToast()
   const [bookings, setBookings] = useState<BookingList[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedView, setSelectedView] = useState<"dayGridMonth" | "timeGridWeek" | "timeGridDay" | "listWeek">("dayGridMonth")
+  // "staffDay" is our own staff × time grid; the rest are FullCalendar views
+  const [selectedView, setSelectedView] = useState<"staffDay" | "dayGridMonth" | "timeGridWeek" | "timeGridDay" | "listWeek">("staffDay")
   const [currentTitle, setCurrentTitle] = useState("")
   const calendarRef = useRef<FullCalendar>(null)
 
@@ -105,11 +107,12 @@ export default function BookingCalendarPage() {
   }
 
   const handleViewChange = (view: typeof selectedView) => {
+    setSelectedView(view)
+    if (view === "staffDay") return
     const calendarApi = calendarRef.current?.getApi()
     if (calendarApi) {
       calendarApi.changeView(view)
       setCurrentTitle(calendarApi.view.title)
-      setSelectedView(view)
     }
   }
 
@@ -118,9 +121,11 @@ export default function BookingCalendarPage() {
     if (calendarApi) {
       setCurrentTitle(calendarApi.view.title)
     }
-  }, [])
+  }, [selectedView])
 
-  if (loading) {
+  const isStaffDay = selectedView === "staffDay"
+
+  if (loading && !isStaffDay) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -141,7 +146,7 @@ export default function BookingCalendarPage() {
       <Card>
         <CardHeader className="border-b">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className={isStaffDay ? "hidden" : "flex items-center gap-2"}>
               <Button variant="outline" size="sm" onClick={handlePrevClick}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -153,9 +158,16 @@ export default function BookingCalendarPage() {
               </Button>
             </div>
 
-            <h2 className="text-xl font-semibold">{currentTitle}</h2>
+            <h2 className="text-xl font-semibold">{isStaffDay ? t("staffDay") : currentTitle}</h2>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={isStaffDay ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleViewChange("staffDay")}
+              >
+                {t("staffDay")}
+              </Button>
               <Button
                 variant={selectedView === "dayGridMonth" ? "default" : "outline"}
                 size="sm"
@@ -211,6 +223,9 @@ export default function BookingCalendarPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6">
+          {isStaffDay ? (
+            <StaffDayTimeline />
+          ) : (
           <FullCalendar
             ref={calendarRef}
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
@@ -229,6 +244,7 @@ export default function BookingCalendarPage() {
             }}
             eventClassNames="cursor-pointer hover:opacity-80 transition-opacity"
           />
+          )}
         </CardContent>
       </Card>
     </div>

@@ -47,8 +47,8 @@ import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
  * the Django enum. We cast status string literals through `Status711enum` using
  * this helper to avoid bare `as any`.
  */
-import type { StatusF43enum } from "@/api/generated/interfaces";
-const asStatus = (v: string) => v as unknown as StatusF43enum;
+import type { Status956enum } from "@/api/generated/interfaces";
+const asStatus = (v: string) => v as unknown as Status956enum;
 
 interface AddProductSheetProps {
   open: boolean;
