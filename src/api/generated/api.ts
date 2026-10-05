@@ -65,6 +65,8 @@ import type {
   PatchedServiceDetailRequest,
   ServiceListRequest,
   ServiceList,
+  BookingTestSmsRequest,
+  BookingTestSmsResult,
   PaginatedBookingStaffList,
   BookingStaffCreateRequest,
   BookingStaffCreate,
@@ -1670,6 +1672,16 @@ export async function bookingsAdminSettingsUpdate(): Promise<any> {
 
 export async function bookingsAdminSettingsPartialUpdate(): Promise<any> {
   const response = await axios.patch(`/api/bookings/admin/settings/`);
+  return response.data;
+}
+
+export async function bookingsAdminSettingsTestSmsCreate(
+  data: BookingTestSmsRequest,
+): Promise<BookingTestSmsResult> {
+  const response = await axios.post(
+    `/api/bookings/admin/settings/test-sms/`,
+    data,
+  );
   return response.data;
 }
 

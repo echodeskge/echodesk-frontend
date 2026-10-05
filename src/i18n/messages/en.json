@@ -3946,7 +3946,79 @@
       "timezone": "Time zone",
       "timezoneDesc": "Booking times, lead time and the cancellation deadline follow this clock."
     },
-    "loadFailed": "Settings could not be loaded. Reload the page before saving."
+    "loadFailed": "Settings could not be loaded. Reload the page before saving.",
+    "reminders": {
+      "title": "Reminders",
+      "description": "When customers are reminded of a confirmed booking. Applies to the email reminder and, if switched on below, the SMS reminder.",
+      "firstLabel": "Remind the customer",
+      "hoursBefore": "hours before the visit",
+      "secondLabel": "Second reminder",
+      "secondDesc": "One more reminder closer to the visit, for example 2 hours before",
+      "secondMustBeCloser": "Must be fewer hours than the first reminder",
+      "rules": "Reminders are sent between 09:00 and 21:00 on your clock; one that falls due at night goes out in the morning. A booking made inside the reminder window gets no reminder, because the confirmation was just sent."
+    },
+    "sms": {
+      "title": "SMS notifications",
+      "description": "Text customers about their bookings. Works for customers who left only a phone number. Georgian mobile numbers only.",
+      "account": {
+        "title": "SMS account",
+        "own": "Messages are sent from your own sender.ge account.",
+        "platform": "Messages are sent from the shared EchoDesk account.",
+        "platformUsage": "{used} of {limit} SMS used this month. When the limit is reached, SMS stop until next month unless you add your own key.",
+        "none": "No SMS can be sent yet. Enter your sender.ge API key below.",
+        "ownKeyLabel": "Your own sender.ge API key (optional)",
+        "replaceKey": "Replace the key",
+        "removeKey": "Remove key",
+        "keyPlaceholder": "Paste the API key",
+        "keyHint": "With your own key, messages come from your sender name and you pay sender.ge directly, with no monthly limit here. Save the settings after entering it.",
+        "sentThisMonth": "SMS sent this month: {n}"
+      },
+      "kinds": {
+        "title": "Send an SMS when",
+        "reminder": "Reminder before the visit",
+        "reminderDesc": "At the time set under Reminders",
+        "confirmed": "Booking confirmed",
+        "confirmedDesc": "When you confirm a booking or add one yourself",
+        "rescheduled": "Time changed",
+        "rescheduledDesc": "When a booking is moved to another time",
+        "cancelled": "Booking cancelled",
+        "cancelledDesc": "When a booking is cancelled",
+        "created": "Request received",
+        "createdDesc": "Right after an online booking, before you confirm it (one extra SMS per booking)"
+      },
+      "texts": {
+        "title": "Message texts",
+        "reset": "Reset to default",
+        "insert": "Insert:",
+        "preview": "What the customer receives (example)",
+        "counter": "{chars} characters · {segments} SMS",
+        "longHint": "billed as more than one SMS",
+        "languageHint": "Customers get the text in the language they booked in. Georgian letters fit 70 characters per SMS; Latin letters fit 160."
+      },
+      "placeholders": {
+        "business": "Your business name",
+        "name": "Customer's first name",
+        "service": "Service",
+        "date": "Date of the visit",
+        "time": "Time of the visit",
+        "staff": "Specialist",
+        "link": "Link to view or cancel the booking (long: about 75 characters)"
+      },
+      "sample": {
+        "business": "Your business",
+        "name": "Ana",
+        "service": "Consultation",
+        "staff": "Nino"
+      },
+      "test": {
+        "title": "Send a test SMS",
+        "send": "Send test",
+        "hint": "Sends the text shown above, with example values, to this number. It counts as a real SMS.",
+        "saveFirst": "Save the settings first so the new key is used for the test.",
+        "sent": "Test SMS sent",
+        "failed": "The test SMS was not sent"
+      }
+    }
   },
   "bookingsDashboard": {
     "title": "Booking Management",

@@ -441,6 +441,20 @@ export interface BookingStaffRequest {
   is_active_for_bookings?: boolean;
 }
 
+export interface BookingTestSmsRequest {
+  phone: string;
+  kind?: KindEnum;
+  language?: LanguageEnum;
+  text?: string;
+}
+
+export interface BookingTestSmsResult {
+  status: string;
+  text: string;
+  segments: number;
+  account: string;
+}
+
 export type BookingTypeEnum = 'fixed_slots' | 'duration_based';
 
 export interface BookingUserMinimal {
@@ -2150,6 +2164,13 @@ export interface KanbanBoard {
   tickets_by_column: string;
 }
 
+export type KindEnum =
+  | 'created'
+  | 'confirmed'
+  | 'rescheduled'
+  | 'cancelled'
+  | 'reminder';
+
 export interface LandingPageAdmin {
   id: number;
   slug: string;
@@ -2257,15 +2278,13 @@ export type LandingTopicSeedItemPageTypeEnum =
   | 'vertical'
   | 'comparison';
 
-export type LandingTopicSeedItemPrimaryLanguageEnum = 'ka' | 'en';
-
 export interface LandingTopicSeedItemRequest {
   slug: string;
   page_type: LandingTopicSeedItemPageTypeEnum;
   title_hint?: any;
   angle_hint?: string;
   target_keywords?: string[];
-  primary_language?: LandingTopicSeedItemPrimaryLanguageEnum;
+  primary_language?: PrimaryLanguage619enum;
   highlighted_feature_slugs?: string[];
   competitor_name?: string;
   priority?: number;
@@ -2282,6 +2301,8 @@ export interface Language {
   created_at: string;
   updated_at: string;
 }
+
+export type LanguageEnum = 'ka' | 'en';
 
 export interface LanguageRequest {
   code: string;
@@ -4780,6 +4801,8 @@ export type PreferredDayOfWeekEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type PreferredLanguage711enum = 'en' | 'ru' | 'ka';
 
 export type PricingModelEnum = 'agent' | 'crm';
+
+export type PrimaryLanguage619enum = 'ka' | 'en';
 
 export type PriorityEnum = 'low' | 'medium' | 'high' | 'critical';
 

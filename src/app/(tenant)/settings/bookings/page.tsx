@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Save, Loader2, Eye, EyeOff, Copy, ExternalLink } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { getApiErrorMessage } from "@/lib/utils"
 import axios from "@/api/axios"
+import { ReminderSettingsCard, SmsSettings, SmsSettingsCard, SMS_SETTINGS_DEFAULTS } from "@/components/bookings/sms-settings-card"
 
-interface BookingSettings {
+interface BookingSettings extends SmsSettings {
   id?: number
   require_deposit: boolean
   allow_cash_payment: boolean
@@ -97,6 +99,7 @@ export default function SettingsPage() {
     public_address: "",
     public_phone: "",
     timezone: "Asia/Tbilisi",
+    ...SMS_SETTINGS_DEFAULTS,
   })
 
   // book.echodesk.ge/<tenant> — the tenant is the dashboard's subdomain.
@@ -132,6 +135,8 @@ export default function SettingsPage() {
         // Stored credentials are never sent back; empty = "keep what's saved"
         bog_client_id: "",
         bog_client_secret: "",
+        sms_api_key: "",
+        sms_api_key_clear: false,
       })
       setLoadFailed(false)
     } catch (error) {
@@ -145,18 +150,31 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true)
-      const { id: _id, has_bog_client_id: _hasId, has_bog_client_secret: _hasSecret, ...dataToSend } = settings
+      const {
+        id: _id,
+        has_bog_client_id: _hasId,
+        has_bog_client_secret: _hasSecret,
+        // read-only SMS information
+        has_sms_api_key: _hasSmsKey,
+        sms_default_templates: _smsDefaults,
+        sms_platform_available: _smsPlatform,
+        sms_platform_limit: _smsLimit,
+        sms_platform_sent_this_month: _smsPlatformSent,
+        sms_sent_this_month: _smsSent,
+        ...dataToSend
+      } = settings
       // Only send credentials the user actually typed
       if (!dataToSend.bog_client_id) delete (dataToSend as Partial<BookingSettings>).bog_client_id
       if (!dataToSend.bog_client_secret) delete dataToSend.bog_client_secret
+      if (!dataToSend.sms_api_key) delete dataToSend.sms_api_key
 
       // The API creates the settings row on first read, so PATCH always applies.
       const response = await axios.patch("/api/bookings/admin/settings/", dataToSend)
-      setSettings({ ...response.data, bog_client_id: "", bog_client_secret: "" })
+      setSettings({ ...response.data, bog_client_id: "", bog_client_secret: "", sms_api_key: "", sms_api_key_clear: false })
       toast({ title: t("success"), description: t("settingsSaved") })
     } catch (error) {
       console.error("Failed to save settings:", error)
-      toast({ title: t("error"), description: t("settingsSaveFailed"), variant: "destructive" })
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("settingsSaveFailed")), variant: "destructive" })
     } finally {
       setSaving(false)
     }
@@ -502,6 +520,10 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        <ReminderSettingsCard settings={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
+
+        <SmsSettingsCard settings={settings} onChange={(patch) => setSettings((current) => ({ ...current, ...patch }))} />
 
         <div className="flex justify-end">
           {loadFailed && <p className="mr-4 self-center text-sm text-destructive">{t("loadFailed")}</p>}
