@@ -49,6 +49,7 @@ import { useLanguages } from "@/hooks/useLanguages";
 import type { ProductDetail, ProductCreateUpdateRequest, Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
+import { DescriptionField, ShippingFields, normalizeShipping } from "@/components/products/ProductExtraFields";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
 import { VariantManager } from "./VariantManager";
@@ -163,6 +164,8 @@ export function EditProductSheet({
         status: product.status,
         is_featured: product.is_featured || false,
         track_inventory: product.track_inventory !== false,
+        weight: product.weight ?? "",
+        dimensions: product.dimensions || {},
       });
 
       // Convert attribute_values to AttributeValue format
@@ -246,7 +249,7 @@ export function EditProductSheet({
 
       // Prepare product data with attributes
       const productData: Partial<ProductCreateUpdateRequest> = {
-        ...data,
+        ...normalizeShipping(data),
         attributes: attributes.length > 0 ? attributes : undefined,
       };
 
@@ -303,8 +306,8 @@ export function EditProductSheet({
         <ScrollArea className="h-full">
           <div className="p-6">
             <SheetHeader>
-              <SheetTitle>{t("title")}</SheetTitle>
-              <SheetDescription>{t("description")}</SheetDescription>
+              <SheetTitle>{t("editTitle")}</SheetTitle>
+              <SheetDescription>{t("editDescription")}</SheetDescription>
             </SheetHeader>
 
             <Form {...form}>
@@ -388,6 +391,9 @@ export function EditProductSheet({
                     </FormItem>
                   )}
                 />
+
+                {/* Full description - selected language */}
+                <DescriptionField form={form} language={selectedLanguage} />
 
                 {/* Pricing */}
                 <div className="grid grid-cols-3 gap-4">
@@ -476,6 +482,8 @@ export function EditProductSheet({
                     )}
                   />
                 </div>
+
+                <ShippingFields form={form} />
 
                 {/* Product Images */}
                 <FormField

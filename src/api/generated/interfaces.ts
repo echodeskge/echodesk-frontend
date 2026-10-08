@@ -4280,10 +4280,12 @@ export interface PatchedProductVariantAdminRequest {
   sku?: string;
   name?: any;
   price?: string;
+  compare_at_price?: string;
   quantity?: number;
   image?: string;
   is_active?: boolean;
   sort_order?: number;
+  attributes?: ProductVariantAttributeValueRequest[];
   product?: number;
 }
 
@@ -5017,6 +5019,7 @@ export interface ProductVariant {
   sku: string;
   name: any;
   price?: string;
+  compare_at_price?: string;
   effective_price: string;
   quantity?: number;
   image?: string;
@@ -5032,6 +5035,7 @@ export interface ProductVariantAdmin {
   sku: string;
   name: any;
   price?: string;
+  compare_at_price?: string;
   effective_price: string;
   quantity?: number;
   image?: string;
@@ -5047,10 +5051,12 @@ export interface ProductVariantAdminRequest {
   sku: string;
   name: any;
   price?: string;
+  compare_at_price?: string;
   quantity?: number;
   image?: string;
   is_active?: boolean;
   sort_order?: number;
+  attributes?: ProductVariantAttributeValueRequest[];
   product: number;
 }
 
@@ -5069,10 +5075,12 @@ export interface ProductVariantRequest {
   sku: string;
   name: any;
   price?: string;
+  compare_at_price?: string;
   quantity?: number;
   image?: string;
   is_active?: boolean;
   sort_order?: number;
+  attributes?: ProductVariantAttributeValueRequest[];
 }
 
 export interface PromoCode {

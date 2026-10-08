@@ -38,6 +38,7 @@ import { useLanguages } from "@/hooks/useLanguages";
 import type { ProductCreateUpdate, ProductCreateUpdateRequest, Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
 import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
+import { DescriptionField, ShippingFields, normalizeShipping } from "@/components/products/ProductExtraFields";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
 
@@ -104,6 +105,8 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       status: asStatus("draft"),
       is_featured: false,
       track_inventory: true,
+      weight: "",
+      dimensions: {},
     };
   };
 
@@ -187,7 +190,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
       // Prepare product data with attributes
       const productData: Partial<ProductCreateUpdateRequest> & Pick<ProductCreateUpdate, never> = {
-        ...data,
+        ...normalizeShipping(data),
         attributes: attributes.length > 0 ? attributes : undefined,
       };
 
@@ -318,6 +321,9 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                   )}
                 />
 
+                {/* Full description - selected language */}
+                <DescriptionField form={form} language={selectedLanguage} />
+
                 {/* Pricing */}
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
@@ -390,6 +396,8 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     )}
                   />
                 </div>
+
+                <ShippingFields form={form} />
 
                 {/* Product Images */}
                 <FormField
