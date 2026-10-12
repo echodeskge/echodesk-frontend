@@ -78,15 +78,17 @@ export default function OrderDetailPage() {
     if (!order) return
     try {
       setRefunding(true)
-      const response = await ecommerceAdminOrdersRefundCreate(order.id)
-      setOrder(response as unknown as OrderDetail)
+      // The refund endpoint answers {status}, not the order: reload the order
+      // instead of replacing it (that left it without dates and crashed the page).
+      await ecommerceAdminOrdersRefundCreate(order.id)
       toast.success(t("refund.success"))
+      await fetchOrder(order.id)
     } catch {
       toast.error(t("refund.error"))
     } finally {
       setRefunding(false)
     }
-  }, [order, t])
+  }, [order, t, fetchOrder])
 
   if (loading) {
     return (
