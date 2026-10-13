@@ -2453,7 +2453,13 @@
         "addButton": "Add Button",
         "creating": "Creating..."
       }
-    }
+    },
+    "removePage": "Remove",
+    "removePageTitle": "Remove “{name}”?",
+    "removePageDescription": "This page is no longer connected. Removing it takes it off this list and deletes the messages received through it. This can't be undone.",
+    "cancel": "Cancel",
+    "pageRemoved": "Page removed",
+    "pageRemoveFailed": "Could not remove the page"
   },
   "timeTracking": {
     "title": "Time Tracking",

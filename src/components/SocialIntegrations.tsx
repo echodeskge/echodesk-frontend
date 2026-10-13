@@ -34,7 +34,20 @@ import {
   Info,
   ArrowRight,
   Mail,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { socialFacebookPagesDestroy } from "@/api/generated/api";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { WhatsAppConnection } from "@/components/WhatsAppConnection";
@@ -106,6 +119,9 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   const t = useTranslations("social");
   const [error, setError] = useState("");
   const router = useRouter();
+  // An old (inactive) page the user asked to remove from the list
+  const [pageToRemove, setPageToRemove] = useState<FacebookPageConnection | null>(null);
+  const [removingPage, setRemovingPage] = useState(false);
 
   // React Query hooks - Facebook
   const { data: facebookStatusData, isLoading: statusLoading, refetch: refetchStatus } = useFacebookStatus();
@@ -433,9 +449,23 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                             </div>
                           </div>
                         </div>
-                        <Badge variant={page.is_active ? "default" : "secondary"} className="self-start sm:self-auto">
-                          {page.is_active ? t("active") : t("inactive")}
-                        </Badge>
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          <Badge variant={page.is_active ? "default" : "secondary"}>
+                            {page.is_active ? t("active") : t("inactive")}
+                          </Badge>
+                          {!page.is_active && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => setPageToRemove(page)}
+                            >
+                              <Trash2 className="mr-1 h-4 w-4" />
+                              {t("removePage")}
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -443,6 +473,39 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
               </CardContent>
             </Card>
           )}
+
+          <AlertDialog open={pageToRemove !== null} onOpenChange={(open) => !open && setPageToRemove(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("removePageTitle", { name: pageToRemove?.page_name ?? "" })}</AlertDialogTitle>
+                <AlertDialogDescription>{t("removePageDescription")}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={removingPage}>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  disabled={removingPage}
+                  onClick={async (event) => {
+                    event.preventDefault()
+                    if (!pageToRemove) return
+                    setRemovingPage(true)
+                    try {
+                      await socialFacebookPagesDestroy(pageToRemove.id)
+                      toast.success(t("pageRemoved"))
+                      setPageToRemove(null)
+                      await refetchPages()
+                    } catch {
+                      toast.error(t("pageRemoveFailed"))
+                    } finally {
+                      setRemovingPage(false)
+                    }
+                  }}
+                >
+                  {t("removePage")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
 
         {/* Instagram Tab */}
