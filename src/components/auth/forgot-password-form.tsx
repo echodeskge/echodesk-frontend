@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 interface ForgotPasswordFormProps {
   tenant: TenantConfig
@@ -26,7 +27,13 @@ interface ForgotPasswordFormProps {
 
 export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFormProps) {
   const t = useTranslations("auth")
-  const [success, setSuccess] = useState(false)
+  // email → code (sent) → done
+  const [step, setStep] = useState<"email" | "code" | "done">("email")
+  const [sentTo, setSentTo] = useState("")
+  const [code, setCode] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState("")
 
   const form = useForm<ForgotPasswordFormType>({
@@ -49,14 +56,13 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Origin': typeof window !== 'undefined' ? window.location.origin : '',
         },
-        mode: 'cors',
         body: JSON.stringify({ email }),
       })
 
       if (response.ok) {
-        setSuccess(true)
+        setSentTo(email)
+        setStep("code")
       } else {
         const errorData = await response.json()
         setError(errorData.detail || errorData.message || t("resetEmailFailed"))
@@ -71,24 +77,87 @@ export function ForgotPasswordForm({ tenant, onBackToSignIn }: ForgotPasswordFor
     }
   }
 
-  if (success) {
+  async function confirmReset(event: React.FormEvent) {
+    event.preventDefault()
+    setError("")
+    if (newPassword !== confirmPassword) {
+      setError(t("passwordsDoNotMatch"))
+      return
+    }
+    setConfirming(true)
+    try {
+      const response = await fetch(`${tenant.api_url}/users/password-reset/confirm/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ email: sentTo, code: code.trim(), new_password: newPassword }),
+      })
+      if (response.ok) {
+        setStep("done")
+        return
+      }
+      const data = await response.json().catch(() => ({}))
+      if (data.code === "invalid_code") setError(t("resetCodeInvalid"))
+      else if (Array.isArray(data.new_password)) setError(data.new_password.join(" "))
+      else setError(data.detail || t("resetEmailFailed"))
+    } catch {
+      setError(t("networkError"))
+    } finally {
+      setConfirming(false)
+    }
+  }
+
+  if (step === "done") {
     return (
       <div className="grid gap-6">
         <div className="rounded-lg bg-green-50 p-4 text-sm text-green-800 border border-green-200">
-          <div className="font-medium">{t("emailSent")}</div>
-          <div className="mt-1">
-            {t("resetInstructionsSent")}
-          </div>
+          <div className="font-medium">{t("passwordResetDone")}</div>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onBackToSignIn}
-          className="w-full"
-        >
+        <Button type="button" onClick={onBackToSignIn} className="w-full">
           {t("backToSignIn")}
         </Button>
       </div>
+    )
+  }
+
+  if (step === "code") {
+    return (
+      <form onSubmit={confirmReset} className="grid gap-4">
+        <div className="rounded-lg bg-green-50 p-3 text-sm text-green-800 border border-green-200">
+          {t("resetCodeSent", { email: sentTo })}
+        </div>
+        {error && <div className="rounded-lg bg-destructive/15 p-3 text-sm text-destructive">{error}</div>}
+        <div className="grid gap-2">
+          <Label htmlFor="reset-code">{t("resetCode")}</Label>
+          <Input
+            id="reset-code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            placeholder="123456"
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            autoFocus
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="reset-new">{t("newPassword")}</Label>
+          <Input id="reset-new" type="password" autoComplete="new-password" placeholder={t("newPasswordPlaceholder")} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          <p className="text-xs text-muted-foreground">{t("passwordRequirements")}</p>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="reset-confirm">{t("confirmPassword")}</Label>
+          <Input id="reset-confirm" type="password" autoComplete="new-password" placeholder={t("confirmPasswordPlaceholder")} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+        </div>
+        <Button type="submit" className="w-full" disabled={confirming || code.length !== 6 || newPassword.length < 8}>
+          {confirming ? t("changingPassword") : t("setNewPassword")}
+        </Button>
+        <Button type="button" variant="ghost" className="w-full" onClick={() => { setStep("email"); setCode(""); setError("") }}>
+          {t("resendCode")}
+        </Button>
+        <Button type="button" variant="outline" onClick={onBackToSignIn} className="w-full">
+          {t("backToSignIn")}
+        </Button>
+      </form>
     )
   }
 

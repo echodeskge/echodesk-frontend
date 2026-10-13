@@ -406,7 +406,7 @@
     "loginTitle": "Sign in to your account",
     "loginSubtitle": "Welcome back! Please enter your details.",
     "resetPassword": "Reset Password",
-    "resetPasswordDescription": "Enter your email address and we'll send you a link to reset your password",
+    "resetPasswordDescription": "Enter your email address and we'll send you a code to set a new password",
     "emailPlaceholder": "name@example.com",
     "signInWithEmail": "Sign In with Email",
     "signingIn": "Signing in...",
@@ -418,7 +418,7 @@
     "resetInstructionsSent": "We've sent password reset instructions to your email address",
     "backToSignIn": "Back to Sign In",
     "sending": "Sending...",
-    "sendResetInstructions": "Send Reset Instructions",
+    "sendResetInstructions": "Send code",
     "resetEmailFailed": "Failed to send reset email. Please try again.",
     "createTenant": "Create Your Multi-Tenant CRM",
     "package": "Package",
@@ -509,7 +509,14 @@
     "unlimitedUsers": "Unlimited Users",
     "loadingFeatures": "Loading features...",
     "maxUsers": "Max Users",
-    "crmPricingNote": "CRM is included in the base price"
+    "crmPricingNote": "CRM is included in the base price",
+    "resetCodeSent": "If {email} has an account, we've sent a 6-digit code to it. Enter it below with your new password.",
+    "resetCode": "Code from the email",
+    "setNewPassword": "Set new password",
+    "resendCode": "Send a new code",
+    "resetCodeInvalid": "The code is wrong or has expired. Request a new one.",
+    "passwordsDoNotMatch": "The passwords don't match.",
+    "passwordResetDone": "Your password has been changed. You can sign in now."
   },
   "tickets": {
     "ticketTitle": "Title",
