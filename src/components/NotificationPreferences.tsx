@@ -48,6 +48,8 @@ function defaultPreferences(): NotificationPreferences {
     messages: {
       new_message: { inApp: true, sound: true, push: true },
       message_assigned: { inApp: true, sound: true, push: true },
+      team_chat: { inApp: true, sound: true, push: true },
+      social_admin: { inApp: true, sound: true, push: true },
     },
     invoices: {
       created: { inApp: true, sound: true, push: true },
@@ -138,6 +140,10 @@ const NOTIFICATION_TYPE_MAP: Record<string, { category: keyof NotificationPrefer
   // Messages
   message_received: { category: 'messages', subType: 'new_message' },
   message_assigned: { category: 'messages', subType: 'message_assigned' },
+  team_chat_message: { category: 'messages', subType: 'team_chat' },
+  auto_post_draft: { category: 'messages', subType: 'social_admin' },
+  auto_post_failed: { category: 'messages', subType: 'social_admin' },
+  whatsapp_template_status: { category: 'messages', subType: 'social_admin' },
 
   // Invoices
   invoice_created: { category: 'invoices', subType: 'created' },
@@ -210,6 +216,8 @@ const CATEGORIES: CategoryMeta[] = [
     subTypes: [
       { key: 'new_message', label: 'New Message' },
       { key: 'message_assigned', label: 'Message Assigned' },
+      { key: 'team_chat', label: 'Team Chat' },
+      { key: 'social_admin', label: 'Auto-posts & Templates' },
     ],
   },
   {

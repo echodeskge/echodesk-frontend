@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { usersRetrieve } from '@/api/generated/api';
-import type { UserDirectory } from '@/api/generated/interfaces';
-import { useUserProfile } from '@/hooks/useUserProfile';
+import type { User, UserDirectory } from '@/api/generated/interfaces';
+import { authService } from '@/services/auth';
+import { profileHasPermission } from '@/lib/backendPermissions';
 
 export type TenantRole = 'admin' | 'manager' | 'agent' | 'viewer';
 
@@ -21,7 +22,18 @@ const ROLE_RANK: Record<TenantRole, number> = { viewer: 0, agent: 1, manager: 2,
  * show, and every call still surfaces the backend's error message.
  */
 export function useMyAccess() {
-  const { data: profile } = useUserProfile();
+  // Shares the ['userProfile'] cache with useUserProfile, but without its
+  // refetchOnMount: 'always', so every gated button doesn't refetch the profile.
+  const { data: profile } = useQuery<User>({
+    queryKey: ['userProfile'],
+    queryFn: () => authService.getProfile(),
+    enabled: authService.isAuthenticated(),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
   const p = profile as unknown as
     | {
         id?: number;
@@ -45,16 +57,8 @@ export function useMyAccess() {
   const isSuperuser = Boolean(p?.is_superuser);
   const isStaff = Boolean(p?.is_staff);
   const role = (me?.role as TenantRole | undefined) ?? null;
-  const codenames = new Set<string>(
-    Array.isArray(p?.permissions_list)
-      ? p!.permissions_list
-      : Array.isArray(p?.all_permissions)
-        ? (p!.all_permissions as string[])
-        : []
-  );
-
   /** Backend `user.has_permission(codename)` (individual flag or role grant). */
-  const has = (codename: string) => isSuperuser || codenames.has(codename);
+  const has = (codename: string) => profileHasPermission(p, codename);
   const isRole = (...roles: TenantRole[]) => role !== null && roles.includes(role);
   const isStaffOrSuperuser = isStaff || isSuperuser;
 

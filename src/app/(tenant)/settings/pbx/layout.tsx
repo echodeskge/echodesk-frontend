@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
-import { permissionService } from "@/services/permissionService";
+import { profileHasPermission } from "@/lib/backendPermissions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const PBX_TABS = [
@@ -58,9 +58,8 @@ export default function PbxLayout({ children }: { children: React.ReactNode }) {
   // Mirrors the backend: PBX configuration needs a PBX admin (staff,
   // superuser or manage_settings); statistics also open to view_reports.
   const isPbxAdmin =
-    isStaffOrAdmin || permissionService.hasPermission(userProfile as any, "can_manage_settings");
-  const canViewStats =
-    isPbxAdmin || permissionService.hasPermission(userProfile as any, "can_view_reports");
+    isStaffOrAdmin || profileHasPermission(userProfile as never, "manage_settings");
+  const canViewStats = isPbxAdmin || profileHasPermission(userProfile as never, "view_reports");
   const visibleTabs = PBX_TABS.filter((tab) =>
     tab.id === "statistics" ? canViewStats : isPbxAdmin
   );

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -58,10 +59,12 @@ export default function ProductsPage() {
   })
 
   // Deep links from notifications: ?status=&stock= (low-stock digest) and
-  // ?edit=<id> (single low-stock product).
+  // ?edit=<id> (single low-stock product). Re-applied whenever the query
+  // string changes, e.g. clicking another notification while on this page.
+  const searchParams = useSearchParams()
+  const searchKey = searchParams?.toString() ?? ""
   useEffect(() => {
-    if (typeof window === "undefined") return
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(searchKey)
     const status = params.get("status")
     if (status && ["all", "active", "draft", "inactive", "out_of_stock"].includes(status)) {
       setStatusFilter(status)
@@ -78,7 +81,7 @@ export default function ProductsPage() {
       setSelectedProductId(edit)
       setIsEditProductOpen(true)
     }
-  }, [])
+  }, [searchKey])
 
   const { data: selectedProduct } = useProduct(selectedProductId!)
 

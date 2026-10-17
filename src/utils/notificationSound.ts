@@ -79,6 +79,12 @@ const NOTIFICATION_TYPE_SOUNDS: Record<string, string> = {
   // Messages
   message_received: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
   message_assigned: 'mixkit-magic-notification-ring-2344.wav',
+  team_chat_message: 'mixkit-message-pop-alert-2354.mp3',
+
+  // Social admin
+  auto_post_draft: 'mixkit-positive-notification-951.wav',
+  auto_post_failed: 'mixkit-guitar-notification-alert-2320.wav',
+  whatsapp_template_status: 'mixkit-confirmation-tone-2867.wav',
 
   // Invoices
   invoice_created: 'mixkit-correct-answer-tone-2870.wav',

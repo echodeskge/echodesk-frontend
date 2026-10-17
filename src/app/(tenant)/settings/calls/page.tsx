@@ -32,6 +32,9 @@ import type {
   SipConfiguration,
 } from "@/api/generated/interfaces";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { useUserProfile } from "@/hooks/useUserProfile";
+import { isPbxAdmin } from "@/lib/backendPermissions";
 import axiosInstance from "@/api/axios";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -391,7 +394,14 @@ export default function CallSettingsPage() {
   const t = useTranslations("calls");
   const ts = useTranslations("callsSettings");
   const tCommon = useTranslations("common");
+  const tPbx = useTranslations("pbxSettings");
   const { toast } = useToast();
+  // Every write here (and the SIP config list) needs a PBX admin: staff,
+  // superuser or manage_settings, as in crm/permissions.py.
+  const { user } = useAuth();
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile();
+  const canManagePbx =
+    Boolean(user?.is_staff || user?.is_superuser) || isPbxAdmin(userProfile as never);
 
   // ── SIP Config State (Tab 1 - existing) ──
   const [sipConfigs, setSipConfigs] = useState<SipConfigurationList[]>([]);
@@ -798,6 +808,20 @@ export default function CallSettingsPage() {
   };
 
   // ── Render ──
+  if (!profileLoading && !canManagePbx) {
+    return (
+      <div className="container mx-auto p-4 sm:p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>{tPbx("page.noAccessTitle")}</CardTitle>
+            <CardDescription>{tPbx("page.noAccessDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent />
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <FeatureGate feature="ip_calling" showUpgrade={true}>
       <div className="container mx-auto p-4 sm:p-6 space-y-6">

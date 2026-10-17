@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { useSubscription } from "@/contexts/SubscriptionContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUserProfile } from "@/hooks/useUserProfile"
-import { permissionService } from "@/services/permissionService"
+import { profileHasPermission } from "@/lib/backendPermissions"
 import {
   Settings,
   Palette,
@@ -208,8 +208,11 @@ export function SettingsSidebar() {
     return hasFeature(key as any)
   }
 
-  const canManageSettings =
-    isStaffOrAdmin || permissionService.hasPermission(userProfile as any, "can_manage_settings")
+  // Same rule as the backend's has_permission(): bare codenames from the
+  // profile's permissions_list (role grants included), plus the staff bypass.
+  const hasBackendPermission = (permission: string) =>
+    profileHasPermission(userProfile as never, permission)
+  const canManageSettings = isStaffOrAdmin || hasBackendPermission("can_manage_settings")
   const linkFor = (item: SettingsNavItem): string =>
     !canManageSettings && item.hrefWithoutManageSettings ? item.hrefWithoutManageSettings : item.href
 
@@ -218,7 +221,7 @@ export function SettingsSidebar() {
     if (
       item.anyPermission &&
       !isStaffOrAdmin &&
-      !item.anyPermission.some((p) => permissionService.hasPermission(userProfile as any, p))
+      !item.anyPermission.some((p) => hasBackendPermission(p))
     )
       return false
     if (item.featureKey && !hasFeatureAccess(item.featureKey)) return false
