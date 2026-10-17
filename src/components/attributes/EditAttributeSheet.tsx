@@ -37,6 +37,7 @@ import { useLanguages } from "@/hooks/useLanguages";
 import { OptionsManager, type AttributeOption } from "./OptionsManager";
 import type { AttributeDefinition, Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface EditAttributeSheetProps {
   open: boolean;
@@ -176,7 +177,7 @@ export function EditAttributeSheet({
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to update attribute:", error);
-      toast.error(error.message || "Failed to update attribute");
+      toast.error(getApiErrorMessage(error, "Failed to update attribute"));
     }
   };
 

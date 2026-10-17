@@ -15,6 +15,7 @@ import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate,
 import { MiniMapPicker } from "@/components/MiniMapPicker"
 import type { EcommerceSettings as EcommerceSettingsType, EcommerceSettingsRequest, DeploymentResponse } from "@/api/generated/interfaces"
 import { toast } from "sonner"
+import { getApiErrorMessage } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import axios from "@/api/axios"
@@ -670,7 +671,8 @@ export default function EcommerceSettingsPage() {
       await fetchSettings()
     } catch (error) {
       console.error("Failed to save settings:", error)
-      toast.error("Failed to save settings. Please try again.")
+      // Store settings writes need staff, role admin or manage_settings.
+      toast.error(getApiErrorMessage(error, "Failed to save settings. Please try again."))
     } finally {
       setSaving(false)
     }

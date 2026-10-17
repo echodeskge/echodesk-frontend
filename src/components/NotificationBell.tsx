@@ -21,6 +21,7 @@ import { getNotificationSound } from '@/utils/notificationSound'
 import { getNotificationPreferenceByType } from '@/components/NotificationPreferences'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { webRouteForNotificationLink } from '@/lib/notificationLinks'
 
 interface NotificationBellProps {
   onNotificationClick?: (notification: NotificationData) => void
@@ -98,7 +99,7 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
             if (ticketId) {
               router.push(`/tickets/${ticketId}`)
             } else if (linkUrl && linkUrl.startsWith('/')) {
-              router.push(linkUrl)
+              router.push(webRouteForNotificationLink(linkUrl))
             }
           },
         })

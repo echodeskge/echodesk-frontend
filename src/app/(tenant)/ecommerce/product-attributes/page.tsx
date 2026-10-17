@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import type { Locale } from "@/lib/i18n"
 import type { AttributeDefinition } from "@/api/generated"
 import { AttributesTable } from "./_components/attributes-table"
+import { getApiErrorMessage } from "@/lib/utils"
 
 export default function ProductAttributesPage() {
   const locale = useLocale() as Locale
@@ -59,8 +60,8 @@ export default function ProductAttributesPage() {
     try {
       await deleteAttribute.mutateAsync(deletingAttribute.id)
       toast.success("Attribute deleted successfully")
-    } catch {
-      toast.error("Failed to delete attribute")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to delete attribute"))
     } finally {
       setDeletingAttribute(null)
     }

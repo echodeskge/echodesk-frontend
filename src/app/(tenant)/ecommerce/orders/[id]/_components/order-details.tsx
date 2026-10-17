@@ -26,6 +26,8 @@ interface OrderDetailsProps {
   order: OrderDetail
   updatingStatus: boolean
   refunding: boolean
+  /** E-commerce manager: may refund, mark paid and cancel paid orders. */
+  isManager: boolean
   onStatusChange: (status: string) => Promise<void>
   onMarkPaid: () => Promise<void>
   onRefund: () => Promise<void>
@@ -36,6 +38,7 @@ export function OrderDetails({
   order,
   updatingStatus,
   refunding,
+  isManager,
   onStatusChange,
   onMarkPaid,
   onRefund,
@@ -80,6 +83,7 @@ export function OrderDetails({
           <OrderHeaderCard
             order={order}
             updatingStatus={updatingStatus}
+            isManager={isManager}
             onStatusChange={handleStatusChangeRequest}
             t={t}
           />
@@ -91,6 +95,7 @@ export function OrderDetails({
           <OrderPaymentCard
             order={order}
             refunding={refunding}
+            isManager={isManager}
             onMarkPaid={onMarkPaid}
             onRefund={handleRefundRequest}
             t={t}

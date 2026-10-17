@@ -14,6 +14,7 @@ import { OrderDetail } from "../../_types"
 interface OrderPaymentCardProps {
   order: OrderDetail
   refunding: boolean
+  isManager: boolean
   onMarkPaid: () => void
   onRefund: () => void
   t: (key: string) => string
@@ -22,15 +23,22 @@ interface OrderPaymentCardProps {
 export function OrderPaymentCard({
   order,
   refunding,
+  isManager,
   onMarkPaid,
   onRefund,
   t,
 }: OrderPaymentCardProps) {
   const paymentStatus = String(order.payment_status || "pending")
   const PaymentIcon = PAYMENT_STATUS_ICONS[paymentStatus] || PAYMENT_STATUS_ICONS.pending
-  const canMarkPaid = paymentStatus !== "paid"
-  const canRefund =
-    String(order.status) !== "refunded" && String(order.status) !== "cancelled"
+  const orderClosed =
+    String(order.status) === "refunded" || String(order.status) === "cancelled"
+  // Mirrors the backend: manager-only, and mark-paid is refused for refunded
+  // payments and for cancelled/refunded orders.
+  const canMarkPaid =
+    isManager &&
+    !orderClosed &&
+    !["paid", "refunded", "partially_refunded"].includes(paymentStatus)
+  const canRefund = isManager && !orderClosed
 
   return (
     <Card>

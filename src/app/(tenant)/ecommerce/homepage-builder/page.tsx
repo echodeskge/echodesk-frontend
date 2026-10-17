@@ -69,6 +69,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 /**
  * Helper to cast string values to the opaque generated enum types.
@@ -259,7 +260,7 @@ export default function HomepageBuilderPage() {
       setIsAddOpen(false);
     },
     onError: (error: Error) => {
-      toast.error(error.message || t("error.create"));
+      toast.error(getApiErrorMessage(error, t("error.create")));
     },
   });
 
@@ -274,7 +275,7 @@ export default function HomepageBuilderPage() {
       setIsAddOpen(false);
     },
     onError: (error: Error) => {
-      toast.error(error.message || t("error.update"));
+      toast.error(getApiErrorMessage(error, t("error.update")));
     },
   });
 
@@ -287,7 +288,7 @@ export default function HomepageBuilderPage() {
       setDeletingSection(null);
     },
     onError: (error: Error) => {
-      toast.error(error.message || t("error.delete"));
+      toast.error(getApiErrorMessage(error, t("error.delete")));
     },
   });
 
@@ -300,7 +301,7 @@ export default function HomepageBuilderPage() {
       toast.success(t("success.reordered"));
     },
     onError: (error: Error) => {
-      toast.error(error.message || t("error.reorder"));
+      toast.error(getApiErrorMessage(error, t("error.reorder")));
     },
   });
 

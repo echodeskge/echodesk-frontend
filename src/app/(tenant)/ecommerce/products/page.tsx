@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import axiosInstance from "@/api/axios"
 import type { Locale } from "@/lib/i18n"
 import { ProductsTable } from "./_components/products-table"
+import { getApiErrorMessage } from "@/lib/utils"
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -26,6 +27,9 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("active")
   const [lowStockOnly, setLowStockOnly] = useState(false)
+  // Set from the low-stock notification link (?stock=low_or_out); it also
+  // covers sold-out products, which low_stock=true leaves out.
+  const [stockFilter, setStockFilter] = useState<"low" | "out" | "low_or_out" | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [isAddProductOpen, setIsAddProductOpen] = useState(false)
@@ -48,9 +52,33 @@ export default function ProductsPage() {
       | "inactive"
       | "out_of_stock"
       | undefined,
-    low_stock: lowStockOnly || undefined,
+    low_stock: (lowStockOnly && !stockFilter) || undefined,
+    stock: (lowStockOnly && stockFilter) || undefined,
     page,
   })
+
+  // Deep links from notifications: ?status=&stock= (low-stock digest) and
+  // ?edit=<id> (single low-stock product).
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    const status = params.get("status")
+    if (status && ["all", "active", "draft", "inactive", "out_of_stock"].includes(status)) {
+      setStatusFilter(status)
+    }
+    const stock = params.get("stock")
+    if (stock === "low" || stock === "out" || stock === "low_or_out") {
+      setStockFilter(stock)
+      setLowStockOnly(true)
+    } else if (params.get("low_stock") === "true") {
+      setLowStockOnly(true)
+    }
+    const edit = Number(params.get("edit"))
+    if (Number.isInteger(edit) && edit > 0) {
+      setSelectedProductId(edit)
+      setIsEditProductOpen(true)
+    }
+  }, [])
 
   const { data: selectedProduct } = useProduct(selectedProductId!)
 
@@ -72,6 +100,7 @@ export default function ProductsPage() {
 
   const handleLowStockToggle = useCallback(() => {
     setLowStockOnly((prev) => !prev)
+    setStockFilter(null)
     setPage(1)
     setSelectedProductIds(new Set())
   }, [])
@@ -110,8 +139,8 @@ export default function ProductsPage() {
         )
         setSelectedProductIds(new Set())
         refetch()
-      } catch {
-        toast.error("Failed to update products. Please try again.")
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Failed to update products. Please try again."))
       } finally {
         setBulkActionLoading(false)
       }

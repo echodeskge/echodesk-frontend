@@ -22,6 +22,7 @@ import { OrderDetail } from "../../_types"
 interface OrderHeaderCardProps {
   order: OrderDetail
   updatingStatus: boolean
+  isManager: boolean
   onStatusChange: (status: string) => void
   t: (key: string) => string
 }
@@ -29,6 +30,7 @@ interface OrderHeaderCardProps {
 export function OrderHeaderCard({
   order,
   updatingStatus,
+  isManager,
   onStatusChange,
   t,
 }: OrderHeaderCardProps) {
@@ -38,6 +40,10 @@ export function OrderHeaderCard({
   const StatusIcon = STATUS_ICONS[status] || STATUS_ICONS.pending
   const paymentVariant = PAYMENT_BADGE_VARIANTS[paymentStatus] || "secondary"
   const PaymentIcon = PAYMENT_STATUS_ICONS[paymentStatus] || PAYMENT_STATUS_ICONS.pending
+  // Cancelled and refunded orders are final on the backend.
+  const isFinal = status === "cancelled" || status === "refunded"
+  // Only e-commerce managers may cancel an order that has been paid.
+  const canCancel = isManager || paymentStatus !== "paid"
 
   return (
     <Card>
@@ -62,7 +68,7 @@ export function OrderHeaderCard({
           <Select
             value={status}
             onValueChange={onStatusChange}
-            disabled={updatingStatus}
+            disabled={updatingStatus || isFinal}
           >
             <SelectTrigger className="h-8 w-[160px]">
               <SelectValue />
@@ -75,7 +81,9 @@ export function OrderHeaderCard({
                 "shipped",
                 "delivered",
                 "cancelled",
-              ].map((s) => (
+              ]
+                .filter((s) => s !== "cancelled" || canCancel || status === "cancelled")
+                .map((s) => (
                 <SelectItem key={s} value={s}>
                   <div className="flex items-center gap-2">
                     <span

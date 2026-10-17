@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Truck } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/utils";
 
 const EMPTY_FORM: ShippingMethodRequest = {
   name: { en: "", ka: "" },
@@ -79,8 +80,8 @@ export default function ShippingMethodsPage() {
       setLoading(true);
       const response = await ecommerceAdminShippingMethodsList();
       setMethods(response.results || []);
-    } catch {
-      toast.error(t("fetchError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("fetchError")));
     } finally {
       setLoading(false);
     }
@@ -129,8 +130,8 @@ export default function ShippingMethodsPage() {
       }
       setSheetOpen(false);
       fetchMethods();
-    } catch {
-      toast.error(editingMethod ? t("updateError") : t("createError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, editingMethod ? t("updateError") : t("createError")));
     } finally {
       setSaving(false);
     }
@@ -143,8 +144,8 @@ export default function ShippingMethodsPage() {
       toast.success(t("deleteSuccess"));
       setDeletingMethod(null);
       fetchMethods();
-    } catch {
-      toast.error(t("deleteError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("deleteError")));
     }
   };
 

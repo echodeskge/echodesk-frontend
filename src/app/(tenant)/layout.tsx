@@ -57,6 +57,7 @@ import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
 import { Plus, Volume2, VolumeX, Sun, Moon, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
+import { webRouteForNotificationLink } from "@/lib/notificationLinks";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -755,7 +756,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                   if (notification.ticket_id) {
                     router.push(`/tickets/${notification.ticket_id}`);
                   } else if (linkUrl && linkUrl.startsWith('/')) {
-                    router.push(linkUrl);
+                    router.push(webRouteForNotificationLink(linkUrl));
                   }
                 }}
               />
