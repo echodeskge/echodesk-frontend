@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { UserCreate, UserUpdate, User, TenantGroup } from "@/api/generated/interfaces";
 import { usersRetrieve } from "@/api/generated/api";
 import { useTenantGroups } from "@/hooks/api/useTenant";
+import { useMyAccess } from "@/hooks/useMyAccess";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ export default function UserForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
   const [fullUserData, setFullUserData] = useState<User | null>(null);
+  // Assigning tenant groups grants feature keys: staff or manage_groups only.
+  const { canManageGroups } = useMyAccess();
 
   // Use React Query hook for tenant groups - only fetch when dialog is open
   const { data: tenantGroupsData, isLoading: loadingGroups } = useTenantGroups({ enabled: open });
@@ -283,13 +286,20 @@ export default function UserForm({
                   </p>
                 </div>
               ) : (
-                <MultiGroupSelection
-                  groups={tenantGroups}
-                  selectedGroupIds={formData.tenant_group_ids}
-                  onChange={(groupIds) => handleChange("tenant_group_ids", groupIds)}
-                  disabled={isSubmitting}
-                  placeholder="Select groups to assign to this user..."
-                />
+                <>
+                  <MultiGroupSelection
+                    groups={tenantGroups}
+                    selectedGroupIds={formData.tenant_group_ids}
+                    onChange={(groupIds) => handleChange("tenant_group_ids", groupIds)}
+                    disabled={isSubmitting || !canManageGroups}
+                    placeholder="Select groups to assign to this user..."
+                  />
+                  {!canManageGroups && (
+                    <p className="text-xs text-muted-foreground">
+                      Only staff or users with the Manage Groups permission can change group membership.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>

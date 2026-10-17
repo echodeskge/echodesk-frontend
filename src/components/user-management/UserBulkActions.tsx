@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useMyAccess, TENANT_ROLE_RANK, type TenantRole } from "@/hooks/useMyAccess";
 
 interface UserBulkActionsProps {
   selectedCount: number;
@@ -19,6 +20,12 @@ export default function UserBulkActions({
 }: UserBulkActionsProps) {
   const [showActions, setShowActions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { isSuperuser, isStaff, roleRank } = useMyAccess();
+  // Backend role guard: only a superuser grants admin, and non-staff callers
+  // cannot hand out a role above their own.
+  const canGrantRole = (role: TenantRole) =>
+    isSuperuser ||
+    (role !== "admin" && (isStaff || TENANT_ROLE_RANK[role] <= roleRank));
 
   const handleBulkAction = async (action: string, additionalData?: any) => {
     if (
@@ -155,42 +162,50 @@ export default function UserBulkActions({
             <div className="action-section">
               <h5>Role Changes</h5>
               <div className="action-buttons">
-                <button
-                  className="action-btn action-purple"
-                  onClick={() =>
-                    handleBulkAction("change_role", { role: "admin" })
-                  }
-                  disabled={isLoading}
-                >
-                  👑 Make Admin
-                </button>
-                <button
-                  className="action-btn action-blue"
-                  onClick={() =>
-                    handleBulkAction("change_role", { role: "manager" })
-                  }
-                  disabled={isLoading}
-                >
-                  👨‍💼 Make Manager
-                </button>
-                <button
-                  className="action-btn action-green"
-                  onClick={() =>
-                    handleBulkAction("change_role", { role: "agent" })
-                  }
-                  disabled={isLoading}
-                >
-                  🎧 Make Agent
-                </button>
-                <button
-                  className="action-btn action-gray"
-                  onClick={() =>
-                    handleBulkAction("change_role", { role: "viewer" })
-                  }
-                  disabled={isLoading}
-                >
-                  👁️ Make Viewer
-                </button>
+                {canGrantRole("admin") && (
+                  <button
+                    className="action-btn action-purple"
+                    onClick={() =>
+                      handleBulkAction("change_role", { role: "admin" })
+                    }
+                    disabled={isLoading}
+                  >
+                    👑 Make Admin
+                  </button>
+                )}
+                {canGrantRole("manager") && (
+                  <button
+                    className="action-btn action-blue"
+                    onClick={() =>
+                      handleBulkAction("change_role", { role: "manager" })
+                    }
+                    disabled={isLoading}
+                  >
+                    👨‍💼 Make Manager
+                  </button>
+                )}
+                {canGrantRole("agent") && (
+                  <button
+                    className="action-btn action-green"
+                    onClick={() =>
+                      handleBulkAction("change_role", { role: "agent" })
+                    }
+                    disabled={isLoading}
+                  >
+                    🎧 Make Agent
+                  </button>
+                )}
+                {canGrantRole("viewer") && (
+                  <button
+                    className="action-btn action-gray"
+                    onClick={() =>
+                      handleBulkAction("change_role", { role: "viewer" })
+                    }
+                    disabled={isLoading}
+                  >
+                    👁️ Make Viewer
+                  </button>
+                )}
               </div>
             </div>
 

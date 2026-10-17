@@ -28,6 +28,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/utils';
 
 interface Feature {
   id: number;
@@ -123,7 +124,8 @@ export function FeatureManagementCard() {
       }
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.error || 'Failed to add feature';
+      // 403s from the staff-only billing endpoints come back as {detail}.
+      const errorMessage = getApiErrorMessage(error, 'Failed to add feature');
       toast.error(errorMessage);
     },
   });
@@ -143,7 +145,7 @@ export function FeatureManagementCard() {
       queryClient.invalidateQueries({ queryKey: ['tenant-subscription'] });
     },
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.error || 'Failed to remove feature';
+      const errorMessage = getApiErrorMessage(error, 'Failed to remove feature');
       toast.error(errorMessage);
     },
   });
