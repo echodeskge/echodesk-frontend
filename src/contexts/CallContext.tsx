@@ -98,6 +98,13 @@ export interface CallContextValue {
 
 const CallContext = createContext<CallContextValue | undefined>(undefined);
 
+// The softphone endpoints (my_config, webrtc_config) send sip_enabled=false
+// with blank credentials when this user has nothing to register with.
+function isSipEnabled(config: SipConfigurationDetail & { sip_enabled?: boolean }): boolean {
+  if (config.sip_enabled === false) return false;
+  return Boolean(config.username);
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -456,6 +463,11 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const myConfig = myConfigRes.data;
 
         if (myConfig && myConfig.sip_configuration) {
+          if (myConfig.sip_enabled === false || !myConfig.extension) {
+            // No credentials this user may register with: skip SIP.
+            setActiveSipConfig(null);
+            return;
+          }
           // User has a personal assignment — use their extension credentials
           const sipConfig = myConfig.sip_configuration;
           // Override username/password with the user's extension credentials
@@ -478,6 +490,12 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const webrtcConfig = await sipConfigurationsWebrtcConfigRetrieve(defaultConfig.id);
+      // Agents without an extension get blank credentials and
+      // sip_enabled=false: registering would only fail and retry, so skip it.
+      if (!isSipEnabled(webrtcConfig)) {
+        setActiveSipConfig(null);
+        return;
+      }
       setActiveSipConfig(webrtcConfig);
     } catch (err: unknown) {
       console.error('Failed to load SIP configuration:', err);
@@ -786,6 +804,7 @@ export const CallProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (
       activeSipConfig &&
+      isSipEnabled(activeSipConfig) &&
       localAudioRef.current &&
       remoteAudioRef.current &&
       !sipServiceRef.current

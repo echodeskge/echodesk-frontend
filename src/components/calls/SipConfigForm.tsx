@@ -42,8 +42,13 @@ export function SipConfigForm({
     await onSave();
   };
 
+  // The API never returns the stored password, so an edit may leave it blank
+  // (blank keeps the stored one). A new configuration still needs one.
   const isValid =
-    configForm.name && configForm.sip_server && configForm.username && (configForm as any).password;
+    configForm.name &&
+    configForm.sip_server &&
+    configForm.username &&
+    (editingConfig || (configForm as any).password);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -125,7 +130,10 @@ export function SipConfigForm({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">{t("settings.trunkPassword")} *</Label>
+                  <Label htmlFor="password">
+                    {t("settings.trunkPassword")}
+                    {editingConfig ? "" : " *"}
+                  </Label>
                   <Input
                     id="password"
                     type="password"

@@ -33,7 +33,9 @@ interface PhoneAssignment {
   user_email: string;
   sip_configuration: number;
   extension: string;
+  // Always "" from the API (write-only secret); see has_extension_password.
   extension_password: string;
+  has_extension_password?: boolean;
   phone_number: string;
   display_name: string;
   is_primary: boolean;
@@ -124,7 +126,9 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
     setForm({
       user: String(assignment.user),
       extension: assignment.extension,
-      extension_password: assignment.extension_password,
+      // The API never returns the password. Blank on save keeps the
+      // stored one; typing a new one replaces it.
+      extension_password: "",
       phone_number: assignment.phone_number,
       display_name: assignment.display_name,
       is_primary: assignment.is_primary,
@@ -136,19 +140,21 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
   const handleSave = async () => {
     setSaving(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         user: parseInt(form.user),
         sip_configuration: sipConfigId,
         extension: form.extension,
-        extension_password: form.extension_password,
         phone_number: form.phone_number,
         display_name: form.display_name,
         is_primary: form.is_primary,
         is_active: form.is_active,
       };
+      if (form.extension_password) {
+        payload.extension_password = form.extension_password;
+      }
 
       if (editing) {
-        await axios.put(`/api/phone-assignments/${editing.id}/`, payload);
+        await axios.patch(`/api/phone-assignments/${editing.id}/`, payload);
       } else {
         await axios.post("/api/phone-assignments/", payload);
       }
@@ -174,7 +180,10 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
     }
   };
 
-  const isValid = form.user && form.extension && form.extension_password && form.phone_number;
+  // A password is required for a new extension only; when editing, blank
+  // keeps the stored one.
+  const isValid =
+    form.user && form.extension && form.phone_number && (editing || form.extension_password);
 
   return (
     <Card>
@@ -271,7 +280,13 @@ export function UserPhoneAssignments({ sipConfigId, sipConfigName }: UserPhoneAs
                   value={form.extension_password}
                   onChange={(e) => setForm({ ...form, extension_password: e.target.value })}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                 />
+                {editing && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("settings.passwordKeepHint")}
+                  </p>
+                )}
               </div>
             </div>
 

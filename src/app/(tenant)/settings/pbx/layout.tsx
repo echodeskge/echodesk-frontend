@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
+import { permissionService } from "@/services/permissionService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 const PBX_TABS = [
@@ -54,6 +55,19 @@ export default function PbxLayout({ children }: { children: React.ReactNode }) {
 
   if (!hasIpCalling) return <UpgradeRequired />;
 
+  // Mirrors the backend: PBX configuration needs a PBX admin (staff,
+  // superuser or manage_settings); statistics also open to view_reports.
+  const isPbxAdmin =
+    isStaffOrAdmin || permissionService.hasPermission(userProfile as any, "can_manage_settings");
+  const canViewStats =
+    isPbxAdmin || permissionService.hasPermission(userProfile as any, "can_view_reports");
+  const visibleTabs = PBX_TABS.filter((tab) =>
+    tab.id === "statistics" ? canViewStats : isPbxAdmin
+  );
+  const onAllowedTab = visibleTabs.some((tab) =>
+    tab.exact ? pathname === tab.href : pathname === tab.href || pathname.startsWith(tab.href + "/")
+  );
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div>
@@ -62,7 +76,7 @@ export default function PbxLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       <nav className="flex flex-wrap gap-1 border-b">
-        {PBX_TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const isActive = tab.exact
             ? pathname === tab.href
             : pathname === tab.href || pathname.startsWith(tab.href + "/");
@@ -83,7 +97,19 @@ export default function PbxLayout({ children }: { children: React.ReactNode }) {
         })}
       </nav>
 
-      <div>{children}</div>
+      <div>
+        {onAllowedTab ? (
+          children
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("page.noAccessTitle")}</CardTitle>
+              <CardDescription>{t("page.noAccessDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent />
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

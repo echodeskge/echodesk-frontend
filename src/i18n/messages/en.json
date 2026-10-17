@@ -919,6 +919,7 @@
       "selectUserPlaceholder": "Select a user...",
       "extension": "Extension",
       "extensionPassword": "Extension Password",
+      "passwordKeepHint": "Leave blank to keep the current password.",
       "phoneNumber": "Phone Number",
       "displayName": "Display Name",
       "primaryNumber": "Primary Number",
@@ -5225,7 +5226,9 @@
       "title": "PBX Management",
       "description": "Manage SIP trunks, extensions, queues, inbound routing and call statistics for your phone system.",
       "upgradeTitle": "Upgrade required",
-      "upgradeDescription": "PBX management is included in the IP calling add-on. Upgrade your plan to unlock this feature."
+      "upgradeDescription": "PBX management is included in the IP calling add-on. Upgrade your plan to unlock this feature.",
+      "noAccessTitle": "No access",
+      "noAccessDescription": "Only PBX administrators can open this page."
     },
     "tabs": {
       "overview": "Overview",
