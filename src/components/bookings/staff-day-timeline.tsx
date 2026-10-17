@@ -431,5 +431,7 @@ export function StaffDayTimeline() {
 }
 
 function statusKey(status: string): string {
-  return status === "in_progress" ? "inProgress" : ["pending", "confirmed", "completed", "cancelled"].includes(status) ? status : "pending"
+  if (status === "in_progress") return "inProgress"
+  if (status === "no_show") return "noShow"
+  return ["pending", "confirmed", "completed", "cancelled"].includes(status) ? status : "pending"
 }

@@ -15,10 +15,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Briefcase, Plus, Edit, Trash2, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useMyAccess } from "@/hooks/useMyAccess"
+import { getApiErrorMessage } from "@/lib/utils"
 
 export default function ServicesPage() {
   const t = useTranslations("bookingsServices")
   const { toast } = useToast()
+  // Service writes are limited to booking admins (staff, admin or manager role).
+  const { isBookingAdmin } = useMyAccess()
   const [services, setServices] = useState<ServiceList[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -107,7 +111,7 @@ export default function ServicesPage() {
       fetchServices()
     } catch (error) {
       console.error("Failed to save service:", error)
-      toast({ title: t("error"), description: t("saveFailed"), variant: "destructive" })
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("saveFailed")), variant: "destructive" })
     }
   }
 
@@ -120,7 +124,7 @@ export default function ServicesPage() {
       fetchServices()
     } catch (error) {
       console.error("Failed to delete service:", error)
-      toast({ title: t("error"), description: t("deleteFailed"), variant: "destructive" })
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("deleteFailed")), variant: "destructive" })
     }
   }
 
@@ -168,10 +172,12 @@ export default function ServicesPage() {
                   className="pl-8"
                 />
               </div>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("addService")}
-              </Button>
+              {isBookingAdmin && (
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("addService")}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -181,10 +187,12 @@ export default function ServicesPage() {
               <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-semibold">{t("noServicesFound")}</h3>
               <p className="text-muted-foreground mt-2">{t("getStartedServices")}</p>
-              <Button className="mt-4" onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("createService")}
-              </Button>
+              {isBookingAdmin && (
+                <Button className="mt-4" onClick={() => handleOpenDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("createService")}
+                </Button>
+              )}
             </div>
           ) : (
             <div className="rounded-md border">
@@ -225,14 +233,16 @@ export default function ServicesPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(service)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(service.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          {isBookingAdmin && (
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(service)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(service.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )

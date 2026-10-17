@@ -4321,6 +4321,7 @@
     "pending": "Pending",
     "confirmed": "Confirmed",
     "inProgress": "In Progress",
+    "noShow": "No Show",
     "completed": "Completed",
     "cancelled": "Cancelled",
     "error": "Error",

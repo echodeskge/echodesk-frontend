@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { useMyAccess } from "@/hooks/useMyAccess"
 import { renderSmsTemplate, smsLength, smsSegments } from "@/lib/sms"
 import { cn, getApiErrorMessage } from "@/lib/utils"
 
@@ -128,6 +129,8 @@ export function ReminderSettingsCard<T extends SmsSettings>({ settings, onChange
 export function SmsSettingsCard<T extends SmsSettings>({ settings, onChange, businessName }: Props<T>) {
   const t = useTranslations("bookingSettings.sms")
   const { toast } = useToast()
+  // The test SMS is limited to booking admins (staff, admin or manager role).
+  const { isBookingAdmin } = useMyAccess()
   const [kind, setKind] = useState<SmsKind>("reminder")
   const [language, setLanguage] = useState<SmsLanguage>("ka")
   const [testPhone, setTestPhone] = useState("")
@@ -325,7 +328,7 @@ export function SmsSettingsCard<T extends SmsSettings>({ settings, onChange, bus
             <Label htmlFor="sms-test-phone">{t("test.title")}</Label>
             <div className="flex flex-wrap gap-2">
               <Input id="sms-test-phone" type="tel" className="w-[200px]" placeholder="599 12 34 56" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} />
-              <Button type="button" variant="outline" disabled={testing || testPhone.replace(/\D/g, "").length < 9} onClick={sendTest}>
+              <Button type="button" variant="outline" disabled={testing || !isBookingAdmin || testPhone.replace(/\D/g, "").length < 9} onClick={sendTest}>
                 {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                 {t("test.send")}
               </Button>
