@@ -34,7 +34,8 @@ interface SettingsNavItem {
   href: string
   icon: React.ElementType
   labelKey: string
-  featureKey?: string
+  /** Visible when the user has any of these feature keys. */
+  featureKey?: string | string[]
   staffOnly?: boolean
 }
 
@@ -133,7 +134,9 @@ const settingsNav: SettingsNavItem[] = [
     href: "/settings/item-lists",
     icon: List,
     labelKey: "nav.itemLists",
-    featureKey: "ticket_management",
+    // Lists also back e-commerce (store branches, homepage sections), so
+    // e-commerce-only workspaces need them too.
+    featureKey: ["ticket_management", "ecommerce_crm"],
   },
   {
     id: "ticket-forms",
@@ -187,7 +190,9 @@ export function SettingsSidebar() {
       : userProfile.feature_keys
     : []
 
-  const hasFeatureAccess = (key: string): boolean => {
+  const hasFeatureAccess = (keyOrKeys: string | string[]): boolean => {
+    if (Array.isArray(keyOrKeys)) return keyOrKeys.some((key) => hasFeatureAccess(key))
+    const key = keyOrKeys
     // Staff/superadmin see everything
     if (isStaffOrAdmin && userFeatureKeys.length === 0) return true
     // Check user's feature_keys first (from group), then fall back to subscription

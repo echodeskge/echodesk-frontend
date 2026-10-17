@@ -318,7 +318,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
 
   // Helper function to check if user has a feature key
-  const hasFeatureKey = (featureKey: string): boolean => {
+  const hasFeatureKey = (featureKey: string | string[]): boolean => {
+    if (Array.isArray(featureKey)) return featureKey.some((key) => userFeatureKeys.includes(key));
     return userFeatureKeys.includes(featureKey);
   };
 
