@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
+import { useMyAccess } from "@/hooks/useMyAccess";
 import { useTranslations } from "next-intl";
 import {
   ticketFormsList,
@@ -41,6 +43,8 @@ import type {
 
 export default function TicketFormsPage() {
   const t = useTranslations('settings.ticketFormsPage');
+  // Writes need staff or manage_settings; others get read-only lists.
+  const { canManageSettings } = useMyAccess();
   const tCommon = useTranslations('common');
   const [forms, setForms] = useState<any[]>([]);
   const [itemLists, setItemLists] = useState<ItemListMinimal[]>([]);
@@ -150,7 +154,7 @@ export default function TicketFormsPage() {
       setDialogOpen(false);
       loadData();
     } catch (error) {
-      toast.error(t('error.save'));
+      toast.error(getApiErrorMessage(error, t('error.save')));
     }
   };
 
@@ -162,7 +166,7 @@ export default function TicketFormsPage() {
       toast.success(t('success.deleted'));
       loadData();
     } catch (error) {
-      toast.error(t('error.delete'));
+      toast.error(getApiErrorMessage(error, t('error.delete')));
     }
   };
 
@@ -174,7 +178,7 @@ export default function TicketFormsPage() {
       toast.success(t('success.defaultUpdated'));
       loadData();
     } catch (error) {
-      toast.error(t('error.setDefault'));
+      toast.error(getApiErrorMessage(error, t('error.setDefault')));
     }
   };
 
@@ -223,10 +227,12 @@ export default function TicketFormsPage() {
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
           <CardTitle>{t('title')}</CardTitle>
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('createForm')}
-          </Button>
+          {canManageSettings && (
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('createForm')}
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -288,7 +294,7 @@ export default function TicketFormsPage() {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    {!form.is_default && (
+                    {canManageSettings && !form.is_default && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -298,14 +304,16 @@ export default function TicketFormsPage() {
                         {t('setDefault')}
                       </Button>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(form)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {!form.is_default && (
+                    {canManageSettings && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(form)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canManageSettings && !form.is_default && (
                       <Button
                         variant="outline"
                         size="sm"

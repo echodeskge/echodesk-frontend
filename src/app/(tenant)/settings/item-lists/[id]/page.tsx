@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 import {
   itemListsRetrieve,
   listItemsCreate,
@@ -116,7 +117,7 @@ export default function ItemListDetailPage() {
       const response = await itemListsRetrieve(listId);
       setItemList(response);
     } catch (error) {
-      toast.error(t("failedToSaveItem"));
+      toast.error(getApiErrorMessage(error, t("failedToSaveItem")));
     } finally {
       setLoading(false);
     }
@@ -212,7 +213,7 @@ export default function ItemListDetailPage() {
       setDialogOpen(false);
       loadItemList();
     } catch (error) {
-      toast.error(t("failedToSaveItem"));
+      toast.error(getApiErrorMessage(error, t("failedToSaveItem")));
     }
   };
 
@@ -224,7 +225,7 @@ export default function ItemListDetailPage() {
       toast.success(t("itemDeleted"));
       loadItemList();
     } catch (error) {
-      toast.error(t("failedToDeleteItem"));
+      toast.error(getApiErrorMessage(error, t("failedToDeleteItem")));
     }
   };
 

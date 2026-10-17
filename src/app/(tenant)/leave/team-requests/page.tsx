@@ -10,6 +10,7 @@ import {
   leaveManagerTeamRequestsRetrieve,
 } from "@/api/generated/api"
 import { getApiErrorMessage } from "@/lib/utils"
+import { useMyAccess } from "@/hooks/useMyAccess"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -64,6 +65,10 @@ function unwrapList<T>(data: unknown): T[] {
 export default function TeamRequestsPage() {
   const t = useTranslations("leave")
   const locale = useLocale()
+  // Nobody but a superuser may approve or reject their own leave request.
+  const { userId, isSuperuser } = useMyAccess()
+  const canDecide = (request: LeaveRequest) =>
+    request.status === "pending" && (isSuperuser || request.employee !== userId)
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null)
@@ -283,7 +288,7 @@ export default function TeamRequestsPage() {
                     <TableCell>{request.total_days}</TableCell>
                     <TableCell>{getStatusBadge(request.status)}</TableCell>
                     <TableCell>
-                      {request.status === "pending" && (
+                      {canDecide(request) && (
                         <div className="flex gap-2">
                           <Button
                             size="sm"
