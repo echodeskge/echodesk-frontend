@@ -89,11 +89,20 @@ const NOTIFICATION_TYPE_SOUNDS: Record<string, string> = {
   leave_request_submitted: 'mixkit-message-pop-alert-2354.mp3',
   leave_request_approved: 'mixkit-happy-bells-notification-937.wav',
   leave_request_rejected: 'mixkit-guitar-notification-alert-2320.wav',
+  leave_request_progress: 'mixkit-positive-notification-951.wav',
+  leave_request_awaiting_approval: 'mixkit-message-pop-alert-2354.mp3',
+  leave_request_cancelled: 'mixkit-guitar-notification-alert-2320.wav',
 
   // Bookings
   booking_confirmed: 'mixkit-happy-bells-notification-937.wav',
   booking_cancelled: 'mixkit-guitar-notification-alert-2320.wav',
   booking_reminder: 'mixkit-bell-notification-933.wav',
+  booking_assigned: 'mixkit-confirmation-tone-2867.wav',
+
+  // E-commerce
+  ecommerce_order_created: 'mixkit-correct-answer-tone-2870.wav',
+  ecommerce_order_paid: 'mixkit-happy-bells-notification-937.wav',
+  ecommerce_low_stock: 'mixkit-urgent-simple-tone-loop-2976.wav',
 
   // Calls
   call_missed: 'mixkit-game-notification-wave-alarm-987.wav',
