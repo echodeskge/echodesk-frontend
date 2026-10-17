@@ -73,8 +73,9 @@ function createWrapper() {
       mutations: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) =>
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
+  return Wrapper;
 }
 
 function renderForm(props: Partial<React.ComponentProps<typeof UserForm>> = {}) {
@@ -285,6 +286,58 @@ describe("UserForm", () => {
       renderForm({ mode: "edit", user: editUser });
 
       expect(screen.getByText("User is active")).toBeInTheDocument();
+    });
+
+    it("shows the notification language selector in edit mode only", () => {
+      renderForm({ mode: "edit", user: editUser });
+      expect(screen.getByText("Notification Language")).toBeInTheDocument();
+    });
+
+    it("does not show the notification language selector in create mode", () => {
+      renderForm();
+      expect(screen.queryByText("Notification Language")).not.toBeInTheDocument();
+    });
+
+    it("sends preferred_language null (tenant default) when the user has none", async () => {
+      const { usersRetrieve } = await import("@/api/generated/api");
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      renderForm({ mode: "edit", user: editUser, onSubmit });
+      await waitFor(() => expect(usersRetrieve).toHaveBeenCalled());
+
+      expect(screen.getAllByText("Tenant default").length).toBeGreaterThan(0);
+      await user.click(screen.getByText("Update User"));
+
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ preferred_language: null })
+        );
+      });
+    });
+
+    it("keeps the user's stored preferred_language on submit", async () => {
+      const { usersRetrieve } = await import("@/api/generated/api");
+      const stored = makeUser({
+        id: 1,
+        email: "edit@test.com",
+        first_name: "Edit",
+        last_name: "Me",
+        ...({ preferred_language: "en" } as Partial<User>),
+      });
+      vi.mocked(usersRetrieve).mockResolvedValueOnce(stored);
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      renderForm({ mode: "edit", user: stored, onSubmit });
+      await waitFor(() => expect(usersRetrieve).toHaveBeenCalled());
+
+      expect(screen.getAllByText("English").length).toBeGreaterThan(0);
+      await user.click(screen.getByText("Update User"));
+
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ preferred_language: "en" })
+        );
+      });
     });
   });
 

@@ -15,6 +15,7 @@ import { Upload, Image as ImageIcon, X, Languages } from "lucide-react";
 import { toast } from "sonner";
 import { useTenantSettings, useUpdateTenantSettings, useUploadTenantLogo, useRemoveTenantLogo } from "@/hooks/api";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
+import { syncPreferredLanguage } from "@/lib/preferredLanguage";
 import { useMyAccess } from "@/hooks/useMyAccess";
 
 interface TenantSettings {
@@ -123,6 +124,9 @@ export default function GeneralSettingsPage() {
 
   const handleLocaleChange = async (newLocale: Locale) => {
     if (newLocale === currentLocale) return;
+
+    // Also make it this user's notification language (best effort, not awaited).
+    void syncPreferredLanguage(newLocale);
 
     // Set cookie via server action
     await fetch('/api/set-locale', {

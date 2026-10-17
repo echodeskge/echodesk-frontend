@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { locales, localeNames, type Locale } from "@/lib/i18n";
+import { syncPreferredLanguage } from "@/lib/preferredLanguage";
 
 interface LanguageSwitcherProps {
   currentLocale: Locale;
@@ -25,6 +26,10 @@ export function LanguageSwitcher({ currentLocale }: LanguageSwitcherProps) {
     if (newLocale === locale) return;
 
     setLocaleState(newLocale);
+
+    // Also make it the signed-in user's notification language (best effort,
+    // not awaited; a no-op when signed out).
+    void syncPreferredLanguage(newLocale);
 
     // Set cookie via server action
     await fetch('/api/set-locale', {
