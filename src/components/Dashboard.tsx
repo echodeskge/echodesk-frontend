@@ -372,7 +372,7 @@ export default function Dashboard({ tenant, onLogout }: DashboardProps) {
                   }}
                 >
                   <strong>Note:</strong> Social media integrations are now
-                  available in the dedicated "Social Media" section in
+                  available in the dedicated &quot;Social Media&quot; section in
                   the sidebar.
                 </div>
               </div>

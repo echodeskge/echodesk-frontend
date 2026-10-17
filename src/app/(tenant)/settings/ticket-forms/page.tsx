@@ -448,7 +448,7 @@ export default function TicketFormsPage() {
               <div className="border rounded-lg p-3 space-y-3 max-h-96 overflow-y-auto">
                 {formData.custom_fields.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No custom fields defined. Click "Add Field" to create one.
+                    No custom fields defined. Click &quot;Add Field&quot; to create one.
                   </p>
                 ) : (
                   formData.custom_fields.map((field, index) => (

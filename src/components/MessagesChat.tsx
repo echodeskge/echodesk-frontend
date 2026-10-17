@@ -872,7 +872,7 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
 
         let platform: 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget';
         let senderName = 'Unknown';
-        let accountName = '';
+        const accountName = '';
 
         if (platformPrefix === 'fb') {
           platform = 'facebook';

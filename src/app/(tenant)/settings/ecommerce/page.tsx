@@ -274,7 +274,7 @@ export default function EcommerceSettingsPage() {
         const settingsData = response.results[0] as EcommerceSettingsType & { bog_use_production?: boolean }
 
         // Build active_payment_providers from data or derive from legacy fields
-        let activeProviders: PaymentProvider[] = settingsData.active_payment_providers || []
+        const activeProviders: PaymentProvider[] = settingsData.active_payment_providers || []
         if (activeProviders.length === 0) {
           // Derive from legacy fields for backward compatibility
           if (settingsData.enable_card_payment) activeProviders.push("bog")

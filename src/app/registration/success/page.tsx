@@ -53,7 +53,7 @@ export default function RegistrationSuccessPage() {
               Payment Successful!
             </h1>
             <p style={{ color: '#666', fontSize: '16px', marginBottom: '20px' }}>
-              We're setting up your EchoDesk tenant...
+              We&apos;re setting up your EchoDesk tenant...
             </p>
             <p style={{ color: '#888', fontSize: '14px' }}>
               This usually takes just a few seconds. Please wait while we:
@@ -115,7 +115,7 @@ export default function RegistrationSuccessPage() {
               marginBottom: '30px'
             }}>
               <p style={{ color: '#333', fontSize: '14px', marginBottom: '10px' }}>
-                <strong>What's next?</strong>
+                <strong>What&apos;s next?</strong>
               </p>
               <ol style={{
                 textAlign: 'left',

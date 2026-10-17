@@ -6,7 +6,7 @@ import { boardsList, boardsPartialUpdate } from "@/api/generated/api";
 import { ticketService } from "@/services/ticketService";
 import MultiUserAssignment, { AssignmentData } from "./MultiUserAssignment";
 
-interface BoardManagementProps {}
+type BoardManagementProps = Record<string, never>;
 
 export default function BoardManagement({}: BoardManagementProps) {
   const [boards, setBoards] = useState<Board[]>([]);
@@ -249,7 +249,7 @@ export default function BoardManagement({}: BoardManagementProps) {
             <>
               <div style={{ marginBottom: "20px" }}>
                 <h3 style={{ margin: "0 0 8px 0", color: "#343a40", fontSize: "18px" }}>
-                  Order Users for "{selectedBoard.name}"
+                  Order Users for &quot;{selectedBoard.name}&quot;
                 </h3>
                 <p style={{ margin: "0 0 16px 0", color: "#6c757d", fontSize: "14px" }}>
                   Select which users can create orders on this board. If no users are selected, 
@@ -355,9 +355,9 @@ export default function BoardManagement({}: BoardManagementProps) {
                 }}>
                   <strong>ℹ️ How Order Users Work:</strong>
                   <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px" }}>
-                    <li>If no users are selected, any user with "can_access_orders" permission can create orders</li>
+                    <li>If no users are selected, any user with &quot;can_access_orders&quot; permission can create orders</li>
                     <li>If users are selected, only those users can create orders on this board</li>
-                    <li>Users still need the "can_access_orders" permission to see the Orders menu</li>
+                    <li>Users still need the &quot;can_access_orders&quot; permission to see the Orders menu</li>
                     <li>Orders are automatically assigned to the first column of the board</li>
                   </ul>
                 </div>

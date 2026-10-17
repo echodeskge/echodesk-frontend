@@ -153,7 +153,7 @@ export default function TemplateParameterInput({
                 </div>
                 {preview && (
                   <p className="text-xs text-muted-foreground italic">
-                    "{preview}"
+                    &quot;{preview}&quot;
                   </p>
                 )}
                 <Input

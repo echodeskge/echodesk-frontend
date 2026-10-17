@@ -159,7 +159,7 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           is_default: formData.is_default,
           is_closed_status: formData.is_closed_status,
           track_time: formData.track_time,
-          board: selectedBoard?.id!,
+          board: selectedBoard?.id as number,
         };
         await columnsCreate(createData);
         setSuccess(t("statusManagement.columnCreated"));

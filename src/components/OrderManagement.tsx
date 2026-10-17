@@ -7,7 +7,7 @@ import { boardsList } from "@/api/generated/api";
 import { AuthService } from "@/services/auth";
 import OrderForm from "./OrderForm";
 
-interface OrderManagementProps {}
+type OrderManagementProps = Record<string, never>;
 
 export default function OrderManagement({}: OrderManagementProps) {
   const t = useTranslations("orders");

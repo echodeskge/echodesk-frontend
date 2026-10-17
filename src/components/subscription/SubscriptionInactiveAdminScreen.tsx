@@ -155,7 +155,7 @@ export function SubscriptionInactiveAdminScreen({
           <AlertDescription className="text-sm text-gray-600">
             <p className="font-medium mb-1">Need help?</p>
             <p>
-              If you're experiencing issues with payment or have questions about your subscription,
+              If you&apos;re experiencing issues with payment or have questions about your subscription,
               please contact our support team or check your subscription settings.
             </p>
           </AlertDescription>

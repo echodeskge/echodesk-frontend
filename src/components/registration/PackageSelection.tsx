@@ -96,7 +96,7 @@ export function PackageSelection({
                 Start Your 14-Day Free Trial
               </h3>
               <p className="text-sm text-green-700 dark:text-green-300">
-                No payment required now! We'll only charge your card after your trial ends.
+                No payment required now! We&apos;ll only charge your card after your trial ends.
                 You can cancel anytime before the trial ends with no charge.
               </p>
             </div>
