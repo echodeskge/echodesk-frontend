@@ -8,9 +8,11 @@ import {
   PaginatedUserList,
   UserUpdate,
 } from "@/api/generated/interfaces";
-import { usersPartialUpdate, usersSendNewPasswordCreate, bookingsAdminStaffCreate, usersBulkActionCreate } from "@/api/generated/api";
+import { usersPartialUpdate, usersSendNewPasswordCreate, usersSetStaffCreate, bookingsAdminStaffCreate, usersBulkActionCreate } from "@/api/generated/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from "@/hooks/api/useUsers";
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys } from "@/hooks/api/useUsers";
+import { getApiErrorMessage } from "@/lib/utils";
 
 import UserTable from "./user-management/UserTable";
 import UserBulkActions from "./user-management/UserBulkActions";
@@ -36,6 +38,12 @@ export default function UserManagement() {
   const t = useTranslations("users");
   const tCommon = useTranslations("common");
   const { data: currentUserProfile } = useUserProfile();
+  const queryClient = useQueryClient();
+  // The profile payload carries is_superuser even though the generated User
+  // type does not declare it.
+  const isSuperuser = Boolean(
+    (currentUserProfile as { is_superuser?: boolean } | undefined)?.is_superuser
+  );
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -79,10 +87,8 @@ export default function UserManagement() {
     try {
       await createUserMutation.mutateAsync(userData as UserCreate);
       setShowCreateForm(false);
-    } catch (err: any) {
-      throw new Error(
-        err.response?.data?.detail || err.message || "Failed to create user"
-      );
+    } catch (err: unknown) {
+      throw new Error(getApiErrorMessage(err, "Failed to create user"));
     }
   };
 
@@ -93,10 +99,8 @@ export default function UserManagement() {
     try {
       await updateUserMutation.mutateAsync({ id: userId, data: userData as UserUpdate });
       setEditingUser(null);
-    } catch (err: any) {
-      throw new Error(
-        err.response?.data?.detail || err.message || "Failed to update user"
-      );
+    } catch (err: unknown) {
+      throw new Error(getApiErrorMessage(err, "Failed to update user"));
     }
   };
 
@@ -107,10 +111,8 @@ export default function UserManagement() {
 
     try {
       await deleteUserMutation.mutateAsync(userId);
-    } catch (err: any) {
-      alert(
-        err.response?.data?.detail || err.message || tCommon("error")
-      );
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, tCommon("error")));
     }
   };
 
@@ -118,12 +120,8 @@ export default function UserManagement() {
     try {
       await usersPartialUpdate(userId, { status: status as any });
       // React Query will auto-invalidate and refetch
-    } catch (err: any) {
-      alert(
-        err.response?.data?.detail ||
-          err.message ||
-          "Failed to change user status"
-      );
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Failed to change user status"));
     }
   };
 
@@ -137,14 +135,12 @@ export default function UserManagement() {
 
     setSendPasswordLoading(true);
     try {
-      await usersSendNewPasswordCreate(selectedUserForPassword.id, {} as any);
+      await usersSendNewPasswordCreate(selectedUserForPassword.id);
       alert(t("sendNewPasswordSuccess"));
       setShowSendPasswordModal(false);
       setSelectedUserForPassword(null);
-    } catch (err: any) {
-      alert(
-        err.response?.data?.detail || err.response?.data?.error || err.message || tCommon("error")
-      );
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, tCommon("error")));
     } finally {
       setSendPasswordLoading(false);
     }
@@ -152,8 +148,9 @@ export default function UserManagement() {
 
   const handleToggleStaff = async (userId: number, isStaff: boolean) => {
     try {
-      // Update user's is_staff field
-      await usersPartialUpdate(userId, { is_staff: isStaff } as any);
+      // is_staff is no longer writable through PATCH /api/users/{id}/; the
+      // dedicated superuser-only endpoint is the only way to change it.
+      await usersSetStaffCreate(userId, { is_staff: isStaff });
 
       if (isStaff) {
         // Create BookingStaff record when enabling staff
@@ -170,13 +167,10 @@ export default function UserManagement() {
         }
       }
 
-      // React Query will auto-invalidate and refetch
-    } catch (err: any) {
-      alert(
-        err.response?.data?.detail ||
-          err.message ||
-          "Failed to toggle staff status"
-      );
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Failed to toggle staff status"));
+    } finally {
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
     }
   };
 
@@ -192,11 +186,23 @@ export default function UserManagement() {
         ...additionalData,
       };
 
-      await usersBulkActionCreate(bulkActionData);
+      const result = await usersBulkActionCreate(bulkActionData);
       setSelectedUsers([]);
-      // React Query will auto-invalidate and refetch
-    } catch (err: any) {
-      alert(err.response?.data?.detail || err.message || "Bulk action failed");
+      // The backend skips users the caller may not touch (higher privileges,
+      // superusers, themselves) and reports them instead of failing.
+      const skipped = result?.skipped_user_ids || [];
+      if (skipped.length > 0) {
+        alert(
+          t("bulkActionPartial", {
+            affected: result?.affected ?? 0,
+            skipped: skipped.length,
+          })
+        );
+      }
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Bulk action failed"));
+    } finally {
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
     }
   };
 
@@ -277,6 +283,8 @@ export default function UserManagement() {
         onSendNewPassword={handleOpenSendPasswordModal}
         onToggleStaff={handleToggleStaff}
         showStaffColumn={hasBookingManagement}
+        canToggleStaff={isSuperuser}
+        currentUserId={currentUserProfile?.id}
         pagination={pagination}
         onPageChange={handlePageChange}
       />

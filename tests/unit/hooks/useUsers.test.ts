@@ -132,7 +132,11 @@ describe("useUsers", () => {
       });
 
       await waitFor(() =>
-        expect(mockUsersList).toHaveBeenCalledWith(undefined, 2, undefined, "admin")
+        // (department, group, isActive, isStaff, lite, manager, ordering, page, pageSize, role, search)
+        expect(mockUsersList).toHaveBeenCalledWith(
+          undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+          2, undefined, undefined, "admin"
+        )
       );
     });
 

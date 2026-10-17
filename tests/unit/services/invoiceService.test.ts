@@ -492,7 +492,7 @@ describe("InvoiceService", () => {
       const result = await invoiceService.duplicateInvoice(1);
 
       expect(result.id).toBe(2);
-      expect(mockDuplicate).toHaveBeenCalledWith(1, expect.anything());
+      expect(mockDuplicate).toHaveBeenCalledWith(1);
     });
   });
 
@@ -503,7 +503,7 @@ describe("InvoiceService", () => {
 
       const result = await invoiceService.finalizeInvoice(1);
 
-      expect(mockFinalize).toHaveBeenCalledWith(1, expect.anything());
+      expect(mockFinalize).toHaveBeenCalledWith(1);
     });
 
     it("propagates error when finalize fails", async () => {

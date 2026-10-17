@@ -83,8 +83,8 @@ export default function PublicHolidaysPage() {
 
   const fetchHolidays = async () => {
     try {
-      // Positional: (ordering, page, pageSize)
-      const response = await leaveAdminPublicHolidaysList("date", undefined, 100)
+      // Positional: (appliesToAll, isRecurring, lang, ordering, page, pageSize, year)
+      const response = await leaveAdminPublicHolidaysList(undefined, undefined, undefined, "date", undefined, 100)
       setHolidays(unwrapList<PublicHoliday>(response))
     } catch (error) {
       console.error("Failed to fetch holidays:", error)

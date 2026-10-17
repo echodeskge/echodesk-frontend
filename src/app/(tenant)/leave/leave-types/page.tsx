@@ -114,8 +114,8 @@ export default function LeaveTypesPage() {
 
   const fetchLeaveTypes = async () => {
     try {
-      // Positional: (ordering, page, pageSize, search)
-      const response = await leaveAdminLeaveTypesList(undefined, undefined, 100)
+      // Positional: (calculationMethod, isActive, lang, ordering, page, pageSize, requiresApproval, search)
+      const response = await leaveAdminLeaveTypesList(undefined, undefined, undefined, undefined, undefined, 100)
       const list = unwrapList<LeaveType>(response)
 
       // The list omits calculation method / day allocations; load each detail.

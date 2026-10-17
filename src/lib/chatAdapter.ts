@@ -531,7 +531,8 @@ interface ApiUnifiedConversation {
   // Widget-only: present when the visitor or another agent has closed
   // the chat. Used to disable the composer + show a banner.
   session_ended_at?: string | null;
-  session_ended_by?: 'visitor' | 'agent' | 'timeout' | null;
+  // 'visitor' | 'agent' | 'timeout' (typed as a plain string by the API schema)
+  session_ended_by?: string | null;
 }
 
 /**
@@ -599,7 +600,8 @@ export function convertApiConversationsToChatFormat(
       platform: conversation.platform as 'facebook' | 'instagram' | 'whatsapp' | 'email' | 'widget' | 'telegram',
       messagesLoaded: false, // Always false - messages need to be fetched
       sessionEndedAt: conversation.session_ended_at || undefined,
-      sessionEndedBy: conversation.session_ended_by || undefined,
+      sessionEndedBy:
+        (conversation.session_ended_by as 'visitor' | 'agent' | 'timeout' | null | undefined) || undefined,
     };
   });
 

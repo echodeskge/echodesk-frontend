@@ -9,8 +9,8 @@ import {
 } from "../api/generated/api";
 import {
   TicketColumn,
-  TicketColumnCreate,
-  TicketColumnUpdate,
+  TicketColumnCreateRequest,
+  TicketColumnUpdateRequest,
   Board,
 } from "../api/generated/interfaces";
 import { Spinner } from "@/components/ui/spinner";
@@ -137,7 +137,8 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
     try {
       if (editingColumn) {
         // Update existing column
-        const updateData: TicketColumnUpdate = {
+        // `board` is read-only on update (a column can't move boards).
+        const updateData: TicketColumnUpdateRequest = {
           name: formData.name,
           description: formData.description,
           color: formData.color,
@@ -145,13 +146,12 @@ const StatusManagement: React.FC<StatusManagementProps> = ({
           is_default: formData.is_default,
           is_closed_status: formData.is_closed_status,
           track_time: formData.track_time,
-          board: selectedBoard?.id!,
         };
         await columnsUpdate(editingColumn.id, updateData);
         setSuccess(t("statusManagement.columnUpdated"));
       } else {
         // Create new column - include board reference
-        const createData: TicketColumnCreate = {
+        const createData: TicketColumnCreateRequest = {
           name: formData.name,
           description: formData.description,
           color: formData.color,

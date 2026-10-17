@@ -8,6 +8,7 @@ import {
   changeTenantPassword,
 } from "../api/generated/api";
 import type {
+  ChangeTenantPasswordRequest,
   TenantLoginRequest as TenantLoginType,
   User as GeneratedUser,
 } from "../api/generated/interfaces";
@@ -326,9 +327,12 @@ class AuthService {
   /**
    * Update user profile
    */
-  async updateProfile(): Promise<User> {
+  async updateProfile(data: {
+    first_name?: string;
+    last_name?: string;
+  }): Promise<User> {
     try {
-      const response = await updateTenantProfile();
+      const response = await updateTenantProfile(data);
 
       const user = response.user as User;
 
@@ -359,9 +363,9 @@ class AuthService {
   /**
    * Change password
    */
-  async changePassword(): Promise<void> {
+  async changePassword(data: ChangeTenantPasswordRequest): Promise<void> {
     try {
-      await changeTenantPassword();
+      await changeTenantPassword(data);
 
       // Password change requires re-login, so remove token
       this.removeToken();

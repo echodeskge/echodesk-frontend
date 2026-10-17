@@ -11,8 +11,8 @@ import {
 } from "../api/generated/api";
 import {
   TicketColumn,
-  TicketColumnCreate,
-  TicketColumnUpdate,
+  TicketColumnCreateRequest,
+  TicketColumnUpdateRequest,
   Board,
 } from "../api/generated/interfaces";
 import { Button } from "@/components/ui/button";
@@ -159,7 +159,8 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
     try {
       if (editingColumn) {
         // Update existing column
-        const updateData: TicketColumnUpdate = {
+        // `board` is read-only on update (a column can't move boards).
+        const updateData: TicketColumnUpdateRequest = {
           name: formData.name,
           description: formData.description,
           color: formData.color,
@@ -167,13 +168,12 @@ const BoardStatusEditor: React.FC<BoardStatusEditorProps> = ({
           is_default: formData.is_default,
           is_closed_status: formData.is_closed_status,
           track_time: formData.track_time,
-          board: boardId,
         };
         await columnsUpdate(editingColumn.id, updateData);
         setSuccess(t("boardStatusEditor.columnUpdated"));
       } else {
         // Create new column
-        const createData: TicketColumnCreate = {
+        const createData: TicketColumnCreateRequest = {
           name: formData.name,
           description: formData.description,
           color: formData.color,

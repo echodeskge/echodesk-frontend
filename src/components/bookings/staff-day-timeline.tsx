@@ -168,9 +168,9 @@ export function StaffDayTimeline() {
   const runAction = async (booking: BookingList, action: "confirm" | "complete" | "cancel") => {
     setBusyId(booking.id)
     try {
-      if (action === "confirm") await bookingsAdminBookingsConfirmCreate(booking.id, { force: true } as never)
-      else if (action === "complete") await bookingsAdminBookingsCompleteCreate(booking.id, {} as never)
-      else await bookingsAdminBookingsCancelCreate(booking.id, { reason: "" } as never)
+      if (action === "confirm") await bookingsAdminBookingsConfirmCreate(booking.id, { force: true })
+      else if (action === "complete") await bookingsAdminBookingsCompleteCreate(booking.id)
+      else await bookingsAdminBookingsCancelCreate(booking.id, { reason: "" })
       toast({ title: t(`timeline.${action}Done`) })
       setOpenId(null)
       await load(true)

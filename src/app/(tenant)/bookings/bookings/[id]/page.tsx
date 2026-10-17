@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { getApiErrorMessage } from "@/lib/utils"
 import {
   Select,
   SelectContent,
@@ -108,11 +109,11 @@ export default function BookingDetailPage() {
   const handleConfirm = async () => {
     setActionLoading(true)
     try {
-      await bookingsAdminBookingsConfirmCreate(bookingId, {} as any)
+      await bookingsAdminBookingsConfirmCreate(bookingId, {})
       toast({ title: t("success"), description: t("bookingConfirmed") })
       fetchBooking()
-    } catch {
-      toast({ title: t("error"), description: t("actionFailed"), variant: "destructive" })
+    } catch (error) {
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("actionFailed")), variant: "destructive" })
     } finally {
       setActionLoading(false)
     }
@@ -121,11 +122,11 @@ export default function BookingDetailPage() {
   const handleComplete = async () => {
     setActionLoading(true)
     try {
-      await bookingsAdminBookingsCompleteCreate(bookingId, {} as any)
+      await bookingsAdminBookingsCompleteCreate(bookingId)
       toast({ title: t("success"), description: t("bookingCompleted") })
       fetchBooking()
-    } catch {
-      toast({ title: t("error"), description: t("actionFailed"), variant: "destructive" })
+    } catch (error) {
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("actionFailed")), variant: "destructive" })
     } finally {
       setActionLoading(false)
     }
@@ -134,13 +135,19 @@ export default function BookingDetailPage() {
   const handleCancel = async () => {
     setActionLoading(true)
     try {
-      await bookingsAdminBookingsCancelCreate(bookingId, { reason: cancelReason } as any)
+      const result = await bookingsAdminBookingsCancelCreate(bookingId, { reason: cancelReason })
       toast({ title: t("success"), description: t("bookingCancelled") })
+      // Cash recorded at the desk is never refunded online; the backend tells
+      // us how much has to be handed back by hand.
+      const manualDue = parseFloat(result?.manual_refund_due || "0")
+      if (manualDue > 0) {
+        toast({ title: t("manualRefundDueTitle"), description: t("manualRefundDue", { amount: manualDue.toFixed(2) }) })
+      }
       setCancelDialog(false)
       setCancelReason("")
       fetchBooking()
-    } catch {
-      toast({ title: t("error"), description: t("actionFailed"), variant: "destructive" })
+    } catch (error) {
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("actionFailed")), variant: "destructive" })
     } finally {
       setActionLoading(false)
     }
@@ -153,14 +160,14 @@ export default function BookingDetailPage() {
       await bookingsAdminBookingsRescheduleCreate(bookingId, {
         date: newDate,
         start_time: newTime,
-      } as any)
+      })
       toast({ title: t("success"), description: t("bookingRescheduled") })
       setRescheduleDialog(false)
       setNewDate("")
       setNewTime("")
       fetchBooking()
-    } catch {
-      toast({ title: t("error"), description: t("actionFailed"), variant: "destructive" })
+    } catch (error) {
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("actionFailed")), variant: "destructive" })
     } finally {
       setActionLoading(false)
     }
@@ -169,10 +176,15 @@ export default function BookingDetailPage() {
   const handleOpenStaffDialog = async () => {
     try {
       const response = await bookingsAdminStaffList()
-      setStaffList((response.results || response) as BookingStaff[])
+      // Inactive staff can't take bookings (the backend refuses them).
+      setStaffList(
+        ((response.results || response) as BookingStaff[]).filter(
+          (s) => s.is_active_for_bookings !== false
+        )
+      )
       setStaffDialog(true)
-    } catch {
-      toast({ title: t("error"), description: t("actionFailed"), variant: "destructive" })
+    } catch (error) {
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("actionFailed")), variant: "destructive" })
     }
   }
 
@@ -182,13 +194,13 @@ export default function BookingDetailPage() {
     try {
       await bookingsAdminBookingsAssignStaffCreate(bookingId, {
         staff_id: parseInt(selectedStaffId),
-      } as any)
+      })
       toast({ title: t("success"), description: t("staffAssigned") })
       setStaffDialog(false)
       setSelectedStaffId("")
       fetchBooking()
-    } catch {
-      toast({ title: t("error"), description: t("actionFailed"), variant: "destructive" })
+    } catch (error) {
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("actionFailed")), variant: "destructive" })
     } finally {
       setActionLoading(false)
     }
@@ -214,9 +226,9 @@ export default function BookingDetailPage() {
 
   const formatTime = (timeStr: string) => timeStr?.slice(0, 5) || ""
 
-  const formatCurrency = (amount: string | undefined) => {
-    if (!amount) return "₾0.00"
-    return `₾${parseFloat(amount).toFixed(2)}`
+  const formatCurrency = (amount: string | number | undefined | null) => {
+    if (amount === undefined || amount === null || amount === "") return "₾0.00"
+    return `₾${parseFloat(String(amount)).toFixed(2)}`
   }
 
   const status = booking?.status as unknown as string

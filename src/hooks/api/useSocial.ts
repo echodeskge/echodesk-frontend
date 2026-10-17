@@ -14,7 +14,6 @@ import {
   WhatsAppTemplateCreateRequest,
   WhatsAppTemplateSendRequest,
   socialEmailStatusRetrieve,
-  socialEmailMessagesThreadsRetrieve,
   socialEmailFoldersRetrieve,
   socialEmailDraftsList,
   socialEmailDraftsCreate,
@@ -674,7 +673,7 @@ export function useConnectWhatsApp() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: socialWhatsappOauthStartRetrieve,
+    mutationFn: () => socialWhatsappOauthStartRetrieve(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.whatsappStatus() });
     },
@@ -1762,7 +1761,9 @@ export function useEmailStatus(options?: { enabled?: boolean }) {
   return useQuery<EmailConnectionStatus>({
     queryKey: socialKeys.emailStatus(),
     queryFn: async () => {
-      return await socialEmailStatusRetrieve();
+      // Generated type marks every field required; the local interface keeps
+      // the nullable `connection` the UI already handles.
+      return (await socialEmailStatusRetrieve()) as unknown as EmailConnectionStatus;
     },
     staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
@@ -2238,7 +2239,7 @@ export function useUpdateEmailDraft() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: number; data: PatchedEmailDraftRequest }) => {
-      return await socialEmailDraftsPartialUpdate(String(id), data);
+      return await socialEmailDraftsPartialUpdate(id, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });
@@ -2251,7 +2252,7 @@ export function useDeleteEmailDraft() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      return await socialEmailDraftsDestroy(String(id));
+      return await socialEmailDraftsDestroy(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });

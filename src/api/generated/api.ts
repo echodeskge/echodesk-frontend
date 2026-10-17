@@ -9,7 +9,11 @@ import type {
   TicketAttachmentRequest,
   TicketAttachment,
   PatchedTicketAttachmentRequest,
+  ChangeTenantPasswordRequest,
   TenantDashboardData,
+  AuthDevice,
+  RevokeOtherDevicesRequest,
+  RevokeOtherDevicesResponse,
   TenantLoginRequest,
   PaginatedBlogCategoryAdminList,
   BlogCategoryAdminRequest,
@@ -34,45 +38,62 @@ import type {
   BoardRequest,
   Board,
   PatchedBoardRequest,
+  BoardSetDefaultResponse,
+  BoardTelegramConnection,
+  BoardTelegramConnectionCreateRequest,
+  PatchedBoardTelegramConnectionRequest,
+  BoardTelegramTestRequest,
+  BoardTelegramTestResponse,
   PaginatedStaffAvailabilityList,
   StaffAvailabilityRequest,
   StaffAvailability,
   PatchedStaffAvailabilityRequest,
   PaginatedBookingListList,
   AdminBookingCreateRequest,
-  AdminBookingCreate,
   BookingDetail,
-  BookingListRequest,
-  BookingList,
-  PatchedBookingListRequest,
+  AdminBookingUpdateRequest,
+  PatchedAdminBookingUpdateRequest,
+  BookingAssignStaffRequestRequest,
+  BookingCancelRequestRequest,
+  BookingCancelResponse,
+  BookingConfirmRequestRequest,
+  BookingRecordPaymentRequestRequest,
+  BookingRescheduleRequestRequest,
+  PaginatedBookingRowList,
   PaginatedServiceCategoryList,
   ServiceCategoryRequest,
   ServiceCategory,
   PatchedServiceCategoryRequest,
   PaginatedBookingClientList,
   BookingClient,
+  BookingList,
+  BookingClientStats,
+  BookingDashboard,
   PaginatedStaffExceptionList,
   StaffExceptionRequest,
   StaffException,
   PatchedStaffExceptionRequest,
   PaginatedRecurringBookingList,
-  RecurringBookingRequest,
+  AdminRecurringBookingCreateRequest,
   RecurringBooking,
+  RecurringBookingRequest,
   PatchedRecurringBookingRequest,
+  StaffSchedule,
   PaginatedServiceListList,
-  ServiceDetailRequest,
+  ServiceCreateRequest,
   ServiceDetail,
-  PatchedServiceDetailRequest,
-  ServiceListRequest,
-  ServiceList,
+  PatchedServiceCreateRequest,
+  BookingSettings,
+  BookingSettingsRequest,
+  PatchedBookingSettingsRequest,
   BookingTestSmsRequest,
   BookingTestSmsResult,
+  AdminSlotsResponse,
   PaginatedBookingStaffList,
   BookingStaffCreateRequest,
-  BookingStaffCreate,
   BookingStaff,
   PatchedBookingStaffCreateRequest,
-  BookingStaffRequest,
+  AvailableUser,
   PaginatedPublicBookingList,
   BookingCreateRequest,
   BookingCreate,
@@ -81,6 +102,7 @@ import type {
   PublicService,
   PublicBookingStaff,
   PaginatedCallLogList,
+  Client,
   CallLogCreateRequest,
   CallLogCreate,
   CallLogDetail,
@@ -89,22 +111,29 @@ import type {
   PatchedCallLogRequest,
   CallEventRequest,
   CallEvent,
-  CallStatusUpdateRequest,
+  CallEndRequest,
   ConsultationInitiateRequest,
+  ConsultationInitiateResponse,
   MergeConferenceRequest,
   MergeConferenceResponse,
   SmsReviewResponse,
   CallRecording,
+  CallTransferRequest,
   PatchedCallStatusUpdateRequest,
   CallInitiateRequest,
+  CallLogStatisticsResponse,
+  CallStatsOverviewResponse,
+  CallStatsQueueResponse,
+  CallStatsUsersResponse,
+  CallStatsUserTimelineResponse,
   PaginatedChecklistItemList,
   ChecklistItemRequest,
   ChecklistItem,
   PatchedChecklistItemRequest,
   PaginatedClientList,
   ClientRequest,
-  Client,
   PatchedClientRequest,
+  ClientPhoneLookupResponse,
   PaginatedTicketColumnList,
   TicketColumnCreateRequest,
   TicketColumnCreate,
@@ -112,7 +141,8 @@ import type {
   TicketColumnUpdateRequest,
   TicketColumnUpdate,
   PatchedTicketColumnUpdateRequest,
-  TicketColumnRequest,
+  TicketColumnReorderRequest,
+  TicketColumnReorderResponse,
   KanbanBoard,
   PaginatedTicketCommentList,
   TicketCommentRequest,
@@ -156,7 +186,11 @@ import type {
   HomepageSectionRequest,
   HomepageSection,
   PatchedHomepageSectionRequest,
+  HomepageSectionChoices,
+  HomepageGenerateFromVariantRequestRequest,
+  HomepageGenerateFromVariantResponse,
   HomepageSectionReorderRequest,
+  HomepageVariantSummary,
   PaginatedProductImageList,
   ProductImageRequest,
   ProductImage,
@@ -171,14 +205,23 @@ import type {
   Order,
   OrderRequest,
   PatchedOrderRequest,
+  OrderInitiatePaymentRequestRequest,
+  OrderInitiatePaymentResponse,
+  OrderMarkPaidRequestRequest,
   OrderRefundResponse,
+  OrderStatusUpdateRequestRequest,
+  OrderAnalyticsResponse,
   BulkUpdateStatusRequestRequest,
+  BulkUpdateStatusResponse,
   PaginatedProductListList,
   ProductCreateUpdateRequest,
   ProductCreateUpdate,
   ProductDetail,
   PatchedProductCreateUpdateRequest,
-  ProductDetailRequest,
+  ProductAddImageRequestRequest,
+  StockAdjustRequestRequest,
+  StockAdjustResponse,
+  ProductUpdateAttributesRequestRequest,
   BulkProductUpdateRequestRequest,
   BulkProductUpdateResponse,
   PaginatedPromoCodeList,
@@ -208,12 +251,14 @@ import type {
   ProductVariantAdminRequest,
   ProductVariantAdmin,
   PatchedProductVariantAdminRequest,
+  VariantStockAdjustRequestRequest,
+  VariantStockAdjustResponse,
   PaginatedCartList,
   GuestCheckoutRequestRequest,
   HomepageSectionPublic,
-  PaginatedItemListMinimalList,
+  PaginatedEcommerceItemListMinimalList,
   ItemListDetail,
-  ListItem,
+  EcommerceListItem,
   PaginatedOrderList,
   ProductReviewCreateRequest,
   ProductReviewCreate,
@@ -233,6 +278,7 @@ import type {
   ResendVerificationCodeResponse,
   EmailVerificationRequestRequest,
   EmailVerificationResponse,
+  ExtensionStatusResponse,
   PaginatedFeatureList,
   Feature,
   PaginatedTicketFormSubmissionList,
@@ -263,33 +309,39 @@ import type {
   InboundRouteRequest,
   InboundRoute,
   PatchedInboundRouteRequest,
+  PaginatedInvoiceClientList,
+  InvoiceClient,
   PaginatedInvoiceListList,
   InvoiceCreateUpdateRequest,
-  InvoiceCreateUpdate,
   InvoiceDetail,
   PatchedInvoiceCreateUpdateRequest,
-  InvoiceDetailRequest,
+  InvoiceMarkPaidRequest,
+  InvoiceSendEmailRequest,
+  MessageResponse,
+  InvoiceStats,
   PaginatedInvoiceLineItemList,
   InvoiceLineItemRequest,
   InvoiceLineItem,
   PatchedInvoiceLineItemRequest,
-  PaginatedListItemMaterialList,
+  InvoiceLineItemReorderRequest,
   ListItemMaterial,
   PaginatedInvoicePaymentList,
   InvoicePaymentRequest,
   InvoicePayment,
   PatchedInvoicePaymentRequest,
-  PaginatedInvoiceSettingsList,
-  InvoiceSettingsRequest,
   InvoiceSettings,
+  InvoiceSettingsRequest,
   PatchedInvoiceSettingsRequest,
+  InvoiceAvailableItemList,
   PaginatedInvoiceTemplateList,
   InvoiceTemplateRequest,
   InvoiceTemplate,
   PatchedInvoiceTemplateRequest,
+  PaginatedItemListMinimalList,
   ItemListRequest,
   ItemList,
   PatchedItemListRequest,
+  ListItem,
   PaginatedLandingPageAdminList,
   LandingPageAdminRequest,
   LandingPageAdmin,
@@ -315,6 +367,7 @@ import type {
   CarryForwardRequestRequest,
   CarryForwardResponse,
   InitializeUserRequestRequest,
+  LeaveActionResponse,
   PaginatedLeaveRequestListList,
   LeaveRequestCreateRequest,
   LeaveRequestCreate,
@@ -323,9 +376,7 @@ import type {
   LeaveRequestUpdate,
   PatchedLeaveRequestUpdateRequest,
   LeaveApprovalRequest,
-  LeaveApproval,
   LeaveCancellationRequest,
-  LeaveCancellation,
   PaginatedLeaveTypeListList,
   LeaveTypeCreateUpdateRequest,
   LeaveTypeCreateUpdate,
@@ -342,9 +393,14 @@ import type {
   PatchedLeaveSettingsRequest,
   PublicHolidayList,
   LeaveTypeList,
+  LeaveCancellation,
+  LeaveRequestPreviewRequest,
+  LeaveRequestPreviewResponse,
   PaginatedListItemMinimalList,
   ListItemRequest,
   PatchedListItemRequest,
+  ListItemMinimal,
+  PatchedListItemReorderRequest,
   PaginatedContactSubmissionAdminList,
   ContactSubmissionAdmin,
   ContactSubmissionAdminRequest,
@@ -362,6 +418,9 @@ import type {
   NewsletterUnsubscribeResponse,
   PaginatedTestimonialList,
   Testimonial,
+  NotificationPreference,
+  NotificationPreferenceBulkItemRequest,
+  NotificationPreferenceType,
   PaginatedNotificationList,
   NotificationRequest,
   Notification,
@@ -371,6 +430,7 @@ import type {
   TicketPayment,
   PatchedTicketPaymentRequest,
   InvoiceListResponse,
+  SavedCard,
   AddNewCardRequestRequest,
   AddNewCardResponse,
   AddEcommerceCardResponse,
@@ -379,6 +439,9 @@ import type {
   PbxServerRequest,
   PbxServer,
   PatchedPbxServerRequest,
+  PbxSettings,
+  PatchedPbxSettingsRequest,
+  PbxSoundRemoveRequest,
   PaginatedPermissionList,
   Permission,
   PaginatedUserPhoneAssignmentList,
@@ -393,55 +456,145 @@ import type {
   PatchedQueueRequest,
   TenantRegistrationRequest,
   Tenant,
+  CurrentIpinfo,
+  IpwhitelistList,
   TenantIpwhitelistRequest,
   TenantIpwhitelist,
   PatchedTenantIpwhitelistRequest,
+  ToggleIpwhitelistRequest,
+  IpwhitelistState,
+  PaginatedSecurityLogList,
+  SecurityLogsStats,
   PaginatedSipConfigurationListList,
   SipConfigurationRequest,
   SipConfiguration,
   SipConfigurationDetail,
   PatchedSipConfigurationRequest,
+  SipConfigurationMessageResponse,
+  SipConfigurationTestResponse,
+  SoftphoneSipConfiguration,
+  MySoftphoneConfig,
   AicompanionSettings,
   PatchedAicompanionSettingsRequest,
+  AistateResponse,
   AistateUpdateRequest,
-  ConversationSummary,
+  AisummaryList,
   ConversationTripleRequest,
+  AisummaryCreated,
+  AitestRequest,
+  AitestResponse,
+  ChatAssignment,
+  ChatAssignmentCreateRequest,
+  AssignmentMessageResponse,
+  BulkAssignmentStatusResponse,
+  ConversationRefRequest,
+  EndSessionResponse,
   AssignmentStatusResponse,
+  ChatTransferRequest,
+  SocialMessageResponse,
+  AutoPostContent,
+  AutoPostEditRequest,
+  AutoPostRejectRequest,
+  AutoPostListResponse,
+  PublishingStatusResponse,
+  AutoPostSettings,
+  AutoPostSettingsRequest,
+  ClearHistoryRequest,
+  ClearHistoryResponse,
   PaginatedSocialClientListList,
   SocialClientCreateRequest,
   SocialClientCreate,
   SocialClient,
   PatchedSocialClientCreateRequest,
-  SocialClientRequest,
+  ClientBookingHistoryResponse,
+  ClientBookingStatsResponse,
+  SocialAccountLinkRequest,
+  LinkAccountResponse,
+  UnlinkAccountResponse,
+  ClientByAccountResponse,
   PaginatedSocialClientCustomFieldList,
   SocialClientCustomFieldRequest,
   SocialClientCustomField,
   PatchedSocialClientCustomFieldRequest,
+  ReorderRequest,
+  ReorderResponse,
   PaginatedUnifiedConversation,
+  ConversationsRequest,
+  ArchiveResponse,
+  PlatformsRequest,
+  ArchiveAllResponse,
+  UnarchiveResponse,
+  DeleteConversationResponse,
   PaginatedEmailDraftList,
   EmailDraftRequest,
   EmailDraft,
   PatchedEmailDraftRequest,
   PaginatedEmailMessageList,
-  EmailMessage,
-  EmailMessageRequest,
+  EmailMessageDetail,
+  EmailFolder,
+  PaginatedEmailMessageLiteList,
+  EmailMoveRequest,
+  EmailMoveResponse,
+  EmailThread,
+  EmailAssignedUsersResponse,
+  EmailAssignedUsersUpdateRequest,
+  EmailMessageActionRequest,
+  EmailActionResponse,
+  EmailConnectionWithAssignments,
+  EmailMessageResponse,
+  EmailAssignmentCreateRequest,
+  EmailConnectionUserAssignment,
+  EmailConnectRequest,
+  EmailConnectResponse,
+  EmailConnectionIdRequest,
+  EmailDisconnectResponse,
+  EmailFoldersResponse,
+  EmailReactivateRequest,
+  EmailConnectionResponse,
+  EmailSendRequest,
+  EmailSendResponse,
+  EmailSignature,
+  PatchedEmailSignatureRequest,
+  EmailConnectionStatusResponse,
+  EmailSyncRequest,
+  EmailSyncResponse,
+  EmailSyncDaysRequest,
+  EmailSyncDaysResponse,
+  EmailConnectionUpdateRequest,
   PaginatedFacebookMessageList,
   FacebookMessage,
   PaginatedFacebookPageConnectionList,
   FacebookPageConnectionRequest,
   FacebookPageConnection,
   PatchedFacebookPageConnectionRequest,
+  FacebookDisconnectResponse,
+  OauthStartResponse,
+  FacebookPageDisconnectResponse,
   FacebookSendMessageRequest,
+  MetaSendResponse,
+  FacebookStatusResponse,
   PaginatedInstagramAccountConnectionList,
   InstagramAccountConnectionRequest,
   InstagramAccountConnection,
   PatchedInstagramAccountConnectionRequest,
   PaginatedInstagramMessageList,
   InstagramMessage,
+  InstagramDisconnectResponse,
   InstagramSendMessageRequest,
+  InstagramStatusResponse,
+  MarkAllReadResponse,
+  ConversationKeyRequest,
+  MarkReadResponse,
+  MarkUnreadResponse,
+  MessagingWindowResponse,
   QuickReply,
   QuickReplyRequest,
   PatchedQuickReplyRequest,
+  QuickReplyUseRequest,
+  QuickReplyUseResponse,
+  QuickReplyVariables,
+  RatingStatisticsResponse,
+  UserRatingSessionsResponse,
   SocialIntegrationSettings,
   SocialIntegrationSettingsRequest,
   PatchedSocialIntegrationSettingsRequest,
@@ -457,17 +610,38 @@ import type {
   TelegramVerifyResponse,
   PaginatedTikTokMessageList,
   TikTokMessage,
+  StatusMessageResponse,
+  TikTokSendMessageRequest,
+  TikTokSendResponse,
+  TikTokStatusResponse,
+  SocialUnreadCountResponse,
   PaginatedWhatsAppBusinessAccountList,
   WhatsAppBusinessAccountRequest,
   WhatsAppBusinessAccount,
   PatchedWhatsAppBusinessAccountRequest,
+  CoexStatusResponse,
+  SyncRequestedResponse,
+  SyncHistoryRequest,
   PaginatedWhatsAppContactList,
   WhatsAppContact,
   PaginatedWhatsAppMessageList,
   WhatsAppMessage,
   WhatsAppMessageTemplate,
+  WhatsAppTemplateSyncResponse,
+  WhatsAppDisconnectRequest,
+  WhatsAppDisconnectResponse,
+  WhatsAppSendMessageRequest,
+  WhatsAppSendResponse,
+  WhatsAppStatusResponse,
   WhatsAppTemplateCreateRequest,
   WhatsAppTemplateSendRequest,
+  UpdateAgentCountRequest,
+  UpdateAgentCountResponse,
+  AddSubscriptionFeatureRequest,
+  AddSubscriptionFeatureResponse,
+  SubscriptionAvailableFeatures,
+  RemoveSubscriptionFeatureRequest,
+  RemoveSubscriptionFeatureResponse,
   PaginatedTagList,
   TagRequest,
   Tag,
@@ -475,8 +649,16 @@ import type {
   PaginatedTeamChatConversationList,
   TeamChatConversation,
   TeamChatConversationDetail,
+  TeamChatClearHistoryResponse,
+  TeamChatHideResponse,
+  TeamChatMarkReadResponse,
+  TeamChatUnhideResponse,
   PaginatedTeamChatMessageList,
   TeamChatMessage,
+  TeamChatUnreadCount,
+  TeamChatFileUploadRequest,
+  TeamChatFileUploadResult,
+  TeamChatUser,
   PaginatedTenantFeatureList,
   TenantFeature,
   TenantFeatureRequest,
@@ -485,9 +667,15 @@ import type {
   TenantGroupCreate,
   TenantGroup,
   PatchedTenantGroupCreateRequest,
-  TenantGroupRequest,
+  TenantGroupUserIdsRequest,
+  TenantGroupAddUsersResponse,
+  TenantGroupMembersResponse,
+  TenantGroupRemoveUsersResponse,
+  TenantGroupAvailableFeaturesResponse,
   PaginatedTenantPermissionList,
   TenantPermission,
+  TenantSettings,
+  PatchedTenantSettingsRequest,
   PaginatedTenantList,
   TenantCreateRequest,
   TenantCreate,
@@ -497,10 +685,13 @@ import type {
   TicketFormRequest,
   TicketForm,
   PatchedTicketFormRequest,
+  TicketFormSetDefaultResponse,
   PaginatedTicketListList,
   TicketRequest,
   Ticket,
   PatchedTicketRequest,
+  PatchedMoveTicketToColumnRequestRequest,
+  PatchedReorderTicketInColumnRequestRequest,
   PaginatedTicketAssignmentList,
   TicketAssignmentRequest,
   TicketAssignment,
@@ -508,6 +699,8 @@ import type {
   PaginatedTicketTimeLogList,
   TicketTimeLog,
   TimeTrackingSummary,
+  TeamSummary,
+  TicketTimeSummary,
   PaginatedTrunkListList,
   TrunkRequest,
   Trunk,
@@ -519,13 +712,22 @@ import type {
   UserUpdateRequest,
   UserUpdate,
   PatchedUserUpdateRequest,
-  UserRequest,
+  PasswordChangeRequest,
+  UserMessageResponse,
+  SetUserStaffRequest,
+  SetUserStaffResponse,
+  BulkUserActionRequest,
+  BulkUserActionResponse,
+  PaginatedUserDirectoryList,
   PaginatedWidgetConnectionList,
   WidgetConnectionRequest,
   WidgetConnection,
   PatchedWidgetConnectionRequest,
   PaginatedWidgetMessageList,
   WidgetMessage,
+  WidgetAdminSendMessageRequest,
+  DevicePushToken,
+  DevicePushTokenRequest,
 } from './interfaces';
 
 export async function attachmentsList(
@@ -581,15 +783,34 @@ export async function attachmentsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function changeTenantPassword(): Promise<{
+export async function changeTenantPassword(
+  data: ChangeTenantPasswordRequest,
+): Promise<{
   message?: string;
 }> {
-  const response = await axios.post(`/api/auth/change-password/`);
+  const response = await axios.post(`/api/auth/change-password/`, data);
   return response.data;
 }
 
 export async function tenantDashboard(): Promise<TenantDashboardData> {
   const response = await axios.get(`/api/auth/dashboard/`);
+  return response.data;
+}
+
+export async function authDevicesList(): Promise<AuthDevice[]> {
+  const response = await axios.get(`/api/auth/devices/`);
+  return response.data;
+}
+
+export async function authDevicesRevoke(id: string): Promise<any> {
+  const response = await axios.delete(`/api/auth/devices/${id}/`);
+  return response.data;
+}
+
+export async function authDevicesRevokeOthers(
+  data: RevokeOtherDevicesRequest,
+): Promise<RevokeOtherDevicesResponse> {
+  const response = await axios.post(`/api/auth/devices/revoke-others/`, data);
   return response.data;
 }
 
@@ -608,6 +829,7 @@ export async function forcedPasswordChange(data: {
 export async function tenantLogin(data: TenantLoginRequest): Promise<{
   message?: string;
   token?: string;
+  token_type?: 'shared' | 'device';
   dashboard_data?: Record<string, any>;
 }> {
   const response = await axios.post(`/api/auth/login/`, data);
@@ -628,12 +850,14 @@ export async function tenantProfile(): Promise<{
   last_name?: string;
   is_staff?: boolean;
   is_superuser?: boolean;
+  is_leave_manager?: boolean;
   date_joined?: string;
   last_login?: string;
   is_active?: boolean;
   groups?: {
     id?: number;
     name?: string;
+    feature_keys?: string[];
     permissions?: {
       id?: number;
       codename?: string;
@@ -643,24 +867,32 @@ export async function tenantProfile(): Promise<{
     }[];
   }[];
   all_permissions?: string[];
+  permissions_list?: string[];
+  feature_keys?: string[];
 }> {
   const response = await axios.get(`/api/auth/profile/`);
   return response.data;
 }
 
-export async function updateTenantProfile2(): Promise<{
+export async function updateTenantProfile2(data: {
+  first_name?: string;
+  last_name?: string;
+}): Promise<{
   message?: string;
   user?: Record<string, any>;
 }> {
-  const response = await axios.put(`/api/auth/profile/update/`);
+  const response = await axios.put(`/api/auth/profile/update/`, data);
   return response.data;
 }
 
-export async function updateTenantProfile(): Promise<{
+export async function updateTenantProfile(data: {
+  first_name?: string;
+  last_name?: string;
+}): Promise<{
   message?: string;
   user?: Record<string, any>;
 }> {
-  const response = await axios.patch(`/api/auth/profile/update/`);
+  const response = await axios.patch(`/api/auth/profile/update/`, data);
   return response.data;
 }
 
@@ -996,30 +1228,34 @@ export async function boardsDestroy(id: string): Promise<any> {
   return response.data;
 }
 
-export async function boardsKanbanBoardRetrieve(id: string): Promise<Board> {
-  const response = await axios.get(`/api/boards/${id}/kanban_board/`);
+export async function boardsKanbanBoardRetrieve(
+  id: string,
+  lite?: boolean,
+): Promise<Board> {
+  const response = await axios.get(
+    `/api/boards/${id}/kanban_board/${lite ? '?lite=' + encodeURIComponent(lite) : ''}`,
+  );
   return response.data;
 }
 
 export async function boardsSetDefaultCreate(
   id: string,
-  data: BoardRequest,
-): Promise<Board> {
-  const response = await axios.post(`/api/boards/${id}/set_default/`, data);
+): Promise<BoardSetDefaultResponse> {
+  const response = await axios.post(`/api/boards/${id}/set_default/`);
   return response.data;
 }
 
 export async function boardsTelegramConnectionRetrieve(
   id: string,
-): Promise<Board> {
+): Promise<BoardTelegramConnection> {
   const response = await axios.get(`/api/boards/${id}/telegram-connection/`);
   return response.data;
 }
 
 export async function boardsTelegramConnectionCreate(
   id: string,
-  data: BoardRequest,
-): Promise<Board> {
+  data: BoardTelegramConnectionCreateRequest,
+): Promise<BoardTelegramConnection> {
   const response = await axios.post(
     `/api/boards/${id}/telegram-connection/`,
     data,
@@ -1029,8 +1265,8 @@ export async function boardsTelegramConnectionCreate(
 
 export async function boardsTelegramConnectionUpdate(
   id: string,
-  data: BoardRequest,
-): Promise<Board> {
+  data: PatchedBoardTelegramConnectionRequest,
+): Promise<BoardTelegramConnection> {
   const response = await axios.put(
     `/api/boards/${id}/telegram-connection/`,
     data,
@@ -1047,8 +1283,8 @@ export async function boardsTelegramConnectionDestroy(
 
 export async function boardsTelegramConnectionTestCreate(
   id: string,
-  data: BoardRequest,
-): Promise<Board> {
+  data: BoardTelegramTestRequest,
+): Promise<BoardTelegramTestResponse> {
   const response = await axios.post(
     `/api/boards/${id}/telegram-connection/test/`,
     data,
@@ -1134,6 +1370,11 @@ export async function bookingsAdminAvailabilityDestroy(
 
 export async function bookingsAdminBookingsList(
   client?: number,
+  dateFrom?: string,
+  dateTo?: string,
+  lang?: string,
+  lite?: boolean,
+  mine?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -1146,12 +1387,23 @@ export async function bookingsAdminBookingsList(
   search?: string,
   service?: number,
   staff?: number,
-  status?: 'cancelled' | 'completed' | 'confirmed' | 'in_progress' | 'pending',
+  status?:
+    | 'cancelled'
+    | 'completed'
+    | 'confirmed'
+    | 'in_progress'
+    | 'no_show'
+    | 'pending',
 ): Promise<PaginatedBookingListList> {
   const response = await axios.get(
     `/api/bookings/admin/bookings/${(() => {
       const parts = [
         client ? 'client=' + encodeURIComponent(client) : null,
+        dateFrom ? 'date_from=' + encodeURIComponent(dateFrom) : null,
+        dateTo ? 'date_to=' + encodeURIComponent(dateTo) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
+        mine ? 'mine=' + encodeURIComponent(mine) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -1171,7 +1423,7 @@ export async function bookingsAdminBookingsList(
 
 export async function bookingsAdminBookingsCreate(
   data: AdminBookingCreateRequest,
-): Promise<AdminBookingCreate> {
+): Promise<BookingDetail> {
   const response = await axios.post(`/api/bookings/admin/bookings/`, data);
   return response.data;
 }
@@ -1185,16 +1437,16 @@ export async function bookingsAdminBookingsRetrieve(
 
 export async function bookingsAdminBookingsUpdate(
   id: number,
-  data: BookingListRequest,
-): Promise<BookingList> {
+  data: AdminBookingUpdateRequest,
+): Promise<BookingDetail> {
   const response = await axios.put(`/api/bookings/admin/bookings/${id}/`, data);
   return response.data;
 }
 
 export async function bookingsAdminBookingsPartialUpdate(
   id: number,
-  data: PatchedBookingListRequest,
-): Promise<BookingList> {
+  data: PatchedAdminBookingUpdateRequest,
+): Promise<BookingDetail> {
   const response = await axios.patch(
     `/api/bookings/admin/bookings/${id}/`,
     data,
@@ -1209,8 +1461,8 @@ export async function bookingsAdminBookingsDestroy(id: number): Promise<any> {
 
 export async function bookingsAdminBookingsAssignStaffCreate(
   id: number,
-  data: BookingListRequest,
-): Promise<BookingList> {
+  data: BookingAssignStaffRequestRequest,
+): Promise<BookingDetail> {
   const response = await axios.post(
     `/api/bookings/admin/bookings/${id}/assign_staff/`,
     data,
@@ -1220,8 +1472,8 @@ export async function bookingsAdminBookingsAssignStaffCreate(
 
 export async function bookingsAdminBookingsCancelCreate(
   id: number,
-  data: BookingListRequest,
-): Promise<BookingList> {
+  data: BookingCancelRequestRequest,
+): Promise<BookingCancelResponse> {
   const response = await axios.post(
     `/api/bookings/admin/bookings/${id}/cancel/`,
     data,
@@ -1229,9 +1481,20 @@ export async function bookingsAdminBookingsCancelCreate(
   return response.data;
 }
 
+export async function bookingsAdminBookingsCheckInCreate(
+  id: number,
+  data: BookingConfirmRequestRequest,
+): Promise<BookingDetail> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/check_in/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function bookingsAdminBookingsCheckPaymentStatusRetrieve(
   id: number,
-): Promise<BookingList> {
+): Promise<Record<string, any>> {
   const response = await axios.get(
     `/api/bookings/admin/bookings/${id}/check_payment_status/`,
   );
@@ -1240,19 +1503,17 @@ export async function bookingsAdminBookingsCheckPaymentStatusRetrieve(
 
 export async function bookingsAdminBookingsCompleteCreate(
   id: number,
-  data: BookingListRequest,
-): Promise<BookingList> {
+): Promise<BookingDetail> {
   const response = await axios.post(
     `/api/bookings/admin/bookings/${id}/complete/`,
-    data,
   );
   return response.data;
 }
 
 export async function bookingsAdminBookingsConfirmCreate(
   id: number,
-  data: BookingListRequest,
-): Promise<BookingList> {
+  data: BookingConfirmRequestRequest,
+): Promise<BookingDetail> {
   const response = await axios.post(
     `/api/bookings/admin/bookings/${id}/confirm/`,
     data,
@@ -1260,13 +1521,84 @@ export async function bookingsAdminBookingsConfirmCreate(
   return response.data;
 }
 
+export async function bookingsAdminBookingsNoShowCreate(
+  id: number,
+): Promise<BookingDetail> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/no_show/`,
+  );
+  return response.data;
+}
+
+export async function bookingsAdminBookingsRecordPaymentCreate(
+  id: number,
+  data: BookingRecordPaymentRequestRequest,
+): Promise<BookingDetail> {
+  const response = await axios.post(
+    `/api/bookings/admin/bookings/${id}/record_payment/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function bookingsAdminBookingsRescheduleCreate(
   id: number,
-  data: BookingListRequest,
-): Promise<BookingList> {
+  data: BookingRescheduleRequestRequest,
+): Promise<BookingDetail> {
   const response = await axios.post(
     `/api/bookings/admin/bookings/${id}/reschedule/`,
     data,
+  );
+  return response.data;
+}
+
+export async function bookingsAdminBookingsRowsList(
+  client?: number,
+  dateFrom?: string,
+  dateTo?: string,
+  lang?: string,
+  mine?: boolean,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  paymentStatus?:
+    | 'deposit_paid'
+    | 'failed'
+    | 'fully_paid'
+    | 'pending'
+    | 'refunded',
+  search?: string,
+  service?: number,
+  staff?: number,
+  status?:
+    | 'cancelled'
+    | 'completed'
+    | 'confirmed'
+    | 'in_progress'
+    | 'no_show'
+    | 'pending',
+): Promise<PaginatedBookingRowList> {
+  const response = await axios.get(
+    `/api/bookings/admin/bookings/rows/${(() => {
+      const parts = [
+        client ? 'client=' + encodeURIComponent(client) : null,
+        dateFrom ? 'date_from=' + encodeURIComponent(dateFrom) : null,
+        dateTo ? 'date_to=' + encodeURIComponent(dateTo) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        mine ? 'mine=' + encodeURIComponent(mine) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        paymentStatus
+          ? 'payment_status=' + encodeURIComponent(paymentStatus)
+          : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        service ? 'service=' + encodeURIComponent(service) : null,
+        staff ? 'staff=' + encodeURIComponent(staff) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
@@ -1363,22 +1695,41 @@ export async function bookingsAdminClientsRetrieve(
 
 export async function bookingsAdminClientsBookingsRetrieve(
   id: number,
-): Promise<BookingClient> {
+  lang?: string,
+  lite?: boolean,
+): Promise<BookingList[]> {
   const response = await axios.get(
-    `/api/bookings/admin/clients/${id}/bookings/`,
+    `/api/bookings/admin/clients/${id}/bookings/${(() => {
+      const parts = [
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
 
 export async function bookingsAdminClientsStatsRetrieve(
   id: number,
-): Promise<BookingClient> {
+): Promise<BookingClientStats> {
   const response = await axios.get(`/api/bookings/admin/clients/${id}/stats/`);
   return response.data;
 }
 
-export async function bookingsAdminDashboardRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/bookings/admin/dashboard/`);
+export async function bookingsAdminDashboardRetrieve(
+  lang?: string,
+  lite?: boolean,
+): Promise<BookingDashboard> {
+  const response = await axios.get(
+    `/api/bookings/admin/dashboard/${(() => {
+      const parts = [
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
@@ -1388,6 +1739,7 @@ export async function bookingsAdminExceptionsList(
   page?: number,
   pageSize?: number,
   search?: string,
+  showPast?: boolean,
   staff?: number,
 ): Promise<PaginatedStaffExceptionList> {
   const response = await axios.get(
@@ -1398,6 +1750,7 @@ export async function bookingsAdminExceptionsList(
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        showPast ? 'show_past=' + encodeURIComponent(showPast) : null,
         staff ? 'staff=' + encodeURIComponent(staff) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1476,7 +1829,7 @@ export async function bookingsAdminRecurringBookingsList(
 }
 
 export async function bookingsAdminRecurringBookingsCreate(
-  data: RecurringBookingRequest,
+  data: AdminRecurringBookingCreateRequest,
 ): Promise<RecurringBooking> {
   const response = await axios.post(
     `/api/bookings/admin/recurring-bookings/`,
@@ -1527,45 +1880,43 @@ export async function bookingsAdminRecurringBookingsDestroy(
 
 export async function bookingsAdminRecurringBookingsCancelCreate(
   id: number,
-  data: RecurringBookingRequest,
 ): Promise<RecurringBooking> {
   const response = await axios.post(
     `/api/bookings/admin/recurring-bookings/${id}/cancel/`,
-    data,
   );
   return response.data;
 }
 
 export async function bookingsAdminRecurringBookingsPauseCreate(
   id: number,
-  data: RecurringBookingRequest,
 ): Promise<RecurringBooking> {
   const response = await axios.post(
     `/api/bookings/admin/recurring-bookings/${id}/pause/`,
-    data,
   );
   return response.data;
 }
 
 export async function bookingsAdminRecurringBookingsResumeCreate(
   id: number,
-  data: RecurringBookingRequest,
 ): Promise<RecurringBooking> {
   const response = await axios.post(
     `/api/bookings/admin/recurring-bookings/${id}/resume/`,
-    data,
   );
   return response.data;
 }
 
 export async function bookingsAdminScheduleRetrieve(
   date?: string,
+  lang?: string,
+  lite?: boolean,
   staffId?: number,
-): Promise<any> {
+): Promise<StaffSchedule> {
   const response = await axios.get(
     `/api/bookings/admin/schedule/${(() => {
       const parts = [
         date ? 'date=' + encodeURIComponent(date) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
         staffId ? 'staff_id=' + encodeURIComponent(staffId) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -1601,7 +1952,7 @@ export async function bookingsAdminServicesList(
 }
 
 export async function bookingsAdminServicesCreate(
-  data: ServiceDetailRequest,
+  data: ServiceCreateRequest,
 ): Promise<ServiceDetail> {
   const response = await axios.post(`/api/bookings/admin/services/`, data);
   return response.data;
@@ -1616,7 +1967,7 @@ export async function bookingsAdminServicesRetrieve(
 
 export async function bookingsAdminServicesUpdate(
   id: number,
-  data: ServiceDetailRequest,
+  data: ServiceCreateRequest,
 ): Promise<ServiceDetail> {
   const response = await axios.put(`/api/bookings/admin/services/${id}/`, data);
   return response.data;
@@ -1624,7 +1975,7 @@ export async function bookingsAdminServicesUpdate(
 
 export async function bookingsAdminServicesPartialUpdate(
   id: number,
-  data: PatchedServiceDetailRequest,
+  data: PatchedServiceCreateRequest,
 ): Promise<ServiceDetail> {
   const response = await axios.patch(
     `/api/bookings/admin/services/${id}/`,
@@ -1640,38 +1991,38 @@ export async function bookingsAdminServicesDestroy(id: number): Promise<any> {
 
 export async function bookingsAdminServicesActivateCreate(
   id: number,
-  data: ServiceListRequest,
-): Promise<ServiceList> {
+): Promise<ServiceDetail> {
   const response = await axios.post(
     `/api/bookings/admin/services/${id}/activate/`,
-    data,
   );
   return response.data;
 }
 
 export async function bookingsAdminServicesDeactivateCreate(
   id: number,
-  data: ServiceListRequest,
-): Promise<ServiceList> {
+): Promise<ServiceDetail> {
   const response = await axios.post(
     `/api/bookings/admin/services/${id}/deactivate/`,
-    data,
   );
   return response.data;
 }
 
-export async function bookingsAdminSettingsRetrieve(): Promise<any> {
+export async function bookingsAdminSettingsRetrieve(): Promise<BookingSettings> {
   const response = await axios.get(`/api/bookings/admin/settings/`);
   return response.data;
 }
 
-export async function bookingsAdminSettingsUpdate(): Promise<any> {
-  const response = await axios.put(`/api/bookings/admin/settings/`);
+export async function bookingsAdminSettingsUpdate(
+  data: BookingSettingsRequest,
+): Promise<BookingSettings> {
+  const response = await axios.put(`/api/bookings/admin/settings/`, data);
   return response.data;
 }
 
-export async function bookingsAdminSettingsPartialUpdate(): Promise<any> {
-  const response = await axios.patch(`/api/bookings/admin/settings/`);
+export async function bookingsAdminSettingsPartialUpdate(
+  data: PatchedBookingSettingsRequest,
+): Promise<BookingSettings> {
+  const response = await axios.patch(`/api/bookings/admin/settings/`, data);
   return response.data;
 }
 
@@ -1681,6 +2032,32 @@ export async function bookingsAdminSettingsTestSmsCreate(
   const response = await axios.post(
     `/api/bookings/admin/settings/test-sms/`,
     data,
+  );
+  return response.data;
+}
+
+export async function bookingsAdminSlotsRetrieve(
+  date?: string,
+  excludeBooking?: number,
+  includePast?: boolean,
+  service?: number,
+  staff?: number,
+  step?: number,
+): Promise<AdminSlotsResponse> {
+  const response = await axios.get(
+    `/api/bookings/admin/slots/${(() => {
+      const parts = [
+        date ? 'date=' + encodeURIComponent(date) : null,
+        excludeBooking
+          ? 'exclude_booking=' + encodeURIComponent(excludeBooking)
+          : null,
+        includePast ? 'include_past=' + encodeURIComponent(includePast) : null,
+        service ? 'service=' + encodeURIComponent(service) : null,
+        staff ? 'staff=' + encodeURIComponent(staff) : null,
+        step ? 'step=' + encodeURIComponent(step) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
@@ -1711,7 +2088,7 @@ export async function bookingsAdminStaffList(
 
 export async function bookingsAdminStaffCreate(
   data: BookingStaffCreateRequest,
-): Promise<BookingStaffCreate> {
+): Promise<BookingStaff> {
   const response = await axios.post(`/api/bookings/admin/staff/`, data);
   return response.data;
 }
@@ -1726,7 +2103,7 @@ export async function bookingsAdminStaffRetrieve(
 export async function bookingsAdminStaffUpdate(
   id: number,
   data: BookingStaffCreateRequest,
-): Promise<BookingStaffCreate> {
+): Promise<BookingStaff> {
   const response = await axios.put(`/api/bookings/admin/staff/${id}/`, data);
   return response.data;
 }
@@ -1734,7 +2111,7 @@ export async function bookingsAdminStaffUpdate(
 export async function bookingsAdminStaffPartialUpdate(
   id: number,
   data: PatchedBookingStaffCreateRequest,
-): Promise<BookingStaffCreate> {
+): Promise<BookingStaff> {
   const response = await axios.patch(`/api/bookings/admin/staff/${id}/`, data);
   return response.data;
 }
@@ -1746,7 +2123,7 @@ export async function bookingsAdminStaffDestroy(id: number): Promise<any> {
 
 export async function bookingsAdminStaffAvailabilityRetrieve(
   id: number,
-): Promise<BookingStaff> {
+): Promise<StaffAvailability[]> {
   const response = await axios.get(
     `/api/bookings/admin/staff/${id}/availability/`,
   );
@@ -1755,14 +2132,26 @@ export async function bookingsAdminStaffAvailabilityRetrieve(
 
 export async function bookingsAdminStaffBookingsRetrieve(
   id: number,
-): Promise<BookingStaff> {
-  const response = await axios.get(`/api/bookings/admin/staff/${id}/bookings/`);
+  date?: string,
+  lang?: string,
+  lite?: boolean,
+): Promise<BookingList[]> {
+  const response = await axios.get(
+    `/api/bookings/admin/staff/${id}/bookings/${(() => {
+      const parts = [
+        date ? 'date=' + encodeURIComponent(date) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
 export async function bookingsAdminStaffExceptionsRetrieve(
   id: number,
-): Promise<BookingStaff> {
+): Promise<StaffException[]> {
   const response = await axios.get(
     `/api/bookings/admin/staff/${id}/exceptions/`,
   );
@@ -1771,19 +2160,24 @@ export async function bookingsAdminStaffExceptionsRetrieve(
 
 export async function bookingsAdminStaffToggleActiveCreate(
   id: number,
-  data: BookingStaffRequest,
 ): Promise<BookingStaff> {
   const response = await axios.post(
     `/api/bookings/admin/staff/${id}/toggle_active/`,
-    data,
   );
   return response.data;
 }
 
-export async function bookingsAdminStaffAvailableUsersRetrieve(): Promise<BookingStaff> {
+export async function bookingsAdminStaffAvailableUsersRetrieve(
+  search?: string,
+): Promise<AvailableUser[]> {
   const response = await axios.get(
-    `/api/bookings/admin/staff/available_users/`,
+    `/api/bookings/admin/staff/available_users/${search ? '?search=' + encodeURIComponent(search) : ''}`,
   );
+  return response.data;
+}
+
+export async function bookingsAdminStaffMeRetrieve(): Promise<BookingStaff> {
+  const response = await axios.get(`/api/bookings/admin/staff/me/`);
   return response.data;
 }
 
@@ -2019,11 +2413,18 @@ export async function bookingsPaymentWebhookCreate(): Promise<any> {
 
 export async function callLogsList(
   callType?: 'conference' | 'video' | 'voice',
+  client?: number,
   direction?: 'inbound' | 'outbound',
+  handledBy?: number,
+  mine?: boolean,
+  missed?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
   search?: string,
+  socialClient?: number,
+  startedAfter?: string,
+  startedBefore?: string,
   status?:
     | 'answered'
     | 'busy'
@@ -2037,17 +2438,35 @@ export async function callLogsList(
     | 'recording'
     | 'ringing'
     | 'transferred',
+  status_In?: string[],
 ): Promise<PaginatedCallLogList> {
   const response = await axios.get(
     `/api/call-logs/${(() => {
       const parts = [
         callType ? 'call_type=' + encodeURIComponent(callType) : null,
+        client ? 'client=' + encodeURIComponent(client) : null,
         direction ? 'direction=' + encodeURIComponent(direction) : null,
+        handledBy ? 'handled_by=' + encodeURIComponent(handledBy) : null,
+        mine ? 'mine=' + encodeURIComponent(mine) : null,
+        missed ? 'missed=' + encodeURIComponent(missed) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        socialClient
+          ? 'social_client=' + encodeURIComponent(socialClient)
+          : null,
+        startedAfter
+          ? 'started_after=' + encodeURIComponent(startedAfter)
+          : null,
+        startedBefore
+          ? 'started_before=' + encodeURIComponent(startedBefore)
+          : null,
         status ? 'status=' + encodeURIComponent(status) : null,
+        status_In
+          ? 'status__in=' +
+            status_In.map(String).map(encodeURIComponent).join('&status__in=')
+          : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -2125,7 +2544,7 @@ export async function callLogsCompleteAttendedTransferCreate(
 
 export async function callLogsEndCallCreate(
   id: number,
-  data: CallStatusUpdateRequest,
+  data: CallEndRequest,
 ): Promise<CallLog> {
   const response = await axios.post(`/api/call-logs/${id}/end_call/`, data);
   return response.data;
@@ -2134,7 +2553,7 @@ export async function callLogsEndCallCreate(
 export async function callLogsInitiateConsultationCreate(
   id: number,
   data: ConsultationInitiateRequest,
-): Promise<Record<string, any>> {
+): Promise<ConsultationInitiateResponse> {
   const response = await axios.post(
     `/api/call-logs/${id}/initiate_consultation/`,
     data,
@@ -2160,48 +2579,33 @@ export async function callLogsRecordingRetrieve(id: number): Promise<string> {
 
 export async function callLogsSendSmsReviewCreate(
   id: number,
-  data: CallLogRequest,
 ): Promise<SmsReviewResponse> {
-  const response = await axios.post(
-    `/api/call-logs/${id}/send_sms_review/`,
-    data,
-  );
+  const response = await axios.post(`/api/call-logs/${id}/send_sms_review/`);
   return response.data;
 }
 
 export async function callLogsStartRecordingCreate(
   id: number,
-  data: CallLogRequest,
 ): Promise<CallRecording> {
-  const response = await axios.post(
-    `/api/call-logs/${id}/start_recording/`,
-    data,
-  );
+  const response = await axios.post(`/api/call-logs/${id}/start_recording/`);
   return response.data;
 }
 
 export async function callLogsStopRecordingCreate(
   id: number,
-  data: CallLogRequest,
 ): Promise<CallRecording> {
-  const response = await axios.post(
-    `/api/call-logs/${id}/stop_recording/`,
-    data,
-  );
+  const response = await axios.post(`/api/call-logs/${id}/stop_recording/`);
   return response.data;
 }
 
-export async function callLogsToggleHoldCreate(
-  id: number,
-  data: CallLogRequest,
-): Promise<CallLog> {
-  const response = await axios.post(`/api/call-logs/${id}/toggle_hold/`, data);
+export async function callLogsToggleHoldCreate(id: number): Promise<CallLog> {
+  const response = await axios.post(`/api/call-logs/${id}/toggle_hold/`);
   return response.data;
 }
 
 export async function callLogsTransferCallCreate(
   id: number,
-  data: CallLogRequest,
+  data: CallTransferRequest,
 ): Promise<CallLog> {
   const response = await axios.post(
     `/api/call-logs/${id}/transfer_call/`,
@@ -2237,7 +2641,7 @@ export async function callLogsLogIncomingCallCreate(
 
 export async function callLogsStatisticsRetrieve(
   period?: 'month' | 'today' | 'week',
-): Promise<Record<string, any>> {
+): Promise<CallLogStatisticsResponse> {
   const response = await axios.get(
     `/api/call-logs/statistics/${period ? '?period=' + encodeURIComponent(period) : ''}`,
   );
@@ -2246,7 +2650,7 @@ export async function callLogsStatisticsRetrieve(
 
 export async function callStatsOverviewRetrieve(
   range?: 'month' | 'today' | 'week',
-): Promise<any> {
+): Promise<CallStatsOverviewResponse> {
   const response = await axios.get(
     `/api/call-stats/overview/${range ? '?range=' + encodeURIComponent(range) : ''}`,
   );
@@ -2256,7 +2660,7 @@ export async function callStatsOverviewRetrieve(
 export async function callStatsQueuesRetrieve(
   queueId: number,
   range?: 'month' | 'today' | 'week',
-): Promise<any> {
+): Promise<CallStatsQueueResponse> {
   const response = await axios.get(
     `/api/call-stats/queues/${(() => {
       const parts = [
@@ -2269,7 +2673,9 @@ export async function callStatsQueuesRetrieve(
   return response.data;
 }
 
-export async function callStatsUsersRetrieve(month?: string): Promise<any> {
+export async function callStatsUsersRetrieve(
+  month?: string,
+): Promise<CallStatsUsersResponse> {
   const response = await axios.get(
     `/api/call-stats/users/${month ? '?month=' + encodeURIComponent(month) : ''}`,
   );
@@ -2279,7 +2685,7 @@ export async function callStatsUsersRetrieve(month?: string): Promise<any> {
 export async function callStatsUsersTimelineRetrieve(
   userId: number,
   month?: string,
-): Promise<any> {
+): Promise<CallStatsUserTimelineResponse> {
   const response = await axios.get(
     `/api/call-stats/users/${userId}/timeline/${month ? '?month=' + encodeURIComponent(month) : ''}`,
   );
@@ -2412,30 +2818,14 @@ export async function clientsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function clientsCallHistoryList(
-  id: number,
-  ordering?: string,
-  page?: number,
-  pageSize?: number,
-  search?: string,
-): Promise<PaginatedCallLogList> {
-  const response = await axios.get(
-    `/api/clients/${id}/call_history/${(() => {
-      const parts = [
-        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
-        page ? 'page=' + encodeURIComponent(page) : null,
-        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
-  );
+export async function clientsCallHistoryList(id: number): Promise<CallLog[]> {
+  const response = await axios.get(`/api/clients/${id}/call_history/`);
   return response.data;
 }
 
 export async function clientsLookupByPhoneRetrieve(
   phone: string,
-): Promise<Record<string, any>> {
+): Promise<ClientPhoneLookupResponse> {
   const response = await axios.get(
     `/api/clients/lookup-by-phone/${(() => {
       const parts = ['phone=' + encodeURIComponent(phone)].filter(Boolean);
@@ -2500,8 +2890,8 @@ export async function columnsDestroy(id: number): Promise<any> {
 
 export async function columnsReorderCreate(
   id: number,
-  data: TicketColumnRequest,
-): Promise<TicketColumn> {
+  data: TicketColumnReorderRequest,
+): Promise<TicketColumnReorderResponse> {
   const response = await axios.post(`/api/columns/${id}/reorder/`, data);
   return response.data;
 }
@@ -2672,6 +3062,7 @@ export async function updateDashboardAppearance(
 }
 
 export async function departmentsList(
+  includeInactive?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -2680,6 +3071,9 @@ export async function departmentsList(
   const response = await axios.get(
     `/api/departments/${(() => {
       const parts = [
+        includeInactive
+          ? 'include_inactive=' + encodeURIComponent(includeInactive)
+          : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -2821,11 +3215,9 @@ export async function ecommerceAdminAddressesDestroy(id: number): Promise<any> {
 
 export async function ecommerceAdminAddressesSetDefaultCreate(
   id: number,
-  data: ClientAddressRequest,
 ): Promise<ClientAddress> {
   const response = await axios.post(
     `/api/ecommerce/admin/addresses/${id}/set_default/`,
-    data,
   );
   return response.data;
 }
@@ -3270,7 +3662,7 @@ export async function ecommerceAdminHomepageSectionsDestroy(
   return response.data;
 }
 
-export async function ecommerceAdminHomepageSectionsChoicesRetrieve(): Promise<HomepageSection> {
+export async function ecommerceAdminHomepageSectionsChoicesRetrieve(): Promise<HomepageSectionChoices> {
   const response = await axios.get(
     `/api/ecommerce/admin/homepage-sections/choices/`,
   );
@@ -3278,8 +3670,8 @@ export async function ecommerceAdminHomepageSectionsChoicesRetrieve(): Promise<H
 }
 
 export async function ecommerceAdminHomepageSectionsGenerateFromVariantCreate(
-  data: HomepageSectionRequest,
-): Promise<HomepageSection> {
+  data: HomepageGenerateFromVariantRequestRequest,
+): Promise<HomepageGenerateFromVariantResponse> {
   const response = await axios.post(
     `/api/ecommerce/admin/homepage-sections/generate-from-variant/`,
     data,
@@ -3297,7 +3689,9 @@ export async function ecommerceAdminHomepageSectionsReorderCreate(
   return response.data;
 }
 
-export async function ecommerceAdminHomepageSectionsVariantsRetrieve(): Promise<HomepageSection> {
+export async function ecommerceAdminHomepageSectionsVariantsList(): Promise<
+  HomepageVariantSummary[]
+> {
   const response = await axios.get(
     `/api/ecommerce/admin/homepage-sections/variants/`,
   );
@@ -3423,10 +3817,21 @@ export async function ecommerceAdminLanguagesDestroy(id: number): Promise<any> {
 
 export async function ecommerceAdminOrdersList(
   client?: number,
+  createdAfter?: string,
+  createdBefore?: string,
+  hasTracking?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
+  paymentMethod?: string,
   paymentProvider?: 'bog' | 'flitt' | 'tbc',
+  paymentStatus?:
+    | 'failed'
+    | 'paid'
+    | 'partially_refunded'
+    | 'pending'
+    | 'refunded',
+  paymentStatus_In?: string,
   search?: string,
   status?:
     | 'cancelled'
@@ -3436,19 +3841,37 @@ export async function ecommerceAdminOrdersList(
     | 'processing'
     | 'refunded'
     | 'shipped',
+  status_In?: string,
 ): Promise<PaginatedOrderListList> {
   const response = await axios.get(
     `/api/ecommerce/admin/orders/${(() => {
       const parts = [
         client ? 'client=' + encodeURIComponent(client) : null,
+        createdAfter
+          ? 'created_after=' + encodeURIComponent(createdAfter)
+          : null,
+        createdBefore
+          ? 'created_before=' + encodeURIComponent(createdBefore)
+          : null,
+        hasTracking ? 'has_tracking=' + encodeURIComponent(hasTracking) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        paymentMethod
+          ? 'payment_method=' + encodeURIComponent(paymentMethod)
+          : null,
         paymentProvider
           ? 'payment_provider=' + encodeURIComponent(paymentProvider)
           : null,
+        paymentStatus
+          ? 'payment_status=' + encodeURIComponent(paymentStatus)
+          : null,
+        paymentStatus_In
+          ? 'payment_status__in=' + encodeURIComponent(paymentStatus_In)
+          : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
+        status_In ? 'status__in=' + encodeURIComponent(status_In) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3494,8 +3917,8 @@ export async function ecommerceAdminOrdersDestroy(id: number): Promise<any> {
 
 export async function ecommerceAdminOrdersInitiatePaymentCreate(
   id: number,
-  data: OrderRequest,
-): Promise<Order> {
+  data: OrderInitiatePaymentRequestRequest,
+): Promise<OrderInitiatePaymentResponse> {
   const response = await axios.post(
     `/api/ecommerce/admin/orders/${id}/initiate_payment/`,
     data,
@@ -3505,7 +3928,7 @@ export async function ecommerceAdminOrdersInitiatePaymentCreate(
 
 export async function ecommerceAdminOrdersMarkPaidCreate(
   id: number,
-  data: OrderRequest,
+  data: OrderMarkPaidRequestRequest,
 ): Promise<Order> {
   const response = await axios.post(
     `/api/ecommerce/admin/orders/${id}/mark-paid/`,
@@ -3525,7 +3948,7 @@ export async function ecommerceAdminOrdersRefundCreate(
 
 export async function ecommerceAdminOrdersUpdateStatusCreate(
   id: number,
-  data: OrderRequest,
+  data: OrderStatusUpdateRequestRequest,
 ): Promise<Order> {
   const response = await axios.post(
     `/api/ecommerce/admin/orders/${id}/update_status/`,
@@ -3534,14 +3957,14 @@ export async function ecommerceAdminOrdersUpdateStatusCreate(
   return response.data;
 }
 
-export async function ecommerceAdminOrdersAnalyticsRetrieve(): Promise<Order> {
+export async function ecommerceAdminOrdersAnalyticsRetrieve(): Promise<OrderAnalyticsResponse> {
   const response = await axios.get(`/api/ecommerce/admin/orders/analytics/`);
   return response.data;
 }
 
 export async function ecommerceAdminOrdersBulkUpdateStatusCreate(
   data: BulkUpdateStatusRequestRequest,
-): Promise<any> {
+): Promise<BulkUpdateStatusResponse> {
   const response = await axios.post(
     `/api/ecommerce/admin/orders/bulk-update-status/`,
     data,
@@ -3565,7 +3988,9 @@ export async function ecommerceAdminProductsList(
   page?: number,
   pageSize?: number,
   search?: string,
-  status?: 'active' | 'draft' | 'inactive' | 'out_of_stock',
+  status?: string,
+  status_In?: string,
+  stock?: 'low' | 'low_or_out' | 'out',
 ): Promise<PaginatedProductListList> {
   const response = await axios.get(
     `/api/ecommerce/admin/products/${(() => {
@@ -3581,6 +4006,8 @@ export async function ecommerceAdminProductsList(
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         status ? 'status=' + encodeURIComponent(status) : null,
+        status_In ? 'status__in=' + encodeURIComponent(status_In) : null,
+        stock ? 'stock=' + encodeURIComponent(stock) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -3631,8 +4058,8 @@ export async function ecommerceAdminProductsDestroy(id: number): Promise<any> {
 
 export async function ecommerceAdminProductsAddImageCreate(
   id: number,
-  data: ProductDetailRequest,
-): Promise<ProductDetail> {
+  data: ProductAddImageRequestRequest,
+): Promise<ProductImage> {
   const response = await axios.post(
     `/api/ecommerce/admin/products/${id}/add_image/`,
     data,
@@ -3640,9 +4067,20 @@ export async function ecommerceAdminProductsAddImageCreate(
   return response.data;
 }
 
+export async function ecommerceAdminProductsAdjustStockCreate(
+  id: number,
+  data: StockAdjustRequestRequest,
+): Promise<StockAdjustResponse> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/products/${id}/adjust-stock/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function ecommerceAdminProductsRemoveImageDestroy(
   id: number,
-  imageId: string,
+  imageId: number,
 ): Promise<any> {
   const response = await axios.delete(
     `/api/ecommerce/admin/products/${id}/remove_image/${imageId}/`,
@@ -3652,7 +4090,7 @@ export async function ecommerceAdminProductsRemoveImageDestroy(
 
 export async function ecommerceAdminProductsUpdateAttributesCreate(
   id: number,
-  data: ProductDetailRequest,
+  data: ProductUpdateAttributesRequestRequest,
 ): Promise<ProductDetail> {
   const response = await axios.post(
     `/api/ecommerce/admin/products/${id}/update_attributes/`,
@@ -3671,13 +4109,79 @@ export async function ecommerceAdminProductsBulkUpdateCreate(
   return response.data;
 }
 
-export async function ecommerceAdminProductsFeaturedRetrieve(): Promise<ProductDetail> {
-  const response = await axios.get(`/api/ecommerce/admin/products/featured/`);
+export async function ecommerceAdminProductsFeaturedList(
+  attributes?: string,
+  inStock?: boolean,
+  isFeatured?: boolean,
+  lowStock?: boolean,
+  maxPrice?: number,
+  minPrice?: number,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+  status?: string,
+  status_In?: string,
+  stock?: 'low' | 'low_or_out' | 'out',
+): Promise<PaginatedProductListList> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/products/featured/${(() => {
+      const parts = [
+        attributes ? 'attributes=' + encodeURIComponent(attributes) : null,
+        inStock ? 'in_stock=' + encodeURIComponent(inStock) : null,
+        isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
+        lowStock ? 'low_stock=' + encodeURIComponent(lowStock) : null,
+        maxPrice ? 'max_price=' + encodeURIComponent(maxPrice) : null,
+        minPrice ? 'min_price=' + encodeURIComponent(minPrice) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+        status_In ? 'status__in=' + encodeURIComponent(status_In) : null,
+        stock ? 'stock=' + encodeURIComponent(stock) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
-export async function ecommerceAdminProductsLowStockRetrieve(): Promise<ProductDetail> {
-  const response = await axios.get(`/api/ecommerce/admin/products/low_stock/`);
+export async function ecommerceAdminProductsLowStockList(
+  attributes?: string,
+  inStock?: boolean,
+  isFeatured?: boolean,
+  lowStock?: boolean,
+  maxPrice?: number,
+  minPrice?: number,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+  status?: string,
+  status_In?: string,
+  stock?: 'low' | 'low_or_out' | 'out',
+): Promise<PaginatedProductListList> {
+  const response = await axios.get(
+    `/api/ecommerce/admin/products/low_stock/${(() => {
+      const parts = [
+        attributes ? 'attributes=' + encodeURIComponent(attributes) : null,
+        inStock ? 'in_stock=' + encodeURIComponent(inStock) : null,
+        isFeatured ? 'is_featured=' + encodeURIComponent(isFeatured) : null,
+        lowStock ? 'low_stock=' + encodeURIComponent(lowStock) : null,
+        maxPrice ? 'max_price=' + encodeURIComponent(maxPrice) : null,
+        minPrice ? 'min_price=' + encodeURIComponent(minPrice) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+        status_In ? 'status__in=' + encodeURIComponent(status_In) : null,
+        stock ? 'stock=' + encodeURIComponent(stock) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
@@ -3827,22 +4331,18 @@ export async function ecommerceAdminReviewsDestroy(id: number): Promise<any> {
 
 export async function ecommerceAdminReviewsApproveCreate(
   id: number,
-  data: ProductReviewRequest,
 ): Promise<ProductReview> {
   const response = await axios.post(
     `/api/ecommerce/admin/reviews/${id}/approve/`,
-    data,
   );
   return response.data;
 }
 
 export async function ecommerceAdminReviewsRejectCreate(
   id: number,
-  data: ProductReviewRequest,
 ): Promise<ProductReview> {
   const response = await axios.post(
     `/api/ecommerce/admin/reviews/${id}/reject/`,
-    data,
   );
   return response.data;
 }
@@ -4092,6 +4592,17 @@ export async function ecommerceAdminVariantsPartialUpdate(
 
 export async function ecommerceAdminVariantsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/ecommerce/admin/variants/${id}/`);
+  return response.data;
+}
+
+export async function ecommerceAdminVariantsAdjustStockCreate(
+  id: number,
+  data: VariantStockAdjustRequestRequest,
+): Promise<VariantStockAdjustResponse> {
+  const response = await axios.post(
+    `/api/ecommerce/admin/variants/${id}/adjust-stock/`,
+    data,
+  );
   return response.data;
 }
 
@@ -4429,7 +4940,7 @@ export async function ecommerceClientItemListsList(
   page?: number,
   pageSize?: number,
   search?: string,
-): Promise<PaginatedItemListMinimalList> {
+): Promise<PaginatedEcommerceItemListMinimalList> {
   const response = await axios.get(
     `/api/ecommerce/client/item-lists/${(() => {
       const parts = [
@@ -4454,7 +4965,7 @@ export async function ecommerceClientItemListsRetrieve(
 export async function ecommerceClientItemListsItemsRetrieve(
   id: number,
   itemId: string,
-): Promise<ListItem> {
+): Promise<EcommerceListItem> {
   const response = await axios.get(
     `/api/ecommerce/client/item-lists/${id}/items/${itemId}/`,
   );
@@ -4813,7 +5324,7 @@ export async function ecommerceQuickshipperWebhook(): Promise<any> {
   return response.data;
 }
 
-export async function extensionsStatusRetrieve(): Promise<any> {
+export async function extensionsStatusRetrieve(): Promise<ExtensionStatusResponse> {
   const response = await axios.get(`/api/extensions/status/`);
   return response.data;
 }
@@ -4902,13 +5413,21 @@ export async function formSubmissionsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function formSubmissionsByFormRetrieve(): Promise<TicketFormSubmission> {
-  const response = await axios.get(`/api/form-submissions/by_form/`);
+export async function formSubmissionsByFormRetrieve(
+  formId?: number,
+): Promise<TicketFormSubmission[]> {
+  const response = await axios.get(
+    `/api/form-submissions/by_form/${formId ? '?form_id=' + encodeURIComponent(formId) : ''}`,
+  );
   return response.data;
 }
 
-export async function formSubmissionsByTicketRetrieve(): Promise<TicketFormSubmission> {
-  const response = await axios.get(`/api/form-submissions/by_ticket/`);
+export async function formSubmissionsByTicketRetrieve(
+  ticketId?: number,
+): Promise<TicketFormSubmission> {
+  const response = await axios.get(
+    `/api/form-submissions/by_ticket/${ticketId ? '?ticket_id=' + encodeURIComponent(ticketId) : ''}`,
+  );
   return response.data;
 }
 
@@ -5100,6 +5619,12 @@ export async function helpAdminCategoriesDestroy(slug: string): Promise<any> {
 }
 
 export async function helpPublicArticlesList(
+  category?: string,
+  contentType?: 'article' | 'faq' | 'guide' | 'video',
+  featured?: boolean,
+  forDashboard?: boolean,
+  forPublic?: boolean,
+  lang?: 'en' | 'ka' | 'ru',
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -5107,6 +5632,14 @@ export async function helpPublicArticlesList(
   const response = await axios.get(
     `/api/help/public/articles/${(() => {
       const parts = [
+        category ? 'category=' + encodeURIComponent(category) : null,
+        contentType ? 'content_type=' + encodeURIComponent(contentType) : null,
+        featured ? 'featured=' + encodeURIComponent(featured) : null,
+        forDashboard
+          ? 'for_dashboard=' + encodeURIComponent(forDashboard)
+          : null,
+        forPublic ? 'for_public=' + encodeURIComponent(forPublic) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -5119,29 +5652,70 @@ export async function helpPublicArticlesList(
 
 export async function helpPublicArticlesRetrieve(
   slug: string,
+  forDashboard?: boolean,
+  forPublic?: boolean,
+  lang?: 'en' | 'ka' | 'ru',
 ): Promise<HelpArticleDetail> {
-  const response = await axios.get(`/api/help/public/articles/${slug}/`);
+  const response = await axios.get(
+    `/api/help/public/articles/${slug}/${(() => {
+      const parts = [
+        forDashboard
+          ? 'for_dashboard=' + encodeURIComponent(forDashboard)
+          : null,
+        forPublic ? 'for_public=' + encodeURIComponent(forPublic) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
-export async function helpPublicArticlesFeaturedRetrieve(): Promise<HelpArticleList> {
-  const response = await axios.get(`/api/help/public/articles/featured/`);
+export async function helpPublicArticlesFeaturedList(
+  category?: string,
+  contentType?: 'article' | 'faq' | 'guide' | 'video',
+  forDashboard?: boolean,
+  forPublic?: boolean,
+  lang?: 'en' | 'ka' | 'ru',
+  ordering?: string,
+): Promise<HelpArticleList[]> {
+  const response = await axios.get(
+    `/api/help/public/articles/featured/${(() => {
+      const parts = [
+        category ? 'category=' + encodeURIComponent(category) : null,
+        contentType ? 'content_type=' + encodeURIComponent(contentType) : null,
+        forDashboard
+          ? 'for_dashboard=' + encodeURIComponent(forDashboard)
+          : null,
+        forPublic ? 'for_public=' + encodeURIComponent(forPublic) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
 export async function helpPublicCategoriesList(
+  forDashboard?: boolean,
+  forPublic?: boolean,
+  lang?: 'en' | 'ka' | 'ru',
   ordering?: string,
   page?: number,
   pageSize?: number,
-  search?: string,
 ): Promise<PaginatedHelpCategoryListList> {
   const response = await axios.get(
     `/api/help/public/categories/${(() => {
       const parts = [
+        forDashboard
+          ? 'for_dashboard=' + encodeURIComponent(forDashboard)
+          : null,
+        forPublic ? 'for_public=' + encodeURIComponent(forPublic) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -5151,13 +5725,44 @@ export async function helpPublicCategoriesList(
 
 export async function helpPublicCategoriesRetrieve(
   slug: string,
+  forDashboard?: boolean,
+  forPublic?: boolean,
+  lang?: 'en' | 'ka' | 'ru',
 ): Promise<HelpCategoryDetail> {
-  const response = await axios.get(`/api/help/public/categories/${slug}/`);
+  const response = await axios.get(
+    `/api/help/public/categories/${slug}/${(() => {
+      const parts = [
+        forDashboard
+          ? 'for_dashboard=' + encodeURIComponent(forDashboard)
+          : null,
+        forPublic ? 'for_public=' + encodeURIComponent(forPublic) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
-export async function helpPublicSearchRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/help/public/search/`);
+export async function helpPublicSearchList(
+  forDashboard?: boolean,
+  forPublic?: boolean,
+  lang?: 'en' | 'ka' | 'ru',
+  q?: string,
+): Promise<HelpArticleList[]> {
+  const response = await axios.get(
+    `/api/help/public/search/${(() => {
+      const parts = [
+        forDashboard
+          ? 'for_dashboard=' + encodeURIComponent(forDashboard)
+          : null,
+        forPublic ? 'for_public=' + encodeURIComponent(forPublic) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        q ? 'q=' + encodeURIComponent(q) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
@@ -5235,7 +5840,7 @@ export async function invoicesClientsList(
   page?: number,
   pageSize?: number,
   search?: string,
-): Promise<PaginatedClientList> {
+): Promise<PaginatedInvoiceClientList> {
   const response = await axios.get(
     `/api/invoices/clients/${(() => {
       const parts = [
@@ -5249,15 +5854,21 @@ export async function invoicesClientsList(
   return response.data;
 }
 
-export async function invoicesClientsRetrieve(id: number): Promise<Client> {
+export async function invoicesClientsRetrieve(
+  id: number,
+): Promise<InvoiceClient> {
   const response = await axios.get(`/api/invoices/clients/${id}/`);
   return response.data;
 }
 
 export async function invoicesInvoicesList(
   client?: number,
+  clientItemlistItem?: number,
   currency?: string,
+  dateFrom?: string,
+  dateTo?: string,
   ordering?: string,
+  overdue?: boolean,
   page?: number,
   pageSize?: number,
   search?: string,
@@ -5274,8 +5885,14 @@ export async function invoicesInvoicesList(
     `/api/invoices/invoices/${(() => {
       const parts = [
         client ? 'client=' + encodeURIComponent(client) : null,
+        clientItemlistItem
+          ? 'client_itemlist_item=' + encodeURIComponent(clientItemlistItem)
+          : null,
         currency ? 'currency=' + encodeURIComponent(currency) : null,
+        dateFrom ? 'date_from=' + encodeURIComponent(dateFrom) : null,
+        dateTo ? 'date_to=' + encodeURIComponent(dateTo) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        overdue ? 'overdue=' + encodeURIComponent(overdue) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
@@ -5289,7 +5906,7 @@ export async function invoicesInvoicesList(
 
 export async function invoicesInvoicesCreate(
   data: InvoiceCreateUpdateRequest,
-): Promise<InvoiceCreateUpdate> {
+): Promise<InvoiceDetail> {
   const response = await axios.post(`/api/invoices/invoices/`, data);
   return response.data;
 }
@@ -5304,7 +5921,7 @@ export async function invoicesInvoicesRetrieve(
 export async function invoicesInvoicesUpdate(
   id: number,
   data: InvoiceCreateUpdateRequest,
-): Promise<InvoiceCreateUpdate> {
+): Promise<InvoiceDetail> {
   const response = await axios.put(`/api/invoices/invoices/${id}/`, data);
   return response.data;
 }
@@ -5312,7 +5929,7 @@ export async function invoicesInvoicesUpdate(
 export async function invoicesInvoicesPartialUpdate(
   id: number,
   data: PatchedInvoiceCreateUpdateRequest,
-): Promise<InvoiceCreateUpdate> {
+): Promise<InvoiceDetail> {
   const response = await axios.patch(`/api/invoices/invoices/${id}/`, data);
   return response.data;
 }
@@ -5324,36 +5941,26 @@ export async function invoicesInvoicesDestroy(id: number): Promise<any> {
 
 export async function invoicesInvoicesDuplicateCreate(
   id: number,
-  data: InvoiceDetailRequest,
 ): Promise<InvoiceDetail> {
-  const response = await axios.post(
-    `/api/invoices/invoices/${id}/duplicate/`,
-    data,
-  );
+  const response = await axios.post(`/api/invoices/invoices/${id}/duplicate/`);
   return response.data;
 }
 
-export async function invoicesInvoicesExcelRetrieve(
-  id: number,
-): Promise<InvoiceDetail> {
+export async function invoicesInvoicesExcelRetrieve(id: number): Promise<any> {
   const response = await axios.get(`/api/invoices/invoices/${id}/excel/`);
   return response.data;
 }
 
 export async function invoicesInvoicesFinalizeCreate(
   id: number,
-  data: InvoiceDetailRequest,
 ): Promise<InvoiceDetail> {
-  const response = await axios.post(
-    `/api/invoices/invoices/${id}/finalize/`,
-    data,
-  );
+  const response = await axios.post(`/api/invoices/invoices/${id}/finalize/`);
   return response.data;
 }
 
 export async function invoicesInvoicesMarkPaidCreate(
   id: number,
-  data: InvoiceDetailRequest,
+  data: InvoiceMarkPaidRequest,
 ): Promise<InvoiceDetail> {
   const response = await axios.post(
     `/api/invoices/invoices/${id}/mark_paid/`,
@@ -5364,15 +5971,18 @@ export async function invoicesInvoicesMarkPaidCreate(
 
 export async function invoicesInvoicesPdfRetrieve(
   id: number,
-): Promise<InvoiceDetail> {
-  const response = await axios.get(`/api/invoices/invoices/${id}/pdf/`);
+  regenerate?: boolean,
+): Promise<any> {
+  const response = await axios.get(
+    `/api/invoices/invoices/${id}/pdf/${regenerate ? '?regenerate=' + encodeURIComponent(regenerate) : ''}`,
+  );
   return response.data;
 }
 
 export async function invoicesInvoicesSendEmailCreate(
   id: number,
-  data: InvoiceDetailRequest,
-): Promise<InvoiceDetail> {
+  data: InvoiceSendEmailRequest,
+): Promise<MessageResponse> {
   const response = await axios.post(
     `/api/invoices/invoices/${id}/send_email/`,
     data,
@@ -5380,12 +5990,13 @@ export async function invoicesInvoicesSendEmailCreate(
   return response.data;
 }
 
-export async function invoicesInvoicesStatsRetrieve(): Promise<InvoiceDetail> {
+export async function invoicesInvoicesStatsRetrieve(): Promise<InvoiceStats> {
   const response = await axios.get(`/api/invoices/invoices/stats/`);
   return response.data;
 }
 
 export async function invoicesLineItemsList(
+  invoiceId?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -5394,6 +6005,7 @@ export async function invoicesLineItemsList(
   const response = await axios.get(
     `/api/invoices/line-items/${(() => {
       const parts = [
+        invoiceId ? 'invoice_id=' + encodeURIComponent(invoiceId) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -5441,26 +6053,17 @@ export async function invoicesLineItemsDestroy(id: number): Promise<any> {
 }
 
 export async function invoicesLineItemsReorderCreate(
-  data: InvoiceLineItemRequest,
-): Promise<InvoiceLineItem> {
+  data: InvoiceLineItemReorderRequest,
+): Promise<MessageResponse> {
   const response = await axios.post(`/api/invoices/line-items/reorder/`, data);
   return response.data;
 }
 
 export async function invoicesMaterialsList(
-  page?: number,
-  pageSize?: number,
   search?: string,
-): Promise<PaginatedListItemMaterialList> {
+): Promise<ListItemMaterial[]> {
   const response = await axios.get(
-    `/api/invoices/materials/${(() => {
-      const parts = [
-        page ? 'page=' + encodeURIComponent(page) : null,
-        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
-        search ? 'search=' + encodeURIComponent(search) : null,
-      ].filter(Boolean);
-      return parts.length > 0 ? '?' + parts.join('&') : '';
-    })()}`,
+    `/api/invoices/materials/${search ? '?search=' + encodeURIComponent(search) : ''}`,
   );
   return response.data;
 }
@@ -5473,6 +6076,7 @@ export async function invoicesMaterialsRetrieve(
 }
 
 export async function invoicesPaymentsList(
+  invoiceId?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -5481,6 +6085,7 @@ export async function invoicesPaymentsList(
   const response = await axios.get(
     `/api/invoices/payments/${(() => {
       const parts = [
+        invoiceId ? 'invoice_id=' + encodeURIComponent(invoiceId) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -5532,7 +6137,7 @@ export async function invoicesSettingsList(
   page?: number,
   pageSize?: number,
   search?: string,
-): Promise<PaginatedInvoiceSettingsList> {
+): Promise<InvoiceSettings> {
   const response = await axios.get(
     `/api/invoices/settings/${(() => {
       const parts = [
@@ -5582,31 +6187,42 @@ export async function invoicesSettingsDestroy(id: number): Promise<any> {
   return response.data;
 }
 
-export async function invoicesSettingsAvailableItemlistsRetrieve(): Promise<InvoiceSettings> {
+export async function invoicesSettingsAvailableItemlistsRetrieve(
+  ordering?: string,
+  search?: string,
+): Promise<InvoiceAvailableItemList[]> {
   const response = await axios.get(
-    `/api/invoices/settings/available-itemlists/`,
+    `/api/invoices/settings/available-itemlists/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
 
-export async function invoicesSettingsDebugSubscriptionRetrieve(): Promise<InvoiceSettings> {
+export async function invoicesSettingsDebugSubscriptionRetrieve(): Promise<
+  Record<string, any>
+> {
   const response = await axios.get(
     `/api/invoices/settings/debug-subscription/`,
   );
   return response.data;
 }
 
-export async function invoicesSettingsRemoveBadgeDestroy(): Promise<any> {
+export async function invoicesSettingsRemoveBadgeDestroy(): Promise<MessageResponse> {
   const response = await axios.delete(`/api/invoices/settings/remove-badge/`);
   return response.data;
 }
 
-export async function invoicesSettingsRemoveLogoDestroy(): Promise<any> {
+export async function invoicesSettingsRemoveLogoDestroy(): Promise<MessageResponse> {
   const response = await axios.delete(`/api/invoices/settings/remove-logo/`);
   return response.data;
 }
 
-export async function invoicesSettingsRemoveSignatureDestroy(): Promise<any> {
+export async function invoicesSettingsRemoveSignatureDestroy(): Promise<MessageResponse> {
   const response = await axios.delete(
     `/api/invoices/settings/remove-signature/`,
   );
@@ -5614,7 +6230,7 @@ export async function invoicesSettingsRemoveSignatureDestroy(): Promise<any> {
 }
 
 export async function invoicesSettingsUploadBadgeCreate(
-  data: InvoiceSettingsRequest,
+  data: FormData,
 ): Promise<InvoiceSettings> {
   const response = await axios.post(
     `/api/invoices/settings/upload-badge/`,
@@ -5624,7 +6240,7 @@ export async function invoicesSettingsUploadBadgeCreate(
 }
 
 export async function invoicesSettingsUploadLogoCreate(
-  data: InvoiceSettingsRequest,
+  data: FormData,
 ): Promise<InvoiceSettings> {
   const response = await axios.post(
     `/api/invoices/settings/upload-logo/`,
@@ -5634,7 +6250,7 @@ export async function invoicesSettingsUploadLogoCreate(
 }
 
 export async function invoicesSettingsUploadSignatureCreate(
-  data: InvoiceSettingsRequest,
+  data: FormData,
 ): Promise<InvoiceSettings> {
   const response = await axios.post(
     `/api/invoices/settings/upload-signature/`,
@@ -5704,6 +6320,7 @@ export async function invoicesTemplatesPreviewRetrieve(
 }
 
 export async function itemListsList(
+  isActive?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -5712,6 +6329,7 @@ export async function itemListsList(
   const response = await axios.get(
     `/api/item-lists/${(() => {
       const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -5758,19 +6376,19 @@ export async function itemListsDestroy(id: number): Promise<any> {
 
 export async function itemListsPublicItemsRetrieve(
   id: number,
-): Promise<ItemList> {
+): Promise<ListItem[]> {
   const response = await axios.get(`/api/item-lists/${id}/public_items/`);
   return response.data;
 }
 
 export async function itemListsRootItemsRetrieve(
   id: number,
-): Promise<ItemList> {
+): Promise<ListItem[]> {
   const response = await axios.get(`/api/item-lists/${id}/root_items/`);
   return response.data;
 }
 
-export async function itemListsPublicRetrieve(): Promise<ItemList> {
+export async function itemListsPublicRetrieve(): Promise<ItemList[]> {
   const response = await axios.get(`/api/item-lists/public/`);
   return response.data;
 }
@@ -5972,6 +6590,10 @@ export async function landingPublicPagesRetrieve(
 }
 
 export async function leaveAdminApprovalChainsList(
+  approverRole?: 'admin' | 'hr' | 'manager',
+  isRequired?: boolean,
+  lang?: 'en' | 'ka',
+  leaveType?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -5979,6 +6601,12 @@ export async function leaveAdminApprovalChainsList(
   const response = await axios.get(
     `/api/leave/admin/approval-chains/${(() => {
       const parts = [
+        approverRole
+          ? 'approver_role=' + encodeURIComponent(approverRole)
+          : null,
+        isRequired ? 'is_required=' + encodeURIComponent(isRequired) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        leaveType ? 'leave_type=' + encodeURIComponent(leaveType) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -5998,8 +6626,11 @@ export async function leaveAdminApprovalChainsCreate(
 
 export async function leaveAdminApprovalChainsRetrieve(
   id: string,
+  lang?: 'en' | 'ka',
 ): Promise<LeaveApprovalChain> {
-  const response = await axios.get(`/api/leave/admin/approval-chains/${id}/`);
+  const response = await axios.get(
+    `/api/leave/admin/approval-chains/${id}/${lang ? '?lang=' + encodeURIComponent(lang) : ''}`,
+  );
   return response.data;
 }
 
@@ -6035,18 +6666,26 @@ export async function leaveAdminApprovalChainsDestroy(
 }
 
 export async function leaveAdminLeaveBalancesList(
+  lang?: 'en' | 'ka',
+  leaveType?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
   search?: string,
+  user?: number,
+  year?: number,
 ): Promise<PaginatedLeaveBalanceListList> {
   const response = await axios.get(
     `/api/leave/admin/leave-balances/${(() => {
       const parts = [
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        leaveType ? 'leave_type=' + encodeURIComponent(leaveType) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        user ? 'user=' + encodeURIComponent(user) : null,
+        year ? 'year=' + encodeURIComponent(year) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -6063,8 +6702,11 @@ export async function leaveAdminLeaveBalancesCreate(
 
 export async function leaveAdminLeaveBalancesRetrieve(
   id: string,
+  lang?: 'en' | 'ka',
 ): Promise<LeaveBalanceDetail> {
-  const response = await axios.get(`/api/leave/admin/leave-balances/${id}/`);
+  const response = await axios.get(
+    `/api/leave/admin/leave-balances/${id}/${lang ? '?lang=' + encodeURIComponent(lang) : ''}`,
+  );
   return response.data;
 }
 
@@ -6096,7 +6738,7 @@ export async function leaveAdminLeaveBalancesCarryForwardCreate(
 
 export async function leaveAdminLeaveBalancesInitializeUserCreate(
   data: InitializeUserRequestRequest,
-): Promise<LeaveBalanceDetail> {
+): Promise<LeaveActionResponse> {
   const response = await axios.post(
     `/api/leave/admin/leave-balances/initialize_user/`,
     data,
@@ -6105,18 +6747,40 @@ export async function leaveAdminLeaveBalancesInitializeUserCreate(
 }
 
 export async function leaveAdminLeaveRequestsList(
+  department?: number,
+  employee?: number,
+  endDate?: string,
+  lang?: 'en' | 'ka',
+  leaveType?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
   search?: string,
+  startDate?: string,
+  status?:
+    | 'approved'
+    | 'cancelled'
+    | 'hr_approved'
+    | 'manager_approved'
+    | 'pending'
+    | 'rejected',
+  status_In?: string,
 ): Promise<PaginatedLeaveRequestListList> {
   const response = await axios.get(
     `/api/leave/admin/leave-requests/${(() => {
       const parts = [
+        department ? 'department=' + encodeURIComponent(department) : null,
+        employee ? 'employee=' + encodeURIComponent(employee) : null,
+        endDate ? 'end_date=' + encodeURIComponent(endDate) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
+        leaveType ? 'leave_type=' + encodeURIComponent(leaveType) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        startDate ? 'start_date=' + encodeURIComponent(startDate) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+        status_In ? 'status__in=' + encodeURIComponent(status_In) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -6133,8 +6797,11 @@ export async function leaveAdminLeaveRequestsCreate(
 
 export async function leaveAdminLeaveRequestsRetrieve(
   id: string,
+  lang?: 'en' | 'ka',
 ): Promise<LeaveRequestDetail> {
-  const response = await axios.get(`/api/leave/admin/leave-requests/${id}/`);
+  const response = await axios.get(
+    `/api/leave/admin/leave-requests/${id}/${lang ? '?lang=' + encodeURIComponent(lang) : ''}`,
+  );
   return response.data;
 }
 
@@ -6168,7 +6835,7 @@ export async function leaveAdminLeaveRequestsDestroy(id: string): Promise<any> {
 export async function leaveAdminLeaveRequestsApproveCreate(
   id: string,
   data: LeaveApprovalRequest,
-): Promise<LeaveApproval> {
+): Promise<LeaveActionResponse> {
   const response = await axios.post(
     `/api/leave/admin/leave-requests/${id}/approve/`,
     data,
@@ -6179,7 +6846,7 @@ export async function leaveAdminLeaveRequestsApproveCreate(
 export async function leaveAdminLeaveRequestsCancelCreate(
   id: string,
   data: LeaveCancellationRequest,
-): Promise<LeaveCancellation> {
+): Promise<LeaveActionResponse> {
   const response = await axios.post(
     `/api/leave/admin/leave-requests/${id}/cancel/`,
     data,
@@ -6190,7 +6857,7 @@ export async function leaveAdminLeaveRequestsCancelCreate(
 export async function leaveAdminLeaveRequestsRejectCreate(
   id: string,
   data: LeaveApprovalRequest,
-): Promise<LeaveApproval> {
+): Promise<LeaveActionResponse> {
   const response = await axios.post(
     `/api/leave/admin/leave-requests/${id}/reject/`,
     data,
@@ -6199,17 +6866,29 @@ export async function leaveAdminLeaveRequestsRejectCreate(
 }
 
 export async function leaveAdminLeaveTypesList(
+  calculationMethod?: 'accrual' | 'annual' | 'manual',
+  isActive?: boolean,
+  lang?: 'en' | 'ka',
   ordering?: string,
   page?: number,
   pageSize?: number,
+  requiresApproval?: boolean,
   search?: string,
 ): Promise<PaginatedLeaveTypeListList> {
   const response = await axios.get(
     `/api/leave/admin/leave-types/${(() => {
       const parts = [
+        calculationMethod
+          ? 'calculation_method=' + encodeURIComponent(calculationMethod)
+          : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        requiresApproval
+          ? 'requires_approval=' + encodeURIComponent(requiresApproval)
+          : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6227,8 +6906,11 @@ export async function leaveAdminLeaveTypesCreate(
 
 export async function leaveAdminLeaveTypesRetrieve(
   id: string,
+  lang?: 'en' | 'ka',
 ): Promise<LeaveTypeDetail> {
-  const response = await axios.get(`/api/leave/admin/leave-types/${id}/`);
+  const response = await axios.get(
+    `/api/leave/admin/leave-types/${id}/${lang ? '?lang=' + encodeURIComponent(lang) : ''}`,
+  );
   return response.data;
 }
 
@@ -6257,16 +6939,26 @@ export async function leaveAdminLeaveTypesDestroy(id: string): Promise<any> {
 }
 
 export async function leaveAdminPublicHolidaysList(
+  appliesToAll?: boolean,
+  isRecurring?: boolean,
+  lang?: 'en' | 'ka',
   ordering?: string,
   page?: number,
   pageSize?: number,
+  year?: number,
 ): Promise<PaginatedPublicHolidayListList> {
   const response = await axios.get(
     `/api/leave/admin/public-holidays/${(() => {
       const parts = [
+        appliesToAll
+          ? 'applies_to_all=' + encodeURIComponent(appliesToAll)
+          : null,
+        isRecurring ? 'is_recurring=' + encodeURIComponent(isRecurring) : null,
+        lang ? 'lang=' + encodeURIComponent(lang) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        year ? 'year=' + encodeURIComponent(year) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -6283,8 +6975,11 @@ export async function leaveAdminPublicHolidaysCreate(
 
 export async function leaveAdminPublicHolidaysRetrieve(
   id: string,
+  lang?: 'en' | 'ka',
 ): Promise<PublicHolidayDetail> {
-  const response = await axios.get(`/api/leave/admin/public-holidays/${id}/`);
+  const response = await axios.get(
+    `/api/leave/admin/public-holidays/${id}/${lang ? '?lang=' + encodeURIComponent(lang) : ''}`,
+  );
   return response.data;
 }
 
@@ -6463,6 +7158,7 @@ export async function leaveEmployeeMyRequestsList(
   ordering?: string,
   page?: number,
   pageSize?: number,
+  status_In?: string,
 ): Promise<PaginatedLeaveRequestListList> {
   const response = await axios.get(
     `/api/leave/employee/my-requests/${(() => {
@@ -6470,6 +7166,7 @@ export async function leaveEmployeeMyRequestsList(
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        status_In ? 'status__in=' + encodeURIComponent(status_In) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -6533,6 +7230,16 @@ export async function leaveEmployeeMyRequestsPendingRetrieve(): Promise<LeaveReq
   return response.data;
 }
 
+export async function leaveEmployeeMyRequestsPreviewCreate(
+  data: LeaveRequestPreviewRequest,
+): Promise<LeaveRequestPreviewResponse> {
+  const response = await axios.post(
+    `/api/leave/employee/my-requests/preview/`,
+    data,
+  );
+  return response.data;
+}
+
 export async function leaveManagerTeamBalancesList(
   ordering?: string,
   page?: number,
@@ -6564,18 +7271,24 @@ export async function leaveManagerTeamBalancesSummaryRetrieve(): Promise<LeaveBa
 }
 
 export async function leaveManagerTeamRequestsList(
+  endDate?: string,
   ordering?: string,
   page?: number,
   pageSize?: number,
   search?: string,
+  startDate?: string,
+  status_In?: string,
 ): Promise<PaginatedLeaveRequestListList> {
   const response = await axios.get(
     `/api/leave/manager/team-requests/${(() => {
       const parts = [
+        endDate ? 'end_date=' + encodeURIComponent(endDate) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        startDate ? 'start_date=' + encodeURIComponent(startDate) : null,
+        status_In ? 'status__in=' + encodeURIComponent(status_In) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -6593,7 +7306,7 @@ export async function leaveManagerTeamRequestsRetrieve(
 export async function leaveManagerTeamRequestsApproveCreate(
   id: string,
   data: LeaveApprovalRequest,
-): Promise<LeaveApproval> {
+): Promise<LeaveActionResponse> {
   const response = await axios.post(
     `/api/leave/manager/team-requests/${id}/approve/`,
     data,
@@ -6604,7 +7317,7 @@ export async function leaveManagerTeamRequestsApproveCreate(
 export async function leaveManagerTeamRequestsRejectCreate(
   id: string,
   data: LeaveApprovalRequest,
-): Promise<LeaveApproval> {
+): Promise<LeaveActionResponse> {
   const response = await axios.post(
     `/api/leave/manager/team-requests/${id}/reject/`,
     data,
@@ -6620,10 +7333,12 @@ export async function leaveManagerTeamRequestsPendingRetrieve(): Promise<LeaveRe
 export async function listItemsList(
   isActive?: boolean,
   itemList?: number,
+  itemListId?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
   parent?: number,
+  rootOnly?: boolean,
   search?: string,
 ): Promise<PaginatedListItemMinimalList> {
   const response = await axios.get(
@@ -6631,10 +7346,12 @@ export async function listItemsList(
       const parts = [
         isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
         itemList ? 'item_list=' + encodeURIComponent(itemList) : null,
+        itemListId ? 'item_list_id=' + encodeURIComponent(itemListId) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         parent ? 'parent=' + encodeURIComponent(parent) : null,
+        rootOnly ? 'root_only=' + encodeURIComponent(rootOnly) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -6678,19 +7395,21 @@ export async function listItemsDestroy(id: number): Promise<any> {
 
 export async function listItemsAllDescendantsRetrieve(
   id: number,
-): Promise<ListItem> {
+): Promise<ListItemMinimal[]> {
   const response = await axios.get(`/api/list-items/${id}/all_descendants/`);
   return response.data;
 }
 
-export async function listItemsChildrenRetrieve(id: number): Promise<ListItem> {
+export async function listItemsChildrenRetrieve(
+  id: number,
+): Promise<ListItem[]> {
   const response = await axios.get(`/api/list-items/${id}/children/`);
   return response.data;
 }
 
 export async function listItemsReorderPartialUpdate(
   id: number,
-  data: PatchedListItemRequest,
+  data: PatchedListItemReorderRequest,
 ): Promise<ListItem> {
   const response = await axios.patch(`/api/list-items/${id}/reorder/`, data);
   return response.data;
@@ -6909,13 +7628,24 @@ export async function marketingPublicTestimonialsRetrieve(
   return response.data;
 }
 
-export async function notificationPreferencesRetrieve(): Promise<any> {
+export async function notificationPreferencesRetrieve(): Promise<
+  NotificationPreference[]
+> {
   const response = await axios.get(`/api/notification-preferences/`);
   return response.data;
 }
 
-export async function notificationPreferencesBulkUpdate(): Promise<any> {
-  const response = await axios.put(`/api/notification-preferences/bulk/`);
+export async function notificationPreferencesBulkUpdate(
+  data: NotificationPreferenceBulkItemRequest[],
+): Promise<NotificationPreference[]> {
+  const response = await axios.put(`/api/notification-preferences/bulk/`, data);
+  return response.data;
+}
+
+export async function notificationPreferencesTypesRetrieve(): Promise<
+  NotificationPreferenceType[]
+> {
+  const response = await axios.get(`/api/notification-preferences/types/`);
   return response.data;
 }
 
@@ -7071,13 +7801,16 @@ export async function cancelSubscription(): Promise<any> {
   return response.data;
 }
 
-export async function createSubscriptionPayment(): Promise<{
+export async function createSubscriptionPayment(data: {
+  package_id: number;
+  agent_count?: number;
+}): Promise<{
   payment_id?: string;
   payment_url?: string;
   amount?: number;
   currency?: string;
 }> {
-  const response = await axios.post(`/api/payments/create/`);
+  const response = await axios.post(`/api/payments/create/`, data);
   return response.data;
 }
 
@@ -7122,7 +7855,7 @@ export async function reactivateSubscriptionPayment(): Promise<{
   return response.data;
 }
 
-export async function getSavedCard(): Promise<any> {
+export async function getSavedCard(): Promise<SavedCard[]> {
   const response = await axios.get(`/api/payments/saved-card/`);
   return response.data;
 }
@@ -7233,32 +7966,39 @@ export async function pbxServersRegenerateTokenCreate(
   return response.data;
 }
 
-export async function pbxSettingsRetrieve(sipConfigId: number): Promise<any> {
+export async function pbxSettingsRetrieve(
+  sipConfigId: number,
+): Promise<PbxSettings> {
   const response = await axios.get(`/api/pbx-settings/${sipConfigId}/`);
   return response.data;
 }
 
 export async function pbxSettingsPartialUpdate(
   sipConfigId: number,
-): Promise<any> {
-  const response = await axios.patch(`/api/pbx-settings/${sipConfigId}/`);
+  data: PatchedPbxSettingsRequest,
+): Promise<PbxSettings> {
+  const response = await axios.patch(`/api/pbx-settings/${sipConfigId}/`, data);
   return response.data;
 }
 
 export async function pbxSettingsRemoveSoundCreate(
   sipConfigId: number,
-): Promise<any> {
+  data: PbxSoundRemoveRequest,
+): Promise<PbxSettings> {
   const response = await axios.post(
     `/api/pbx-settings/${sipConfigId}/remove-sound/`,
+    data,
   );
   return response.data;
 }
 
 export async function pbxSettingsUploadSoundCreate(
   sipConfigId: number,
-): Promise<any> {
+  data: FormData,
+): Promise<PbxSettings> {
   const response = await axios.post(
     `/api/pbx-settings/${sipConfigId}/upload-sound/`,
+    data,
   );
   return response.data;
 }
@@ -7299,18 +8039,28 @@ export async function permissionsRetrieve(id: number): Promise<Permission> {
 }
 
 export async function phoneAssignmentsList(
+  isActive?: boolean,
+  isPrimary?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
   search?: string,
+  sipConfiguration?: number,
+  user?: number,
 ): Promise<PaginatedUserPhoneAssignmentList> {
   const response = await axios.get(
     `/api/phone-assignments/${(() => {
       const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isPrimary ? 'is_primary=' + encodeURIComponent(isPrimary) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        sipConfiguration
+          ? 'sip_configuration=' + encodeURIComponent(sipConfiguration)
+          : null,
+        user ? 'user=' + encodeURIComponent(user) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -7497,21 +8247,12 @@ export async function registerTenantWithPayment(
   return response.data;
 }
 
-export async function getCurrentIp(): Promise<{
-  ip_address?: string;
-  city?: string;
-  country?: string;
-  country_code?: string;
-}> {
+export async function getCurrentIp(): Promise<CurrentIpinfo> {
   const response = await axios.get(`/api/security/current-ip/`);
   return response.data;
 }
 
-export async function listIpWhitelist(): Promise<{
-  ip_whitelist_enabled?: boolean;
-  superadmin_bypass_whitelist?: boolean;
-  entries?: unknown[];
-}> {
+export async function listIpWhitelist(): Promise<IpwhitelistList> {
   const response = await axios.get(`/api/security/ip-whitelist/`);
   return response.data;
 }
@@ -7546,12 +8287,10 @@ export async function createIpWhitelist(
   return response.data;
 }
 
-export async function toggleIpWhitelist(): Promise<{
-  ip_whitelist_enabled?: boolean;
-  superadmin_bypass_whitelist?: boolean;
-  message?: string;
-}> {
-  const response = await axios.post(`/api/security/ip-whitelist/toggle/`);
+export async function toggleIpWhitelist(
+  data: ToggleIpwhitelistRequest,
+): Promise<IpwhitelistState> {
+  const response = await axios.post(`/api/security/ip-whitelist/toggle/`, data);
   return response.data;
 }
 
@@ -7564,7 +8303,7 @@ export async function listSecurityLogs(
   pageSize?: number,
   search?: string,
   userId?: number,
-): Promise<any> {
+): Promise<PaginatedSecurityLogList> {
   const response = await axios.get(
     `/api/security/logs/${(() => {
       const parts = [
@@ -7586,7 +8325,7 @@ export async function listSecurityLogs(
 export async function mySecurityLogs(
   page?: number,
   pageSize?: number,
-): Promise<any> {
+): Promise<PaginatedSecurityLogList> {
   const response = await axios.get(
     `/api/security/logs/me/${(() => {
       const parts = [
@@ -7599,17 +8338,9 @@ export async function mySecurityLogs(
   return response.data;
 }
 
-export async function securityLogsStats(days?: number): Promise<{
-  total_logins?: number;
-  failed_logins?: number;
-  unique_ips?: number;
-  unique_users?: number;
-  by_event_type?: Record<string, any>;
-  by_device_type?: Record<string, any>;
-  by_date?: unknown[];
-  recent_failed_logins?: unknown[];
-  top_ips?: unknown[];
-}> {
+export async function securityLogsStats(
+  days?: number,
+): Promise<SecurityLogsStats> {
   const response = await axios.get(
     `/api/security/logs/stats/${days ? '?days=' + encodeURIComponent(days) : ''}`,
   );
@@ -7674,7 +8405,7 @@ export async function sipConfigurationsDestroy(id: number): Promise<any> {
 export async function sipConfigurationsSetDefaultCreate(
   id: number,
   data: SipConfigurationRequest,
-): Promise<Record<string, any>> {
+): Promise<SipConfigurationMessageResponse> {
   const response = await axios.post(
     `/api/sip-configurations/${id}/set_default/`,
     data,
@@ -7685,7 +8416,7 @@ export async function sipConfigurationsSetDefaultCreate(
 export async function sipConfigurationsTestConnectionCreate(
   id: number,
   data: SipConfigurationRequest,
-): Promise<Record<string, any>> {
+): Promise<SipConfigurationTestResponse> {
   const response = await axios.post(
     `/api/sip-configurations/${id}/test_connection/`,
     data,
@@ -7695,14 +8426,14 @@ export async function sipConfigurationsTestConnectionCreate(
 
 export async function sipConfigurationsWebrtcConfigRetrieve(
   id: number,
-): Promise<SipConfigurationDetail> {
+): Promise<SoftphoneSipConfiguration> {
   const response = await axios.get(
     `/api/sip-configurations/${id}/webrtc_config/`,
   );
   return response.data;
 }
 
-export async function sipConfigurationsMyConfigRetrieve(): Promise<SipConfiguration> {
+export async function sipConfigurationsMyConfigRetrieve(): Promise<MySoftphoneConfig> {
   const response = await axios.get(`/api/sip-configurations/my_config/`);
   return response.data;
 }
@@ -7719,14 +8450,33 @@ export async function socialAiSettingsPartialUpdate(
   return response.data;
 }
 
-export async function socialAiStateRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/ai/state/`);
+export async function socialAiStateRetrieve(
+  accountId: string,
+  conversationId: string,
+  platform:
+    | 'email'
+    | 'facebook'
+    | 'instagram'
+    | 'telegram'
+    | 'whatsapp'
+    | 'widget',
+): Promise<AistateResponse> {
+  const response = await axios.get(
+    `/api/social/ai/state/${(() => {
+      const parts = [
+        'account_id=' + encodeURIComponent(accountId),
+        'conversation_id=' + encodeURIComponent(conversationId),
+        'platform=' + encodeURIComponent(platform),
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
 export async function socialAiStateCreate(
   data: AistateUpdateRequest,
-): Promise<any> {
+): Promise<AistateResponse> {
   const response = await axios.post(`/api/social/ai/state/`, data);
   return response.data;
 }
@@ -7735,7 +8485,7 @@ export async function socialAiSummariesList(
   accountId: string,
   conversationId: string,
   platform: string,
-): Promise<ConversationSummary[]> {
+): Promise<AisummaryList> {
   const response = await axios.get(
     `/api/social/ai/summaries/${(() => {
       const parts = [
@@ -7751,46 +8501,63 @@ export async function socialAiSummariesList(
 
 export async function socialAiSummarizeCreate(
   data: ConversationTripleRequest,
-): Promise<ConversationSummary> {
+): Promise<AisummaryCreated> {
   const response = await axios.post(`/api/social/ai/summarize/`, data);
   return response.data;
 }
 
-export async function socialAiTestCreate(data: {
-  message: string;
-  guidance_prompt?: string;
-}): Promise<any> {
+export async function socialAiTestCreate(
+  data: AitestRequest,
+): Promise<AitestResponse> {
   const response = await axios.post(`/api/social/ai/test/`, data);
   return response.data;
 }
 
-export async function socialAssignmentsRetrieve(): Promise<any> {
+export async function socialAssignmentsRetrieve(): Promise<ChatAssignment[]> {
   const response = await axios.get(`/api/social/assignments/`);
   return response.data;
 }
 
-export async function socialAssignmentsAllRetrieve(): Promise<any> {
+export async function socialAssignmentsAllRetrieve(): Promise<
+  ChatAssignment[]
+> {
   const response = await axios.get(`/api/social/assignments/all/`);
   return response.data;
 }
 
-export async function socialAssignmentsAssignCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/assignments/assign/`);
+export async function socialAssignmentsAssignCreate(
+  data: ChatAssignmentCreateRequest,
+): Promise<AssignmentMessageResponse> {
+  const response = await axios.post(`/api/social/assignments/assign/`, data);
   return response.data;
 }
 
-export async function socialAssignmentsBulkStatusRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/assignments/bulk-status/`);
+export async function socialAssignmentsBulkStatusRetrieve(
+  platforms?: string,
+): Promise<BulkAssignmentStatusResponse> {
+  const response = await axios.get(
+    `/api/social/assignments/bulk-status/${platforms ? '?platforms=' + encodeURIComponent(platforms) : ''}`,
+  );
   return response.data;
 }
 
-export async function socialAssignmentsEndSessionCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/assignments/end-session/`);
+export async function socialAssignmentsEndSessionCreate(
+  data: ConversationRefRequest,
+): Promise<EndSessionResponse> {
+  const response = await axios.post(
+    `/api/social/assignments/end-session/`,
+    data,
+  );
   return response.data;
 }
 
-export async function socialAssignmentsStartSessionCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/assignments/start-session/`);
+export async function socialAssignmentsStartSessionCreate(
+  data: ConversationRefRequest,
+): Promise<ChatAssignment> {
+  const response = await axios.post(
+    `/api/social/assignments/start-session/`,
+    data,
+  );
   return response.data;
 }
 
@@ -7812,83 +8579,127 @@ export async function socialAssignmentsStatusRetrieve(
   return response.data;
 }
 
-export async function socialAssignmentsTransferCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/assignments/transfer/`);
+export async function socialAssignmentsTransferCreate(
+  data: ChatTransferRequest,
+): Promise<AssignmentMessageResponse> {
+  const response = await axios.post(`/api/social/assignments/transfer/`, data);
   return response.data;
 }
 
-export async function socialAssignmentsUnassignCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/assignments/unassign/`);
+export async function socialAssignmentsUnassignCreate(
+  data: ConversationRefRequest,
+): Promise<SocialMessageResponse> {
+  const response = await axios.post(`/api/social/assignments/unassign/`, data);
   return response.data;
 }
 
-export async function socialAutoPostRetrieve(id: number): Promise<any> {
+export async function socialAutoPostRetrieve(
+  id: number,
+): Promise<AutoPostContent> {
   const response = await axios.get(`/api/social/auto-post/${id}/`);
   return response.data;
 }
 
-export async function socialAutoPostApproveCreate(id: number): Promise<any> {
+export async function socialAutoPostApproveCreate(
+  id: number,
+): Promise<AutoPostContent> {
   const response = await axios.post(`/api/social/auto-post/${id}/approve/`);
   return response.data;
 }
 
-export async function socialAutoPostEditUpdate(id: number): Promise<any> {
-  const response = await axios.put(`/api/social/auto-post/${id}/edit/`);
+export async function socialAutoPostEditUpdate(
+  id: number,
+  data: AutoPostEditRequest,
+): Promise<AutoPostContent> {
+  const response = await axios.put(`/api/social/auto-post/${id}/edit/`, data);
   return response.data;
 }
 
-export async function socialAutoPostPublishCreate(id: number): Promise<any> {
+export async function socialAutoPostPublishCreate(
+  id: number,
+): Promise<AutoPostContent> {
   const response = await axios.post(`/api/social/auto-post/${id}/publish/`);
   return response.data;
 }
 
-export async function socialAutoPostRejectCreate(id: number): Promise<any> {
-  const response = await axios.post(`/api/social/auto-post/${id}/reject/`);
+export async function socialAutoPostRejectCreate(
+  id: number,
+  data: AutoPostRejectRequest,
+): Promise<AutoPostContent> {
+  const response = await axios.post(
+    `/api/social/auto-post/${id}/reject/`,
+    data,
+  );
   return response.data;
 }
 
-export async function socialAutoPostGenerateCreate(): Promise<any> {
+export async function socialAutoPostGenerateCreate(): Promise<AutoPostContent> {
   const response = await axios.post(`/api/social/auto-post/generate/`);
   return response.data;
 }
 
-export async function socialAutoPostListRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/auto-post/list/`);
+export async function socialAutoPostListRetrieve(
+  page?: number,
+  pageSize?: number,
+  status?: 'approved' | 'draft' | 'failed' | 'published' | 'rejected',
+): Promise<AutoPostListResponse> {
+  const response = await axios.get(
+    `/api/social/auto-post/list/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
-export async function socialAutoPostPublishingStatusRetrieve(): Promise<any> {
+export async function socialAutoPostPublishingStatusRetrieve(): Promise<PublishingStatusResponse> {
   const response = await axios.get(`/api/social/auto-post/publishing-status/`);
   return response.data;
 }
 
-export async function socialAutoPostSettingsRetrieve(): Promise<any> {
+export async function socialAutoPostSettingsRetrieve(): Promise<AutoPostSettings> {
   const response = await axios.get(`/api/social/auto-post/settings/`);
   return response.data;
 }
 
-export async function socialAutoPostSettingsUpdate(): Promise<any> {
-  const response = await axios.put(`/api/social/auto-post/settings/`);
+export async function socialAutoPostSettingsUpdate(
+  data: AutoPostSettingsRequest,
+): Promise<AutoPostSettings> {
+  const response = await axios.put(`/api/social/auto-post/settings/`, data);
   return response.data;
 }
 
-export async function socialClearHistoryCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/clear-history/`);
+export async function socialClearHistoryCreate(
+  data: ClearHistoryRequest,
+): Promise<ClearHistoryResponse> {
+  const response = await axios.post(`/api/social/clear-history/`, data);
   return response.data;
 }
 
 export async function socialClientsList(
+  clientType?: 'booking' | 'social',
+  isBookingEnabled?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
+  platform?: string,
   search?: string,
 ): Promise<PaginatedSocialClientListList> {
   const response = await axios.get(
     `/api/social/clients/${(() => {
       const parts = [
+        clientType ? 'client_type=' + encodeURIComponent(clientType) : null,
+        isBookingEnabled
+          ? 'is_booking_enabled=' + encodeURIComponent(isBookingEnabled)
+          : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        platform ? 'platform=' + encodeURIComponent(platform) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -7932,24 +8743,32 @@ export async function socialClientsDestroy(id: number): Promise<any> {
 
 export async function socialClientsBookingHistoryRetrieve(
   id: number,
-): Promise<SocialClient> {
+  page?: number,
+  pageSize?: number,
+): Promise<ClientBookingHistoryResponse> {
   const response = await axios.get(
-    `/api/social/clients/${id}/booking_history/`,
+    `/api/social/clients/${id}/booking_history/${(() => {
+      const parts = [
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
 
 export async function socialClientsBookingStatsRetrieve(
   id: number,
-): Promise<SocialClient> {
+): Promise<ClientBookingStatsResponse> {
   const response = await axios.get(`/api/social/clients/${id}/booking_stats/`);
   return response.data;
 }
 
 export async function socialClientsLinkAccountCreate(
   id: number,
-  data: SocialClientRequest,
-): Promise<SocialClient> {
+  data: SocialAccountLinkRequest,
+): Promise<LinkAccountResponse> {
   const response = await axios.post(
     `/api/social/clients/${id}/link_account/`,
     data,
@@ -7959,8 +8778,8 @@ export async function socialClientsLinkAccountCreate(
 
 export async function socialClientsUnlinkAccountCreate(
   id: number,
-  data: SocialClientRequest,
-): Promise<SocialClient> {
+  data: SocialAccountLinkRequest,
+): Promise<UnlinkAccountResponse> {
   const response = await axios.post(
     `/api/social/clients/${id}/unlink_account/`,
     data,
@@ -7968,12 +8787,26 @@ export async function socialClientsUnlinkAccountCreate(
   return response.data;
 }
 
-export async function socialClientsByAccountRetrieve(): Promise<SocialClient> {
-  const response = await axios.get(`/api/social/clients/by_account/`);
+export async function socialClientsByAccountRetrieve(
+  accountConnectionId: string,
+  platform: string,
+  platformId: string,
+): Promise<ClientByAccountResponse> {
+  const response = await axios.get(
+    `/api/social/clients/by_account/${(() => {
+      const parts = [
+        'account_connection_id=' + encodeURIComponent(accountConnectionId),
+        'platform=' + encodeURIComponent(platform),
+        'platform_id=' + encodeURIComponent(platformId),
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
 export async function socialClientsCustomFieldsList(
+  isActive?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -7982,6 +8815,7 @@ export async function socialClientsCustomFieldsList(
   const response = await axios.get(
     `/api/social/clients/custom-fields/${(() => {
       const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -8039,8 +8873,8 @@ export async function socialClientsCustomFieldsDestroy(
 }
 
 export async function socialClientsCustomFieldsReorderCreate(
-  data: SocialClientCustomFieldRequest,
-): Promise<SocialClientCustomField> {
+  data: ReorderRequest,
+): Promise<ReorderResponse> {
   const response = await axios.post(
     `/api/social/clients/custom-fields/reorder/`,
     data,
@@ -8078,23 +8912,54 @@ export async function socialConversationsRetrieve(
   return response.data;
 }
 
-export async function socialConversationsArchiveCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/conversations/archive/`);
+export async function socialConversationsArchiveCreate(
+  data: ConversationsRequest,
+): Promise<ArchiveResponse> {
+  const response = await axios.post(`/api/social/conversations/archive/`, data);
   return response.data;
 }
 
-export async function socialConversationsArchiveAllCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/conversations/archive-all/`);
+export async function socialConversationsArchiveAllCreate(
+  data: PlatformsRequest,
+): Promise<ArchiveAllResponse> {
+  const response = await axios.post(
+    `/api/social/conversations/archive-all/`,
+    data,
+  );
   return response.data;
 }
 
-export async function socialConversationsUnarchiveCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/conversations/unarchive/`);
+export async function socialConversationsUnarchiveCreate(
+  data: ConversationsRequest,
+): Promise<UnarchiveResponse> {
+  const response = await axios.post(
+    `/api/social/conversations/unarchive/`,
+    data,
+  );
   return response.data;
 }
 
-export async function socialDeleteConversationDestroy(): Promise<any> {
-  const response = await axios.delete(`/api/social/delete-conversation/`);
+export async function socialDeleteConversationDestroy(
+  conversationId?: string,
+  platform?:
+    | 'email'
+    | 'facebook'
+    | 'instagram'
+    | 'telegram'
+    | 'whatsapp'
+    | 'widget',
+): Promise<DeleteConversationResponse> {
+  const response = await axios.delete(
+    `/api/social/delete-conversation/${(() => {
+      const parts = [
+        conversationId
+          ? 'conversation_id=' + encodeURIComponent(conversationId)
+          : null,
+        platform ? 'platform=' + encodeURIComponent(platform) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
@@ -8126,14 +8991,14 @@ export async function socialEmailDraftsCreate(
 }
 
 export async function socialEmailDraftsRetrieve(
-  id: string,
+  id: number,
 ): Promise<EmailDraft> {
   const response = await axios.get(`/api/social/email-drafts/${id}/`);
   return response.data;
 }
 
 export async function socialEmailDraftsUpdate(
-  id: string,
+  id: number,
   data: EmailDraftRequest,
 ): Promise<EmailDraft> {
   const response = await axios.put(`/api/social/email-drafts/${id}/`, data);
@@ -8141,31 +9006,47 @@ export async function socialEmailDraftsUpdate(
 }
 
 export async function socialEmailDraftsPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedEmailDraftRequest,
 ): Promise<EmailDraft> {
   const response = await axios.patch(`/api/social/email-drafts/${id}/`, data);
   return response.data;
 }
 
-export async function socialEmailDraftsDestroy(id: string): Promise<any> {
+export async function socialEmailDraftsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/social/email-drafts/${id}/`);
   return response.data;
 }
 
 export async function socialEmailMessagesList(
+  connectionId?: number,
+  folder?: string,
+  isRead?: boolean,
+  label?: string,
+  lite?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
   search?: string,
+  starred?: boolean,
+  threadId?: string,
 ): Promise<PaginatedEmailMessageList> {
   const response = await axios.get(
     `/api/social/email-messages/${(() => {
       const parts = [
+        connectionId
+          ? 'connection_id=' + encodeURIComponent(connectionId)
+          : null,
+        folder ? 'folder=' + encodeURIComponent(folder) : null,
+        isRead ? 'is_read=' + encodeURIComponent(isRead) : null,
+        label ? 'label=' + encodeURIComponent(label) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        starred ? 'starred=' + encodeURIComponent(starred) : null,
+        threadId ? 'thread_id=' + encodeURIComponent(threadId) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -8175,31 +9056,80 @@ export async function socialEmailMessagesList(
 
 export async function socialEmailMessagesRetrieve(
   id: number,
-): Promise<EmailMessage> {
+): Promise<EmailMessageDetail> {
   const response = await axios.get(`/api/social/email-messages/${id}/`);
   return response.data;
 }
 
-export async function socialEmailMessagesFoldersRetrieve(): Promise<EmailMessage> {
+export async function socialEmailMessagesFoldersList(): Promise<EmailFolder[]> {
   const response = await axios.get(`/api/social/email-messages/folders/`);
   return response.data;
 }
 
+export async function socialEmailMessagesLiteList(
+  connectionId?: number,
+  folder?: string,
+  isRead?: boolean,
+  label?: string,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  search?: string,
+  starred?: boolean,
+  threadId?: string,
+): Promise<PaginatedEmailMessageLiteList> {
+  const response = await axios.get(
+    `/api/social/email-messages/lite/${(() => {
+      const parts = [
+        connectionId
+          ? 'connection_id=' + encodeURIComponent(connectionId)
+          : null,
+        folder ? 'folder=' + encodeURIComponent(folder) : null,
+        isRead ? 'is_read=' + encodeURIComponent(isRead) : null,
+        label ? 'label=' + encodeURIComponent(label) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        starred ? 'starred=' + encodeURIComponent(starred) : null,
+        threadId ? 'thread_id=' + encodeURIComponent(threadId) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
 export async function socialEmailMessagesMoveCreate(
-  data: EmailMessageRequest,
-): Promise<EmailMessage> {
+  data: EmailMoveRequest,
+): Promise<EmailMoveResponse> {
   const response = await axios.post(`/api/social/email-messages/move/`, data);
   return response.data;
 }
 
-export async function socialEmailMessagesThreadsRetrieve(): Promise<EmailMessage> {
-  const response = await axios.get(`/api/social/email-messages/threads/`);
+export async function socialEmailMessagesThreadsList(
+  connectionId?: number,
+  folder?: string,
+  lite?: boolean,
+): Promise<EmailThread[]> {
+  const response = await axios.get(
+    `/api/social/email-messages/threads/${(() => {
+      const parts = [
+        connectionId
+          ? 'connection_id=' + encodeURIComponent(connectionId)
+          : null,
+        folder ? 'folder=' + encodeURIComponent(folder) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
 export async function socialEmailAssignedUsersRetrieve(
   connectionId: number,
-): Promise<any> {
+): Promise<EmailAssignedUsersResponse> {
   const response = await axios.get(
     `/api/social/email/${connectionId}/assigned-users/`,
   );
@@ -8208,103 +9138,140 @@ export async function socialEmailAssignedUsersRetrieve(
 
 export async function socialEmailAssignedUsersUpdate(
   connectionId: number,
-): Promise<any> {
+  data: EmailAssignedUsersUpdateRequest,
+): Promise<EmailAssignedUsersResponse> {
   const response = await axios.put(
     `/api/social/email/${connectionId}/assigned-users/`,
+    data,
   );
   return response.data;
 }
 
-export async function socialEmailActionCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/action/`);
+export async function socialEmailActionCreate(
+  data: EmailMessageActionRequest,
+): Promise<EmailActionResponse> {
+  const response = await axios.post(`/api/social/email/action/`, data);
   return response.data;
 }
 
-export async function socialEmailAssignmentsRetrieve(): Promise<any> {
+export async function socialEmailAssignmentsList(): Promise<
+  EmailConnectionWithAssignments[]
+> {
   const response = await axios.get(`/api/social/email/assignments/`);
   return response.data;
 }
 
 export async function socialEmailAssignmentsDestroy(
   assignmentId: number,
-): Promise<any> {
+): Promise<EmailMessageResponse> {
   const response = await axios.delete(
     `/api/social/email/assignments/${assignmentId}/`,
   );
   return response.data;
 }
 
-export async function socialEmailAssignmentsCreateCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/assignments/create/`);
+export async function socialEmailAssignmentsCreateCreate(
+  data: EmailAssignmentCreateRequest,
+): Promise<EmailConnectionUserAssignment> {
+  const response = await axios.post(
+    `/api/social/email/assignments/create/`,
+    data,
+  );
   return response.data;
 }
 
-export async function socialEmailConnectCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/connect/`);
+export async function socialEmailConnectCreate(
+  data: EmailConnectRequest,
+): Promise<EmailConnectResponse> {
+  const response = await axios.post(`/api/social/email/connect/`, data);
   return response.data;
 }
 
-export async function socialEmailDisconnectCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/disconnect/`);
+export async function socialEmailDisconnectCreate(
+  data: EmailConnectionIdRequest,
+): Promise<EmailDisconnectResponse> {
+  const response = await axios.post(`/api/social/email/disconnect/`, data);
   return response.data;
 }
 
-export async function socialEmailFoldersRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/email/folders/`);
+export async function socialEmailFoldersRetrieve(
+  connectionId?: number,
+): Promise<EmailFoldersResponse> {
+  const response = await axios.get(
+    `/api/social/email/folders/${connectionId ? '?connection_id=' + encodeURIComponent(connectionId) : ''}`,
+  );
   return response.data;
 }
 
-export async function socialEmailReactivateCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/reactivate/`);
+export async function socialEmailReactivateCreate(
+  data: EmailReactivateRequest,
+): Promise<EmailConnectionResponse> {
+  const response = await axios.post(`/api/social/email/reactivate/`, data);
   return response.data;
 }
 
-export async function socialEmailSendCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/send/`);
+export async function socialEmailSendCreate(
+  data: EmailSendRequest,
+): Promise<EmailSendResponse> {
+  const response = await axios.post(`/api/social/email/send/`, data);
   return response.data;
 }
 
-export async function socialEmailSignatureRetrieve(): Promise<any> {
+export async function socialEmailSignatureRetrieve(): Promise<EmailSignature> {
   const response = await axios.get(`/api/social/email/signature/`);
   return response.data;
 }
 
-export async function socialEmailSignaturePartialUpdate(): Promise<any> {
-  const response = await axios.patch(`/api/social/email/signature/`);
+export async function socialEmailSignaturePartialUpdate(
+  data: PatchedEmailSignatureRequest,
+): Promise<EmailSignature> {
+  const response = await axios.patch(`/api/social/email/signature/`, data);
   return response.data;
 }
 
-export async function socialEmailStatusRetrieve(): Promise<any> {
+export async function socialEmailStatusRetrieve(): Promise<EmailConnectionStatusResponse> {
   const response = await axios.get(`/api/social/email/status/`);
   return response.data;
 }
 
-export async function socialEmailSyncCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/sync/`);
+export async function socialEmailSyncCreate(
+  data: EmailSyncRequest,
+): Promise<EmailSyncResponse> {
+  const response = await axios.post(`/api/social/email/sync/`, data);
   return response.data;
 }
 
-export async function socialEmailSyncDebugRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/email/sync/debug/`);
+export async function socialEmailSyncDebugRetrieve(
+  connectionId?: number,
+): Promise<Record<string, any>> {
+  const response = await axios.get(
+    `/api/social/email/sync/debug/${connectionId ? '?connection_id=' + encodeURIComponent(connectionId) : ''}`,
+  );
   return response.data;
 }
 
-export async function socialEmailSyncSettingsCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/sync/settings/`);
+export async function socialEmailSyncSettingsCreate(
+  data: EmailSyncDaysRequest,
+): Promise<EmailSyncDaysResponse> {
+  const response = await axios.post(`/api/social/email/sync/settings/`, data);
   return response.data;
 }
 
-export async function socialEmailUpdateCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/email/update/`);
+export async function socialEmailUpdateCreate(
+  data: EmailConnectionUpdateRequest,
+): Promise<EmailConnectionResponse> {
+  const response = await axios.post(`/api/social/email/update/`, data);
   return response.data;
 }
 
 export async function socialFacebookMessagesList(
+  initialLoad?: boolean,
   isFromPage?: boolean,
   isReadByStaff?: boolean,
   ordering?: string,
   page?: number,
   pageConnection_PageId?: string,
+  pageId?: string,
   pageSize?: number,
   search?: string,
   senderId?: string,
@@ -8312,6 +9279,7 @@ export async function socialFacebookMessagesList(
   const response = await axios.get(
     `/api/social/facebook-messages/${(() => {
       const parts = [
+        initialLoad ? 'initial_load=' + encodeURIComponent(initialLoad) : null,
         isFromPage ? 'is_from_page=' + encodeURIComponent(isFromPage) : null,
         isReadByStaff
           ? 'is_read_by_staff=' + encodeURIComponent(isReadByStaff)
@@ -8322,6 +9290,7 @@ export async function socialFacebookMessagesList(
           ? 'page_connection__page_id=' +
             encodeURIComponent(pageConnection_PageId)
           : null,
+        pageId ? 'page_id=' + encodeURIComponent(pageId) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
         senderId ? 'sender_id=' + encodeURIComponent(senderId) : null,
@@ -8419,7 +9388,7 @@ export async function socialFacebookDatabaseTestCreate(): Promise<any> {
   return response.data;
 }
 
-export async function socialFacebookDisconnectCreate(): Promise<any> {
+export async function socialFacebookDisconnectCreate(): Promise<FacebookDisconnectResponse> {
   const response = await axios.post(`/api/social/facebook/disconnect/`);
   return response.data;
 }
@@ -8434,21 +9403,27 @@ export async function socialFacebookOauthDebugRetrieve(): Promise<any> {
   return response.data;
 }
 
-export async function socialFacebookOauthStartRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/facebook/oauth/start/`);
+export async function socialFacebookOauthStartRetrieve(
+  returnTo?: 'app',
+): Promise<OauthStartResponse> {
+  const response = await axios.get(
+    `/api/social/facebook/oauth/start/${returnTo ? '?return_to=' + encodeURIComponent(returnTo) : ''}`,
+  );
   return response.data;
 }
 
-export async function socialFacebookOauthStartPublishingRetrieve(): Promise<any> {
+export async function socialFacebookOauthStartPublishingRetrieve(
+  returnTo?: 'app',
+): Promise<OauthStartResponse> {
   const response = await axios.get(
-    `/api/social/facebook/oauth/start-publishing/`,
+    `/api/social/facebook/oauth/start-publishing/${returnTo ? '?return_to=' + encodeURIComponent(returnTo) : ''}`,
   );
   return response.data;
 }
 
 export async function socialFacebookPagesDisconnectCreate(
   pageId: string,
-): Promise<any> {
+): Promise<FacebookPageDisconnectResponse> {
   const response = await axios.post(
     `/api/social/facebook/pages/${pageId}/disconnect/`,
   );
@@ -8462,16 +9437,12 @@ export async function socialFacebookPagesDebugRetrieve(): Promise<any> {
 
 export async function socialFacebookSendMessageCreate(
   data: FacebookSendMessageRequest,
-): Promise<{
-  success?: boolean;
-  message?: string;
-  facebook_message_id?: string;
-}> {
+): Promise<MetaSendResponse> {
   const response = await axios.post(`/api/social/facebook/send-message/`, data);
   return response.data;
 }
 
-export async function socialFacebookStatusRetrieve(): Promise<any> {
+export async function socialFacebookStatusRetrieve(): Promise<FacebookStatusResponse> {
   const response = await axios.get(`/api/social/facebook/status/`);
   return response.data;
 }
@@ -8549,6 +9520,8 @@ export async function socialInstagramAccountsDestroy(id: number): Promise<any> {
 
 export async function socialInstagramMessagesList(
   accountConnection_InstagramAccountId?: string,
+  accountId?: string,
+  initialLoad?: boolean,
   isFromBusiness?: boolean,
   isReadByStaff?: boolean,
   ordering?: string,
@@ -8564,6 +9537,8 @@ export async function socialInstagramMessagesList(
           ? 'account_connection__instagram_account_id=' +
             encodeURIComponent(accountConnection_InstagramAccountId)
           : null,
+        accountId ? 'account_id=' + encodeURIComponent(accountId) : null,
+        initialLoad ? 'initial_load=' + encodeURIComponent(initialLoad) : null,
         isFromBusiness
           ? 'is_from_business=' + encodeURIComponent(isFromBusiness)
           : null,
@@ -8589,18 +9564,14 @@ export async function socialInstagramMessagesRetrieve(
   return response.data;
 }
 
-export async function socialInstagramDisconnectCreate(): Promise<any> {
+export async function socialInstagramDisconnectCreate(): Promise<InstagramDisconnectResponse> {
   const response = await axios.post(`/api/social/instagram/disconnect/`);
   return response.data;
 }
 
 export async function socialInstagramSendMessageCreate(
   data: InstagramSendMessageRequest,
-): Promise<{
-  success?: boolean;
-  message?: string;
-  instagram_message_id?: string;
-}> {
+): Promise<MetaSendResponse> {
   const response = await axios.post(
     `/api/social/instagram/send-message/`,
     data,
@@ -8608,28 +9579,47 @@ export async function socialInstagramSendMessageCreate(
   return response.data;
 }
 
-export async function socialInstagramStatusRetrieve(): Promise<any> {
+export async function socialInstagramStatusRetrieve(): Promise<InstagramStatusResponse> {
   const response = await axios.get(`/api/social/instagram/status/`);
   return response.data;
 }
 
-export async function socialMarkAllReadCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/mark-all-read/`);
+export async function socialMarkAllReadCreate(
+  data: PlatformsRequest,
+): Promise<MarkAllReadResponse> {
+  const response = await axios.post(`/api/social/mark-all-read/`, data);
   return response.data;
 }
 
-export async function socialMarkReadCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/mark-read/`);
+export async function socialMarkReadCreate(
+  data: ConversationKeyRequest,
+): Promise<MarkReadResponse> {
+  const response = await axios.post(`/api/social/mark-read/`, data);
   return response.data;
 }
 
-export async function socialMarkUnreadCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/mark-unread/`);
+export async function socialMarkUnreadCreate(
+  data: ConversationKeyRequest,
+): Promise<MarkUnreadResponse> {
+  const response = await axios.post(`/api/social/mark-unread/`, data);
   return response.data;
 }
 
-export async function socialMessagingWindowRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/messaging-window/`);
+export async function socialMessagingWindowRetrieve(
+  accountId: string,
+  conversationId: string,
+  platform: 'facebook' | 'instagram' | 'whatsapp',
+): Promise<MessagingWindowResponse> {
+  const response = await axios.get(
+    `/api/social/messaging-window/${(() => {
+      const parts = [
+        'account_id=' + encodeURIComponent(accountId),
+        'conversation_id=' + encodeURIComponent(conversationId),
+        'platform=' + encodeURIComponent(platform),
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
@@ -8648,14 +9638,20 @@ export async function socialPublicRatingSubmitCreate(
 }
 
 export async function socialQuickRepliesList(
+  category?: string,
   ordering?: string,
+  platform?: string,
   search?: string,
+  shortcut?: string,
 ): Promise<QuickReply[]> {
   const response = await axios.get(
     `/api/social/quick-replies/${(() => {
       const parts = [
+        category ? 'category=' + encodeURIComponent(category) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        platform ? 'platform=' + encodeURIComponent(platform) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        shortcut ? 'shortcut=' + encodeURIComponent(shortcut) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -8700,8 +9696,8 @@ export async function socialQuickRepliesDestroy(id: number): Promise<any> {
 
 export async function socialQuickRepliesUseCreate(
   id: number,
-  data: QuickReplyRequest,
-): Promise<QuickReply> {
+  data: QuickReplyUseRequest,
+): Promise<QuickReplyUseResponse> {
   const response = await axios.post(
     `/api/social/quick-replies/${id}/use/`,
     data,
@@ -8709,33 +9705,73 @@ export async function socialQuickRepliesUseCreate(
   return response.data;
 }
 
-export async function socialQuickRepliesCategoriesRetrieve(): Promise<QuickReply> {
+export async function socialQuickRepliesCategoriesRetrieve(): Promise<
+  string[]
+> {
   const response = await axios.get(`/api/social/quick-replies/categories/`);
   return response.data;
 }
 
 export async function socialQuickRepliesReorderCreate(
-  data: QuickReplyRequest,
-): Promise<QuickReply> {
+  data: ReorderRequest,
+): Promise<ReorderResponse> {
   const response = await axios.post(`/api/social/quick-replies/reorder/`, data);
   return response.data;
 }
 
-export async function socialQuickRepliesVariablesRetrieve(): Promise<QuickReply> {
-  const response = await axios.get(`/api/social/quick-replies/variables/`);
+export async function socialQuickRepliesVariablesRetrieve(
+  ordering?: string,
+  search?: string,
+): Promise<QuickReplyVariables[]> {
+  const response = await axios.get(
+    `/api/social/quick-replies/variables/${(() => {
+      const parts = [
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
-export async function socialRatingStatisticsRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/rating-statistics/`);
+export async function socialRatingStatisticsRetrieve(
+  endDate?: string,
+  source?: 'all' | 'calls' | 'social',
+  startDate?: string,
+): Promise<RatingStatisticsResponse> {
+  const response = await axios.get(
+    `/api/social/rating-statistics/${(() => {
+      const parts = [
+        endDate ? 'end_date=' + encodeURIComponent(endDate) : null,
+        source ? 'source=' + encodeURIComponent(source) : null,
+        startDate ? 'start_date=' + encodeURIComponent(startDate) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
   return response.data;
 }
 
 export async function socialRatingStatisticsUserRetrieve(
   userId: number,
-): Promise<any> {
+  endDate?: string,
+  page?: number,
+  pageSize?: number,
+  source?: 'all' | 'calls' | 'social',
+  startDate?: string,
+): Promise<UserRatingSessionsResponse> {
   const response = await axios.get(
-    `/api/social/rating-statistics/user/${userId}/`,
+    `/api/social/rating-statistics/user/${userId}/${(() => {
+      const parts = [
+        endDate ? 'end_date=' + encodeURIComponent(endDate) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        source ? 'source=' + encodeURIComponent(source) : null,
+        startDate ? 'start_date=' + encodeURIComponent(startDate) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
@@ -8760,17 +9796,21 @@ export async function socialSettingsPartialUpdate(
 }
 
 export async function socialTelegramMessagesList(
+  accountId?: string,
   ordering?: string,
   page?: number,
   pageSize?: number,
+  peerId?: string,
   search?: string,
 ): Promise<PaginatedTelegramMessageList> {
   const response = await axios.get(
     `/api/social/telegram-messages/${(() => {
       const parts = [
+        accountId ? 'account_id=' + encodeURIComponent(accountId) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        peerId ? 'peer_id=' + encodeURIComponent(peerId) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -8820,6 +9860,8 @@ export async function socialTelegramVerifyCreate(
 }
 
 export async function socialTiktokMessagesList(
+  accountId?: string,
+  conversationId?: string,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -8828,6 +9870,10 @@ export async function socialTiktokMessagesList(
   const response = await axios.get(
     `/api/social/tiktok-messages/${(() => {
       const parts = [
+        accountId ? 'account_id=' + encodeURIComponent(accountId) : null,
+        conversationId
+          ? 'conversation_id=' + encodeURIComponent(conversationId)
+          : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -8853,27 +9899,33 @@ export async function socialTiktokMessagesConversationsRetrieve(): Promise<TikTo
   return response.data;
 }
 
-export async function socialTiktokDisconnectCreate(): Promise<any> {
+export async function socialTiktokDisconnectCreate(): Promise<StatusMessageResponse> {
   const response = await axios.post(`/api/social/tiktok/disconnect/`);
   return response.data;
 }
 
-export async function socialTiktokOauthStartRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/tiktok/oauth/start/`);
+export async function socialTiktokOauthStartRetrieve(
+  returnTo?: 'app',
+): Promise<OauthStartResponse> {
+  const response = await axios.get(
+    `/api/social/tiktok/oauth/start/${returnTo ? '?return_to=' + encodeURIComponent(returnTo) : ''}`,
+  );
   return response.data;
 }
 
-export async function socialTiktokSendMessageCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/tiktok/send-message/`);
+export async function socialTiktokSendMessageCreate(
+  data: TikTokSendMessageRequest,
+): Promise<TikTokSendResponse> {
+  const response = await axios.post(`/api/social/tiktok/send-message/`, data);
   return response.data;
 }
 
-export async function socialTiktokStatusRetrieve(): Promise<any> {
+export async function socialTiktokStatusRetrieve(): Promise<TikTokStatusResponse> {
   const response = await axios.get(`/api/social/tiktok/status/`);
   return response.data;
 }
 
-export async function socialUnreadCountRetrieve(): Promise<any> {
+export async function socialUnreadCountRetrieve(): Promise<SocialUnreadCountResponse> {
   const response = await axios.get(`/api/social/unread-count/`);
   return response.data;
 }
@@ -8956,28 +10008,27 @@ export async function socialWhatsappAccountsDestroy(id: number): Promise<any> {
 
 export async function socialWhatsappAccountsCoexStatusRetrieve(
   id: number,
-): Promise<WhatsAppBusinessAccount> {
+  refresh?: boolean,
+): Promise<CoexStatusResponse> {
   const response = await axios.get(
-    `/api/social/whatsapp-accounts/${id}/coex-status/`,
+    `/api/social/whatsapp-accounts/${id}/coex-status/${refresh ? '?refresh=' + encodeURIComponent(refresh) : ''}`,
   );
   return response.data;
 }
 
 export async function socialWhatsappAccountsSyncContactsCreate(
   id: number,
-  data: WhatsAppBusinessAccountRequest,
-): Promise<WhatsAppBusinessAccount> {
+): Promise<SyncRequestedResponse> {
   const response = await axios.post(
     `/api/social/whatsapp-accounts/${id}/sync-contacts/`,
-    data,
   );
   return response.data;
 }
 
 export async function socialWhatsappAccountsSyncHistoryCreate(
   id: number,
-  data: WhatsAppBusinessAccountRequest,
-): Promise<WhatsAppBusinessAccount> {
+  data: SyncHistoryRequest,
+): Promise<SyncRequestedResponse> {
   const response = await axios.post(
     `/api/social/whatsapp-accounts/${id}/sync-history/`,
     data,
@@ -9024,12 +10075,16 @@ export async function socialWhatsappMediaRetrieve(mediaId: string): Promise<{
 export async function socialWhatsappMessagesList(
   businessAccount_PhoneNumberId?: string,
   businessAccount_WabaId?: string,
+  fromNumber?: string,
+  initialLoad?: boolean,
   isFromBusiness?: boolean,
   isReadByStaff?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
+  phoneNumberId?: string,
   search?: string,
+  wabaId?: string,
 ): Promise<PaginatedWhatsAppMessageList> {
   const response = await axios.get(
     `/api/social/whatsapp-messages/${(() => {
@@ -9042,6 +10097,8 @@ export async function socialWhatsappMessagesList(
           ? 'business_account__waba_id=' +
             encodeURIComponent(businessAccount_WabaId)
           : null,
+        fromNumber ? 'from_number=' + encodeURIComponent(fromNumber) : null,
+        initialLoad ? 'initial_load=' + encodeURIComponent(initialLoad) : null,
         isFromBusiness
           ? 'is_from_business=' + encodeURIComponent(isFromBusiness)
           : null,
@@ -9051,7 +10108,11 @@ export async function socialWhatsappMessagesList(
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        phoneNumberId
+          ? 'phone_number_id=' + encodeURIComponent(phoneNumberId)
+          : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        wabaId ? 'waba_id=' + encodeURIComponent(wabaId) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -9075,15 +10136,17 @@ export async function socialWhatsappTemplatesList(
 
 export async function socialWhatsappTemplatesSyncCreate(
   wabaId: string,
-): Promise<WhatsAppMessageTemplate[]> {
+): Promise<WhatsAppTemplateSyncResponse> {
   const response = await axios.post(
     `/api/social/whatsapp/${wabaId}/templates/sync/`,
   );
   return response.data;
 }
 
-export async function socialWhatsappDisconnectCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/whatsapp/disconnect/`);
+export async function socialWhatsappDisconnectCreate(
+  data: WhatsAppDisconnectRequest,
+): Promise<WhatsAppDisconnectResponse> {
+  const response = await axios.post(`/api/social/whatsapp/disconnect/`, data);
   return response.data;
 }
 
@@ -9101,24 +10164,30 @@ export async function socialWhatsappEmbeddedSignupCallbackCreate(): Promise<any>
   return response.data;
 }
 
-export async function socialWhatsappOauthStartRetrieve(): Promise<any> {
-  const response = await axios.get(`/api/social/whatsapp/oauth/start/`);
+export async function socialWhatsappOauthStartRetrieve(
+  returnTo?: 'app',
+): Promise<OauthStartResponse> {
+  const response = await axios.get(
+    `/api/social/whatsapp/oauth/start/${returnTo ? '?return_to=' + encodeURIComponent(returnTo) : ''}`,
+  );
   return response.data;
 }
 
-export async function socialWhatsappSendMessageCreate(): Promise<any> {
-  const response = await axios.post(`/api/social/whatsapp/send-message/`);
+export async function socialWhatsappSendMessageCreate(
+  data: WhatsAppSendMessageRequest,
+): Promise<WhatsAppSendResponse> {
+  const response = await axios.post(`/api/social/whatsapp/send-message/`, data);
   return response.data;
 }
 
-export async function socialWhatsappStatusRetrieve(): Promise<any> {
+export async function socialWhatsappStatusRetrieve(): Promise<WhatsAppStatusResponse> {
   const response = await axios.get(`/api/social/whatsapp/status/`);
   return response.data;
 }
 
 export async function socialWhatsappTemplatesDeleteDestroy(
   templateId: number,
-): Promise<any> {
+): Promise<SocialMessageResponse> {
   const response = await axios.delete(
     `/api/social/whatsapp/templates/${templateId}/delete/`,
   );
@@ -9145,23 +10214,29 @@ export async function socialWhatsappTemplatesSendCreate(
   return response.data;
 }
 
-export async function subscriptionAgentCountUpdate(): Promise<any> {
-  const response = await axios.put(`/api/subscription/agent-count/`);
+export async function subscriptionAgentCountUpdate(
+  data: UpdateAgentCountRequest,
+): Promise<UpdateAgentCountResponse> {
+  const response = await axios.put(`/api/subscription/agent-count/`, data);
   return response.data;
 }
 
-export async function subscriptionFeaturesAddCreate(): Promise<any> {
-  const response = await axios.post(`/api/subscription/features/add/`);
+export async function subscriptionFeaturesAddCreate(
+  data: AddSubscriptionFeatureRequest,
+): Promise<AddSubscriptionFeatureResponse> {
+  const response = await axios.post(`/api/subscription/features/add/`, data);
   return response.data;
 }
 
-export async function subscriptionFeaturesAvailableRetrieve(): Promise<any> {
+export async function subscriptionFeaturesAvailableRetrieve(): Promise<SubscriptionAvailableFeatures> {
   const response = await axios.get(`/api/subscription/features/available/`);
   return response.data;
 }
 
-export async function subscriptionFeaturesRemoveCreate(): Promise<any> {
-  const response = await axios.post(`/api/subscription/features/remove/`);
+export async function subscriptionFeaturesRemoveCreate(
+  data: RemoveSubscriptionFeatureRequest,
+): Promise<RemoveSubscriptionFeatureResponse> {
+  const response = await axios.post(`/api/subscription/features/remove/`, data);
   return response.data;
 }
 
@@ -9260,6 +10335,7 @@ export async function teamChatConversationsList(
   ordering?: string,
   page?: number,
   pageSize?: number,
+  scope?: 'all' | 'today',
   search?: string,
 ): Promise<PaginatedTeamChatConversationList> {
   const response = await axios.get(
@@ -9268,6 +10344,7 @@ export async function teamChatConversationsList(
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        scope ? 'scope=' + encodeURIComponent(scope) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
@@ -9309,7 +10386,7 @@ export async function teamChatConversationsDestroy(id: string): Promise<any> {
 
 export async function teamChatConversationsClearHistoryCreate(
   id: string,
-): Promise<TeamChatConversation> {
+): Promise<TeamChatClearHistoryResponse> {
   const response = await axios.post(
     `/api/team-chat/conversations/${id}/clear_history/`,
   );
@@ -9318,7 +10395,7 @@ export async function teamChatConversationsClearHistoryCreate(
 
 export async function teamChatConversationsClearHistoryDestroy(
   id: string,
-): Promise<any> {
+): Promise<TeamChatClearHistoryResponse> {
   const response = await axios.delete(
     `/api/team-chat/conversations/${id}/clear_history/`,
   );
@@ -9327,7 +10404,7 @@ export async function teamChatConversationsClearHistoryDestroy(
 
 export async function teamChatConversationsHideForMeCreate(
   id: string,
-): Promise<TeamChatConversation> {
+): Promise<TeamChatHideResponse> {
   const response = await axios.post(
     `/api/team-chat/conversations/${id}/hide_for_me/`,
   );
@@ -9336,7 +10413,7 @@ export async function teamChatConversationsHideForMeCreate(
 
 export async function teamChatConversationsMarkReadCreate(
   id: string,
-): Promise<TeamChatConversation> {
+): Promise<TeamChatMarkReadResponse> {
   const response = await axios.post(
     `/api/team-chat/conversations/${id}/mark_read/`,
   );
@@ -9345,7 +10422,7 @@ export async function teamChatConversationsMarkReadCreate(
 
 export async function teamChatConversationsUnhideCreate(
   id: string,
-): Promise<TeamChatConversation> {
+): Promise<TeamChatUnhideResponse> {
   const response = await axios.post(
     `/api/team-chat/conversations/${id}/unhide/`,
   );
@@ -9354,7 +10431,7 @@ export async function teamChatConversationsUnhideCreate(
 
 export async function teamChatConversationsWithRetrieve(
   userId: string,
-): Promise<TeamChatConversation> {
+): Promise<TeamChatConversationDetail> {
   const response = await axios.get(
     `/api/team-chat/conversations/with/${userId}/`,
   );
@@ -9363,7 +10440,7 @@ export async function teamChatConversationsWithRetrieve(
 
 export async function teamChatConversationsWithCreate(
   userId: string,
-): Promise<TeamChatConversation> {
+): Promise<TeamChatConversationDetail> {
   const response = await axios.post(
     `/api/team-chat/conversations/with/${userId}/`,
   );
@@ -9371,6 +10448,7 @@ export async function teamChatConversationsWithCreate(
 }
 
 export async function teamChatMessagesList(
+  conversation?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -9379,6 +10457,9 @@ export async function teamChatMessagesList(
   const response = await axios.get(
     `/api/team-chat/messages/${(() => {
       const parts = [
+        conversation
+          ? 'conversation=' + encodeURIComponent(conversation)
+          : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -9427,26 +10508,24 @@ export async function teamChatMessagesDestroy(id: string): Promise<any> {
 
 export async function teamChatMessagesMarkReadCreate(
   id: string,
-  data: FormData,
 ): Promise<TeamChatMessage> {
-  const response = await axios.post(
-    `/api/team-chat/messages/${id}/mark_read/`,
-    data,
-  );
+  const response = await axios.post(`/api/team-chat/messages/${id}/mark_read/`);
   return response.data;
 }
 
-export async function teamChatUnreadCountRetrieve(): Promise<any> {
+export async function teamChatUnreadCountRetrieve(): Promise<TeamChatUnreadCount> {
   const response = await axios.get(`/api/team-chat/unread-count/`);
   return response.data;
 }
 
-export async function teamChatUploadCreate(): Promise<any> {
-  const response = await axios.post(`/api/team-chat/upload/`);
+export async function teamChatUploadCreate(
+  data: TeamChatFileUploadRequest,
+): Promise<TeamChatFileUploadResult> {
+  const response = await axios.post(`/api/team-chat/upload/`, data);
   return response.data;
 }
 
-export async function teamChatUsersRetrieve(): Promise<any> {
+export async function teamChatUsersRetrieve(): Promise<TeamChatUser[]> {
   const response = await axios.get(`/api/team-chat/users/`);
   return response.data;
 }
@@ -9540,8 +10619,8 @@ export async function tenantGroupsDestroy(id: number): Promise<any> {
 
 export async function tenantGroupsAddUsersCreate(
   id: number,
-  data: TenantGroupRequest,
-): Promise<TenantGroup> {
+  data: TenantGroupUserIdsRequest,
+): Promise<TenantGroupAddUsersResponse> {
   const response = await axios.post(
     `/api/tenant-groups/${id}/add_users/`,
     data,
@@ -9551,15 +10630,18 @@ export async function tenantGroupsAddUsersCreate(
 
 export async function tenantGroupsMembersRetrieve(
   id: number,
-): Promise<TenantGroup> {
-  const response = await axios.get(`/api/tenant-groups/${id}/members/`);
+  lite?: boolean,
+): Promise<TenantGroupMembersResponse> {
+  const response = await axios.get(
+    `/api/tenant-groups/${id}/members/${lite ? '?lite=' + encodeURIComponent(lite) : ''}`,
+  );
   return response.data;
 }
 
 export async function tenantGroupsRemoveUsersCreate(
   id: number,
-  data: TenantGroupRequest,
-): Promise<TenantGroup> {
+  data: TenantGroupUserIdsRequest,
+): Promise<TenantGroupRemoveUsersResponse> {
   const response = await axios.post(
     `/api/tenant-groups/${id}/remove_users/`,
     data,
@@ -9567,8 +10649,12 @@ export async function tenantGroupsRemoveUsersCreate(
   return response.data;
 }
 
-export async function tenantGroupsAvailableFeaturesRetrieve(): Promise<TenantGroup> {
-  const response = await axios.get(`/api/tenant-groups/available_features/`);
+export async function tenantGroupsAvailableFeaturesRetrieve(
+  groupId?: number,
+): Promise<TenantGroupAvailableFeaturesResponse> {
+  const response = await axios.get(
+    `/api/tenant-groups/available_features/${groupId ? '?group_id=' + encodeURIComponent(groupId) : ''}`,
+  );
   return response.data;
 }
 
@@ -9599,11 +10685,15 @@ export async function tenantPermissionsRetrieve(
   return response.data;
 }
 
-export async function tenantSettingsGet(): Promise<{
-  logo?: string;
-  company_name?: string;
-}> {
+export async function tenantSettingsGet(): Promise<TenantSettings> {
   const response = await axios.get(`/api/tenant-settings/`);
+  return response.data;
+}
+
+export async function tenantSettingsUpdate(
+  data: PatchedTenantSettingsRequest,
+): Promise<TenantSettings> {
+  const response = await axios.patch(`/api/tenant-settings/`, data);
   return response.data;
 }
 
@@ -9730,6 +10820,8 @@ export async function tenantsListRetrieve(): Promise<any> {
 }
 
 export async function ticketFormsList(
+  isActive?: boolean,
+  isDefault?: boolean,
   ordering?: string,
   page?: number,
   pageSize?: number,
@@ -9738,6 +10830,8 @@ export async function ticketFormsList(
   const response = await axios.get(
     `/api/ticket-forms/${(() => {
       const parts = [
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isDefault ? 'is_default=' + encodeURIComponent(isDefault) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
@@ -9785,7 +10879,7 @@ export async function ticketFormsDestroy(id: number): Promise<any> {
 export async function ticketFormsSetDefaultCreate(
   id: number,
   data: TicketFormRequest,
-): Promise<TicketForm> {
+): Promise<TicketFormSetDefaultResponse> {
   const response = await axios.post(
     `/api/ticket-forms/${id}/set_default/`,
     data,
@@ -9806,18 +10900,40 @@ export async function ticketFormsDefaultRetrieve(): Promise<TicketForm> {
 }
 
 export async function ticketsList(
+  assignedGroups?: number[],
+  assignedTo?: number,
+  board?: number,
+  column?: number,
+  createdBy?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
+  priority?: 'critical' | 'high' | 'low' | 'medium',
   search?: string,
+  tags?: number[],
 ): Promise<PaginatedTicketListList> {
   const response = await axios.get(
     `/api/tickets/${(() => {
       const parts = [
+        assignedGroups
+          ? 'assigned_groups=' +
+            assignedGroups
+              .map(String)
+              .map(encodeURIComponent)
+              .join('&assigned_groups=')
+          : null,
+        assignedTo ? 'assigned_to=' + encodeURIComponent(assignedTo) : null,
+        board ? 'board=' + encodeURIComponent(board) : null,
+        column ? 'column=' + encodeURIComponent(column) : null,
+        createdBy ? 'created_by=' + encodeURIComponent(createdBy) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        priority ? 'priority=' + encodeURIComponent(priority) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        tags
+          ? 'tags=' + tags.map(String).map(encodeURIComponent).join('&tags=')
+          : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -9887,14 +11003,20 @@ export async function ticketsHistoryRetrieve(id: string): Promise<Ticket> {
   return response.data;
 }
 
-export async function moveTicketToColumn(id: string): Promise<Ticket> {
-  const response = await axios.patch(`/api/tickets/${id}/move_to_column/`);
+export async function moveTicketToColumn(
+  id: string,
+  data: PatchedMoveTicketToColumnRequestRequest,
+): Promise<Ticket> {
+  const response = await axios.patch(
+    `/api/tickets/${id}/move_to_column/`,
+    data,
+  );
   return response.data;
 }
 
-export async function ticketsReorderInColumnPartialUpdate(
+export async function reorderTicketInColumn(
   id: string,
-  data: PatchedTicketRequest,
+  data: PatchedReorderTicketInColumnRequestRequest,
 ): Promise<Ticket> {
   const response = await axios.patch(
     `/api/tickets/${id}/reorder_in_column/`,
@@ -10010,16 +11132,22 @@ export async function ticketsMyTicketsRetrieve(): Promise<Ticket> {
 }
 
 export async function timeLogsList(
+  column?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
+  ticket?: number,
+  user?: number,
 ): Promise<PaginatedTicketTimeLogList> {
   const response = await axios.get(
     `/api/time-logs/${(() => {
       const parts = [
+        column ? 'column=' + encodeURIComponent(column) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        ticket ? 'ticket=' + encodeURIComponent(ticket) : null,
+        user ? 'user=' + encodeURIComponent(user) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -10037,6 +11165,36 @@ export async function timeLogsMyTimeSummaryRetrieve(
 ): Promise<TimeTrackingSummary> {
   const response = await axios.get(
     `/api/time-logs/my_time_summary/${days ? '?days=' + encodeURIComponent(days) : ''}`,
+  );
+  return response.data;
+}
+
+export async function timeLogsTeamSummary(
+  days?: number,
+  endDate?: string,
+  startDate?: string,
+): Promise<TeamSummary> {
+  const response = await axios.get(
+    `/api/time-logs/team_summary/${(() => {
+      const parts = [
+        days ? 'days=' + encodeURIComponent(days) : null,
+        endDate ? 'end_date=' + encodeURIComponent(endDate) : null,
+        startDate ? 'start_date=' + encodeURIComponent(startDate) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
+  );
+  return response.data;
+}
+
+export async function timeLogsTicketSummary(
+  ticket: number,
+): Promise<TicketTimeSummary> {
+  const response = await axios.get(
+    `/api/time-logs/ticket_summary/${(() => {
+      const parts = ['ticket=' + encodeURIComponent(ticket)].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
@@ -10109,18 +11267,34 @@ export async function uploadImage(data: FormData): Promise<{
 }
 
 export async function usersList(
+  department?: number,
+  group?: number,
+  isActive?: boolean,
+  isStaff?: boolean,
+  lite?: boolean,
+  manager?: number,
   ordering?: string,
   page?: number,
   pageSize?: number,
+  role?: 'admin' | 'agent' | 'manager' | 'viewer',
   search?: string,
+  status?: 'active' | 'inactive' | 'pending' | 'suspended',
 ): Promise<PaginatedUserList> {
   const response = await axios.get(
     `/api/users/${(() => {
       const parts = [
+        department ? 'department=' + encodeURIComponent(department) : null,
+        group ? 'group=' + encodeURIComponent(group) : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isStaff ? 'is_staff=' + encodeURIComponent(isStaff) : null,
+        lite ? 'lite=' + encodeURIComponent(lite) : null,
+        manager ? 'manager=' + encodeURIComponent(manager) : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        role ? 'role=' + encodeURIComponent(role) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -10135,8 +11309,10 @@ export async function usersCreate(
   return response.data;
 }
 
-export async function usersRetrieve(id: number): Promise<User> {
-  const response = await axios.get(`/api/users/${id}/`);
+export async function usersRetrieve(id: number, lite?: boolean): Promise<User> {
+  const response = await axios.get(
+    `/api/users/${id}/${lite ? '?lite=' + encodeURIComponent(lite) : ''}`,
+  );
   return response.data;
 }
 
@@ -10163,25 +11339,79 @@ export async function usersDestroy(id: number): Promise<any> {
 
 export async function usersChangePasswordCreate(
   id: number,
-  data: UserRequest,
-): Promise<User> {
+  data: PasswordChangeRequest,
+): Promise<UserMessageResponse> {
   const response = await axios.post(`/api/users/${id}/change_password/`, data);
   return response.data;
 }
 
 export async function usersSendNewPasswordCreate(
   id: number,
-  data: UserRequest,
-): Promise<User> {
-  const response = await axios.post(
-    `/api/users/${id}/send_new_password/`,
-    data,
+): Promise<UserMessageResponse> {
+  const response = await axios.post(`/api/users/${id}/send_new_password/`);
+  return response.data;
+}
+
+export async function usersSetStaffCreate(
+  id: number,
+  data: SetUserStaffRequest,
+): Promise<SetUserStaffResponse> {
+  const response = await axios.post(`/api/users/${id}/set-staff/`, data);
+  return response.data;
+}
+
+export async function usersBulkActionCreate(
+  data: BulkUserActionRequest,
+): Promise<BulkUserActionResponse> {
+  const response = await axios.post(`/api/users/bulk_action/`, data);
+  return response.data;
+}
+
+export async function usersDirectoryList(
+  department?: number,
+  group?: number,
+  isActive?: boolean,
+  isStaff?: boolean,
+  manager?: number,
+  ordering?: string,
+  page?: number,
+  pageSize?: number,
+  role?: 'admin' | 'agent' | 'manager' | 'viewer',
+  search?: string,
+  status?: 'active' | 'inactive' | 'pending' | 'suspended',
+): Promise<PaginatedUserDirectoryList> {
+  const response = await axios.get(
+    `/api/users/directory/${(() => {
+      const parts = [
+        department ? 'department=' + encodeURIComponent(department) : null,
+        group ? 'group=' + encodeURIComponent(group) : null,
+        isActive ? 'is_active=' + encodeURIComponent(isActive) : null,
+        isStaff ? 'is_staff=' + encodeURIComponent(isStaff) : null,
+        manager ? 'manager=' + encodeURIComponent(manager) : null,
+        ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
+        page ? 'page=' + encodeURIComponent(page) : null,
+        pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
+        role ? 'role=' + encodeURIComponent(role) : null,
+        search ? 'search=' + encodeURIComponent(search) : null,
+        status ? 'status=' + encodeURIComponent(status) : null,
+      ].filter(Boolean);
+      return parts.length > 0 ? '?' + parts.join('&') : '';
+    })()}`,
   );
   return response.data;
 }
 
-export async function usersBulkActionCreate(data: UserRequest): Promise<User> {
-  const response = await axios.post(`/api/users/bulk_action/`, data);
+export async function usersPasswordResetCreate(
+  data: PasswordResetRequestRequest,
+): Promise<any> {
+  const response = await axios.post(`/api/users/password-reset/`, data);
+  return response.data;
+}
+
+export async function usersPasswordResetConfirmCreate(
+  data: PasswordResetConfirmRequest,
+): Promise<any> {
+  const response = await axios.post(`/api/users/password-reset/confirm/`, data);
   return response.data;
 }
 
@@ -10254,14 +11484,14 @@ export async function widgetAdminConnectionsCreate(
 }
 
 export async function widgetAdminConnectionsRetrieve(
-  id: string,
+  id: number,
 ): Promise<WidgetConnection> {
   const response = await axios.get(`/api/widget/admin/connections/${id}/`);
   return response.data;
 }
 
 export async function widgetAdminConnectionsUpdate(
-  id: string,
+  id: number,
   data: WidgetConnectionRequest,
 ): Promise<WidgetConnection> {
   const response = await axios.put(
@@ -10272,7 +11502,7 @@ export async function widgetAdminConnectionsUpdate(
 }
 
 export async function widgetAdminConnectionsPartialUpdate(
-  id: string,
+  id: number,
   data: PatchedWidgetConnectionRequest,
 ): Promise<WidgetConnection> {
   const response = await axios.patch(
@@ -10282,24 +11512,32 @@ export async function widgetAdminConnectionsPartialUpdate(
   return response.data;
 }
 
-export async function widgetAdminConnectionsDestroy(id: string): Promise<any> {
+export async function widgetAdminConnectionsDestroy(id: number): Promise<any> {
   const response = await axios.delete(`/api/widget/admin/connections/${id}/`);
   return response.data;
 }
 
 export async function widgetAdminMessagesList(
-  ordering?: string,
+  conversationId?: string,
+  ordering?: '-id' | '-timestamp' | 'id' | 'timestamp',
   page?: number,
   pageSize?: number,
   search?: string,
+  sessionId?: string,
+  visitorId?: string,
 ): Promise<PaginatedWidgetMessageList> {
   const response = await axios.get(
     `/api/widget/admin/messages/${(() => {
       const parts = [
+        conversationId
+          ? 'conversation_id=' + encodeURIComponent(conversationId)
+          : null,
         ordering ? 'ordering=' + encodeURIComponent(ordering) : null,
         page ? 'page=' + encodeURIComponent(page) : null,
         pageSize ? 'page_size=' + encodeURIComponent(pageSize) : null,
         search ? 'search=' + encodeURIComponent(search) : null,
+        sessionId ? 'session_id=' + encodeURIComponent(sessionId) : null,
+        visitorId ? 'visitor_id=' + encodeURIComponent(visitorId) : null,
       ].filter(Boolean);
       return parts.length > 0 ? '?' + parts.join('&') : '';
     })()}`,
@@ -10308,14 +11546,16 @@ export async function widgetAdminMessagesList(
 }
 
 export async function widgetAdminMessagesRetrieve(
-  id: string,
+  id: number,
 ): Promise<WidgetMessage> {
   const response = await axios.get(`/api/widget/admin/messages/${id}/`);
   return response.data;
 }
 
-export async function widgetAdminMessagesSendCreate(): Promise<any> {
-  const response = await axios.post(`/api/widget/admin/messages/send/`);
+export async function widgetAdminMessagesSendCreate(
+  data: WidgetAdminSendMessageRequest,
+): Promise<WidgetMessage> {
+  const response = await axios.post(`/api/widget/admin/messages/send/`, data);
   return response.data;
 }
 
@@ -10378,6 +11618,27 @@ export async function widgetPublicSessionsRateCreate(data: {
 
 export async function widgetPublicUploadCreate(): Promise<any> {
   const response = await axios.post(`/api/widget/public/upload/`);
+  return response.data;
+}
+
+export async function notificationsDevicesList(): Promise<DevicePushToken[]> {
+  const response = await axios.get(`/notifications/devices/`);
+  return response.data;
+}
+
+export async function notificationsDevicesCreate(
+  data: DevicePushTokenRequest,
+): Promise<DevicePushToken> {
+  const response = await axios.post(`/notifications/devices/`, data);
+  return response.data;
+}
+
+export async function notificationsDevicesDestroy(
+  token?: string,
+): Promise<any> {
+  const response = await axios.delete(
+    `/notifications/devices/${token ? '?token=' + encodeURIComponent(token) : ''}`,
+  );
   return response.data;
 }
 

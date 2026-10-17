@@ -139,7 +139,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Validate token by fetching current user
       const userData = await authService.getCurrentUser();
       setToken(storedToken);
-      setUser(userData);
+      // The generated User now types feature_keys/permissions as arrays;
+      // AuthUser keeps the looser legacy shape the app reads at runtime.
+      setUser(userData as unknown as AuthUser);
 
       // Update React Query cache to prevent duplicate fetch
       queryClient.setQueryData(['userProfile'], userData);

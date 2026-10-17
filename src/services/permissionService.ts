@@ -392,8 +392,13 @@ export class PermissionService {
   private getUserPermissionCodenames(userProfile: User): string[] {
     const permissionCodenames: Set<string> = new Set();
     
-    if (userProfile.groups && userProfile.groups.length > 0) {
-      userProfile.groups.forEach(group => {
+    // Legacy Django `groups` are not part of the generated User type any more
+    // (the backend never returned them), but keep reading them defensively.
+    const legacyGroups = (userProfile as unknown as {
+      groups?: { permissions?: { codename: string }[] }[];
+    }).groups;
+    if (legacyGroups && legacyGroups.length > 0) {
+      legacyGroups.forEach(group => {
         if (group.permissions && group.permissions.length > 0) {
           group.permissions.forEach(permission => {
             permissionCodenames.add(permission.codename);
@@ -560,7 +565,7 @@ export class PermissionService {
     }
 
     try {
-      const parsed = JSON.parse(userProfile.all_permissions);
+      const parsed = JSON.parse(userProfile.all_permissions as unknown as string);
       
       // Validate that it's an object with boolean values
       if (typeof parsed === 'object' && parsed !== null) {

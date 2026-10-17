@@ -157,9 +157,16 @@ describe("TicketService", () => {
         ordering: "-created_at",
       });
 
+      // (assignedGroups, assignedTo, board, column, createdBy, ordering, page, pageSize, priority, search)
       expect(mockTicketsList).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
         "-created_at",
         2,
+        undefined,
         undefined,
         "bug"
       );

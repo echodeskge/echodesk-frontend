@@ -132,7 +132,7 @@ export default function UserStatistics({ className }: UserStatisticsProps) {
     let hasMore = true;
 
     while (hasMore) {
-      const response = await timeLogsList(undefined, page);
+      const response = await timeLogsList(undefined /* column */, undefined /* ordering */, page);
       allTimeLogs.push(...response.results);
 
       hasMore = !!response.next;

@@ -44,7 +44,10 @@ export default function ClientDetailPage() {
       setOrdersLoading(true)
       const response = await ecommerceAdminOrdersList(
         clientId,
-        undefined,
+        undefined, // createdAfter
+        undefined, // createdBefore
+        undefined, // hasTracking
+        undefined, // ordering
         1,
         100
       )

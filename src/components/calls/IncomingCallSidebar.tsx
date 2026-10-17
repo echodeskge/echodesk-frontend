@@ -118,9 +118,15 @@ export function IncomingCallSidebar() {
       if (matchedClient) {
         try {
           const ticketsResult = await ticketsList(
+            undefined, // assignedGroups
+            undefined, // assignedTo
+            undefined, // board
+            undefined, // column
+            undefined, // createdBy
             "-created_at",
             1,
             5,
+            undefined, // priority
             matchedClient.name
           );
           setRecentTickets(ticketsResult.results || []);

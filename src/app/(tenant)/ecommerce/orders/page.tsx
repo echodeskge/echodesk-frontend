@@ -40,11 +40,17 @@ export default function EcommerceOrdersPage() {
               | "refunded"
               | "shipped")
       const response = await ecommerceAdminOrdersList(
-        undefined,
-        undefined,
+        undefined, // client
+        undefined, // createdAfter
+        undefined, // createdBefore
+        undefined, // hasTracking
+        undefined, // ordering
         page,
         pageSize,
-        undefined, // payment provider
+        undefined, // paymentMethod
+        undefined, // paymentProvider
+        undefined, // paymentStatus
+        undefined, // paymentStatus_In
         searchQuery || undefined,
         statusParam
       )
