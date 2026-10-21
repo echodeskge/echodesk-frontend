@@ -8,7 +8,7 @@ export interface NavigationItem {
   id: string;
   label: string;
   icon: string;
-  requiredFeatureKey?: string; // Feature key from user's feature_keys array (optional - items without this are always visible)
+  requiredFeatureKey?: string | string[]; // Feature key (or any-of list) from user's feature_keys array (optional - items without this are always visible)
   excludeFeatureKey?: string; // Hide this item when user HAS this feature key (inverse of requiredFeatureKey)
   description: string;
   isPremium?: boolean; // Visual indicator for premium features
@@ -239,7 +239,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
       {
         id: "settings/item-lists",
         icon: "List",
-        requiredFeatureKey: "ticket_management",
+        requiredFeatureKey: ["ticket_management", "ecommerce_crm"],
       },
       {
         id: "settings/ticket-forms",
@@ -346,7 +346,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
 /**
  * Get required feature key for a navigation item
  */
-export function getRequiredFeatureKey(itemId: string): string | undefined {
+export function getRequiredFeatureKey(itemId: string): string | string[] | undefined {
   const item = navigationConfig.find(i => i.id === itemId);
   return item?.requiredFeatureKey;
 }

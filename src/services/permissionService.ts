@@ -5,7 +5,7 @@ export interface MenuItem {
   label: string;
   icon: string;
   description?: string;
-  requiredFeatureKey?: string; // Feature key required to access this menu item (optional - items without this are always visible)
+  requiredFeatureKey?: string | string[]; // Feature key (or any-of list) required to access this menu item (optional - items without this are always visible)
   isPremium?: boolean;
   isLocked?: boolean;
   children?: Omit<MenuItem, 'children'>[]; // Nested menu items (one level deep)
@@ -295,7 +295,7 @@ export class PermissionService {
       }
 
       // Check if user has the required feature key
-      return userFeatureKeys.includes(item.requiredFeatureKey);
+      return [item.requiredFeatureKey].flat().some((key) => userFeatureKeys.includes(key));
     }).map(item => {
       // If item has children, filter them recursively
       if (item.children && item.children.length > 0) {
@@ -305,7 +305,7 @@ export class PermissionService {
             if (!child.requiredFeatureKey) {
               return true;
             }
-            return userFeatureKeys.includes(child.requiredFeatureKey);
+            return [child.requiredFeatureKey].flat().some((key) => userFeatureKeys.includes(key));
           })
         };
       }

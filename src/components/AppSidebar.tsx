@@ -180,23 +180,27 @@ export function AppSidebar({
       <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
         <div className="flex items-center gap-3 px-4 py-2">
           {tenant?.theme?.logo_url && (
+            // Request a large enough source for wide logos (a 32px request
+            // gets downscaled by next/image and looks blurry), then cap the
+            // box so the name column keeps its space.
             <Image
               src={tenant.theme.logo_url}
               alt={tenant.name || "Logo"}
-              width={32}
-              height={32}
-              className="h-8 w-auto object-contain"
+              width={240}
+              height={80}
+              className="h-10 w-auto max-w-[96px] shrink-0 object-contain object-left"
             />
           )}
-          <div className="flex flex-col">
+          <div className="flex min-w-0 flex-1 flex-col">
             <h2
-              className="text-lg font-semibold"
+              className="truncate text-lg font-semibold leading-tight"
               style={{ color: tenant?.theme?.primary_color }}
+              title={tenant?.name || "EchoDesk"}
             >
               {tenant?.name || "EchoDesk"}
             </h2>
             {tenant?.domain && (
-              <p className="text-xs text-muted-foreground">
+              <p className="truncate text-xs text-muted-foreground" title={tenant.domain}>
                 {tenant.domain}
               </p>
             )}
