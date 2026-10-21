@@ -277,11 +277,13 @@ We do not sell Facebook or Instagram data, and we do not use it for advertising.
 
 **Retention**
 
-Conversation data is kept while the business's Page or account stays connected to EchoDesk and its subscription is active, so its team can see the conversation history. When the business disconnects the Page, removes EchoDesk in Facebook settings, or closes its account, the access tokens are revoked right away and the related conversation data is deleted within 30 days, unless the law requires us to keep it longer.
+- Messages are kept for as long as the business keeps the channel connected and its EchoDesk account active, or until the business deletes them, so its team can see the conversation history.
+- When a Page is disconnected or the EchoDesk app is removed in Facebook settings, the connection is deactivated and its access tokens are deleted immediately. Conversations already stored in EchoDesk are not deleted automatically; they are deleted on request (see below).
+- When a business closes its EchoDesk account, its conversation data is deleted within 30 days, unless the law requires us to keep it longer.
 
 **Deleting your data**
 
-You can remove EchoDesk at any time in Facebook Settings → Apps and Websites, which sends us a deletion request automatically, or email support@echodesk.ge. See [Data Deletion](/data-deletion) for the steps, what gets deleted and how to check the status of a request.
+You can remove EchoDesk at any time in Facebook Settings → Apps and Websites. We are notified automatically and immediately deactivate the connections and delete the access tokens tied to your Facebook account. To have stored messages and profile data deleted, email support@echodesk.ge with the name of the Page or Instagram account; we complete email requests within 30 days. See [Data Deletion](/data-deletion) for the steps, what gets deleted and how to check the status of a request.
 
 ## Cookies
 

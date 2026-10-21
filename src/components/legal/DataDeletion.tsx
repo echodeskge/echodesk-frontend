@@ -48,9 +48,14 @@ const CONTENT: Record<
               </li>
             </ol>
             <p className="text-gray-700 mb-4 leading-relaxed">
-              Removing the app sends EchoDesk a data deletion request automatically through Meta&apos;s data
-              deletion callback. Facebook then shows you a confirmation code and a link where you can check the
-              status of the request.
+              Removing the app notifies EchoDesk automatically through Meta&apos;s deauthorization and data
+              deletion callbacks. We immediately deactivate the Page and Instagram connections tied to your Facebook
+              account and delete their access tokens, so EchoDesk can no longer read or send messages for them.
+              Facebook then shows you a confirmation code and a link where you can check the status of the request.
+            </p>
+            <p className="text-gray-700 mb-4 leading-relaxed">
+              Removing the app does <strong>not</strong> by itself delete conversations already stored in the
+              business&apos;s EchoDesk inbox. To have those messages and profile data deleted, email us (Option 2).
             </p>
           </>
         ),
@@ -72,11 +77,21 @@ const CONTENT: Record<
         title: "What gets deleted",
         body: (
           <>
+            <p className="text-gray-700 mb-2 leading-relaxed">
+              <strong>When you remove EchoDesk in Facebook (Option 1), automatically and right away:</strong>
+            </p>
             <ul className="list-disc pl-6 space-y-2 mb-4 text-gray-700">
-              <li>The connection between EchoDesk and the Page or Instagram account, including the access tokens Meta issued. Tokens are revoked right away.</li>
+              <li>The connections between EchoDesk and the Pages or Instagram accounts tied to your Facebook account are deactivated.</li>
+              <li>The access tokens Meta issued for those connections are deleted.</li>
+              <li>Any data EchoDesk stored under the Facebook user ID in the request is deleted.</li>
+            </ul>
+            <p className="text-gray-700 mb-2 leading-relaxed">
+              <strong>When you email us (Option 2), or when the business closes its EchoDesk account:</strong>
+            </p>
+            <ul className="list-disc pl-6 space-y-2 mb-4 text-gray-700">
               <li>Messenger and Instagram messages, attachments, reactions and delivery or read receipts stored for that Page or account.</li>
               <li>Profile data received from Meta about the people in those conversations: names, profile pictures and Page- or Instagram-scoped user IDs.</li>
-              <li>For a request from an individual customer: the messages and profile data linked to your Facebook or Instagram user ID.</li>
+              <li>For a request from an individual customer: the messages and profile data linked to your Facebook or Instagram profile in the conversations with the Page you name.</li>
             </ul>
             <p className="text-gray-700 mb-4 leading-relaxed">
               We keep only what the law requires us to keep, such as billing records of the business&apos;s EchoDesk
@@ -90,8 +105,9 @@ const CONTENT: Record<
         title: "Timeline",
         body: (
           <p className="text-gray-700 mb-4 leading-relaxed">
-            Access is revoked immediately. The data listed above is deleted within <strong>30 days</strong> of the
-            request.
+            Removing the app revokes EchoDesk&apos;s access and deletes the access tokens immediately. Messages and
+            profile data are deleted within <strong>30 days</strong> of an email request or of the business closing
+            its EchoDesk account.
           </p>
         ),
       },
@@ -147,9 +163,15 @@ const CONTENT: Record<
               <li>Instagram-ში გადადით: პარამეტრები → ვებსაიტის ნებართვები → აპები და ვებსაიტები და წაშალეთ EchoDesk.</li>
             </ol>
             <p className="text-gray-700 mb-4 leading-relaxed">
-              აპის წაშლისას EchoDesk მონაცემების წაშლის მოთხოვნას ავტომატურად იღებს Meta-ს მონაცემთა წაშლის
-              callback-ით. ამის შემდეგ Facebook გაჩვენებთ დადასტურების კოდს და ბმულს, სადაც მოთხოვნის სტატუსს
-              შეამოწმებთ.
+              აპის წაშლისას EchoDesk ამის შესახებ ავტომატურად იგებს Meta-ს ავტორიზაციის გაუქმებისა და მონაცემთა
+              წაშლის callback-ებით. თქვენს Facebook ანგარიშთან დაკავშირებულ გვერდებსა და Instagram ანგარიშებთან
+              კავშირს მაშინვე ვთიშავთ და მათ წვდომის ტოკენებს ვშლით, ასე რომ EchoDesk მათ სახელით შეტყობინებებს ვეღარ
+              წაიკითხავს და ვეღარ გაგზავნის. ამის შემდეგ Facebook გაჩვენებთ დადასტურების კოდს და ბმულს, სადაც
+              მოთხოვნის სტატუსს შეამოწმებთ.
+            </p>
+            <p className="text-gray-700 mb-4 leading-relaxed">
+              აპის წაშლა თავისთავად <strong>არ</strong> შლის ბიზნესის EchoDesk-ის ინბოქსში უკვე შენახულ მიმოწერას.
+              ამ შეტყობინებებისა და პროფილის მონაცემების წასაშლელად მოგვწერეთ ელფოსტაზე (ვარიანტი 2).
             </p>
           </>
         ),
@@ -172,11 +194,21 @@ const CONTENT: Record<
         title: "რა იშლება",
         body: (
           <>
+            <p className="text-gray-700 mb-2 leading-relaxed">
+              <strong>EchoDesk-ის Facebook-ში წაშლისას (ვარიანტი 1) — ავტომატურად და მაშინვე:</strong>
+            </p>
             <ul className="list-disc pl-6 space-y-2 mb-4 text-gray-700">
-              <li>EchoDesk-სა და გვერდს ან Instagram ანგარიშს შორის კავშირი, მათ შორის Meta-ს მიერ გაცემული წვდომის ტოკენები. ტოკენები მაშინვე უქმდება.</li>
+              <li>ითიშება კავშირი EchoDesk-სა და თქვენს Facebook ანგარიშთან დაკავშირებულ გვერდებსა და Instagram ანგარიშებს შორის.</li>
+              <li>იშლება ამ კავშირებისთვის Meta-ს მიერ გაცემული წვდომის ტოკენები.</li>
+              <li>იშლება ის მონაცემები, რომლებიც EchoDesk-მა მოთხოვნაში მითითებული Facebook მომხმარებლის ID-ით შეინახა.</li>
+            </ul>
+            <p className="text-gray-700 mb-2 leading-relaxed">
+              <strong>ელფოსტით მოთხოვნისას (ვარიანტი 2) ან როცა ბიზნესი EchoDesk-ის ანგარიშს დახურავს:</strong>
+            </p>
+            <ul className="list-disc pl-6 space-y-2 mb-4 text-gray-700">
               <li>ამ გვერდისთვის ან ანგარიშისთვის შენახული Messenger-ისა და Instagram-ის შეტყობინებები, მიმაგრებული ფაილები, რეაქციები და მიწოდების ან წაკითხვის სტატუსები.</li>
               <li>Meta-სგან მიღებული პროფილის მონაცემები ამ საუბრების მონაწილეებზე: სახელები, პროფილის სურათები და გვერდის ან Instagram-ის ფარგლებში მინიჭებული მომხმარებლის ID-ები.</li>
-              <li>ცალკეული მომხმარებლის მოთხოვნისას: თქვენს Facebook ან Instagram მომხმარებლის ID-სთან დაკავშირებული შეტყობინებები და პროფილის მონაცემები.</li>
+              <li>ცალკეული მომხმარებლის მოთხოვნისას: თქვენს Facebook ან Instagram პროფილთან დაკავშირებული შეტყობინებები და პროფილის მონაცემები იმ გვერდთან მიმოწერაში, რომელსაც მიუთითებთ.</li>
             </ul>
             <p className="text-gray-700 mb-4 leading-relaxed">
               ვინახავთ მხოლოდ იმას, რისი შენახვაც კანონით გვევალება, მაგალითად ბიზნესის EchoDesk-ის გამოწერის
@@ -190,8 +222,9 @@ const CONTENT: Record<
         title: "ვადები",
         body: (
           <p className="text-gray-700 mb-4 leading-relaxed">
-            წვდომა მაშინვე უქმდება. ზემოთ ჩამოთვლილი მონაცემები მოთხოვნიდან <strong>30 დღის</strong> განმავლობაში
-            იშლება.
+            აპის წაშლისას EchoDesk-ის წვდომა მაშინვე უქმდება და წვდომის ტოკენები იშლება. შეტყობინებები და პროფილის
+            მონაცემები იშლება ელფოსტით მოთხოვნიდან ან ბიზნესის მიერ EchoDesk-ის ანგარიშის დახურვიდან{" "}
+            <strong>30 დღის</strong> განმავლობაში.
           </p>
         ),
       },

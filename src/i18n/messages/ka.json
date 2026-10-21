@@ -5054,7 +5054,7 @@
     },
     "dataDeletion": {
       "title": "მონაცემების წაშლა | EchoDesk",
-      "description": "როგორ წაშალოთ Facebook-ისა და Instagram-ის მონაცემები, რომლებსაც EchoDesk ამუშავებს: წაშალეთ აპი Facebook-ის პარამეტრებში ან მოგვწერეთ support@echodesk.ge-ზე. წაიშლება 30 დღეში.",
+      "description": "როგორ წაშალოთ Facebook-ისა და Instagram-ის მონაცემები, რომლებსაც EchoDesk ამუშავებს: აპის Facebook-ის პარამეტრებში წაშლა წვდომას მაშინვე აუქმებს; შენახული შეტყობინებების 30 დღეში წასაშლელად მოგვწერეთ support@echodesk.ge-ზე.",
       "keywords": "EchoDesk მონაცემების წაშლა, Facebook მონაცემების წაშლა, Instagram მონაცემების წაშლა",
       "ogTitle": "მონაცემების წაშლა",
       "ogSubtitle": "Facebook-ისა და Instagram-ის მონაცემების წაშლის ინსტრუქცია",

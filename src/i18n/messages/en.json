@@ -5211,7 +5211,7 @@
     },
     "dataDeletion": {
       "title": "Data Deletion | EchoDesk",
-      "description": "How to delete the Facebook and Instagram data EchoDesk processes: remove the app in Facebook settings or email support@echodesk.ge. Deleted within 30 days.",
+      "description": "How to delete the Facebook and Instagram data EchoDesk processes: removing the app in Facebook settings revokes access immediately; email support@echodesk.ge to delete stored messages within 30 days.",
       "keywords": "EchoDesk data deletion, Facebook data deletion, Instagram data deletion",
       "ogTitle": "Data Deletion",
       "ogSubtitle": "Facebook & Instagram data deletion instructions",

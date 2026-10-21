@@ -30,6 +30,9 @@ describe("/data-deletion", () => {
     expect(html).toContain("support@echodesk.ge");
     expect(html).toContain("30 days");
     expect(html).toContain("Checking the status of a request");
+    // Removing the app only revokes access; stored messages are deleted on request.
+    expect(html).toContain("does <strong>not</strong> by itself delete conversations");
+    expect(html).toMatch(/30 days<\/strong> of an email request/);
     // Georgian version is in the HTML too (hidden until toggled).
     expect(html).toContain("Facebook-ისა და Instagram-ის მონაცემების წაშლა");
   });
@@ -59,6 +62,9 @@ describe("/privacy-policy", () => {
     expect(html).toContain("only when the business enables");
     expect(html).toContain('href="/data-deletion"');
     expect(html).toContain("Facebook, Instagram და Messenger");
+    // Retention matches what the backend does: app removal revokes tokens, no automatic message deletion.
+    expect(html).toContain("Conversations already stored in EchoDesk are not deleted automatically");
+    expect(html).not.toContain("related conversation data is deleted within 30 days");
   });
 
   it("toggles between Georgian (default) and English", async () => {
