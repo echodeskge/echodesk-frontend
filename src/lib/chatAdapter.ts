@@ -225,6 +225,29 @@ export function replyPreviewLabel(msg: MessageType): string {
 }
 
 /**
+ * True for a business-side message EchoDesk sent on its own (auto-reply, AI
+ * assistant, rating request): sent through EchoDesk (`source: 'echodesk'`)
+ * but with no staff author. Only trusted when the payload actually carries
+ * `sent_by` — a frame that omits the field says nothing about the author.
+ * An explicit `is_automated` / `is_ai` flag from the API wins.
+ */
+export function isAutomatedSend(msg: {
+  is_from_business?: boolean;
+  source?: string;
+  sent_by?: unknown;
+  sent_by_name?: string | null;
+  is_automated?: boolean;
+  is_ai?: boolean;
+}): boolean {
+  if (!msg.is_from_business) return false;
+  if (msg.is_automated === true || msg.is_ai === true) return true;
+  if (msg.is_automated === false || msg.is_ai === false) return false;
+  if (msg.source !== 'echodesk') return false;
+  if (!Object.prototype.hasOwnProperty.call(msg, 'sent_by')) return false;
+  return msg.sent_by == null && !msg.sent_by_name;
+}
+
+/**
  * Converts a UnifiedMessage to a MessageType (shared conversion logic).
  * The senderId is determined by the caller since the context differs.
  */
@@ -268,6 +291,9 @@ function convertMessageFields(msg: UnifiedMessage, senderId: string): MessageTyp
     source: msg.source,
     isEcho: msg.is_echo,
     sentByName: msg.sent_by_name,
+    messagingType: msg.messaging_type || undefined,
+    messageTag: msg.message_tag || undefined,
+    isAutomated: isAutomatedSend(msg),
     isEdited: msg.is_edited,
     editedAt: msg.edited_at ? parseTimestamp(msg.edited_at) : undefined,
     originalText: msg.original_text,
@@ -319,6 +345,13 @@ interface UnifiedMessage {
   is_echo?: boolean;
   // Staff member who sent this message via EchoDesk
   sent_by_name?: string;
+  // Staff user id (FB/IG serializers; null for automated sends)
+  sent_by?: number | string | null;
+  is_automated?: boolean;
+  is_ai?: boolean;
+  // Meta send metadata (FB/IG): RESPONSE / MESSAGE_TAG / UPDATE + the tag
+  messaging_type?: string | null;
+  message_tag?: string | null;
   is_edited?: boolean;
   edited_at?: string;
   original_text?: string;

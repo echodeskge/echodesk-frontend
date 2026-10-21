@@ -95,6 +95,14 @@ export interface MessageType {
   isEcho?: boolean
   // Staff member who sent this message via EchoDesk
   sentByName?: string
+  // Meta send metadata (Facebook / Instagram): `messaging_type` used for the
+  // send (RESPONSE / MESSAGE_TAG / UPDATE) and the tag, "HUMAN_AGENT" when a
+  // person replied after the 24h window.
+  messagingType?: string
+  messageTag?: string
+  // Sent by EchoDesk itself (auto-reply, AI assistant, rating request) —
+  // not by a person.
+  isAutomated?: boolean
   isEdited?: boolean
   editedAt?: Date
   originalText?: string

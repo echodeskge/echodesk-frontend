@@ -56,6 +56,19 @@ import { TikTokConnection } from "@/components/TikTokConnection";
 import { TelegramConnection, TelegramIcon } from "@/components/TelegramConnection";
 import { WidgetConnection } from "@/components/WidgetConnection";
 
+// Scopes requested by the Facebook Login dialog (backend facebook_oauth_start)
+// with the one-line purpose shown before connecting.
+const CONNECT_PERMISSIONS = [
+  { scope: "pages_show_list", key: "pages_show_list" },
+  { scope: "pages_messaging", key: "pages_messaging" },
+  { scope: "pages_manage_metadata", key: "pages_manage_metadata" },
+  { scope: "pages_read_engagement", key: "pages_read_engagement" },
+  { scope: "instagram_basic", key: "instagram_basic" },
+  { scope: "instagram_manage_messages", key: "instagram_manage_messages" },
+  { scope: "business_management", key: "business_management" },
+  { scope: "public_profile, email", key: "public_profile_email" },
+] as const;
+
 // WhatsApp icon component
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -411,8 +424,25 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
                       <strong>{t("note")}:</strong> {t("noteAdmin")}
                     </AlertDescription>
                   </Alert>
+
+                  {/* What each requested Meta permission is used for */}
+                  <h4 className="font-medium mt-4 mb-2">{t("connectPermissions.title")}</h4>
+                  <ul className="space-y-1.5 text-sm text-muted-foreground" data-testid="connect-permissions">
+                    {CONNECT_PERMISSIONS.map(({ scope, key }) => (
+                      <li key={scope}>
+                        <code className="rounded bg-muted px-1 py-0.5 text-xs text-foreground">{scope}</code>{" "}
+                        — {t(`connectPermissions.${key}`)}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
+
+              {/* Meta Human Agent: replies up to 7 days, people only */}
+              <Alert className="mt-4" data-testid="human-agent-note">
+                <Clock className="h-4 w-4" />
+                <AlertDescription>{t("humanAgentNote")}</AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
 

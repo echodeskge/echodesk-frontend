@@ -1197,7 +1197,11 @@
       "cancel": "Cancel",
       "create": "Create",
       "update": "Update"
-    }
+    },
+    "humanAgentReply": "Human agent reply",
+    "humanAgentReplyHint": "Sent by a person after the 24-hour window, with Meta's Human Agent tag.",
+    "automated": "Automated",
+    "automatedHint": "Sent automatically by EchoDesk (auto-reply, AI assistant or rating request), not by a person."
   },
   "ratingStatistics": {
     "title": "Rating Statistics",
@@ -2461,7 +2465,19 @@
     "removePageDescription": "This page is no longer connected. Removing it takes it off this list and deletes the messages received through it. This can't be undone.",
     "cancel": "Cancel",
     "pageRemoved": "Page removed",
-    "pageRemoveFailed": "Could not remove the page"
+    "pageRemoveFailed": "Could not remove the page",
+    "connectPermissions": {
+      "title": "What EchoDesk asks Facebook for",
+      "business_management": "Find the Pages and Instagram accounts in your Business portfolio.",
+      "pages_show_list": "List the Pages you manage so you can choose which ones to connect.",
+      "pages_manage_metadata": "Subscribe the Page to message webhooks so new messages reach EchoDesk.",
+      "pages_messaging": "Read and reply to Messenger conversations from your team inbox.",
+      "pages_read_engagement": "Read the Page's name and picture and the names of people who message it.",
+      "instagram_basic": "Read the Instagram professional account linked to the Page.",
+      "instagram_manage_messages": "Read and reply to Instagram Direct messages.",
+      "public_profile_email": "Identify you, the person connecting the Page (name and email)."
+    },
+    "humanAgentNote": "Agents can reply up to 7 days after the customer's last message. After the first 24 hours a reply is sent by a person with Meta's Human Agent tag — EchoDesk never uses it for automated messages."
   },
   "timeTracking": {
     "title": "Time Tracking",
@@ -3313,7 +3329,8 @@
         "title": "Legal",
         "privacy": "Privacy Policy",
         "terms": "Terms of Service",
-        "refund": "Refund Policy"
+        "refund": "Refund Policy",
+        "dataDeletion": "Data Deletion"
       },
       "contact": {
         "title": "Contact",
@@ -5191,6 +5208,14 @@
         "title": "EchoDesk",
         "description": "Run your whole business from one platform."
       }
+    },
+    "dataDeletion": {
+      "title": "Data Deletion | EchoDesk",
+      "description": "How to delete the Facebook and Instagram data EchoDesk processes: remove the app in Facebook settings or email support@echodesk.ge. Deleted within 30 days.",
+      "keywords": "EchoDesk data deletion, Facebook data deletion, Instagram data deletion",
+      "ogTitle": "Data Deletion",
+      "ogSubtitle": "Facebook & Instagram data deletion instructions",
+      "ogTag": "Legal"
     }
   },
   "cookie": {
@@ -5594,7 +5619,11 @@
       "invalidMessage": "Invalid message",
       "failedToAssign": "Failed to assign",
       "failedToStartSession": "Failed to start session",
-      "outsideMessagingWindow": "This customer last wrote more than 24 hours ago, and Facebook/Instagram no longer allow a reply. You can answer once they write again."
+      "outsideMessagingWindow": "Meta only allows replies within 7 days of the customer's last message (24 hours without Human Agent). You can reply once they write again.",
+      "humanAgentWindowBanner": "The 24-hour window has closed. You can still reply as a human agent for {hours} more hours. Replies are sent with Meta's Human Agent tag.",
+      "humanAgentWindowBannerNoHours": "The 24-hour window has closed. You can still reply as a human agent within 7 days of the customer's last message. Replies are sent with Meta's Human Agent tag.",
+      "messagingWindowClosedBanner": "Meta only allows replies within 7 days of the customer's last message (24 hours without Human Agent). You can reply once they write again.",
+      "placeholderWindowClosed": "Replies are closed for this conversation"
     },
     "header": {
       "assignToMe": "Assign to me",

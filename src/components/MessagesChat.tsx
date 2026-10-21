@@ -57,6 +57,9 @@ interface UnifiedMessage {
   source?: 'echodesk' | 'cloud_api' | 'business_app' | 'synced' | 'facebook_app' | 'messenger_app' | 'instagram_app';
   is_echo?: boolean;
   sent_by_name?: string;
+  sent_by?: number | string | null;
+  messaging_type?: string | null;
+  message_tag?: string | null;
   subject?: string;
   body_html?: string;
   reply_to_message_id?: string;
@@ -638,6 +641,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           source: msg.source,
           is_echo: msg.is_echo,
           sent_by_name: msg.sent_by_name,
+          // Only forward `sent_by` when the API sent it — its absence must
+          // not read as "no author" (see isAutomatedSend).
+          ...("sent_by" in msg ? { sent_by: msg.sent_by } : {}),
+          messaging_type: msg.messaging_type,
+          message_tag: msg.message_tag,
           reply_to_message_id: msg.reply_to_message_id,
           reply_to_id: msg.reply_to_id,
         }));
@@ -680,6 +688,11 @@ export default function MessagesChat({ platforms }: MessagesChatProps) {
           source: msg.source,
           is_echo: msg.is_echo,
           sent_by_name: msg.sent_by_name,
+          // Only forward `sent_by` when the API sent it — its absence must
+          // not read as "no author" (see isAutomatedSend).
+          ...("sent_by" in msg ? { sent_by: msg.sent_by } : {}),
+          messaging_type: msg.messaging_type,
+          message_tag: msg.message_tag,
         }));
 
         return convertUnifiedMessagesToMessageType(unifiedMessages);

@@ -248,6 +248,41 @@ CONTACTING Echodesk.ge
 
 For questions related to the Privacy Policy and for obtaining additional information, please contact us at info@echodesk.ge.
 
+## Facebook, Instagram and Messenger
+
+Businesses that use EchoDesk can connect their Facebook Pages and Instagram professional accounts through Meta's official login. This section explains what we do with that data. The business that connects its Page is the data controller for its customers' conversations; EchoDesk processes them on the business's behalf.
+
+**Data we collect**
+
+- Page and account details: Page name, Page ID, linked Instagram account ID and username, and the access token Meta issues for the connection.
+- Messages sent to the connected Page or Instagram account and the replies sent from EchoDesk: text, attachments (images, video, audio, files), timestamps, delivery and read status, reactions and reply references.
+- Basic public profile of the people who message the business: name, profile picture and the Page-scoped or Instagram-scoped user ID.
+- The name and email of the person who connects the Page (from the public_profile and email permissions).
+
+We only access Pages and accounts the business explicitly authorizes, and only the conversations sent to them. We do not access anyone's personal inbox.
+
+**Why we use it**
+
+- To show the business's Messenger and Instagram conversations in its EchoDesk inbox so its team can read and answer them.
+- To send the replies the business's agents write. Within 24 hours of the customer's last message a reply is sent as a standard response. Up to 7 days after that message, where Meta has approved the Human Agent feature, a reply typed by a person is sent with Meta's HUMAN_AGENT message tag. That tag is never used for automated messages.
+- To run the automations the business turns on: an auto-reply, a satisfaction-rating request after a conversation, and notifications for its team.
+
+**AI features**
+
+Message content is processed by AI only when the business enables EchoDesk's AI assistant for its workspace. In that case the content of a conversation is sent to our AI model provider to draft or send an answer, and only for that purpose. The provider acts as our processor and may not use the data to train its models. Messages sent by the AI assistant are marked as automated in the inbox.
+
+**Sharing**
+
+We do not sell Facebook or Instagram data, and we do not use it for advertising. It is shared only with the infrastructure providers that host EchoDesk (under data processing agreements), with the AI provider when the business enables AI features, and when required by law.
+
+**Retention**
+
+Conversation data is kept while the business's Page or account stays connected to EchoDesk and its subscription is active, so its team can see the conversation history. When the business disconnects the Page, removes EchoDesk in Facebook settings, or closes its account, the access tokens are revoked right away and the related conversation data is deleted within 30 days, unless the law requires us to keep it longer.
+
+**Deleting your data**
+
+You can remove EchoDesk at any time in Facebook Settings → Apps and Websites, which sends us a deletion request automatically, or email support@echodesk.ge. See [Data Deletion](/data-deletion) for the steps, what gets deleted and how to check the status of a request.
+
 ## Cookies
 
 EchoDesk uses the following cookies:
