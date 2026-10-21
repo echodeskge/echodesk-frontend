@@ -24,6 +24,7 @@ vi.mock("@/hooks/api/useSocial", () => ({
   useSocialSettings: () => ({ data: { chat_assignment_enabled: false } }),
   useAssignChat: () => ({ mutateAsync: vi.fn() }),
   useStartSession: () => ({ mutateAsync: vi.fn() }),
+  useMessagingWindow: () => ({ data: undefined, refetch: vi.fn() }),
 }));
 
 vi.mock("@/hooks/useTypingWebSocket", () => ({

@@ -3106,8 +3106,17 @@ export function useArchiveAllConversations() {
 // ============================================================================
 
 export interface MessagingWindowStatus {
+  /** Standard 24h window (any message type allowed). */
   window_open: boolean;
   hours_remaining: number | null;
+  /**
+   * FB / IG only: past 24h a human agent may still reply for up to 7 days
+   * with Meta's HUMAN_AGENT tag (workspaces approved for Human Agent).
+   */
+  human_agent_window_open?: boolean;
+  human_agent_hours_remaining?: number | null;
+  /** `window_open || human_agent_window_open`. */
+  can_reply?: boolean;
   last_user_message_at?: string;
   hours_passed?: number;
   message?: string;
@@ -3130,6 +3139,9 @@ export function useMessagingWindow(
     enabled: options?.enabled ?? true,
     staleTime: 60 * 1000, // Fresh for 1 minute
     refetchInterval: 60 * 1000, // Re-check every minute
+    // The window closes on its own clock — re-check when the agent comes
+    // back to the tab instead of trusting a reading from hours ago.
+    refetchOnWindowFocus: true,
   });
 }
 

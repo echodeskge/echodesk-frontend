@@ -25,6 +25,13 @@ const nextConfig: NextConfig = {
   // DigitalOcean App Platform optimization
   output: 'standalone',
 
+  // /privacy-policy reads its markdown from public/ on the server (so the
+  // text is in the HTML for crawlers); ship those files with the route even
+  // where public/ isn't copied next to the server.
+  outputFileTracingIncludes: {
+    '/privacy-policy': ['./public/privacy-english.md', './public/privacy-georgian.md'],
+  },
+
   // Disable React Strict Mode for better drag and drop performance
   reactStrictMode: false,
 

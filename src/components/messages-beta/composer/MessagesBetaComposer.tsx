@@ -13,9 +13,11 @@ import {
   useState,
 } from "react";
 import {
+  Clock,
   FileText,
   Image as ImageIcon,
   Loader2,
+  Lock,
   Paperclip,
   Reply,
   Send,
@@ -33,6 +35,7 @@ import { QuickReplySelector } from "@/components/social/QuickReplySelector";
 import { QuickReplySuggestions } from "./QuickReplySuggestions";
 import {
   useAssignChat,
+  useMessagingWindow,
   useSocialSettings,
   useStartSession,
 } from "@/hooks/api/useSocial";
@@ -43,6 +46,11 @@ import { TextMessageSchema } from "@/components/chat/schemas/text-message-schema
 
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import type { ConversationRow } from "../store/types";
+import {
+  isMetaMessagingPlatform,
+  isOutsideWindowError,
+  windowBanner,
+} from "./messagingWindowGate";
 
 interface Props {
   conversation: ConversationRow;
@@ -108,6 +116,21 @@ export function MessagesBetaComposer({ conversation }: Props) {
   const canSendMessages = !assignmentEnabled || (isAssignedToMe && isInSession);
   const assignChat = useAssignChat();
   const startSession = useStartSession();
+
+  // --- Meta reply window (Messenger / Instagram). ---
+  // Same ids the send path uses: `fb_<page>_<psid>` / `ig_<account>_<igsid>`.
+  const [, windowAccountId = "", ...windowTargetParts] = conversation.id.split("_");
+  const windowTargetId = windowTargetParts.join("_");
+  const isMetaThread = isMetaMessagingPlatform(conversation.platform);
+  const messagingWindow = useMessagingWindow(
+    conversation.platform,
+    windowTargetId,
+    windowAccountId,
+    { enabled: isMetaThread && !!windowTargetId && !!windowAccountId }
+  );
+  const refetchWindow = messagingWindow.refetch;
+  const banner = windowBanner(conversation.platform, messagingWindow.data);
+  const windowClosed = banner.kind === "closed";
 
   const [text, setText] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -277,7 +300,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
   const submit = useCallback(async () => {
     const message = text.trim();
     if (!message && files.length === 0) return;
-    if (sending) return;
+    if (sending || windowClosed) return;
 
     // Text-only sends go through the same zod schema legacy uses
     // (chat/schemas/text-message-schema). When attachments are present,
@@ -310,21 +333,38 @@ export function MessagesBetaComposer({ conversation }: Props) {
       sendTypingStop();
     } catch (err: any) {
       const rawError: string = err?.response?.data?.error || err?.message || "";
-      // Meta refuses replies sent more than 24 hours after the customer's last
-      // message ("(#10) This message is sent outside of allowed window"). Say
-      // that plainly instead of showing Meta's developer-facing text.
-      const outsideWindow = /outside of allowed window|\(#10\)/i.test(rawError);
-      const errMsg = outsideWindow ? t("outsideMessagingWindow") : rawError || t("failedToSend");
+      // Meta refuses replies outside its window (24h, or 7 days with the
+      // Human Agent tag). The backend answers 400 `outside_messaging_window`
+      // (older backends pass Meta's "(#10) … outside of allowed window"
+      // through). Say that plainly instead of Meta's developer-facing text.
+      const errMsg = isOutsideWindowError(err)
+        ? t("outsideMessagingWindow")
+        : rawError || t("failedToSend");
       console.error("[messages-beta] send failed:", err);
       toast.error(errMsg);
     } finally {
       setSending(false);
+      // Re-read the window after every send attempt: a refused send means
+      // it closed under us; a successful one keeps the banner current.
+      if (isMetaThread) void refetchWindow();
       // The textarea is disabled while sending, which drops focus — return
       // it so the agent can keep typing without clicking back into the box.
       // rAF waits for React to re-enable the textarea first.
       requestAnimationFrame(() => textareaRef.current?.focus());
     }
-  }, [conversation, text, files, sending, replyingTo, setReplyingTo, sendTypingStop, t]);
+  }, [
+    conversation,
+    text,
+    files,
+    sending,
+    replyingTo,
+    setReplyingTo,
+    sendTypingStop,
+    t,
+    isMetaThread,
+    refetchWindow,
+    windowClosed,
+  ]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -468,6 +508,34 @@ export function MessagesBetaComposer({ conversation }: Props) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* Meta reply window: Human Agent period, or closed for good */}
+      {banner.kind === "humanAgent" && (
+        <div
+          role="status"
+          data-testid="human-agent-window-banner"
+          className="flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          <Clock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <p>
+            {/* Under an hour left reads oddly as "0 more hours" — fall back
+                to the 7-day wording then. */}
+            {banner.hoursRemaining
+              ? t("humanAgentWindowBanner", { hours: banner.hoursRemaining })
+              : t("humanAgentWindowBannerNoHours")}
+          </p>
+        </div>
+      )}
+      {windowClosed && (
+        <div
+          role="alert"
+          data-testid="messaging-window-closed-banner"
+          className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+        >
+          <Lock className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <p>{t("messagingWindowClosedBanner")}</p>
+        </div>
+      )}
+
       {/* Reply preview */}
       {replyingTo && platformSupportsReply && (
         <div className="flex items-start justify-between gap-2 rounded-md border-l-2 border-primary bg-muted/40 px-3 py-2 text-xs">
@@ -565,7 +633,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           variant="ghost"
           size="icon"
           onClick={() => fileInputRef.current?.click()}
-          disabled={sending || conversation.platform === "widget"}
+          disabled={sending || windowClosed || conversation.platform === "widget"}
           aria-label={t("attachFile")}
           title={
             conversation.platform === "widget"
@@ -612,16 +680,22 @@ export function MessagesBetaComposer({ conversation }: Props) {
           }}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          placeholder={isDragOver ? t("placeholderDrop") : t("placeholder")}
+          placeholder={
+            windowClosed
+              ? t("placeholderWindowClosed")
+              : isDragOver
+                ? t("placeholderDrop")
+                : t("placeholder")
+          }
           className="resize-none overflow-y-auto min-h-[40px] max-h-[160px]"
           rows={1}
-          disabled={sending}
+          disabled={sending || windowClosed}
         />
 
         <Button
           type="button"
           onClick={() => void submit()}
-          disabled={sending || (!text.trim() && files.length === 0)}
+          disabled={sending || windowClosed || (!text.trim() && files.length === 0)}
           className="shrink-0"
           aria-label={t("sendMessage")}
         >

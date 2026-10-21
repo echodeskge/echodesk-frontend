@@ -11,7 +11,7 @@
  */
 import { parseTimestamp } from "@/lib/parseTimestamp";
 import { consumePendingMedia } from "@/lib/pendingMedia";
-import { convertAttachments, extractLocation } from "@/lib/chatAdapter";
+import { convertAttachments, extractLocation, isAutomatedSend } from "@/lib/chatAdapter";
 
 import { isInEndSessionBlockWindow } from "../end-session-block";
 
@@ -166,6 +166,9 @@ function frameToMessage(messageData: Record<string, any>): MessageType {
     source: messageData.source,
     isEcho: messageData.is_echo,
     sentByName: messageData.sent_by || messageData.sent_by_name,
+    messagingType: messageData.messaging_type || undefined,
+    messageTag: messageData.message_tag || undefined,
+    isAutomated: isAutomatedSend({ ...messageData, is_from_business: isFromBusiness }),
     // Reply-quote thread-through. Map the API-provided reply text when present;
     // appendMessage resolves it against the loaded thread when only the id is
     // sent (the common case for live frames).

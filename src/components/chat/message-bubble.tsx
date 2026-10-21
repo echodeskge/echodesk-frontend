@@ -1,8 +1,9 @@
 import { forwardRef, memo, useContext } from "react"
+import { useTranslations } from "next-intl"
 
 import type { MessageType, UserType } from "@/components/chat/types"
 import { formatDistanceToNow } from "date-fns"
-import { Pencil, Trash2, Smartphone, History, Reply, MessageCircle, Instagram, Facebook } from "lucide-react"
+import { Pencil, Trash2, Smartphone, History, Reply, MessageCircle, Instagram, Facebook, Bot, UserCheck } from "lucide-react"
 import {
   Tooltip,
   TooltipContent,
@@ -165,6 +166,50 @@ function MessageAuthorBadge({ sentByName }: { sentByName?: string }) {
   )
 }
 
+/**
+ * How a Messenger / Instagram reply went out: a person replying after the
+ * 24h window with Meta's HUMAN_AGENT tag, or an automated EchoDesk send
+ * (auto-reply, AI assistant, rating request). Nothing for a regular reply.
+ */
+export function MessageSendKindBadge({ message }: { message: MessageType }) {
+  const t = useTranslations("chat")
+  const kind =
+    message.messageTag === "HUMAN_AGENT"
+      ? "humanAgent"
+      : message.isAutomated
+        ? "automated"
+        : null
+  if (!kind) return null
+
+  const Icon = kind === "humanAgent" ? UserCheck : Bot
+  const label = kind === "humanAgent" ? t("humanAgentReply") : t("automated")
+  const hint = kind === "humanAgent" ? t("humanAgentReplyHint") : t("automatedHint")
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            data-testid={kind === "humanAgent" ? "human-agent-label" : "automated-label"}
+            className={cn(
+              "inline-flex items-center gap-0.5 rounded-full border px-1.5 py-px text-[10px] font-medium leading-4 cursor-default",
+              kind === "humanAgent"
+                ? "border-amber-300/70 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200"
+                : "border-border bg-muted text-muted-foreground"
+            )}
+          >
+            <Icon className="h-2.5 w-2.5" />
+            {label}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs max-w-[220px]">
+          {hint}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
 const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
   function MessageBubble(
     { sender, message, isByCurrentUser, platform, isHighlighted, searchQuery, onQuoteClick },
@@ -180,6 +225,8 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
 
   // Check if this is an email message
   const isEmail = message.platform === 'email' || platform === 'email'
+  const effectivePlatform = platform ?? message.platform
+  const isMetaMessaging = effectivePlatform === 'facebook' || effectivePlatform === 'instagram'
 
   // Handle reply action
   const handleReply = () => {
@@ -287,6 +334,11 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
           {/* Author name for business-side messages */}
           {isByCurrentUser && message.sentByName && (
             <MessageAuthorBadge sentByName={message.sentByName} />
+          )}
+
+          {/* Human Agent tag / automated send (Messenger + Instagram) */}
+          {isByCurrentUser && isMetaMessaging && (
+            <MessageSendKindBadge message={message} />
           )}
 
           {/* Source indicator for external app messages (all platforms) */}

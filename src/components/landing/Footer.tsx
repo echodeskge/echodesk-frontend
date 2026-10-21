@@ -126,6 +126,11 @@ export function Footer() {
                   {t('legal.refund')}
                 </Link>
               </li>
+              <li>
+                <Link href="/data-deletion" className="text-muted-foreground hover:text-secondary transition-colors">
+                  {t('legal.dataDeletion')}
+                </Link>
+              </li>
             </ul>
           </div>
 
