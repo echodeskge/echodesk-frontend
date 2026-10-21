@@ -34,7 +34,20 @@ export const ticketKeys = {
 export function useTickets(filters?: Record<string, any>) {
   return useQuery({
     queryKey: ticketKeys.list(filters || {}),
-    queryFn: () => ticketsList(...(filters ? [filters.assignedGroups, filters.assignedTo, filters.column, filters.createdBy, filters.ordering, filters.page, filters.priority, filters.search, filters.tags] : [])),
+    queryFn: () =>
+      ticketsList(
+        filters?.assignedGroups,
+        filters?.assignedTo,
+        filters?.board,
+        filters?.column,
+        filters?.createdBy,
+        filters?.ordering,
+        filters?.page,
+        filters?.pageSize,
+        filters?.priority,
+        filters?.search,
+        filters?.tags,
+      ),
     staleTime: 30 * 1000, // Consider data fresh for 30 seconds (tickets change frequently)
     gcTime: 2 * 60 * 1000, // Keep in cache for 2 minutes
   });

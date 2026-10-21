@@ -28,6 +28,9 @@ interface UserTableProps {
   onSendNewPassword: (user: User) => void;
   onToggleStaff: (userId: number, isStaff: boolean) => void;
   showStaffColumn?: boolean;
+  /** Only superusers may change is_staff (POST /api/users/{id}/set-staff/). */
+  canToggleStaff?: boolean;
+  currentUserId?: number;
   pagination: PaginationInfo;
   onPageChange: (page: number) => void;
 }
@@ -44,6 +47,8 @@ export default function UserTable({
   onSendNewPassword,
   onToggleStaff,
   showStaffColumn = false,
+  canToggleStaff = false,
+  currentUserId,
   pagination,
   onPageChange,
 }: UserTableProps) {
@@ -223,6 +228,7 @@ export default function UserTable({
                       <td className="p-3 text-center">
                         <Checkbox
                           checked={user.is_staff || false}
+                          disabled={!canToggleStaff || user.id === currentUserId}
                           onCheckedChange={(checked) =>
                             onToggleStaff(user.id, checked as boolean)
                           }

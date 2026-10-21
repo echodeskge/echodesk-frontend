@@ -234,8 +234,12 @@ describe("AuthService", () => {
       const response: ChangePasswordReturn = { message: "Password changed" };
       mockChangeTenantPassword.mockResolvedValue(response);
 
-      await authService.changePassword();
+      await authService.changePassword({ old_password: "old", new_password: "new-pass-123" });
 
+      expect(mockChangeTenantPassword).toHaveBeenCalledWith({
+        old_password: "old",
+        new_password: "new-pass-123",
+      });
       expect(authService.isAuthenticated()).toBe(false);
     });
   });

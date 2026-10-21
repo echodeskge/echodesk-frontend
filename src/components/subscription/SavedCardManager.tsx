@@ -65,7 +65,7 @@ export const SavedCardManager: React.FC = () => {
   // Fetch saved cards (now returns an array)
   const { data: savedCards, isLoading, error } = useQuery<SavedCard[]>({
     queryKey: ['savedCards'],
-    queryFn: getSavedCard,
+    queryFn: async () => (await getSavedCard()) as SavedCard[],
     retry: false,
   });
 

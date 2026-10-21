@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl"
 import { ecommerceAdminOrdersList } from "@/api/generated"
 import axiosInstance from "@/api/axios"
 import { toast } from "sonner"
+import { getApiErrorMessage } from "@/lib/utils"
+import type { BulkUpdateStatusResponse } from "@/api/generated/interfaces"
 import { OrderListItem } from "./_types"
 import { OrdersTable } from "./_components/orders-table"
 import { OrdersBulkActionsBar } from "./_components/orders-bulk-actions-bar"
@@ -40,11 +42,17 @@ export default function EcommerceOrdersPage() {
               | "refunded"
               | "shipped")
       const response = await ecommerceAdminOrdersList(
-        undefined,
-        undefined,
+        undefined, // client
+        undefined, // createdAfter
+        undefined, // createdBefore
+        undefined, // hasTracking
+        undefined, // ordering
         page,
         pageSize,
-        undefined, // payment provider
+        undefined, // paymentMethod
+        undefined, // paymentProvider
+        undefined, // paymentStatus
+        undefined, // paymentStatus_In
         searchQuery || undefined,
         statusParam
       )
@@ -106,8 +114,8 @@ export default function EcommerceOrdersPage() {
           toast.success("Payment initiated successfully")
           await fetchOrders()
         }
-      } catch {
-        toast.error("Failed to initiate payment. Please try again.")
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Failed to initiate payment. Please try again."))
       }
     },
     [fetchOrders]
@@ -118,17 +126,30 @@ export default function EcommerceOrdersPage() {
       if (selectedOrderIds.size === 0) return
       setBulkActionLoading(true)
       try {
-        await axiosInstance.post("/api/ecommerce/admin/orders/bulk-update/", {
-          order_ids: Array.from(selectedOrderIds),
-          status,
-        })
-        toast.success(
-          `${selectedOrderIds.size} orders updated to ${status}`
+        const { data } = await axiosInstance.post<BulkUpdateStatusResponse>(
+          "/api/ecommerce/admin/orders/bulk-update/",
+          {
+            order_ids: Array.from(selectedOrderIds),
+            status,
+          }
         )
+        toast.success(
+          `${data?.updated ?? selectedOrderIds.size} orders updated to ${status}`
+        )
+        // Final (cancelled/refunded) orders and orders paid meanwhile are skipped.
+        const skipped = data?.skipped || []
+        if (skipped.length > 0) {
+          toast.warning(
+            `${skipped.length} orders were skipped: ${skipped
+              .map((s) => `#${s.id} (${s.error})`)
+              .join(", ")}`
+          )
+        }
         await fetchOrders()
         setSelectedOrderIds(new Set())
-      } catch {
-        toast.error("Failed to update orders. Please try again.")
+      } catch (error) {
+        // e.g. 403 when a paid order is in the selection and the user is not a manager
+        toast.error(getApiErrorMessage(error, "Failed to update orders. Please try again."))
       } finally {
         setBulkActionLoading(false)
       }

@@ -9,11 +9,21 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import UserBulkActions from "@/components/user-management/UserBulkActions";
 
+// The role buttons follow the backend role guard; default to a superuser.
+const access = vi.hoisted(() => ({
+  current: { isSuperuser: true, isStaff: true, roleRank: 3 },
+}));
+vi.mock("@/hooks/useMyAccess", () => ({
+  useMyAccess: () => access.current,
+  TENANT_ROLE_RANK: { viewer: 0, agent: 1, manager: 2, admin: 3 },
+}));
+
 describe("UserBulkActions", () => {
   const onBulkAction = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
     vi.clearAllMocks();
+    access.current = { isSuperuser: true, isStaff: true, roleRank: 3 };
     // Mock window.confirm for all tests
     vi.spyOn(window, "confirm").mockReturnValue(true);
   });
@@ -126,5 +136,16 @@ describe("UserBulkActions", () => {
     await user.click(screen.getByText(/✅ Activate Users/));
 
     expect(onBulkAction).not.toHaveBeenCalled();
+  });
+
+  it("hides roles above a non-staff caller's own role", async () => {
+    access.current = { isSuperuser: false, isStaff: false, roleRank: 2 };
+    const user = userEvent.setup();
+    renderComponent();
+    await user.click(screen.getByText(/Bulk Actions/));
+
+    expect(screen.queryByText(/Make Admin/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Make Manager/)).toBeInTheDocument();
+    expect(screen.getByText(/Make Agent/)).toBeInTheDocument();
   });
 });

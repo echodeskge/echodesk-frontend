@@ -126,9 +126,9 @@ export default function StaffAvailabilityPage() {
 
   const fetchExceptions = async () => {
     try {
-      // (isAvailable, ordering, page, pageSize, search, staff)
+      // (isAvailable, ordering, page, pageSize, search, showPast, staff)
       const response = await bookingsAdminExceptionsList(
-        undefined, undefined, undefined, 100, undefined, parseInt(selectedStaffId)
+        undefined, undefined, undefined, 100, undefined, undefined, parseInt(selectedStaffId)
       )
       setExceptions((response.results || response) as StaffException[])
     } catch {

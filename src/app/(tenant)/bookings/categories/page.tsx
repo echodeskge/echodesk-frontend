@@ -14,10 +14,14 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Search, FolderTree, Plus, Edit, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useMyAccess } from "@/hooks/useMyAccess"
+import { getApiErrorMessage } from "@/lib/utils"
 
 export default function CategoriesPage() {
   const t = useTranslations("bookingsCategories")
   const { toast } = useToast()
+  // Category writes are limited to booking admins (staff, admin or manager role).
+  const { isBookingAdmin } = useMyAccess()
   const [categories, setCategories] = useState<ServiceCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -87,7 +91,7 @@ export default function CategoriesPage() {
       fetchCategories()
     } catch (error) {
       console.error("Failed to save category:", error)
-      toast({ title: t("error"), description: t("saveFailed"), variant: "destructive" })
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("saveFailed")), variant: "destructive" })
     }
   }
 
@@ -100,7 +104,7 @@ export default function CategoriesPage() {
       fetchCategories()
     } catch (error) {
       console.error("Failed to delete category:", error)
-      toast({ title: t("error"), description: t("deleteFailed"), variant: "destructive" })
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("deleteFailed")), variant: "destructive" })
     }
   }
 
@@ -144,10 +148,12 @@ export default function CategoriesPage() {
                   className="pl-8"
                 />
               </div>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("addCategory")}
-              </Button>
+              {isBookingAdmin && (
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("addCategory")}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -157,10 +163,12 @@ export default function CategoriesPage() {
               <FolderTree className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-semibold">{t("noCategoriesFound")}</h3>
               <p className="text-muted-foreground mt-2">{t("getStartedCategories")}</p>
-              <Button className="mt-4" onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("createCategory")}
-              </Button>
+              {isBookingAdmin && (
+                <Button className="mt-4" onClick={() => handleOpenDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("createCategory")}
+                </Button>
+              )}
             </div>
           ) : (
             <div className="rounded-md border">
@@ -187,14 +195,16 @@ export default function CategoriesPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(category)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(category.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          {isBookingAdmin && (
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(category)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(category.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )

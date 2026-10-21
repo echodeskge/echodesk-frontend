@@ -41,6 +41,7 @@ import { useCreateAttribute } from "@/hooks/useAttributes";
 import { useLanguages } from "@/hooks/useLanguages";
 import type { AttributeDefinition, Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface AttributeOption {
   value: string;
@@ -269,7 +270,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to create attribute:", error);
-      toast.error(error.message || "Failed to create attribute");
+      toast.error(getApiErrorMessage(error, "Failed to create attribute"));
     }
   };
 

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Save, Loader2, Eye, EyeOff, Copy, ExternalLink } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { useMyAccess } from "@/hooks/useMyAccess"
 import { getApiErrorMessage } from "@/lib/utils"
 import axios from "@/api/axios"
 import { ReminderSettingsCard, SmsSettings, SmsSettingsCard, SMS_SETTINGS_DEFAULTS } from "@/components/bookings/sms-settings-card"
@@ -75,6 +76,8 @@ function timezoneLabel(zone: string): string {
 export default function SettingsPage() {
   const t = useTranslations("bookingSettings")
   const { toast } = useToast()
+  // Saving booking settings is limited to booking admins (staff, admin or manager role).
+  const { isBookingAdmin } = useMyAccess()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   // If the settings couldn't be loaded, saving would overwrite the real ones
@@ -527,7 +530,7 @@ export default function SettingsPage() {
 
         <div className="flex justify-end">
           {loadFailed && <p className="mr-4 self-center text-sm text-destructive">{t("loadFailed")}</p>}
-          <Button onClick={handleSave} disabled={saving || loadFailed}>
+          <Button onClick={handleSave} disabled={saving || loadFailed || !isBookingAdmin}>
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (

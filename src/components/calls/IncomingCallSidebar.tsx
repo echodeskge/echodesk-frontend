@@ -38,11 +38,15 @@ import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 import { useCall } from "@/contexts/CallContext";
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
 import {
-  callLogsList,
   callLogsPartialUpdate,
   ticketsList,
 } from "@/api/generated/api";
-import type { Client, CallLog, TicketList } from "@/api/generated/interfaces";
+import type {
+  Client,
+  CallLog,
+  PaginatedCallLogList,
+  TicketList,
+} from "@/api/generated/interfaces";
 import axios from "@/api/axios";
 import { format } from "date-fns";
 
@@ -114,9 +118,15 @@ export function IncomingCallSidebar() {
       if (matchedClient) {
         try {
           const ticketsResult = await ticketsList(
+            undefined, // assignedGroups
+            undefined, // assignedTo
+            undefined, // board
+            undefined, // column
+            undefined, // createdBy
             "-created_at",
             1,
             5,
+            undefined, // priority
             matchedClient.name
           );
           setRecentTickets(ticketsResult.results || []);
@@ -129,14 +139,11 @@ export function IncomingCallSidebar() {
 
       // Fetch recent calls with this number
       try {
-        const callsResult = await callLogsList(
-          undefined,
-          undefined,
-          "-started_at",
-          1,
-          6,
-          phoneNumber,
-          undefined
+        // Named query params: the generated callLogsList takes positional
+        // arguments whose order shifts whenever a filter is added.
+        const { data: callsResult } = await axios.get<PaginatedCallLogList>(
+          "/api/call-logs/",
+          { params: { ordering: "-started_at", page: 1, page_size: 6, search: phoneNumber } }
         );
         setRecentCalls(
           (callsResult.results || []).filter((c) => c.id !== callLogId).slice(0, 5)

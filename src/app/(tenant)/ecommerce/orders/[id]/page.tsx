@@ -11,6 +11,8 @@ import axiosInstance from "@/api/axios"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { useMyAccess } from "@/hooks/useMyAccess"
+import { getApiErrorMessage } from "@/lib/utils"
 import { OrderDetail } from "../_types"
 import { OrderDetails } from "./_components/order-details"
 import { OrderNotFound } from "./_components/order-not-found"
@@ -22,6 +24,8 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [refunding, setRefunding] = useState(false)
+  // Refund, mark-paid and cancelling a paid order need e-commerce manager rights.
+  const { isEcommerceManager } = useMyAccess()
 
   const fetchOrder = useCallback(async (id: number) => {
     try {
@@ -52,8 +56,8 @@ export default function OrderDetailPage() {
         )
         setOrder(response.data as unknown as OrderDetail)
         toast.success(`Order status updated to ${newStatus}`)
-      } catch {
-        toast.error("Failed to update order status")
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Failed to update order status"))
       } finally {
         setUpdatingStatus(false)
       }
@@ -69,8 +73,8 @@ export default function OrderDetailPage() {
       )
       toast.success("Order marked as paid")
       fetchOrder(order.id)
-    } catch {
-      toast.error("Failed to mark as paid")
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to mark as paid"))
     }
   }, [order, fetchOrder])
 
@@ -83,8 +87,8 @@ export default function OrderDetailPage() {
       await ecommerceAdminOrdersRefundCreate(order.id)
       toast.success(t("refund.success"))
       await fetchOrder(order.id)
-    } catch {
-      toast.error(t("refund.error"))
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("refund.error")))
     } finally {
       setRefunding(false)
     }
@@ -134,6 +138,7 @@ export default function OrderDetailPage() {
         order={order}
         updatingStatus={updatingStatus}
         refunding={refunding}
+        isManager={isEcommerceManager}
         onStatusChange={handleStatusChange}
         onMarkPaid={handleMarkPaid}
         onRefund={handleRefund}

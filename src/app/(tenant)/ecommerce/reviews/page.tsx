@@ -9,7 +9,8 @@ import {
   ecommerceAdminReviewsRejectCreate,
   ecommerceAdminReviewsDestroy,
 } from "@/api/generated";
-import type { ProductReview, ProductReviewRequest } from "@/api/generated/interfaces";
+import type { ProductReview } from "@/api/generated/interfaces";
+import { getApiErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -106,17 +107,11 @@ export default function ReviewsPage() {
   const handleApprove = async (review: ProductReview) => {
     try {
       setActionLoading(review.id);
-      const payload: ProductReviewRequest = {
-        product: review.product,
-        rating: review.rating,
-        title: review.title,
-        content: review.content,
-      };
-      await ecommerceAdminReviewsApproveCreate(review.id, payload);
+      await ecommerceAdminReviewsApproveCreate(review.id);
       toast.success(t("approveSuccess"));
       fetchReviews();
-    } catch {
-      toast.error(t("approveError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("approveError")));
     } finally {
       setActionLoading(null);
     }
@@ -125,17 +120,11 @@ export default function ReviewsPage() {
   const handleReject = async (review: ProductReview) => {
     try {
       setActionLoading(review.id);
-      const payload: ProductReviewRequest = {
-        product: review.product,
-        rating: review.rating,
-        title: review.title,
-        content: review.content,
-      };
-      await ecommerceAdminReviewsRejectCreate(review.id, payload);
+      await ecommerceAdminReviewsRejectCreate(review.id);
       toast.success(t("rejectSuccess"));
       fetchReviews();
-    } catch {
-      toast.error(t("rejectError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("rejectError")));
     } finally {
       setActionLoading(null);
     }
@@ -148,8 +137,9 @@ export default function ReviewsPage() {
       toast.success(t("deleteSuccess"));
       setDeletingReview(null);
       fetchReviews();
-    } catch {
-      toast.error(t("deleteError"));
+    } catch (error) {
+      // Deleting reviews needs e-commerce manager rights; show the backend reason.
+      toast.error(getApiErrorMessage(error, t("deleteError")));
     }
   };
 

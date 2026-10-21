@@ -24,6 +24,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Search, UserCheck, Mail, Phone, Plus, Edit, Trash2, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useMyAccess } from "@/hooks/useMyAccess"
+import { getApiErrorMessage } from "@/lib/utils"
 
 interface AvailableUser {
   id: number
@@ -36,6 +38,8 @@ interface AvailableUser {
 export default function StaffPage() {
   const t = useTranslations("bookingsStaff")
   const { toast } = useToast()
+  // Staff writes are limited to booking admins (staff, admin or manager role).
+  const { isBookingAdmin } = useMyAccess()
   const [staff, setStaff] = useState<BookingStaff[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -144,7 +148,7 @@ export default function StaffPage() {
       fetchStaff()
     } catch (error) {
       console.error("Failed to save staff:", error)
-      toast({ title: t("error"), description: t("saveFailed"), variant: "destructive" })
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("saveFailed")), variant: "destructive" })
     } finally {
       setSaving(false)
     }
@@ -159,7 +163,7 @@ export default function StaffPage() {
       fetchStaff()
     } catch (error) {
       console.error("Failed to delete staff:", error)
-      toast({ title: t("error"), description: t("deleteFailed"), variant: "destructive" })
+      toast({ title: t("error"), description: getApiErrorMessage(error, t("deleteFailed")), variant: "destructive" })
     }
   }
 
@@ -227,10 +231,12 @@ export default function StaffPage() {
                   className="pl-8"
                 />
               </div>
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t("addStaff")}
-              </Button>
+              {isBookingAdmin && (
+                <Button onClick={() => handleOpenDialog()}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t("addStaff")}
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -240,10 +246,12 @@ export default function StaffPage() {
               <UserCheck className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-4 text-lg font-semibold">{t("noStaffFound")}</h3>
               <p className="text-muted-foreground mt-2">{t("noStaffMatch")}</p>
-              <Button onClick={() => handleOpenDialog()} className="mt-4">
-                <Plus className="h-4 w-4 mr-2" />
-                {t("addStaff")}
-              </Button>
+              {isBookingAdmin && (
+                <Button onClick={() => handleOpenDialog()} className="mt-4">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t("addStaff")}
+                </Button>
+              )}
             </div>
           ) : (
             <div className="rounded-md border">
@@ -293,22 +301,24 @@ export default function StaffPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleOpenDialog(member)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(member.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+                        {isBookingAdmin && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleOpenDialog(member)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDelete(member.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

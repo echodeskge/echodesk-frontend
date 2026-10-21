@@ -28,14 +28,28 @@ export interface AicompanionSettings {
   is_enabled?: boolean;
   provider?: ProviderEnum;
   model?: string;
-  has_api_key: string;
+  has_api_key: boolean;
   guidance_prompt?: string;
   escalation_instructions?: string;
   language?: string;
   max_replies_per_conversation_per_day?: number;
   max_replies_per_day?: number;
+  channels: AicompanionChannel[];
   updated_at: string;
 }
+
+export interface Aierror {
+  error: string;
+}
+
+export interface AistateResponse {
+  mode: AistateResponseModeEnum;
+  reason: string;
+  last_ai_reply_at: string;
+  updated_at: string;
+}
+
+export type AistateResponseModeEnum = 'ai' | 'needs_human' | 'off';
 
 export interface AistateUpdateRequest {
   platform: PlatformE2dEnum;
@@ -44,7 +58,24 @@ export interface AistateUpdateRequest {
   mode: ModeEnum;
 }
 
-export type ActionEnum = 'approve' | 'reject';
+export interface AisummaryCreated {
+  summary: ConversationSummary;
+}
+
+export interface AisummaryList {
+  results: ConversationSummary[];
+}
+
+export interface AitestRequest {
+  message: string;
+  guidance_prompt?: string;
+}
+
+export interface AitestResponse {
+  action: string;
+  reply_text: string;
+  reason: string;
+}
 
 export interface AddDomainRequestRequest {
   domain: string;
@@ -76,21 +107,20 @@ export interface AddNewCardResponse {
   currency: string;
 }
 
-export interface AdminBookingCreate {
-  service_id: number;
-  staff_id: number;
-  date: string;
-  start_time: string;
-  client_id?: number;
-  first_name?: string;
-  last_name?: string;
-  phone_number?: string;
-  email?: string;
-  total_amount?: string;
-  status?: AdminBookingCreateStatusEnum;
-  staff_notes?: string;
-  client_notes?: string;
-  notify_client?: boolean;
+export interface AddSubscriptionFeatureRequest {
+  feature_id: number;
+  charge_immediately?: boolean;
+}
+
+export interface AddSubscriptionFeatureResponse {
+  feature: SubscriptionFeatureRef;
+  success: boolean;
+  message: string;
+  requires_payment?: boolean;
+  payment_url?: string;
+  prorated_cost: number;
+  new_monthly_cost?: number;
+  days_remaining: number;
 }
 
 export interface AdminBookingCreateRequest {
@@ -112,7 +142,65 @@ export interface AdminBookingCreateRequest {
 
 export type AdminBookingCreateStatusEnum = 'pending' | 'confirmed';
 
+export interface AdminBookingUpdateRequest {
+  staff_notes?: string;
+  client_notes?: string;
+  total_amount?: string;
+}
+
+export interface AdminRecurringBookingCreateRequest {
+  client_id: number;
+  service_id: number;
+  staff_id?: number;
+  frequency: FrequencyEnum;
+  preferred_day_of_week: PreferredDayOfWeekEnum;
+  preferred_time: string;
+  end_date?: string;
+  max_occurrences?: number;
+}
+
+export interface AdminSlot {
+  start_time: string;
+  end_time: string;
+  staff_id: number;
+  staff_name: string;
+  available_staff: AdminSlotStaff[];
+}
+
+export interface AdminSlotStaff {
+  staff_id: number;
+  staff_name: string;
+}
+
+export interface AdminSlotsResponse {
+  date: string;
+  service_id: number;
+  staff_id: number;
+  slots: AdminSlot[];
+}
+
+export type AfterHoursActionEnum = 'announcement' | 'voicemail' | 'forward';
+
 export type ApproverRoleEnum = 'manager' | 'hr' | 'admin';
+
+export interface ArchiveAllResponse {
+  success: boolean;
+  archived_count: number;
+  platform: string;
+  message: string;
+}
+
+export interface ArchiveResponse {
+  success: boolean;
+  archived_count: number;
+  message: string;
+  errors?: ConversationActionError[];
+}
+
+export interface AssignmentMessageResponse {
+  message: string;
+  assignment: ChatAssignment;
+}
 
 export interface AssignmentSettingsFlags {
   chat_assignment_enabled: boolean;
@@ -157,6 +245,107 @@ export interface AttributeDefinitionRequest {
 }
 
 export type AttributeTypeEnum = 'multiselect' | 'number';
+
+export interface AuthDevice {
+  id: string;
+  platform: TenantLoginPlatformEnum;
+  device_name: string;
+  created_at: string;
+  last_used_at: string;
+  is_current: boolean;
+}
+
+export interface AutoPostContent {
+  id: number;
+  status?: AutoPostContentStatusEnum;
+  facebook_text?: string;
+  instagram_text?: string;
+  image_url?: string;
+  featured_product?: number;
+  featured_product_name: string;
+  target_facebook?: boolean;
+  target_instagram?: boolean;
+  scheduled_for: string;
+  facebook_post_id: string;
+  instagram_media_id: string;
+  published_at: string;
+  error_message: string;
+  ai_model_used: string;
+  approved_by: number;
+  approved_by_name: string;
+  approved_at: string;
+  rejected_by: number;
+  rejected_by_name: string;
+  rejected_at: string;
+  rejection_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type AutoPostContentStatusEnum =
+  | 'draft'
+  | 'approved'
+  | 'published'
+  | 'failed'
+  | 'rejected';
+
+export interface AutoPostEditRequest {
+  facebook_text?: string;
+  instagram_text?: string;
+  image_url?: string;
+  target_facebook?: boolean;
+  target_instagram?: boolean;
+}
+
+export interface AutoPostListResponse {
+  count: number;
+  next: string;
+  previous: string;
+  results: AutoPostContent[];
+}
+
+export interface AutoPostRejectRequest {
+  reason?: string;
+}
+
+export interface AutoPostSettings {
+  id: number;
+  is_enabled?: boolean;
+  company_description?: string;
+  posting_time?: string;
+  timezone?: string;
+  post_to_facebook?: boolean;
+  post_to_instagram?: boolean;
+  tone?: ToneEnum;
+  content_source?: ContentSourceEnum;
+  content_language?: string;
+  require_approval?: boolean;
+  max_posts_per_day?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AutoPostSettingsRequest {
+  is_enabled?: boolean;
+  company_description?: string;
+  posting_time?: string;
+  timezone?: string;
+  post_to_facebook?: boolean;
+  post_to_instagram?: boolean;
+  tone?: ToneEnum;
+  content_source?: ContentSourceEnum;
+  content_language?: string;
+  require_approval?: boolean;
+  max_posts_per_day?: number;
+}
+
+export interface AvailableUser {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+}
 
 export type BlankEnum = '';
 
@@ -300,7 +489,18 @@ export interface Board {
   order_users: UserMinimal[];
   board_groups: TenantGroupMinimal[];
   board_users: UserMinimal[];
-  payment_summary: string;
+  payment_summary: BoardPaymentSummary;
+}
+
+export interface BoardPaymentSummary {
+  total_tickets: number;
+  total_orders: number;
+  total_price: string;
+  total_paid: string;
+  paid_tickets: number;
+  unpaid_tickets: number;
+  overdue_tickets: number;
+  remaining_balance: string;
 }
 
 export interface BoardRequest {
@@ -310,6 +510,81 @@ export interface BoardRequest {
   order_user_ids?: number[];
   board_group_ids?: number[];
   board_user_ids?: number[];
+}
+
+export interface BoardSetDefaultResponse {
+  status: string;
+}
+
+export interface BoardTelegramConnection {
+  id: number;
+  board: number;
+  chat_id: string;
+  is_active?: boolean;
+  has_token: boolean;
+  created_by: UserMinimal;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BoardTelegramConnectionCreateRequest {
+  chat_id: string;
+  is_active?: boolean;
+  bot_token_raw: string;
+}
+
+export interface BoardTelegramTestRequest {
+  bot_token_raw?: string;
+  chat_id?: string;
+}
+
+export interface BoardTelegramTestResponse {
+  status: string;
+  message: string;
+}
+
+export interface BookingAssignStaffRequestRequest {
+  staff_id: number;
+}
+
+export interface BookingCancelRequestRequest {
+  reason?: string;
+  refund?: boolean;
+}
+
+export interface BookingCancelResponse {
+  id: number;
+  booking_number: string;
+  client: BookingClient;
+  service: ServiceList;
+  staff: BookingStaff;
+  date: string;
+  start_time: string;
+  end_time: string;
+  status?: Status308enum;
+  payment_status?: PaymentStatus0acEnum;
+  payment_method?: PaymentMethod9aeEnum | BlankEnum;
+  total_amount: string;
+  deposit_amount?: string;
+  paid_amount?: string;
+  remaining_amount: number;
+  bog_order_id?: string;
+  payment_url?: string;
+  client_notes?: string;
+  staff_notes?: string;
+  contact_email?: string;
+  rating?: number;
+  review?: string;
+  cancelled_at?: string;
+  cancelled_by?: CancelledByEnum | BlankEnum;
+  cancellation_reason?: string;
+  created_at: string;
+  updated_at: string;
+  confirmed_at?: string;
+  completed_at?: string;
+  manual_payments: ManualPayment[];
+  refund: BookingRefundResult;
+  manual_refund_due: string;
 }
 
 export interface BookingClient {
@@ -330,6 +605,18 @@ export interface BookingClientRequest {
   last_name?: string;
 }
 
+export interface BookingClientStats {
+  total_bookings: number;
+  completed_bookings: number;
+  cancelled_bookings: number;
+  total_spent: number;
+  last_booking: BookingList;
+}
+
+export interface BookingConfirmRequestRequest {
+  force?: boolean;
+}
+
 export interface BookingCreate {
   date: string;
   start_time: string;
@@ -345,6 +632,12 @@ export interface BookingCreateRequest {
   payment_type?: PaymentTypeEnum | NullEnum;
 }
 
+export interface BookingDashboard {
+  today: DashboardToday;
+  week: DashboardWeek;
+  overall: DashboardOverall;
+}
+
 export interface BookingDetail {
   id: number;
   booking_number: string;
@@ -354,13 +647,13 @@ export interface BookingDetail {
   date: string;
   start_time: string;
   end_time: string;
-  status?: Status528enum;
+  status?: Status308enum;
   payment_status?: PaymentStatus0acEnum;
   payment_method?: PaymentMethod9aeEnum | BlankEnum;
   total_amount: string;
   deposit_amount?: string;
   paid_amount?: string;
-  remaining_amount: string;
+  remaining_amount: number;
   bog_order_id?: string;
   payment_url?: string;
   client_notes?: string;
@@ -375,6 +668,11 @@ export interface BookingDetail {
   updated_at: string;
   confirmed_at?: string;
   completed_at?: string;
+  manual_payments: ManualPayment[];
+}
+
+export interface BookingError {
+  error: string;
 }
 
 export interface BookingList {
@@ -386,7 +684,7 @@ export interface BookingList {
   date: string;
   start_time: string;
   end_time: string;
-  status?: Status528enum;
+  status?: Status308enum;
   payment_status?: PaymentStatus0acEnum;
   payment_method?: PaymentMethod9aeEnum | BlankEnum;
   total_amount: string;
@@ -396,17 +694,144 @@ export interface BookingList {
   created_at: string;
 }
 
-export interface BookingListRequest {
+export interface BookingRecordPaymentRequestRequest {
+  amount: string;
+  method?: MethodEnum;
+  note?: string;
+}
+
+export interface BookingRefundResult {
+  status: BookingRefundResultStatusEnum;
+  amount: string;
+}
+
+export type BookingRefundResultStatusEnum =
+  | 'no_refund'
+  | 'refunded'
+  | 'manual_required'
+  | 'error';
+
+export interface BookingRescheduleRequestRequest {
+  date: string;
+  start_time: string;
+}
+
+export interface BookingRow {
+  id: number;
+  booking_number: string;
+  client: BookingRowClient;
+  service: BookingRowService;
+  staff: BookingRowStaff;
   date: string;
   start_time: string;
   end_time: string;
-  status?: Status528enum;
-  payment_status?: PaymentStatus0acEnum;
-  payment_method?: PaymentMethod9aeEnum | BlankEnum;
+  status: Status308enum;
+  payment_status: PaymentStatus0acEnum;
+  payment_method: PaymentMethod9aeEnum;
   total_amount: string;
-  deposit_amount?: string;
-  paid_amount?: string;
-  client_notes?: string;
+  deposit_amount: string;
+  paid_amount: string;
+  client_notes: string;
+  created_at: string;
+}
+
+export interface BookingRowClient {
+  id: number;
+  full_name: string;
+  phone_number: string;
+  email: string;
+}
+
+export interface BookingRowService {
+  id: number;
+  name_display: string;
+  duration_minutes: number;
+}
+
+export interface BookingRowStaff {
+  id: number;
+  user_id: number;
+  full_name: string;
+  profile_image: string;
+}
+
+export interface BookingSettings {
+  id: number;
+  payment_method?: BookingSettingsPaymentMethodEnum;
+  bank_name?: string;
+  bank_iban?: string;
+  bank_account_holder?: string;
+  require_deposit?: boolean;
+  allow_cash_payment?: boolean;
+  allow_card_payment?: boolean;
+  has_bog_client_id: boolean;
+  has_bog_client_secret: boolean;
+  bog_use_production?: boolean;
+  cancellation_hours_before?: number;
+  refund_policy?: RefundPolicyEnum;
+  auto_confirm_on_deposit?: boolean;
+  auto_confirm_on_full_payment?: boolean;
+  min_hours_before_booking?: number;
+  max_days_advance_booking?: number;
+  timezone?: string;
+  public_page_enabled?: boolean;
+  public_description?: any;
+  public_address?: string;
+  public_phone?: string;
+  reminder_hours_before?: number;
+  second_reminder_hours_before?: number;
+  sms_enabled?: boolean;
+  has_sms_api_key: boolean;
+  sms_on_created?: boolean;
+  sms_on_confirmed?: boolean;
+  sms_on_rescheduled?: boolean;
+  sms_on_cancelled?: boolean;
+  sms_on_reminder?: boolean;
+  sms_templates?: any;
+  sms_default_templates: Record<string, any>;
+  sms_platform_available: boolean;
+  sms_platform_limit: number;
+  sms_platform_sent_this_month: number;
+  sms_sent_this_month: number;
+}
+
+export type BookingSettingsPaymentMethodEnum =
+  | 'manual_transfer'
+  | 'bog_gateway';
+
+export interface BookingSettingsRequest {
+  payment_method?: BookingSettingsPaymentMethodEnum;
+  bank_name?: string;
+  bank_iban?: string;
+  bank_account_holder?: string;
+  require_deposit?: boolean;
+  allow_cash_payment?: boolean;
+  allow_card_payment?: boolean;
+  bog_client_id?: string;
+  bog_client_secret?: string;
+  bog_use_production?: boolean;
+  cancellation_hours_before?: number;
+  refund_policy?: RefundPolicyEnum;
+  auto_confirm_on_deposit?: boolean;
+  auto_confirm_on_full_payment?: boolean;
+  min_hours_before_booking?: number;
+  max_days_advance_booking?: number;
+  timezone?: string;
+  public_page_enabled?: boolean;
+  public_description?: any;
+  public_address?: string;
+  public_phone?: string;
+  reminder_hours_before?: number;
+  second_reminder_hours_before?: number;
+  sms_enabled?: boolean;
+  sms_api_key?: string;
+  sms_api_key_clear?: boolean;
+  sms_on_created?: boolean;
+  sms_on_confirmed?: boolean;
+  sms_on_rescheduled?: boolean;
+  sms_on_cancelled?: boolean;
+  sms_on_reminder?: boolean;
+  sms_templates?: any;
 }
 
 export interface BookingStaff {
@@ -418,13 +843,7 @@ export interface BookingStaff {
   total_ratings: number;
   is_active_for_bookings?: boolean;
   services: ServiceMinimal[];
-  services_count: string;
-}
-
-export interface BookingStaffCreate {
-  bio?: string;
-  profile_image?: string;
-  is_active_for_bookings?: boolean;
+  services_count: number;
 }
 
 export interface BookingStaffCreateRequest {
@@ -465,9 +884,17 @@ export interface BookingUserMinimal {
   full_name: string;
 }
 
+export interface BulkAssignmentStatusResponse {
+  assignments: ChatAssignment[];
+  settings: AssignmentSettingsFlags;
+}
+
 export interface BulkProductUpdateRequestRequest {
   product_ids: number[];
-  status: string;
+  status?: Status956enum;
+  price?: string;
+  quantity?: number;
+  is_featured?: boolean;
 }
 
 export interface BulkProductUpdateResponse {
@@ -479,7 +906,45 @@ export interface BulkUpdateStatusRequestRequest {
   status: Status1f1enum;
 }
 
+export interface BulkUpdateStatusResponse {
+  updated: number;
+  status: string;
+  order_ids: number[];
+  skipped: BulkUpdateStatusSkipped[];
+}
+
+export interface BulkUpdateStatusSkipped {
+  id: number;
+  error: string;
+}
+
+export type BulkUserActionActionEnum =
+  | 'activate'
+  | 'deactivate'
+  | 'delete'
+  | 'change_role'
+  | 'reset_password'
+  | 'add_to_group'
+  | 'remove_from_group';
+
+export interface BulkUserActionRequest {
+  user_ids: number[];
+  action: BulkUserActionActionEnum;
+  role?: Role4c6enum;
+  group_id?: number;
+}
+
+export interface BulkUserActionResponse {
+  message: string;
+  affected: number;
+  skipped_user_ids: number[];
+}
+
 export type CalculationMethodEnum = 'annual' | 'accrual' | 'manual';
+
+export interface CallEndRequest {
+  status?: string;
+}
 
 export interface CallEvent {
   id: number;
@@ -572,6 +1037,7 @@ export interface CallLogDetail {
   notes?: string;
   sip_call_id?: string;
   client: number;
+  social_client: number;
   client_name: string;
   handled_by?: number;
   handled_by_name: string;
@@ -579,6 +1045,12 @@ export interface CallLogDetail {
   sip_config_name: string;
   recording_url: string;
   call_quality_score: number;
+  transferred_to?: string;
+  transferred_to_user?: number;
+  transferred_to_user_name: string;
+  transferred_at?: string;
+  parent_call: number;
+  transfer_type?: TransferTypeEnum | BlankEnum;
   created_at: string;
   updated_at: string;
   events: CallEvent[];
@@ -602,6 +1074,17 @@ export interface CallLogRequest {
   transferred_to_user?: number;
   transferred_at?: string;
   transfer_type?: TransferTypeEnum | BlankEnum;
+}
+
+export interface CallLogStatisticsResponse {
+  period: string;
+  total_calls: number;
+  answered_calls: number;
+  missed_calls: number;
+  inbound_calls: number;
+  outbound_calls: number;
+  answer_rate: number;
+  average_duration_seconds: number;
 }
 
 export interface CallRecording {
@@ -631,25 +1114,103 @@ export type CallRecordingStatusEnum =
   | 'failed'
   | 'deleted';
 
-export interface CallStatusUpdateRequest {
-  status: StatusB9eEnum;
-  notes?: string;
-  call_quality_score?: number;
-  recording_url?: string;
+export interface CallStatsOverviewResponse {
+  range: string;
+  start: string;
+  end: string;
+  total_calls: number;
+  answered_calls: number;
+  missed_calls: number;
+  inbound_calls: number;
+  outbound_calls: number;
+  avg_talk_seconds: number;
+  busiest_hour: number;
+  busiest_weekday: number;
+  top_5_users: CallStatsTopUser[];
+}
+
+export interface CallStatsQueueResponse {
+  queue_id: number;
+  range: string;
+  start: string;
+  end: string;
+  matched_dids: string[];
+  total_calls: number;
+  answered_count: number;
+  abandoned_count: number;
+  avg_wait_seconds: number;
+  peak_hour: number;
+}
+
+export interface CallStatsTimelineDay {
+  day: string;
+  total_calls: number;
+  answered_count: number;
+  missed_count: number;
+  outbound_count: number;
+  total_talk_seconds: number;
+}
+
+export interface CallStatsTopUser {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  answered_count: number;
+  outbound_count: number;
+  total_talk_seconds: number;
+}
+
+export interface CallStatsUserRow {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  answered_count: number;
+  missed_count: number;
+  outbound_count: number;
+  total_talk_seconds: number;
+  avg_talk_seconds: number;
+}
+
+export interface CallStatsUserTimelineResponse {
+  user_id: number;
+  month: string;
+  start: string;
+  end: string;
+  results: CallStatsTimelineDay[];
+}
+
+export interface CallStatsUsersResponse {
+  results: CallStatsUserRow[];
+  month: string;
+  start: string;
+  end: string;
+}
+
+export interface CallTransferRequest {
+  transfer_to: string;
 }
 
 export type CallTypeEnum = 'voice' | 'video' | 'conference';
 
 export type CancelledByEnum = 'client' | 'staff' | 'admin';
 
+export type CardSaveTypeEnum = 'subscription' | 'ecommerce';
+
 export interface CarryForwardRequestRequest {
   from_year: number;
   to_year: number;
+  force?: boolean;
 }
 
 export interface CarryForwardResponse {
   success: boolean;
   message: string;
+  already_run: boolean;
+  carried_forward: number;
+  from_year: number;
+  to_year: number;
+  run_at: string;
+  total_days: string;
 }
 
 export interface Cart {
@@ -703,7 +1264,7 @@ export interface CartList {
   client: number;
   client_name: string;
   status?: Status38cEnum;
-  items_count: string;
+  items_count: number;
   updated_at: string;
 }
 
@@ -730,6 +1291,11 @@ export interface ChangePasswordResponse {
   message: string;
 }
 
+export interface ChangeTenantPasswordRequest {
+  old_password?: string;
+  new_password?: string;
+}
+
 export interface ChatAssignment {
   id: number;
   platform: Platform1fcEnum;
@@ -746,7 +1312,20 @@ export interface ChatAssignment {
   updated_at: string;
 }
 
+export interface ChatAssignmentCreateRequest {
+  platform: UnifiedConversationPlatformEnum;
+  conversation_id: string;
+  account_id: string;
+}
+
 export type ChatAssignmentStatusEnum = 'active' | 'in_session' | 'completed';
+
+export interface ChatTransferRequest {
+  platform: UnifiedConversationPlatformEnum;
+  conversation_id: string;
+  account_id: string;
+  target_user_id: number;
+}
 
 export interface ChatWidgetConfigResponse {
   token: string;
@@ -768,6 +1347,27 @@ export interface ChecklistItemRequest {
   text: string;
   is_checked?: boolean;
   position?: number;
+}
+
+export type ClearHistoryPlatformEnum =
+  | 'facebook'
+  | 'instagram'
+  | 'whatsapp'
+  | 'email'
+  | 'widget'
+  | 'telegram'
+  | 'tiktok';
+
+export interface ClearHistoryRequest {
+  platform: ClearHistoryPlatformEnum;
+}
+
+export interface ClearHistoryResponse {
+  status: string;
+  platform: string;
+  messages_deleted: number;
+  archives_removed: number;
+  message: string;
 }
 
 export interface Client {
@@ -810,9 +1410,61 @@ export interface ClientAddressRequest {
   is_default?: boolean;
 }
 
+export interface ClientBookingHistoryResponse {
+  results: any[];
+  count: number;
+  page: number;
+  page_size: number;
+  error?: string;
+}
+
+export interface ClientBookingStatsResponse {
+  total?: number;
+  completed?: number;
+  upcoming?: number;
+  cancelled?: number;
+  total_spent?: number;
+  error?: string;
+  stats?: any;
+}
+
+export interface ClientByAccountResponse {
+  found: boolean;
+  client: SocialClient;
+  social_account: SocialAccount;
+  prefill: ClientPrefill;
+}
+
+export interface ClientItemListDetails {
+  id: number;
+  title: string;
+  description: string;
+}
+
 export interface ClientLoginRequest {
   identifier: string;
   password: string;
+}
+
+export interface ClientPhoneLookupResponse {
+  count: number;
+  results: ClientPhoneLookupResult[];
+}
+
+export interface ClientPhoneLookupResult {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  company: string;
+  source: string;
+}
+
+export interface ClientPrefill {
+  name: string;
+  email: string;
+  visitor_id: string;
+  session_id: string;
 }
 
 export interface ClientRegistrationRequest {
@@ -839,9 +1491,40 @@ export interface ClientRequest {
   is_active?: boolean;
 }
 
+export interface CoexApiStatus {
+  is_on_biz_app: boolean;
+  platform_type: string;
+  verified_name: string;
+  quality_rating: string;
+}
+
+export interface CoexLocalStatus {
+  coex_enabled: boolean;
+  is_on_biz_app: boolean;
+  platform_type: string;
+  sync_status: string;
+  onboarded_at: string;
+  contacts_synced_at: string;
+  history_synced_at: string;
+  throughput_limit: number;
+  sync_window_open: boolean;
+  sync_window_remaining_seconds: number;
+}
+
+export interface CoexStatusResponse {
+  local_status: CoexLocalStatus;
+  api_status: CoexApiStatus;
+}
+
 export interface ConsultationInitiateRequest {
   target_number: string;
   target_user_id?: number;
+}
+
+export interface ConsultationInitiateResponse {
+  consultation_log_id: number;
+  consultation_call_id: string;
+  original_call_id: string;
 }
 
 export interface ContactSubmissionAdmin {
@@ -894,7 +1577,26 @@ export interface ContactSubmitResponse {
 
 export type ContactTypeEnum = 'USER' | 'BUSINESS';
 
+export type ContentSourceEnum = 'products' | 'company' | 'both';
+
 export type ContentTypeEnum = 'video' | 'article' | 'guide' | 'faq';
+
+export interface ConversationActionError {
+  conversation: any;
+  error: string;
+}
+
+export interface ConversationKeyRequest {
+  platform: UnifiedConversationPlatformEnum;
+  conversation_id: string;
+  account_id?: string;
+}
+
+export interface ConversationRefRequest {
+  platform: UnifiedConversationPlatformEnum;
+  conversation_id: string;
+  account_id: string;
+}
 
 export interface ConversationSummary {
   id: number;
@@ -912,6 +1614,24 @@ export interface ConversationTripleRequest {
   platform: PlatformE2dEnum;
   conversation_id: string;
   account_id: string;
+}
+
+export interface ConversationsRequest {
+  conversations: ConversationRefRequest[];
+}
+
+export interface CurrentIpinfo {
+  ip_address: string;
+  city: string;
+  country: string;
+  country_code: string;
+  is_whitelisted: boolean;
+}
+
+export interface DailyBreakdown {
+  date: string;
+  total_seconds: number;
+  session_count: number;
 }
 
 export interface DashboardAppearanceSettings {
@@ -937,6 +1657,37 @@ export interface DashboardAppearanceSettingsRequest {
   sidebar_order?: any;
 }
 
+export interface DashboardOverall {
+  total_clients: number;
+  total_revenue: number;
+  active_staff: number;
+}
+
+export interface DashboardPopularService {
+  service__name: any;
+  count: number;
+}
+
+export interface DashboardStatusCount {
+  status: string;
+  count: number;
+}
+
+export interface DashboardToday {
+  total_bookings: number;
+  confirmed: number;
+  pending: number;
+  completed: number;
+  status_breakdown: DashboardStatusCount[];
+  bookings: BookingList[];
+}
+
+export interface DashboardWeek {
+  total_bookings: number;
+  revenue: number;
+  popular_services: DashboardPopularService[];
+}
+
 export type DayOfWeekEnum = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export type DeactivationReasonEnum =
@@ -946,6 +1697,11 @@ export type DeactivationReasonEnum =
   | 'auth_error'
   | 'api_error';
 
+export interface DeleteConversationResponse {
+  success: boolean;
+  messages_deleted: number;
+}
+
 export type DeliveryMethodEnum = 'courier' | 'pickup';
 
 export interface Department {
@@ -953,7 +1709,7 @@ export interface Department {
   name: string;
   description?: string;
   is_active?: boolean;
-  employee_count: string;
+  employee_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -993,7 +1749,41 @@ export type DestinationTypeEnum =
   | 'ivr_custom'
   | 'hangup';
 
+export interface DevicePushToken {
+  id: number;
+  token: string;
+  platform: DevicePushTokenPlatformEnum;
+  device_id?: string;
+  device_name?: string;
+  app_version?: string;
+  is_active: boolean;
+  created_at: string;
+  last_seen_at: string;
+}
+
+export type DevicePushTokenPlatformEnum = 'ios' | 'android';
+
+export interface DevicePushTokenRequest {
+  token: string;
+  platform: DevicePushTokenPlatformEnum;
+  device_id?: string;
+  device_name?: string;
+  app_version?: string;
+}
+
+export type DeviceTypeEnum = 'desktop' | 'mobile' | 'tablet' | 'unknown';
+
 export type DirectionEnum = 'inbound' | 'outbound';
+
+export interface DirectoryDepartment {
+  id: number;
+  name: string;
+}
+
+export interface DirectoryGroup {
+  id: number;
+  name: string;
+}
 
 export type DiscountTypeEnum = 'percentage' | 'fixed';
 
@@ -1018,7 +1808,7 @@ export interface EcommerceClient {
   created_at: string;
   updated_at: string;
   addresses: ClientAddress[];
-  favorites: string;
+  favorites: FavoriteProduct[];
 }
 
 export interface EcommerceClientList {
@@ -1042,6 +1832,35 @@ export interface EcommerceClientRequest {
   phone_number: string;
   date_of_birth?: string;
   is_active?: boolean;
+}
+
+export interface EcommerceDeleteConflict {
+  error: string;
+}
+
+export interface EcommerceItemListMinimal {
+  id: number;
+  title: string;
+  description?: string;
+  is_public?: boolean;
+  is_active?: boolean;
+  items_count: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EcommerceListItem {
+  id: number;
+  label: string;
+  custom_id?: string;
+  position?: number;
+  is_active?: boolean;
+  custom_data?: any;
+  children: EcommerceListItem[];
+}
+
+export interface EcommerceOrderError {
+  error: string;
 }
 
 export type EcommercePaymentProviderEnum = 'bog' | 'tbc' | 'flitt' | 'paddle';
@@ -1181,9 +2000,194 @@ export interface EcommerceSettingsRequest {
   voltage_font_pair?: VoltageFontPairEnum;
 }
 
-export interface EmailDraft {
+export interface EmailActionResponse {
+  status: string;
+  action: string;
+  affected_count: number;
+}
+
+export interface EmailAssignedUsersResponse {
+  connection_id: number;
+  connection_email?: string;
+  message?: string;
+  assigned_users: EmailConnectionUserAssignment[];
+}
+
+export interface EmailAssignedUsersUpdateRequest {
+  user_ids: number[];
+}
+
+export interface EmailAssignmentCreateRequest {
+  connection_id: number;
+  user_id: number;
+}
+
+export interface EmailConnectRequest {
+  email_address: string;
+  display_name?: string;
+  imap_server: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+  username: string;
+  password: string;
+  sync_folder?: string;
+  sync_days_back?: number;
+}
+
+export interface EmailConnectResponse {
+  status: string;
+  message: string;
+  created: boolean;
+  connection: EmailConnection;
+}
+
+export interface EmailConnection {
+  id: number;
+  email_address: string;
+  display_name?: string;
+  imap_server: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+  username: string;
+  is_active?: boolean;
+  last_sync_at: string;
+  last_sync_error: string;
+  auto_disabled_at: string;
+  sync_failure_count: number;
+  sync_folder?: string;
+  sync_days_back?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailConnectionFolders {
+  connection_id: number;
+  email: string;
+  folders: string[];
+  success?: boolean;
+  error?: string;
+}
+
+export interface EmailConnectionIdRequest {
+  connection_id: number;
+}
+
+export interface EmailConnectionResponse {
+  message: string;
+  connection: EmailConnection;
+}
+
+export interface EmailConnectionStatusAssignedUser {
+  id: number;
+  user_id: number;
+  user_email: string;
+  user_name: string;
+  assigned_at: string;
+}
+
+export interface EmailConnectionStatusItem {
+  id: number;
+  email_address: string;
+  display_name: string;
+  imap_server: string;
+  smtp_server: string;
+  is_active: boolean;
+  last_sync_at: string;
+  last_sync_error: string;
+  auto_disabled_at: string;
+  sync_failure_count: number;
+  sync_folder: string;
+  connected_at: string;
+  signature_enabled: boolean;
+  signature_html: string;
+  signature_text: string;
+  assigned_users: EmailConnectionStatusAssignedUser[];
+}
+
+export interface EmailConnectionStatusResponse {
+  connected: boolean;
+  connections: EmailConnectionStatusItem[];
+  connection: EmailConnectionStatusItem;
+}
+
+export interface EmailConnectionUpdateRequest {
+  connection_id: number;
+  display_name?: string;
+  signature_enabled?: boolean;
+  signature_html?: string;
+  signature_text?: string;
+  imap_server?: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server?: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+  username?: string;
+  password?: string;
+  sync_folder?: string;
+  sync_days_back?: number;
+}
+
+export interface EmailConnectionUserAssignment {
   id: number;
   connection: number;
+  user: number;
+  user_email: string;
+  user_name: string;
+  assigned_by: number;
+  assigned_by_email: string;
+  assigned_by_name: string;
+  connection_email: string;
+  assigned_at: string;
+}
+
+export interface EmailConnectionWithAssignments {
+  id: number;
+  email_address: string;
+  display_name?: string;
+  imap_server: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+  username: string;
+  is_active?: boolean;
+  last_sync_at: string;
+  last_sync_error: string;
+  auto_disabled_at: string;
+  sync_failure_count: number;
+  sync_folder?: string;
+  sync_days_back?: number;
+  assigned_users: EmailConnectionUserAssignment[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailDisconnectDeleted {
+  messages: number;
+  drafts: number;
+}
+
+export interface EmailDisconnectResponse {
+  status: string;
+  message: string;
+  deleted: EmailDisconnectDeleted;
+}
+
+export interface EmailDraft {
+  id: number;
+  connection?: number;
   to_emails?: any;
   cc_emails?: any;
   bcc_emails?: any;
@@ -1202,7 +2206,7 @@ export interface EmailDraft {
 }
 
 export interface EmailDraftRequest {
-  connection: number;
+  connection?: number;
   to_emails?: any;
   cc_emails?: any;
   bcc_emails?: any;
@@ -1213,6 +2217,24 @@ export interface EmailDraftRequest {
   is_reply_all?: boolean;
   is_forward?: boolean;
   reply_to_message?: number;
+}
+
+export interface EmailErrorResponse {
+  error: string;
+  details?: string;
+}
+
+export interface EmailFolder {
+  name: string;
+  delimiter: string;
+  flags: string[];
+}
+
+export interface EmailFoldersResponse {
+  connection_id?: number;
+  email?: string;
+  folders?: string[];
+  connections?: EmailConnectionFolders[];
 }
 
 export interface EmailMessage {
@@ -1252,7 +2274,31 @@ export interface EmailMessage {
   updated_at: string;
 }
 
-export interface EmailMessageRequest {
+export type EmailMessageActionActionEnum =
+  | 'mark_read'
+  | 'mark_unread'
+  | 'star'
+  | 'unstar'
+  | 'label'
+  | 'unlabel'
+  | 'move'
+  | 'delete'
+  | 'restore';
+
+export interface EmailMessageActionRequest {
+  message_ids?: number[];
+  thread_id?: string;
+  action: EmailMessageActionActionEnum;
+  label?: string;
+  folder?: string;
+}
+
+export interface EmailMessageDetail {
+  id: number;
+  message_id: string;
+  thread_id: string;
+  in_reply_to: string;
+  references: string;
   from_email: string;
   from_name?: string;
   to_emails?: any;
@@ -1263,14 +2309,199 @@ export interface EmailMessageRequest {
   body_text?: string;
   body_html?: string;
   attachments?: any;
+  timestamp: string;
+  folder: string;
+  uid: string;
+  is_from_business: boolean;
   is_read?: boolean;
   is_starred?: boolean;
+  is_answered: boolean;
   is_draft?: boolean;
   labels?: any;
+  has_business_reply: boolean;
   is_read_by_staff?: boolean;
   read_by_staff_at?: string;
   is_deleted?: boolean;
   deleted_at?: string;
+  connection_id: number;
+  connection_email: string;
+  connection_display_name: string;
+  created_at: string;
+  updated_at: string;
+  body_html_safe: string;
+}
+
+export interface EmailMessageLite {
+  id: number;
+  message_id: string;
+  thread_id: string;
+  in_reply_to: string;
+  from_email: string;
+  from_name?: string;
+  to_emails?: any;
+  cc_emails?: any;
+  bcc_emails?: any;
+  reply_to?: string;
+  subject?: string;
+  snippet: string;
+  attachments_count: number;
+  timestamp: string;
+  folder: string;
+  uid: string;
+  is_from_business: boolean;
+  is_read?: boolean;
+  is_starred?: boolean;
+  is_answered: boolean;
+  is_draft?: boolean;
+  labels?: any;
+  has_business_reply: boolean;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
+  is_deleted?: boolean;
+  deleted_at?: string;
+  connection_id: number;
+  connection_email: string;
+  connection_display_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailMessageResponse {
+  message: string;
+}
+
+export interface EmailMoveRequest {
+  message_id: string;
+  source_folder: string;
+  target_folder: string;
+}
+
+export interface EmailMoveResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface EmailReactivateRequest {
+  connection_id: number;
+  password?: string;
+  username?: string;
+  imap_server?: string;
+  imap_port?: number;
+  imap_use_ssl?: boolean;
+  smtp_server?: string;
+  smtp_port?: number;
+  smtp_use_tls?: boolean;
+  smtp_use_ssl?: boolean;
+}
+
+export interface EmailSendMultipartRequest {
+  to_emails: string[];
+  cc_emails?: string[];
+  bcc_emails?: string[];
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  reply_to_message_id?: number;
+  connection_id?: number;
+  attachments?: string[];
+}
+
+export interface EmailSendRequest {
+  to_emails: string[];
+  cc_emails?: string[];
+  bcc_emails?: string[];
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  reply_to_message_id?: number;
+  connection_id?: number;
+}
+
+export interface EmailSendResponse {
+  status: string;
+  message_id: number;
+  data: EmailMessage;
+}
+
+export interface EmailSignature {
+  id: number;
+  sender_name?: string;
+  signature_html?: string;
+  signature_text?: string;
+  is_enabled?: boolean;
+  include_on_reply?: boolean;
+  created_by: number;
+  created_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailSyncDaysRequest {
+  connection_id?: number;
+  sync_days_back: number;
+}
+
+export interface EmailSyncDaysResponse {
+  status: string;
+  sync_days_back: number;
+  meaning: string;
+}
+
+export interface EmailSyncRequest {
+  connection_id?: number;
+}
+
+export interface EmailSyncResponse {
+  status: string;
+  new_messages: number;
+  sync_results: EmailSyncResult[];
+}
+
+export interface EmailSyncResult {
+  connection_id: number;
+  email_address: string;
+  new_messages: number;
+}
+
+export interface EmailThread {
+  id: number;
+  message_id: string;
+  thread_id: string;
+  in_reply_to: string;
+  references: string;
+  from_email: string;
+  from_name?: string;
+  to_emails?: any;
+  cc_emails?: any;
+  bcc_emails?: any;
+  reply_to?: string;
+  subject?: string;
+  body_text?: string;
+  body_html?: string;
+  attachments?: any;
+  timestamp: string;
+  folder: string;
+  uid: string;
+  is_from_business: boolean;
+  is_read?: boolean;
+  is_starred?: boolean;
+  is_answered: boolean;
+  is_draft?: boolean;
+  labels?: any;
+  has_business_reply: boolean;
+  is_read_by_staff?: boolean;
+  read_by_staff_at?: string;
+  is_deleted?: boolean;
+  deleted_at?: string;
+  connection_id: number;
+  connection_email: string;
+  connection_display_name: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  unread_count: number;
+  customer_email: string;
+  customer_name: string;
 }
 
 export interface EmailVerificationRequestRequest {
@@ -1283,6 +2514,16 @@ export interface EmailVerificationResponse {
   client: EcommerceClient;
   access: string;
   refresh: string;
+}
+
+export interface EndSessionResponse {
+  message: string;
+  assignment: ChatAssignment;
+  rating_link: string;
+}
+
+export interface ErrorResponse {
+  error: string;
 }
 
 export type EventTypeEnum =
@@ -1303,6 +2544,22 @@ export type EventTypeEnum =
   | 'failed'
   | 'error'
   | 'conference_started';
+
+export interface ExtensionStatusItem {
+  extension: string;
+  status: string;
+}
+
+export interface ExtensionStatusResponse {
+  extensions: ExtensionStatusItem[];
+}
+
+export interface FacebookDisconnectResponse {
+  status: string;
+  message: string;
+  deactivated_pages?: any;
+  facebook_pages_deactivated?: number;
+}
 
 export interface FacebookMessage {
   id: number;
@@ -1368,6 +2625,23 @@ export interface FacebookPageConnectionRequest {
   is_active?: boolean;
 }
 
+export interface FacebookPageDisconnectResponse {
+  status: string;
+  message: string;
+  page_id?: string;
+  page_name?: string;
+}
+
+export interface FacebookPageStatus {
+  id: number;
+  page_id: string;
+  page_name: string;
+  is_active: boolean;
+  connected_at: string;
+  webhook_subscribed: boolean;
+  connected_by: string;
+}
+
 export interface FacebookSendMessageRequest {
   recipient_id: string;
   message?: string;
@@ -1375,10 +2649,24 @@ export interface FacebookSendMessageRequest {
   reply_to_message_id?: string;
 }
 
+export interface FacebookSendMultipartRequest {
+  media?: string;
+  recipient_id: string;
+  message?: string;
+  page_id: string;
+  reply_to_message_id?: string;
+}
+
+export interface FacebookStatusResponse {
+  connected: boolean;
+  pages_count: number;
+  pages: FacebookPageStatus[];
+}
+
 export interface FavoriteProduct {
   id: number;
   client: number;
-  product: string;
+  product: ProductList;
   created_at: string;
 }
 
@@ -1417,14 +2705,6 @@ export interface Feature {
 
 export interface FeatureMinimal {
   id: number;
-  key: string;
-  name: string;
-  description?: string;
-  category?: CategoryF8dEnum;
-  icon?: string;
-}
-
-export interface FeatureMinimalRequest {
   key: string;
   name: string;
   description?: string;
@@ -1595,8 +2875,8 @@ export interface HelpArticleDetail {
   video_url?: string;
   video_thumbnail?: string;
   video_duration?: string;
-  guide_steps: string;
-  faq_items: string;
+  guide_steps: HelpGuideStep[];
+  faq_items: HelpFaqitem[];
   position?: number;
   is_active?: boolean;
   is_featured?: boolean;
@@ -1667,8 +2947,8 @@ export interface HelpCategoryDetail {
   show_on_public?: boolean;
   show_in_dashboard?: boolean;
   required_feature_key?: string;
-  article_count: string;
-  articles: string;
+  article_count: number;
+  articles: HelpArticleList[];
   created_at: string;
   updated_at: string;
 }
@@ -1684,9 +2964,41 @@ export interface HelpCategoryList {
   show_on_public?: boolean;
   show_in_dashboard?: boolean;
   required_feature_key?: string;
-  article_count: string;
+  article_count: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface HelpFaqitem {
+  question: string;
+  answer: string;
+}
+
+export interface HelpGuideStep {
+  step: number;
+  title: string;
+  content: string;
+  image: string;
+}
+
+export interface HomepageChoiceOption {
+  value: string;
+  label: string;
+}
+
+export interface HomepageDisplayModeOption {
+  value: string;
+  label: string;
+}
+
+export interface HomepageGenerateFromVariantRequestRequest {
+  variant: string;
+}
+
+export interface HomepageGenerateFromVariantResponse {
+  variant: string;
+  sections: HomepageSection[];
+  message: string;
 }
 
 export interface HomepageSection {
@@ -1709,6 +3021,11 @@ export interface HomepageSection {
   text_color?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface HomepageSectionChoices {
+  section_types: HomepageChoiceOption[];
+  display_modes: HomepageDisplayModeOption[];
 }
 
 export interface HomepageSectionPublic {
@@ -1753,6 +3070,37 @@ export type HomepageVariantEnum =
   | 'minimal'
   | 'boutique'
   | 'marketplace';
+
+export interface HomepageVariantSummary {
+  key: string;
+  name: string;
+  description: string;
+  section_count: number;
+  section_types: string[];
+}
+
+export interface IpwhitelistList {
+  ip_whitelist_enabled: boolean;
+  superadmin_bypass_whitelist: boolean;
+  entries: TenantIpwhitelist[];
+}
+
+export type IpwhitelistLockoutCodeEnum =
+  | 'no_active_entries'
+  | 'would_lock_out'
+  | 'would_lock_out_superusers';
+
+export interface IpwhitelistLockoutError {
+  error: string;
+  code: IpwhitelistLockoutCodeEnum;
+  ip_address?: string;
+}
+
+export interface IpwhitelistState {
+  ip_whitelist_enabled: boolean;
+  superadmin_bypass_whitelist: boolean;
+  message: string;
+}
 
 export interface InboundRoute {
   id: number;
@@ -1807,6 +3155,22 @@ export interface InstagramAccountConnectionRequest {
   is_active?: boolean;
 }
 
+export interface InstagramAccountStatus {
+  id: number;
+  instagram_account_id: string;
+  username: string;
+  profile_picture_url: string;
+  is_active: boolean;
+  connected_at: string;
+}
+
+export interface InstagramDisconnectResponse {
+  status: string;
+  message: string;
+  deactivated_accounts?: any;
+  instagram_accounts_deactivated?: number;
+}
+
 export interface InstagramMessage {
   id: number;
   message_id: string;
@@ -1855,17 +3219,55 @@ export interface InstagramSendMessageRequest {
   recipient_id: string;
   message?: string;
   instagram_account_id: string;
+  reply_to_message_id?: string;
 }
 
-export interface InvoiceCreateUpdate {
-  issue_date?: string;
-  due_date: string;
-  currency?: string;
-  discount_amount?: string;
-  notes?: string;
-  terms_and_conditions?: string;
-  template?: number;
-  line_items?: InvoiceLineItem[];
+export interface InstagramSendMultipartRequest {
+  media?: string;
+  recipient_id: string;
+  message?: string;
+  instagram_account_id: string;
+  reply_to_message_id?: string;
+}
+
+export interface InstagramStatusResponse {
+  connected: boolean;
+  accounts_count: number;
+  accounts: InstagramAccountStatus[];
+}
+
+export interface InvoiceAvailableItemList {
+  id: number;
+  title: string;
+  description: string;
+  is_active: boolean;
+  is_public: boolean;
+  parent_list: number;
+  custom_fields_schema: any;
+  created_at: string;
+  updated_at: string;
+  created_by: Record<string, any>;
+  items_count: number;
+}
+
+export interface InvoiceBadgeUploadRequest {
+  badge: string;
+}
+
+export interface InvoiceClient {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface InvoiceClientDetails {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  full_name: string;
 }
 
 export interface InvoiceCreateUpdateRequest {
@@ -1882,11 +3284,11 @@ export interface InvoiceCreateUpdateRequest {
 
 export interface InvoiceDetail {
   id: number;
-  client_details: string;
+  client_details: InvoiceClientDetails;
   line_items: InvoiceLineItem[];
   payments: InvoicePayment[];
   balance: string;
-  is_overdue: string;
+  is_overdue: boolean;
   created_by_name: string;
   template_name: string;
   pdf_url: string;
@@ -1916,23 +3318,6 @@ export interface InvoiceDetail {
   created_by: number;
 }
 
-export interface InvoiceDetailRequest {
-  status?: Status36dEnum;
-  client_name?: string;
-  issue_date?: string;
-  due_date: string;
-  sent_date?: string;
-  paid_date?: string;
-  currency?: string;
-  discount_amount?: string;
-  notes?: string;
-  terms_and_conditions?: string;
-  pdf_file?: string;
-  client?: number;
-  client_itemlist_item?: number;
-  template?: number;
-}
-
 export interface InvoiceLineItem {
   id: number;
   line_subtotal: string;
@@ -1954,6 +3339,15 @@ export interface InvoiceLineItem {
   updated_at: string;
   product?: number;
   list_item?: number;
+}
+
+export interface InvoiceLineItemReorderItemRequest {
+  id: number;
+  position: number;
+}
+
+export interface InvoiceLineItemReorderRequest {
+  items: InvoiceLineItemReorderItemRequest[];
 }
 
 export interface InvoiceLineItemRequest {
@@ -1982,13 +3376,22 @@ export interface InvoiceList {
   total?: string;
   paid_amount?: string;
   balance: string;
-  is_overdue: string;
-  line_items_count: string;
+  is_overdue: boolean;
+  line_items_count: number;
   created_at: string;
 }
 
 export interface InvoiceListResponse {
-  invoices: Record<string, any>[];
+  invoices: SubscriptionInvoice[];
+}
+
+export interface InvoiceLogoUploadRequest {
+  logo: string;
+}
+
+export interface InvoiceMarkPaidRequest {
+  payment_method?: PaymentMethod0e6enum;
+  notes?: string;
 }
 
 export interface InvoicePayment {
@@ -1996,7 +3399,7 @@ export interface InvoicePayment {
   recorded_by_name: string;
   payment_date?: string;
   amount: string;
-  payment_method?: InvoicePaymentPaymentMethodEnum;
+  payment_method?: PaymentMethod0e6enum;
   reference_number?: string;
   notes?: string;
   created_at: string;
@@ -2005,25 +3408,26 @@ export interface InvoicePayment {
   recorded_by: number;
 }
 
-export type InvoicePaymentPaymentMethodEnum =
-  | 'card'
-  | 'cash'
-  | 'bank_transfer'
-  | 'check'
-  | 'other';
-
 export interface InvoicePaymentRequest {
   payment_date?: string;
   amount: string;
-  payment_method?: InvoicePaymentPaymentMethodEnum;
+  payment_method?: PaymentMethod0e6enum;
   reference_number?: string;
   notes?: string;
   invoice: number;
 }
 
+export interface InvoiceSendEmailRequest {
+  recipient_email: string;
+  cc_emails?: string[];
+  subject?: string;
+  message?: string;
+  attach_pdf?: boolean;
+}
+
 export interface InvoiceSettings {
   id: number;
-  client_itemlist_details: string;
+  client_itemlist_details: ClientItemListDetails;
   company_name?: string;
   tax_id?: string;
   registration_number?: string;
@@ -2081,6 +3485,22 @@ export interface InvoiceSettingsRequest {
   materials_itemlist?: number;
 }
 
+export interface InvoiceSignatureUploadRequest {
+  signature: string;
+}
+
+export interface InvoiceStats {
+  current_month: InvoiceStatsCurrentMonth;
+  outstanding_amount: number;
+  overdue_count: number;
+}
+
+export interface InvoiceStatsCurrentMonth {
+  total_invoiced: number;
+  total_paid: number;
+  count: number;
+}
+
 export interface InvoiceTemplate {
   id: number;
   created_by_name: string;
@@ -2118,8 +3538,8 @@ export interface ItemList {
   updated_at: string;
   created_by: UserMinimal;
   items: ListItem[];
-  items_count: string;
-  root_items: string;
+  items_count: number;
+  root_items: ListItem[];
 }
 
 export interface ItemListDetail {
@@ -2138,12 +3558,15 @@ export interface ItemListDetail {
 export interface ItemListMinimal {
   id: number;
   title: string;
-  description?: string;
-  is_public?: boolean;
-  is_active?: boolean;
-  items_count: string;
+  description: string;
+  is_active: boolean;
+  is_public: boolean;
+  parent_list: number;
+  custom_fields_schema: any;
   created_at: string;
   updated_at: string;
+  created_by: UserMinimal;
+  items_count: number;
 }
 
 export interface ItemListRequest {
@@ -2321,10 +3744,21 @@ export interface LastMessage {
   platform_message_id: string;
 }
 
-export interface LeaveApproval {
-  action: ActionEnum;
-  comments?: string;
+export interface LeaveActionErrorResponse {
+  error?: string;
+  action?: string[];
+  comments?: string[];
+  reason?: string[];
+  non_field_errors?: string[];
 }
+
+export interface LeaveActionResponse {
+  success: boolean;
+  message: string;
+  status?: StatusCf2enum;
+}
+
+export type LeaveApprovalActionEnum = 'approve' | 'reject';
 
 export interface LeaveApprovalChain {
   id: number;
@@ -2346,7 +3780,7 @@ export interface LeaveApprovalChainRequest {
 }
 
 export interface LeaveApprovalRequest {
-  action: ActionEnum;
+  action: LeaveApprovalActionEnum;
   comments?: string;
 }
 
@@ -2410,6 +3844,15 @@ export interface LeaveCancellationRequest {
   reason?: string;
 }
 
+export interface LeaveErrorResponse {
+  error: string;
+}
+
+export interface LeaveForbiddenResponse {
+  detail?: string;
+  error?: string;
+}
+
 export interface LeaveRequestCreate {
   leave_type: number;
   start_date: string;
@@ -2451,6 +3894,7 @@ export interface LeaveRequestDetail {
   final_approver?: number;
   final_approver_name: string;
   final_approved_at?: string;
+  final_comments?: string;
   rejected_by?: number;
   rejected_by_name: string;
   rejected_at?: string;
@@ -2475,6 +3919,19 @@ export interface LeaveRequestList {
   status?: StatusCf2enum;
   status_display: string;
   created_at: string;
+}
+
+export interface LeaveRequestPreviewRequest {
+  leave_type: number;
+  start_date: string;
+  end_date: string;
+}
+
+export interface LeaveRequestPreviewResponse {
+  total_days: string;
+  available_days: string;
+  allowed: boolean;
+  message: string;
 }
 
 export interface LeaveRequestUpdate {
@@ -2581,6 +4038,11 @@ export interface LeaveTypeList {
   color?: string;
   is_active?: boolean;
   sort_order?: number;
+  calculation_method?: CalculationMethodEnum;
+  default_days_per_year?: string;
+  accrual_rate_per_month?: string;
+  max_carry_forward_days?: number;
+  carry_forward_expiry_months?: number;
 }
 
 export interface LeaveTypeListRequest {
@@ -2591,25 +4053,42 @@ export interface LeaveTypeListRequest {
   color?: string;
   is_active?: boolean;
   sort_order?: number;
+  calculation_method?: CalculationMethodEnum;
+  default_days_per_year?: string;
+  accrual_rate_per_month?: string;
+  max_carry_forward_days?: number;
+  carry_forward_expiry_months?: number;
 }
 
 export type LeavewhenemptyEnum = 'yes' | 'no' | 'strict' | 'loose';
 
+export interface LinkAccountResponse {
+  status: string;
+  social_account: SocialAccount;
+}
+
 export interface ListItem {
   id: number;
+  item_list: number;
   label: string;
   custom_id?: string;
+  parent?: number;
+  parent_list_item?: number;
   position?: number;
   is_active?: boolean;
   custom_data?: any;
-  children: string;
+  created_at: string;
+  updated_at: string;
+  created_by: UserMinimal;
+  children: ListItem[];
+  full_path: string;
 }
 
 export interface ListItemMaterial {
   id: number;
   label: string;
   custom_data?: any;
-  price: string;
+  price: number | string;
   unit: string;
   description: string;
 }
@@ -2638,6 +4117,31 @@ export interface ListItemRequest {
 
 export type LocaleEnum = 'ka' | 'en';
 
+export interface ManualPayment {
+  amount: string;
+  method: MethodEnum;
+  note: string;
+  recorded_by: number;
+  recorded_by_name: string;
+  recorded_at: string;
+}
+
+export interface MarkAllReadResponse {
+  success: boolean;
+  messages_marked_read: number;
+  platform: string;
+}
+
+export interface MarkReadResponse {
+  success: boolean;
+  messages_marked_read: number;
+}
+
+export interface MarkUnreadResponse {
+  success: boolean;
+  messages_marked_unread: number;
+}
+
 export interface MergeConferenceRequest {
   consultation_log_id: number;
 }
@@ -2649,7 +4153,45 @@ export interface MergeConferenceResponse {
   channels_redirected: string[];
 }
 
+export interface MessageResponse {
+  message: string;
+}
+
+export type MessageTypeD4bEnum = 'text' | 'image' | 'file' | 'voice';
+
+export interface MessagingWindowResponse {
+  window_open: boolean;
+  hours_remaining: number;
+  human_agent_window_open: boolean;
+  human_agent_hours_remaining: number;
+  can_reply: boolean;
+  last_user_message_at?: string;
+  hours_passed?: number;
+  message?: string;
+}
+
+export interface MetaSendResponse {
+  status: string;
+  message_id: string;
+  recipient_id?: string;
+}
+
+export type MethodEnum = 'cash' | 'card' | 'transfer' | 'other';
+
 export type ModeEnum = 'ai' | 'off';
+
+export interface MySoftphoneConfig {
+  id: number;
+  user: number;
+  sip_configuration: SoftphoneSipConfiguration;
+  extension: string;
+  extension_password: string;
+  phone_number: string;
+  display_name: string;
+  is_primary: boolean;
+  is_active: boolean;
+  sip_enabled: boolean;
+}
 
 export interface NewsletterSubscribeRequest {
   email: string;
@@ -2694,6 +4236,30 @@ export interface Notification {
   time_ago: string;
 }
 
+export interface NotificationPreference {
+  id: number;
+  notification_type: string;
+  in_app?: boolean;
+  sound?: boolean;
+  push?: boolean;
+}
+
+export interface NotificationPreferenceBulkItemRequest {
+  notification_type: string;
+  in_app?: boolean;
+  sound?: boolean;
+  push?: boolean;
+}
+
+export interface NotificationPreferenceType {
+  notification_type: string;
+  label: string;
+  in_app: boolean;
+  sound: boolean;
+  push: boolean;
+  is_customized: boolean;
+}
+
 export interface NotificationRequest {
   notification_type: NotificationTypeEnum;
   title: string;
@@ -2716,6 +4282,7 @@ export type NotificationTypeEnum =
   | 'message_received'
   | 'message_assigned'
   | 'ai_handoff_requested'
+  | 'team_chat_message'
   | 'invoice_created'
   | 'invoice_paid'
   | 'invoice_overdue'
@@ -2724,21 +4291,38 @@ export type NotificationTypeEnum =
   | 'leave_request_submitted'
   | 'leave_request_approved'
   | 'leave_request_rejected'
+  | 'leave_request_progress'
+  | 'leave_request_awaiting_approval'
+  | 'leave_request_cancelled'
   | 'booking_confirmed'
   | 'booking_cancelled'
   | 'booking_reminder'
+  | 'booking_assigned'
   | 'call_missed'
   | 'call_voicemail'
-  | 'email_sync_disabled';
+  | 'ecommerce_order_created'
+  | 'ecommerce_order_paid'
+  | 'ecommerce_low_stock'
+  | 'email_sync_disabled'
+  | 'auto_post_draft'
+  | 'auto_post_failed'
+  | 'whatsapp_template_status'
+  | 'system';
 
 export type NullEnum = 'null';
+
+export interface OauthStartResponse {
+  oauth_url: string;
+  redirect_uri?: string;
+  instructions?: string;
+}
 
 export interface Order {
   id: number;
   order_number: string;
   public_token: string;
   client: number;
-  client_details: string;
+  client_details: OrderClientDetails;
   delivery_address: ClientAddress;
   status?: Status1f1enum;
   total_amount: string;
@@ -2770,6 +4354,76 @@ export interface Order {
   shipped_at?: string;
   delivered_at?: string;
   cancelled_at?: string;
+}
+
+export interface OrderAnalyticsCounts {
+  today: number;
+  week: number;
+  month: number;
+  total: number;
+  change: number;
+}
+
+export interface OrderAnalyticsCustomers {
+  total: number;
+  new: number;
+  returning: number;
+}
+
+export interface OrderAnalyticsPaymentMethod {
+  payment_method: string;
+  revenue: number;
+  count: number;
+  percentage: number;
+}
+
+export interface OrderAnalyticsRecentOrder {
+  id: number;
+  order_number: string;
+  status: string;
+  payment_status: string;
+  total_amount: number;
+  created_at: string;
+  client_name: string;
+}
+
+export interface OrderAnalyticsResponse {
+  revenue: OrderAnalyticsRevenue;
+  orders: OrderAnalyticsCounts;
+  avg_order_value: number;
+  top_products: OrderAnalyticsTopProduct[];
+  order_status_breakdown: Record<string, any>;
+  sales_trend: OrderAnalyticsTrendPoint[];
+  customer_insights: OrderAnalyticsCustomers;
+  revenue_by_method: OrderAnalyticsPaymentMethod[];
+  recent_orders: OrderAnalyticsRecentOrder[];
+}
+
+export interface OrderAnalyticsRevenue {
+  today: number;
+  week: number;
+  month: number;
+  total: number;
+  change: number;
+}
+
+export interface OrderAnalyticsTopProduct {
+  product__name: any;
+  sold: number;
+  revenue: number;
+}
+
+export interface OrderAnalyticsTrendPoint {
+  date: string;
+  revenue: number;
+  orders: number;
+}
+
+export interface OrderClientDetails {
+  id: number;
+  full_name: string;
+  email: string;
+  phone_number: string;
 }
 
 export interface OrderCreate {
@@ -2806,6 +4460,26 @@ export interface OrderCreateRequest {
   delivery_method?: DeliveryMethodEnum;
 }
 
+export type OrderInitiatePaymentRequestPaymentMethodEnum =
+  | 'card'
+  | 'cash_on_delivery';
+
+export interface OrderInitiatePaymentRequestRequest {
+  payment_method?: OrderInitiatePaymentRequestPaymentMethodEnum;
+  return_url_success?: string;
+  return_url_fail?: string;
+}
+
+export interface OrderInitiatePaymentResponse {
+  payment_url?: string;
+  bog_order_id?: string;
+  amount?: number;
+  currency?: string;
+  status?: string;
+  payment_method?: string;
+  message?: string;
+}
+
 export interface OrderItem {
   id: number;
   order: number;
@@ -2834,7 +4508,7 @@ export interface OrderList {
   client: number;
   client_name: string;
   client_email: string;
-  total_items: string;
+  total_items: number;
   status?: Status1f1enum;
   payment_status?: PaymentStatus83cEnum;
   payment_method?: string;
@@ -2846,6 +4520,10 @@ export interface OrderList {
   subtotal?: string;
   discount_amount?: string;
   created_at: string;
+}
+
+export interface OrderMarkPaidRequestRequest {
+  notes?: string;
 }
 
 export interface OrderRefundResponse {
@@ -2874,6 +4552,13 @@ export interface OrderRequest {
   shipped_at?: string;
   delivered_at?: string;
   cancelled_at?: string;
+}
+
+export interface OrderStatusUpdateRequestRequest {
+  status: Status1f1enum;
+  tracking_number?: string;
+  courier_provider?: string;
+  estimated_delivery_date?: string;
 }
 
 export type PageType705enum = 'feature' | 'vertical' | 'comparison';
@@ -2932,6 +4617,13 @@ export interface PaginatedBookingListList {
   next?: string;
   previous?: string;
   results: BookingList[];
+}
+
+export interface PaginatedBookingRowList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: BookingRow[];
 }
 
 export interface PaginatedBookingStaffList {
@@ -3011,6 +4703,13 @@ export interface PaginatedEcommerceClientListList {
   results: EcommerceClientList[];
 }
 
+export interface PaginatedEcommerceItemListMinimalList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EcommerceItemListMinimal[];
+}
+
 export interface PaginatedEcommerceSettingsList {
   count: number;
   next?: string;
@@ -3030,6 +4729,13 @@ export interface PaginatedEmailMessageList {
   next?: string;
   previous?: string;
   results: EmailMessage[];
+}
+
+export interface PaginatedEmailMessageLiteList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: EmailMessageLite[];
 }
 
 export interface PaginatedFacebookMessageList {
@@ -3123,6 +4829,13 @@ export interface PaginatedInstagramMessageList {
   results: InstagramMessage[];
 }
 
+export interface PaginatedInvoiceClientList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: InvoiceClient[];
+}
+
 export interface PaginatedInvoiceLineItemList {
   count: number;
   next?: string;
@@ -3142,13 +4855,6 @@ export interface PaginatedInvoicePaymentList {
   next?: string;
   previous?: string;
   results: InvoicePayment[];
-}
-
-export interface PaginatedInvoiceSettingsList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: InvoiceSettings[];
 }
 
 export interface PaginatedInvoiceTemplateList {
@@ -3226,13 +4932,6 @@ export interface PaginatedLeaveTypeListList {
   next?: string;
   previous?: string;
   results: LeaveTypeList[];
-}
-
-export interface PaginatedListItemMaterialList {
-  count: number;
-  next?: string;
-  previous?: string;
-  results: ListItemMaterial[];
 }
 
 export interface PaginatedListItemMinimalList {
@@ -3373,6 +5072,13 @@ export interface PaginatedRecurringBookingList {
   next?: string;
   previous?: string;
   results: RecurringBooking[];
+}
+
+export interface PaginatedSecurityLogList {
+  count: number;
+  next: string;
+  previous: string;
+  results: SecurityLog[];
 }
 
 export interface PaginatedServiceCategoryList {
@@ -3585,6 +5291,13 @@ export interface PaginatedUnifiedConversation {
   results: UnifiedConversation[];
 }
 
+export interface PaginatedUserDirectoryList {
+  count: number;
+  next?: string;
+  previous?: string;
+  results: UserDirectory[];
+}
+
 export interface PaginatedUserList {
   count: number;
   next?: string;
@@ -3634,6 +5347,12 @@ export interface PaginatedWidgetMessageList {
   results: WidgetMessage[];
 }
 
+export interface PasswordChangeRequest {
+  old_password: string;
+  new_password: string;
+  new_password_confirm: string;
+}
+
 export interface PasswordResetConfirmRequest {
   email: string;
   code: string;
@@ -3656,6 +5375,12 @@ export interface PatchedAicompanionSettingsRequest {
   max_replies_per_conversation_per_day?: number;
   max_replies_per_day?: number;
   channels?: AicompanionChannelRequest[];
+}
+
+export interface PatchedAdminBookingUpdateRequest {
+  staff_notes?: string;
+  client_notes?: string;
+  total_amount?: string;
 }
 
 export interface PatchedAttributeDefinitionRequest {
@@ -3724,17 +5449,45 @@ export interface PatchedBoardRequest {
   board_user_ids?: number[];
 }
 
-export interface PatchedBookingListRequest {
-  date?: string;
-  start_time?: string;
-  end_time?: string;
-  status?: Status528enum;
-  payment_status?: PaymentStatus0acEnum;
-  payment_method?: PaymentMethod9aeEnum | BlankEnum;
-  total_amount?: string;
-  deposit_amount?: string;
-  paid_amount?: string;
-  client_notes?: string;
+export interface PatchedBoardTelegramConnectionRequest {
+  chat_id?: string;
+  is_active?: boolean;
+  bot_token_raw?: string;
+}
+
+export interface PatchedBookingSettingsRequest {
+  payment_method?: BookingSettingsPaymentMethodEnum;
+  bank_name?: string;
+  bank_iban?: string;
+  bank_account_holder?: string;
+  require_deposit?: boolean;
+  allow_cash_payment?: boolean;
+  allow_card_payment?: boolean;
+  bog_client_id?: string;
+  bog_client_secret?: string;
+  bog_use_production?: boolean;
+  cancellation_hours_before?: number;
+  refund_policy?: RefundPolicyEnum;
+  auto_confirm_on_deposit?: boolean;
+  auto_confirm_on_full_payment?: boolean;
+  min_hours_before_booking?: number;
+  max_days_advance_booking?: number;
+  timezone?: string;
+  public_page_enabled?: boolean;
+  public_description?: any;
+  public_address?: string;
+  public_phone?: string;
+  reminder_hours_before?: number;
+  second_reminder_hours_before?: number;
+  sms_enabled?: boolean;
+  sms_api_key?: string;
+  sms_api_key_clear?: boolean;
+  sms_on_created?: boolean;
+  sms_on_confirmed?: boolean;
+  sms_on_rescheduled?: boolean;
+  sms_on_cancelled?: boolean;
+  sms_on_reminder?: boolean;
+  sms_templates?: any;
 }
 
 export interface PatchedBookingStaffCreateRequest {
@@ -3922,6 +5675,14 @@ export interface PatchedEmailDraftRequest {
   reply_to_message?: number;
 }
 
+export interface PatchedEmailSignatureRequest {
+  sender_name?: string;
+  signature_html?: string;
+  signature_text?: string;
+  is_enabled?: boolean;
+  include_on_reply?: boolean;
+}
+
 export interface PatchedFacebookPageConnectionRequest {
   page_id?: string;
   page_name?: string;
@@ -4036,7 +5797,7 @@ export interface PatchedInvoiceLineItemRequest {
 export interface PatchedInvoicePaymentRequest {
   payment_date?: string;
   amount?: string;
-  payment_method?: InvoicePaymentPaymentMethodEnum;
+  payment_method?: PaymentMethod0e6enum;
   reference_number?: string;
   notes?: string;
   invoice?: number;
@@ -4175,6 +5936,10 @@ export interface PatchedLeaveTypeCreateUpdateRequest {
   sort_order?: number;
 }
 
+export interface PatchedListItemReorderRequest {
+  position?: number;
+}
+
 export interface PatchedListItemRequest {
   item_list?: number;
   label?: string;
@@ -4184,6 +5949,11 @@ export interface PatchedListItemRequest {
   position?: number;
   is_active?: boolean;
   custom_data?: any;
+}
+
+export interface PatchedMoveTicketToColumnRequestRequest {
+  column_id?: number;
+  position_in_column?: number;
 }
 
 export interface PatchedNotificationRequest {
@@ -4240,6 +6010,41 @@ export interface PatchedPbxServerRequest {
   notes?: string;
 }
 
+export interface PatchedPbxSettingsRequest {
+  working_hours_enabled?: boolean;
+  working_hours_schedule?: any;
+  timezone?: string;
+  holidays?: any;
+  after_hours_action?: AfterHoursActionEnum;
+  forward_number?: string;
+  voicemail_enabled?: boolean;
+  review_method?: ReviewMethodEnum;
+  sms_api_key?: string;
+  sms_rating_template_ka?: string;
+  sms_rating_template_en?: string;
+  review_delay_hours?: number;
+  review_cooldown_hours?: number;
+  sound_greeting?: string;
+  sound_after_hours?: string;
+  sound_queue_hold?: string;
+  sound_voicemail_prompt?: string;
+  sound_thank_you?: string;
+  sound_transfer_hold?: string;
+  sound_review_prompt?: string;
+  sound_review_invalid?: string;
+  sound_review_thanks?: string;
+  sound_queue_position_1?: string;
+  sound_queue_position_2?: string;
+  sound_queue_position_3?: string;
+  sound_queue_position_4?: string;
+  sound_queue_position_5?: string;
+  sound_queue_position_6?: string;
+  sound_queue_position_7?: string;
+  sound_queue_position_8?: string;
+  sound_queue_position_9?: string;
+  sound_queue_position_10?: string;
+}
+
 export interface PatchedProductCreateUpdateRequest {
   sku?: string;
   slug?: string;
@@ -4264,6 +6069,7 @@ export interface PatchedProductCreateUpdateRequest {
 }
 
 export interface PatchedProductImageRequest {
+  product?: number;
   image?: string;
   alt_text?: any;
   sort_order?: number;
@@ -4344,6 +6150,10 @@ export interface PatchedRecurringBookingRequest {
   max_occurrences?: number;
 }
 
+export interface PatchedReorderTicketInColumnRequestRequest {
+  position_in_column?: number;
+}
+
 export interface PatchedServiceCategoryRequest {
   name?: any;
   description?: any;
@@ -4352,15 +6162,17 @@ export interface PatchedServiceCategoryRequest {
   is_active?: boolean;
 }
 
-export interface PatchedServiceDetailRequest {
+export interface PatchedServiceCreateRequest {
   name?: any;
   description?: any;
+  category_id?: number;
   base_price?: string;
   deposit_percentage?: number;
   duration_minutes?: number;
   buffer_time_minutes?: number;
   booking_type?: BookingTypeEnum;
   available_time_slots?: any;
+  staff_ids?: number[];
   status?: StatusE7cEnum;
   image?: string;
 }
@@ -4470,22 +6282,20 @@ export interface PatchedTagRequest {
 }
 
 export interface PatchedTeamChatMessageRequest {
-  conversation?: number;
-  sender_id?: number;
-  message_type?: TeamChatMessageMessageTypeEnum;
+  message_type?: MessageTypeD4bEnum;
   text?: string;
   file?: string;
   file_name?: string;
   file_size?: number;
   file_mime_type?: string;
   voice_duration?: number;
-  is_read?: boolean;
-  read_at?: string;
 }
 
 export interface PatchedTenantGroupCreateRequest {
   name?: string;
   description?: string;
+  is_active?: boolean;
+  is_booking_staff?: boolean;
   feature_ids?: number[];
 }
 
@@ -4511,6 +6321,12 @@ export interface PatchedTenantRequest {
   is_active?: boolean;
   min_users_per_ticket?: number;
   only_superadmin_can_delete_tickets?: boolean;
+}
+
+export interface PatchedTenantSettingsRequest {
+  min_users_per_ticket?: number;
+  only_superadmin_can_delete_tickets?: boolean;
+  preferred_language?: PreferredLanguage711enum;
 }
 
 export interface PatchedTestimonialAdminRequest {
@@ -4545,7 +6361,6 @@ export interface PatchedTicketColumnUpdateRequest {
   is_default?: boolean;
   is_closed_status?: boolean;
   track_time?: boolean;
-  board?: number;
 }
 
 export interface PatchedTicketCommentRequest {
@@ -4640,6 +6455,8 @@ export interface PatchedUserUpdateRequest {
   phone_number?: string;
   job_title?: string;
   is_active?: boolean;
+  department_id?: number;
+  manager_id?: number;
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
@@ -4679,6 +6496,13 @@ export interface PaymentConfigResponse {
   tax_label?: string;
   tax_inclusive?: boolean;
 }
+
+export type PaymentMethod0e6enum =
+  | 'card'
+  | 'cash'
+  | 'bank_transfer'
+  | 'check'
+  | 'other';
 
 export type PaymentMethod9aeEnum = 'cash' | 'card';
 
@@ -4754,6 +6578,53 @@ export type PbxServerStatusEnum =
   | 'error'
   | 'revoked';
 
+export interface PbxSettings {
+  id: number;
+  sip_configuration: number;
+  working_hours_enabled?: boolean;
+  working_hours_schedule?: any;
+  timezone?: string;
+  holidays?: any;
+  after_hours_action?: AfterHoursActionEnum;
+  forward_number?: string;
+  voicemail_enabled?: boolean;
+  review_method?: ReviewMethodEnum;
+  sms_rating_template_ka?: string;
+  sms_rating_template_en?: string;
+  review_delay_hours?: number;
+  review_cooldown_hours?: number;
+  sound_greeting_url: string;
+  sound_after_hours_url: string;
+  sound_queue_hold_url: string;
+  sound_voicemail_prompt_url: string;
+  sound_thank_you_url: string;
+  sound_transfer_hold_url: string;
+  sound_review_prompt_url: string;
+  sound_review_invalid_url: string;
+  sound_review_thanks_url: string;
+  sound_queue_position_1_url: string;
+  sound_queue_position_2_url: string;
+  sound_queue_position_3_url: string;
+  sound_queue_position_4_url: string;
+  sound_queue_position_5_url: string;
+  sound_queue_position_6_url: string;
+  sound_queue_position_7_url: string;
+  sound_queue_position_8_url: string;
+  sound_queue_position_9_url: string;
+  sound_queue_position_10_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PbxSoundRemoveRequest {
+  sound_type: SoundTypeEnum;
+}
+
+export interface PbxSoundUploadRequest {
+  sound_type: SoundTypeEnum;
+  file: string;
+}
+
 export interface Permission {
   id: number;
   name: string;
@@ -4767,6 +6638,8 @@ export interface PermissionRequest {
   codename: string;
   content_type: number;
 }
+
+export type PhaseEnum = '0-1' | '1-90' | '90-180';
 
 export type PlanEnum = 'basic' | 'premium' | 'enterprise';
 
@@ -4789,6 +6662,10 @@ export type PlatformE2dEnum =
 
 export type PlatformTypeEnum = 'CLOUD_API' | 'ON_PREMISE' | 'SMB';
 
+export interface PlatformsRequest {
+  platform?: string;
+}
+
 export type PositionEnum = 'bottom-right' | 'bottom-left';
 
 export type PostTypeEnum =
@@ -4808,10 +6685,16 @@ export type PrimaryLanguage619enum = 'ka' | 'en';
 
 export type PriorityEnum = 'low' | 'medium' | 'high' | 'critical';
 
+export interface ProductAddImageRequestRequest {
+  image: string;
+  alt_text?: any;
+  sort_order?: number;
+}
+
 export interface ProductAttributeValue {
   id: number;
   attribute: AttributeDefinition;
-  value: string;
+  value: any;
   value_text?: string;
   value_number?: string;
   value_boolean?: boolean;
@@ -4819,6 +6702,15 @@ export interface ProductAttributeValue {
   value_json?: any;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProductAttributeValueInputRequest {
+  attribute_id: number;
+  value_text?: string;
+  value_number?: string;
+  value_boolean?: boolean;
+  value_date?: string;
+  value_json?: any;
 }
 
 export interface ProductAttributeValueRequest {
@@ -4901,34 +6793,14 @@ export interface ProductDetail {
   meta_description?: any;
   attribute_values: ProductAttributeValue[];
   variants: ProductVariant[];
-  average_rating: string;
-  review_count: string;
+  average_rating: number;
+  review_count: number;
   created_at: string;
   updated_at: string;
   created_by: number;
   created_by_name: string;
   updated_by: number;
   updated_by_name: string;
-}
-
-export interface ProductDetailRequest {
-  sku: string;
-  slug: string;
-  name: any;
-  description?: any;
-  short_description?: any;
-  price: string;
-  compare_at_price?: string;
-  cost_price?: string;
-  track_inventory?: boolean;
-  quantity?: number;
-  low_stock_threshold?: number;
-  status?: Status956enum;
-  is_featured?: boolean;
-  weight?: string;
-  dimensions?: any;
-  meta_title?: any;
-  meta_description?: any;
 }
 
 export interface ProductImage {
@@ -4940,6 +6812,7 @@ export interface ProductImage {
 }
 
 export interface ProductImageRequest {
+  product?: number;
   image: string;
   alt_text?: any;
   sort_order?: number;
@@ -4962,8 +6835,8 @@ export interface ProductList {
   is_low_stock: boolean;
   is_in_stock: boolean;
   attribute_values: ProductAttributeValue[];
-  average_rating: string;
-  review_count: string;
+  average_rating: number;
+  review_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -4983,6 +6856,9 @@ export interface ProductListRequest {
 export interface ProductReview {
   id: number;
   product: number;
+  product_name: any;
+  product_sku: string;
+  product_image: string;
   client: number;
   client_name: string;
   rating: number;
@@ -5012,6 +6888,10 @@ export interface ProductReviewRequest {
   rating: number;
   title?: string;
   content?: string;
+}
+
+export interface ProductUpdateAttributesRequestRequest {
+  attributes: ProductAttributeValueInputRequest[];
 }
 
 export interface ProductVariant {
@@ -5179,13 +7059,13 @@ export interface PublicBooking {
   date: string;
   start_time: string;
   end_time: string;
-  status: Status528enum;
+  status: Status308enum;
   payment_status: PaymentStatus0acEnum;
   payment_method: PaymentMethod9aeEnum;
   total_amount: string;
   deposit_amount: string;
   paid_amount: string;
-  remaining_amount: string;
+  remaining_amount: number;
   payment_url: string;
   client_notes: string;
   rating: number;
@@ -5209,7 +7089,7 @@ export interface PublicBookingStaff {
   total_ratings: number;
   is_active_for_bookings?: boolean;
   services: ServiceMinimal[];
-  services_count: string;
+  services_count: number;
 }
 
 export interface PublicBookingStaffRequest {
@@ -5300,12 +7180,12 @@ export interface PublicService {
   buffer_time_minutes?: number;
   booking_type?: BookingTypeEnum;
   available_time_slots?: any;
-  staff_members: string;
+  staff_members: PublicBookingStaff[];
   status?: StatusE7cEnum;
   image?: string;
   name_display: string;
   description_display: string;
-  deposit_amount: string;
+  deposit_amount: number;
 }
 
 export interface PublicServiceRequest {
@@ -5326,6 +7206,25 @@ export interface PublicStaffUser {
   first_name: string;
   last_name: string;
   full_name: string;
+}
+
+export interface PublishingInstagram {
+  id: number;
+  instagram_account_id: string;
+  username: string;
+  has_publishing_permission: boolean;
+}
+
+export interface PublishingPage {
+  id: number;
+  page_id: string;
+  page_name: string;
+  has_publishing_permission: boolean;
+}
+
+export interface PublishingStatusResponse {
+  facebook_pages: PublishingPage[];
+  instagram_accounts: PublishingInstagram[];
 }
 
 export interface Queue {
@@ -5422,6 +7321,24 @@ export interface QuickReplyRequest {
   position?: number;
 }
 
+export interface QuickReplyUseRequest {
+  customer_name?: string;
+  order_number?: string;
+  agent_name?: string;
+  company_name?: string;
+}
+
+export interface QuickReplyUseResponse {
+  original_message: string;
+  processed_message: string;
+  use_count: number;
+}
+
+export interface QuickReplyVariables {
+  name: string;
+  description: string;
+}
+
 export interface QuickshipperGuestItemRequest {
   product_id: number;
   quantity: number;
@@ -5438,6 +7355,69 @@ export interface QuickshipperQuoteGuestRequestRequest {
 export interface QuickshipperQuoteRequestRequest {
   cart_id: number;
   delivery_address_id: number;
+}
+
+export interface RatingBreakdown {
+  1: number;
+  2: number;
+  3: number;
+  4: number;
+  5: number;
+}
+
+export interface RatingBySource {
+  social: RatingTotals;
+  calls_callback: RatingTotals;
+  calls_sms: RatingTotals;
+}
+
+export interface RatingOverall {
+  total_ratings: number;
+  average_rating: number;
+  by_source: RatingBySource;
+}
+
+export interface RatingSession {
+  id: number;
+  platform: string;
+  conversation_id: string;
+  account_id: string;
+  customer_name: string;
+  rating: number;
+  comment: string;
+  session_started_at: string;
+  session_ended_at: string;
+  created_at: string;
+  is_archived: boolean;
+}
+
+export interface RatingStatisticsResponse {
+  start_date: string;
+  end_date: string;
+  overall: RatingOverall;
+  users: RatingUserStat[];
+}
+
+export interface RatingTotals {
+  total: number;
+  average: number;
+}
+
+export interface RatingUserInfo {
+  id: number;
+  email: string;
+  name: string;
+}
+
+export interface RatingUserStat {
+  user_id: number;
+  email: string;
+  name: string;
+  total_ratings: number;
+  average_rating: number;
+  rating_breakdown: RatingBreakdown;
+  social_ratings: number;
+  call_ratings: number;
 }
 
 export interface RecurringBooking {
@@ -5473,8 +7453,39 @@ export type RecurringBookingStatusEnum =
   | 'cancelled'
   | 'completed';
 
+export type RefundPolicyEnum =
+  | 'full'
+  | 'partial_50'
+  | 'partial_25'
+  | 'no_refund';
+
 export interface RemoveDomainRequestRequest {
   domain: string;
+}
+
+export interface RemoveSubscriptionFeatureRequest {
+  feature_id: number;
+}
+
+export interface RemoveSubscriptionFeatureResponse {
+  feature: SubscriptionFeatureRef;
+  success: boolean;
+  message: string;
+  cost_reduction: number;
+  new_monthly_cost: number;
+}
+
+export interface ReorderItemRequest {
+  id: number;
+  position: number;
+}
+
+export interface ReorderRequest {
+  items: ReorderItemRequest[];
+}
+
+export interface ReorderResponse {
+  status: string;
 }
 
 export interface ResendVerificationCodeRequestRequest {
@@ -5486,7 +7497,29 @@ export interface ResendVerificationCodeResponse {
   message: string;
 }
 
+export type ReviewMethodEnum = 'callback' | 'sms' | 'both' | 'none';
+
+export interface RevokeOtherDevicesRequest {
+  include_web?: boolean;
+}
+
+export interface RevokeOtherDevicesResponse {
+  revoked: number;
+  web_session_revoked: boolean;
+}
+
 export type Role4c6enum = 'admin' | 'manager' | 'agent' | 'viewer';
+
+export interface SavedCard {
+  id: number;
+  card_type: string;
+  masked_card_number: string;
+  card_expiry: string;
+  saved_at: string;
+  is_active?: boolean;
+  is_default?: boolean;
+  card_save_type: CardSaveTypeEnum;
+}
 
 export type SectionTypeEnum =
   | 'hero_banner'
@@ -5496,6 +7529,61 @@ export type SectionTypeEnum =
   | 'statistics'
   | 'branches'
   | 'custom_content';
+
+export interface SecurityErrorResponse {
+  error: string;
+}
+
+export interface SecurityLog {
+  id: number;
+  user_id: number;
+  user_email: string;
+  attempted_email: string;
+  event_type: SecurityLogEventTypeEnum;
+  event_type_display: string;
+  ip_address: string;
+  user_agent: string;
+  device_type: DeviceTypeEnum;
+  device_type_display: string;
+  browser: string;
+  operating_system: string;
+  city: string;
+  country: string;
+  country_code: string;
+  failure_reason: string;
+  created_at: string;
+}
+
+export type SecurityLogEventTypeEnum =
+  | 'login_success'
+  | 'login_failed'
+  | 'logout'
+  | 'token_expired';
+
+export interface SecurityLogsStats {
+  total_logins: number;
+  failed_logins: number;
+  unique_ips: number;
+  unique_users: number;
+  by_event_type: Record<string, any>;
+  by_device_type: Record<string, any>;
+  by_date: SecurityLogsStatsDay[];
+  recent_failed_logins: SecurityLog[];
+  top_ips: SecurityLogsStatsTopIp[];
+  period_days: number;
+}
+
+export interface SecurityLogsStatsDay {
+  date: string;
+  login_success: number;
+  login_failed: number;
+  logout: number;
+}
+
+export interface SecurityLogsStatsTopIp {
+  ip_address: string;
+  count: number;
+}
 
 export type SenderRoleEnum =
   | 'BUYER'
@@ -5523,6 +7611,21 @@ export interface ServiceCategoryRequest {
   is_active?: boolean;
 }
 
+export interface ServiceCreateRequest {
+  name: any;
+  description?: any;
+  category_id?: number;
+  base_price: string;
+  deposit_percentage?: number;
+  duration_minutes: number;
+  buffer_time_minutes?: number;
+  booking_type?: BookingTypeEnum;
+  available_time_slots?: any;
+  staff_ids?: number[];
+  status?: StatusE7cEnum;
+  image?: string;
+}
+
 export interface ServiceDetail {
   id: number;
   name: any;
@@ -5539,20 +7642,7 @@ export interface ServiceDetail {
   image?: string;
   name_display: string;
   description_display: string;
-  deposit_amount: string;
-}
-
-export interface ServiceDetailRequest {
-  name: any;
-  description?: any;
-  base_price: string;
-  deposit_percentage?: number;
-  duration_minutes: number;
-  buffer_time_minutes?: number;
-  booking_type?: BookingTypeEnum;
-  available_time_slots?: any;
-  status?: StatusE7cEnum;
-  image?: string;
+  deposit_amount: number;
 }
 
 export interface ServiceList {
@@ -5571,7 +7661,7 @@ export interface ServiceList {
   image?: string;
   name_display: string;
   description_display: string;
-  deposit_amount: string;
+  deposit_amount: number;
 }
 
 export interface ServiceListRequest {
@@ -5595,6 +7685,15 @@ export interface ServiceMinimal {
 
 export interface SetDefaultCardRequestRequest {
   card_id: number;
+}
+
+export interface SetUserStaffRequest {
+  is_staff: boolean;
+}
+
+export interface SetUserStaffResponse {
+  id: number;
+  is_staff: boolean;
 }
 
 export interface ShippingMethod {
@@ -5625,7 +7724,7 @@ export interface SipConfiguration {
   sip_server: string;
   sip_port?: number;
   username: string;
-  password: string;
+  password?: string;
   realm?: string;
   proxy?: string;
   phone_number?: string;
@@ -5634,6 +7733,8 @@ export interface SipConfiguration {
   turn_server?: string;
   turn_username?: string;
   turn_password?: string;
+  has_password: boolean;
+  has_turn_password: boolean;
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
@@ -5656,7 +7757,9 @@ export interface SipConfigurationDetail {
   stun_server?: string;
   turn_server?: string;
   turn_username?: string;
-  turn_password?: string;
+  turn_password: string;
+  has_password: boolean;
+  has_turn_password: boolean;
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
@@ -5673,12 +7776,16 @@ export interface SipConfigurationList {
   assignment_count: number;
 }
 
+export interface SipConfigurationMessageResponse {
+  message: string;
+}
+
 export interface SipConfigurationRequest {
   name: string;
   sip_server: string;
   sip_port?: number;
   username: string;
-  password: string;
+  password?: string;
   realm?: string;
   proxy?: string;
   phone_number?: string;
@@ -5690,6 +7797,13 @@ export interface SipConfigurationRequest {
   is_active?: boolean;
   is_default?: boolean;
   max_concurrent_calls?: number;
+}
+
+export interface SipConfigurationTestResponse {
+  message: string;
+  server: string;
+  port: number;
+  success: boolean;
 }
 
 export interface SmsReviewResponse {
@@ -5711,15 +7825,22 @@ export interface SocialAccount {
   is_auto_created?: boolean;
 }
 
-export interface SocialAccountRequest {
-  platform: Platform1fcEnum;
+export type SocialAccountLinkPlatformEnum =
+  | 'facebook'
+  | 'instagram'
+  | 'whatsapp'
+  | 'email'
+  | 'tiktok'
+  | 'widget'
+  | 'telegram';
+
+export interface SocialAccountLinkRequest {
+  platform: SocialAccountLinkPlatformEnum;
   platform_id: string;
   account_connection_id: string;
   display_name?: string;
   username?: string;
   profile_pic_url?: string;
-  last_message_at?: string;
-  is_auto_created?: boolean;
 }
 
 export interface SocialClient {
@@ -5745,6 +7866,7 @@ export interface SocialClient {
 }
 
 export interface SocialClientCreate {
+  id: number;
   name: string;
   email?: string;
   phone?: string;
@@ -5815,17 +7937,13 @@ export interface SocialClientList {
   booking_count: string;
 }
 
-export interface SocialClientRequest {
-  name: string;
-  email?: string;
-  phone?: string;
-  notes?: string;
-  profile_picture?: string;
-  first_name?: string;
-  last_name?: string;
-  is_booking_enabled?: boolean;
-  is_verified?: boolean;
-  last_login?: string;
+export interface SocialError {
+  error: string;
+}
+
+export interface SocialErrorWithDetails {
+  error: string;
+  details?: any;
 }
 
 export interface SocialIntegrationSettings {
@@ -5883,6 +8001,65 @@ export interface SocialIntegrationSettingsRequest {
   auto_reply_settings?: any;
 }
 
+export interface SocialMessageResponse {
+  message: string;
+}
+
+export interface SocialUnreadCountResponse {
+  total: number;
+  facebook: number;
+  instagram: number;
+  whatsapp: number;
+  email: number;
+  widget: number;
+  telegram: number;
+}
+
+export interface SoftphoneSipConfiguration {
+  id: number;
+  name: string;
+  sip_server: string;
+  sip_port?: number;
+  username: string;
+  password: string;
+  realm?: string;
+  proxy?: string;
+  phone_number?: string;
+  websocket_path?: string;
+  stun_server?: string;
+  turn_server?: string;
+  turn_username?: string;
+  turn_password: string;
+  has_password: boolean;
+  has_turn_password: boolean;
+  is_active?: boolean;
+  is_default?: boolean;
+  max_concurrent_calls?: number;
+  user_assignments: UserPhoneAssignment[];
+  sip_enabled: boolean;
+}
+
+export type SoundTypeEnum =
+  | 'greeting'
+  | 'after_hours'
+  | 'queue_hold'
+  | 'voicemail_prompt'
+  | 'thank_you'
+  | 'transfer_hold'
+  | 'review_prompt'
+  | 'review_invalid'
+  | 'review_thanks'
+  | 'queue_position_1'
+  | 'queue_position_2'
+  | 'queue_position_3'
+  | 'queue_position_4'
+  | 'queue_position_5'
+  | 'queue_position_6'
+  | 'queue_position_7'
+  | 'queue_position_8'
+  | 'queue_position_9'
+  | 'queue_position_10';
+
 export interface StaffAvailability {
   id: number;
   staff: number;
@@ -5905,6 +8082,13 @@ export interface StaffAvailabilityRequest {
   break_end?: string;
 }
 
+export interface StaffDayAvailability {
+  start_time: string;
+  end_time: string;
+  break_start: string;
+  break_end: string;
+}
+
 export interface StaffException {
   id: number;
   staff: number;
@@ -5924,6 +8108,18 @@ export interface StaffExceptionRequest {
   reason?: string;
 }
 
+export interface StaffSchedule {
+  date: string;
+  schedule: StaffScheduleEntry[];
+}
+
+export interface StaffScheduleEntry {
+  staff: BookingStaff;
+  availability: StaffDayAvailability;
+  bookings: BookingList[];
+  booking_count: number;
+}
+
 export type Status1f1enum =
   | 'pending'
   | 'confirmed'
@@ -5932,6 +8128,14 @@ export type Status1f1enum =
   | 'delivered'
   | 'cancelled'
   | 'refunded';
+
+export type Status308enum =
+  | 'pending'
+  | 'confirmed'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
+  | 'no_show';
 
 export type Status336enum = 'active' | 'inactive' | 'suspended' | 'pending';
 
@@ -5947,13 +8151,6 @@ export type Status36dEnum =
   | 'cancelled';
 
 export type Status38cEnum = 'active' | 'abandoned' | 'converted';
-
-export type Status528enum =
-  | 'pending'
-  | 'confirmed'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled';
 
 export type Status956enum = 'draft' | 'active' | 'inactive' | 'out_of_stock';
 
@@ -5995,6 +8192,24 @@ export type StatusE30enum =
 
 export type StatusE7cEnum = 'active' | 'inactive' | 'coming_soon';
 
+export interface StatusMessageResponse {
+  status: string;
+  message: string;
+}
+
+export interface StockAdjustRequestRequest {
+  delta: number;
+  reason?: string;
+}
+
+export interface StockAdjustResponse {
+  id: number;
+  quantity: number;
+  delta: number;
+  reason: string;
+  is_low_stock: boolean;
+}
+
 export interface StoreThemeResponse {
   preset: string;
   colors: Record<string, any>;
@@ -6022,6 +8237,65 @@ export type SubjectEnum =
   | 'partnership'
   | 'other';
 
+export interface SubmissionTicketData {
+  id: number;
+  title: string;
+  status: string;
+}
+
+export interface SubscriptionAvailableFeature {
+  id: number;
+  key: string;
+  name: string;
+  description: string;
+  price_per_user_gel: number;
+  price_unlimited_gel: number;
+  monthly_cost_for_current_agents: number;
+  is_selected: boolean;
+  icon: string;
+}
+
+export interface SubscriptionAvailableFeatures {
+  agent_count: number;
+  features_by_category: Record<string, any>;
+}
+
+export interface SubscriptionErrorResponse {
+  error: string;
+}
+
+export interface SubscriptionFeatureRef {
+  id: number;
+  key: string;
+  name: string;
+  price_per_user_gel?: number;
+}
+
+export interface SubscriptionInvoice {
+  id: number;
+  invoice_number: string;
+  amount: number;
+  currency: string;
+  description: string;
+  package_name: string;
+  agent_count: number;
+  invoice_date: string;
+  paid_date: string;
+  due_date: string;
+  pdf_url: string;
+  pdf_generated: boolean;
+}
+
+export interface SyncHistoryRequest {
+  phase?: PhaseEnum;
+}
+
+export interface SyncRequestedResponse {
+  status: string;
+  message: string;
+  phase?: string;
+}
+
 export type SyncStatusEnum = 'pending' | 'syncing' | 'completed' | 'failed';
 
 export interface Tag {
@@ -6039,12 +8313,17 @@ export interface TagRequest {
   description?: string;
 }
 
+export interface TeamChatClearHistoryResponse {
+  message: string;
+  deleted_count: number;
+}
+
 export interface TeamChatConversation {
   id: number;
   participants: TeamChatUser[];
-  other_participant: string;
-  last_message: string;
-  unread_count: string;
+  other_participant: TeamChatUser;
+  last_message: TeamChatMessage;
+  unread_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -6052,19 +8331,57 @@ export interface TeamChatConversation {
 export interface TeamChatConversationDetail {
   id: number;
   participants: TeamChatUser[];
-  other_participant: string;
-  last_message: string;
-  unread_count: string;
+  other_participant: TeamChatUser;
+  last_message: TeamChatMessage;
+  unread_count: number;
   created_at: string;
   updated_at: string;
-  messages: string;
+  messages: TeamChatMessage[];
+}
+
+export interface TeamChatCreateMessageRequest {
+  recipient_id?: number;
+  conversation_id?: number;
+  message_type?: MessageTypeD4bEnum;
+  text?: string;
+  file?: string;
+  voice_duration?: number;
+}
+
+export interface TeamChatError {
+  error: string;
+}
+
+export type TeamChatFileUploadMessageTypeEnum = 'image' | 'file' | 'voice';
+
+export interface TeamChatFileUploadRequest {
+  file: string;
+  message_type?: TeamChatFileUploadMessageTypeEnum;
+  voice_duration?: number;
+}
+
+export interface TeamChatFileUploadResult {
+  file_name: string;
+  file_size: number;
+  file_mime_type: string;
+  message: string;
+}
+
+export interface TeamChatHideResponse {
+  success: boolean;
+  message: string;
+  created: boolean;
+}
+
+export interface TeamChatMarkReadResponse {
+  marked_read: number;
 }
 
 export interface TeamChatMessage {
   id: number;
   conversation: number;
   sender: TeamChatUser;
-  message_type?: TeamChatMessageMessageTypeEnum;
+  message_type?: MessageTypeD4bEnum;
   text?: string;
   file?: string;
   file_url: string;
@@ -6072,29 +8389,29 @@ export interface TeamChatMessage {
   file_size?: number;
   file_mime_type?: string;
   voice_duration?: number;
-  is_read?: boolean;
-  read_at?: string;
+  is_read: boolean;
+  read_at: string;
   created_at: string;
 }
 
-export type TeamChatMessageMessageTypeEnum =
-  | 'text'
-  | 'image'
-  | 'file'
-  | 'voice';
-
 export interface TeamChatMessageRequest {
-  conversation: number;
-  sender_id?: number;
-  message_type?: TeamChatMessageMessageTypeEnum;
+  message_type?: MessageTypeD4bEnum;
   text?: string;
   file?: string;
   file_name?: string;
   file_size?: number;
   file_mime_type?: string;
   voice_duration?: number;
-  is_read?: boolean;
-  read_at?: string;
+}
+
+export interface TeamChatUnhideResponse {
+  success: boolean;
+  message: string;
+  was_hidden: boolean;
+}
+
+export interface TeamChatUnreadCount {
+  count: number;
 }
 
 export interface TeamChatUser {
@@ -6103,7 +8420,7 @@ export interface TeamChatUser {
   first_name?: string;
   last_name?: string;
   full_name: string;
-  is_online: string;
+  is_online: boolean;
   last_seen: string;
 }
 
@@ -6111,6 +8428,38 @@ export interface TeamChatUserRequest {
   email: string;
   first_name?: string;
   last_name?: string;
+}
+
+export interface TeamSummary {
+  period: TeamSummaryPeriod;
+  users: TeamSummaryUser[];
+  totals: TeamSummaryTotals;
+}
+
+export interface TeamSummaryPeriod {
+  start_date: string;
+  end_date: string;
+  days: number;
+}
+
+export interface TeamSummaryTotals {
+  total_seconds: number;
+  sessions: number;
+  users: number;
+}
+
+export interface TeamSummaryUser {
+  user: TeamSummaryUserInfo;
+  total_seconds: number;
+  sessions: number;
+  active_sessions: number;
+  last_activity: string;
+}
+
+export interface TeamSummaryUserInfo {
+  id: number;
+  full_name: string;
+  email: string;
 }
 
 export interface TelegramAccount {
@@ -6303,22 +8652,58 @@ export interface TenantGroup {
   name: string;
   description?: string;
   is_active?: boolean;
+  is_booking_staff?: boolean;
   created_at: string;
   updated_at: string;
-  member_count: string;
+  member_count: number;
   features: FeatureMinimal[];
-  feature_keys: string;
+  feature_keys: string[];
+}
+
+export interface TenantGroupAddUsersResponse {
+  message: string;
+  added_users: string[];
+}
+
+export interface TenantGroupAvailableFeature {
+  id: number;
+  key: string;
+  name: string;
+  description: string;
+  icon: string;
+  sort_order: number;
+}
+
+export interface TenantGroupAvailableFeaturesResponse {
+  categories: TenantGroupFeatureCategory[];
 }
 
 export interface TenantGroupCreate {
+  id: number;
   name: string;
   description?: string;
+  is_active?: boolean;
+  is_booking_staff?: boolean;
 }
 
 export interface TenantGroupCreateRequest {
   name: string;
   description?: string;
+  is_active?: boolean;
+  is_booking_staff?: boolean;
   feature_ids?: number[];
+}
+
+export interface TenantGroupFeatureCategory {
+  category: string;
+  category_display: string;
+  features: TenantGroupAvailableFeature[];
+}
+
+export interface TenantGroupMembersResponse {
+  count: number;
+  group: string;
+  members: User[];
 }
 
 export interface TenantGroupMinimal {
@@ -6327,10 +8712,13 @@ export interface TenantGroupMinimal {
   description: string;
 }
 
-export interface TenantGroupRequest {
-  name: string;
-  description?: string;
-  is_active?: boolean;
+export interface TenantGroupRemoveUsersResponse {
+  message: string;
+  removed_users: string[];
+}
+
+export interface TenantGroupUserIdsRequest {
+  user_ids: number[];
 }
 
 export interface TenantIpwhitelist {
@@ -6352,9 +8740,14 @@ export interface TenantIpwhitelistRequest {
   is_active?: boolean;
 }
 
+export type TenantLoginPlatformEnum = 'web' | 'ios' | 'android';
+
 export interface TenantLoginRequest {
   email: string;
   password: string;
+  platform?: TenantLoginPlatformEnum;
+  device_id?: string;
+  device_name?: string;
 }
 
 export interface TenantPermission {
@@ -6395,6 +8788,14 @@ export interface TenantRequest {
   is_active?: boolean;
   min_users_per_ticket?: number;
   only_superadmin_can_delete_tickets?: boolean;
+}
+
+export interface TenantSettings {
+  logo: string;
+  company_name: string;
+  min_users_per_ticket: number;
+  only_superadmin_can_delete_tickets: boolean;
+  preferred_language: PreferredLanguage711enum;
 }
 
 export interface Testimonial {
@@ -6540,6 +8941,7 @@ export interface TicketColumn {
 }
 
 export interface TicketColumnCreate {
+  id: number;
   name: string;
   description?: string;
   color?: string;
@@ -6561,6 +8963,16 @@ export interface TicketColumnCreateRequest {
   board: number;
 }
 
+export interface TicketColumnReorderRequest {
+  position: number;
+}
+
+export interface TicketColumnReorderResponse {
+  message: string;
+  board: number;
+  columns: TicketColumn[];
+}
+
 export interface TicketColumnRequest {
   name: string;
   description?: string;
@@ -6573,6 +8985,7 @@ export interface TicketColumnRequest {
 }
 
 export interface TicketColumnUpdate {
+  id: number;
   name: string;
   description?: string;
   color?: string;
@@ -6591,7 +9004,6 @@ export interface TicketColumnUpdateRequest {
   is_default?: boolean;
   is_closed_status?: boolean;
   track_time?: boolean;
-  board: number;
 }
 
 export interface TicketComment {
@@ -6615,7 +9027,7 @@ export interface TicketForm {
   description?: string;
   parent_form: TicketFormMinimal;
   child_forms: TicketFormMinimal[];
-  child_forms_count: string;
+  child_forms_count: number;
   item_lists: ItemListMinimal[];
   form_config?: any;
   custom_fields?: any;
@@ -6624,7 +9036,7 @@ export interface TicketForm {
   created_at: string;
   updated_at: string;
   created_by: UserMinimal;
-  submissions_count: string;
+  submissions_count: number;
 }
 
 export interface TicketFormMinimal {
@@ -6635,11 +9047,18 @@ export interface TicketFormMinimal {
   is_active: boolean;
   created_at: string;
   created_by: UserMinimal;
-  child_forms: string;
-  parent_form: string;
+  child_forms: TicketFormRef[];
+  parent_form: TicketFormRef;
   item_lists: ItemListMinimal[];
-  submissions_count: string;
+  submissions_count: number;
   custom_fields: any;
+}
+
+export interface TicketFormRef {
+  id: number;
+  title: string;
+  description: string;
+  is_active: boolean;
 }
 
 export interface TicketFormRequest {
@@ -6653,6 +9072,10 @@ export interface TicketFormRequest {
   is_active?: boolean;
 }
 
+export interface TicketFormSetDefaultResponse {
+  status: string;
+}
+
 export interface TicketFormSubmission {
   id: number;
   ticket: number;
@@ -6661,7 +9084,7 @@ export interface TicketFormSubmission {
   form_data?: any;
   submitted_at: string;
   submitted_by: UserMinimal;
-  ticket_data: string;
+  ticket_data: SubmissionTicketData;
 }
 
 export interface TicketFormSubmissionRequest {
@@ -6744,15 +9167,47 @@ export interface TicketRequest {
   payment_due_date?: string;
 }
 
+export interface TicketTimeActive {
+  log_id: number;
+  column: TicketTimeColumnRef;
+  entered_at: string;
+  elapsed_seconds: number;
+}
+
+export interface TicketTimeByColumn {
+  column_id: number;
+  column_name: string;
+  column_color: string;
+  total_seconds: number;
+  sessions: number;
+}
+
+export interface TicketTimeColumnRef {
+  id: number;
+  name: string;
+  color: string;
+}
+
 export interface TicketTimeLog {
   id: number;
   ticket: string;
+  ticket_id: number;
+  ticket_title: string;
   column: TicketColumn;
+  column_id: number;
   user: UserMinimal;
   entered_at: string;
   exited_at: string;
   duration_seconds: number;
   duration_display: string;
+}
+
+export interface TicketTimeSummary {
+  ticket_id: number;
+  total_seconds: number;
+  active: TicketTimeActive;
+  by_column: TicketTimeByColumn[];
+  logs: TicketTimeLog[];
 }
 
 export interface TikTokMessage {
@@ -6797,16 +9252,87 @@ export type TikTokMessageMessageTypeEnum =
   | 'ALLOCATED_SERVICE'
   | 'OTHER';
 
+export type TikTokSendMessageMessageTypeEnum =
+  | 'TEXT'
+  | 'IMAGE'
+  | 'VIDEO'
+  | 'PRODUCT_CARD'
+  | 'ORDER_CARD'
+  | 'EMOTICONS';
+
+export interface TikTokSendMessageRequest {
+  conversation_id: string;
+  message: string;
+  message_type?: TikTokSendMessageMessageTypeEnum;
+  media_url?: string;
+}
+
+export interface TikTokSendResponse {
+  status: string;
+  message?: any;
+}
+
+export interface TikTokShopAccount {
+  id: number;
+  open_id: string;
+  seller_name: string;
+  seller_base_region: string;
+  shop_id: string;
+  shop_cipher: string;
+  user_type: UserTypeEnum;
+  scope: string;
+  is_active?: boolean;
+  token_expires_at: string;
+  refresh_token_expires_at: string;
+  deactivated_at: string;
+  deactivation_reason: TikTokShopAccountDeactivationReasonEnum;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TikTokShopAccountDeactivationReasonEnum =
+  | 'expired_token'
+  | 'revoked_access'
+  | 'manual'
+  | 'api_error';
+
+export interface TikTokStatusResponse {
+  connected: boolean;
+  account: TikTokShopAccount;
+  token_expires_at: string;
+  is_token_expired: boolean;
+}
+
+export interface TimeByColumn {
+  column__name: string;
+  column__color: string;
+  total_seconds: number;
+  session_count: number;
+  avg_seconds: number;
+}
+
 export interface TimeTrackingSummary {
   period_days: number;
   start_date: string;
   total_time_seconds: number;
   total_sessions: number;
-  time_by_column: any[];
-  daily_breakdown: any[];
+  time_by_column: TimeByColumn[];
+  daily_breakdown: DailyBreakdown[];
   recent_activity: TicketTimeLog[];
   active_sessions: TicketTimeLog[];
 }
+
+export interface ToggleIpwhitelistRequest {
+  enabled?: boolean;
+  superadmin_bypass?: boolean;
+}
+
+export type ToneEnum =
+  | 'professional'
+  | 'casual'
+  | 'friendly'
+  | 'promotional'
+  | 'informative';
 
 export type TransferTypeEnum = 'blind' | 'attended';
 
@@ -6818,6 +9344,7 @@ export interface Trunk {
   sip_port?: number;
   username: string;
   password: string;
+  has_password: boolean;
   realm?: string;
   proxy?: string;
   register?: boolean;
@@ -6855,6 +9382,13 @@ export interface TrunkRequest {
   is_default?: boolean;
 }
 
+export interface UnarchiveResponse {
+  success: boolean;
+  unarchived_count: number;
+  message: string;
+  errors?: ConversationActionError[];
+}
+
 export interface UnifiedConversation {
   conversation_id: string;
   platform: UnifiedConversationPlatformEnum;
@@ -6872,6 +9406,7 @@ export interface UnifiedConversation {
   assignment_status?: string;
   session_started_at?: string;
   session_ended_at?: string;
+  session_ended_by?: string;
   is_archived?: boolean;
   archived_at?: string;
   ai_state?: string;
@@ -6885,6 +9420,25 @@ export type UnifiedConversationPlatformEnum =
   | 'widget'
   | 'telegram';
 
+export interface UnlinkAccountResponse {
+  status: string;
+}
+
+export interface UpdateAgentCountRequest {
+  agent_count: number;
+}
+
+export interface UpdateAgentCountResponse {
+  success: boolean;
+  message: string;
+  old_agent_count: number;
+  new_agent_count: number;
+  old_monthly_cost: number;
+  new_monthly_cost: number;
+  prorated_difference: number;
+  days_remaining: number;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -6896,17 +9450,24 @@ export interface User {
   phone_number?: string;
   job_title?: string;
   department: Department;
+  manager: number;
+  manager_name: string;
   is_active?: boolean;
   is_staff?: boolean;
-  is_booking_staff: string;
+  is_booking_staff: boolean;
   date_joined: string;
   last_login: string;
-  permissions: string;
-  group_permissions: string;
-  all_permissions: string;
-  feature_keys: string;
-  groups: Group[];
+  permissions: string[];
+  group_permissions: string[];
+  all_permissions: UserAllPermissions;
+  feature_keys: string[];
   tenant_groups: TenantGroup[];
+}
+
+export interface UserAllPermissions {
+  individual: string[];
+  group: string[];
+  all: string[];
 }
 
 export interface UserCreate {
@@ -6916,7 +9477,9 @@ export interface UserCreate {
   role?: Role4c6enum;
   status?: Status336enum;
   phone_number?: string;
+  job_title?: string;
   department_id?: number;
+  manager_id?: number;
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
@@ -6929,10 +9492,39 @@ export interface UserCreateRequest {
   role?: Role4c6enum;
   status?: Status336enum;
   phone_number?: string;
+  job_title?: string;
   department_id?: number;
+  manager_id?: number;
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
+}
+
+export interface UserDirectory {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  phone_number: string;
+  job_title: string;
+  role: Role4c6enum;
+  status: Status336enum;
+  is_active: boolean;
+  is_staff: boolean;
+  department: DirectoryDepartment;
+  manager: number;
+  manager_name: string;
+  tenant_groups: DirectoryGroup[];
+  last_login: string;
+}
+
+export interface UserErrorResponse {
+  error: string;
+}
+
+export interface UserMessageResponse {
+  message: string;
 }
 
 export interface UserMinimal {
@@ -6950,6 +9542,7 @@ export interface UserPhoneAssignment {
   sip_configuration: number;
   extension: string;
   extension_password: string;
+  has_extension_password: boolean;
   phone_number: string;
   display_name?: string;
   is_primary?: boolean;
@@ -6961,9 +9554,10 @@ export interface UserPhoneAssignment {
 export interface UserPhoneAssignmentDetail {
   id: number;
   user: number;
-  sip_configuration: string;
+  sip_configuration: SipConfigurationDetail;
   extension: string;
   extension_password: string;
+  has_extension_password: boolean;
   phone_number: string;
   display_name?: string;
   is_primary?: boolean;
@@ -6981,21 +9575,18 @@ export interface UserPhoneAssignmentRequest {
   is_active?: boolean;
 }
 
-export interface UserRequest {
-  email: string;
-  first_name?: string;
-  last_name?: string;
-  role?: Role4c6enum;
-  status?: Status336enum;
-  phone_number?: string;
-  job_title?: string;
-  department_id?: number;
-  is_active?: boolean;
-  is_staff?: boolean;
-  group_ids?: number[];
-  tenant_group_ids?: number[];
-  user_permission_ids?: number[];
+export interface UserRatingSessionsResponse {
+  user: RatingUserInfo;
+  start_date: string;
+  end_date: string;
+  sessions: RatingSession[];
+  total_sessions: number;
+  page?: number;
+  page_size?: number;
+  has_next?: boolean;
 }
+
+export type UserTypeEnum = 0 | 1 | 3;
 
 export interface UserUpdate {
   email?: string;
@@ -7006,6 +9597,8 @@ export interface UserUpdate {
   phone_number?: string;
   job_title?: string;
   is_active?: boolean;
+  department_id?: number;
+  manager_id?: number;
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
@@ -7020,9 +9613,23 @@ export interface UserUpdateRequest {
   phone_number?: string;
   job_title?: string;
   is_active?: boolean;
+  department_id?: number;
+  manager_id?: number;
   group_ids?: number[];
   tenant_group_ids?: number[];
   user_permission_ids?: number[];
+}
+
+export interface VariantStockAdjustRequestRequest {
+  delta: number;
+  reason?: string;
+}
+
+export interface VariantStockAdjustResponse {
+  id: number;
+  quantity: number;
+  delta: number;
+  reason: string;
 }
 
 export interface VerifyDomainRequestRequest {
@@ -7055,6 +9662,16 @@ export type VoltageThemePresetEnum =
   | 'violet'
   | 'mono'
   | 'rose';
+
+export interface WhatsAppAccountStatus {
+  id: number;
+  waba_id: string;
+  business_name: string;
+  phone_number: string;
+  quality_rating: string;
+  is_active: boolean;
+  connected_at: string;
+}
 
 export interface WhatsAppBusinessAccount {
   id: number;
@@ -7098,6 +9715,16 @@ export interface WhatsAppContact {
   last_message_at?: string;
   account_phone: string;
   account_name: string;
+}
+
+export interface WhatsAppDisconnectRequest {
+  waba_id?: string;
+}
+
+export interface WhatsAppDisconnectResponse {
+  status: string;
+  message: string;
+  deactivated: any;
 }
 
 export interface WhatsAppMessage {
@@ -7183,6 +9810,33 @@ export type WhatsAppMessageTemplateStatusEnum =
   | 'APPROVED'
   | 'REJECTED';
 
+export interface WhatsAppSendMessageRequest {
+  to_number: string;
+  message?: string;
+  waba_id: string;
+  reply_to_message_id?: string;
+}
+
+export interface WhatsAppSendMultipartRequest {
+  media?: string;
+  to_number: string;
+  message?: string;
+  waba_id: string;
+  reply_to_message_id?: string;
+}
+
+export interface WhatsAppSendResponse {
+  status: string;
+  message: string;
+  message_id: string;
+}
+
+export interface WhatsAppStatusResponse {
+  connected: boolean;
+  accounts_count: number;
+  accounts: WhatsAppAccountStatus[];
+}
+
 export type WhatsAppTemplateCreateCategoryEnum =
   | 'MARKETING'
   | 'UTILITY'
@@ -7202,6 +9856,18 @@ export interface WhatsAppTemplateSendRequest {
   to_number: string;
   parameters?: Record<string, any>;
   opt_in_confirmed?: boolean;
+}
+
+export interface WhatsAppTemplateSyncResponse {
+  synced: number;
+  templates: WhatsAppMessageTemplate[];
+}
+
+export interface WidgetAdminSendMessageRequest {
+  connection_id: number;
+  session_id: string;
+  message_text?: string;
+  attachments?: Record<string, any>[];
 }
 
 export interface WidgetConnection {

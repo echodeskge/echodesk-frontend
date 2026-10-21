@@ -48,6 +48,8 @@ function defaultPreferences(): NotificationPreferences {
     messages: {
       new_message: { inApp: true, sound: true, push: true },
       message_assigned: { inApp: true, sound: true, push: true },
+      team_chat: { inApp: true, sound: true, push: true },
+      social_admin: { inApp: true, sound: true, push: true },
     },
     invoices: {
       created: { inApp: true, sound: true, push: true },
@@ -58,11 +60,15 @@ function defaultPreferences(): NotificationPreferences {
       submitted: { inApp: true, sound: true, push: true },
       approved: { inApp: true, sound: true, push: true },
       rejected: { inApp: true, sound: true, push: true },
+      progress: { inApp: true, sound: true, push: true },
+      awaiting_approval: { inApp: true, sound: true, push: true },
+      cancelled: { inApp: true, sound: true, push: true },
     },
     bookings: {
       confirmed: { inApp: true, sound: true, push: true },
       cancelled: { inApp: true, sound: true, push: true },
       reminder: { inApp: true, sound: true, push: true },
+      assigned: { inApp: true, sound: true, push: true },
     },
     calls: {
       missed: { inApp: true, sound: true, push: true },
@@ -134,6 +140,10 @@ const NOTIFICATION_TYPE_MAP: Record<string, { category: keyof NotificationPrefer
   // Messages
   message_received: { category: 'messages', subType: 'new_message' },
   message_assigned: { category: 'messages', subType: 'message_assigned' },
+  team_chat_message: { category: 'messages', subType: 'team_chat' },
+  auto_post_draft: { category: 'messages', subType: 'social_admin' },
+  auto_post_failed: { category: 'messages', subType: 'social_admin' },
+  whatsapp_template_status: { category: 'messages', subType: 'social_admin' },
 
   // Invoices
   invoice_created: { category: 'invoices', subType: 'created' },
@@ -144,6 +154,9 @@ const NOTIFICATION_TYPE_MAP: Record<string, { category: keyof NotificationPrefer
   leave_request_submitted: { category: 'leave', subType: 'submitted' },
   leave_request_approved: { category: 'leave', subType: 'approved' },
   leave_request_rejected: { category: 'leave', subType: 'rejected' },
+  leave_request_progress: { category: 'leave', subType: 'progress' },
+  leave_request_awaiting_approval: { category: 'leave', subType: 'awaiting_approval' },
+  leave_request_cancelled: { category: 'leave', subType: 'cancelled' },
 
   // Bookings
   // booking_created / booking_rescheduled (online bookings by customers)
@@ -151,6 +164,7 @@ const NOTIFICATION_TYPE_MAP: Record<string, { category: keyof NotificationPrefer
   booking_confirmed: { category: 'bookings', subType: 'confirmed' },
   booking_cancelled: { category: 'bookings', subType: 'cancelled' },
   booking_reminder: { category: 'bookings', subType: 'reminder' },
+  booking_assigned: { category: 'bookings', subType: 'assigned' },
 
   // Calls
   call_missed: { category: 'calls', subType: 'missed' },
@@ -202,6 +216,8 @@ const CATEGORIES: CategoryMeta[] = [
     subTypes: [
       { key: 'new_message', label: 'New Message' },
       { key: 'message_assigned', label: 'Message Assigned' },
+      { key: 'team_chat', label: 'Team Chat' },
+      { key: 'social_admin', label: 'Auto-posts & Templates' },
     ],
   },
   {
@@ -222,6 +238,9 @@ const CATEGORIES: CategoryMeta[] = [
       { key: 'submitted', label: 'Submitted' },
       { key: 'approved', label: 'Approved' },
       { key: 'rejected', label: 'Rejected' },
+      { key: 'progress', label: 'Partially Approved' },
+      { key: 'awaiting_approval', label: 'Awaiting My Approval' },
+      { key: 'cancelled', label: 'Cancelled' },
     ],
   },
   {
@@ -232,6 +251,7 @@ const CATEGORIES: CategoryMeta[] = [
       { key: 'confirmed', label: 'Confirmed' },
       { key: 'cancelled', label: 'Cancelled' },
       { key: 'reminder', label: 'Reminder' },
+      { key: 'assigned', label: 'Assigned to Me' },
     ],
   },
   {

@@ -53,7 +53,7 @@ export function useSecurityLogs(filters: SecurityLogFilters = {}, options?: { en
         filters.search,
         filters.user_id
       );
-      return response as PaginatedSecurityLogs;
+      return response as unknown as PaginatedSecurityLogs;
     },
     enabled: options?.enabled !== false && authService.isAuthenticated(),
     staleTime: 30 * 1000, // 30 seconds
@@ -66,7 +66,7 @@ export function useSecurityLogsStats(days: number = 30, options?: { enabled?: bo
     queryKey: securityKeys.logsStats(days),
     queryFn: async () => {
       const response = await securityLogsStats(days);
-      return response as SecurityLogStats;
+      return response as unknown as SecurityLogStats;
     },
     enabled: options?.enabled !== false && authService.isAuthenticated(),
     staleTime: 60 * 1000, // 1 minute
@@ -79,7 +79,7 @@ export function useMySecurityLogs(page: number = 1, options?: { enabled?: boolea
     queryKey: securityKeys.myLogs(page),
     queryFn: async () => {
       const response = await mySecurityLogs(page, 20);
-      return response as PaginatedSecurityLogs;
+      return response as unknown as PaginatedSecurityLogs;
     },
     enabled: options?.enabled !== false && authService.isAuthenticated(),
     staleTime: 30 * 1000,

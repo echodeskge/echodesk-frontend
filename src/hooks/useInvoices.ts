@@ -5,7 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoiceService, InvoiceFilters, SendInvoiceData } from "@/services/invoiceService";
 import type {
-  InvoiceCreateUpdate,
+  InvoiceCreateUpdateRequest,
   PatchedInvoiceCreateUpdateRequest,
   InvoiceLineItemRequest,
   PatchedInvoiceLineItemRequest,
@@ -44,7 +44,7 @@ export function useCreateInvoice() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: InvoiceCreateUpdate & { client: number }) =>
+    mutationFn: (data: InvoiceCreateUpdateRequest) =>
       invoiceService.createInvoice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] });

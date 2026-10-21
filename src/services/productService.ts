@@ -26,6 +26,8 @@ export interface ProductFilters {
   search?: string;
   in_stock?: boolean;
   low_stock?: boolean;
+  /** Inventory-tracked stock band: low (0 < qty <= threshold), out (qty <= 0), low_or_out. */
+  stock?: 'low' | 'out' | 'low_or_out';
   attributes?: string; // Format: "color:red,size:large"
   ordering?: string;
   page?: number;
@@ -63,6 +65,7 @@ class ProductService {
     if (filters?.page_size) params.append('page_size', String(filters.page_size));
     if (filters?.search) params.append('search', filters.search);
     if (filters?.status) params.append('status', filters.status);
+    if (filters?.stock) params.append('stock', filters.stock);
     if (filters?.attributes) params.append('attributes', filters.attributes);
 
     const queryString = params.toString();

@@ -10,7 +10,7 @@ import type { Ticket, Board } from "@/api/generated/interfaces";
 
 type View = "kanban" | "detail" | "create" | "edit" | "createBoard";
 
-interface TicketManagementProps {}
+type TicketManagementProps = Record<string, never>;
 
 export default function TicketManagement({}: TicketManagementProps = {}) {
   const [currentView, setCurrentView] = useState<View>("kanban");

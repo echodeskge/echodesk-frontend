@@ -66,6 +66,8 @@ import {
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { useMyAccess } from "@/hooks/useMyAccess";
+import { getApiErrorMessage } from "@/lib/utils";
 
 // Platform badge colors
 const platformColors: Record<string, string> = {
@@ -149,6 +151,8 @@ export default function SocialClientsPage() {
   const createClient = useCreateSocialClient();
   const updateClient = useUpdateSocialClient();
   const deleteClient = useDeleteSocialClient();
+  // Deleting a client needs staff, role admin or manage_social_settings.
+  const { canManageSocialSettings } = useMyAccess();
 
   const clients = clientsData?.results || [];
   const totalCount = clientsData?.count || 0;
@@ -244,7 +248,7 @@ export default function SocialClientsPage() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to save client",
+        description: getApiErrorMessage(error, "Failed to save client"),
         variant: "destructive",
       });
     }
@@ -262,7 +266,7 @@ export default function SocialClientsPage() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to delete client",
+        description: getApiErrorMessage(error, "Failed to delete client"),
         variant: "destructive",
       });
     }
@@ -597,13 +601,15 @@ export default function SocialClientsPage() {
                               <Pencil className="h-4 w-4 mr-2" />
                               {t("actions.edit")}
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(client)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              {t("actions.delete")}
-                            </DropdownMenuItem>
+                            {canManageSocialSettings && (
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(client)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t("actions.delete")}
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

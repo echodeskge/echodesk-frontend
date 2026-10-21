@@ -20,6 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Globe, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import { useMyAccess } from '@/hooks/useMyAccess';
+import { getApiErrorMessage } from '@/lib/utils';
 
 export default function SubscriptionPage() {
   const t = useTranslations('settings.subscription');
@@ -35,6 +37,8 @@ export default function SubscriptionPage() {
   const addCardMutation = useAddNewCard();
   const removeCardMutation = useRemoveSavedCard();
   const setDefaultCardMutation = useSetDefaultCard();
+  // Card and plan changes need staff, superuser or role admin (IsBillingAdmin).
+  const { isBillingAdmin } = useMyAccess();
 
   // Determine payment provider from tenant config
   const paymentProvider = (tenantConfig as any)?.payment_provider || 'bog';
@@ -48,7 +52,7 @@ export default function SubscriptionPage() {
         window.location.href = result.payment_url;
       }
     } catch (error: any) {
-      toast.error('Failed to initiate card addition');
+      toast.error(getApiErrorMessage(error, 'Failed to initiate card addition'));
       console.error('Add card error:', error);
     }
   };
@@ -58,7 +62,7 @@ export default function SubscriptionPage() {
       await removeCardMutation.mutateAsync({ card_id: cardId });
       toast.success('Card removed successfully');
     } catch (error: any) {
-      toast.error('Failed to remove card');
+      toast.error(getApiErrorMessage(error, 'Failed to remove card'));
       console.error('Remove card error:', error);
     }
   };
@@ -68,7 +72,7 @@ export default function SubscriptionPage() {
       await setDefaultCardMutation.mutateAsync({ card_id: cardId });
       toast.success('Default card updated');
     } catch (error: any) {
-      toast.error('Failed to set default card');
+      toast.error(getApiErrorMessage(error, 'Failed to set default card'));
       console.error('Set default card error:', error);
     }
   };
@@ -164,9 +168,9 @@ export default function SubscriptionPage() {
             <PaymentMethodCard
               savedCards={savedCards}
               isLoading={cardsLoading}
-              onAddCard={handleAddCard}
-              onRemoveCard={handleRemoveCard}
-              onSetDefaultCard={handleSetDefaultCard}
+              onAddCard={isBillingAdmin ? handleAddCard : undefined}
+              onRemoveCard={isBillingAdmin ? handleRemoveCard : undefined}
+              onSetDefaultCard={isBillingAdmin ? handleSetDefaultCard : undefined}
             />
           )}
 

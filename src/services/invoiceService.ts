@@ -45,7 +45,6 @@ import {
 import type {
   PaginatedInvoiceListList,
   InvoiceDetail,
-  InvoiceCreateUpdate,
   InvoiceCreateUpdateRequest,
   PatchedInvoiceCreateUpdateRequest,
   PaginatedInvoiceLineItemList,
@@ -56,12 +55,11 @@ import type {
   InvoicePayment,
   InvoicePaymentRequest,
   PatchedInvoicePaymentRequest,
-  PaginatedInvoiceSettingsList,
   InvoiceSettings,
   InvoiceSettingsRequest,
   PatchedInvoiceSettingsRequest,
   PaginatedClientList,
-  PaginatedListItemMaterialList,
+  ListItemMaterial,
   PaginatedInvoiceTemplateList,
   InvoiceTemplate,
   InvoiceTemplateRequest,
@@ -160,14 +158,14 @@ class InvoiceService {
    * Duplicate an invoice
    */
   async duplicateInvoice(id: number): Promise<InvoiceDetail> {
-    return invoicesInvoicesDuplicateCreate(id, {} as any) as Promise<InvoiceDetail>;
+    return invoicesInvoicesDuplicateCreate(id);
   }
 
   /**
    * Finalize invoice and generate PDF
    */
   async finalizeInvoice(id: number): Promise<InvoiceDetail> {
-    return invoicesInvoicesFinalizeCreate(id, {} as any) as Promise<InvoiceDetail>;
+    return invoicesInvoicesFinalizeCreate(id);
   }
 
   /**
@@ -406,10 +404,11 @@ class InvoiceService {
   /**
    * Get materials from ItemList for invoice selection
    */
-  async getMaterials(search?: string): Promise<PaginatedListItemMaterialList> {
+  async getMaterials(search?: string): Promise<ListItemMaterial[]> {
     const params = search ? `?search=${encodeURIComponent(search)}` : '';
     const { default: axios } = await import('@/api/axios');
-    const response = await axios.get<PaginatedListItemMaterialList>(`/api/invoices/materials/${params}`);
+    // Not paginated: the endpoint returns a bare array.
+    const response = await axios.get<ListItemMaterial[]>(`/api/invoices/materials/${params}`);
     return response.data;
   }
 

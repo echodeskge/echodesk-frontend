@@ -57,6 +57,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Tag, Search } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/utils";
 
 const EMPTY_FORM: PromoCodeRequest = {
   code: "",
@@ -90,8 +91,8 @@ export default function PromoCodesPage() {
       setLoading(true);
       const response = await ecommerceAdminPromoCodesList();
       setCodes(response.results || []);
-    } catch {
-      toast.error(t("fetchError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("fetchError")));
     } finally {
       setLoading(false);
     }
@@ -196,8 +197,8 @@ export default function PromoCodesPage() {
       }
       setSheetOpen(false);
       fetchCodes();
-    } catch {
-      toast.error(editingCode ? t("updateError") : t("createError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, editingCode ? t("updateError") : t("createError")));
     } finally {
       setSaving(false);
     }
@@ -210,8 +211,8 @@ export default function PromoCodesPage() {
       toast.success(t("deleteSuccess"));
       setDeletingCode(null);
       fetchCodes();
-    } catch {
-      toast.error(t("deleteError"));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t("deleteError")));
     }
   };
 

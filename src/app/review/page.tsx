@@ -128,6 +128,16 @@ function ReviewContent() {
     }
   };
 
+  // Auto-redirect after submission if redirect URL is set
+  useEffect(() => {
+    if (submitted && redirectUrl) {
+      const timer = setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [submitted, redirectUrl]);
+
   // Loading state
   if (isLoadingInfo) {
     return (
@@ -214,16 +224,6 @@ function ReviewContent() {
       </div>
     );
   }
-
-  // Auto-redirect after submission if redirect URL is set
-  useEffect(() => {
-    if (submitted && redirectUrl) {
-      const timer = setTimeout(() => {
-        window.location.href = redirectUrl;
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [submitted, redirectUrl]);
 
   // Successfully submitted
   if (submitted) {

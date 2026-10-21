@@ -72,7 +72,9 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
     try {
       setLoading(true);
       const data = await subscriptionFeaturesAvailableRetrieve();
-      setCategories((data.categories as Category[]) || []);
+      // The typed response is {agent_count, features_by_category}; this
+      // (currently unused) builder still expects a legacy `categories` list.
+      setCategories(((data as unknown as { categories?: Category[] }).categories) || []);
     } catch (error) {
       console.error('Failed to load features:', error);
       setError(t('loadFeaturesFailed') || 'Failed to load features');
@@ -322,7 +324,7 @@ export function CustomPackageBuilder({ onComplete, onBack }: CustomPackageBuilde
                   <span className="text-primary">{calculating ? '...' : `${totalPrice}₾/month`}</span>
                 </div>
                 <div className="flex items-center justify-between text-xl font-bold pt-2 border-t text-green-600">
-                  <span>Today's Charge</span>
+                  <span>Today&apos;s Charge</span>
                   <span>0₾</span>
                 </div>
               </div>

@@ -919,6 +919,7 @@
       "selectUserPlaceholder": "Select a user...",
       "extension": "Extension",
       "extensionPassword": "Extension Password",
+      "passwordKeepHint": "Leave blank to keep the current password.",
       "phoneNumber": "Phone Number",
       "displayName": "Display Name",
       "primaryNumber": "Primary Number",
@@ -1592,6 +1593,7 @@
     "sendNewPasswordConfirm": "Are you sure you want to send a new password to this user?",
     "sendNewPasswordWarning": "This will generate a new password and email it to the user. Their current password will be invalidated and they will be required to change it on next login.",
     "sendNewPasswordSuccess": "New password has been sent successfully",
+    "bulkActionPartial": "Applied to {affected} user(s). {skipped} user(s) were skipped because you do not have enough privileges to change them.",
     "sendPassword": "Send Password",
     "sending": "Sending...",
     "cancel": "Cancel",
@@ -4293,6 +4295,8 @@
     "bookingConfirmed": "Booking confirmed",
     "bookingCompleted": "Booking completed",
     "bookingCancelled": "Booking cancelled",
+    "manualRefundDueTitle": "Cash to return",
+    "manualRefundDue": "Return ₾{amount} paid in cash to the client by hand.",
     "bookingRescheduled": "Booking rescheduled",
     "staffAssigned": "Staff assigned",
     "actionFailed": "Action failed",
@@ -4317,6 +4321,7 @@
     "pending": "Pending",
     "confirmed": "Confirmed",
     "inProgress": "In Progress",
+    "noShow": "No Show",
     "completed": "Completed",
     "cancelled": "Cancelled",
     "error": "Error",
@@ -5225,7 +5230,9 @@
       "title": "PBX Management",
       "description": "Manage SIP trunks, extensions, queues, inbound routing and call statistics for your phone system.",
       "upgradeTitle": "Upgrade required",
-      "upgradeDescription": "PBX management is included in the IP calling add-on. Upgrade your plan to unlock this feature."
+      "upgradeDescription": "PBX management is included in the IP calling add-on. Upgrade your plan to unlock this feature.",
+      "noAccessTitle": "No access",
+      "noAccessDescription": "Only PBX administrators can open this page."
     },
     "tabs": {
       "overview": "Overview",

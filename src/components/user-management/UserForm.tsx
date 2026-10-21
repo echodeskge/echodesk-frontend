@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { UserCreate, UserUpdate, User, TenantGroup } from "@/api/generated/interfaces";
 import { usersRetrieve } from "@/api/generated/api";
 import { useTenantGroups } from "@/hooks/api/useTenant";
+import { useMyAccess } from "@/hooks/useMyAccess";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,16 @@ import { Spinner } from "@/components/ui/spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { XCircle, AlertCircle } from "lucide-react";
+import type { PreferredLanguage } from "@/lib/preferredLanguage";
+
+// The generated client may not have User.preferred_language yet.
+type WithPreferredLanguage = { preferred_language?: PreferredLanguage };
+
+// Select value for "follow the tenant language" (null on the backend).
+const TENANT_LANGUAGE = "tenant";
+
+const toLanguageSelectValue = (user?: User | null): string =>
+  (user as (User & WithPreferredLanguage) | null | undefined)?.preferred_language || TENANT_LANGUAGE;
 
 interface UserFormProps {
   mode: "create" | "edit";
@@ -34,6 +45,8 @@ export default function UserForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
   const [fullUserData, setFullUserData] = useState<User | null>(null);
+  // Assigning tenant groups grants feature keys: staff or manage_groups only.
+  const { canManageGroups } = useMyAccess();
 
   // Use React Query hook for tenant groups - only fetch when dialog is open
   const { data: tenantGroupsData, isLoading: loadingGroups } = useTenantGroups({ enabled: open });
@@ -47,6 +60,7 @@ export default function UserForm({
     tenant_group_ids: user?.tenant_groups?.map(g => g.id) || [],
     phone_number: user?.phone_number || "",
     status: user?.is_active ? "active" : "inactive",
+    preferred_language: toLanguageSelectValue(user),
   });
 
   // Fetch full user details when in edit mode
@@ -86,6 +100,7 @@ export default function UserForm({
         tenant_group_ids: userData.tenant_groups ? userData.tenant_groups.map(g => g.id) : [],
         phone_number: userData.phone_number || "",
         status: userData.is_active ? "active" : "inactive",
+        preferred_language: toLanguageSelectValue(userData),
       }));
     }
   }, [fullUserData, user]);
@@ -145,6 +160,8 @@ export default function UserForm({
           tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
           is_active: formData.is_active,
+          preferred_language:
+            formData.preferred_language === TENANT_LANGUAGE ? null : formData.preferred_language,
         };
         await onSubmit(updateData);
       }
@@ -268,6 +285,25 @@ export default function UserForm({
                 </Select>
               </div>
             )}
+
+            {mode === "edit" && (
+              <div className="space-y-2">
+                <Label htmlFor="preferred_language">Notification Language</Label>
+                <Select
+                  value={formData.preferred_language}
+                  onValueChange={(value) => handleChange("preferred_language", value)}
+                >
+                  <SelectTrigger id="preferred_language">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
+                    <SelectItem value={TENANT_LANGUAGE}>Tenant default</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="ka">ქართული</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {/* Group Assignment Section */}
@@ -283,13 +319,20 @@ export default function UserForm({
                   </p>
                 </div>
               ) : (
-                <MultiGroupSelection
-                  groups={tenantGroups}
-                  selectedGroupIds={formData.tenant_group_ids}
-                  onChange={(groupIds) => handleChange("tenant_group_ids", groupIds)}
-                  disabled={isSubmitting}
-                  placeholder="Select groups to assign to this user..."
-                />
+                <>
+                  <MultiGroupSelection
+                    groups={tenantGroups}
+                    selectedGroupIds={formData.tenant_group_ids}
+                    onChange={(groupIds) => handleChange("tenant_group_ids", groupIds)}
+                    disabled={isSubmitting || !canManageGroups}
+                    placeholder="Select groups to assign to this user..."
+                  />
+                  {!canManageGroups && (
+                    <p className="text-xs text-muted-foreground">
+                      Only staff or users with the Manage Groups permission can change group membership.
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </div>

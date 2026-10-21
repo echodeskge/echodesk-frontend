@@ -79,6 +79,12 @@ const NOTIFICATION_TYPE_SOUNDS: Record<string, string> = {
   // Messages
   message_received: 'mixkit-bubble-pop-up-alert-notification-2357.wav',
   message_assigned: 'mixkit-magic-notification-ring-2344.wav',
+  team_chat_message: 'mixkit-message-pop-alert-2354.mp3',
+
+  // Social admin
+  auto_post_draft: 'mixkit-positive-notification-951.wav',
+  auto_post_failed: 'mixkit-guitar-notification-alert-2320.wav',
+  whatsapp_template_status: 'mixkit-confirmation-tone-2867.wav',
 
   // Invoices
   invoice_created: 'mixkit-correct-answer-tone-2870.wav',
@@ -89,11 +95,20 @@ const NOTIFICATION_TYPE_SOUNDS: Record<string, string> = {
   leave_request_submitted: 'mixkit-message-pop-alert-2354.mp3',
   leave_request_approved: 'mixkit-happy-bells-notification-937.wav',
   leave_request_rejected: 'mixkit-guitar-notification-alert-2320.wav',
+  leave_request_progress: 'mixkit-positive-notification-951.wav',
+  leave_request_awaiting_approval: 'mixkit-message-pop-alert-2354.mp3',
+  leave_request_cancelled: 'mixkit-guitar-notification-alert-2320.wav',
 
   // Bookings
   booking_confirmed: 'mixkit-happy-bells-notification-937.wav',
   booking_cancelled: 'mixkit-guitar-notification-alert-2320.wav',
   booking_reminder: 'mixkit-bell-notification-933.wav',
+  booking_assigned: 'mixkit-confirmation-tone-2867.wav',
+
+  // E-commerce
+  ecommerce_order_created: 'mixkit-correct-answer-tone-2870.wav',
+  ecommerce_order_paid: 'mixkit-happy-bells-notification-937.wav',
+  ecommerce_low_stock: 'mixkit-urgent-simple-tone-loop-2976.wav',
 
   // Calls
   call_missed: 'mixkit-game-notification-wave-alarm-987.wav',

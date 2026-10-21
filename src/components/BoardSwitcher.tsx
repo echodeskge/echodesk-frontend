@@ -124,7 +124,7 @@ export default function BoardSwitcher({
         {boards.length === 0 && (
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">
             <p className="mb-2">No boards available</p>
-            <p className="text-xs">Click "Create New Board" below to get started</p>
+            <p className="text-xs">Click &quot;Create New Board&quot; below to get started</p>
           </div>
         )}
 
@@ -236,7 +236,7 @@ export default function BoardSwitcher({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Board</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{boardToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{boardToDelete?.name}&quot;? This action cannot be undone.
               All tickets in this board will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>

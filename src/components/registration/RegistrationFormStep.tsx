@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Building2, User, Mail, Lock, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -318,13 +319,13 @@ export function RegistrationFormStep({
 
         <p className="text-center text-sm text-muted-foreground">
           {t('byContinuing')}{' '}
-          <a href="/terms-of-service" className="text-primary hover:underline">
+          <Link href="/terms-of-service" className="text-primary hover:underline">
             {t('termsOfService')}
-          </a>{' '}
+          </Link>{' '}
           {t('and')}{' '}
-          <a href="/privacy-policy" className="text-primary hover:underline">
+          <Link href="/privacy-policy" className="text-primary hover:underline">
             {t('privacyPolicy')}
-          </a>
+          </Link>
         </p>
       </form>
     </div>

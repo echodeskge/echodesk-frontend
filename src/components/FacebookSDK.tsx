@@ -25,9 +25,9 @@ export function FacebookSDK() {
 
     // Load the SDK asynchronously
     (function(d, s, id) {
-      var js, fjs = d.getElementsByTagName(s)[0];
+      const fjs = d.getElementsByTagName(s)[0];
       if (d.getElementById(id)) return;
-      js = d.createElement(s) as HTMLScriptElement;
+      const js = d.createElement(s) as HTMLScriptElement;
       js.id = id;
       js.src = "https://connect.facebook.net/en_US/sdk.js";
       fjs.parentNode?.insertBefore(js, fjs);

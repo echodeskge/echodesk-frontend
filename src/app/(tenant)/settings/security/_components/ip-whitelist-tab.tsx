@@ -41,6 +41,8 @@ import {
   MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useMyAccess } from "@/hooks/useMyAccess";
+import { getApiErrorMessage } from "@/lib/utils";
 import {
   useIPWhitelist,
   useCurrentIP,
@@ -71,13 +73,15 @@ export function IPWhitelistTab() {
   const updateMutation = useUpdateIPWhitelist();
   const deleteMutation = useDeleteIPWhitelist();
   const toggleMutation = useToggleIPWhitelist();
+  // Only a superuser may change the superadmin bypass (403 bypass_superuser_only).
+  const { isSuperuser } = useMyAccess();
 
   const handleToggleWhitelist = async (enabled: boolean) => {
     try {
       await toggleMutation.mutateAsync({ enabled });
       toast.success(enabled ? t('whitelist.enabledSuccess') : t('whitelist.disabledSuccess'));
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t('whitelist.toggleError'));
+      toast.error(getApiErrorMessage(error, t('whitelist.toggleError')));
     }
   };
 
@@ -86,7 +90,7 @@ export function IPWhitelistTab() {
       await toggleMutation.mutateAsync({ superadmin_bypass });
       toast.success(t('whitelist.bypassUpdated'));
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t('whitelist.toggleError'));
+      toast.error(getApiErrorMessage(error, t('whitelist.toggleError')));
     }
   };
 
@@ -111,7 +115,7 @@ export function IPWhitelistTab() {
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t('whitelist.addError'));
+      toast.error(getApiErrorMessage(error, t('whitelist.addError')));
     }
   };
 
@@ -137,7 +141,7 @@ export function IPWhitelistTab() {
       setIsEditDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t('whitelist.updateError'));
+      toast.error(getApiErrorMessage(error, t('whitelist.updateError')));
     }
   };
 
@@ -149,7 +153,7 @@ export function IPWhitelistTab() {
       setIsDeleteDialogOpen(false);
       setSelectedEntry(null);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || t('whitelist.deleteError'));
+      toast.error(getApiErrorMessage(error, t('whitelist.deleteError')));
     }
   };
 
@@ -216,7 +220,7 @@ export function IPWhitelistTab() {
                 <Switch
                   checked={whitelistData?.superadmin_bypass_whitelist || false}
                   onCheckedChange={handleToggleBypass}
-                  disabled={toggleMutation.isPending}
+                  disabled={toggleMutation.isPending || !isSuperuser}
                 />
               </div>
 

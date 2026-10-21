@@ -14,7 +14,7 @@ import type { EmailFolder } from "@/hooks/api/useSocial";
 /** Clean up IMAP folder names for display */
 function getDisplayName(name: string, inboxLabel: string): string {
   if (name === "INBOX") return inboxLabel;
-  let display = name
+  const display = name
     .replace(/^\[Gmail\]\//i, "")
     .replace(/^INBOX\//i, "")
     .replace(/^INBOX\./i, "")

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { useSubscription } from "@/contexts/SubscriptionContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { useUserProfile } from "@/hooks/useUserProfile"
+import { profileHasPermission } from "@/lib/backendPermissions"
 import {
   Settings,
   Palette,
@@ -37,6 +38,12 @@ interface SettingsNavItem {
   /** Visible when the user has any of these feature keys. */
   featureKey?: string | string[]
   staffOnly?: boolean
+  // Shown to staff/superusers and to holders of any of these permissions
+  // (mirrors the backend gate of the page's API).
+  anyPermission?: string[]
+  // Where the link goes for users who see the item without
+  // can_manage_settings (the first page they may open).
+  hrefWithoutManageSettings?: string
 }
 
 const settingsNav: SettingsNavItem[] = [
@@ -93,6 +100,8 @@ const settingsNav: SettingsNavItem[] = [
     icon: Phone,
     labelKey: "nav.calls",
     featureKey: "ip_calling",
+    // SIP configuration + extensions: PBX admins (staff or manage_settings).
+    anyPermission: ["can_manage_settings"],
   },
   {
     id: "pbx",
@@ -100,6 +109,10 @@ const settingsNav: SettingsNavItem[] = [
     icon: Headset,
     labelKey: "nav.pbx",
     featureKey: "ip_calling",
+    // PBX config (manage_settings) or its statistics tab (view_reports).
+    anyPermission: ["can_manage_settings", "can_view_reports"],
+    // view_reports-only users can open just the statistics tab.
+    hrefWithoutManageSettings: "/settings/pbx/statistics",
   },
   {
     id: "ecommerce",
@@ -200,8 +213,22 @@ export function SettingsSidebar() {
     return hasFeature(key as any)
   }
 
+  // Same rule as the backend's has_permission(): bare codenames from the
+  // profile's permissions_list (role grants included), plus the staff bypass.
+  const hasBackendPermission = (permission: string) =>
+    profileHasPermission(userProfile as never, permission)
+  const canManageSettings = isStaffOrAdmin || hasBackendPermission("can_manage_settings")
+  const linkFor = (item: SettingsNavItem): string =>
+    !canManageSettings && item.hrefWithoutManageSettings ? item.hrefWithoutManageSettings : item.href
+
   const visibleItems = settingsNav.filter((item) => {
     if (item.staffOnly && !isStaffOrAdmin) return false
+    if (
+      item.anyPermission &&
+      !isStaffOrAdmin &&
+      !item.anyPermission.some((p) => hasBackendPermission(p))
+    )
+      return false
     if (item.featureKey && !hasFeatureAccess(item.featureKey)) return false
     return true
   })
@@ -228,7 +255,7 @@ export function SettingsSidebar() {
           return (
             <Link
               key={item.id}
-              href={item.href}
+              href={linkFor(item)}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                 isActive

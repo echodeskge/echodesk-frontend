@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
+import { useMyAccess } from "@/hooks/useMyAccess";
 import { useTranslations } from "next-intl";
 import {
   itemListsList,
@@ -43,6 +45,8 @@ interface CustomField {
 
 export default function ItemListsPage() {
   const t = useTranslations('settings.itemListsPage');
+  // Writes need staff or manage_settings; others get read-only lists.
+  const { canManageSettings } = useMyAccess();
   const tCommon = useTranslations('common');
   const [itemLists, setItemLists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -159,7 +163,7 @@ export default function ItemListsPage() {
       setDialogOpen(false);
       loadItemLists();
     } catch (error) {
-      toast.error(t('error.save'));
+      toast.error(getApiErrorMessage(error, t('error.save')));
     }
   };
 
@@ -171,7 +175,7 @@ export default function ItemListsPage() {
       toast.success(t('success.deleted'));
       loadItemLists();
     } catch (error) {
-      toast.error(t('error.delete'));
+      toast.error(getApiErrorMessage(error, t('error.delete')));
     }
   };
 
@@ -180,10 +184,12 @@ export default function ItemListsPage() {
       <Card>
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-3">
           <CardTitle>{t('title')}</CardTitle>
-          <Button onClick={handleCreate}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('createList')}
-          </Button>
+          {canManageSettings && (
+            <Button onClick={handleCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              {t('createList')}
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -246,20 +252,24 @@ export default function ItemListsPage() {
                         {t('manageItems')}
                       </Button>
                     </Link>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(list)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(list.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canManageSettings && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(list)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(list.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

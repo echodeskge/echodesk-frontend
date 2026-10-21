@@ -20,7 +20,19 @@ export function useUsers(options?: { page?: number; search?: string; enabled?: b
   return useQuery<PaginatedUserList>({
     queryKey: userKeys.list(page, search),
     queryFn: async () => {
-      return await usersList(undefined, page, undefined, search);
+      return await usersList(
+        undefined, // department
+        undefined, // group
+        undefined, // isActive
+        undefined, // isStaff
+        undefined, // lite
+        undefined, // manager
+        undefined, // ordering
+        page,
+        undefined, // pageSize
+        undefined, // role
+        search,
+      );
     },
     // Only fetch when authenticated
     enabled: enabled !== false && authService.isAuthenticated(),
@@ -36,7 +48,19 @@ export function useInfiniteUsers(options?: { search?: string; enabled?: boolean;
   return useInfiniteQuery<PaginatedUserList>({
     queryKey: [...userKeys.lists(), 'infinite', { search }],
     queryFn: async ({ pageParam = 1 }) => {
-      return await usersList(undefined, pageParam as number, pageSize, search);
+      return await usersList(
+        undefined, // department
+        undefined, // group
+        undefined, // isActive
+        undefined, // isStaff
+        undefined, // lite
+        undefined, // manager
+        undefined, // ordering
+        pageParam as number,
+        pageSize,
+        undefined, // role
+        search,
+      );
     },
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {

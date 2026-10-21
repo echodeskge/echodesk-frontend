@@ -88,9 +88,15 @@ export class TicketService {
   ): Promise<PaginatedTicketListList> {
     try {
       return await ticketsList(
+        undefined, // assignedGroups
+        undefined, // assignedTo
+        undefined, // board
+        undefined, // column
+        undefined, // createdBy
         filters.ordering,
         filters.page,
-        undefined,
+        undefined, // pageSize
+        undefined, // priority
         filters.search
       );
     } catch (error) {
@@ -259,9 +265,16 @@ export class TicketService {
   async getUsers(search?: string): Promise<PaginatedUserList> {
     try {
       return await usersList(
+        undefined, // department
+        undefined, // group
+        undefined, // isActive
+        undefined, // isStaff
+        undefined, // lite
+        undefined, // manager
         undefined, // ordering
         undefined, // page
         undefined, // pageSize
+        undefined, // role
         search // search
       );
     } catch (error) {
