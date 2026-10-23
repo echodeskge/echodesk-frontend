@@ -35,6 +35,13 @@ describe("ecommerce dashboard labels", () => {
         expect(t.has(`statusLabels.${status}`)).toBe(true)
       }
     }
+    // The recent-orders badge reads from ecommerceOrders.status instead
+    for (const messages of [en.ecommerceOrders, ka.ecommerceOrders]) {
+      const t = translator(messages)
+      for (const status of BACKEND_ORDER_STATUSES) {
+        expect(t.has(`status.${status}`)).toBe(true)
+      }
+    }
     expect(labelOr(translator(ka.ecommerceAnalytics), "statusLabels.refunded", "refunded")).toBe("დაბრუნებული")
   })
 
