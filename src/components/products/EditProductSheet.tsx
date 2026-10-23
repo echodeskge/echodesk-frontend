@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -271,15 +272,45 @@ export function EditProductSheet({
   const handleDelete = async () => {
     if (!product?.id) return;
 
+    const productId = product.id;
     try {
-      await deleteProduct.mutateAsync(product.id);
-      toast.success("Product deleted successfully");
+      await deleteProduct.mutateAsync(productId);
+      toast.success(t("deleted"));
       onOpenChange(false);
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to delete product";
       console.error("Failed to delete product:", error);
-      toast.error(message);
+      const response = (error as { response?: { status?: number; data?: { orders?: string[] } } })?.response;
+      if (response?.status === 409) {
+        // Still in orders that aren't finished yet: say which, and offer to
+        // hide the product from the shop instead.
+        setDeleteConfirmOpen(false);
+        const orders = response.data?.orders ?? [];
+        toast.error(
+          orders.length > 0
+            ? t("deleteBlockedByOrders", { orders: orders.join(", ") })
+            : t("deleteBlocked"),
+          {
+            duration: 15000,
+            action: {
+              label: t("deactivateInstead"),
+              onClick: async () => {
+                try {
+                  await updateProduct.mutateAsync({
+                    id: productId,
+                    data: { status: asStatus("inactive") },
+                  });
+                  toast.success(t("deactivated"));
+                  onOpenChange(false);
+                } catch (deactivateError: unknown) {
+                  toast.error(getApiErrorMessage(deactivateError, t("deactivateFailed")));
+                }
+              },
+            },
+          },
+        );
+        return;
+      }
+      toast.error(getApiErrorMessage(error, t("deleteFailed")));
     }
   };
 

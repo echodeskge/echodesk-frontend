@@ -2603,7 +2603,16 @@
       "saving": "Saving...",
       "saveChanges": "Save Changes",
       "editTitle": "Edit product",
-      "editDescription": "Change the product's details, photos and variants"
+      "editDescription": "Change the product's details, photos and variants",
+      "created": "Product created",
+      "variantsFailed": "{count, plural, one {A variant} other {# variants}} could not be added ({skus}). Add them from the product's edit form.",
+      "deleted": "Product deleted",
+      "deleteFailed": "Could not delete the product",
+      "deleteBlocked": "This product is in orders that are still open, so it can't be deleted yet. Deactivate it to hide it from the shop.",
+      "deleteBlockedByOrders": "This product is in open orders ({orders}). It can be deleted once they are delivered, cancelled or refunded. Until then, deactivate it to hide it from the shop.",
+      "deactivateInstead": "Deactivate",
+      "deactivated": "Product deactivated and hidden from the shop",
+      "deactivateFailed": "Could not deactivate the product"
     },
     "variants": {
       "title": "Variants ({count})",
@@ -2641,7 +2650,8 @@
       "addAttribute": "Add attribute",
       "removeAttribute": "Remove",
       "image": "Photo",
-      "imageHint": "Shown when a customer picks this variant. One image."
+      "imageHint": "Shown when a customer picks this variant. One image.",
+      "stagedEmpty": "No variants yet. You can add them now; they are saved together with the product."
     },
     "fullDescription": "Full description",
     "fullDescriptionPlaceholder": "Everything a customer should know about the product",
@@ -5891,5 +5901,19 @@
       "service_unavailable": "This service can't be booked online right now.",
       "not_found": "We could not find this booking."
     }
+  },
+  "imageGalleryPicker": {
+    "uploading": "Uploading...",
+    "clickToUpload": "Click to upload",
+    "orDragAndDrop": "or drag and drop",
+    "formats": "PNG, JPG, GIF, WebP up to 5MB. You can pick several at once.",
+    "imageAlt": "Image {index}",
+    "orAddByUrl": "Or add by URL",
+    "imagesAdded": "{count, plural, one {# image added} other {# images added}}",
+    "pasteUrlsHint": "You can also paste image URLs directly",
+    "notAnImage": "{name} is not an image file",
+    "tooLarge": "{name} is too large (max 5MB)",
+    "uploadFailed": "Could not upload {name}",
+    "uploaded": "{count, plural, one {Image uploaded} other {# images uploaded}}"
   }
 }
