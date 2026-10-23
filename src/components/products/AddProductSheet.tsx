@@ -41,6 +41,9 @@ import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
 import { DescriptionField, ShippingFields, normalizeShipping } from "@/components/products/ProductExtraFields";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
+import { StagedVariantManager, createStagedVariants, type StagedVariant } from "./VariantManager";
+import { Separator } from "@/components/ui/separator";
+import { getApiErrorMessage } from "@/lib/utils";
 
 /**
  * The generated Status711enum is typed as `{ [key: string]: any }` (an object)
@@ -77,6 +80,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
   // Product attributes
   const [attributes, setAttributes] = useState<AttributeValue[]>([]);
+
+  // Variants typed before the product exists; created right after it is saved
+  const [stagedVariants, setStagedVariants] = useState<StagedVariant[]>([]);
+  const [variantFormOpen, setVariantFormOpen] = useState(false);
 
   // Build initial default values with dynamic languages
   const buildDefaultValues = (): Partial<ProductCreateUpdate> => {
@@ -120,6 +127,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       form.reset(buildDefaultValues());
       setSkuManuallyEdited(false);
       setAttributes([]);
+      setStagedVariants([]);
       // Reset to 'ka' or first available language
       const kaLang = activeLanguages.find(l => l.code === 'ka');
       setSelectedLanguage(kaLang ? 'ka' : activeLanguages[0]?.code || 'ka');
@@ -155,6 +163,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   };
 
   const onSubmit = async (data: Partial<ProductCreateUpdate>) => {
+    if (variantFormOpen) {
+      toast.error(t("finishVariantFirst"));
+      return;
+    }
     try {
       // Auto-fill logic: Find first filled language for each field
       const fields = ['name', 'description', 'short_description'] as const;
@@ -194,17 +206,31 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
         attributes: attributes.length > 0 ? attributes : undefined,
       };
 
-      await createProduct.mutateAsync(productData as ProductCreateUpdate);
+      const created = await createProduct.mutateAsync(productData as ProductCreateUpdate);
 
-      toast.success("Product created successfully");
+      if (stagedVariants.length > 0 && created?.id) {
+        const { failed } = await createStagedVariants(created.id, stagedVariants);
+        if (failed.length > 0) {
+          // The product is saved; say which variants still need adding from
+          // the product's edit form.
+          toast.error(
+            t("variantsFailed", {
+              count: failed.length,
+              skus: failed.map((f) => f.variant.sku).join(", "),
+            }),
+            { description: getApiErrorMessage(failed[0].error), duration: 15000 },
+          );
+        }
+      }
+
+      toast.success(t("created"));
       form.reset(buildDefaultValues());
       setAttributes([]);
+      setStagedVariants([]);
       onOpenChange(false);
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create product";
       console.error("Failed to create product:", error);
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("createFailed")));
     }
   };
 
@@ -424,6 +450,14 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
                     onChange={setAttributes}
                   />
                 </div>
+
+                {/* Variants (saved together with the product) */}
+                <Separator className="my-2" />
+                <StagedVariantManager
+                  value={stagedVariants}
+                  onChange={setStagedVariants}
+                  onEditingChange={setVariantFormOpen}
+                />
 
                 {/* Status */}
                 <FormField

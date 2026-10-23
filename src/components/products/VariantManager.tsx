@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -289,6 +289,178 @@ export function VariantManager({ productId }: VariantManagerProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+// ─── Variants staged on the create form ───────────────────────────────────────
+
+/** A variant typed on the "add product" form, created once the product exists. */
+export type StagedVariant = ProductVariantRequest;
+
+/**
+ * Create the staged variants for a just-created product, in order. Returns
+ * the ones the API refused (e.g. a duplicate SKU) so the caller can report
+ * them; the product itself is already saved at this point.
+ */
+export async function createStagedVariants(
+  productId: number,
+  variants: StagedVariant[],
+): Promise<{ failed: { variant: StagedVariant; error: unknown }[] }> {
+  const failed: { variant: StagedVariant; error: unknown }[] = [];
+  for (const [index, variant] of variants.entries()) {
+    try {
+      const payload: VariantCreatePayload = { ...variant, sort_order: variant.sort_order ?? index, product: productId };
+      await ecommerceAdminVariantsCreate(payload as unknown as ProductVariantAdminRequest);
+    } catch (error) {
+      failed.push({ variant, error });
+    }
+  }
+  return { failed };
+}
+
+/** The staged request shape, read back into the form's `initialData`. */
+function stagedAsVariant(variant: StagedVariant): ProductVariant {
+  return {
+    ...variant,
+    attribute_values: (variant.attributes ?? []).map((a) => ({
+      attribute: { id: a.attribute_id },
+      value_json: a.value_json,
+    })),
+  } as unknown as ProductVariant;
+}
+
+const variantDisplayName = (name: unknown) =>
+  typeof name === "object" && name !== null
+    ? (name as Record<string, string>).ka || (name as Record<string, string>).en || Object.values(name as Record<string, string>)[0] || "--"
+    : String(name || "--");
+
+interface StagedVariantManagerProps {
+  value: StagedVariant[];
+  onChange: (variants: StagedVariant[]) => void;
+  /** Whether a variant form is open with changes not yet added to the list. */
+  onEditingChange?: (editing: boolean) => void;
+}
+
+/**
+ * Variant editor for a product that hasn't been saved yet: same form as
+ * VariantManager, but the variants live in local state and the create form
+ * posts them right after the product is created.
+ */
+export function StagedVariantManager({ value, onChange, onEditingChange }: StagedVariantManagerProps) {
+  const t = useTranslations("products.variants");
+  const locale = useLocale();
+  const { data: attributesData } = useAttributes({} as never);
+  const attributes: AttributeDefinition[] = attributesData?.results ?? [];
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // Lets the product form refuse to save while a variant is still being typed
+  // (it would be dropped without a word otherwise).
+  const editing = showAddForm || editingIndex !== null;
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
+  useEffect(() => () => onEditingChange?.(false), [onEditingChange]);
+
+  const attributeName = (id: number) => {
+    const definition = attributes.find((a) => a.id === id);
+    const name = definition?.name as Record<string, string> | string | undefined;
+    if (typeof name === "object" && name !== null) return name[locale] || name.en || definition?.key || "";
+    return name || definition?.key || "";
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">{t("title", { count: value.length })}</h3>
+        {!showAddForm && (
+          <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
+            <Plus className="h-4 w-4 mr-1" />
+            {t("add")}
+          </Button>
+        )}
+      </div>
+
+      {showAddForm && (
+        <VariantForm
+          onSubmit={(data) => {
+            onChange([...value, data]);
+            setShowAddForm(false);
+          }}
+          onCancel={() => setShowAddForm(false)}
+          isPending={false}
+        />
+      )}
+
+      {value.length === 0 && !showAddForm && (
+        <p className="text-sm text-muted-foreground py-2">{t("stagedEmpty")}</p>
+      )}
+
+      <div className="space-y-2">
+        {value.map((variant, index) =>
+          editingIndex === index ? (
+            <VariantForm
+              key={index}
+              initialData={stagedAsVariant(variant)}
+              onSubmit={(data) => {
+                onChange(value.map((v, i) => (i === index ? data : v)));
+                setEditingIndex(null);
+              }}
+              onCancel={() => setEditingIndex(null)}
+              isPending={false}
+            />
+          ) : (
+            <div key={index} className="flex items-center gap-3 rounded-md border p-3 text-sm">
+              {variant.image ? (
+                // eslint-disable-next-line @next/next/no-img-element -- arbitrary external URL
+                <img src={variant.image} alt="" className="h-9 w-9 flex-none rounded object-cover" />
+              ) : (
+                <div className="h-9 w-9 flex-none rounded bg-muted" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium break-words">{variantDisplayName(variant.name)}</p>
+                {(variant.attributes?.length ?? 0) > 0 && (
+                  <p className="text-xs text-muted-foreground break-words">
+                    {(variant.attributes ?? [])
+                      .map((a) => `${attributeName(a.attribute_id)}: ${String(a.value_json ?? "")}`)
+                      .join(" · ")}
+                  </p>
+                )}
+                <p className="font-mono text-xs text-muted-foreground break-all" title={variant.sku}>
+                  {variant.sku}
+                </p>
+              </div>
+              <div className="flex-none text-right">
+                <p className="whitespace-nowrap">{variant.price ? `${variant.price} ₾` : t("basePrice")}</p>
+                <p className="whitespace-nowrap text-xs text-muted-foreground">
+                  {t("qty", { count: variant.quantity ?? 0 })}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setEditingIndex(index)}
+                aria-label={t("update")}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive"
+                onClick={() => onChange(value.filter((_, i) => i !== index))}
+                aria-label={t("delete")}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ),
+        )}
+      </div>
     </div>
   );
 }
