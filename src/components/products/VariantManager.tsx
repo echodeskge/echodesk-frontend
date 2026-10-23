@@ -206,33 +206,35 @@ export function VariantManager({ productId }: VariantManagerProps) {
               ) : (
                 <div className="h-9 w-9 flex-none rounded bg-muted" />
               )}
-              <div className="flex-1 min-w-0 grid grid-cols-4 gap-2 items-center">
-                <span className="font-mono text-xs truncate" title={variant.sku}>
+              {/* Name, attributes and SKU stack on the left so long Georgian
+                  names and SKUs wrap instead of being cut to "SATIN_…". */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium break-words">
+                  {typeof variant.name === "object" && variant.name !== null
+                    ? variant.name.ka || variant.name.en || Object.values(variant.name)[0] || "--"
+                    : variant.name || "--"}
+                </p>
+                {variant.attribute_values?.length > 0 && (
+                  <p className="text-xs text-muted-foreground break-words">
+                    {variant.attribute_values
+                      .map((av) => `${typeof av.attribute.name === "object" && av.attribute.name ? av.attribute.name.ka || av.attribute.name.en : av.attribute.key}: ${String(av.value_json ?? "")}`)
+                      .join(" · ")}
+                  </p>
+                )}
+                <p className="font-mono text-xs text-muted-foreground break-all" title={variant.sku}>
                   {variant.sku}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate">
-                    {typeof variant.name === "object" && variant.name !== null
-                      ? variant.name.ka || variant.name.en || Object.values(variant.name)[0] || "--"
-                      : variant.name || "--"}
-                  </span>
-                  {variant.attribute_values?.length > 0 && (
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {variant.attribute_values
-                        .map((av) => `${typeof av.attribute.name === "object" && av.attribute.name ? av.attribute.name.ka || av.attribute.name.en : av.attribute.key}: ${String(av.value_json ?? "")}`)
-                        .join(" · ")}
-                    </span>
-                  )}
-                </span>
-                <span className="text-right">
+                </p>
+              </div>
+              <div className="flex-none text-right">
+                <p className="whitespace-nowrap">
                   {variant.price ? `${variant.price} ₾` : t("basePrice")}
                   {variant.compare_at_price && (
                     <span className="ml-1 text-xs text-muted-foreground line-through">{variant.compare_at_price} ₾</span>
                   )}
-                </span>
-                <span className="text-right text-muted-foreground">
+                </p>
+                <p className="whitespace-nowrap text-xs text-muted-foreground">
                   {t("qty", { count: variant.quantity ?? 0 })}
-                </span>
+                </p>
               </div>
               <Switch
                 checked={variant.is_active !== false}

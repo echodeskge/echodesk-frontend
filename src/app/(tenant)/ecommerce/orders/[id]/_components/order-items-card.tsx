@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import { useLocale } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -15,12 +16,43 @@ import { Separator } from "@/components/ui/separator"
 import { formatCurrency } from "../../_lib/utils"
 import { OrderDetail } from "../../_types"
 
+type Localized = string | Record<string, string> | null | undefined
+
+/** Readable variant info sent by the API with each order line. */
+interface VariantDetails {
+  id: number
+  sku: string
+  name: Localized
+  image: string | null
+  attributes: { key: string; name: Localized; value: Localized | Localized[] }[]
+}
+
+function localized(value: Localized, locale: string): string {
+  if (value == null) return ""
+  if (typeof value !== "object") return String(value)
+  return value[locale] || value.ka || value.en || Object.values(value)[0] || ""
+}
+
+function variantSummary(details: VariantDetails, locale: string): string {
+  const name = localized(details.name, locale)
+  const attrs = details.attributes
+    .map((a) => {
+      const value = Array.isArray(a.value)
+        ? a.value.map((v) => localized(v, locale)).join(", ")
+        : localized(a.value, locale)
+      return value ? `${localized(a.name, locale) || a.key}: ${value}` : ""
+    })
+    .filter(Boolean)
+  return [name, ...attrs].filter(Boolean).join(" · ")
+}
+
 interface OrderItemsCardProps {
   order: OrderDetail
   t: (key: string) => string
 }
 
 export function OrderItemsCard({ order, t }: OrderItemsCardProps) {
+  const locale = useLocale()
   return (
     <Card>
       <CardHeader>
@@ -49,13 +81,14 @@ export function OrderItemsCard({ order, t }: OrderItemsCardProps) {
             <TableBody>
               {order.items?.map((item) => {
                 const productName =
-                  typeof item.product_name === "object"
-                    ? item.product_name.en ||
-                      item.product_name.ka ||
-                      "Product"
-                    : item.product_name
-                const productImage = (item as unknown as Record<string, unknown>)
-                  .product_image as string | undefined
+                  localized(item.product_name as Localized, locale) || "Product"
+                const extra = item as unknown as {
+                  product_image?: string | null
+                  variant_details?: VariantDetails | null
+                }
+                const variantDetails = extra.variant_details
+                const productImage =
+                  variantDetails?.image || extra.product_image || undefined
 
                 return (
                   <TableRow key={item.id}>
@@ -74,10 +107,21 @@ export function OrderItemsCard({ order, t }: OrderItemsCardProps) {
                           <span className="text-sm font-medium">
                             {productName}
                           </span>
-                          {item.variant && (
-                            <p className="text-xs text-muted-foreground">
-                              Variant ID: {item.variant}
-                            </p>
+                          {variantDetails ? (
+                            <>
+                              <p className="text-xs text-muted-foreground">
+                                {variantSummary(variantDetails, locale)}
+                              </p>
+                              <p className="font-mono text-xs text-muted-foreground">
+                                {variantDetails.sku}
+                              </p>
+                            </>
+                          ) : (
+                            item.variant && (
+                              <p className="text-xs text-muted-foreground">
+                                #{item.variant}
+                              </p>
+                            )
                           )}
                         </div>
                       </div>
