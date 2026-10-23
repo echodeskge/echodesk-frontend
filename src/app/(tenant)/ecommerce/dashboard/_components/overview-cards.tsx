@@ -9,19 +9,13 @@ import {
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import type { Translator } from "../_lib/labels"
 
 interface OverviewCardsProps {
   revenue: { today: number; week: number; month: number; total: number; change: number }
   orders: { today: number; week: number; month: number; total: number; change: number }
   avgOrderValue: number
-  t: (key: string) => string
-}
-
-function formatCurrency(amount: number) {
-  if (amount >= 1000) {
-    return `₾${(amount / 1000).toFixed(1)}K`
-  }
-  return `₾${amount.toFixed(2)}`
+  t: Translator
 }
 
 function formatLargeNumber(amount: number) {
@@ -37,28 +31,24 @@ export function OverviewCards({ revenue, orders, avgOrderValue, t }: OverviewCar
       value: formatLargeNumber(revenue.total),
       change: revenue.change,
       icon: HandCoins,
-      period: "vs last month",
     },
     {
       label: t("overview.monthRevenue"),
       value: formatLargeNumber(revenue.month),
       change: revenue.change,
       icon: BadgePercent,
-      period: "this month",
     },
     {
       label: t("overview.totalOrders"),
       value: orders.total.toLocaleString(),
       change: orders.change,
       icon: ShoppingBag,
-      period: "vs last month",
     },
     {
       label: t("overview.avgOrderValue"),
       value: `₾${avgOrderValue.toFixed(2)}`,
       change: 0,
       icon: HandCoins,
-      period: "all time",
     },
   ]
 

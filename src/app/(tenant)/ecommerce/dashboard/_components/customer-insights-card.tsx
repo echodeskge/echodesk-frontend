@@ -3,6 +3,7 @@
 import { Users, UserPlus, UserCheck } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import type { Translator } from "../_lib/labels"
 
 interface CustomerInsightsCardProps {
   insights: {
@@ -10,7 +11,7 @@ interface CustomerInsightsCardProps {
     new: number
     returning: number
   }
-  t: (key: string) => string
+  t: Translator
 }
 
 export function CustomerInsightsCard({ insights, t }: CustomerInsightsCardProps) {

@@ -9,18 +9,20 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts"
+import { useLocale } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { format } from "date-fns"
+import { formatShortDay, type Translator } from "../_lib/labels"
 
 interface SalesTrendChartProps {
   data: Array<{ date: string; revenue: number; orders: number }>
-  t: (key: string) => string
+  t: Translator
 }
 
 export function SalesTrendChart({ data, t }: SalesTrendChartProps) {
+  const locale = useLocale()
   const chartData = data.map((d) => ({
     ...d,
-    label: format(new Date(d.date), "MMM dd"),
+    label: formatShortDay(d.date, locale),
   }))
 
   const maxRevenue = Math.max(...data.map((d) => d.revenue), 1)
@@ -45,7 +47,7 @@ export function SalesTrendChart({ data, t }: SalesTrendChartProps) {
             <p className="text-lg font-semibold">₾{highestDay?.revenue?.toFixed(2) || "0"}</p>
             {highestDay?.date && (
               <p className="text-xs text-muted-foreground">
-                {format(new Date(highestDay.date), "MMM dd")}
+                {formatShortDay(highestDay.date, locale)}
               </p>
             )}
           </div>
@@ -54,7 +56,7 @@ export function SalesTrendChart({ data, t }: SalesTrendChartProps) {
             <p className="text-lg font-semibold">₾{lowestDay?.revenue?.toFixed(2) || "0"}</p>
             {lowestDay?.date && (
               <p className="text-xs text-muted-foreground">
-                {format(new Date(lowestDay.date), "MMM dd")}
+                {formatShortDay(lowestDay.date, locale)}
               </p>
             )}
           </div>
@@ -93,7 +95,7 @@ export function SalesTrendChart({ data, t }: SalesTrendChartProps) {
                   backgroundColor: "hsl(var(--background))",
                   color: "hsl(var(--foreground))",
                 }}
-                formatter={(value) => [`₾${Number(value).toFixed(2)}`, "Revenue"]}
+                formatter={(value) => [`₾${Number(value).toFixed(2)}`, t("salesTrend.revenue")]}
               />
               <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
             </BarChart>

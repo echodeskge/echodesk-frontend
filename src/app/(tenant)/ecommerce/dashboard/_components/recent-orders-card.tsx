@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useLocale } from "next-intl"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -12,12 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { format } from "date-fns"
 import {
   STATUS_COLORS,
   PAYMENT_BADGE_VARIANTS,
   PAYMENT_STATUS_ICONS,
 } from "../../orders/_data/constants"
+import { formatDate } from "../../orders/_lib/utils"
+import { labelOr, type Translator } from "../_lib/labels"
 
 interface RecentOrder {
   id: number
@@ -31,11 +33,12 @@ interface RecentOrder {
 
 interface RecentOrdersCardProps {
   orders: RecentOrder[]
-  t: (key: string) => string
-  tOrders: (key: string) => string
+  t: Translator
+  tOrders: Translator
 }
 
 export function RecentOrdersCard({ orders, t, tOrders }: RecentOrdersCardProps) {
+  const locale = useLocale()
   return (
     <Card>
       <CardHeader>
@@ -82,10 +85,10 @@ export function RecentOrdersCard({ orders, t, tOrders }: RecentOrdersCardProps) 
                         </Link>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {order.client_name}
+                        {order.client_name || "—"}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {format(new Date(order.created_at), "PP")}
+                        {formatDate(order.created_at, locale)}
                       </TableCell>
                       <TableCell className="text-end font-medium">
                         ₾{order.total_amount.toFixed(2)}
@@ -96,7 +99,7 @@ export function RecentOrdersCard({ orders, t, tOrders }: RecentOrdersCardProps) 
                             variant="secondary"
                             className={STATUS_COLORS[status] || ""}
                           >
-                            {tOrders(`status.${status}`)}
+                            {labelOr(tOrders, `status.${status}`, status)}
                           </Badge>
                         </div>
                       </TableCell>
