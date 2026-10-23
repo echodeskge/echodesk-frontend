@@ -153,6 +153,23 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   const { data: instagramMessagesData } = useInstagramMessages({ page: 1 }, { enabled: isInstagramConnected });
   const disconnectInstagram = useDisconnectInstagram();
 
+  // The OAuth callback lands here with ?facebook_status=connected|error&message=…
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("facebook_status");
+    if (!status) return;
+    const message = params.get("message") || undefined;
+    if (status === "connected") {
+      toast.success(t("oauthConnected"), { description: message });
+      refetchStatus();
+      refetchPages();
+    } else {
+      toast.error(t("oauthFailed"), { description: message });
+    }
+    window.history.replaceState({}, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleRefresh = async () => {
     await Promise.all([
       refetchStatus(),

@@ -2307,6 +2307,8 @@
     "removePageTitle": "წავშალოთ „{name}“?",
     "removePageDescription": "ეს გვერდი აღარ არის დაკავშირებული. წაშლით ის გაქრება სიიდან და წაიშლება მისი მეშვეობით მიღებული შეტყობინებებიც. ამის დაბრუნება შეუძლებელია.",
     "cancel": "გაუქმება",
+    "oauthConnected": "Facebook დაკავშირებულია",
+    "oauthFailed": "Facebook-თან დაკავშირება ვერ მოხერხდა",
     "pageRemoved": "გვერდი წაიშალა",
     "pageRemoveFailed": "გვერდის წაშლა ვერ მოხერხდა",
     "connectPermissions": {

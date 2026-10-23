@@ -426,6 +426,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       return true;
     }
 
+    // /social/connections only forwards to /settings/social/connections (OAuth callbacks land here)
+    if (currentPath === '/social/connections') {
+      return true;
+    }
+
     // Build the base route ID to check (e.g., "ecommerce/orders" or "tickets")
     // For nested parents, use first two segments; for others, use first segment
     const nestedParents = ["ecommerce", "bookings", "leave", "invoices", "social"];
