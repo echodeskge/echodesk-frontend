@@ -13,6 +13,7 @@ import {
   useInstagramAccounts,
   useInstagramMessages,
   useDisconnectInstagram,
+  useRecheckInstagramMessaging,
 } from "@/hooks/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,10 @@ import { EmailConnection } from "@/components/EmailConnection";
 import { TikTokConnection } from "@/components/TikTokConnection";
 import { TelegramConnection, TelegramIcon } from "@/components/TelegramConnection";
 import { WidgetConnection } from "@/components/WidgetConnection";
+import {
+  InstagramMessagingHealthAlert,
+  type InstagramMessagingStatus,
+} from "@/components/social/InstagramMessagingHealthAlert";
 
 // Scopes requested by the Facebook Login dialog (backend facebook_oauth_start)
 // with the one-line purpose shown before connecting.
@@ -120,6 +125,10 @@ interface InstagramStatus {
     profile_picture_url?: string;
     is_active: boolean;
     connected_at: string;
+    messaging_status?: InstagramMessagingStatus;
+    messaging_error?: string;
+    messaging_error_code?: string;
+    messaging_checked_at?: string | null;
   }>;
 }
 
@@ -152,6 +161,7 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
   const isInstagramConnected = instagramStatus?.connected || false;
   const { data: instagramMessagesData } = useInstagramMessages({ page: 1 }, { enabled: isInstagramConnected });
   const disconnectInstagram = useDisconnectInstagram();
+  const recheckInstagram = useRecheckInstagramMessaging();
 
   // The OAuth callback lands here with ?facebook_status=connected|error&message=…
   useEffect(() => {
@@ -163,6 +173,9 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
       toast.success(t("oauthConnected"), { description: message });
       refetchStatus();
       refetchPages();
+      // Reconnecting Facebook also (re)links Instagram accounts.
+      refetchInstagramStatus();
+      refetchInstagramAccounts();
     } else {
       toast.error(t("oauthFailed"), { description: message });
     }
@@ -289,6 +302,16 @@ export default function SocialIntegrations({ onBackToDashboard, onConnectionChan
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Shown above the tabs: Facebook is the default tab, and Instagram
+          DMs silently stop when the owner turns off message access. */}
+      <div className="mb-6 empty:hidden">
+        <InstagramMessagingHealthAlert
+          accounts={instagramStatus?.accounts || []}
+          onRecheck={() => recheckInstagram.mutate()}
+          rechecking={recheckInstagram.isPending}
+        />
+      </div>
 
       <Tabs defaultValue="facebook" className="w-full">
         <TabsList className="mb-6 h-auto flex-wrap">
