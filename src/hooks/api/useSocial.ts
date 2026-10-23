@@ -569,6 +569,22 @@ export function useSendInstagramMessage() {
   });
 }
 
+// Re-probes each Instagram account's messaging access with Meta (bypasses
+// the backend's cached health result) and refreshes the status query.
+export function useRecheckInstagramMessaging() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await axios.get('/api/social/instagram/status/', { params: { check: true } });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(socialKeys.instagramStatus(), data);
+    },
+  });
+}
+
 export function useDisconnectInstagram() {
   const queryClient = useQueryClient();
 

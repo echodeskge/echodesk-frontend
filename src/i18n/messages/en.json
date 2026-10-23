@@ -1961,6 +1961,21 @@
     "areYouSureDisconnect": "Are you sure you want to disconnect all Facebook pages? This will stop receiving messages.",
     "instagramAccounts": "Instagram Accounts",
     "connectedInstagramAccounts": "Connected Instagram Accounts",
+    "instagramHealth": {
+      "disabledTitle": "Instagram messages are not reaching EchoDesk: {accounts}",
+      "disabledDescription": "The owner of this Instagram account has turned off access to messages for connected tools, so Instagram does not send new DMs to EchoDesk and replies cannot be sent. Reconnecting Facebook does not fix this — it must be turned on in the Instagram app:",
+      "steps": {
+        "step1": "Open the Instagram app and switch to the business account connected to EchoDesk.",
+        "step2": "Go to your profile, tap the menu (☰) in the top-right corner and choose \"Settings and activity\".",
+        "step3": "Tap \"Messages and story replies\", then \"Message controls\".",
+        "step4": "Under \"Connected tools\", turn on \"Allow access to messages\".",
+        "step5": "Come back to this page and click \"Check again\"."
+      },
+      "afterEnabling": "New messages will start arriving within a few minutes. Messages received while access was off are not delivered to EchoDesk afterwards — check them in the Instagram app.",
+      "errorTitle": "Instagram messaging check failed: {accounts}",
+      "errorDescription": "Meta returned an error when EchoDesk checked access to this account's messages. If Instagram messages are not arriving, reconnect Facebook on the Facebook tab.",
+      "recheck": "Check again"
+    },
     "instagramConnectsViaFacebook": "Instagram accounts are connected through Facebook Pages. Connect a Facebook Page with an associated Instagram Business account to get started.",
     "viewMessages": "View Messages",
     "note": "Note",
