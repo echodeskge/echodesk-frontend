@@ -1,6 +1,7 @@
 "use client"
 
 import { Package } from "lucide-react"
+import { useLocale } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -11,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { localizedName, type Translator } from "../_lib/labels"
 
 interface TopProduct {
   product__name: Record<string, string> | string
@@ -20,13 +22,7 @@ interface TopProduct {
 
 interface TopProductsCardProps {
   products: TopProduct[]
-  t: (key: string) => string
-}
-
-function getLocalizedName(name: Record<string, string> | string): string {
-  if (!name) return "Unknown"
-  if (typeof name === "string") return name
-  return name.en || Object.values(name)[0] || "Unknown"
+  t: Translator
 }
 
 function formatCurrency(amount: number) {
@@ -34,6 +30,7 @@ function formatCurrency(amount: number) {
 }
 
 export function TopProductsCard({ products, t }: TopProductsCardProps) {
+  const locale = useLocale()
   if (products.length === 0) {
     return (
       <Card>
@@ -82,7 +79,7 @@ export function TopProductsCard({ products, t }: TopProductsCardProps) {
                     {index + 1}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {getLocalizedName(product.product__name)}
+                    {localizedName(product.product__name, locale, t("topProducts.unknown"))}
                   </TableCell>
                   <TableCell className="text-end">{product.sold}</TableCell>
                   <TableCell className="text-end font-medium">

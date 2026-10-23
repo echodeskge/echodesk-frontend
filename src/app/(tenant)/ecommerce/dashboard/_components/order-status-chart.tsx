@@ -11,10 +11,11 @@ import {
   Cell,
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { labelOr, type Translator } from "../_lib/labels"
 
 interface OrderStatusChartProps {
   statusBreakdown: Record<string, number>
-  t: (key: string) => string
+  t: Translator
 }
 
 const STATUS_CHART_COLORS: Record<string, string> = {
@@ -24,6 +25,7 @@ const STATUS_CHART_COLORS: Record<string, string> = {
   shipped: "hsl(239, 84%, 67%)",
   delivered: "hsl(142, 71%, 45%)",
   cancelled: "hsl(0, 84%, 60%)",
+  refunded: "hsl(25, 95%, 53%)",
 }
 
 export function OrderStatusChart({
@@ -32,13 +34,7 @@ export function OrderStatusChart({
 }: OrderStatusChartProps) {
   const data = Object.entries(statusBreakdown).map(([status, count]) => ({
     status,
-    label: (() => {
-      try {
-        return t(`statusLabels.${status}`)
-      } catch {
-        return status.charAt(0).toUpperCase() + status.slice(1)
-      }
-    })(),
+    label: labelOr(t, `statusLabels.${status}`, status),
     count,
     color: STATUS_CHART_COLORS[status] || "hsl(220, 14%, 46%)",
   }))
@@ -84,7 +80,7 @@ export function OrderStatusChart({
                 backgroundColor: "hsl(var(--background))",
                 color: "hsl(var(--foreground))",
               }}
-              formatter={(value) => [String(value), "Orders"]}
+              formatter={(value) => [String(value), t("statusBreakdown.orders")]}
             />
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
               {data.map((entry, index) => (

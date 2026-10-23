@@ -11,6 +11,7 @@ import {
 } from "recharts"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { labelOr, type Translator } from "../_lib/labels"
 
 interface RevenueMethod {
   payment_method: string
@@ -21,7 +22,7 @@ interface RevenueMethod {
 
 interface RevenueByMethodCardProps {
   data: RevenueMethod[]
-  t: (key: string) => string
+  t: Translator
 }
 
 const METHOD_COLORS: Record<string, string> = {
@@ -38,12 +39,8 @@ const METHOD_DOT_COLORS: Record<string, string> = {
   "": "bg-gray-500",
 }
 
-function getMethodLabel(method: string, t: (key: string) => string): string {
-  try {
-    return t(`paymentMethods.${method || "unknown"}`)
-  } catch {
-    return method || "Unknown"
-  }
+function getMethodLabel(method: string, t: Translator): string {
+  return labelOr(t, `paymentMethods.${method || "unknown"}`, method)
 }
 
 export function RevenueByMethodCard({ data, t }: RevenueByMethodCardProps) {

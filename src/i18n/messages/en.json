@@ -218,7 +218,10 @@
       "tooMany": "Maximum {maxFiles} files allowed",
       "invalidType": "File type is not supported",
       "uploadFailed": "File upload failed"
-    }
+    },
+    "update": "Update",
+    "somethingWentWrong": "Something went wrong",
+    "tryAgain": "Try again"
   },
   "nav": {
     "tickets": "Boards",
@@ -1778,12 +1781,14 @@
       "product": "Product",
       "sold": "Sold",
       "revenue": "Revenue",
-      "empty": "No product sales data yet"
+      "empty": "No product sales data yet",
+      "unknown": "Unknown product"
     },
     "statusBreakdown": {
       "title": "Order Status Breakdown",
       "subtitle": "Current distribution of order statuses",
-      "empty": "No order status data yet"
+      "empty": "No order status data yet",
+      "orders": "Orders"
     },
     "statusLabels": {
       "pending": "Pending",
@@ -1791,7 +1796,8 @@
       "processing": "Processing",
       "shipped": "Shipped",
       "delivered": "Delivered",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "refunded": "Refunded"
     },
     "salesTrend": {
       "title": "Sales Trend",
@@ -1800,7 +1806,8 @@
       "lowest": "Lowest Sales",
       "total": "Total Sales",
       "average": "Avg. Sales/Day",
-      "noData": "No sales data for this period"
+      "noData": "No sales data for this period",
+      "revenue": "Revenue"
     },
     "customerInsights": {
       "title": "Customer Insights",
