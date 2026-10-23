@@ -2605,6 +2605,8 @@
       "editTitle": "Edit product",
       "editDescription": "Change the product's details, photos and variants",
       "created": "Product created",
+      "finishVariantFirst": "Add or cancel the variant you are editing before creating the product.",
+      "createFailed": "Could not create the product",
       "variantsFailed": "{count, plural, one {A variant} other {# variants}} could not be added ({skus}). Add them from the product's edit form.",
       "deleted": "Product deleted",
       "deleteFailed": "Could not delete the product",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -338,6 +338,8 @@ const variantDisplayName = (name: unknown) =>
 interface StagedVariantManagerProps {
   value: StagedVariant[];
   onChange: (variants: StagedVariant[]) => void;
+  /** Whether a variant form is open with changes not yet added to the list. */
+  onEditingChange?: (editing: boolean) => void;
 }
 
 /**
@@ -345,13 +347,21 @@ interface StagedVariantManagerProps {
  * VariantManager, but the variants live in local state and the create form
  * posts them right after the product is created.
  */
-export function StagedVariantManager({ value, onChange }: StagedVariantManagerProps) {
+export function StagedVariantManager({ value, onChange, onEditingChange }: StagedVariantManagerProps) {
   const t = useTranslations("products.variants");
   const locale = useLocale();
   const { data: attributesData } = useAttributes({} as never);
   const attributes: AttributeDefinition[] = attributesData?.results ?? [];
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  // Lets the product form refuse to save while a variant is still being typed
+  // (it would be dropped without a word otherwise).
+  const editing = showAddForm || editingIndex !== null;
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
+  useEffect(() => () => onEditingChange?.(false), [onEditingChange]);
 
   const attributeName = (id: number) => {
     const definition = attributes.find((a) => a.id === id);

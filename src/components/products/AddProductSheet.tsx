@@ -83,6 +83,7 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
   // Variants typed before the product exists; created right after it is saved
   const [stagedVariants, setStagedVariants] = useState<StagedVariant[]>([]);
+  const [variantFormOpen, setVariantFormOpen] = useState(false);
 
   // Build initial default values with dynamic languages
   const buildDefaultValues = (): Partial<ProductCreateUpdate> => {
@@ -162,6 +163,10 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
   };
 
   const onSubmit = async (data: Partial<ProductCreateUpdate>) => {
+    if (variantFormOpen) {
+      toast.error(t("finishVariantFirst"));
+      return;
+    }
     try {
       // Auto-fill logic: Find first filled language for each field
       const fields = ['name', 'description', 'short_description'] as const;
@@ -224,10 +229,8 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       setStagedVariants([]);
       onOpenChange(false);
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "Failed to create product";
       console.error("Failed to create product:", error);
-      toast.error(message);
+      toast.error(getApiErrorMessage(error, t("createFailed")));
     }
   };
 
@@ -450,7 +453,11 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
 
                 {/* Variants (saved together with the product) */}
                 <Separator className="my-2" />
-                <StagedVariantManager value={stagedVariants} onChange={setStagedVariants} />
+                <StagedVariantManager
+                  value={stagedVariants}
+                  onChange={setStagedVariants}
+                  onEditingChange={setVariantFormOpen}
+                />
 
                 {/* Status */}
                 <FormField
