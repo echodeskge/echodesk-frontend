@@ -23,6 +23,22 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   `https://${process.env.NEXT_PUBLIC_MAIN_DOMAIN || 'echodesk.ge'}`;
 
+const TRANSLATE_DOM_GUARD = `(function(){
+  if (typeof Node !== 'function' || !Node.prototype) return;
+  var removeChild = Node.prototype.removeChild;
+  Node.prototype.removeChild = function(child) {
+    if (child.parentNode !== this) return child;
+    return removeChild.apply(this, arguments);
+  };
+  var insertBefore = Node.prototype.insertBefore;
+  Node.prototype.insertBefore = function(newNode, referenceNode) {
+    if (referenceNode && referenceNode.parentNode !== this) {
+      return insertBefore.call(this, newNode, null);
+    }
+    return insertBefore.apply(this, arguments);
+  };
+})();`;
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -191,6 +207,10 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://scripts.clarity.ms" />
         <link rel="preconnect" href="https://v.clarity.ms" />
         <link rel="preconnect" href="https://echodesk-spaces.fra1.digitaloceanspaces.com" />
+        {/* Chrome's page translation wraps text nodes in <font> tags, so React's
+            next removeChild/insertBefore targets a node that moved and the page
+            crashes (facebook/react#11538). Skip those calls instead of throwing. */}
+        <script dangerouslySetInnerHTML={{ __html: TRANSLATE_DOM_GUARD }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} bg-background`}>
         <OrganizationSchema />
