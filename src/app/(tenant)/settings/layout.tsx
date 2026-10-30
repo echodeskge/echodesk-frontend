@@ -3,7 +3,7 @@ import { getMessages } from 'next-intl/server';
 import { pickRouteMessages } from '@/lib/pick-messages';
 import { SettingsSidebar } from './settings-sidebar';
 
-const NAMESPACES = ['settings', 'social', 'autoPosting', 'ecommerceSettings', 'invoices', 'bookingSettings', 'leave', 'users', 'groups', 'callsSettings', 'calls', 'subscription', 'notificationPreferences', 'ratingStatistics', 'pbxSettings'];
+const NAMESPACES = ['settings', 'social', 'autoPosting', 'ecommerceSettings', 'invoices', 'bookingSettings', 'leave', 'users', 'groups', 'callsSettings', 'calls', 'subscription', 'notificationPreferences', 'ratingStatistics', 'pbxSettings', 'imageGalleryPicker'];
 
 export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
   const messages = await getMessages();
