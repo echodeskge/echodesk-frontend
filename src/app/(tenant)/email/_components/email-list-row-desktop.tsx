@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { EmailAnsweredBadge } from "./email-answered-badge";
+import { EmailListRowDeleteButton } from "./email-list-row-delete-button";
 
 interface EmailListRowDesktopProps {
   email: EmailMessage;
@@ -65,7 +66,7 @@ export function EmailListRowDesktop({
 
   return (
     <TableRow
-      className={cn("cursor-pointer", email.is_read && "bg-muted")}
+      className={cn("group cursor-pointer", email.is_read && "bg-muted")}
       onClick={handleNavigate}
       onKeyDown={handleOnKeyDown}
       tabIndex={0}
@@ -116,10 +117,13 @@ export function EmailListRowDesktop({
           </span>
         </div>
       </TableCell>
-      <TableCell className="w-28">
-        <span className="text-sm text-muted-foreground">
-          {formatDate(email.timestamp)}
-        </span>
+      <TableCell className="w-36">
+        <div className="flex items-center justify-end gap-1">
+          <span className="text-sm text-muted-foreground">
+            {formatDate(email.timestamp)}
+          </span>
+          <EmailListRowDeleteButton email={email} filter={filter} />
+        </div>
       </TableCell>
       <TableCell className="w-10">
         <DropdownMenu>

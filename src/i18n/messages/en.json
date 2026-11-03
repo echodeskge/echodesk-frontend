@@ -5103,7 +5103,12 @@
       "answered": "Answered",
       "new": "New",
       "from": "From",
-      "notFound": "No emails found. Try a different filter or compose a new email."
+      "notFound": "No emails found. Try a different filter or compose a new email.",
+      "deleteEmail": "Delete email",
+      "deleteDialogTitle": "Delete this email?",
+      "deleteDialogDescription": "The email will be removed from your EchoDesk mailbox. The copy on the mail server is not affected.",
+      "emailDeleted": "Email deleted",
+      "deleteFailed": "Failed to delete email"
     },
     "view": {
       "backToList": "Back to list",

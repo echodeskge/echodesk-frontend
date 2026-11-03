@@ -10,6 +10,7 @@ import { cn, formatDate } from "@/lib/utils";
 import { useEmailAction } from "@/hooks/api/useSocial";
 import { useEmailContext } from "../_hooks/use-email-context";
 import { EmailAnsweredBadge } from "./email-answered-badge";
+import { EmailListRowDeleteButton } from "./email-list-row-delete-button";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -59,7 +60,7 @@ export function EmailListContentItemMobile({
   return (
     <li
       className={cn(
-        "flex items-center justify-between gap-1.5 p-1 ps-3 cursor-pointer",
+        "group flex items-center justify-between gap-1.5 p-1 ps-3 cursor-pointer",
         email.is_read && "bg-muted"
       )}
       onClick={handleNavigate}
@@ -102,6 +103,7 @@ export function EmailListContentItemMobile({
           )}
         />
       </Button>
+      <EmailListRowDeleteButton email={email} filter={filter} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
