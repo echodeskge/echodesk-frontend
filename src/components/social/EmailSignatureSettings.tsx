@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import DOMPurify from "dompurify";
 import { Mail, Loader2, Eye, EyeOff } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useToast } from "@/hooks/use-toast";
 import { useEmailSignature, useUpdateEmailSignature } from "@/hooks/api/useSocial";
 
@@ -42,6 +43,7 @@ function processSignatureForPreview(html: string): string {
 
 export function EmailSignatureSettings() {
   const { toast } = useToast();
+  const t = useTranslations("social.emailSignature");
   const { data: signature, isLoading } = useEmailSignature();
   const updateSignature = useUpdateEmailSignature();
 
@@ -97,15 +99,15 @@ export function EmailSignatureSettings() {
       {
         onSuccess: () => {
           toast({
-            title: "Signature saved",
-            description: "Your email signature has been updated successfully.",
+            title: t("saved"),
+            description: t("wsSavedDescription"),
           });
           setHasChanges(false);
         },
         onError: (error: any) => {
           toast({
-            title: "Error saving signature",
-            description: error.response?.data?.error || "Failed to update signature. Please try again.",
+            title: t("saveFailed"),
+            description: error.response?.data?.error || t("wsSaveFailedDescription"),
             variant: "destructive",
           });
         },
@@ -128,19 +130,19 @@ export function EmailSignatureSettings() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Mail className="h-5 w-5" />
-          Email Signature
+          {t("wsTitle")}
         </CardTitle>
         <CardDescription>
-          Configure your email signature for outgoing emails
+          {t("wsDescription")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Enable/Disable Toggle */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="signature-enabled">Enable email signature</Label>
+            <Label htmlFor="signature-enabled">{t("wsEnable")}</Label>
             <p className="text-sm text-muted-foreground">
-              Automatically append signature to outgoing emails
+              {t("wsEnableHint")}
             </p>
           </div>
           <Switch
@@ -155,9 +157,9 @@ export function EmailSignatureSettings() {
         {/* Include on Reply Toggle */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="include-on-reply">Include on replies</Label>
+            <Label htmlFor="include-on-reply">{t("wsIncludeOnReply")}</Label>
             <p className="text-sm text-muted-foreground">
-              Include signature when replying to emails
+              {t("wsIncludeOnReplyHint")}
             </p>
           </div>
           <Switch
@@ -171,7 +173,7 @@ export function EmailSignatureSettings() {
 
         {/* Sender Name */}
         <div className="space-y-2">
-          <Label htmlFor="sender-name">Sender Name</Label>
+          <Label htmlFor="sender-name">{t("wsSenderName")}</Label>
           <Input
             id="sender-name"
             placeholder="John Doe or Support Team"
@@ -179,7 +181,7 @@ export function EmailSignatureSettings() {
             onChange={(e) => setSenderName(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">
-            Name to display in the signature (e.g., &quot;John Doe&quot; or &quot;Support Team&quot;)
+            {t("wsSenderNameHint")}
           </p>
         </div>
 
@@ -188,7 +190,7 @@ export function EmailSignatureSettings() {
         {/* HTML Signature Editor */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="signature-html">Signature (HTML)</Label>
+            <Label htmlFor="ws-signature-html">{t("htmlLabel")}</Label>
             <Button
               variant="ghost"
               size="sm"
@@ -198,18 +200,18 @@ export function EmailSignatureSettings() {
               {showPreview ? (
                 <>
                   <EyeOff className="h-4 w-4 mr-1" />
-                  Hide Preview
+                  {t("hidePreview")}
                 </>
               ) : (
                 <>
                   <Eye className="h-4 w-4 mr-1" />
-                  Preview
+                  {t("preview")}
                 </>
               )}
             </Button>
           </div>
           <Textarea
-            id="signature-html"
+            id="ws-signature-html"
             placeholder={`Best regards,
 <br/><br/>
 <strong>John Doe</strong><br/>
@@ -221,19 +223,18 @@ Marketing Manager<br/>
             className="min-h-[150px] font-mono text-sm"
           />
           <p className="text-xs text-muted-foreground">
-            Use HTML tags like &lt;br/&gt;, &lt;strong&gt;, &lt;span style=&quot;...&quot;&gt;, &lt;a href=&quot;...&quot;&gt;.
-            <strong className="block mt-1">Tip:</strong> Use inline styles (e.g., style=&quot;color: #0066cc;&quot;) for consistent appearance across email clients.
+            {t("htmlHint")}
           </p>
         </div>
 
         {/* HTML Preview - matches actual email rendering */}
         {showPreview && signatureHtml && (
           <div className="space-y-2">
-            <Label>Preview (as it will appear in emails)</Label>
+            <Label>{t("preview")}</Label>
             <div className="rounded-md border bg-white p-4">
               {/* Simulated email with signature */}
               <div className="text-sm text-muted-foreground mb-3 pb-3 border-b border-dashed">
-                <span className="italic">Your message will appear here...</span>
+                <span className="italic">{t("wsPreviewPlaceholder")}</span>
               </div>
               {/* Signature with separator - matches backend email_utils.py wrapper */}
               <div
@@ -247,9 +248,6 @@ Marketing Manager<br/>
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedSignatureHtml) }}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              This preview shows how your signature will appear in email clients like Outlook and Gmail.
-            </p>
           </div>
         )}
 
@@ -257,16 +255,16 @@ Marketing Manager<br/>
 
         {/* Plain Text Fallback */}
         <div className="space-y-2">
-          <Label htmlFor="signature-text">Plain Text Fallback</Label>
+          <Label htmlFor="ws-signature-text">{t("textLabel")}</Label>
           <Textarea
-            id="signature-text"
+            id="ws-signature-text"
             placeholder="Best regards,&#10;John Doe&#10;Company Name"
             value={signatureText}
             onChange={(e) => setSignatureText(e.target.value)}
             className="min-h-[80px]"
           />
           <p className="text-xs text-muted-foreground">
-            Used for email clients that don&apos;t support HTML. Leave empty to auto-generate from HTML.
+            {t("textHint")}
           </p>
         </div>
 
@@ -277,7 +275,7 @@ Marketing Manager<br/>
             disabled={updateSignature.isPending || !hasChanges}
           >
             {updateSignature.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {updateSignature.isPending ? "Saving..." : "Save Signature"}
+            {updateSignature.isPending ? t("saving") : t("wsSave")}
           </Button>
         </div>
       </CardContent>

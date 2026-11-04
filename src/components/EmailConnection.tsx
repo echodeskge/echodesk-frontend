@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import DOMPurify from 'dompurify';
+import { useTranslations } from 'next-intl';
 import {
   useEmailStatus,
   useConnectEmail,
@@ -54,6 +55,14 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { EmailUserAssignmentDialog } from '@/components/email/EmailUserAssignmentDialog';
+import { EmailSignatureSettings } from '@/components/social/EmailSignatureSettings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  hasEffectiveSignature,
+  signatureDialogInitialState,
+  signatureSavePayload,
+  type SignatureDialogState,
+} from '@/lib/email-compose';
 
 // Individual email account card
 function EmailAccountCard({
@@ -235,8 +244,11 @@ function EmailAccountCard({
         >
           <FileSignature className="mr-2 h-3 w-3" />
           Signature
-          {(connection.signature_html || connection.signature_text) && (
-            <Check className="ml-1 h-3 w-3 text-green-500" />
+          {hasEffectiveSignature(connection) && (
+            <Check
+              className="ml-1 h-3 w-3 text-green-500"
+              data-testid="signature-indicator"
+            />
           )}
         </Button>
         <Button
@@ -276,6 +288,7 @@ function EmailAccountCard({
 }
 
 export function EmailConnection() {
+  const tSig = useTranslations('social.emailSignature');
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSignatureDialog, setShowSignatureDialog] = useState(false);
@@ -293,6 +306,8 @@ export function EmailConnection() {
   // Signature form state
   const [signatureHtml, setSignatureHtml] = useState('');
   const [signatureText, setSignatureText] = useState('');
+  const [signatureSource, setSignatureSource] = useState<SignatureDialogState['source']>('legacy');
+  const [signatureTab, setSignatureTab] = useState<'mailbox' | 'workspace'>('mailbox');
 
   const [formData, setFormData] = useState<EmailConnectRequest>({
     email_address: '',
@@ -548,8 +563,13 @@ export function EmailConnection() {
 
   const handleEditSignature = (connection: EmailConnectionDetail) => {
     setEditingConnection(connection);
-    setSignatureHtml(connection.signature_html || '');
-    setSignatureText(connection.signature_text || '');
+    // Show the signature that is really used: the mailbox's own, else the
+    // workspace default that every mailbox without its own inherits.
+    const initial = signatureDialogInitialState(connection);
+    setSignatureHtml(initial.html);
+    setSignatureText(initial.text);
+    setSignatureSource(initial.source);
+    setSignatureTab('mailbox');
     setShowSignaturePreview(false);
     setShowSignatureDialog(true);
   };
@@ -565,16 +585,31 @@ export function EmailConnection() {
     try {
       await updateEmailConnection.mutateAsync({
         connection_id: editingConnection.id,
-        signature_enabled: !!(signatureHtml || signatureText),
-        signature_html: signatureHtml,
-        signature_text: signatureText,
+        ...signatureSavePayload(signatureHtml, signatureText),
       });
-      toast.success('Signature saved successfully');
+      toast.success(tSig('saved'));
       setShowSignatureDialog(false);
       setEditingConnection(null);
     } catch (error: any) {
       console.error('Failed to save signature:', error);
-      toast.error(error.response?.data?.error || 'Failed to save signature');
+      toast.error(error.response?.data?.error || tSig('saveFailed'));
+    }
+  };
+
+  // Drop the mailbox's own signature so it inherits the workspace default.
+  const handleUseWorkspaceSignature = async () => {
+    if (!editingConnection) return;
+    try {
+      await updateEmailConnection.mutateAsync({
+        connection_id: editingConnection.id,
+        signature_enabled: false,
+      });
+      toast.success(tSig('revertedToWorkspace'));
+      setShowSignatureDialog(false);
+      setEditingConnection(null);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      toast.error(err.response?.data?.error || tSig('saveFailed'));
     }
   };
 
@@ -1093,115 +1128,154 @@ export function EmailConnection() {
         setShowSignatureDialog(open);
         if (!open) setEditingConnection(null);
       }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <FileSignature className="h-5 w-5" />
-              Email Signature
+              {tSig('title')}
             </DialogTitle>
             <DialogDescription>
-              Configure signature for {editingConnection?.email_address}
+              {tSig('description', { email: editingConnection?.email_address ?? '' })}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Signature will be automatically added to outgoing emails if content is provided below.
-            </p>
+          <Tabs
+            value={signatureTab}
+            onValueChange={(value) => setSignatureTab(value as 'mailbox' | 'workspace')}
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="mailbox">{tSig('tabMailbox')}</TabsTrigger>
+              <TabsTrigger value="workspace">{tSig('tabWorkspace')}</TabsTrigger>
+            </TabsList>
 
-            {/* HTML Signature Editor */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="signature-html">Signature (HTML)</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSignaturePreview(!showSignaturePreview)}
-                  className="h-8 px-2"
-                >
-                  {showSignaturePreview ? (
-                    <>
-                      <EyeOff className="h-4 w-4 mr-1" />
-                      Hide
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4 mr-1" />
-                      Preview
-                    </>
-                  )}
-                </Button>
-              </div>
-              <Textarea
-                id="signature-html"
-                placeholder={`Best regards,
+            <TabsContent value="mailbox">
+              <div className="space-y-4 py-2">
+                {signatureSource === 'tenant' && (
+                  <Alert data-testid="signature-inherited-note">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{tSig('inheritedNote')}</AlertDescription>
+                  </Alert>
+                )}
+                {signatureSource === 'connection' && (
+                  <div className="flex flex-col gap-2 rounded-md border p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-muted-foreground">{tSig('ownNote')}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUseWorkspaceSignature}
+                      disabled={updateEmailConnection.isPending}
+                    >
+                      {tSig('useWorkspace')}
+                    </Button>
+                  </div>
+                )}
+                {(signatureSource === 'none' || signatureSource === 'legacy') && (
+                  <p className="text-sm text-muted-foreground">{tSig('noneNote')}</p>
+                )}
+
+                {/* HTML Signature Editor */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="signature-html">{tSig('htmlLabel')}</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowSignaturePreview(!showSignaturePreview)}
+                      className="h-8 px-2"
+                    >
+                      {showSignaturePreview ? (
+                        <>
+                          <EyeOff className="h-4 w-4 mr-1" />
+                          {tSig('hidePreview')}
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="h-4 w-4 mr-1" />
+                          {tSig('preview')}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="signature-html"
+                    placeholder={`Best regards,
 <br/><br/>
 <strong>John Doe</strong><br/>
 Marketing Manager<br/>
 <a href="https://example.com">www.example.com</a>`}
-                value={signatureHtml}
-                onChange={(e) => setSignatureHtml(e.target.value)}
-                className="min-h-[120px] font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Use HTML tags like &lt;br/&gt;, &lt;strong&gt;, &lt;a href=&quot;...&quot;&gt;
-              </p>
-            </div>
-
-            {/* HTML Preview */}
-            {showSignaturePreview && signatureHtml && (
-              <div className="space-y-2">
-                <Label>Preview</Label>
-                <div className="rounded-md border bg-white p-4">
-                  <div
-                    className="[&_a]:text-blue-600 [&_a]:underline"
-                    style={{
-                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-                      fontSize: "14px",
-                      lineHeight: "1.5",
-                      color: "#666666",
-                    }}
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(signatureHtml) }}
+                    value={signatureHtml}
+                    onChange={(e) => setSignatureHtml(e.target.value)}
+                    className="min-h-[120px] font-mono text-sm"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    {tSig('htmlHint')}
+                  </p>
+                </div>
+
+                {/* HTML Preview */}
+                {showSignaturePreview && signatureHtml && (
+                  <div className="space-y-2">
+                    <Label>{tSig('preview')}</Label>
+                    <div className="rounded-md border bg-white p-4">
+                      <div
+                        className="[&_a]:text-blue-600 [&_a]:underline"
+                        style={{
+                          fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+                          fontSize: "14px",
+                          lineHeight: "1.5",
+                          color: "#666666",
+                        }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(signatureHtml) }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Plain Text Fallback */}
+                <div className="space-y-2">
+                  <Label htmlFor="signature-text">{tSig('textLabel')}</Label>
+                  <Textarea
+                    id="signature-text"
+                    placeholder="Best regards,&#10;John Doe&#10;Company Name"
+                    value={signatureText}
+                    onChange={(e) => setSignatureText(e.target.value)}
+                    className="min-h-[80px]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {tSig('textHint')}
+                  </p>
                 </div>
               </div>
-            )}
 
-            {/* Plain Text Fallback */}
-            <div className="space-y-2">
-              <Label htmlFor="signature-text">Plain Text Fallback</Label>
-              <Textarea
-                id="signature-text"
-                placeholder="Best regards,&#10;John Doe&#10;Company Name"
-                value={signatureText}
-                onChange={(e) => setSignatureText(e.target.value)}
-                className="min-h-[80px]"
-              />
-              <p className="text-xs text-muted-foreground">
-                Used for email clients that don&apos;t support HTML
-              </p>
-            </div>
-          </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowSignatureDialog(false)}>
+                  {tSig('cancel')}
+                </Button>
+                <Button
+                  onClick={handleSaveSignature}
+                  disabled={updateEmailConnection.isPending}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {updateEmailConnection.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {tSig('saving')}
+                    </>
+                  ) : signatureSource === 'tenant' ? (
+                    tSig('saveForMailbox')
+                  ) : (
+                    tSig('save')
+                  )}
+                </Button>
+              </DialogFooter>
+            </TabsContent>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSignatureDialog(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveSignature}
-              disabled={updateEmailConnection.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {updateEmailConnection.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Signature'
-              )}
-            </Button>
-          </DialogFooter>
+            <TabsContent value="workspace">
+              <p className="pb-2 text-sm text-muted-foreground">{tSig('workspaceNote')}</p>
+              <EmailSignatureSettings />
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

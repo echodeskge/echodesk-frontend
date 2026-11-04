@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import DOMPurify from "dompurify";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ImageOff, Paperclip } from "lucide-react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
 import { CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatFileSize } from "@/lib/utils";
-import { Paperclip } from "lucide-react";
+import { prepareEmailHtml } from "@/lib/email-reading";
 
 interface EmailViewContentBodyProps {
   email: EmailMessage;
@@ -80,57 +81,135 @@ function wrapHtmlQuotedSections(html: string): string {
   return html;
 }
 
+/** Quote styling applied inside the isolated email iframe. */
+const IFRAME_QUOTE_CSS = `
+  .gmail_quote.gmail_quote_container, blockquote.gmail_quote, .echodesk-quoted {
+    margin-top: 12px !important; border-radius: 6px !important;
+    border: 1px solid #e5e7eb !important; background: #f9fafb !important;
+    padding: 12px !important; font-size: 0.8rem !important; color: #6b7280 !important;
+  }
+  .gmail_attr { margin-bottom: 8px !important; font-size: 0.75rem !important; color: #6b7280 !important; }
+  blockquote { border-left: 2px solid #d1d5db; margin-left: 0; padding-left: 12px; color: #6b7280; }
+`;
+
+/**
+ * Renders sanitised email HTML in a sandboxed iframe (no scripts; popups
+ * allowed so links open in a new tab). `allow-same-origin` only lets the
+ * parent measure the document for auto-height — scripts never run inside.
+ */
+export function EmailHtmlFrame({
+  srcDoc,
+  title,
+}: {
+  srcDoc: string;
+  title: string;
+}) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [height, setHeight] = useState(120);
+
+  const measure = useCallback(() => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc?.documentElement) return;
+    const next = Math.max(
+      doc.documentElement.scrollHeight,
+      doc.body?.scrollHeight ?? 0
+    );
+    if (next > 0) setHeight(next + 4);
+  }, []);
+
+  const observerRef = useRef<ResizeObserver | null>(null);
+
+  const handleLoad = useCallback(() => {
+    measure();
+    const doc = iframeRef.current?.contentDocument;
+    observerRef.current?.disconnect();
+    if (doc?.body && typeof ResizeObserver !== "undefined") {
+      observerRef.current = new ResizeObserver(() => measure());
+      observerRef.current.observe(doc.body);
+    }
+    // Late-loading images change the height — re-measure as each finishes.
+    doc?.querySelectorAll("img").forEach((img) =>
+      img.addEventListener("load", measure, { once: true })
+    );
+  }, [measure]);
+
+  useEffect(() => () => observerRef.current?.disconnect(), []);
+
+  return (
+    <iframe
+      ref={iframeRef}
+      title={title}
+      srcDoc={srcDoc}
+      onLoad={handleLoad}
+      sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin"
+      referrerPolicy="no-referrer"
+      className="w-full border-0 rounded-md bg-white"
+      style={{ height }}
+      data-testid="email-html-frame"
+    />
+  );
+}
+
 export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
-  const hasHtml = email.body_html && email.body_html.trim().length > 0;
+  const hasHtml = !!email.body_html && email.body_html.trim().length > 0;
   const [showQuoted, setShowQuoted] = useState(true);
+  // Remote images are blocked per message until the user asks for them.
+  const [allowRemoteImages, setAllowRemoteImages] = useState(false);
   const t = useTranslations("email.view");
 
   const { body, quoted } = useMemo(
-    () => (hasHtml ? { body: "", quoted: "" } : splitQuotedText(email.body_text)),
+    () => (hasHtml ? { body: "", quoted: "" } : splitQuotedText(email.body_text || "")),
     [email.body_text, hasHtml]
   );
 
+  const prepared = useMemo(
+    () =>
+      hasHtml
+        ? prepareEmailHtml(wrapHtmlQuotedSections(email.body_html), {
+            attachments: email.attachments,
+            allowRemoteImages,
+            extraCss: IFRAME_QUOTE_CSS,
+          })
+        : null,
+    [hasHtml, email.body_html, email.attachments, allowRemoteImages]
+  );
+
+  // Inline images shown in the body (cid:) are not repeated as chips.
+  const visibleAttachments = useMemo(() => {
+    const inline = new Set(prepared?.inlineAttachmentUrls ?? []);
+    return (email.attachments ?? []).filter((a) => !a.url || !inline.has(a.url));
+  }, [email.attachments, prepared]);
+
   return (
     <>
-      {hasHtml ? (
-        <>
-          <style>{`
-            .email-body .gmail_quote.gmail_quote_container,
-            .email-body blockquote.gmail_quote,
-            .email-body .echodesk-quoted {
-              margin-top: 12px !important;
-              border-radius: 6px !important;
-              border: 1px solid hsl(var(--border)) !important;
-              background: hsl(var(--muted)) !important;
-              padding: 12px !important;
-              font-size: 0.8rem !important;
-              color: hsl(var(--muted-foreground)) !important;
-            }
-            .email-body .gmail_attr {
-              margin-bottom: 8px !important;
-              font-size: 0.75rem !important;
-              color: hsl(var(--muted-foreground)) !important;
-            }
-            .email-body blockquote {
-              border-left: 2px solid hsl(var(--muted-foreground) / 0.3) !important;
-              padding-left: 12px !important;
-              color: hsl(var(--muted-foreground)) !important;
-              font-style: normal !important;
-            }
-          `}</style>
-          <CardContent
-            className="prose prose-sm max-w-none dark:prose-invert email-body"
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(wrapHtmlQuotedSections(email.body_html), {
-                ADD_TAGS: ["style"],
-                ADD_ATTR: ["target"],
-              }),
-            }}
+      {hasHtml && prepared ? (
+        <CardContent className="space-y-2">
+          {prepared.blockedCount > 0 && !allowRemoteImages && (
+            <div
+              className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground"
+              role="status"
+            >
+              <ImageOff className="h-4 w-4 shrink-0" />
+              <span className="flex-1">{t("imagesBlocked")}</span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7"
+                onClick={() => setAllowRemoteImages(true)}
+              >
+                {t("showImages")}
+              </Button>
+            </div>
+          )}
+          <EmailHtmlFrame
+            srcDoc={prepared.srcDoc}
+            title={email.subject || t("messageBody")}
           />
-        </>
+        </CardContent>
       ) : (
         <CardContent className="space-y-3">
-          <div className="whitespace-pre-wrap">{body}</div>
+          <div className="whitespace-pre-wrap break-words">{body}</div>
           {quoted && (
             <div className="space-y-1">
               <button
@@ -152,13 +231,13 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
         </CardContent>
       )}
 
-      {email.attachments && email.attachments.length > 0 && (
+      {visibleAttachments.length > 0 && (
         <div className="px-6 py-3 border-t border-border">
           <p className="text-sm font-medium text-muted-foreground mb-2">
-            {t("attachments", { count: email.attachments.length })}
+            {t("attachments", { count: visibleAttachments.length })}
           </p>
           <div className="flex flex-wrap gap-2">
-            {email.attachments.map((attachment, index) => (
+            {visibleAttachments.map((attachment, index) => (
               <a
                 key={index}
                 href={attachment.url}

@@ -1670,7 +1670,21 @@ export interface EmailConnectionDetail {
   signature_enabled?: boolean;
   signature_html?: string;
   signature_text?: string;
+  /**
+   * The signature the backend's send path will actually use for this
+   * mailbox (connection signature, else the workspace default, else none).
+   * Absent on older backends — callers must fall back to legacy behaviour.
+   */
+  effective_signature?: EmailEffectiveSignature;
   assigned_users?: EmailConnectionAssignedUser[];
+}
+
+export interface EmailEffectiveSignature {
+  source: 'connection' | 'tenant' | 'none';
+  is_enabled: boolean;
+  include_on_reply: boolean;
+  signature_html: string;
+  signature_text: string;
 }
 
 export interface EmailConnectionStatus {
@@ -1699,9 +1713,14 @@ export interface EmailMessage {
     content_type: string;
     url: string;
     size: number;
+    /** Content-ID of an inline part (without <>), when the backend stores it. */
+    content_id?: string | null;
+    is_inline?: boolean;
   }>;
   timestamp: string;
   folder: string;
+  /** Folder the message was in before it was moved to Trash (restore target). */
+  previous_folder?: string | null;
   uid: string;
   is_from_business: boolean;
   is_read: boolean;
@@ -1728,12 +1747,25 @@ export interface EmailMessage {
 export interface EmailFolder {
   name: string;
   display_name: string;
+  /** Outlook role (C5): inbox | sent | drafts | trash | junk | archive | custom. */
+  role?: string;
+  /** IMAP special-use flags when the backend exposes them. */
+  flags?: string[];
+  unread_count?: number;
+  total_count?: number;
+  /**
+   * Decoded folder name on the IMAP server when it differs from `name`
+   * (from `folder_details`, where `name` is the DB folder name).
+   */
+  server_name?: string;
 }
 
 export interface EmailMoveRequest {
   message_id: string;
   source_folder: string;
   target_folder: string;
+  /** Mailbox that owns the message (disambiguates a Message-ID shared by two mailboxes). */
+  connection_id?: number;
 }
 
 export interface EmailConnectRequest {
@@ -1762,6 +1794,12 @@ export interface EmailSendRequest {
   reply_to_message_id?: number;
   connection_id?: number;  // Optional: send from specific email account
   attachments?: File[];    // Optional: files to attach (sent as multipart/form-data)
+  /** The body already contains the signature — the backend must not append one. */
+  signature_included?: boolean;
+  /** EmailMessage being forwarded — the backend re-attaches its stored attachments. */
+  forward_message_id?: number;
+  /** EmailDraft to delete after a successful send. */
+  draft_id?: number;
 }
 
 export interface EmailActionRequest {
@@ -1868,6 +1906,41 @@ export function useInfiniteEmailMessages(filters?: {
   });
 }
 
+/**
+ * Every message of one conversation (received + our Sent replies, across
+ * folders) for the reading pane's conversation view. Keyed under
+ * emailMessages() so send / action invalidations refresh it.
+ */
+export function useEmailThreadMessages(threadId?: string | null, connectionId?: number | null) {
+  const params = {
+    thread_id: threadId || '',
+    ...(connectionId ? { connection_id: connectionId } : {}),
+    page_size: 100,
+  };
+  return useQuery<EmailMessage[]>({
+    queryKey: socialKeys.emailMessagesList({ ...params, view: 'thread' }),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/email-messages/', { params });
+      const data = response.data as { results?: EmailMessage[] } | EmailMessage[];
+      return Array.isArray(data) ? data : data.results ?? [];
+    },
+    // Never query without a thread id — the backend would return every message.
+    enabled: !!threadId,
+    refetchInterval: 30000,
+  });
+}
+
+/** One message (reading pane). Keyed under emailMessages() so actions refresh it. */
+export function useEmailMessageDetail(id: number) {
+  return useQuery<EmailMessage>({
+    queryKey: [...socialKeys.emailMessages(), 'detail', id],
+    queryFn: async () => {
+      const response = await axios.get(`/api/social/email-messages/${id}/`);
+      return response.data;
+    },
+  });
+}
+
 // Email Threads Query
 export function useEmailThreads(filters?: { folder?: string; connection_id?: number }) {
   return useQuery<GeneratedEmailMessage[]>({
@@ -1889,10 +1962,38 @@ export function useEmailThreads(filters?: { folder?: string; connection_id?: num
 }
 
 // Email Folders Response Types
+/** Legacy backends return folder names; newer ones (C5) return objects. */
+type EmailFolderEntry =
+  | string
+  | {
+      name: string;
+      display_name?: string;
+      role?: string;
+      flags?: string[];
+      unread_count?: number;
+      total_count?: number;
+      server_name?: string;
+    };
+
+/**
+ * C5 `folder_details` entry: `name` is the DB folder name (canonical
+ * INBOX/Sent/Trash/Junk/Archive for special folders), `display_name` the
+ * decoded IMAP name, `raw_name` the modified UTF-7 name.
+ */
+interface EmailFolderDetail {
+  name: string;
+  display_name?: string;
+  raw_name?: string;
+  role?: string;
+  unread_count?: number;
+  total_count?: number;
+}
+
 interface EmailConnectionFolders {
   connection_id: number;
   email: string;
-  folders: string[];
+  folders: EmailFolderEntry[];
+  folder_details?: EmailFolderDetail[];
   success: boolean;
   error?: string;
 }
@@ -1904,16 +2005,59 @@ interface EmailFoldersAllResponse {
 interface EmailFoldersSingleResponse {
   connection_id: number;
   email: string;
-  folders: string[];
+  folders: EmailFolderEntry[];
+  folder_details?: EmailFolderDetail[];
 }
 
-// Helper to transform folder strings to EmailFolder objects
-function transformFolders(folderNames: string[]): EmailFolder[] {
-  return folderNames.map(name => ({
-    name,
-    display_name: name.replace(/^INBOX\.?/i, '').replace(/\./g, ' / ') || name,
-  }));
+/**
+ * Folder entries of one connection: `folder_details` (role + DB counts) when
+ * the backend sends them, else the legacy `folders` list.
+ */
+export function folderEntriesOf(data: {
+  folders?: EmailFolderEntry[];
+  folder_details?: EmailFolderDetail[];
+}): EmailFolderEntry[] {
+  if (Array.isArray(data.folder_details) && data.folder_details.length > 0) {
+    return data.folder_details
+      .filter((d) => d && d.name)
+      .map((d) => ({
+        name: d.name,
+        display_name: d.display_name || d.name,
+        server_name: d.display_name || d.name,
+        role: d.role,
+        unread_count: d.unread_count,
+        total_count: d.total_count,
+      }));
+  }
+  return Array.isArray(data.folders) ? data.folders : [];
 }
+
+// Helper to transform folder entries (names or C5 objects) to EmailFolder
+// objects. Entries with the same name (several connections) are merged and
+// their counts summed.
+function transformFolders(entries: EmailFolderEntry[]): EmailFolder[] {
+  const byName = new Map<string, EmailFolder>();
+  for (const entry of entries) {
+    const obj = typeof entry === 'string' ? { name: entry } : entry;
+    if (!obj || !obj.name) continue;
+    const existing = byName.get(obj.name);
+    if (existing) {
+      if (obj.unread_count !== undefined) existing.unread_count = (existing.unread_count ?? 0) + obj.unread_count;
+      if (obj.total_count !== undefined) existing.total_count = (existing.total_count ?? 0) + obj.total_count;
+      continue;
+    }
+    const label = obj.server_name || obj.name;
+    byName.set(obj.name, {
+      ...obj,
+      name: obj.name,
+      display_name: label.replace(/^INBOX\.?/i, '').replace(/\./g, ' / ') || obj.name,
+    });
+  }
+  return Array.from(byName.values());
+}
+
+/** Key prefix of every useEmailFolders query (all connections). */
+const emailFoldersPrefix = () => [...socialKeys.email(), 'folders'] as const;
 
 // Email Folders Query
 export function useEmailFolders(connectionId?: number | null) {
@@ -1928,17 +2072,17 @@ export function useEmailFolders(connectionId?: number | null) {
       if (connectionId) {
         // Single connection response
         const data = response.data as EmailFoldersSingleResponse;
-        return transformFolders(data.folders);
+        return transformFolders(folderEntriesOf(data));
       } else {
         // All connections response - merge unique folders
         const data = response.data as EmailFoldersAllResponse;
-        const allFolders = new Set<string>();
+        const allFolders: EmailFolderEntry[] = [];
         data.connections.forEach(conn => {
           if (conn.success) {
-            conn.folders.forEach(folder => allFolders.add(folder));
+            allFolders.push(...folderEntriesOf(conn));
           }
         });
-        return transformFolders(Array.from(allFolders).sort());
+        return transformFolders(allFolders).sort((a, b) => a.name.localeCompare(b.name));
       }
     },
     staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
@@ -1957,6 +2101,7 @@ export function useMoveEmail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
+      queryClient.invalidateQueries({ queryKey: emailFoldersPrefix() });
     },
   });
 }
@@ -1988,14 +2133,21 @@ export function useSendEmail() {
       if (rest.body_html !== undefined) formData.append('body_html', rest.body_html);
       if (rest.connection_id !== undefined) formData.append('connection_id', String(rest.connection_id));
       if (rest.reply_to_message_id !== undefined) formData.append('reply_to_message_id', String(rest.reply_to_message_id));
+      if (rest.signature_included !== undefined) formData.append('signature_included', String(rest.signature_included));
+      if (rest.forward_message_id !== undefined) formData.append('forward_message_id', String(rest.forward_message_id));
+      if (rest.draft_id !== undefined) formData.append('draft_id', String(rest.draft_id));
       attachments.forEach((file) => formData.append('attachments', file));
 
       const response = await axios.post('/api/social/email/send/', formData);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
+      queryClient.invalidateQueries({ queryKey: emailFoldersPrefix() });
+      if (variables.draft_id !== undefined) {
+        queryClient.invalidateQueries({ queryKey: socialKeys.emailDrafts() });
+      }
     },
   });
 }
@@ -2013,6 +2165,7 @@ export function useEmailAction() {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
       queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
+      queryClient.invalidateQueries({ queryKey: emailFoldersPrefix() });
     },
   });
 }
@@ -2234,6 +2387,20 @@ export function useEmailDrafts() {
     queryFn: async () => {
       return await socialEmailDraftsList();
     },
+  });
+}
+
+export function useEmailDraft(id: number | null) {
+  return useQuery<EmailDraft>({
+    queryKey: [...socialKeys.email(), 'draftDetail', id],
+    queryFn: async () => {
+      const response = await axios.get(`/api/social/email-drafts/${id}/`);
+      return response.data as EmailDraft;
+    },
+    enabled: id !== null,
+    // Opened once into the composer; autosave owns it from then on.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -2492,6 +2659,8 @@ export function useUpdateEmailSignature() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...socialKeys.email(), 'signature'] });
+      // Connections expose the resolved effective_signature.
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailStatus() });
     },
   });
 }

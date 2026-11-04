@@ -21,6 +21,10 @@ vi.mock("next-intl", () => ({
       starred: "Starred",
       drafts: "Drafts",
       virtual: "Virtual",
+      sentItems: "Sent Items",
+      deletedItems: "Deleted Items",
+      junk: "Junk Email",
+      archive: "Archive",
     };
     return translations[key] || key;
   },
@@ -67,7 +71,12 @@ import { EmailSidebarList } from "@/app/(tenant)/email/_components/email-sidebar
 // ---------------------------------------------------------------------------
 
 function setupFolders(
-  folders: Array<{ name: string; display_name: string }> | null,
+  folders: Array<{
+    name: string;
+    display_name: string;
+    role?: string;
+    unread_count?: number;
+  }> | null,
   isLoading = false
 ) {
   mockUseEmailFolders.mockReturnValue({
@@ -133,6 +142,80 @@ describe("EmailSidebarList", () => {
     });
   });
 
+  describe("Outlook order and roles", () => {
+    it("orders Inbox, Drafts, Sent Items, Deleted Items, Junk, Archive, then custom", () => {
+      setupFolders([
+        { name: "Zeta", display_name: "Zeta" },
+        { name: "INBOX.Archive", display_name: "Archive" },
+        { name: "INBOX.Trash", display_name: "Trash" },
+        { name: "Alpha", display_name: "Alpha" },
+        { name: "INBOX.spam", display_name: "spam" },
+        { name: "INBOX.Sent", display_name: "Sent" },
+        { name: "INBOX.Drafts", display_name: "Drafts" },
+        { name: "INBOX", display_name: "INBOX" },
+      ]);
+
+      render(<EmailSidebarList />);
+
+      const labels = screen
+        .getAllByRole("button")
+        .map((b) => b.querySelector("span.capitalize")?.textContent);
+      expect(labels.slice(0, 8)).toEqual([
+        "Inbox",
+        "Drafts",
+        "Sent Items",
+        "Deleted Items",
+        "Junk Email",
+        "Archive",
+        "Alpha",
+        "Zeta",
+      ]);
+    });
+
+    it("routes role folders to their canonical DB names (Sent, Trash, drafts)", async () => {
+      setupFolders([
+        { name: "INBOX", display_name: "INBOX" },
+        { name: "INBOX.Sent", display_name: "Sent" },
+        { name: "Deleted Items", display_name: "Deleted Items" },
+      ]);
+      render(<EmailSidebarList />);
+
+      screen.getByText("Sent Items").closest("button")!.click();
+      expect(mockRouterPush).toHaveBeenLastCalledWith("/email/Sent");
+      screen.getByText("Deleted Items").closest("button")!.click();
+      expect(mockRouterPush).toHaveBeenLastCalledWith("/email/Trash");
+      screen.getByText("Drafts").closest("button")!.click();
+      expect(mockRouterPush).toHaveBeenLastCalledWith("/email/drafts");
+    });
+
+    it("always shows Trash and Junk even when the server lists neither", () => {
+      setupFolders([{ name: "INBOX", display_name: "INBOX" }]);
+      render(<EmailSidebarList />);
+      expect(screen.getByText("Deleted Items")).toBeInTheDocument();
+      expect(screen.getByText("Junk Email")).toBeInTheDocument();
+    });
+
+    it("shows unread_count badges from the folders endpoint", () => {
+      setupFolders([
+        { name: "INBOX", display_name: "INBOX", role: "inbox", unread_count: 7 },
+        { name: "Sent", display_name: "Sent", role: "sent", unread_count: 3 },
+        { name: "Projects", display_name: "Projects", role: "custom", unread_count: 2 },
+      ]);
+      render(<EmailSidebarList />);
+      const byLabel = (label: string) =>
+        screen
+          .getAllByRole("button")
+          .find((b) => b.querySelector("span.capitalize")?.textContent === label)!;
+      const inbox = byLabel("Inbox");
+      expect(inbox.textContent).toContain("7");
+      const projects = byLabel("Projects");
+      expect(projects.textContent).toContain("2");
+      // No unread badge on Sent Items (Outlook).
+      const sent = byLabel("Sent Items");
+      expect(sent.textContent).not.toMatch(/\d/);
+    });
+  });
+
   // -----------------------------------------------------------------------
   // Namespace filtering
   // -----------------------------------------------------------------------
@@ -166,8 +249,9 @@ describe("EmailSidebarList", () => {
       const allButtons = screen.getAllByRole("button");
       const texts = allButtons.map((btn) => btn.textContent);
 
-      // Sent Mail should be present (with [Gmail]/ prefix stripped)
-      expect(texts.some((t) => t?.includes("Sent Mail"))).toBe(true);
+      // [Gmail]/Sent Mail is the Sent role → shown as Outlook's "Sent Items"
+      expect(texts.some((t) => t?.includes("Sent Items"))).toBe(true);
+      expect(texts.some((t) => t?.includes("Deleted Items"))).toBe(true);
     });
   });
 
@@ -195,7 +279,7 @@ describe("EmailSidebarList", () => {
 
       const allButtons = screen.getAllByRole("button");
       const texts = allButtons.map((btn) => btn.textContent);
-      expect(texts.some((t) => t?.includes("Sent Mail"))).toBe(true);
+      expect(texts.some((t) => t?.includes("Sent Items"))).toBe(true);
       expect(texts.some((t) => t?.includes("[Gmail]"))).toBe(false);
     });
 

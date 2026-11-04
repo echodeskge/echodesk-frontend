@@ -3,72 +3,57 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Star, Pencil } from "lucide-react";
+import { Star } from "lucide-react";
 
-import { useEmailFolders, useEmailMessages } from "@/hooks/api/useSocial";
+import { useEmailMessages } from "@/hooks/api/useSocial";
+import type { FolderRole } from "@/lib/email-reading";
 import { useEmailContext } from "../_hooks/use-email-context";
+import { useFolderLabel } from "../_hooks/use-folder-label";
+import { useSidebarFolders } from "../_hooks/use-sidebar-folders";
 import { getFolderIcon } from "../constants";
 import { EmailSidebarItem } from "./email-sidebar-item";
-import type { EmailFolder } from "@/hooks/api/useSocial";
 
-/** Clean up IMAP folder names for display */
-function getDisplayName(name: string, inboxLabel: string): string {
-  if (name === "INBOX") return inboxLabel;
-  const display = name
-    .replace(/^\[Gmail\]\//i, "")
-    .replace(/^INBOX\//i, "")
-    .replace(/^INBOX\./i, "")
-    .replace(/\./g, " / ");
-  return display || name;
-}
+const ROLE_ICON: Record<Exclude<FolderRole, "custom">, string> = {
+  inbox: "Inbox",
+  drafts: "Pencil",
+  sent: "Send",
+  trash: "Trash2",
+  junk: "AlertCircle",
+  archive: "Archive",
+};
 
+/**
+ * Outlook-style folder list: Inbox, Drafts, Sent Items, Deleted Items, Junk,
+ * Archive, then custom folders alphabetically, each with its unread badge.
+ * Drafts opens the EchoDesk drafts list (virtual "drafts" route).
+ */
 export function EmailSidebarList() {
   const { currentConnectionId } = useEmailContext();
   const params = useParams();
   const rawFilter = params.filter as string | undefined;
   const filterParam = rawFilter ? decodeURIComponent(rawFilter) : undefined;
   const t = useTranslations("email.sidebar");
+  const folderLabel = useFolderLabel();
 
-  const { data: folders, isLoading } = useEmailFolders(currentConnectionId);
+  // Folder names only known from synced messages (e.g. before the server
+  // LIST answers, or folders the server no longer reports).
   const { data: emailsData } = useEmailMessages({
     page: 1,
     connection_id: currentConnectionId ?? undefined,
   });
+  const dbFolders = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (emailsData?.results ?? [])
+            .map((email) => email.folder)
+            .filter((f): f is string => !!f)
+        )
+      ),
+    [emailsData]
+  );
 
-  const visibleFolders = useMemo(() => {
-    const imapFolders = folders ?? [];
-    const folderNames = new Set(imapFolders.map((f) => f.name));
-
-    const emailFolders: EmailFolder[] = [];
-    if (emailsData?.results) {
-      for (const email of emailsData.results) {
-        if (email.folder && !folderNames.has(email.folder)) {
-          folderNames.add(email.folder);
-          emailFolders.push({
-            name: email.folder,
-            display_name: email.folder,
-          });
-        }
-      }
-    }
-
-    const allFolders = [...imapFolders, ...emailFolders];
-    return allFolders
-      .filter((folder) => {
-        if (folder.name === "INBOX") return true;
-        const isNamespaceOnly = allFolders.some(
-          (other) =>
-            other.name !== folder.name &&
-            other.name.startsWith(folder.name + "/")
-        );
-        return !isNamespaceOnly;
-      })
-      .sort((a, b) => {
-        if (a.name === "INBOX") return -1;
-        if (b.name === "INBOX") return 1;
-        return a.name.localeCompare(b.name);
-      });
-  }, [folders, emailsData]);
+  const { folders, isLoading } = useSidebarFolders(currentConnectionId, dbFolders);
 
   return (
     <ul className="p-3 pt-0">
@@ -82,13 +67,19 @@ export function EmailSidebarList() {
           ))
         ) : (
           <>
-            {visibleFolders.map((folder) => (
+            {folders.map((folder) => (
               <EmailSidebarItem
-                key={folder.name}
+                key={`${folder.role}:${folder.name}`}
                 name={folder.name}
-                displayName={getDisplayName(folder.name, t("inbox"))}
-                iconName={getFolderIcon(folder.name)}
+                displayName={folderLabel(folder)}
+                iconName={
+                  folder.role === "custom"
+                    ? getFolderIcon(folder.name)
+                    : ROLE_ICON[folder.role]
+                }
                 isActive={filterParam === folder.name}
+                // Outlook shows no unread count on Sent Items.
+                unreadCount={folder.role === "sent" ? 0 : folder.unreadCount}
               />
             ))}
 
@@ -102,13 +93,6 @@ export function EmailSidebarList() {
                 iconName="Star"
                 isActive={filterParam === "starred"}
                 lucideIcon={Star}
-              />
-              <EmailSidebarItem
-                name="drafts"
-                displayName={t("drafts")}
-                iconName="Pencil"
-                isActive={filterParam === "drafts"}
-                lucideIcon={Pencil}
               />
             </div>
           </>

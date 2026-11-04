@@ -1,13 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import DOMPurify from "dompurify";
-import { Send, Loader2, ChevronDown, ChevronUp, X, ListRestart } from "lucide-react";
-import { useTranslations } from "next-intl";
+import {
+  Send,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Trash2,
+  Paperclip,
+} from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import axios from "@/api/axios";
 
@@ -16,8 +24,30 @@ import {
   useSendEmail,
   useEmailStatus,
   useEmailSignature,
+  useEmailDraft,
+  useCreateEmailDraft,
+  useUpdateEmailDraft,
+  useDeleteEmailDraft,
 } from "@/hooks/api/useSocial";
+import {
+  type ComposeMode,
+  type ComposeDraftState,
+  buildComposedHtml,
+  buildComposedText,
+  buildQuotedHtml,
+  buildQuotedText,
+  composeStateToDraftPayload,
+  computeReplyRecipients,
+  draftToComposeState,
+  isComposeStateEmpty,
+  prefixSubject,
+  resolveComposeSignature,
+  sendErrorDescription,
+  sendResultProblems,
+} from "@/lib/email-compose";
+import { prepareEmailHtml } from "@/lib/email-reading";
 import { useEmailContext } from "../_hooks/use-email-context";
+import { EmailHtmlFrame } from "./email-view-content-body";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
@@ -33,6 +63,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileDropzone } from "@/components/FileDropzone";
+import { EditableSignature } from "@/components/email/EditableSignature";
 import {
   Select,
   SelectContent,
@@ -40,19 +71,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const emailSchema = z.object({
-  to_emails: z
-    .array(z.string().email("Invalid email address"))
-    .min(1, "At least one recipient is required"),
-  cc_emails: z.array(z.string().email("Invalid email address")).optional(),
-  bcc_emails: z.array(z.string().email("Invalid email address")).optional(),
-  subject: z.string().min(1, "Subject is required"),
-  body_text: z.string().min(1, "Message is required"),
-  connection_id: z.number().optional(),
-});
+const AUTOSAVE_DELAY_MS = 2000;
 
-type EmailFormData = z.infer<typeof emailSchema>;
+function parseId(value: string | null): number | null {
+  if (!value) return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function formatSize(bytes: number): string {
+  if (!bytes) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 export function EmailComposerForm() {
   const router = useRouter();
@@ -60,33 +103,90 @@ export function EmailComposerForm() {
   const { toast } = useToast();
   const { currentConnectionId } = useEmailContext();
   const t = useTranslations("email.compose");
+  const locale = useLocale();
   const { data: emailStatus } = useEmailStatus();
-  const { data: signature } = useEmailSignature();
+  const { data: legacySignature } = useEmailSignature();
   const sendEmail = useSendEmail();
+  const createDraft = useCreateEmailDraft();
+  const updateDraft = useUpdateEmailDraft();
+  const deleteDraft = useDeleteEmailDraft();
 
-  const replyToId = searchParams.get("reply_to");
-  const forwardId = searchParams.get("forward");
+  // ---- Compose context from the URL -------------------------------------
+  const replyToParam = parseId(searchParams.get("reply_to"));
+  const replyAllParam = parseId(searchParams.get("reply_all"));
+  const forwardParam = parseId(searchParams.get("forward"));
+  const draftParam = parseId(searchParams.get("draft"));
 
-  // Fetch the original email if replying/forwarding
+  const urlMode: ComposeMode = forwardParam
+    ? "forward"
+    : replyAllParam
+      ? "replyAll"
+      : replyToParam
+        ? "reply"
+        : "new";
+  const urlOriginalId = forwardParam ?? replyAllParam ?? replyToParam ?? null;
+  const sessionKey = `${urlMode}:${urlOriginalId ?? ""}:${draftParam ?? ""}`;
+
+  const { data: draft, isError: draftError } = useEmailDraft(draftParam);
+
+  // A draft decides its own mode/original once loaded.
+  const [ctx, setCtx] = useState<{ mode: ComposeMode; originalId: number | null }>({
+    mode: urlMode,
+    originalId: urlOriginalId,
+  });
+  useEffect(() => {
+    if (draftParam) {
+      if (draft) {
+        const st = draftToComposeState(draft);
+        setCtx({ mode: st.mode, originalId: st.originalId });
+      }
+    } else {
+      setCtx({ mode: urlMode, originalId: urlOriginalId });
+    }
+  }, [sessionKey, draft]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { mode, originalId } = ctx;
+
   const { data: originalEmail } = useQuery<EmailMessage>({
-    queryKey: ["email-message", replyToId || forwardId],
+    queryKey: ["email-message", originalId],
     queryFn: async () => {
-      const id = replyToId || forwardId;
-      const response = await axios.get(`/api/social/email-messages/${id}/`);
+      const response = await axios.get(`/api/social/email-messages/${originalId}/`);
       return response.data;
     },
-    enabled: !!(replyToId || forwardId),
+    enabled: originalId !== null,
   });
 
+  // ---- Local state --------------------------------------------------------
   const [showCcBcc, setShowCcBcc] = useState(false);
   const [showQuoted, setShowQuoted] = useState(true);
-  const [quotedText, setQuotedText] = useState("");
   const [toInput, setToInput] = useState("");
   const [ccInput, setCcInput] = useState("");
   const [bccInput, setBccInput] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [signatureHtml, setSignatureHtml] = useState<string | null>(null);
+  const [signatureLegacy, setSignatureLegacy] = useState(false);
+  const [signatureKey, setSignatureKey] = useState(0);
+  const [draftId, setDraftId] = useState<number | null>(null);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [discardOpen, setDiscardOpen] = useState(false);
 
-  const connections = emailStatus?.connections || [];
+  const connections = useMemo(() => emailStatus?.connections || [], [emailStatus]);
+
+  const emailSchema = useMemo(
+    () =>
+      z.object({
+        to_emails: z
+          .array(z.string().email(t("invalidEmail")))
+          .min(1, t("recipientRequired")),
+        cc_emails: z.array(z.string().email(t("invalidEmail"))).optional(),
+        bcc_emails: z.array(z.string().email(t("invalidEmail"))).optional(),
+        subject: z.string().min(1, t("subjectRequired")),
+        // Required for a new message only — a reply/forward carries the quote.
+        body_text: z.string(),
+        connection_id: z.number().optional(),
+      }),
+    [t]
+  );
+  type EmailFormData = z.infer<typeof emailSchema>;
 
   const form = useForm<EmailFormData>({
     resolver: zodResolver(emailSchema),
@@ -100,72 +200,257 @@ export function EmailComposerForm() {
     },
   });
 
-  // Reset form when navigating to fresh compose (no reply/forward params)
+  // ---- Refs for the autosave closure -------------------------------------
+  const hydratedKeyRef = useRef<string | null>(null);
+  const baselineRef = useRef<string>("");
+  const draftIdRef = useRef<number | null>(null);
+  const signatureRef = useRef<string | null>(null);
+  const ctxRef = useRef(ctx);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inflightRef = useRef<Promise<void> | null>(null);
+  const sendingRef = useRef(false);
+  draftIdRef.current = draftId;
+  signatureRef.current = signatureHtml;
+  ctxRef.current = ctx;
+
+  const snapshot = useCallback((): ComposeDraftState => {
+    const v = form.getValues();
+    return {
+      to: v.to_emails || [],
+      cc: v.cc_emails || [],
+      bcc: v.bcc_emails || [],
+      subject: v.subject || "",
+      bodyText: v.body_text || "",
+      connectionId: v.connection_id,
+      mode: ctxRef.current.mode,
+      originalId: ctxRef.current.originalId,
+      signatureHtml: signatureRef.current,
+    };
+  }, [form]);
+
+  const applySignature = useCallback(
+    (connectionId: number | undefined, forMode: ComposeMode) => {
+      const conn = connections.find((c) => c.id === connectionId);
+      const sig = resolveComposeSignature(conn, forMode);
+      setSignatureLegacy(sig === undefined && !!conn);
+      setSignatureHtml(sig ? sig.html : null);
+      signatureRef.current = sig ? sig.html : null;
+      setSignatureKey((k) => k + 1);
+    },
+    [connections]
+  );
+
+  // ---- Hydrate once per compose session ----------------------------------
   useEffect(() => {
-    if (!replyToId && !forwardId) {
+    if (hydratedKeyRef.current === sessionKey) return;
+    if (!emailStatus) return; // need connections to resolve the signature
+    if (draftParam && !draft) return;
+    if (!draftParam && urlOriginalId !== null && originalEmail?.id !== urlOriginalId) return;
+
+    // A different compose session replaces this one: drop the pending save
+    // (unmount flushes it when the user navigates away instead).
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    const resetInputs = () => {
+      setToInput("");
+      setCcInput("");
+      setBccInput("");
+      setAttachments([]);
+      setShowQuoted(true);
+      setDraftStatus("idle");
+    };
+
+    if (draftParam && draft) {
+      const st = draftToComposeState(draft);
+      ctxRef.current = { mode: st.mode, originalId: st.originalId };
+      form.reset({
+        to_emails: st.to,
+        cc_emails: st.cc,
+        bcc_emails: st.bcc,
+        subject: st.subject,
+        body_text: st.bodyText,
+        connection_id: st.connectionId ?? currentConnectionId ?? connections[0]?.id,
+      });
+      resetInputs();
+      setShowCcBcc(st.cc.length > 0 || st.bcc.length > 0);
+      setDraftId(draft.id);
+      draftIdRef.current = draft.id;
+      if (st.signatureHtml !== null) {
+        setSignatureHtml(st.signatureHtml);
+        signatureRef.current = st.signatureHtml;
+        setSignatureLegacy(false);
+        setSignatureKey((k) => k + 1);
+      } else if (st.signatureRemoved) {
+        // Saved by this composer without a signature (the user removed it):
+        // keep it that way instead of re-inserting the mailbox signature.
+        const conn = connections.find((c) => c.id === st.connectionId);
+        setSignatureLegacy(resolveComposeSignature(conn, st.mode) === undefined && !!conn);
+        setSignatureHtml(null);
+        signatureRef.current = null;
+        setSignatureKey((k) => k + 1);
+      } else {
+        // Drafts without a signature block (e.g. written by the mobile app)
+        // get the mailbox's effective signature, as a fresh message would.
+        applySignature(st.connectionId, st.mode);
+      }
+    } else if (urlOriginalId !== null && originalEmail) {
+      const ownAddresses = connections.map((c) => c.email_address);
+      const connectionId =
+        originalEmail.connection_id ?? currentConnectionId ?? connections[0]?.id;
+      if (urlMode === "forward") {
+        form.reset({
+          to_emails: [],
+          cc_emails: [],
+          bcc_emails: [],
+          subject: prefixSubject(originalEmail.subject, "forward"),
+          body_text: "",
+          connection_id: connectionId,
+        });
+        setShowCcBcc(false);
+      } else {
+        const { to, cc } = computeReplyRecipients(
+          originalEmail,
+          ownAddresses,
+          urlMode === "replyAll"
+        );
+        form.reset({
+          to_emails: to,
+          cc_emails: cc,
+          bcc_emails: [],
+          subject: prefixSubject(originalEmail.subject, "reply"),
+          body_text: "",
+          connection_id: connectionId,
+        });
+        setShowCcBcc(cc.length > 0);
+      }
+      resetInputs();
+      setDraftId(null);
+      draftIdRef.current = null;
+      ctxRef.current = { mode: urlMode, originalId: urlOriginalId };
+      applySignature(connectionId, urlMode);
+    } else {
+      const connectionId = currentConnectionId ?? connections[0]?.id;
       form.reset({
         to_emails: [],
         cc_emails: [],
         bcc_emails: [],
         subject: "",
         body_text: "",
-        connection_id: currentConnectionId ?? connections[0]?.id,
+        connection_id: connectionId,
       });
-      setToInput("");
-      setCcInput("");
-      setBccInput("");
+      resetInputs();
       setShowCcBcc(false);
-      setQuotedText("");
-      setAttachments([]);
+      setDraftId(null);
+      draftIdRef.current = null;
+      ctxRef.current = { mode: "new", originalId: null };
+      applySignature(connectionId, "new");
     }
-  }, [replyToId, forwardId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Pre-fill form when replying or forwarding
-  useEffect(() => {
-    if (!originalEmail) return;
+    hydratedKeyRef.current = sessionKey;
+    baselineRef.current = JSON.stringify(snapshot());
+  }, [sessionKey, emailStatus, draft, originalEmail]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const quoted = `On ${new Date(originalEmail.timestamp).toLocaleDateString("en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}, ${originalEmail.from_name} <${originalEmail.from_email}> wrote:\n\n${originalEmail.body_text}`;
-
-    if (replyToId) {
-      form.setValue("to_emails", [originalEmail.from_email]);
-      form.setValue(
-        "subject",
-        originalEmail.subject.startsWith("Re:")
-          ? originalEmail.subject
-          : `Re: ${originalEmail.subject}`
-      );
-      form.setValue("body_text", "");
-      setQuotedText(quoted);
-      setShowQuoted(true);
-      if (originalEmail.connection_id) {
-        form.setValue("connection_id", originalEmail.connection_id);
+  // ---- Draft autosave -----------------------------------------------------
+  const saveDraft = useCallback(async () => {
+    if (sendingRef.current) return;
+    if (inflightRef.current) await inflightRef.current;
+    if (sendingRef.current) return;
+    const state = snapshot();
+    const id = draftIdRef.current;
+    if (!id) {
+      if (isComposeStateEmpty(state)) return;
+      if (JSON.stringify(state) === baselineRef.current) return;
+    }
+    const payload = composeStateToDraftPayload(state);
+    setDraftStatus("saving");
+    const run = (async () => {
+      try {
+        if (id) {
+          await updateDraft.mutateAsync({ id, data: payload });
+        } else {
+          const created = await createDraft.mutateAsync(payload);
+          draftIdRef.current = created.id;
+          setDraftId(created.id);
+        }
+        setDraftStatus("saved");
+      } catch {
+        setDraftStatus("error");
       }
-    } else if (forwardId) {
-      form.setValue(
-        "subject",
-        originalEmail.subject.startsWith("Fwd:")
-          ? originalEmail.subject
-          : `Fwd: ${originalEmail.subject}`
-      );
-      form.setValue("body_text", "");
-      setQuotedText(`---------- Forwarded message ----------\nFrom: ${originalEmail.from_name} <${originalEmail.from_email}>\nDate: ${new Date(originalEmail.timestamp).toLocaleDateString()}\nSubject: ${originalEmail.subject}\n\n${originalEmail.body_text}`);
-      setShowQuoted(true);
-      if (originalEmail.connection_id) {
-        form.setValue("connection_id", originalEmail.connection_id);
-      }
-    }
-  }, [originalEmail, replyToId, forwardId, form]);
+    })();
+    inflightRef.current = run;
+    await run;
+    if (inflightRef.current === run) inflightRef.current = null;
+  }, [snapshot, createDraft, updateDraft]);
 
-  // Set default connection when data loads
+  const saveDraftRef = useRef(saveDraft);
+  saveDraftRef.current = saveDraft;
+
+  const scheduleAutosave = useCallback(() => {
+    if (hydratedKeyRef.current === null || sendingRef.current) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      void saveDraftRef.current();
+    }, AUTOSAVE_DELAY_MS);
+  }, []);
+
   useEffect(() => {
-    if (!form.getValues("connection_id") && connections.length > 0) {
-      form.setValue(
-        "connection_id",
-        currentConnectionId ?? connections[0]?.id
-      );
-    }
-  }, [connections, currentConnectionId, form]);
+    const sub = form.watch(() => scheduleAutosave());
+    return () => sub.unsubscribe();
+  }, [form, scheduleAutosave]);
 
+  // Flush a pending autosave when leaving the composer.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+        void saveDraftRef.current();
+      }
+    };
+  }, []);
+
+  // ---- Quote of the original ---------------------------------------------
+  const quoteLabels = useMemo(
+    () => ({
+      from: t("quoteFrom"),
+      sent: t("quoteSent"),
+      to: t("quoteTo"),
+      cc: t("quoteCc"),
+      subject: t("quoteSubject"),
+      forwardedMessage: t("forwardedMessage"),
+    }),
+    [t]
+  );
+  const showOriginal = mode !== "new" && !!originalEmail && originalEmail.id === originalId;
+  const quoteHtml = useMemo(
+    () => (showOriginal && originalEmail ? buildQuotedHtml(originalEmail, mode, quoteLabels, locale) : ""),
+    [showOriginal, originalEmail, mode, quoteLabels, locale]
+  );
+  // Preview of the quote: the original is untrusted HTML, so it is shown like
+  // in the reading pane — in a sandboxed iframe with remote images blocked —
+  // never injected into the app DOM. The outgoing body keeps quoteHtml.
+  const quotePreviewDoc = useMemo(
+    () =>
+      quoteHtml
+        ? prepareEmailHtml(quoteHtml, {
+            attachments: originalEmail?.attachments,
+            extraCss: "body { font-size: 12px; color: #4b5563; }",
+          }).srcDoc
+        : "",
+    [quoteHtml, originalEmail?.attachments]
+  );
+  const quoteText = useMemo(
+    () => (showOriginal && originalEmail ? buildQuotedText(originalEmail, mode, quoteLabels, locale) : ""),
+    [showOriginal, originalEmail, mode, quoteLabels, locale]
+  );
+  const forwardedAttachments =
+    mode === "forward" && showOriginal ? originalEmail?.attachments || [] : [];
+
+  // ---- Recipients ---------------------------------------------------------
   const addEmail = (
     field: "to_emails" | "cc_emails" | "bcc_emails",
     email: string
@@ -227,14 +512,36 @@ export function EmailComposerForm() {
     }
   };
 
-  const onSubmit = async (data: EmailFormData) => {
-    try {
-      const fullText = quotedText
-        ? `${data.body_text}\n\n${quotedText}`
-        : data.body_text;
-      const bodyHtml = `<div>${fullText.replace(/\n/g, "<br/>")}</div>`;
+  const originalViewHref =
+    originalEmail && originalId !== null
+      ? `/email/${encodeURIComponent(originalEmail.folder || "INBOX")}/${originalEmail.id}`
+      : null;
 
-      await sendEmail.mutateAsync({
+  // ---- Send ---------------------------------------------------------------
+  const onSubmit = async (data: EmailFormData) => {
+    if (mode === "new" && !data.body_text.trim()) {
+      form.setError("body_text", { message: t("messageRequired") });
+      return;
+    }
+    sendingRef.current = true;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    if (inflightRef.current) await inflightRef.current;
+
+    try {
+      const signatureIncluded = !signatureLegacy;
+      const sig = signatureIncluded ? signatureHtml : null;
+      const bodyHtml = buildComposedHtml({
+        text: data.body_text,
+        signatureHtml: sig,
+        quoteHtml,
+      });
+      const bodyText = buildComposedText(data.body_text, sig, quoteText);
+      const currentDraftId = draftIdRef.current;
+
+      const result = await sendEmail.mutateAsync({
         to_emails: data.to_emails,
         cc_emails:
           data.cc_emails && data.cc_emails.length > 0
@@ -245,34 +552,105 @@ export function EmailComposerForm() {
             ? data.bcc_emails
             : undefined,
         subject: data.subject,
-        body_text: fullText,
+        body_text: bodyText,
         body_html: bodyHtml,
         connection_id: data.connection_id,
-        reply_to_message_id: replyToId ? Number(replyToId) : undefined,
+        reply_to_message_id:
+          (mode === "reply" || mode === "replyAll") && originalId !== null
+            ? originalId
+            : undefined,
+        forward_message_id:
+          mode === "forward" && originalId !== null ? originalId : undefined,
+        signature_included: signatureIncluded ? true : undefined,
+        draft_id: currentDraftId ?? undefined,
         attachments: attachments.length > 0 ? attachments : undefined,
       });
 
-      toast({
-        title: t("sent"),
-        description: t("sentDescription"),
-      });
+      const problems = sendResultProblems(result);
+      if (problems) {
+        // Sent, but not to everyone / not stored: tell the user what failed.
+        toast({
+          title: t("sentWithProblems"),
+          description: [
+            problems.refused.length
+              ? t("refusedRecipients", { list: problems.refused.join(", ") })
+              : "",
+            ...problems.warnings,
+          ]
+            .filter(Boolean)
+            .join(" "),
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: t("sent"),
+          description: t("sentDescription"),
+        });
+      }
 
       setAttachments([]);
-      router.push("/email/INBOX");
+      setDraftId(null);
+      draftIdRef.current = null;
+      // Outlook: after replying/forwarding you stay on the conversation.
+      router.push(originalViewHref ?? "/email/INBOX");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { error?: string } } };
+      sendingRef.current = false;
       toast({
         title: t("sendFailed"),
-        description:
-          err.response?.data?.error || t("sendError"),
+        description: sendErrorDescription(error, t("sendError")),
         variant: "destructive",
       });
     }
   };
 
+  // ---- Discard ------------------------------------------------------------
+  const handleDiscard = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const id = draftIdRef.current;
+    if (id) {
+      deleteDraft.mutate(id);
+    }
+    setDraftId(null);
+    draftIdRef.current = null;
+    setDiscardOpen(false);
+    setToInput("");
+    setCcInput("");
+    setBccInput("");
+    setAttachments([]);
+    setDraftStatus("idle");
+
+    if (originalViewHref) {
+      router.push(originalViewHref);
+      return;
+    }
+    const connectionId = currentConnectionId ?? connections[0]?.id;
+    form.reset({
+      to_emails: [],
+      cc_emails: [],
+      bcc_emails: [],
+      subject: "",
+      body_text: "",
+      connection_id: connectionId,
+    });
+    ctxRef.current = { mode: "new", originalId: null };
+    setCtx({ mode: "new", originalId: null });
+    applySignature(connectionId, "new");
+    baselineRef.current = JSON.stringify(snapshot());
+    if (draftParam) router.replace("/email/compose");
+  };
+
   const toEmails = form.watch("to_emails") || [];
   const ccEmails = form.watch("cc_emails") || [];
   const bccEmails = form.watch("bcc_emails") || [];
+
+  if (draftParam && draftError) {
+    return (
+      <div className="p-6 text-sm text-destructive">{t("draftLoadFailed")}</div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -291,9 +669,13 @@ export function EmailComposerForm() {
                   <FormLabel>{t("from")}</FormLabel>
                   <Select
                     value={field.value?.toString()}
-                    onValueChange={(value) =>
-                      field.onChange(parseInt(value, 10))
-                    }
+                    onValueChange={(value) => {
+                      const id = parseInt(value, 10);
+                      field.onChange(id);
+                      // Outlook swaps the signature with the From account.
+                      applySignature(id, mode);
+                      scheduleAutosave();
+                    }}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -481,54 +863,99 @@ export function EmailComposerForm() {
             )}
           />
 
-          {/* Body */}
+          {/* Body: new text, then signature, then the quoted original */}
           <FormField
             control={form.control}
             name="body_text"
             render={({ field }) => (
               <FormItem>
-                <FormControl>
-                  <Textarea
-                    placeholder={t("messagePlaceholder")}
-                    className={quotedText ? "min-h-[120px] resize-y" : "min-h-[200px] resize-y"}
-                    {...field}
-                  />
-                </FormControl>
+                <div className="rounded-md border border-input focus-within:ring-2 focus-within:ring-ring">
+                  <FormControl>
+                    <Textarea
+                      placeholder={t("messagePlaceholder")}
+                      className={
+                        (quoteHtml ? "min-h-[120px]" : "min-h-[200px]") +
+                        " resize-y border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                      }
+                      {...field}
+                    />
+                  </FormControl>
+
+                  {signatureHtml !== null && !signatureLegacy && (
+                    <EditableSignature
+                      html={signatureHtml}
+                      resetKey={signatureKey}
+                      label={t("signatureLabel")}
+                      removeLabel={t("removeSignature")}
+                      onChange={(html) => {
+                        signatureRef.current = html;
+                        setSignatureHtml(html);
+                        scheduleAutosave();
+                      }}
+                      onRemove={() => {
+                        signatureRef.current = null;
+                        setSignatureHtml(null);
+                        scheduleAutosave();
+                      }}
+                    />
+                  )}
+
+                  {quoteHtml && (
+                    <div className="space-y-1 px-3 pb-3">
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => setShowQuoted(!showQuoted)}
+                      >
+                        {showQuoted ? t("hideQuoted") : t("showQuoted")}
+                      </button>
+                      {showQuoted && (
+                        <div
+                          data-testid="compose-quote"
+                          className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-1"
+                        >
+                          <EmailHtmlFrame
+                            srcDoc={quotePreviewDoc}
+                            title={t("quotedOriginal")}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* Quoted original message */}
-          {quotedText && (
-            <div className="space-y-1">
-              <button
-                type="button"
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setShowQuoted(!showQuoted)}
-              >
-                {showQuoted ? t("hideQuoted") : t("showQuoted")}
-              </button>
-              {showQuoted && (
-                <div className="rounded-md border border-border bg-muted p-3">
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans leading-relaxed">
-                    {quotedText}
-                  </pre>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Signature Preview */}
-          {signature?.is_enabled && signature.signature_html && (
+          {/* Legacy backend: it appends the workspace signature itself */}
+          {signatureLegacy && legacySignature?.is_enabled && legacySignature.signature_html && (
             <div className="text-xs text-muted-foreground">
               <span className="font-medium">{t("signatureNote")}</span>
               <div
                 className="mt-1 p-2 bg-muted rounded text-foreground"
                 dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(signature.signature_html),
+                  __html: DOMPurify.sanitize(legacySignature.signature_html),
                 }}
               />
+            </div>
+          )}
+
+          {/* Attachments of the forwarded message (re-attached by the backend) */}
+          {forwardedAttachments.length > 0 && (
+            <div className="space-y-1">
+              <FormLabel>{t("forwardedAttachments")}</FormLabel>
+              <div className="flex flex-wrap gap-1.5" data-testid="forwarded-attachments">
+                {forwardedAttachments.map((att, i) => (
+                  <Badge key={`${att.filename}-${i}`} variant="outline" className="gap-1 font-normal">
+                    <Paperclip className="h-3 w-3" />
+                    <span className="max-w-[220px] truncate">{att.filename}</span>
+                    {att.size ? (
+                      <span className="text-muted-foreground">{formatSize(att.size)}</span>
+                    ) : null}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
 
@@ -549,21 +976,24 @@ export function EmailComposerForm() {
           </div>
         </div>
 
-        <div className="flex justify-between items-center p-3 border-t border-border">
-          <Button
-            type="reset"
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              form.reset();
-              setToInput("");
-              setCcInput("");
-              setBccInput("");
-              setAttachments([]);
-            }}
-          >
-            <ListRestart className="h-4 w-4" />
-          </Button>
+        <div className="flex justify-between items-center gap-2 p-3 border-t border-border">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t("discard")}
+              title={t("discard")}
+              onClick={() => setDiscardOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground" aria-live="polite">
+              {draftStatus === "saving" && t("draftSaving")}
+              {draftStatus === "saved" && t("draftSaved")}
+              {draftStatus === "error" && t("draftSaveFailed")}
+            </span>
+          </div>
 
           <Button type="submit" disabled={sendEmail.isPending}>
             {sendEmail.isPending ? (
@@ -580,6 +1010,24 @@ export function EmailComposerForm() {
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("discardTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("discardDescription")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("keepEditing")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDiscard}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("discardConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Form>
   );
 }

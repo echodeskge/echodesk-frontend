@@ -68,6 +68,16 @@ function makeEmail(overrides: Partial<EmailMessage> = {}): EmailMessage {
   };
 }
 
+/** The sandboxed iframe's document, parsed from its srcdoc. */
+function frameDoc(container: HTMLElement): Document {
+  const iframe = container.querySelector("iframe");
+  if (!iframe) throw new Error("no iframe rendered");
+  return new DOMParser().parseFromString(
+    iframe.getAttribute("srcdoc") || "",
+    "text/html"
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -87,10 +97,69 @@ describe("EmailViewContentBody", () => {
         body_html: "<p>Hello <strong>World</strong></p>",
       });
 
-      render(<EmailViewContentBody email={email} />);
+      const { container } = render(<EmailViewContentBody email={email} />);
 
-      expect(screen.getByText("Hello")).toBeInTheDocument();
-      expect(screen.getByText("World")).toBeInTheDocument();
+      const doc = frameDoc(container);
+      expect(doc.body.textContent).toContain("Hello");
+      expect(doc.querySelector("strong")?.textContent).toBe("World");
+    });
+
+    it("renders HTML in a sandboxed iframe without scripts", () => {
+      const email = makeEmail({ body_html: "<p>Hi</p>" });
+      const { container } = render(<EmailViewContentBody email={email} />);
+      const iframe = container.querySelector("iframe")!;
+      const sandbox = iframe.getAttribute("sandbox") || "";
+      expect(sandbox).toContain("allow-popups");
+      expect(sandbox).toContain("allow-popups-to-escape-sandbox");
+      expect(sandbox).not.toContain("allow-scripts");
+      // The email's markup never lands in the app DOM.
+      expect(container.querySelector("p")).toBeNull();
+    });
+
+    it("opens links in a new tab", () => {
+      const email = makeEmail({
+        body_html: '<a href="https://example.com">site</a>',
+      });
+      const { container } = render(<EmailViewContentBody email={email} />);
+      const link = frameDoc(container).querySelector("a")!;
+      expect(link.getAttribute("target")).toBe("_blank");
+      expect(link.getAttribute("rel")).toContain("noopener");
+    });
+
+    it("blocks remote images until 'Show images' is clicked", async () => {
+      const email = makeEmail({
+        body_html: '<p>x</p><img src="https://tracker.example.com/p.gif">',
+      });
+      const { container } = render(<EmailViewContentBody email={email} />);
+      expect(frameDoc(container).querySelector("img")?.getAttribute("src")).toBeNull();
+      expect(screen.getByText("imagesBlocked")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByText("showImages"));
+
+      expect(frameDoc(container).querySelector("img")?.getAttribute("src")).toBe(
+        "https://tracker.example.com/p.gif"
+      );
+      expect(screen.queryByText("imagesBlocked")).toBeNull();
+    });
+
+    it("maps cid: images to attachment urls and hides them from the chips", () => {
+      const email = makeEmail({
+        body_html: '<img src="cid:logo@01D9">',
+        attachments: [
+          {
+            filename: "logo.png",
+            content_type: "image/png",
+            url: "https://cdn.example.com/logo.png",
+            size: 10,
+            content_id: "<logo@01D9>",
+          },
+        ],
+      });
+      const { container } = render(<EmailViewContentBody email={email} />);
+      expect(frameDoc(container).querySelector("img")?.getAttribute("src")).toBe(
+        "https://cdn.example.com/logo.png"
+      );
+      expect(screen.queryByText("logo.png")).toBeNull();
     });
 
     it("sanitizes dangerous HTML with DOMPurify", () => {
@@ -103,7 +172,9 @@ describe("EmailViewContentBody", () => {
         <EmailViewContentBody email={email} />
       );
 
-      expect(screen.getByText("Safe content")).toBeInTheDocument();
+      const doc = frameDoc(container);
+      expect(doc.body.textContent).toContain("Safe content");
+      expect(doc.querySelector("script")).toBeNull();
       expect(container.querySelector("script")).toBeNull();
     });
 
@@ -117,8 +188,11 @@ describe("EmailViewContentBody", () => {
         <EmailViewContentBody email={email} />
       );
 
-      // DOMPurify with ADD_TAGS: ["style"] should keep style tags
-      expect(screen.getByText("Styled")).toBeInTheDocument();
+      // The email's own <style> is kept, but contained inside the iframe.
+      const doc = frameDoc(container);
+      expect(doc.querySelector(".custom")?.textContent).toBe("Styled");
+      expect(doc.head.innerHTML).toContain(".custom { color: red; }");
+      expect(container.querySelector("style")).toBeNull();
     });
   });
 
@@ -298,7 +372,7 @@ describe("EmailViewContentBody", () => {
         <EmailViewContentBody email={email} />
       );
 
-      const gmailQuote = container.querySelector(".gmail_quote");
+      const gmailQuote = frameDoc(container).querySelector(".gmail_quote");
       expect(gmailQuote).not.toBeNull();
     });
   });
@@ -318,7 +392,7 @@ describe("EmailViewContentBody", () => {
         <EmailViewContentBody email={email} />
       );
 
-      const echoQuote = container.querySelector(".echodesk-quoted");
+      const echoQuote = frameDoc(container).querySelector(".echodesk-quoted");
       expect(echoQuote).not.toBeNull();
     });
 
@@ -332,7 +406,7 @@ describe("EmailViewContentBody", () => {
         <EmailViewContentBody email={email} />
       );
 
-      const echoQuote = container.querySelector(".echodesk-quoted");
+      const echoQuote = frameDoc(container).querySelector(".echodesk-quoted");
       expect(echoQuote).not.toBeNull();
     });
 
@@ -347,7 +421,7 @@ describe("EmailViewContentBody", () => {
       );
 
       // Should not have echodesk-quoted since gmail_quote exists
-      const echoQuote = container.querySelector(".echodesk-quoted");
+      const echoQuote = frameDoc(container).querySelector(".echodesk-quoted");
       expect(echoQuote).toBeNull();
     });
   });

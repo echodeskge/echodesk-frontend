@@ -41,11 +41,15 @@ const email = {
   is_answered: false,
 } as unknown as EmailMessage;
 
-function renderRow() {
+function renderRow(filter = "INBOX", overrides: Partial<EmailMessage> = {}) {
   return render(
     <table>
       <tbody>
-        <EmailListRowDesktop email={email} filter="INBOX" isSelected={false} />
+        <EmailListRowDesktop
+          email={{ ...email, ...overrides }}
+          filter={filter}
+          isSelected={false}
+        />
       </tbody>
     </table>
   );
@@ -87,5 +91,27 @@ describe("EmailListRowDesktop trash button", () => {
 
     expect(mutate).not.toHaveBeenCalled();
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("explains the message moves to Deleted Items outside Trash", () => {
+    renderRow();
+    fireEvent.click(screen.getByRole("button", { name: "deleteEmail" }));
+    expect(screen.getByText("deleteDialogDescription")).toBeInTheDocument();
+    expect(screen.queryByText("permanentDeleteDialogTitle")).toBeNull();
+  });
+
+  it("asks for permanent deletion inside Trash", () => {
+    mutate.mockImplementation((_vars, opts) => opts?.onSuccess?.());
+    renderRow("Trash", { folder: "Trash" } as Partial<EmailMessage>);
+    fireEvent.click(screen.getByRole("button", { name: "deleteEmail" }));
+
+    expect(screen.getByText("permanentDeleteDialogTitle")).toBeInTheDocument();
+    expect(screen.getByText("permanentDeleteDialogDescription")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "deletePermanently" }));
+    expect(mutate).toHaveBeenCalledWith(
+      { message_ids: [42], action: "delete" },
+      expect.any(Object)
+    );
+    expect(toast).toHaveBeenCalledWith({ title: "emailPermanentlyDeleted" });
   });
 });

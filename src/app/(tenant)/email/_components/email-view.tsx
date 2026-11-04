@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import axios from "@/api/axios";
 
-import { useEmailAction, type EmailMessage } from "@/hooks/api/useSocial";
-import { Card } from "@/components/ui/card";
+import {
+  useEmailAction,
+  useEmailMessageDetail,
+  useEmailThreadMessages,
+} from "@/hooks/api/useSocial";
+import { defaultExpandedIds, sortThreadMessages } from "@/lib/email-reading";
+import { Card, CardContent } from "@/components/ui/card";
 import { EmailNotFound } from "./email-not-found";
-import { EmailViewContent } from "./email-view-content";
+import { EmailThread } from "./email-thread";
+import { EmailViewContentActions } from "./email-view-content-actions";
 import { EmailViewHeader } from "./email-view-header";
 
 interface EmailViewProps {
@@ -17,26 +21,34 @@ interface EmailViewProps {
 }
 
 export function EmailView({ emailId, filter }: EmailViewProps) {
-  const {
-    data: email,
-    isLoading,
-    error,
-  } = useQuery<EmailMessage>({
-    queryKey: ["email-message", emailId],
-    queryFn: async () => {
-      const response = await axios.get(`/api/social/email-messages/${emailId}/`);
-      return response.data;
-    },
-  });
+  const { data: email, isLoading, error } = useEmailMessageDetail(emailId);
+  // Whole conversation (received + our Sent replies) for the reading pane.
+  const { data: threadData } = useEmailThreadMessages(
+    email?.thread_id,
+    email?.connection_id
+  );
+
+  const messages = useMemo(
+    () => (email ? sortThreadMessages(threadData ?? [], email) : []),
+    [threadData, email]
+  );
 
   const emailAction = useEmailAction();
 
-  // Mark as read on mount
+  // Mark the messages shown expanded on open (opened + latest) as read.
+  const unreadOnOpen = useMemo(() => {
+    const expanded = defaultExpandedIds(messages, emailId);
+    return messages
+      .filter((m) => expanded.has(m.id) && !m.is_read)
+      .map((m) => m.id);
+  }, [messages, emailId]);
+  const unreadKey = unreadOnOpen.join(",");
+
   useEffect(() => {
-    if (email && !email.is_read) {
-      emailAction.mutate({ message_ids: [emailId], action: "mark_read" });
+    if (unreadOnOpen.length > 0) {
+      emailAction.mutate({ message_ids: unreadOnOpen, action: "mark_read" });
     }
-  }, [emailId, email?.is_read]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [unreadKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (
@@ -51,7 +63,15 @@ export function EmailView({ emailId, filter }: EmailViewProps) {
   return (
     <Card className="flex-1 w-full md:w-auto overflow-auto">
       <EmailViewHeader email={email} filter={filter} />
-      <EmailViewContent email={email} filter={filter} />
+      <CardContent className="p-3 space-y-3 overflow-hidden">
+        <EmailViewContentActions email={email} filter={filter} />
+        <EmailThread
+          key={emailId}
+          messages={messages}
+          openedId={emailId}
+          filter={filter}
+        />
+      </CardContent>
     </Card>
   );
 }

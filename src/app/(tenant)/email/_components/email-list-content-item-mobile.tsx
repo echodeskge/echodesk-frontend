@@ -1,16 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { EllipsisVertical, Star } from "lucide-react";
+import { EllipsisVertical, Paperclip, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { KeyboardEvent } from "react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
 import { cn, formatDate } from "@/lib/utils";
 import { useEmailAction } from "@/hooks/api/useSocial";
+import {
+  getListCounterparty,
+  hasAttachments,
+  isTrashFolder,
+} from "@/lib/email-reading";
 import { useEmailContext } from "../_hooks/use-email-context";
 import { EmailAnsweredBadge } from "./email-answered-badge";
 import { EmailListRowDeleteButton } from "./email-list-row-delete-button";
+import { EmailDeleteConfirmDialog } from "./email-delete-confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -35,6 +42,9 @@ export function EmailListContentItemMobile({
   const emailAction = useEmailAction();
   const router = useRouter();
   const t = useTranslations("email.list");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const counterparty = getListCounterparty(email, filter);
+  const inTrash = isTrashFolder(email.folder) || isTrashFolder(filter);
 
   function handleNavigate() {
     if (!email.is_read) {
@@ -61,8 +71,9 @@ export function EmailListContentItemMobile({
     <li
       className={cn(
         "group flex items-center justify-between gap-1.5 p-1 ps-3 cursor-pointer",
-        email.is_read && "bg-muted"
+        !email.is_read && "border-s-4 border-s-primary"
       )}
+      data-unread={!email.is_read || undefined}
       onClick={handleNavigate}
       onKeyDown={handleOnKeyDown}
       tabIndex={0}
@@ -76,12 +87,25 @@ export function EmailListContentItemMobile({
       <div className="flex-1 px-2">
         <div className="flex items-center gap-2">
           <EmailAnsweredBadge email={email} />
-          <span className="font-bold line-clamp-1 break-all">
+          <span
+            className={cn(
+              "line-clamp-1 break-all",
+              email.is_read ? "font-normal" : "font-bold"
+            )}
+          >
             {email.subject || t("noSubject")}
           </span>
+          {hasAttachments(email) && (
+            <Paperclip
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+              aria-label={t("hasAttachments")}
+            />
+          )}
         </div>
         <span className="text-muted-foreground line-clamp-1 break-all">
-          {t("from")} {email.from_name || email.from_email}
+          {counterparty.kind === "to"
+            ? `${t("toPrefix")} ${counterparty.label || t("noRecipients")}`
+            : `${t("from")} ${counterparty.label}`}
         </span>
         <span className="text-sm text-muted-foreground">
           {formatDate(email.timestamp)}
@@ -126,18 +150,40 @@ export function EmailListContentItemMobile({
           >
             {email.is_read ? t("markAsUnread") : t("markAsRead")}
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() =>
-              emailAction.mutate({
-                message_ids: [email.id],
-                action: "delete",
-              })
-            }
-          >
-            {t("delete")}
+          {inTrash && (
+            <DropdownMenuItem
+              onClick={() =>
+                emailAction.mutate({
+                  message_ids: [email.id],
+                  action: "restore",
+                })
+              }
+            >
+              {t("restore")}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem onClick={() => setDeleteOpen(true)}>
+            {inTrash ? t("deletePermanently") : t("delete")}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <span
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+        <EmailDeleteConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          permanent={inTrash}
+          isPending={emailAction.isPending}
+          onConfirm={() =>
+            emailAction.mutate(
+              { message_ids: [email.id], action: "delete" },
+              { onSuccess: () => setDeleteOpen(false) }
+            )
+          }
+        />
+      </span>
     </li>
   );
 }

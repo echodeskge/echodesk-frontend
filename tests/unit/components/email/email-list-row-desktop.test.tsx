@@ -29,6 +29,8 @@ vi.mock("next-intl", () => ({
       delete: "Delete",
       answered: "Answered",
       new: "New",
+      toPrefix: "To:",
+      hasAttachments: "Has attachments",
     };
     return translations[key] || key;
   },
@@ -361,22 +363,59 @@ describe("EmailListRowDesktop", () => {
   // -----------------------------------------------------------------------
 
   describe("read/unread styling", () => {
-    it("applies standalone bg-muted class for read emails", () => {
+    it("renders read rows in normal weight without the unread marker", () => {
       renderRow({ is_read: true });
 
       const row = screen.getByRole("row");
-      // Split into individual classes to check for standalone "bg-muted"
-      // (not "hover:bg-muted/50" or "data-[state=selected]:bg-muted")
       const classes = row.className.split(/\s+/);
-      expect(classes).toContain("bg-muted");
+      expect(classes).not.toContain("bg-muted");
+      expect(row.getAttribute("data-unread")).toBeNull();
+      expect(screen.getByText("John Doe").className).toContain("font-normal");
     });
 
-    it("does not apply standalone bg-muted class for unread emails", () => {
+    it("renders unread rows bold with an unread accent bar", () => {
       renderRow({ is_read: false });
 
       const row = screen.getByRole("row");
       const classes = row.className.split(/\s+/);
       expect(classes).not.toContain("bg-muted");
+      expect(classes).toContain("border-s-primary");
+      expect(row.getAttribute("data-unread")).toBe("true");
+      expect(screen.getByText("John Doe").className).toContain("font-bold");
+    });
+  });
+
+  describe("Sent Items and attachments", () => {
+    it("shows 'To: recipient' instead of the sender in Sent", () => {
+      renderRow(
+        {
+          folder: "Sent",
+          is_from_business: true,
+          from_name: "Our Company",
+          to_emails: [
+            { email: "ann@example.com", name: "Ann" },
+            { email: "bob@example.com" },
+          ],
+        },
+        { filter: "Sent" }
+      );
+
+      expect(screen.getByText("To: Ann (+1)")).toBeInTheDocument();
+      expect(screen.queryByText("Our Company")).toBeNull();
+    });
+
+    it("shows a paperclip when the email has attachments", () => {
+      renderRow({
+        attachments: [
+          { filename: "a.pdf", content_type: "application/pdf", url: "/a", size: 1 },
+        ],
+      });
+      expect(screen.getByLabelText("Has attachments")).toBeInTheDocument();
+    });
+
+    it("shows no paperclip without attachments", () => {
+      renderRow({ attachments: [] });
+      expect(screen.queryByLabelText("Has attachments")).toBeNull();
     });
   });
 

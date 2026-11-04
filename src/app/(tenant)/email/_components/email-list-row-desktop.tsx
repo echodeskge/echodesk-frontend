@@ -1,14 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { EllipsisVertical, Star } from "lucide-react";
+import { EllipsisVertical, Paperclip, Star } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { KeyboardEvent } from "react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
 import { cn, formatDate, getInitials } from "@/lib/utils";
 import { useEmailAction } from "@/hooks/api/useSocial";
+import {
+  getListCounterparty,
+  hasAttachments,
+  isTrashFolder,
+} from "@/lib/email-reading";
 import { useEmailContext } from "../_hooks/use-email-context";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -22,6 +28,7 @@ import {
 import { TableCell, TableRow } from "@/components/ui/table";
 import { EmailAnsweredBadge } from "./email-answered-badge";
 import { EmailListRowDeleteButton } from "./email-list-row-delete-button";
+import { EmailDeleteConfirmDialog } from "./email-delete-confirm-dialog";
 
 interface EmailListRowDesktopProps {
   email: EmailMessage;
@@ -38,6 +45,9 @@ export function EmailListRowDesktop({
   const emailAction = useEmailAction();
   const router = useRouter();
   const t = useTranslations("email.list");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const counterparty = getListCounterparty(email, filter);
+  const inTrash = isTrashFolder(email.folder) || isTrashFolder(filter);
 
   function handleNavigate() {
     if (!email.is_read) {
@@ -60,13 +70,23 @@ export function EmailListRowDesktop({
     });
   }
 
-  function handleAction(action: "delete" | "mark_read" | "mark_unread") {
-    emailAction.mutate({ message_ids: [email.id], action });
+  function handleAction(
+    action: "delete" | "mark_read" | "mark_unread" | "restore"
+  ) {
+    emailAction.mutate(
+      { message_ids: [email.id], action },
+      action === "delete" ? { onSuccess: () => setDeleteOpen(false) } : undefined
+    );
   }
 
   return (
     <TableRow
-      className={cn("group cursor-pointer", email.is_read && "bg-muted")}
+      className={cn(
+        "group cursor-pointer",
+        // Outlook: unread rows are bold with an accent bar; read rows plain.
+        !email.is_read && "font-semibold border-s-4 border-s-primary"
+      )}
+      data-unread={!email.is_read || undefined}
       onClick={handleNavigate}
       onKeyDown={handleOnKeyDown}
       tabIndex={0}
@@ -101,20 +121,38 @@ export function EmailListRowDesktop({
         <div className="flex items-center gap-2">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="text-xs">
-              {getInitials(email.from_name || email.from_email)}
+              {getInitials(counterparty.initialsSource)}
             </AvatarFallback>
           </Avatar>
-          <span className="font-bold line-clamp-1 break-all">
-            {email.from_name || email.from_email}
+          <span
+            className={cn(
+              "line-clamp-1 break-all",
+              email.is_read ? "font-normal" : "font-bold"
+            )}
+          >
+            {counterparty.kind === "to"
+              ? `${t("toPrefix")} ${counterparty.label || t("noRecipients")}`
+              : counterparty.label}
           </span>
         </div>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-2">
           <EmailAnsweredBadge email={email} />
-          <span className="text-muted-foreground line-clamp-1 break-all">
+          <span
+            className={cn(
+              "line-clamp-1 break-all",
+              email.is_read ? "text-muted-foreground" : "text-foreground"
+            )}
+          >
             {email.subject || t("noSubject")}
           </span>
+          {hasAttachments(email) && (
+            <Paperclip
+              className="h-4 w-4 shrink-0 text-muted-foreground"
+              aria-label={t("hasAttachments")}
+            />
+          )}
         </div>
       </TableCell>
       <TableCell className="w-36">
@@ -145,11 +183,28 @@ export function EmailListRowDesktop({
             >
               {email.is_read ? t("markAsUnread") : t("markAsRead")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAction("delete")}>
-              {t("delete")}
+            {inTrash && (
+              <DropdownMenuItem onClick={() => handleAction("restore")}>
+                {t("restore")}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={() => setDeleteOpen(true)}>
+              {inTrash ? t("deletePermanently") : t("delete")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <span
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <EmailDeleteConfirmDialog
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            permanent={inTrash}
+            isPending={emailAction.isPending}
+            onConfirm={() => handleAction("delete")}
+          />
+        </span>
       </TableCell>
     </TableRow>
   );

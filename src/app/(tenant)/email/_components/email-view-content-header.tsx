@@ -25,6 +25,9 @@ export function EmailViewContentHeader({ email }: EmailViewContentHeaderProps) {
   const toList = email.to_emails
     .map((t: { email: string }) => t.email)
     .join(", ");
+  const ccList = (email.cc_emails ?? [])
+    .map((c: { email: string }) => c.email)
+    .join(", ");
 
   return (
     <Card className="py-1">
@@ -40,6 +43,11 @@ export function EmailViewContentHeader({ email }: EmailViewContentHeaderProps) {
           {toList && (
             <CardDescription className="truncate text-xs">
               {t("to")}: {toList}
+            </CardDescription>
+          )}
+          {ccList && (
+            <CardDescription className="truncate text-xs">
+              {t("cc")}: {ccList}
             </CardDescription>
           )}
         </div>
