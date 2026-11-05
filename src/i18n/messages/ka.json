@@ -217,7 +217,19 @@
     "settingsSocialConnections": "სოციალური კავშირები",
     "settingsSocialAutoPosting": "ავტო-გამოქვეყნება",
     "settingsSocialRatingStatistics": "შეფასების სტატისტიკა",
-    "searchTickets": "ტიკეტების ძიება..."
+    "searchTickets": "ტიკეტების ძიება...",
+    "sidebar": {
+      "search": "ძიება",
+      "searchPlaceholder": "გვერდების ძიება…",
+      "noResults": "შედეგი არ მოიძებნა",
+      "pages": "გვერდები",
+      "theme": "თემა",
+      "light": "ღია",
+      "dark": "მუქი",
+      "system": "სისტემური",
+      "logout": "გასვლა",
+      "account": "ანგარიში"
+    }
   },
   "bugReport": {
     "title": "ბაგის რეპორტი",

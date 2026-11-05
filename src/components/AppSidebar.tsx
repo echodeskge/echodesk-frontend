@@ -14,7 +14,6 @@ import {
   Settings,
   Clock,
   BarChart3,
-  Power,
   FileText,
   Timer,
   Home,
@@ -71,16 +70,15 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { AuthUser, TenantInfo } from "@/types/auth"
 import { User } from "@/api/generated/interfaces"
 import { MenuItem } from "@/services/permissionService"
 import { LockedFeatureBadge } from "@/components/subscription/LockedFeatureBadge"
 import { Lock } from "lucide-react"
-import Image from "next/image"
 import { useUnreadMessagesCount } from "@/hooks/api/useSocial"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { SidebarSearch, SidebarUserMenu, SidebarWorkspaceHeader } from "@/components/sidebar/SidebarChrome"
 
 // Icon mapping for menu items (lucide-react icon names) — includes Receipt for invoices
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -145,6 +143,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 
 const FOOTER_ITEM_IDS_ORDER = ['settings', 'preferences', 'help', 'report-bug'] as const
 const FOOTER_ITEM_IDS = new Set<string>(FOOTER_ITEM_IDS_ORDER)
+// Menu entries that open a dialog instead of navigating.
+const ACTION_ITEM_IDS: ReadonlySet<string> = new Set(['help', 'report-bug'])
+const iconFor = (icon: string) => iconMap[icon as keyof typeof iconMap] as React.ComponentType<{ className?: string }> | undefined
 
 interface AppSidebarProps {
   tenant: TenantInfo
@@ -331,35 +332,20 @@ export function AppSidebar({
 
   return (
     <Sidebar variant="inset" className="bg-sidebar border-r border-sidebar-border">
-      <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-4 py-2">
-          {tenant?.theme?.logo_url && (
-            // Request a large enough source for wide logos (a 32px request
-            // gets downscaled by next/image and looks blurry), then cap the
-            // box so the name column keeps its space.
-            <Image
-              src={tenant.theme.logo_url}
-              alt={tenant.name || "Logo"}
-              width={240}
-              height={80}
-              className="h-10 w-auto max-w-[96px] shrink-0 object-contain object-left"
-            />
-          )}
-          <div className="flex min-w-0 flex-1 flex-col">
-            <h2
-              className="truncate text-lg font-semibold leading-tight"
-              style={{ color: tenant?.theme?.primary_color }}
-              title={tenant?.name || "EchoDesk"}
-            >
-              {tenant?.name || "EchoDesk"}
-            </h2>
-            {tenant?.domain && (
-              <p className="truncate text-xs text-muted-foreground" title={tenant.domain}>
-                {tenant.domain}
-              </p>
-            )}
-          </div>
-        </div>
+      <SidebarHeader className="bg-sidebar gap-1 p-2">
+        <SidebarWorkspaceHeader
+          name={tenant?.name}
+          domain={tenant?.domain}
+          logoUrl={tenant?.theme?.logo_url}
+          primaryColor={tenant?.theme?.primary_color}
+        />
+        <SidebarSearch
+          items={visibleMenuItems}
+          iconFor={iconFor}
+          actionIds={ACTION_ITEM_IDS}
+          onAction={handleMenuClick}
+          onNavigate={() => { if (isMobile) setOpenMobile(false) }}
+        />
       </SidebarHeader>
 
       <SidebarContent className="bg-sidebar">
@@ -379,27 +365,16 @@ export function AppSidebar({
             {footerItems.map((item) => renderItem(item, true))}
           </SidebarMenu>
         )}
-        <div className="p-4 border-t border-sidebar-border">
-          {userProfile && (
-            <div className="mb-3">
-              <p className="text-sm font-medium">
-                {userProfile.first_name} {userProfile.last_name}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {userProfile.email}
-              </p>
-            </div>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onLogout}
-            className="w-full bg-sidebar hover:bg-sidebar-accent hover:shadow-sm transition-all duration-200"
-          >
-            <Power className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </div>
+        {userProfile && (
+          <div className="border-t border-sidebar-border p-2">
+            <SidebarUserMenu
+              firstName={userProfile.first_name}
+              lastName={userProfile.last_name}
+              email={userProfile.email}
+              onLogout={onLogout}
+            />
+          </div>
+        )}
       </SidebarFooter>
 
       <SidebarRail />

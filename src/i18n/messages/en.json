@@ -374,7 +374,19 @@
     "settingsSocialConnections": "Social Connections",
     "settingsSocialAutoPosting": "Auto-Posting",
     "settingsSocialRatingStatistics": "Rating Statistics",
-    "searchTickets": "Search tickets..."
+    "searchTickets": "Search tickets...",
+    "sidebar": {
+      "search": "Search",
+      "searchPlaceholder": "Search pages…",
+      "noResults": "No results",
+      "pages": "Pages",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "logout": "Log out",
+      "account": "Account"
+    }
   },
   "bugReport": {
     "title": "Report a Bug",
