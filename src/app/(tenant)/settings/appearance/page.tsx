@@ -169,6 +169,8 @@ export default function AppearanceSettingsPage() {
       // "preferences" is the fallback entry for users WITHOUT settings access;
       // anyone on this page has it, so listing it just duplicates "Settings".
       .filter(item => item.excludeFeatureKey !== 'settings')
+      // Settings, Help and Report a bug are pinned to the sidebar footer.
+      .filter(item => !['settings', 'help', 'report-bug'].includes(item.id))
       .map(item => ({
         id: item.id,
         label: tNav(translationKeyMap[item.id] || item.id),

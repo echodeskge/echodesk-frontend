@@ -143,6 +143,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "🛒": ShoppingCart,
 }
 
+const FOOTER_ITEM_IDS_ORDER = ['settings', 'preferences', 'help', 'report-bug'] as const
+const FOOTER_ITEM_IDS = new Set<string>(FOOTER_ITEM_IDS_ORDER)
+
 interface AppSidebarProps {
   tenant: TenantInfo
   userProfile: User | null
@@ -175,45 +178,13 @@ export function AppSidebar({
   // Social messages unread = facebook + instagram + whatsapp
   const socialUnread = (unreadCount?.facebook ?? 0) + (unreadCount?.instagram ?? 0) + (unreadCount?.whatsapp ?? 0)
 
-  return (
-    <Sidebar variant="inset" className="bg-sidebar border-r border-sidebar-border">
-      <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-4 py-2">
-          {tenant?.theme?.logo_url && (
-            // Request a large enough source for wide logos (a 32px request
-            // gets downscaled by next/image and looks blurry), then cap the
-            // box so the name column keeps its space.
-            <Image
-              src={tenant.theme.logo_url}
-              alt={tenant.name || "Logo"}
-              width={240}
-              height={80}
-              className="h-10 w-auto max-w-[96px] shrink-0 object-contain object-left"
-            />
-          )}
-          <div className="flex min-w-0 flex-1 flex-col">
-            <h2
-              className="truncate text-lg font-semibold leading-tight"
-              style={{ color: tenant?.theme?.primary_color }}
-              title={tenant?.name || "EchoDesk"}
-            >
-              {tenant?.name || "EchoDesk"}
-            </h2>
-            {tenant?.domain && (
-              <p className="truncate text-xs text-muted-foreground" title={tenant.domain}>
-                {tenant.domain}
-              </p>
-            )}
-          </div>
-        </div>
-      </SidebarHeader>
+  // Settings / Help / Report a bug live in the footer, above the user block.
+  const mainItems = visibleMenuItems.filter((item) => !FOOTER_ITEM_IDS.has(item.id))
+  const footerItems = FOOTER_ITEM_IDS_ORDER
+    .map((id) => visibleMenuItems.find((item) => item.id === id))
+    .filter((item): item is MenuItem => !!item)
 
-      <SidebarContent className="bg-sidebar">
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {visibleMenuItems.map((item) => {
+  const renderItem = (item: MenuItem, inFooter = false) => {
                 const IconComponent = iconMap[item.icon as keyof typeof iconMap]
                 const isActive = currentView === item.id || (item.id === 'settings' && currentView.startsWith('settings/'))
                 const isLocked = item.isLocked || false
@@ -337,7 +308,7 @@ export function AppSidebar({
                         isLocked
                           ? 'opacity-60 hover:opacity-80'
                           : 'hover:bg-sidebar-accent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&[data-active=true]_svg]:text-primary-foreground'
-                      }`}
+                      }${inFooter ? ' h-8 text-[13px] text-muted-foreground hover:text-foreground' : ''}`}
                       disabled={isLocked}
                     >
                       {isLocked ? (
@@ -356,13 +327,58 @@ export function AppSidebar({
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )
-              })}
+  }
+
+  return (
+    <Sidebar variant="inset" className="bg-sidebar border-r border-sidebar-border">
+      <SidebarHeader className="bg-sidebar border-b border-sidebar-border">
+        <div className="flex items-center gap-3 px-4 py-2">
+          {tenant?.theme?.logo_url && (
+            // Request a large enough source for wide logos (a 32px request
+            // gets downscaled by next/image and looks blurry), then cap the
+            // box so the name column keeps its space.
+            <Image
+              src={tenant.theme.logo_url}
+              alt={tenant.name || "Logo"}
+              width={240}
+              height={80}
+              className="h-10 w-auto max-w-[96px] shrink-0 object-contain object-left"
+            />
+          )}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <h2
+              className="truncate text-lg font-semibold leading-tight"
+              style={{ color: tenant?.theme?.primary_color }}
+              title={tenant?.name || "EchoDesk"}
+            >
+              {tenant?.name || "EchoDesk"}
+            </h2>
+            {tenant?.domain && (
+              <p className="truncate text-xs text-muted-foreground" title={tenant.domain}>
+                {tenant.domain}
+              </p>
+            )}
+          </div>
+        </div>
+      </SidebarHeader>
+
+      <SidebarContent className="bg-sidebar">
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainItems.map((item) => renderItem(item))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="bg-sidebar">
+      <SidebarFooter className="bg-sidebar gap-0 border-t border-sidebar-border p-0">
+        {footerItems.length > 0 && (
+          <SidebarMenu className="gap-0.5 p-2">
+            {footerItems.map((item) => renderItem(item, true))}
+          </SidebarMenu>
+        )}
         <div className="p-4 border-t border-sidebar-border">
           {userProfile && (
             <div className="mb-3">
