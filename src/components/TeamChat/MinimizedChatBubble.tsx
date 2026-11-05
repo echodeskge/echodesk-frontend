@@ -88,7 +88,7 @@ export function MinimizedChatBubble({ chat, index, isOnline }: MinimizedChatBubb
 
               {/* Unread badge */}
               {chat.unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                <span className="absolute -top-1 -left-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
                   {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
                 </span>
               )}
@@ -97,7 +97,7 @@ export function MinimizedChatBubble({ chat, index, isOnline }: MinimizedChatBubb
               <Button
                 variant="destructive"
                 size="icon"
-                className="absolute -top-1 -left-1 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute -top-1 -right-1 z-10 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={(e) => {
                   e.stopPropagation();
                   closeChat(chat.id);
