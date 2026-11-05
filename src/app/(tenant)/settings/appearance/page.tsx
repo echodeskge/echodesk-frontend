@@ -148,7 +148,10 @@ export default function AppearanceSettingsPage() {
     bookings: "bookings",
     leave: "leave",
     invoices: "invoices",
+    "invoices/invoices": "invoicesManagement",
     "social/messages": "messages",
+    "social/clients": "socialClients",
+    "social/templates": "socialTemplates",
     email: "email",
     users: "users",
     groups: "groups",
@@ -161,7 +164,8 @@ export default function AppearanceSettingsPage() {
   // Get top-level sidebar items for ordering
   const sidebarItems = useMemo(() => {
     return navigationConfig
-      .filter(item => !item.id.includes('/')) // Only top-level items
+      // Every navigationConfig entry is a top-level sidebar item (children are
+      // nested), including ids with a slash such as "social/messages".
       // "preferences" is the fallback entry for users WITHOUT settings access;
       // anyone on this page has it, so listing it just duplicates "Settings".
       .filter(item => item.excludeFeatureKey !== 'settings')
