@@ -5805,6 +5805,8 @@
       "archive": "დაარქივება",
       "moreActions": "სხვა მოქმედებები",
       "transferToTeammate": "გუნდის წევრზე გადაცემა",
+      "takeOver": "გადმობარება",
+      "failedToTakeOver": "გადმობარება ვერ მოხერხდა",
       "markAsUnread": "წაუკითხავად მონიშვნა",
       "startSession": "სესიის დაწყება",
       "endSession": "სესიის დასრულება",

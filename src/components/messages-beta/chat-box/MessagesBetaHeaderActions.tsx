@@ -12,6 +12,7 @@ import {
   PowerOff,
   Sparkles,
   Trash2,
+  UserCheck,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
   useMarkConversationUnread,
   useSetAIConversationState,
   useStartSession,
+  useTransferChat,
 } from "@/hooks/api/useSocial";
 import { usePrefetchConversations, usePrefetchUnreadCount } from "@/hooks/api/usePrefetchSocial";
 import { Button } from "@/components/ui/button";
@@ -88,13 +90,14 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const patchArchive = useMessagesBetaStore((s) => s.patchArchive);
   const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
 
-  const [busy, setBusy] = useState<"assign" | "unassign" | "archive" | "start" | null>(null);
+  const [busy, setBusy] = useState<"assign" | "unassign" | "archive" | "start" | "takeOver" | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
   const [endSessionOpen, setEndSessionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
 
   const startSession = useStartSession();
+  const transferChat = useTransferChat();
   const markUnread = useMarkConversationUnread();
   const setUnread = useMessagesBetaStore((s) => s.setUnread);
   const setAiState = useMessagesBetaStore((s) => s.setAiState);
@@ -217,6 +220,37 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
       // Roll back the optimistic patch on failure.
       patchAssignment(conversation.id, previousSlice);
       toast.error(err?.response?.data?.error || t("failedToAssign"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  // Admin "take over": reassigns a chat another agent holds to me.
+  const handleTakeOver = async () => {
+    if (busy || !user?.id) return;
+    setBusy("takeOver");
+    const displayName =
+      [user.first_name, user.last_name].filter(Boolean).join(" ") || user.email;
+    const previousSlice = assignmentSlice;
+    patchAssignment(conversation.id, {
+      assignedUserId: user.id,
+      assignedUserName: displayName,
+      status: "in_session",
+      sessionStartedAt: assignmentSlice?.sessionStartedAt ?? null,
+      sessionEndedAt: null,
+    });
+    setAssignmentTab("assigned");
+    try {
+      await transferChat.mutateAsync({
+        platform: conversation.platform,
+        conversation_id: conversation.conversationKey,
+        account_id: conversation.accountId,
+        target_user_id: user.id,
+      });
+      toast.success(t("assignedToYou"));
+    } catch (err: any) {
+      patchAssignment(conversation.id, previousSlice);
+      toast.error(err?.response?.data?.error || t("failedToTakeOver"));
     } finally {
       setBusy(null);
     }
@@ -389,6 +423,19 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
         <Contact className="h-4 w-4 mr-1" />
         {t("profile")}
       </Button>
+
+      {isAdmin && isAssignedToOther && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleTakeOver}
+          disabled={busy !== null}
+        >
+          <UserCheck className="h-4 w-4 mr-1" />
+          {t("takeOver")}
+        </Button>
+      )}
 
       <Button
         type="button"

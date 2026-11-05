@@ -5805,6 +5805,8 @@
       "archive": "Archive",
       "moreActions": "More actions",
       "transferToTeammate": "Transfer to teammate",
+      "takeOver": "Take over",
+      "failedToTakeOver": "Failed to take over the chat",
       "markAsUnread": "Mark as unread",
       "startSession": "Start session",
       "endSession": "End session",
