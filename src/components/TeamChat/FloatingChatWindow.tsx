@@ -25,11 +25,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { LAYOUT, useFloatingChat, type OpenChat } from './FloatingChatContext';
+import { DOCK_PANEL_RIGHT, panelMaxHeight } from './floatingDock';
 import type { TeamChatMessage } from './types';
 
 interface FloatingChatWindowProps {
   chat: OpenChat;
   index: number; // Position index (0 = rightmost, 1 = next to right, etc.)
+  /** Extra px from the right (e.g. while the dialpad popup is open). */
+  rightOffset?: number;
+  /** Narrow viewport: one window spanning the free width. */
+  isCompact?: boolean;
   currentUserId: number;
   isOnline: boolean;
   typingUser: string | null;
@@ -40,6 +45,7 @@ interface FloatingChatWindowProps {
     messageType?: string,
     voiceDuration?: number
   ) => void;
+  onRetryMessage?: (userId: number, message: TeamChatMessage) => void;
   onTyping: (userId: number, isTyping: boolean) => void;
   onClearHistory?: (conversationId: number) => void;
   isClearingHistory?: boolean;
@@ -50,10 +56,13 @@ interface FloatingChatWindowProps {
 export function FloatingChatWindow({
   chat,
   index,
+  rightOffset = 0,
+  isCompact = false,
   currentUserId,
   isOnline,
   typingUser,
   onSendMessage,
+  onRetryMessage,
   onTyping,
   onClearHistory,
   isClearingHistory,
@@ -217,12 +226,11 @@ export function FloatingChatWindow({
     }
   };
 
-  // Calculate position from right (index 0 = rightmost)
+  // Calculate position from right (index 0 = rightmost). Windows open to the
+  // left of the dock column so they never cover a launcher or a bubble.
   const rightPosition =
-    LAYOUT.MAIN_ICON.right +
-    LAYOUT.MAIN_ICON.size +
-    LAYOUT.WINDOW.gap +
-    index * (LAYOUT.WINDOW.width + LAYOUT.WINDOW.gap);
+    DOCK_PANEL_RIGHT + rightOffset + index * (LAYOUT.WINDOW.width + LAYOUT.WINDOW.gap);
+  const bottomPosition = LAYOUT.MAIN_ICON.bottom;
 
   return (
     <Card
@@ -231,10 +239,13 @@ export function FloatingChatWindow({
         'animate-in slide-in-from-bottom-4 fade-in duration-200'
       )}
       style={{
-        right: rightPosition,
-        bottom: LAYOUT.MAIN_ICON.bottom,
-        width: LAYOUT.WINDOW.width,
+        ...(isCompact
+          ? { left: 8, right: DOCK_PANEL_RIGHT, width: 'auto' }
+          : { right: rightPosition, width: LAYOUT.WINDOW.width }),
+        bottom: bottomPosition,
         height: LAYOUT.WINDOW.height,
+        // Keep the header (minimize / close) on screen on short viewports
+        maxHeight: panelMaxHeight(bottomPosition),
         zIndex: LAYOUT.Z_INDEX.window,
       }}
     >
@@ -301,7 +312,7 @@ export function FloatingChatWindow({
 
       {/* Clear History Confirmation Dialog */}
       <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
-        <AlertDialogContent className="z-[100]">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Clear Chat History</AlertDialogTitle>
             <AlertDialogDescription>
@@ -323,7 +334,7 @@ export function FloatingChatWindow({
 
       {/* Delete Chat Confirmation Dialog */}
       <AlertDialog open={showDeleteChatDialog} onOpenChange={setShowDeleteChatDialog}>
-        <AlertDialogContent className="z-[100]">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Chat</AlertDialogTitle>
             <AlertDialogDescription>
@@ -351,7 +362,7 @@ export function FloatingChatWindow({
 
             return (
               <div
-                key={message.id}
+                key={message.client_id ?? message.id}
                 className={cn('flex gap-1.5', isCurrentUser && 'flex-row-reverse')}
               >
                 <Avatar className="h-6 w-6 shrink-0">
@@ -407,10 +418,22 @@ export function FloatingChatWindow({
                     )}
                   >
                     {formatTime(message.created_at)}
-                    {isCurrentUser && (
+                    {isCurrentUser && message.status === 'pending' && (
+                      <span className="ml-1" aria-label="Sending">…</span>
+                    )}
+                    {isCurrentUser && !message.status && (
                       <span className="ml-1">{message.is_read ? '✓✓' : '✓'}</span>
                     )}
                   </div>
+                  {message.status === 'failed' && (
+                    <button
+                      type="button"
+                      className="text-[10px] mt-0.5 underline text-red-200 hover:text-white"
+                      onClick={() => onRetryMessage?.(chat.user.id, message)}
+                    >
+                      Not sent · Retry
+                    </button>
+                  )}
                 </div>
               </div>
             );

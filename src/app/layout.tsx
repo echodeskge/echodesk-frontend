@@ -236,7 +236,8 @@ export default async function RootLayout({
             <CookieConsent />
           </ConsentProvider>
         </NextIntlClientProvider>
-        <Toaster position="bottom-right" richColors />
+        {/* right offset clears the team chat / dialpad dock column (12 + 36 + gap) */}
+        <Toaster position="bottom-right" richColors offset={{ right: 64, bottom: 16 }} mobileOffset={{ right: 64, bottom: 16 }} />
       </body>
     </html>
   );

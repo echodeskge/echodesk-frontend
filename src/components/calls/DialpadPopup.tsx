@@ -8,6 +8,7 @@ import { DialPad } from "@/components/calls/DialPad";
 import { ActiveCallDisplay } from "@/components/calls/ActiveCallDisplay";
 import { SipStatusIndicator } from "@/components/calls/SipStatusIndicator";
 import { useCall } from "@/contexts/CallContext";
+import { DOCK, DOCK_PANEL_RIGHT, panelMaxHeight } from "@/components/TeamChat/floatingDock";
 
 interface DialpadPopupProps {
   onClose: () => void;
@@ -58,12 +59,21 @@ export function DialpadPopup({ onClose }: DialpadPopupProps) {
   return (
     <div
       ref={popupRef}
-      className="fixed z-[52] animate-in slide-in-from-bottom-2 duration-200"
-      // Sit just above the phone floating button (bottom 54 + size 36 + 8px gap).
-      // right:12 matches the button so the popup is right-edge aligned.
-      style={{ right: 12, bottom: 98 }}
+      className="fixed animate-in slide-in-from-bottom-2 duration-200"
+      // Opens beside the launcher column (shared dock layout), so it never
+      // covers the launchers or minimized chat bubbles. Team chat windows
+      // shift left while it is open.
+      style={{
+        right: DOCK_PANEL_RIGHT,
+        bottom: DOCK.BOTTOM,
+        zIndex: DOCK.Z_INDEX.popup,
+        maxWidth: `calc(100vw - ${DOCK_PANEL_RIGHT + 8}px)`,
+      }}
     >
-      <Card className="w-[300px] min-w-[300px] max-w-[300px] shadow-2xl border overflow-hidden">
+      <Card
+        className="w-[300px] max-w-full shadow-2xl border overflow-x-hidden overflow-y-auto"
+        style={{ maxHeight: panelMaxHeight(DOCK.BOTTOM) }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b">
           <SipStatusIndicator

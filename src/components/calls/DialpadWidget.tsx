@@ -11,6 +11,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 import { DialpadPopup } from "./DialpadPopup";
+import {
+  DOCK,
+  DIALPAD_SLOT,
+  dockSlotBottom,
+  setDialpadPresent,
+  setDialpadPanelOpen,
+  announceDockPopoverOpened,
+  onDockPopoverOpened,
+} from "@/components/TeamChat/floatingDock";
 import { IncomingCallNotification } from "./IncomingCallNotification";
 
 export default function DialpadWidget() {
@@ -53,10 +62,36 @@ export default function DialpadWidget() {
     return keys.includes("ip_calling");
   }, [user, userProfile]);
 
-  // Don't render if user doesn't have ip_calling permission or no SIP config
-  if (!hasIpCalling || !activeSipConfig) return null;
-
+  const isVisible = hasIpCalling && !!activeSipConfig;
+  const isPanelOpen = isVisible && isDialpadOpen && !sidebarOpen;
   const hasActiveCall = !!activeCall;
+
+  // Tell the team chat dock whether the phone launcher occupies its slot, so
+  // minimized chat bubbles stack above it instead of underneath.
+  useEffect(() => {
+    setDialpadPresent(isVisible);
+    return () => setDialpadPresent(false);
+  }, [isVisible]);
+
+  // Chat windows shift left while the popup is open; the chat list closes.
+  useEffect(() => {
+    setDialpadPanelOpen(isPanelOpen);
+    if (isPanelOpen) announceDockPopoverOpened("dialpad");
+    return () => setDialpadPanelOpen(false);
+  }, [isPanelOpen]);
+
+  // Opening the team chat list closes the dialpad (kept open during a call).
+  useEffect(
+    () =>
+      onDockPopoverOpened((opened) => {
+        if (opened === "chat-list" && !hasActiveCall) setIsDialpadOpen(false);
+      }),
+    [hasActiveCall, setIsDialpadOpen]
+  );
+
+  // Don't render if user doesn't have ip_calling permission or no SIP config
+  if (!isVisible) return null;
+
   const isRinging = activeCall?.direction === "incoming" && activeCall?.status === "ringing";
 
   return (
@@ -95,11 +130,15 @@ export default function DialpadWidget() {
         </div>
       )}
 
-      {/* Floating phone icon button — stacked above TeamChat icon.
-          Bottom 12 + size 36 + gap 6 = 54 for the second slot. */}
+      {/* Floating phone icon button — the dock slot directly above the
+          TeamChat icon (shared layout in TeamChat/floatingDock). */}
       <div
-        className="fixed z-50 cursor-pointer"
-        style={{ right: 12, bottom: 54 }}
+        className="fixed cursor-pointer"
+        style={{
+          right: DOCK.RIGHT,
+          bottom: dockSlotBottom(DIALPAD_SLOT),
+          zIndex: DOCK.Z_INDEX.launcher,
+        }}
         data-dialpad-trigger
         onClick={toggleDialpad}
       >
@@ -112,7 +151,7 @@ export default function DialpadWidget() {
                 ? "bg-green-600 hover:bg-green-700 hover:scale-105"
                 : "bg-primary hover:bg-primary/90 hover:scale-105"
           )}
-          style={{ width: 36, height: 36 }}
+          style={{ width: DOCK.SLOT_SIZE, height: DOCK.SLOT_SIZE }}
         >
           <Phone className={cn("h-4 w-4 text-primary-foreground", hasActiveCall && "animate-pulse")} />
 

@@ -13,11 +13,13 @@ interface TeamChatIconProps {
 export function TeamChatIcon({ unreadCount, onClick, isOpen }: TeamChatIconProps) {
   return (
     <div
-      className="fixed z-50 cursor-pointer"
+      className="fixed cursor-pointer"
       style={{
         right: LAYOUT.MAIN_ICON.right,
         bottom: LAYOUT.MAIN_ICON.bottom,
+        zIndex: LAYOUT.Z_INDEX.icon,
       }}
+      data-teamchat-trigger
       onClick={onClick}
     >
       <div

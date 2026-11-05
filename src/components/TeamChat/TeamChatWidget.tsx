@@ -1,16 +1,29 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { TeamChatIcon } from './TeamChatIcon';
 import { ConversationListPopup } from './ConversationListPopup';
 import { FloatingChatWindow } from './FloatingChatWindow';
 import { MinimizedChatBubble } from './MinimizedChatBubble';
-import { FloatingChatProvider, useFloatingChat, LAYOUT } from './FloatingChatContext';
-import { useTeamChatWebSocket } from './useTeamChatWebSocket';
 import {
+  FloatingChatProvider,
+  useFloatingChat,
+  computeMaxOpenChats,
+  chatIdForUserId,
+} from './FloatingChatContext';
+import {
+  DOCK,
+  announceDockPopoverOpened,
+  onDockPopoverOpened,
+  useDialpadPanelOpen,
+} from './floatingDock';
+import { useTeamChatWebSocket, type SentMessageMeta } from './useTeamChatWebSocket';
+import {
+  teamChatKeys,
+  fetchConversationWithUser,
   useTeamChatUsers,
   useTeamChatConversations,
-  useTeamChatConversationWithUser,
   useTeamChatUnreadCount,
   useSendTeamChatMessage,
   useMarkConversationRead,
@@ -24,21 +37,81 @@ interface TeamChatWidgetProps {
   currentUserId: number;
 }
 
+/** A WS send not confirmed within this window is treated as lost. */
+const SEND_ACK_TIMEOUT_MS = 8000;
+
+let optimisticSeq = 0;
+const newClientId = () =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const subscribeResize = (cb: () => void) => {
+  window.addEventListener('resize', cb);
+  return () => window.removeEventListener('resize', cb);
+};
+
+function useViewportWidth() {
+  return useSyncExternalStore(subscribeResize, () => window.innerWidth, () => 1280);
+}
+
+/** Conversation id of a message from any server shape (WS uses conversation_id, REST conversation). */
+const messageConversationId = (message: TeamChatMessage, fallback?: number) =>
+  message.conversation_id ?? (message as unknown as { conversation?: number }).conversation ?? fallback ?? -1;
+
 function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
   const {
     state,
     toggleList,
+    closeList,
+    setMaxOpen,
     addMessage,
+    receiveMessage,
+    markMessageFailed,
+    removeMessage,
     updateMessages,
     updateConversation,
     updateUnread,
     markRead,
+    messagesRead,
     clearMessages,
-    getChatIdFromUser,
   } = useFloatingChat();
+  const queryClient = useQueryClient();
+
+  // Latest state for async callbacks (WS frames, fetch results, timers).
+  const stateRef = useRef(state);
+  useLayoutEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const [typingUsers, setTypingUsers] = useState<Map<number, string>>(new Map());
-  const [activeUserId, setActiveUserId] = useState<number | null>(null);
+
+  // Responsive layout: how many windows fit, and compact mode on phones.
+  const viewportWidth = useViewportWidth();
+  const isCompact = viewportWidth < DOCK.COMPACT_BREAKPOINT;
+
+  // When the dialpad popup is open, panels open to its left so it never
+  // covers the chat being typed in.
+  const dialpadPanelOpen = useDialpadPanelOpen();
+  const panelShift = dialpadPanelOpen && !isCompact ? DOCK.DIALPAD_PANEL_WIDTH + DOCK.PANEL_GAP : 0;
+
+  // Windows that no longer fit (incl. while shifted left by the dialpad
+  // popup) become bubbles instead of running off the left edge.
+  useEffect(() => {
+    setMaxOpen(computeMaxOpenChats(viewportWidth, panelShift));
+  }, [viewportWidth, panelShift, setMaxOpen]);
+
+  // The chat list and the dialpad popup are mutually exclusive.
+  useEffect(() => {
+    if (state.isListOpen) announceDockPopoverOpened('chat-list');
+  }, [state.isListOpen]);
+  useEffect(
+    () =>
+      onDockPopoverOpened((opened) => {
+        if (opened === 'dialpad') closeList();
+      }),
+    [closeList]
+  );
 
   // Determine if we need to fetch full data (when list is open or has active chats)
   const hasActiveChats = state.openChats.length > 0 || state.minimizedChats.length > 0;
@@ -49,13 +122,121 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
   const { data: conversations = [], refetch: refetchConversations } = useTeamChatConversations({ enabled: shouldFetchFullData });
   const { data: unreadCount = 0, refetch: refetchUnreadCount } = useTeamChatUnreadCount();
   const sendMessageMutation = useSendTeamChatMessage();
-  const markReadMutation = useMarkConversationRead();
+  const { mutate: markConversationRead } = useMarkConversationRead();
   const clearHistoryMutation = useClearChatHistory();
   const hideChatMutation = useHideChatForMe();
 
-  // Get conversation with currently active user (for loading messages)
-  const { data: conversationWithUser, refetch: refetchConversationWithUser } =
-    useTeamChatConversationWithUser(activeUserId);
+  // ---------------------------------------------------------------------
+  // History loading: every chat (open or minimized) loads its own history
+  // once, straight from the server (never a stale cache). Closing a chat
+  // forgets it, so reopening always reloads.
+  // ---------------------------------------------------------------------
+  const loadedChatsRef = useRef<Set<string>>(new Set());
+
+  const loadChat = useCallback(
+    async (user: TeamChatUser) => {
+      const chatId = chatIdForUserId(user.id);
+      try {
+        const conversation = await queryClient.fetchQuery({
+          queryKey: teamChatKeys.conversationWithUser(user.id),
+          queryFn: () => fetchConversationWithUser(user.id),
+          staleTime: 0,
+        });
+        const current = stateRef.current;
+        const isOpen = current.openChats.some((c) => c.id === chatId);
+        const isMinimized = current.minimizedChats.some((c) => c.id === chatId);
+        if (!isOpen && !isMinimized) return; // closed meanwhile
+
+        updateConversation(chatId, conversation);
+        // Merges with anything that arrived over the WebSocket meanwhile.
+        updateMessages(chatId, conversation.messages || []);
+
+        if (conversation.unread_count > 0) {
+          if (isOpen) {
+            markConversationRead(conversation.id);
+            markRead(chatId);
+          } else {
+            updateUnread(chatId, conversation.unread_count);
+          }
+        }
+      } catch (error) {
+        loadedChatsRef.current.delete(chatId); // retry on next change
+        console.error('Failed to load team chat conversation:', error);
+      }
+    },
+    [queryClient, updateConversation, updateMessages, markConversationRead, markRead, updateUnread]
+  );
+
+  useEffect(() => {
+    const chats = [...state.openChats, ...state.minimizedChats];
+    const present = new Set(chats.map((c) => c.id));
+    loadedChatsRef.current.forEach((id) => {
+      if (!present.has(id)) loadedChatsRef.current.delete(id);
+    });
+    chats.forEach((chat) => {
+      if (!loadedChatsRef.current.has(chat.id)) {
+        loadedChatsRef.current.add(chat.id);
+        void loadChat(chat.user);
+      }
+    });
+  }, [state.openChats, state.minimizedChats, loadChat]);
+
+  // A chat that becomes visible (opened / maximized) with unread messages is read.
+  useEffect(() => {
+    state.openChats.forEach((chat) => {
+      if (chat.unreadCount > 0) {
+        markRead(chat.id);
+        if (chat.conversation) markConversationRead(chat.conversation.id);
+      }
+    });
+  }, [state.openChats, markRead, markConversationRead]);
+
+  // After a reconnect, catch up on everything missed while offline.
+  const resyncAllChats = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: teamChatKeys.all });
+    const current = stateRef.current;
+    [...current.openChats, ...current.minimizedChats].forEach((chat) => {
+      void loadChat(chat.user);
+    });
+  }, [queryClient, loadChat]);
+
+  // ---------------------------------------------------------------------
+  // Sending: optimistic message + ack timeout
+  // ---------------------------------------------------------------------
+  const pendingTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const clearPendingTimer = useCallback((clientId?: string) => {
+    if (!clientId) return;
+    const timer = pendingTimersRef.current.get(clientId);
+    if (timer) {
+      clearTimeout(timer);
+      pendingTimersRef.current.delete(clientId);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timers = pendingTimersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+    };
+  }, []);
+
+  const keepCacheFresh = useCallback(
+    (peerId: number | null, message: TeamChatMessage) => {
+      if (peerId == null) return;
+      queryClient.setQueryData<TeamChatConversation>(teamChatKeys.conversationWithUser(peerId), (old) => {
+        if (!old) return old;
+        const messages = old.messages || [];
+        return {
+          ...old,
+          last_message: message,
+          messages: messages.some((m) => m.id === message.id) ? messages : [...messages, message],
+        };
+      });
+    },
+    [queryClient]
+  );
 
   // WebSocket
   const {
@@ -64,51 +245,49 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
     sendMessage: wsSendMessage,
     sendTyping,
     sendReadReceipt,
+    reconnectNow,
   } = useTeamChatWebSocket({
-    onNewMessage: (message, conversationId) => {
-      // Find which chat this message belongs to
-      const senderId = message.sender.id;
-      const otherUserId = senderId === currentUserId ? null : senderId;
+    onNewMessage: (message: TeamChatMessage, conversationId: number, meta?: SentMessageMeta) => {
+      const isOwn = message.sender.id === currentUserId;
+      // Own echoes are matched by recipient, so they show up even before the
+      // window knows its conversation id.
+      const peerId = isOwn ? meta?.recipientId ?? null : message.sender.id;
+      clearPendingTimer(meta?.clientId);
 
       // Play team chat sound for messages from other users
-      if (message.sender.id !== currentUserId) {
+      if (!isOwn) {
         getNotificationSound().play('teamChat');
       }
 
-      // Add to any open chat that involves this user
-      state.openChats.forEach((chat) => {
-        if (
-          chat.user.id === otherUserId ||
-          (chat.conversation && chat.conversation.id === conversationId)
-        ) {
-          const chatId = getChatIdFromUser(chat.user);
-          addMessage(chatId, message);
+      receiveMessage({ message, conversationId, peerId, currentUserId, clientId: meta?.clientId });
 
-          // Mark as read if from other user
-          if (message.sender.id !== currentUserId) {
-            sendReadReceipt([message.id], conversationId);
-          }
-        }
-      });
+      // Mark as read right away if the chat is open on screen
+      if (!isOwn) {
+        const isOpen = stateRef.current.openChats.some(
+          (c) => c.user.id === peerId || c.conversation?.id === conversationId
+        );
+        if (isOpen) sendReadReceipt([message.id], conversationId);
+      }
 
-      // Update unread for minimized chats
-      state.minimizedChats.forEach((chat) => {
-        if (
-          chat.user.id === otherUserId ||
-          (chat.conversation && chat.conversation.id === conversationId)
-        ) {
-          const chatId = getChatIdFromUser(chat.user);
-          if (message.sender.id !== currentUserId) {
-            updateUnread(chatId, (chat.unreadCount || 0) + 1);
-          }
-          addMessage(chatId, message);
-        }
-      });
+      keepCacheFresh(peerId, message);
 
       // Refetch conversations to update last message
       refetchConversations();
       refetchUnreadCount();
     },
+    onSendError: (pending) => {
+      clearPendingTimer(pending.clientId);
+      if (pending.clientId && pending.recipientId != null) {
+        markMessageFailed(chatIdForUserId(pending.recipientId), pending.clientId);
+      }
+    },
+    onReadReceipt: (messageIds, readBy, conversationId) => {
+      // The other participant read our messages: flip them to ✓✓.
+      if (Array.isArray(messageIds) && messageIds.length) {
+        messagesRead(messageIds, conversationId, readBy);
+      }
+    },
+    onReconnect: resyncAllChats,
     onTypingIndicator: (userId, userName, isTyping) => {
       setTypingUsers((prev) => {
         const next = new Map(prev);
@@ -120,41 +299,38 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
         return next;
       });
     },
-    onReadReceipt: (messageIds, readBy, conversationId) => {
-      // Could update read status on messages if needed
-    },
-    onUserOnline: () => {
-      // Online status is handled by the hook's state
-    },
   });
 
-  // Load messages when opening a chat
-  useEffect(() => {
-    if (conversationWithUser && activeUserId) {
-      const user = state.openChats.find((c) => c.user.id === activeUserId)?.user;
-      if (user) {
-        const chatId = getChatIdFromUser(user);
-        updateMessages(chatId, conversationWithUser.messages || []);
-        updateConversation(chatId, conversationWithUser);
-
-        // Mark as read
-        if (conversationWithUser.unread_count > 0) {
-          markReadMutation.mutate(conversationWithUser.id);
-          markRead(chatId);
-        }
-      }
+  const sendViaRest = async (
+    userId: number,
+    payload: { text: string; file?: File; messageType?: string; voiceDuration?: number },
+    clientId?: string
+  ) => {
+    const chatId = chatIdForUserId(userId);
+    const chat = [...stateRef.current.openChats, ...stateRef.current.minimizedChats].find((c) => c.id === chatId);
+    try {
+      const message: TeamChatMessage = await sendMessageMutation.mutateAsync({
+        recipient_id: userId,
+        conversation_id: chat?.conversation?.id,
+        text: payload.text,
+        message_type: payload.messageType,
+        file: payload.file,
+        voice_duration: payload.voiceDuration,
+      });
+      // Show the stored message immediately; no refetch round-trip.
+      receiveMessage({
+        message,
+        conversationId: messageConversationId(message, chat?.conversation?.id),
+        peerId: userId,
+        currentUserId,
+        clientId,
+      });
+      keepCacheFresh(userId, message);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      if (clientId) markMessageFailed(chatId, clientId);
     }
-  }, [conversationWithUser, activeUserId]);
-
-  // Load messages when a new chat is opened
-  useEffect(() => {
-    state.openChats.forEach((chat) => {
-      if (chat.messages.length === 0 && !chat.conversation?.messages) {
-        setActiveUserId(chat.user.id);
-        refetchConversationWithUser();
-      }
-    });
-  }, [state.openChats.length]);
+  };
 
   const handleSendMessage = async (
     userId: number,
@@ -163,30 +339,48 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
     messageType?: string,
     voiceDuration?: number
   ) => {
-    // Try WebSocket first for text messages
-    if (!file && wsSendMessage(userId, text)) {
-      // Message will be added via WebSocket callback
+    // Files and voice notes go over REST
+    if (file) {
+      await sendViaRest(userId, { text, file, messageType, voiceDuration });
       return;
     }
 
-    // Fall back to REST API for file uploads
-    try {
-      const chat = state.openChats.find((c) => c.user.id === userId);
-      await sendMessageMutation.mutateAsync({
-        recipient_id: userId,
-        conversation_id: chat?.conversation?.id,
-        text,
-        message_type: messageType,
-        file,
-        voice_duration: voiceDuration,
-      });
+    // Text: show it instantly as pending, confirm via the WS echo
+    const chatId = chatIdForUserId(userId);
+    const clientId = newClientId();
+    addMessage(chatId, {
+      id: -++optimisticSeq,
+      conversation_id: -1,
+      sender: { id: currentUserId, email: '', full_name: '', is_online: true },
+      message_type: 'text',
+      text,
+      is_read: false,
+      created_at: new Date().toISOString(),
+      client_id: clientId,
+      status: 'pending',
+    });
 
-      // Reload conversation to get the new message
-      setActiveUserId(userId);
-      refetchConversationWithUser();
-    } catch (error) {
-      console.error('Failed to send message:', error);
+    if (wsSendMessage(userId, text, 'text', clientId)) {
+      pendingTimersRef.current.set(
+        clientId,
+        setTimeout(() => {
+          pendingTimersRef.current.delete(clientId);
+          // No echo: the socket is probably half-open. Flag the message for
+          // retry and get a fresh connection (the reconnect resyncs history).
+          markMessageFailed(chatId, clientId);
+          reconnectNow();
+        }, SEND_ACK_TIMEOUT_MS)
+      );
+      return;
     }
+
+    // Socket down: fall back to REST
+    await sendViaRest(userId, { text }, clientId);
+  };
+
+  const handleRetryMessage = (userId: number, message: TeamChatMessage) => {
+    if (message.client_id) removeMessage(chatIdForUserId(userId), message.client_id);
+    void handleSendMessage(userId, message.text || '');
   };
 
   const handleTyping = (userId: number, isTyping: boolean) => {
@@ -201,15 +395,9 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
     try {
       await clearHistoryMutation.mutateAsync(conversationId);
       // Find the chat with this conversation and clear its messages locally
-      const chat = state.openChats.find((c) => c.conversation?.id === conversationId);
-      if (chat) {
-        clearMessages(chat.id);
-      }
-      // Also check minimized chats
-      const minimizedChat = state.minimizedChats.find((c) => c.conversation?.id === conversationId);
-      if (minimizedChat) {
-        clearMessages(minimizedChat.id);
-      }
+      [...state.openChats, ...state.minimizedChats]
+        .filter((c) => c.conversation?.id === conversationId)
+        .forEach((c) => clearMessages(c.id));
       refetchConversations();
     } catch (error) {
       console.error('Failed to clear chat history:', error);
@@ -226,6 +414,9 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
     }
   };
 
+  // The reducer keeps openChats within maxOpen; slice is only a safety net.
+  const visibleChats = state.openChats.slice(-Math.max(1, state.maxOpen));
+
   return (
     <>
       {/* Main Icon */}
@@ -241,27 +432,29 @@ function TeamChatWidgetInner({ currentUserId }: TeamChatWidgetProps) {
         conversations={conversations}
         onlineUsers={onlineUsers}
         isConnected={isConnected}
+        rightOffset={panelShift}
       />
 
-      {/* Floating Chat Windows - only show last 4 (visible ones) */}
-      {state.openChats
-        .slice(-LAYOUT.MAX_OPEN_CHATS) // Take last 4 chats
-        .map((chat, idx, arr) => (
-          <FloatingChatWindow
-            key={chat.id}
-            chat={chat}
-            index={arr.length - 1 - idx} // Reverse index: last item = 0 (rightmost)
-            currentUserId={currentUserId}
-            isOnline={onlineUsers.has(chat.user.id)}
-            typingUser={getTypingUser(chat.user.id)}
-            onSendMessage={handleSendMessage}
-            onTyping={handleTyping}
-            onClearHistory={handleClearHistory}
-            isClearingHistory={clearHistoryMutation.isPending}
-            onDeleteChat={handleDeleteChat}
-            isDeletingChat={hideChatMutation.isPending}
-          />
-        ))}
+      {/* Floating Chat Windows */}
+      {visibleChats.map((chat, idx, arr) => (
+        <FloatingChatWindow
+          key={chat.id}
+          chat={chat}
+          index={arr.length - 1 - idx} // Reverse index: last item = 0 (rightmost)
+          rightOffset={panelShift}
+          isCompact={isCompact}
+          currentUserId={currentUserId}
+          isOnline={onlineUsers.has(chat.user.id)}
+          typingUser={getTypingUser(chat.user.id)}
+          onSendMessage={handleSendMessage}
+          onRetryMessage={handleRetryMessage}
+          onTyping={handleTyping}
+          onClearHistory={handleClearHistory}
+          isClearingHistory={clearHistoryMutation.isPending}
+          onDeleteChat={handleDeleteChat}
+          isDeletingChat={hideChatMutation.isPending}
+        />
+      ))}
 
       {/* Minimized Chat Bubbles */}
       {state.minimizedChats.map((chat, index) => (

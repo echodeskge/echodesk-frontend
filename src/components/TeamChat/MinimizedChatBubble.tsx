@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LAYOUT, useFloatingChat, type MinimizedChat } from './FloatingChatContext';
+import { dockSlotBottom, firstBubbleSlot, useDialpadPresent } from './floatingDock';
 import {
   Tooltip,
   TooltipContent,
@@ -30,12 +31,10 @@ export function MinimizedChatBubble({ chat, index, isOnline }: MinimizedChatBubb
       .slice(0, 2);
   };
 
-  // Calculate position - stack vertically above the main icon
-  const bottomPosition =
-    LAYOUT.MAIN_ICON.bottom +
-    LAYOUT.MAIN_ICON.size +
-    LAYOUT.BUBBLE.gap +
-    index * (LAYOUT.BUBBLE.size + LAYOUT.BUBBLE.gap);
+  // Stack vertically in the dock column, above the chat icon AND the PBX
+  // dialpad launcher when it is rendered, so no bubble sits under it.
+  const hasDialpad = useDialpadPresent();
+  const bottomPosition = dockSlotBottom(firstBubbleSlot(hasDialpad) + index);
 
   const getLastMessagePreview = () => {
     if (!chat.lastMessage) return null;

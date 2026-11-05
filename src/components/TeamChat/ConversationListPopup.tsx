@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, User, X, Users, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { LAYOUT, useFloatingChat } from './FloatingChatContext';
+import { DOCK_PANEL_RIGHT, panelMaxHeight } from './floatingDock';
 import type { TeamChatUser, TeamChatConversation } from './types';
 
 interface ConversationListPopupProps {
@@ -16,6 +17,8 @@ interface ConversationListPopupProps {
   conversations: TeamChatConversation[];
   onlineUsers: Map<number, string>;
   isConnected: boolean;
+  /** Extra px from the right (e.g. while the dialpad popup is open). */
+  rightOffset?: number;
 }
 
 export function ConversationListPopup({
@@ -23,9 +26,24 @@ export function ConversationListPopup({
   conversations,
   onlineUsers,
   isConnected,
+  rightOffset = 0,
 }: ConversationListPopupProps) {
   const { state, openChat, closeList, closeAllChats } = useFloatingChat();
   const [searchQuery, setSearchQuery] = useState('');
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  // Close on click outside (the launcher toggles it itself)
+  useEffect(() => {
+    if (!state.isListOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (popupRef.current?.contains(target)) return;
+      if (target.closest?.('[data-teamchat-trigger]')) return;
+      closeList();
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [state.isListOpen, closeList]);
 
   // Filter users and conversations based on search
   // All hooks must be called before any early returns
@@ -99,17 +117,23 @@ export function ConversationListPopup({
     }
   };
 
+  // Opens beside the dock column so it never covers the launchers or bubbles.
+  const right = DOCK_PANEL_RIGHT + rightOffset;
+  const bottom = LAYOUT.MAIN_ICON.bottom;
+
   return (
     <Card
+      ref={popupRef}
       className={cn(
         'fixed shadow-2xl flex flex-col overflow-hidden',
         'animate-in slide-in-from-bottom-4 fade-in duration-200'
       )}
       style={{
-        right: LAYOUT.MAIN_ICON.right,
-        bottom: LAYOUT.MAIN_ICON.bottom + LAYOUT.MAIN_ICON.size + 12,
-        width: LAYOUT.POPUP.width,
+        right,
+        bottom,
+        width: `min(${LAYOUT.POPUP.width}px, calc(100vw - ${right + 8}px))`,
         height: LAYOUT.POPUP.height,
+        maxHeight: panelMaxHeight(bottom),
         zIndex: LAYOUT.Z_INDEX.popup,
       }}
     >

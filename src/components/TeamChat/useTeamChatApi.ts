@@ -51,15 +51,21 @@ export function useTeamChatConversation(id: number | null) {
   });
 }
 
-// Get or create conversation with specific user
+// Get or create conversation with specific user (includes its messages)
+export async function fetchConversationWithUser(userId: number): Promise<TeamChatConversation> {
+  const response = await axios.get(`/api/team-chat/conversations/with/${userId}/`);
+  return response.data;
+}
+
 export function useTeamChatConversationWithUser(userId: number | null) {
   return useQuery({
     queryKey: teamChatKeys.conversationWithUser(userId!),
-    queryFn: async (): Promise<TeamChatConversation> => {
-      const response = await axios.get(`/api/team-chat/conversations/with/${userId}/`);
-      return response.data;
-    },
+    queryFn: () => fetchConversationWithUser(userId!),
     enabled: !!userId,
+    // Chat history must never be served from a stale cache; the WebSocket
+    // keeps open windows live, so no focus refetch either.
+    staleTime: 0,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -114,7 +120,7 @@ export function useSendTeamChatMessage() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations(), exact: true });
     },
   });
 }
@@ -130,7 +136,7 @@ export function useMarkConversationRead() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: teamChatKeys.unreadCount() });
-      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations(), exact: true });
     },
   });
 }
@@ -166,7 +172,7 @@ export function useClearChatHistory() {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations(), exact: true });
       queryClient.invalidateQueries({ queryKey: teamChatKeys.unreadCount() });
     },
   });
@@ -181,7 +187,7 @@ export function useHideChatForMe() {
       return teamChatConversationsHideForMeCreate(String(conversationId));
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations() });
+      queryClient.invalidateQueries({ queryKey: teamChatKeys.conversations(), exact: true });
       queryClient.invalidateQueries({ queryKey: teamChatKeys.unreadCount() });
     },
   });

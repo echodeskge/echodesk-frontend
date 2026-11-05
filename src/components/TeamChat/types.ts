@@ -26,6 +26,10 @@ export interface TeamChatMessage {
   is_read: boolean;
   read_at?: string;
   created_at: string;
+  /** Client-generated id of an optimistic (not yet confirmed) message. */
+  client_id?: string;
+  /** Local delivery state of an optimistic message; absent for server messages. */
+  status?: 'pending' | 'failed';
 }
 
 export interface TeamChatConversation {

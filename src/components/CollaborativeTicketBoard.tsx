@@ -106,7 +106,7 @@ export function CollaborativeTicketBoard({
 
         {/* Floating indicators for tickets being edited/moved */}
         {(ticketsBeingMoved.size > 0 || ticketsBeingEdited.size > 0) && (
-          <div className="fixed bottom-4 right-4 space-y-2 z-50">
+          <div className="fixed bottom-4 right-16 space-y-2 z-50">
             {Array.from(ticketsBeingMoved.entries()).map(([ticketId, userName]) => (
               <Badge
                 key={`moving-${ticketId}`}
