@@ -23,3 +23,30 @@ export function formatDateWithTime(dateString: string | null | undefined, locale
   // 24-hour clock for Georgian; AM/PM markers aren't used there.
   return safeFormat(dateString, locale === "ka" ? "PP HH:mm" : "PP hh:mm a", locale)
 }
+
+export interface CourierInfo {
+  /** Courier the customer picked at checkout (e.g. "Deliverers"). */
+  chosen: string | null
+  /** Courier Quickshipper actually booked, when it differs from the choice. */
+  booked: string | null
+  trackingUrl: string | null
+  pickup: boolean
+}
+
+const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null)
+
+/** Courier details stored on payment_metadata by checkout and the Quickshipper booking task. */
+export function getCourierInfo(paymentMetadata: unknown): CourierInfo {
+  const meta = (paymentMetadata && typeof paymentMetadata === "object" ? paymentMetadata : {}) as Record<string, unknown>
+  const quote = (meta.quickshipper_quote ?? {}) as Record<string, unknown>
+  const booking = (meta.quickshipper ?? {}) as Record<string, unknown>
+  const chosen = str(quote?.provider_name)
+  const bookedName = str(booking?.provider_name)
+  const trackingUrl = str(booking?.tracking_url)
+  return {
+    chosen: chosen ?? bookedName,
+    booked: bookedName && bookedName !== chosen ? bookedName : null,
+    trackingUrl: trackingUrl && /^https:\/\//.test(trackingUrl) ? trackingUrl : null,
+    pickup: meta.delivery_method === "pickup",
+  }
+}

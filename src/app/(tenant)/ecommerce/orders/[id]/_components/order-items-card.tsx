@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { formatCurrency } from "../../_lib/utils"
+import { formatCurrency, getCourierInfo } from "../../_lib/utils"
 import { OrderDetail } from "../../_types"
 
 type Localized = string | Record<string, string> | null | undefined
@@ -53,6 +53,7 @@ interface OrderItemsCardProps {
 
 export function OrderItemsCard({ order, t }: OrderItemsCardProps) {
   const locale = useLocale()
+  const courier = getCourierInfo(order.payment_metadata)
   return (
     <Card>
       <CardHeader>
@@ -155,6 +156,11 @@ export function OrderItemsCard({ order, t }: OrderItemsCardProps) {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
                 {t("detail.shipping")}
+                {courier.pickup
+                  ? ` · ${t("detail.pickup")}`
+                  : courier.chosen
+                    ? ` · ${courier.chosen}`
+                    : ""}
               </span>
               <span>
                 {parseFloat(order.shipping_cost) === 0

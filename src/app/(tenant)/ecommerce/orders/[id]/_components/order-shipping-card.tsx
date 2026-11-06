@@ -1,9 +1,10 @@
 "use client"
 
-import { MapPin, Truck } from "lucide-react"
+import { ExternalLink, MapPin, Truck } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { OrderDetail } from "../../_types"
+import { getCourierInfo } from "../../_lib/utils"
 
 interface OrderShippingCardProps {
   order: OrderDetail
@@ -13,7 +14,9 @@ interface OrderShippingCardProps {
 export function OrderShippingCard({ order, t }: OrderShippingCardProps) {
   const address = order.delivery_address
   const shipping = order.shipping_method_details
-  const hasTracking = order.tracking_number || order.courier_provider
+  const courier = getCourierInfo(order.payment_metadata)
+  const courierName = courier.booked ?? courier.chosen ?? order.courier_provider
+  const hasTracking = order.tracking_number || courierName
 
   if (!address && !shipping && !hasTracking) return null
 
@@ -85,13 +88,31 @@ export function OrderShippingCard({ order, t }: OrderShippingCardProps) {
                   </span>
                 </div>
               )}
-              {order.courier_provider && (
-                <div className="flex justify-between">
+              {courierName && (
+                <div className="flex justify-between gap-4">
                   <span className="text-sm text-muted-foreground">
                     {t("detail.courierProvider")}
                   </span>
-                  <span className="text-sm">{order.courier_provider}</span>
+                  <span className="text-sm text-right">
+                    {courierName}
+                    {courier.booked && courier.chosen && (
+                      <span className="block text-xs text-muted-foreground">
+                        {t("detail.customerChose").replace("{courier}", courier.chosen)}
+                      </span>
+                    )}
+                  </span>
                 </div>
+              )}
+              {courier.trackingUrl && (
+                <a
+                  href={courier.trackingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  {t("detail.trackShipment")}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               )}
             </div>
           </>
