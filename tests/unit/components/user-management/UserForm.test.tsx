@@ -9,7 +9,9 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
+import { NextIntlClientProvider } from "next-intl";
 import UserForm from "@/components/user-management/UserForm";
+import enMessages from "@/i18n/messages/en.json";
 import type { User } from "@/api/generated/interfaces";
 
 // Mock useTenantGroups hook
@@ -20,8 +22,18 @@ vi.mock("@/hooks/api/useTenant", () => ({
   })),
 }));
 
+// Manager picker loads users through axios (/api/users/?lite=1).
+vi.mock("@/api/axios", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/api/axios")>();
+  return {
+    ...actual,
+    default: { get: vi.fn().mockResolvedValue({ data: { results: [] } }) },
+  };
+});
+
 // Mock usersRetrieve for edit mode
 vi.mock("@/api/generated/api", () => ({
+  departmentsList: vi.fn().mockResolvedValue({ results: [] }),
   usersRetrieve: vi.fn().mockResolvedValue({
     id: 1,
     email: "edit@test.com",
@@ -74,7 +86,11 @@ function createWrapper() {
     },
   });
   const Wrapper = ({ children }: { children: React.ReactNode }) =>
-    React.createElement(QueryClientProvider, { client: queryClient }, children);
+    React.createElement(
+      NextIntlClientProvider,
+      { locale: "en", messages: enMessages },
+      React.createElement(QueryClientProvider, { client: queryClient }, children)
+    );
   return Wrapper;
 }
 

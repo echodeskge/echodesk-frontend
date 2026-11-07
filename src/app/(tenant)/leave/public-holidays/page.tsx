@@ -35,6 +35,15 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Flag } from "lucide-react"
+import { loadGeorgianHolidays } from "../_lib/hr-api"
 
 type LocalizedText = { en?: string; ka?: string } | string | null | undefined
 
@@ -80,6 +89,35 @@ export default function PublicHolidaysPage() {
   useEffect(() => {
     fetchHolidays()
   }, [])
+
+  const thisYear = new Date().getFullYear()
+  const [georgianOpen, setGeorgianOpen] = useState(false)
+  const [georgianYear, setGeorgianYear] = useState(String(thisYear))
+  const [loadingGeorgian, setLoadingGeorgian] = useState(false)
+
+  const handleLoadGeorgian = async () => {
+    if (loadingGeorgian) return
+    setLoadingGeorgian(true)
+    try {
+      const result = await loadGeorgianHolidays(Number(georgianYear))
+      toast.success(
+        t("hr.holidays.loaded", {
+          year: result.year,
+          created: result.created.length,
+          skipped: result.skipped.length,
+        })
+      )
+      setGeorgianOpen(false)
+      await fetchHolidays()
+    } catch (error) {
+      console.error("Failed to load Georgian holidays:", error)
+      toast.error(t("hr.holidays.loadFailed"), {
+        description: getApiErrorMessage(error) || undefined,
+      })
+    } finally {
+      setLoadingGeorgian(false)
+    }
+  }
 
   const fetchHolidays = async () => {
     try {
@@ -199,13 +237,52 @@ export default function PublicHolidaysPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">{t("publicHolidays.title")}</h1>
           <p className="text-muted-foreground mt-1">
             {t("publicHolidays.description")}
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Dialog open={georgianOpen} onOpenChange={setGeorgianOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Flag className="h-4 w-4 mr-2" />
+              {t("hr.holidays.loadGeorgian")}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>{t("hr.holidays.loadGeorgianTitle")}</DialogTitle>
+              <DialogDescription>{t("hr.holidays.loadGeorgianDesc")}</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-2 py-2">
+              <Label>{t("hr.holidays.year")}</Label>
+              <Select value={georgianYear} onValueChange={setGeorgianYear}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[thisYear - 1, thisYear, thisYear + 1, thisYear + 2].map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setGeorgianOpen(false)}>
+                {t("shared.cancel")}
+              </Button>
+              <Button type="button" onClick={handleLoadGeorgian} disabled={loadingGeorgian}>
+                {loadingGeorgian && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {t("hr.holidays.load")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <Dialog
           open={isDialogOpen}
           onOpenChange={(open) => {
@@ -314,6 +391,7 @@ export default function PublicHolidaysPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>

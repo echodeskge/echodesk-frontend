@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { UserCreate, UserUpdate, User, TenantGroup } from "@/api/generated/interfaces";
-import { usersRetrieve } from "@/api/generated/api";
+import type { Department } from "@/api/generated/interfaces";
+import { departmentsList, usersRetrieve } from "@/api/generated/api";
+import { UserPicker, useLiteUsers } from "@/app/(tenant)/leave/_components/UserPicker";
 import { useTenantGroups } from "@/hooks/api/useTenant";
 import { useMyAccess } from "@/hooks/useMyAccess";
 import MultiGroupSelection from "@/components/MultiGroupSelection";
@@ -19,6 +22,29 @@ import type { PreferredLanguage } from "@/lib/preferredLanguage";
 
 // The generated client may not have User.preferred_language yet.
 type WithPreferredLanguage = { preferred_language?: PreferredLanguage };
+
+// HR fields the generated User type may lack (employment dates).
+type WithHrFields = {
+  job_title?: string | null;
+  department?: { id: number; name?: string } | null;
+  manager?: number | null;
+  employment_start_date?: string | null;
+  employment_end_date?: string | null;
+};
+
+// Select value for "no department".
+const NO_DEPARTMENT = "none";
+
+const hrFieldsFrom = (user?: User | null) => {
+  const u = user as (User & WithHrFields) | null | undefined;
+  return {
+    job_title: u?.job_title || "",
+    department_id: u?.department?.id ? String(u.department.id) : NO_DEPARTMENT,
+    manager_id: u?.manager ?? null,
+    employment_start_date: u?.employment_start_date || "",
+    employment_end_date: u?.employment_end_date || "",
+  };
+};
 
 // Select value for "follow the tenant language" (null on the backend).
 const TENANT_LANGUAGE = "tenant";
@@ -47,6 +73,20 @@ export default function UserForm({
   const [fullUserData, setFullUserData] = useState<User | null>(null);
   // Assigning tenant groups grants feature keys: staff or manage_groups only.
   const { canManageGroups } = useMyAccess();
+  const t = useTranslations("users");
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const { users: managerOptions } = useLiteUsers({}, open);
+
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    departmentsList(undefined, "name", undefined, 200)
+      .then((res) => alive && setDepartments(res?.results || []))
+      .catch(() => alive && setDepartments([]));
+    return () => {
+      alive = false;
+    };
+  }, [open]);
 
   // Use React Query hook for tenant groups - only fetch when dialog is open
   const { data: tenantGroupsData, isLoading: loadingGroups } = useTenantGroups({ enabled: open });
@@ -61,6 +101,7 @@ export default function UserForm({
     phone_number: user?.phone_number || "",
     status: user?.is_active ? "active" : "inactive",
     preferred_language: toLanguageSelectValue(user),
+    ...hrFieldsFrom(user),
   });
 
   // Fetch full user details when in edit mode
@@ -101,6 +142,7 @@ export default function UserForm({
         phone_number: userData.phone_number || "",
         status: userData.is_active ? "active" : "inactive",
         preferred_language: toLanguageSelectValue(userData),
+        ...hrFieldsFrom(userData),
       }));
     }
   }, [fullUserData, user]);
@@ -129,6 +171,14 @@ export default function UserForm({
       newErrors.last_name = "Last name is required";
     }
 
+    if (
+      formData.employment_start_date &&
+      formData.employment_end_date &&
+      formData.employment_end_date < formData.employment_start_date
+    ) {
+      newErrors.employment_end_date = t("hrFields.endBeforeStart");
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -141,6 +191,14 @@ export default function UserForm({
     }
 
     setIsSubmitting(true);
+    // Empty inputs clear the value on the backend (null).
+    const hrPayload = {
+      job_title: formData.job_title.trim(),
+      department_id: formData.department_id === NO_DEPARTMENT ? null : Number(formData.department_id),
+      manager_id: formData.manager_id,
+      employment_start_date: formData.employment_start_date || null,
+      employment_end_date: formData.employment_end_date || null,
+    };
     try {
       if (mode === "create") {
         const createData: any = {
@@ -149,6 +207,7 @@ export default function UserForm({
           last_name: formData.last_name,
           tenant_group_ids: formData.tenant_group_ids.length > 0 ? formData.tenant_group_ids : undefined,
           phone_number: formData.phone_number || undefined,
+          ...hrPayload,
         };
         await onSubmit(createData);
       } else {
@@ -162,6 +221,7 @@ export default function UserForm({
           is_active: formData.is_active,
           preferred_language:
             formData.preferred_language === TENANT_LANGUAGE ? null : formData.preferred_language,
+          ...hrPayload,
         };
         await onSubmit(updateData);
       }
@@ -196,7 +256,7 @@ export default function UserForm({
           {errors.submit && (
             <Alert variant="destructive">
               <XCircle className="h-4 w-4" />
-              <AlertDescription>{errors.submit}</AlertDescription>
+              <AlertDescription className="whitespace-pre-line">{errors.submit}</AlertDescription>
             </Alert>
           )}
 
@@ -304,6 +364,78 @@ export default function UserForm({
                 </Select>
               </div>
             )}
+          </div>
+
+          {/* Employment (HR) */}
+          <div className="space-y-4 pt-4 border-t">
+            <h3 className="text-sm font-semibold">{t("hrFields.section")}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="job_title">{t("hrFields.jobTitle")}</Label>
+                <Input
+                  id="job_title"
+                  value={formData.job_title}
+                  maxLength={100}
+                  onChange={(e) => handleChange("job_title", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="department_id">{t("hrFields.department")}</Label>
+                <Select
+                  value={formData.department_id}
+                  onValueChange={(value) => handleChange("department_id", value)}
+                >
+                  <SelectTrigger id="department_id">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NO_DEPARTMENT}>{t("hrFields.noDepartment")}</SelectItem>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={String(d.id)}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("hrFields.manager")}</Label>
+                <UserPicker
+                  users={managerOptions}
+                  value={formData.manager_id}
+                  onChange={(id) => handleChange("manager_id", id)}
+                  excludeIds={user?.id ? [user.id] : []}
+                  placeholder={t("hrFields.noManager")}
+                  allowClear
+                />
+              </div>
+              <div className="hidden md:block" />
+              <div className="space-y-2">
+                <Label htmlFor="employment_start_date">{t("hrFields.employmentStart")}</Label>
+                <Input
+                  id="employment_start_date"
+                  type="date"
+                  value={formData.employment_start_date}
+                  onChange={(e) => handleChange("employment_start_date", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="employment_end_date">{t("hrFields.employmentEnd")}</Label>
+                <Input
+                  id="employment_end_date"
+                  type="date"
+                  min={formData.employment_start_date || undefined}
+                  value={formData.employment_end_date}
+                  onChange={(e) => handleChange("employment_end_date", e.target.value)}
+                  className={errors.employment_end_date ? "border-destructive" : ""}
+                />
+                {errors.employment_end_date ? (
+                  <p className="text-sm text-destructive">{errors.employment_end_date}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{t("hrFields.employmentHint")}</p>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Group Assignment Section */}

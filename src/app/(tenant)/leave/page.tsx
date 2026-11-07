@@ -7,7 +7,8 @@ import { toast } from "sonner"
 import axios from "@/api/axios"
 import { getApiErrorMessage } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CalendarCheck, Clock, CheckCircle2, CalendarDays, Users, FileText } from "lucide-react"
+import { CalendarCheck, Clock, CheckCircle2, CalendarDays, Users, FileText, Handshake } from "lucide-react"
+import { useLeaveFeatures } from "./_lib/useLeaveFeatures"
 
 // `null` = not loaded (still loading, failed, or not available to this user).
 interface DashboardStats {
@@ -48,6 +49,8 @@ export default function LeaveDashboard() {
   const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS)
   // Team card is only shown to users the manager endpoint accepts.
   const [showTeamCard, setShowTeamCard] = useState(false)
+  const { features } = useLeaveFeatures()
+  const awaitingMyConsent = features?.substitutes ? features.pending_substitute_count : 0
 
   useEffect(() => {
     let ignore = false
@@ -179,6 +182,19 @@ export default function LeaveDashboard() {
           {t("overview.description")}
         </p>
       </div>
+
+      {awaitingMyConsent > 0 && (
+        <Link href="/leave/covering" className="block">
+          <Card className="border-primary/40 bg-primary/5 hover:bg-primary/10 transition-colors">
+            <CardContent className="flex items-center gap-3 py-4">
+              <Handshake className="h-5 w-5 text-primary shrink-0" />
+              <span className="text-sm font-medium">
+                {t("hr.covering.dashboardBanner", { count: awaitingMyConsent })}
+              </span>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>

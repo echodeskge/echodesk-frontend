@@ -15,6 +15,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { LEAVE_STATUSES } from "../_lib/hr-utils"
+import { useDeepLinkId } from "../_lib/useDeepLinkId"
+import { LeaveRequestDetailDialog } from "../_components/LeaveRequestDetailDialog"
+import { LeaveStatusBadge } from "../_components/LeaveStatusBadge"
 import { Loader2, Calendar } from "lucide-react"
 import {
   Select,
@@ -52,6 +56,14 @@ export default function AllRequestsPage() {
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>("all")
+  // Bumped after the detail dialog changes a request, to reload the list.
+  const [reloadKey, setReloadKey] = useState(0)
+  const [deepLinkId, clearDeepLink] = useDeepLinkId()
+  const [detailId, setDetailId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (deepLinkId !== null) setDetailId(deepLinkId)
+  }, [deepLinkId])
 
   useEffect(() => {
     let ignore = false
@@ -86,22 +98,7 @@ export default function AllRequestsPage() {
       ignore = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, locale])
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: any }> = {
-      pending: { label: t("shared.status.pending"), variant: "outline" },
-      manager_approved: { label: t("shared.status.manager_approved"), variant: "secondary" },
-      hr_approved: { label: t("shared.status.hr_approved"), variant: "secondary" },
-      approved: { label: t("shared.status.approved"), variant: "default" },
-      rejected: { label: t("shared.status.rejected"), variant: "destructive" },
-      cancelled: { label: t("shared.status.cancelled"), variant: "outline" },
-    }
-
-    const config = statusConfig[status] || statusConfig.pending
-
-    return <Badge variant={config.variant}>{config.label}</Badge>
-  }
+  }, [statusFilter, locale, reloadKey])
 
   return (
     <div className="p-6 space-y-6">
@@ -118,12 +115,11 @@ export default function AllRequestsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("allRequests.filterAll")}</SelectItem>
-            <SelectItem value="pending">{t("shared.status.pending")}</SelectItem>
-            <SelectItem value="manager_approved">{t("shared.status.manager_approved")}</SelectItem>
-            <SelectItem value="hr_approved">{t("shared.status.hr_approved")}</SelectItem>
-            <SelectItem value="approved">{t("shared.status.approved")}</SelectItem>
-            <SelectItem value="rejected">{t("shared.status.rejected")}</SelectItem>
-            <SelectItem value="cancelled">{t("shared.status.cancelled")}</SelectItem>
+            {LEAVE_STATUSES.map((status) => (
+              <SelectItem key={status} value={status}>
+                {t(`shared.status.${status}`)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -163,7 +159,11 @@ export default function AllRequestsPage() {
               </TableHeader>
               <TableBody>
                 {requests.map((request) => (
-                  <TableRow key={request.id}>
+                  <TableRow
+                    key={request.id}
+                    className="cursor-pointer"
+                    onClick={() => setDetailId(request.id)}
+                  >
                     <TableCell>
                       <div className="font-medium">{request.employee_name}</div>
                     </TableCell>
@@ -182,7 +182,7 @@ export default function AllRequestsPage() {
                       {new Date(request.end_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{request.total_days}</TableCell>
-                    <TableCell>{getStatusBadge(request.status)}</TableCell>
+                    <TableCell><LeaveStatusBadge status={request.status} /></TableCell>
                     <TableCell>
                       {new Date(request.created_at).toLocaleDateString()}
                     </TableCell>
@@ -193,6 +193,16 @@ export default function AllRequestsPage() {
           )}
         </CardContent>
       </Card>
+
+      <LeaveRequestDetailDialog
+        requestId={detailId}
+        scope="admin"
+        onClose={() => {
+          setDetailId(null)
+          if (deepLinkId !== null) clearDeepLink()
+        }}
+        onChanged={() => setReloadKey((k) => k + 1)}
+      />
     </div>
   )
 }

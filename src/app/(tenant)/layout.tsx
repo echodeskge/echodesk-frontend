@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { profileLeaveFeatures } from "./leave/_lib/useLeaveFeatures";
 import { useBoards } from "@/hooks/useBoards";
 import { getSidebarMenuItems, MenuItem } from "@/services/permissionService";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -265,6 +266,12 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "leave/leave-types": "leaveTypes",
     "leave/public-holidays": "publicHolidays",
     "leave/settings": "settings",
+    "leave/my-substitutes": "mySubstitutes",
+    "leave/covering": "covering",
+    "leave/kpi": "kpi",
+    "leave/attendance": "attendance",
+    "leave/payroll": "payroll",
+    "leave/my-payroll": "myPayroll",
     invoices: "invoices",
     "invoices/invoices": "invoicesManagement",
     "invoices/settings": "invoiceSettings",
@@ -327,6 +334,23 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   // Check if user is staff/admin
   const isStaffOrAdmin = Boolean(user?.is_staff || user?.is_superuser);
 
+  // Leave HR switches (profile.leave_features) gate optional leave pages.
+  const leaveFeatures = profileLeaveFeatures(userProfile);
+  const isLeaveManager = Boolean(
+    (userProfile as unknown as { is_leave_manager?: boolean } | undefined)?.is_leave_manager
+  ) || isStaffOrAdmin;
+  const passesLeaveGate = (item: {
+    requiredLeaveFeature?: string | string[];
+    requiresLeaveManager?: boolean;
+  }): boolean => {
+    if (item.requiresLeaveManager && !isLeaveManager) return false;
+    if (!item.requiredLeaveFeature) return true;
+    if (!leaveFeatures) return false;
+    return [item.requiredLeaveFeature]
+      .flat()
+      .every((key) => Boolean(leaveFeatures[key as keyof typeof leaveFeatures]));
+  };
+
   // Build menu items with feature-based requirements
   const buildMenuItems = (): MenuItem[] => {
     const items: MenuItem[] = navigationConfig.map((config) => ({
@@ -339,7 +363,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       isPremium: config.isPremium,
       isLocked: false, // We'll filter locked items instead of showing them
       // Process children if they exist
-      children: config.children?.map((child) => ({
+      children: config.children?.filter(passesLeaveGate).map((child) => ({
         ...child,
         label: t(translationKeyMap[child.id] || child.id),
         description: t(

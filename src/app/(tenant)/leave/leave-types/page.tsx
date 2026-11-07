@@ -65,6 +65,9 @@ interface LeaveType {
   accrual_rate_per_month?: string
   max_carry_forward_days?: number
   carry_forward_expiry_months?: number
+  requires_substitutes?: boolean
+  max_requests_per_month?: number | null
+  max_days_per_request?: string | null
 }
 
 const DEFAULT_COLOR = "#3B82F6"
@@ -106,6 +109,9 @@ export default function LeaveTypesPage() {
     color: "#3B82F6",
     is_active: true,
     sort_order: 0,
+    requires_substitutes: false,
+    max_requests_per_month: "",
+    max_days_per_request: "",
   })
 
   useEffect(() => {
@@ -166,6 +172,12 @@ export default function LeaveTypesPage() {
         color: formData.color || DEFAULT_COLOR,
         is_active: formData.is_active,
         sort_order: formData.sort_order || 0,
+        requires_substitutes: formData.requires_substitutes,
+        // Empty = no limit (null).
+        max_requests_per_month: formData.max_requests_per_month.trim()
+          ? Number(formData.max_requests_per_month)
+          : null,
+        max_days_per_request: formData.max_days_per_request.trim() || null,
       }
 
       if (editingType) {
@@ -227,6 +239,10 @@ export default function LeaveTypesPage() {
       color: leaveType.color || DEFAULT_COLOR,
       is_active: leaveType.is_active ?? true,
       sort_order: leaveType.sort_order ?? 0,
+      requires_substitutes: leaveType.requires_substitutes ?? false,
+      max_requests_per_month:
+        leaveType.max_requests_per_month == null ? "" : String(leaveType.max_requests_per_month),
+      max_days_per_request: leaveType.max_days_per_request ?? "",
     })
     setIsDialogOpen(true)
   }
@@ -278,6 +294,9 @@ export default function LeaveTypesPage() {
       color: "#3B82F6",
       is_active: true,
       sort_order: 0,
+      requires_substitutes: false,
+      max_requests_per_month: "",
+      max_days_per_request: "",
     })
   }
 
@@ -512,6 +531,52 @@ export default function LeaveTypesPage() {
                     <Label htmlFor="is_active">{t("leaveTypes.active")}</Label>
                   </div>
                 </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="requires_substitutes"
+                    checked={formData.requires_substitutes}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, requires_substitutes: checked })
+                    }
+                  />
+                  <div>
+                    <Label htmlFor="requires_substitutes">{t("hr.leaveTypes.requiresSubstitutes")}</Label>
+                    <p className="text-xs text-muted-foreground">{t("hr.leaveTypes.requiresSubstitutesDesc")}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="max_requests_per_month">{t("hr.leaveTypes.maxRequestsPerMonth")}</Label>
+                    <Input
+                      id="max_requests_per_month"
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder={t("hr.leaveTypes.noLimit")}
+                      value={formData.max_requests_per_month}
+                      onChange={(e) =>
+                        setFormData({ ...formData, max_requests_per_month: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="max_days_per_request">{t("hr.leaveTypes.maxDaysPerRequest")}</Label>
+                    <Input
+                      id="max_days_per_request"
+                      type="number"
+                      min="0.5"
+                      step="0.5"
+                      placeholder={t("hr.leaveTypes.noLimit")}
+                      value={formData.max_days_per_request}
+                      onChange={(e) =>
+                        setFormData({ ...formData, max_days_per_request: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground -mt-2">{t("hr.leaveTypes.limitsHint")}</p>
               </div>
               <DialogFooter>
                 <Button

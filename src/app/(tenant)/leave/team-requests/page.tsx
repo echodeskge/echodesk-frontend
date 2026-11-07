@@ -33,6 +33,9 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { useDeepLinkId } from "../_lib/useDeepLinkId"
+import { LeaveRequestDetailDialog } from "../_components/LeaveRequestDetailDialog"
+import { LeaveStatusBadge } from "../_components/LeaveStatusBadge"
 
 // Shape of LeaveRequestListSerializer: flat ids/names. `reason` and the
 // employee e-mail only exist on the detail endpoint and are loaded when the
@@ -77,6 +80,12 @@ export default function TeamRequestsPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [selectedExtra, setSelectedExtra] = useState<LeaveRequestExtra | null>(null)
+  const [deepLinkId, clearDeepLink] = useDeepLinkId()
+  const [detailId, setDetailId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (deepLinkId !== null) setDetailId(deepLinkId)
+  }, [deepLinkId])
 
   useEffect(() => {
     fetchRequests()
@@ -163,21 +172,6 @@ export default function TeamRequestsPage() {
         description: getApiErrorMessage(error) || undefined,
       })
     }
-  }
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: any }> = {
-      pending: { label: t("shared.status.pending"), variant: "outline" },
-      manager_approved: { label: t("shared.status.manager_approved"), variant: "secondary" },
-      hr_approved: { label: t("shared.status.hr_approved"), variant: "secondary" },
-      approved: { label: t("shared.status.approved"), variant: "default" },
-      rejected: { label: t("shared.status.rejected"), variant: "destructive" },
-      cancelled: { label: t("shared.status.cancelled"), variant: "outline" },
-    }
-
-    const config = statusConfig[status] || statusConfig.pending
-
-    return <Badge variant={config.variant}>{config.label}</Badge>
   }
 
   if (loading) {
@@ -267,7 +261,11 @@ export default function TeamRequestsPage() {
               </TableHeader>
               <TableBody>
                 {requests.map((request) => (
-                  <TableRow key={request.id}>
+                  <TableRow
+                    key={request.id}
+                    className="cursor-pointer"
+                    onClick={() => setDetailId(request.id)}
+                  >
                     <TableCell>
                       <div className="font-medium">{request.employee_name}</div>
                     </TableCell>
@@ -286,10 +284,10 @@ export default function TeamRequestsPage() {
                       {new Date(request.end_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{request.total_days}</TableCell>
-                    <TableCell>{getStatusBadge(request.status)}</TableCell>
+                    <TableCell><LeaveStatusBadge status={request.status} /></TableCell>
                     <TableCell>
                       {canDecide(request) && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
                             variant="default"
@@ -316,6 +314,37 @@ export default function TeamRequestsPage() {
           )}
         </CardContent>
       </Card>
+
+      <LeaveRequestDetailDialog
+        requestId={detailId}
+        scope="manager"
+        onClose={() => {
+          setDetailId(null)
+          if (deepLinkId !== null) clearDeepLink()
+        }}
+        onChanged={fetchRequests}
+        renderActions={(detail) => {
+          const row = requests.find((r) => r.id === detail.id)
+          if (!row || !canDecide(row)) return null
+          const open = (action: "approve" | "reject") => {
+            setDetailId(null)
+            if (deepLinkId !== null) clearDeepLink()
+            openActionDialog(row, action)
+          }
+          return (
+            <>
+              <Button variant="destructive" onClick={() => open("reject")}>
+                <XCircle className="h-4 w-4 mr-1" />
+                {t("teamRequests.reject")}
+              </Button>
+              <Button onClick={() => open("approve")}>
+                <CheckCircle2 className="h-4 w-4 mr-1" />
+                {t("teamRequests.approve")}
+              </Button>
+            </>
+          )
+        }}
+      />
 
       <Dialog
         open={selectedRequest !== null}

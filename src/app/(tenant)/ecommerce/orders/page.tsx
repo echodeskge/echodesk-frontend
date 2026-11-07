@@ -1,5 +1,6 @@
 "use client"
 
+import { downloadBlob } from "@/lib/downloadBlob"
 import { useState, useEffect, useCallback } from "react"
 import { useTranslations } from "next-intl"
 import { ecommerceAdminOrdersList } from "@/api/generated"
@@ -183,12 +184,7 @@ export default function EcommerceOrdersPage() {
         .map((r) => r.join(","))
         .join("\n")
       const blob = new Blob([csv], { type: "text/csv" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `orders-export-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      downloadBlob(blob, `orders-export-${new Date().toISOString().slice(0, 10)}.csv`)
       toast.success(`Exported ${selected.length} orders`)
     } catch {
       toast.error("Failed to export orders")
@@ -202,12 +198,7 @@ export default function EcommerceOrdersPage() {
         { responseType: "blob" }
       )
       const blob = new Blob([response.data], { type: "text/csv" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `all-orders-${new Date().toISOString().slice(0, 10)}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      downloadBlob(blob, `all-orders-${new Date().toISOString().slice(0, 10)}.csv`)
       toast.success("Orders exported successfully")
     } catch {
       toast.error("Failed to export orders")

@@ -21,7 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Calendar, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react"
+import { Plus, Calendar, XCircle, Loader2 } from "lucide-react"
+import Link from "next/link"
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { fetchMySubstitutes, type SubstituteAssignment } from "../_lib/hr-api"
+import {
+  buildSubstitutesPayload,
+  fieldErrors,
+  validateSubstituteRows,
+  type SubstituteDraftRow,
+} from "../_lib/substitutes-utils"
+import { useDeepLinkId } from "../_lib/useDeepLinkId"
+import { useLeaveFeatures } from "../_lib/useLeaveFeatures"
+import { LeaveRequestDetailDialog } from "../_components/LeaveRequestDetailDialog"
+import { LeaveStatusBadge } from "../_components/LeaveStatusBadge"
+import { SubstituteRowsEditor } from "../_components/SubstituteRowsEditor"
+import { useLiteUsers } from "../_components/UserPicker"
 
 // Shape of LeaveRequestListSerializer: flat ids/names, no nested objects and
 // no `reason` (that is only on the detail endpoint).
@@ -62,10 +76,11 @@ interface LeaveType {
   name_display?: string
   code: string
   color?: string
+  requires_substitutes?: boolean
 }
 
 // Statuses the API lets an employee cancel (see CanCancelLeave).
-const CANCELLABLE_STATUSES = ["pending", "manager_approved", "hr_approved"]
+const CANCELLABLE_STATUSES = ["awaiting_substitutes", "pending", "manager_approved", "hr_approved"]
 
 function unwrapList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[]
@@ -88,6 +103,30 @@ export default function MyRequestsPage() {
     end_date: "",
     reason: "",
   })
+  const { features, userId } = useLeaveFeatures()
+  const [deepLinkId, clearDeepLink] = useDeepLinkId()
+  const [detailId, setDetailId] = useState<number | null>(null)
+  // Field errors from the last create attempt (limits, balance, substitutes...).
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  // Substitutes: the saved "My substitutes" list (null = not loaded yet) or
+  // inline rows when that list is empty.
+  const [savedSubstitutes, setSavedSubstitutes] = useState<SubstituteAssignment[] | null>(null)
+  const [substituteRows, setSubstituteRows] = useState<SubstituteDraftRow[]>([])
+  const selectedType = leaveTypes.find((type) => String(type.id) === formData.leave_type)
+  const needsSubstitutes = Boolean(features?.substitutes && selectedType?.requires_substitutes)
+  const needsInlineSubstitutes = needsSubstitutes && savedSubstitutes !== null && savedSubstitutes.length === 0
+  const { users: substituteUsers } = useLiteUsers({}, needsInlineSubstitutes)
+
+  useEffect(() => {
+    if (deepLinkId !== null) setDetailId(deepLinkId)
+  }, [deepLinkId])
+
+  useEffect(() => {
+    if (!needsSubstitutes || savedSubstitutes !== null) return
+    fetchMySubstitutes()
+      .then(setSavedSubstitutes)
+      .catch(() => setSavedSubstitutes([]))
+  }, [needsSubstitutes, savedSubstitutes])
 
   useEffect(() => {
     fetchRequests()
@@ -134,6 +173,10 @@ export default function MyRequestsPage() {
       end_date: "",
       reason: "",
     })
+    setFormErrors({})
+    setSubstituteRows([])
+    // Re-read the saved list next time (it may have changed meanwhile).
+    setSavedSubstitutes(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -144,14 +187,26 @@ export default function MyRequestsPage() {
       return
     }
 
+    if (needsInlineSubstitutes) {
+      const rowsError = validateSubstituteRows(substituteRows, { selfId: userId })
+      if (rowsError) {
+        toast.error(t(`hr.substitutes.errors.${rowsError}`))
+        return
+      }
+    }
+
     setSubmitting(true)
+    setFormErrors({})
     try {
-      await leaveEmployeeMyRequestsCreate({
+      const payload = {
         leave_type: Number(formData.leave_type),
         start_date: formData.start_date,
         end_date: formData.end_date,
         reason: formData.reason,
-      })
+        ...(needsInlineSubstitutes ? { substitutes: buildSubstitutesPayload(substituteRows) } : {}),
+      }
+      // `substitutes` is not in the generated request type yet.
+      await leaveEmployeeMyRequestsCreate(payload as Parameters<typeof leaveEmployeeMyRequestsCreate>[0])
       toast.success(t("myRequests.submitted"))
       setIsDialogOpen(false)
       resetForm()
@@ -159,6 +214,7 @@ export default function MyRequestsPage() {
     } catch (error) {
       // Keep the dialog open so the user can fix the input and retry.
       console.error("Failed to create request:", error)
+      setFormErrors(fieldErrors(error))
       toast.error(t("myRequests.submitFailed"), {
         description: getApiErrorMessage(error) || undefined,
       })
@@ -190,27 +246,6 @@ export default function MyRequestsPage() {
       ? type.name
       : localizedName(type.name, locale) || type.name_display || type.code
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { label: string; variant: any; icon: any }> = {
-      pending: { label: t("shared.status.pending"), variant: "outline", icon: Clock },
-      manager_approved: { label: t("shared.status.manager_approved"), variant: "secondary", icon: CheckCircle2 },
-      hr_approved: { label: t("shared.status.hr_approved"), variant: "secondary", icon: CheckCircle2 },
-      approved: { label: t("shared.status.approved"), variant: "default", icon: CheckCircle2 },
-      rejected: { label: t("shared.status.rejected"), variant: "destructive", icon: XCircle },
-      cancelled: { label: t("shared.status.cancelled"), variant: "outline", icon: XCircle },
-    }
-
-    const config = statusConfig[status] || statusConfig.pending
-    const Icon = config.icon
-
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1 w-fit">
-        <Icon className="h-3 w-3" />
-        {config.label}
-      </Badge>
-    )
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -228,14 +263,20 @@ export default function MyRequestsPage() {
             {t("myRequests.description")}
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open)
+            if (!open) setFormErrors({})
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               {t("myRequests.newRequest")}
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[640px] max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
                 <DialogTitle>{t("myRequests.createTitle")}</DialogTitle>
@@ -248,9 +289,10 @@ export default function MyRequestsPage() {
                   <Label htmlFor="leave_type">{t("shared.leaveType")}</Label>
                   <Select
                     value={formData.leave_type}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
                       setFormData({ ...formData, leave_type: value })
-                    }
+                      setFormErrors({})
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder={t("myRequests.selectLeaveType")} />
@@ -268,6 +310,7 @@ export default function MyRequestsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FieldError message={formErrors.leave_type} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="start_date">{t("shared.startDate")}</Label>
@@ -280,6 +323,7 @@ export default function MyRequestsPage() {
                     }
                     required
                   />
+                  <FieldError message={formErrors.start_date} />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="end_date">{t("shared.endDate")}</Label>
@@ -306,6 +350,53 @@ export default function MyRequestsPage() {
                     rows={4}
                   />
                 </div>
+                {needsSubstitutes && (
+                  <div className="grid gap-2">
+                    <Label>{t("hr.substitutes.requestSectionTitle")}</Label>
+                    {savedSubstitutes === null ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : savedSubstitutes.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          {t("hr.substitutes.savedListHint")}{" "}
+                          <Link href="/leave/my-substitutes" className="underline">
+                            {t("hr.substitutes.editSavedList")}
+                          </Link>
+                        </p>
+                        <ol className="space-y-1 text-sm">
+                          {[...savedSubstitutes]
+                            .sort((a, b) => a.sort_order - b.sort_order)
+                            .map((s, i) => (
+                              <li key={s.id} className="rounded-md border px-3 py-2">
+                                <span className="font-medium">
+                                  {i + 1}. {s.substitute_name}
+                                </span>
+                                <span className="text-muted-foreground"> — {s.task}</span>
+                              </li>
+                            ))}
+                        </ol>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">{t("hr.substitutes.inlineHint")}</p>
+                        <SubstituteRowsEditor
+                          rows={substituteRows}
+                          onChange={setSubstituteRows}
+                          users={substituteUsers}
+                          selfId={userId}
+                          disabled={submitting}
+                          reorderable={false}
+                        />
+                      </div>
+                    )}
+                    <FieldError message={formErrors.substitutes} />
+                  </div>
+                )}
+                <FieldError
+                  message={[formErrors.end_date, formErrors.non_field_errors, formErrors.detail]
+                    .filter(Boolean)
+                    .join(" ")}
+                />
               </div>
               <DialogFooter>
                 <Button
@@ -360,7 +451,11 @@ export default function MyRequestsPage() {
               </TableHeader>
               <TableBody>
                 {requests.map((request) => (
-                  <TableRow key={request.id}>
+                  <TableRow
+                    key={request.id}
+                    className="cursor-pointer"
+                    onClick={() => setDetailId(request.id)}
+                  >
                     <TableCell>
                       <Badge
                         style={{ backgroundColor: request.leave_type_color || undefined }}
@@ -376,7 +471,7 @@ export default function MyRequestsPage() {
                       {new Date(request.end_date).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{request.total_days}</TableCell>
-                    <TableCell>{getStatusBadge(request.status)}</TableCell>
+                    <TableCell><LeaveStatusBadge status={request.status} /></TableCell>
                     <TableCell>
                       {new Date(request.created_at).toLocaleDateString()}
                     </TableCell>
@@ -386,7 +481,10 @@ export default function MyRequestsPage() {
                           size="sm"
                           variant="outline"
                           disabled={cancellingId === request.id}
-                          onClick={() => handleCancel(request.id)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleCancel(request.id)
+                          }}
                         >
                           {cancellingId === request.id ? (
                             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -404,6 +502,21 @@ export default function MyRequestsPage() {
           )}
         </CardContent>
       </Card>
+
+      <LeaveRequestDetailDialog
+        requestId={detailId}
+        scope="employee"
+        onClose={() => {
+          setDetailId(null)
+          if (deepLinkId !== null) clearDeepLink()
+        }}
+        onChanged={fetchRequests}
+      />
     </div>
   )
+}
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null
+  return <p className="text-sm text-destructive">{message}</p>
 }

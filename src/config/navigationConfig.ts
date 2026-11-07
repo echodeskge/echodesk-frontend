@@ -4,6 +4,15 @@
  * Items without requiredFeatureKey are visible to all users
  */
 
+export type LeaveNavFeature =
+  | "substitutes"
+  | "substitution_pay"
+  | "payroll"
+  | "payroll_self_view"
+  | "kpi"
+  | "attendance"
+  | "can_manage_payroll";
+
 export interface NavigationItem {
   id: string;
   label: string;
@@ -13,6 +22,9 @@ export interface NavigationItem {
   description: string;
   isPremium?: boolean; // Visual indicator for premium features
   staffOnly?: boolean; // Only visible to staff/superadmin users
+  // Leave HR switch(es) from profile.leave_features that must all be on (see leave/_lib/hr-api.ts)
+  requiredLeaveFeature?: LeaveNavFeature | LeaveNavFeature[];
+  requiresLeaveManager?: boolean; // Only for profile.is_leave_manager (or staff)
   children?: Omit<NavigationItem, 'children' | 'label' | 'description'>[]; // Nested navigation items
 }
 
@@ -180,6 +192,49 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         id: "leave/public-holidays",
         icon: "CalendarDays",
         requiredFeatureKey: "leave_management",
+        isPremium: true,
+      },
+      {
+        id: "leave/my-substitutes",
+        icon: "UserCheck",
+        requiredFeatureKey: "leave_management",
+        requiredLeaveFeature: "substitutes",
+        isPremium: true,
+      },
+      {
+        id: "leave/covering",
+        icon: "Handshake",
+        requiredFeatureKey: "leave_management",
+        requiredLeaveFeature: "substitutes",
+        isPremium: true,
+      },
+      {
+        id: "leave/kpi",
+        icon: "Target",
+        requiredFeatureKey: "leave_management",
+        requiredLeaveFeature: "kpi",
+        isPremium: true,
+      },
+      {
+        id: "leave/attendance",
+        icon: "CalendarRange",
+        requiredFeatureKey: "leave_management",
+        requiredLeaveFeature: "attendance",
+        requiresLeaveManager: true,
+        isPremium: true,
+      },
+      {
+        id: "leave/payroll",
+        icon: "Wallet",
+        requiredFeatureKey: "leave_management",
+        requiredLeaveFeature: "can_manage_payroll",
+        isPremium: true,
+      },
+      {
+        id: "leave/my-payroll",
+        icon: "Receipt",
+        requiredFeatureKey: "leave_management",
+        requiredLeaveFeature: "payroll_self_view",
         isPremium: true,
       },
     ],

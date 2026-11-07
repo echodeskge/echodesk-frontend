@@ -46,6 +46,10 @@ import {
   Truck,
   Tag,
   Star,
+  Handshake,
+  Target,
+  CalendarRange,
+  Wallet,
 } from "lucide-react"
 
 import {
@@ -124,6 +128,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "Truck": Truck,
   "Tag": Tag,
   "Star": Star,
+  "Handshake": Handshake,
+  "Target": Target,
+  "CalendarRange": CalendarRange,
+  "Wallet": Wallet,
   // Legacy emoji support (for backward compatibility)
   "🏠": Home,
   "🎫": Ticket,
@@ -168,6 +176,10 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const isMobile = useIsMobile()
   const { setOpenMobile } = useSidebar()
+  // Requests waiting for this user's substitute consent (profile.leave_features).
+  const pendingSubstituteCount =
+    (userProfile as unknown as { leave_features?: { pending_substitute_count?: number } | null } | null)
+      ?.leave_features?.pending_substitute_count ?? 0
 
   const handleMenuClick = (viewId: string) => {
     onMenuClick(viewId)
@@ -257,6 +269,11 @@ export function AppSidebar({
                                           <span className="text-sm">{child.icon}</span>
                                         )}
                                         <span>{child.label}</span>
+                                        {child.id === "leave/covering" && pendingSubstituteCount > 0 && (
+                                          <Badge variant="destructive" className="ms-auto h-5 min-w-5 px-1.5 text-xs">
+                                            {pendingSubstituteCount > 99 ? "99+" : pendingSubstituteCount}
+                                          </Badge>
+                                        )}
                                       </NextLink>
                                     )}
                                   </SidebarMenuSubButton>

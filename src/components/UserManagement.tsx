@@ -13,6 +13,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys } from "@/hooks/api/useUsers";
 import { getApiErrorMessage } from "@/lib/utils";
+import { formatBulkBlocked, formatRemovalBlocked } from "./user-management/removalBlocked";
 
 import UserTable from "./user-management/UserTable";
 import UserBulkActions from "./user-management/UserBulkActions";
@@ -100,7 +101,10 @@ export default function UserManagement() {
       await updateUserMutation.mutateAsync({ id: userId, data: userData as UserUpdate });
       setEditingUser(null);
     } catch (err: unknown) {
-      throw new Error(getApiErrorMessage(err, "Failed to update user"));
+      throw new Error(
+        formatRemovalBlocked(err, t("removalBlocked")) ||
+          getApiErrorMessage(err, "Failed to update user")
+      );
     }
   };
 
@@ -112,7 +116,7 @@ export default function UserManagement() {
     try {
       await deleteUserMutation.mutateAsync(userId);
     } catch (err: unknown) {
-      alert(getApiErrorMessage(err, tCommon("error")));
+      alert(formatRemovalBlocked(err, t("removalBlocked")) || getApiErrorMessage(err, tCommon("error")));
     }
   };
 
@@ -121,7 +125,10 @@ export default function UserManagement() {
       await usersPartialUpdate(userId, { status: status as any });
       // React Query will auto-invalidate and refetch
     } catch (err: unknown) {
-      alert(getApiErrorMessage(err, "Failed to change user status"));
+      alert(
+        formatRemovalBlocked(err, t("removalBlocked")) ||
+          getApiErrorMessage(err, "Failed to change user status")
+      );
     }
   };
 
@@ -191,14 +198,27 @@ export default function UserManagement() {
       // The backend skips users the caller may not touch (higher privileges,
       // superusers, themselves) and reports them instead of failing.
       const skipped = result?.skipped_user_ids || [];
-      if (skipped.length > 0) {
-        alert(
+      // Users held back by open leave work are listed with their reasons;
+      // they are also part of skipped_user_ids.
+      const blocked = (result as { blocked?: Record<string, string[]> } | undefined)?.blocked;
+      const blockedLines = formatBulkBlocked(blocked, (id) => {
+        const u = users.find((row) => row.id === id);
+        return u ? `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email : `#${id}`;
+      });
+      const otherSkipped = skipped.length - blockedLines.length;
+      const messages: string[] = [];
+      if (otherSkipped > 0) {
+        messages.push(
           t("bulkActionPartial", {
             affected: result?.affected ?? 0,
-            skipped: skipped.length,
+            skipped: otherSkipped,
           })
         );
       }
+      if (blockedLines.length > 0) {
+        messages.push([t("bulkBlocked", { count: blockedLines.length }), ...blockedLines].join("\n"));
+      }
+      if (messages.length > 0) alert(messages.join("\n\n"));
     } catch (err: unknown) {
       alert(getApiErrorMessage(err, "Bulk action failed"));
     } finally {

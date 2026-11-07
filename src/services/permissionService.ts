@@ -8,6 +8,8 @@ export interface MenuItem {
   requiredFeatureKey?: string | string[]; // Feature key (or any-of list) required to access this menu item (optional - items without this are always visible)
   isPremium?: boolean;
   isLocked?: boolean;
+  requiredLeaveFeature?: string | string[]; // profile.leave_features switch(es) that must all be on
+  requiresLeaveManager?: boolean; // profile.is_leave_manager (or staff)
   children?: Omit<MenuItem, 'children'>[]; // Nested menu items (one level deep)
 }
 

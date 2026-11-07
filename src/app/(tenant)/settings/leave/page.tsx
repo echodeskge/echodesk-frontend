@@ -3,11 +3,18 @@
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
+import { useQueryClient } from "@tanstack/react-query"
+import axios from "@/api/axios"
+import { leaveAdminSettingsList } from "@/api/generated/api"
+import type { HrSettingsFields, PayrollMode } from "../../leave/_lib/hr-api"
+import { MultiUserPicker, useLiteUsers } from "../../leave/_components/UserPicker"
 import {
-  leaveAdminSettingsCreate,
-  leaveAdminSettingsList,
-  leaveAdminSettingsPartialUpdate,
-} from "@/api/generated/api"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { getApiErrorMessage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,7 +24,7 @@ import { Switch } from "@/components/ui/switch"
 import { Loader2, Save } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 
-interface LeaveSettings {
+interface LeaveSettings extends Partial<HrSettingsFields> {
   id: number
   require_manager_approval?: boolean
   require_hr_approval?: boolean
@@ -26,6 +33,33 @@ interface LeaveSettings {
   working_days_per_week?: number
   weekend_days?: unknown
 }
+
+const DEFAULT_HR: HrSettingsFields = {
+  substitutes_enabled: false,
+  substitution_pay_enabled: false,
+  payroll_enabled: false,
+  payroll_self_view_enabled: false,
+  kpi_enabled: false,
+  attendance_grid_enabled: false,
+  auto_georgian_holidays: false,
+  block_deactivation_with_open_requests: true,
+  payroll_mode: "gross",
+  income_tax_rate: "20.00",
+  pension_rate: "2.00",
+  payroll_currency: "GEL",
+  payroll_managers: [],
+}
+
+const HR_SWITCHES = [
+  "substitutes_enabled",
+  "substitution_pay_enabled",
+  "payroll_enabled",
+  "payroll_self_view_enabled",
+  "kpi_enabled",
+  "attendance_grid_enabled",
+  "auto_georgian_holidays",
+  "block_deactivation_with_open_requests",
+] as const
 
 // The API treats an empty `weekend_days` list as Saturday + Sunday.
 const DEFAULT_WEEKEND_DAYS = [5, 6]
@@ -38,6 +72,9 @@ function unwrapList<T>(data: unknown): T[] {
 
 export default function LeaveSettingsPage() {
   const t = useTranslations("leave")
+  const queryClient = useQueryClient()
+  const { users } = useLiteUsers()
+  const [hr, setHr] = useState<HrSettingsFields>(DEFAULT_HR)
   const [settings, setSettings] = useState<LeaveSettings | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -72,6 +109,12 @@ export default function LeaveSettingsPage() {
       ? data.weekend_days.filter((day): day is number => typeof day === "number")
       : []
     setSettings(data)
+    setHr({
+      ...DEFAULT_HR,
+      ...Object.fromEntries(
+        Object.entries(data).filter(([key, value]) => key in DEFAULT_HR && value !== undefined && value !== null)
+      ),
+    })
     setFormData({
       require_manager_approval: data.require_manager_approval ?? true,
       require_hr_approval: data.require_hr_approval ?? false,
@@ -117,13 +160,20 @@ export default function LeaveSettingsPage() {
           ? formData.working_days_per_week
           : 5,
         weekend_days: [...formData.weekend_days].sort((a, b) => a - b),
+        ...hr,
+        payroll_currency: hr.payroll_currency.trim().toUpperCase(),
+        income_tax_rate: hr.income_tax_rate.trim() || "0",
+        pension_rate: hr.pension_rate.trim() || "0",
       }
 
       // No row yet for this tenant -> create it; otherwise update in place.
-      const saved = settings
-        ? await leaveAdminSettingsPartialUpdate(String(settings.id), payload)
-        : await leaveAdminSettingsCreate(payload)
-      applySettings(saved)
+      // Direct calls: the generated client does not know the HR fields yet.
+      const response = settings
+        ? await axios.patch(`/api/leave/admin/settings/${settings.id}/`, payload)
+        : await axios.post("/api/leave/admin/settings/", payload)
+      applySettings(response.data as LeaveSettings)
+      // The sidebar reads the HR switches from the profile.
+      queryClient.invalidateQueries({ queryKey: ["userProfile"] })
       toast.success(t("settings.savedSuccess"))
     } catch (error) {
       console.error("Failed to save settings:", error)
@@ -262,6 +312,105 @@ export default function LeaveSettingsPage() {
                 ))}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("hr.settings.title")}</CardTitle>
+            <CardDescription>{t("hr.settings.description")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {HR_SWITCHES.map((key) => {
+              const disabled =
+                (key === "substitution_pay_enabled" && !hr.substitutes_enabled) ||
+                (key === "payroll_self_view_enabled" && !hr.payroll_enabled)
+              return (
+                <div key={key} className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
+                  <div className="space-y-0.5">
+                    <Label htmlFor={key}>{t(`hr.settings.${key}`)}</Label>
+                    <p className="text-sm text-muted-foreground">{t(`hr.settings.${key}_desc`)}</p>
+                  </div>
+                  <Switch
+                    id={key}
+                    checked={hr[key]}
+                    disabled={disabled}
+                    onCheckedChange={(checked) => setHr((prev) => ({ ...prev, [key]: checked }))}
+                  />
+                </div>
+              )
+            })}
+
+            {(hr.payroll_enabled || hr.substitution_pay_enabled) && (
+              <div className="space-y-4 border-t pt-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label>{t("hr.settings.payroll_mode")}</Label>
+                    <Select
+                      value={hr.payroll_mode}
+                      onValueChange={(value) => setHr((prev) => ({ ...prev, payroll_mode: value as PayrollMode }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gross">{t("hr.settings.mode_gross")}</SelectItem>
+                        <SelectItem value="net">{t("hr.settings.mode_net")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">{t("hr.settings.payroll_mode_desc")}</p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="payroll_currency">{t("hr.settings.payroll_currency")}</Label>
+                    <Input
+                      id="payroll_currency"
+                      maxLength={3}
+                      value={hr.payroll_currency}
+                      onChange={(e) =>
+                        setHr((prev) => ({ ...prev, payroll_currency: e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase() }))
+                      }
+                    />
+                  </div>
+                </div>
+                {hr.payroll_mode === "net" && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-2">
+                      <Label htmlFor="income_tax_rate">{t("hr.settings.income_tax_rate")}</Label>
+                      <Input
+                        id="income_tax_rate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={hr.income_tax_rate}
+                        onChange={(e) => setHr((prev) => ({ ...prev, income_tax_rate: e.target.value }))}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="pension_rate">{t("hr.settings.pension_rate")}</Label>
+                      <Input
+                        id="pension_rate"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={hr.pension_rate}
+                        onChange={(e) => setHr((prev) => ({ ...prev, pension_rate: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="grid gap-2">
+                  <Label>{t("hr.settings.payroll_managers")}</Label>
+                  <MultiUserPicker
+                    users={users}
+                    value={hr.payroll_managers}
+                    onChange={(ids) => setHr((prev) => ({ ...prev, payroll_managers: ids }))}
+                  />
+                  <p className="text-sm text-muted-foreground">{t("hr.settings.payroll_managers_desc")}</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
