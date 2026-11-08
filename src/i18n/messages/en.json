@@ -410,7 +410,8 @@
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode",
     "clearSearch": "Clear search",
-    "settingsTemplates": "Templates"
+    "settingsTemplates": "Templates",
+    "navigationHeading": "Navigation"
   },
   "bugReport": {
     "title": "Report a Bug",
@@ -1723,6 +1724,132 @@
       "employmentEnd": "Employment end date",
       "employmentHint": "Leave empty while the person is still employed.",
       "endBeforeStart": "The end date cannot be before the start date."
+    },
+    "ui": {
+      "subtitle": "Manage users, roles, and permissions",
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "groups": "Groups",
+        "status": "Status",
+        "staff": "Staff",
+        "actions": "Actions",
+        "loading": "Loading users...",
+        "empty": "No users found",
+        "noGroups": "No groups",
+        "staffAdd": "Add to booking staff",
+        "staffRemove": "Remove from booking staff",
+        "view": "View Details",
+        "edit": "Edit User",
+        "deactivate": "Deactivate",
+        "activate": "Activate",
+        "delete": "Delete User",
+        "showing": "Showing {from} to {to} of {count} users",
+        "previous": "Previous",
+        "next": "Next"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "pending": "Pending",
+        "suspended": "Suspended"
+      },
+      "roles": {
+        "admin": "Admin",
+        "manager": "Manager",
+        "agent": "Agent",
+        "viewer": "Viewer"
+      },
+      "filters": {
+        "search": "Search users by name or email...",
+        "allRoles": "All Roles",
+        "allStatus": "All Status",
+        "clear": "Clear",
+        "department": "Department",
+        "departmentPlaceholder": "Filter by department",
+        "accountStatus": "Account Status",
+        "allAccounts": "All Accounts",
+        "activeAccounts": "Active Accounts",
+        "inactiveAccounts": "Inactive Accounts",
+        "staffStatus": "Staff Status",
+        "allUsers": "All Users",
+        "staffMembers": "Staff Members",
+        "regularUsers": "Regular Users",
+        "active": "Active filters:",
+        "chipSearch": "Search",
+        "chipRole": "Role",
+        "chipStatus": "Status",
+        "chipAccount": "Account"
+      },
+      "bulk": {
+        "confirm": "Apply this action to {count} selected user(s)?",
+        "selected": "{count, plural, one {# user selected} other {# users selected}}",
+        "processing": "Processing...",
+        "title": "Bulk Actions",
+        "userStatus": "User Status",
+        "activate": "Activate Users",
+        "deactivate": "Deactivate Users",
+        "security": "Security",
+        "resetPasswords": "Reset Passwords",
+        "roleChanges": "Role Changes",
+        "makeRole": "Make {role}",
+        "danger": "Danger Zone",
+        "delete": "Delete Users"
+      },
+      "details": {
+        "contact": "Contact Information",
+        "phone": "Phone",
+        "notProvided": "Not provided",
+        "jobTitle": "Job Title",
+        "notSpecified": "Not specified",
+        "account": "Account Details",
+        "staffMember": "Staff Member",
+        "dateJoined": "Date Joined",
+        "lastLogin": "Last Login",
+        "never": "Never",
+        "permissions": "Additional Permissions",
+        "user": "User"
+      },
+      "errors": {
+        "create": "Failed to create user",
+        "update": "Failed to update user",
+        "status": "Failed to change user status",
+        "staff": "Failed to change staff status",
+        "bulk": "Bulk action failed"
+      },
+      "removalReasons": {
+        "open_requests": "{count} open leave request(s) must be decided or cancelled first",
+        "covering": "substitute on {count} open leave request(s)",
+        "manager_of": "manager of {count} active employee(s); reassign them first",
+        "has_history": "has leave/KPI history; deactivate the user instead of deleting"
+      },
+      "yes": "Yes",
+      "no": "No",
+      "form": {
+        "createTitle": "Add New User",
+        "editTitle": "Edit User",
+        "createDescription": "Create a new user account. A secure password will be auto-generated and emailed to the user.",
+        "editDescription": "Update user information for {email}",
+        "email": "Email Address",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Please enter a valid email address",
+        "firstNameRequired": "First name is required",
+        "lastNameRequired": "Last name is required",
+        "saveFailed": "Failed to save user",
+        "selectStatus": "Select status",
+        "notificationLanguage": "Notification Language",
+        "selectLanguage": "Select language",
+        "tenantDefault": "Tenant default",
+        "groupAssignment": "Group Assignment",
+        "loadingUser": "Loading user details...",
+        "loadingGroups": "Loading groups...",
+        "selectGroups": "Select groups to assign to this user...",
+        "groupsLocked": "Only staff or users with the Manage Groups permission can change group membership.",
+        "isActive": "User is active",
+        "saving": "Saving...",
+        "create": "Create User",
+        "update": "Update User"
+      }
     }
   },
   "orders": {
@@ -5395,6 +5522,10 @@
           "substitute_worked_days_set": "Substitute worked days updated",
           "other": "Updated"
         }
+      },
+      "limits": {
+        "per_month": "This leave type can be requested at most {max} time(s) per month",
+        "per_request": "This leave type allows at most {max} working day(s) per request"
       }
     }
   },

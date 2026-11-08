@@ -1,6 +1,7 @@
 "use client";
 
 import { User } from "@/api/generated/interfaces";
+import { useLocale, useTranslations } from "next-intl";
 
 interface UserDetailsModalProps {
   user: User;
@@ -19,8 +20,16 @@ export default function UserDetailsModal({
   onChangeStatus,
   onSendNewPassword,
 }: UserDetailsModalProps) {
+  const t = useTranslations("users");
+  const locale = useLocale();
+  const statusLabel = (status: string) =>
+    ["active", "inactive", "pending", "suspended"].includes(status.toLowerCase())
+      ? t(`ui.status.${status.toLowerCase()}`)
+      : status;
+  const roleLabel = (role: string) =>
+    ["admin", "manager", "agent", "viewer"].includes(role.toLowerCase()) ? t(`ui.roles.${role.toLowerCase()}`) : role;
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString("en-US", {
+    return new Date(dateString).toLocaleString(locale === "ka" ? "ka-GE" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -87,7 +96,7 @@ export default function UserDetailsModal({
                     color: getRoleColor(user.role),
                   }}
                 >
-                  {user.role?.toString() || "User"}
+                  {user.role ? roleLabel(user.role.toString()) : t("ui.details.user")}
                 </span>
                 <span
                   className="status-badge"
@@ -96,9 +105,7 @@ export default function UserDetailsModal({
                     color: getStatusColor(user.status, user.is_active),
                   }}
                 >
-                  {user.is_active
-                    ? user.status?.toString() || "Active"
-                    : "Inactive"}
+                  {statusLabel(user.is_active ? user.status?.toString() || "active" : "inactive")}
                 </span>
               </div>
             </div>
@@ -110,55 +117,53 @@ export default function UserDetailsModal({
 
         <div className="modal-content">
           <div className="info-section">
-            <h3>Contact Information</h3>
+            <h3>{t("ui.details.contact")}</h3>
             <div className="info-grid">
               <div className="info-item">
-                <label>Email</label>
+                <label>{t("ui.table.email")}</label>
                 <span>{user.email}</span>
               </div>
               <div className="info-item">
-                <label>Phone</label>
-                <span>{user.phone_number || "Not provided"}</span>
+                <label>{t("ui.details.phone")}</label>
+                <span>{user.phone_number || t("ui.details.notProvided")}</span>
               </div>
 
               <div className="info-item">
-                <label>Job Title</label>
-                <span>{user.job_title || "Not specified"}</span>
+                <label>{t("ui.details.jobTitle")}</label>
+                <span>{user.job_title || t("ui.details.notSpecified")}</span>
               </div>
             </div>
           </div>
 
           <div className="info-section">
-            <h3>Account Details</h3>
+            <h3>{t("ui.details.account")}</h3>
             <div className="info-grid">
               <div className="info-item">
-                <label>Role</label>
+                <label>{t("role")}</label>
                 <span style={{ color: getRoleColor(user.role) }}>
-                  {user.role?.toString() || "User"}
+                  {user.role ? roleLabel(user.role.toString()) : t("ui.details.user")}
                 </span>
               </div>
               <div className="info-item">
-                <label>Status</label>
+                <label>{t("ui.table.status")}</label>
                 <span
                   style={{ color: getStatusColor(user.status, user.is_active) }}
                 >
-                  {user.is_active
-                    ? user.status?.toString() || "Active"
-                    : "Inactive"}
+                  {statusLabel(user.is_active ? user.status?.toString() || "active" : "inactive")}
                 </span>
               </div>
               <div className="info-item">
-                <label>Staff Member</label>
-                <span>{user.is_staff ? "Yes" : "No"}</span>
+                <label>{t("ui.details.staffMember")}</label>
+                <span>{user.is_staff ? t("ui.yes") : t("ui.no")}</span>
               </div>
               <div className="info-item">
-                <label>Date Joined</label>
+                <label>{t("ui.details.dateJoined")}</label>
                 <span>{formatDate(user.date_joined)}</span>
               </div>
               <div className="info-item">
-                <label>Last Login</label>
+                <label>{t("ui.details.lastLogin")}</label>
                 <span>
-                  {user.last_login ? formatDate(user.last_login) : "Never"}
+                  {user.last_login ? formatDate(user.last_login) : t("ui.details.never")}
                 </span>
               </div>
             </div>
@@ -166,7 +171,7 @@ export default function UserDetailsModal({
 
           {user.permissions && (
             <div className="info-section">
-              <h3>Additional Permissions</h3>
+              <h3>{t("ui.details.permissions")}</h3>
               <div className="permissions-text">{user.permissions}</div>
             </div>
           )}
@@ -178,14 +183,14 @@ export default function UserDetailsModal({
               className="btn btn-primary"
               onClick={() => handleAction(() => onEdit(user))}
             >
-              ✏️ Edit User
+              ✏️ {t("ui.table.edit")}
             </button>
 
             <button
               className="btn btn-secondary"
               onClick={() => handleAction(() => onSendNewPassword(user))}
             >
-              🔄 Send New Password
+              🔄 {t("sendNewPassword")}
             </button>
 
             <button
@@ -199,7 +204,7 @@ export default function UserDetailsModal({
                 )
               }
             >
-              {user.is_active ? "🔒 Deactivate" : "🔓 Activate"}
+              {user.is_active ? `🔒 ${t("ui.table.deactivate")}` : `🔓 ${t("ui.table.activate")}`}
             </button>
           </div>
 
@@ -208,7 +213,7 @@ export default function UserDetailsModal({
               className="btn btn-danger"
               onClick={() => handleAction(() => onDelete(user.id))}
             >
-              🗑️ Delete User
+              🗑️ {t("ui.table.delete")}
             </button>
           </div>
         </div>

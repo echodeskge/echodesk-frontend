@@ -5,7 +5,18 @@
  *   - No deprecated add_to_group/remove_from_group actions
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as rtlRender, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import en from "@/i18n/messages/en.json";
+
+// The components read their labels from the "users" messages (English here).
+const render = (ui: ReactElement) =>
+  rtlRender(
+    <NextIntlClientProvider locale="en" messages={en}>
+      {ui}
+    </NextIntlClientProvider>
+  );
 import userEvent from "@testing-library/user-event";
 import UserBulkActions from "@/components/user-management/UserBulkActions";
 

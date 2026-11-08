@@ -102,3 +102,19 @@ describe("misc helpers", () => {
     expect(profileLeaveFeatures(undefined)).toBeNull()
   })
 })
+
+describe("Georgian month and weekday labels", () => {
+  it("spells Georgian months out (Chrome's Intl has none)", async () => {
+    const { formatPeriod } = await import("@/app/(tenant)/leave/_lib/hr-utils")
+    expect(formatPeriod("2026-11", "ka")).toBe("ნოემბერი 2026")
+    expect(formatPeriod("2026-01", "ka")).toBe("იანვარი 2026")
+    expect(formatPeriod("2026-11", "en")).toBe("November 2026")
+  })
+
+  it("gives short Georgian weekdays", async () => {
+    const { formatWeekdayShort } = await import("@/app/(tenant)/leave/_lib/hr-utils")
+    expect(formatWeekdayShort(new Date(2026, 10, 2), "ka")).toBe("ორ") // Monday
+    expect(formatWeekdayShort(new Date(2026, 10, 1), "ka")).toBe("კვ") // Sunday
+    expect(formatWeekdayShort(new Date(2026, 10, 2), "en")).toBe("M")
+  })
+})

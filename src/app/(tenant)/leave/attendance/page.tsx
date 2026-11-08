@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { fetchAttendance, unwrapList, type AttendanceGrid } from "../_lib/hr-api"
-import { currentPeriod, formatPeriod } from "../_lib/hr-utils"
+import { currentPeriod, formatPeriod, formatWeekdayShort } from "../_lib/hr-utils"
 import {
   classifyAttendanceCell,
   dayOfMonth,
@@ -82,10 +82,6 @@ export default function AttendancePage() {
     () => new Map((grid?.legend ?? []).map((l) => [l.code, l])),
     [grid]
   )
-  const weekdayFmt = useMemo(
-    () => new Intl.DateTimeFormat(locale === "ka" ? "ka-GE" : "en-US", { weekday: "narrow" }),
-    [locale]
-  )
 
   return (
     <FeatureGate loaded={loaded} allowed={enabled}>
@@ -146,7 +142,7 @@ export default function AttendancePage() {
                               day.kind === "holiday" && "text-red-500/80"
                             )}
                           >
-                            <span className="text-[10px]">{weekdayFmt.format(new Date(`${day.date}T00:00:00`))}</span>
+                            <span className="text-[10px]">{formatWeekdayShort(new Date(`${day.date}T00:00:00`), locale)}</span>
                             <span className="font-medium">{dayOfMonth(day.date)}</span>
                           </div>
                         )

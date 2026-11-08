@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useMyAccess, TENANT_ROLE_RANK, type TenantRole } from "@/hooks/useMyAccess";
 
 interface UserBulkActionsProps {
@@ -18,6 +19,7 @@ export default function UserBulkActions({
   selectedUsers,
   onBulkAction,
 }: UserBulkActionsProps) {
+  const t = useTranslations("users");
   const [showActions, setShowActions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { isSuperuser, isStaff, roleRank } = useMyAccess();
@@ -29,9 +31,7 @@ export default function UserBulkActions({
 
   const handleBulkAction = async (action: string, additionalData?: any) => {
     if (
-      !confirm(
-        `Are you sure you want to ${action} ${selectedCount} selected user(s)?`
-      )
+      !confirm(t("ui.bulk.confirm", { count: selectedCount }))
     ) {
       return;
     }
@@ -47,59 +47,11 @@ export default function UserBulkActions({
     }
   };
 
-  const bulkActions = [
-    {
-      id: "activate",
-      label: "Activate Users",
-      icon: "✅",
-      color: "green",
-      confirm: true,
-    },
-    {
-      id: "deactivate",
-      label: "Deactivate Users",
-      icon: "❌",
-      color: "red",
-      confirm: true,
-    },
-    {
-      id: "reset_password",
-      label: "Reset Passwords",
-      icon: "🔄",
-      color: "blue",
-      confirm: true,
-    },
-    {
-      id: "change_role_admin",
-      label: "Make Admin",
-      icon: "👑",
-      color: "purple",
-      confirm: true,
-      additionalData: { role: "admin" },
-    },
-    {
-      id: "change_role_agent",
-      label: "Make Agent",
-      icon: "🎧",
-      color: "blue",
-      confirm: true,
-      additionalData: { role: "agent" },
-    },
-    {
-      id: "change_role_viewer",
-      label: "Make Viewer",
-      icon: "👁️",
-      color: "gray",
-      confirm: true,
-      additionalData: { role: "viewer" },
-    },
-  ];
-
   return (
     <div className="bulk-actions">
       <div className="bulk-actions-info">
         <span className="selected-count">
-          {selectedCount} user{selectedCount !== 1 ? "s" : ""} selected
+          {t("ui.bulk.selected", { count: selectedCount })}
         </span>
       </div>
 
@@ -109,14 +61,14 @@ export default function UserBulkActions({
           onClick={() => setShowActions(!showActions)}
           disabled={isLoading}
         >
-          {isLoading ? "Processing..." : "Bulk Actions"} ▼
+          {isLoading ? t("ui.bulk.processing") : t("ui.bulk.title")} ▼
         </button>
       </div>
 
       {showActions && (
         <div className="bulk-actions-dropdown">
           <div className="dropdown-header">
-            <h4>Bulk Actions</h4>
+            <h4>{t("ui.bulk.title")}</h4>
             <button
               className="close-dropdown"
               onClick={() => setShowActions(false)}
@@ -127,40 +79,40 @@ export default function UserBulkActions({
 
           <div className="dropdown-content">
             <div className="action-section">
-              <h5>User Status</h5>
+              <h5>{t("ui.bulk.userStatus")}</h5>
               <div className="action-buttons">
                 <button
                   className="action-btn action-green"
                   onClick={() => handleBulkAction("activate")}
                   disabled={isLoading}
                 >
-                  ✅ Activate Users
+                  ✅ {t("ui.bulk.activate")}
                 </button>
                 <button
                   className="action-btn action-red"
                   onClick={() => handleBulkAction("deactivate")}
                   disabled={isLoading}
                 >
-                  ❌ Deactivate Users
+                  ❌ {t("ui.bulk.deactivate")}
                 </button>
               </div>
             </div>
 
             <div className="action-section">
-              <h5>Security</h5>
+              <h5>{t("ui.bulk.security")}</h5>
               <div className="action-buttons">
                 <button
                   className="action-btn action-blue"
                   onClick={() => handleBulkAction("reset_password")}
                   disabled={isLoading}
                 >
-                  🔄 Reset Passwords
+                  🔄 {t("ui.bulk.resetPasswords")}
                 </button>
               </div>
             </div>
 
             <div className="action-section">
-              <h5>Role Changes</h5>
+              <h5>{t("ui.bulk.roleChanges")}</h5>
               <div className="action-buttons">
                 {canGrantRole("admin") && (
                   <button
@@ -170,7 +122,7 @@ export default function UserBulkActions({
                     }
                     disabled={isLoading}
                   >
-                    👑 Make Admin
+                    👑 {t("ui.bulk.makeRole", { role: t("ui.roles.admin") })}
                   </button>
                 )}
                 {canGrantRole("manager") && (
@@ -181,7 +133,7 @@ export default function UserBulkActions({
                     }
                     disabled={isLoading}
                   >
-                    👨‍💼 Make Manager
+                    👨‍💼 {t("ui.bulk.makeRole", { role: t("ui.roles.manager") })}
                   </button>
                 )}
                 {canGrantRole("agent") && (
@@ -192,7 +144,7 @@ export default function UserBulkActions({
                     }
                     disabled={isLoading}
                   >
-                    🎧 Make Agent
+                    🎧 {t("ui.bulk.makeRole", { role: t("ui.roles.agent") })}
                   </button>
                 )}
                 {canGrantRole("viewer") && (
@@ -203,21 +155,21 @@ export default function UserBulkActions({
                     }
                     disabled={isLoading}
                   >
-                    👁️ Make Viewer
+                    👁️ {t("ui.bulk.makeRole", { role: t("ui.roles.viewer") })}
                   </button>
                 )}
               </div>
             </div>
 
             <div className="action-section danger-section">
-              <h5>Danger Zone</h5>
+              <h5>{t("ui.bulk.danger")}</h5>
               <div className="action-buttons">
                 <button
                   className="action-btn action-red"
                   onClick={() => handleBulkAction("delete")}
                   disabled={isLoading}
                 >
-                  🗑️ Delete Users
+                  🗑️ {t("ui.bulk.delete")}
                 </button>
               </div>
             </div>

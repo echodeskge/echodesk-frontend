@@ -49,3 +49,41 @@ describe("formatBulkBlocked", () => {
     expect(formatBulkBlocked(undefined, String)).toEqual([])
   })
 })
+
+describe("translated reasons (reason_codes)", () => {
+  const coded = {
+    response: {
+      data: {
+        ...blockedError.response.data,
+        reason_codes: [
+          { code: "open_requests", count: 2 },
+          { code: "mystery", count: null },
+        ],
+      },
+    },
+  }
+  const translate = ({ code, count }: { code: string; count: number | null }) =>
+    code === "open_requests" ? `ღია მოთხოვნა: ${count}` : null
+
+  it("uses the translation for known codes and keeps English for the rest", () => {
+    expect(removalBlockedReasons(coded, translate)).toEqual([
+      "ღია მოთხოვნა: 2",
+      "manager of 1 active employee(s)",
+    ])
+  })
+
+  it("ignores codes that do not line up with the reasons", () => {
+    const misaligned = { response: { data: { ...coded.response.data, reason_codes: [{ code: "open_requests", count: 2 }] } } }
+    expect(removalBlockedReasons(misaligned, translate)).toEqual(blockedError.response.data.reasons)
+  })
+
+  it("translates bulk blocked lines with blocked_codes", () => {
+    const lines = formatBulkBlocked(
+      { "5": ["2 open leave request(s) must be decided or cancelled first"] },
+      () => "Nino",
+      { "5": [{ code: "open_requests", count: 2 }] },
+      translate
+    )
+    expect(lines).toEqual(["• Nino: ღია მოთხოვნა: 2"])
+  })
+})

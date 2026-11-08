@@ -13,7 +13,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, userKeys } from "@/hooks/api/useUsers";
 import { getApiErrorMessage } from "@/lib/utils";
-import { formatBulkBlocked, formatRemovalBlocked } from "./user-management/removalBlocked";
+import {
+  formatBulkBlocked,
+  formatRemovalBlocked,
+  removalBlockedReasons,
+  type RemovalReasonCode,
+} from "./user-management/removalBlocked";
+import { toast } from "sonner";
 
 import UserTable from "./user-management/UserTable";
 import UserBulkActions from "./user-management/UserBulkActions";
@@ -38,6 +44,29 @@ export interface UserFilters {
 export default function UserManagement() {
   const t = useTranslations("users");
   const tCommon = useTranslations("common");
+  // Leave-guard reasons arrive with codes (open_requests, covering, ...).
+  const translateReason = ({ code, count }: RemovalReasonCode): string | null =>
+    ["open_requests", "covering", "manager_of", "has_history"].includes(code)
+      ? t(`ui.removalReasons.${code}`, { count: count ?? 0 })
+      : null;
+  // A blocked deactivation/delete shows a toast with the reasons; other errors too.
+  const showRemovalError = (err: unknown, fallback: string) => {
+    const reasons = removalBlockedReasons(err, translateReason);
+    if (reasons !== null) {
+      toast.error(t("removalBlocked"), {
+        description: (
+          <ul className="mt-1 space-y-0.5">
+            {reasons.map((r) => (
+              <li key={r}>• {r}</li>
+            ))}
+          </ul>
+        ),
+        duration: 8000,
+      });
+      return;
+    }
+    toast.error(getApiErrorMessage(err, fallback));
+  };
   const { data: currentUserProfile } = useUserProfile();
   const queryClient = useQueryClient();
   // The profile payload carries is_superuser even though the generated User
@@ -89,7 +118,7 @@ export default function UserManagement() {
       await createUserMutation.mutateAsync(userData as UserCreate);
       setShowCreateForm(false);
     } catch (err: unknown) {
-      throw new Error(getApiErrorMessage(err, "Failed to create user"));
+      throw new Error(getApiErrorMessage(err, t("ui.errors.create")));
     }
   };
 
@@ -102,8 +131,8 @@ export default function UserManagement() {
       setEditingUser(null);
     } catch (err: unknown) {
       throw new Error(
-        formatRemovalBlocked(err, t("removalBlocked")) ||
-          getApiErrorMessage(err, "Failed to update user")
+        formatRemovalBlocked(err, t("removalBlocked"), translateReason) ||
+          getApiErrorMessage(err, t("ui.errors.update"))
       );
     }
   };
@@ -116,7 +145,7 @@ export default function UserManagement() {
     try {
       await deleteUserMutation.mutateAsync(userId);
     } catch (err: unknown) {
-      alert(formatRemovalBlocked(err, t("removalBlocked")) || getApiErrorMessage(err, tCommon("error")));
+      showRemovalError(err, tCommon("error"));
     }
   };
 
@@ -125,10 +154,7 @@ export default function UserManagement() {
       await usersPartialUpdate(userId, { status: status as any });
       // React Query will auto-invalidate and refetch
     } catch (err: unknown) {
-      alert(
-        formatRemovalBlocked(err, t("removalBlocked")) ||
-          getApiErrorMessage(err, "Failed to change user status")
-      );
+      showRemovalError(err, t("ui.errors.status"));
     }
   };
 
@@ -175,7 +201,7 @@ export default function UserManagement() {
       }
 
     } catch (err: unknown) {
-      alert(getApiErrorMessage(err, "Failed to toggle staff status"));
+      alert(getApiErrorMessage(err, t("ui.errors.staff")));
     } finally {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
     }
@@ -200,11 +226,19 @@ export default function UserManagement() {
       const skipped = result?.skipped_user_ids || [];
       // Users held back by open leave work are listed with their reasons;
       // they are also part of skipped_user_ids.
-      const blocked = (result as { blocked?: Record<string, string[]> } | undefined)?.blocked;
-      const blockedLines = formatBulkBlocked(blocked, (id) => {
-        const u = users.find((row) => row.id === id);
-        return u ? `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email : `#${id}`;
-      });
+      const { blocked, blocked_codes: blockedCodes } = (result ?? {}) as {
+        blocked?: Record<string, string[]>;
+        blocked_codes?: Record<string, RemovalReasonCode[]>;
+      };
+      const blockedLines = formatBulkBlocked(
+        blocked,
+        (id) => {
+          const u = users.find((row) => row.id === id);
+          return u ? `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email : `#${id}`;
+        },
+        blockedCodes,
+        translateReason
+      );
       const otherSkipped = skipped.length - blockedLines.length;
       const messages: string[] = [];
       if (otherSkipped > 0) {
@@ -220,7 +254,7 @@ export default function UserManagement() {
       }
       if (messages.length > 0) alert(messages.join("\n\n"));
     } catch (err: unknown) {
-      alert(getApiErrorMessage(err, "Bulk action failed"));
+      alert(getApiErrorMessage(err, t("ui.errors.bulk")));
     } finally {
       queryClient.invalidateQueries({ queryKey: userKeys.lists() });
     }
@@ -261,7 +295,7 @@ export default function UserManagement() {
         <div>
           <h1 className="text-2xl font-semibold">{t("userManagement")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage users, roles, and permissions
+            {t("ui.subtitle")}
           </p>
         </div>
         <Button onClick={() => setShowCreateForm(true)}>

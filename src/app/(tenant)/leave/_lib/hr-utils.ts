@@ -84,12 +84,27 @@ export function shiftPeriod(period: string, months: number): string {
   return `${year}-${String(month).padStart(2, "0")}`
 }
 
+// Chrome's ICU data has no Georgian month or weekday names (Intl falls back to
+// "2026 M11" / English), so Georgian labels are spelled out here.
+const KA_MONTHS = [
+  "იანვარი", "თებერვალი", "მარტი", "აპრილი", "მაისი", "ივნისი",
+  "ივლისი", "აგვისტო", "სექტემბერი", "ოქტომბერი", "ნოემბერი", "დეკემბერი",
+]
+const KA_WEEKDAYS_SHORT = ["კვ", "ორ", "სმ", "ოთ", "ხთ", "პრ", "შბ"]
+
+/** Short weekday label ("ორ", "M") for a date. */
+export function formatWeekdayShort(date: Date, locale: string): string {
+  if (locale === "ka") return KA_WEEKDAYS_SHORT[date.getDay()]
+  return new Intl.DateTimeFormat("en-US", { weekday: "narrow" }).format(date)
+}
+
 /** Localised "November 2026" label for a period. */
 export function formatPeriod(period: string, locale: string): string {
   const m = PERIOD_RE.exec(period)
   if (!m) return period
+  if (locale === "ka") return `${KA_MONTHS[Number(m[2]) - 1]} ${m[1]}`
   const date = new Date(Number(m[1]), Number(m[2]) - 1, 1)
-  return date.toLocaleDateString(locale === "ka" ? "ka-GE" : "en-US", { month: "long", year: "numeric" })
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
 }
 
 // ---------------------------------------------------------------------------

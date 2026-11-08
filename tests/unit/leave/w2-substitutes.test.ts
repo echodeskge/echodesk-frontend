@@ -96,3 +96,16 @@ describe("parseIdParam / fieldErrors / moveItem", () => {
     expect(moveItem([1, 2, 3], 0, -1)).toEqual([1, 2, 3])
   })
 })
+
+describe("leaveTypeLimitError", () => {
+  it("reads the code, limit and max a limit refusal carries", async () => {
+    const { leaveTypeLimitError } = await import("@/app/(tenant)/leave/_lib/substitutes-utils")
+    const error = {
+      response: { data: { leave_type: ["English text"], code: ["leave_type_limit"], limit: ["per_month"], max: ["1"] } },
+    }
+    expect(leaveTypeLimitError(error)).toEqual({ limit: "per_month", max: "1" })
+    expect(leaveTypeLimitError({ response: { data: { leave_type: ["x"] } } })).toBeNull()
+    expect(leaveTypeLimitError({ response: { data: { code: "leave_type_limit", limit: "weird" } } })).toBeNull()
+    expect(leaveTypeLimitError(new Error("x"))).toBeNull()
+  })
+})

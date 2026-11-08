@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog"
 import { MonthPicker } from "../../_components/MonthPicker"
 import { fetchCoverage, setCoverageWorkedDays, type CoverageRow } from "../../_lib/hr-api"
-import { currentPeriod, formatMoney, formatPeriod } from "../../_lib/hr-utils"
+import { currentPeriod, formatMoney, formatPeriod, formatWeekdayShort } from "../../_lib/hr-utils"
 import { groupDaysByMonth, sameDays, toggleDay } from "../../_lib/payroll-utils"
 
 export function WorkedDaysTab() {
@@ -77,11 +77,11 @@ export function WorkedDaysTab() {
     }
   }
 
-  const fmtDay = (d: string) =>
-    new Date(`${d}T00:00:00`).toLocaleDateString(locale === "ka" ? "ka-GE" : "en-US", {
-      weekday: "short",
-      day: "numeric",
-    })
+  const fmtDay = (d: string) => {
+    const date = new Date(`${d}T00:00:00`)
+    if (locale === "ka") return `${date.getDate()}, ${formatWeekdayShort(date, locale)}`
+    return date.toLocaleDateString("en-US", { weekday: "short", day: "numeric" })
+  }
 
   return (
     <div className="space-y-4">

@@ -9,7 +9,18 @@
  *   - Action buttons per row
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render as rtlRender, screen, within } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import en from "@/i18n/messages/en.json";
+
+// The components read their labels from the "users" messages (English here).
+const render = (ui: ReactElement) =>
+  rtlRender(
+    <NextIntlClientProvider locale="en" messages={en}>
+      {ui}
+    </NextIntlClientProvider>
+  );
 import userEvent from "@testing-library/user-event";
 import UserTable from "@/components/user-management/UserTable";
 import type { User } from "@/api/generated/interfaces";

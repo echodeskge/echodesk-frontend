@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import type { UserFilters } from "../UserManagement";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ export default function UserFilters({
   filters,
   onFiltersChange,
 }: UserFiltersProps) {
+  const t = useTranslations("users");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [searchInput, setSearchInput] = useState(filters.search);
 
@@ -40,19 +42,19 @@ export default function UserFilters({
   }, [filters.search]);
 
   const roleOptions = [
-    { value: "all", label: "All Roles" },
-    { value: "admin", label: "Admin" },
-    { value: "manager", label: "Manager" },
-    { value: "agent", label: "Agent" },
-    { value: "viewer", label: "Viewer" },
+    { value: "all", label: t("ui.filters.allRoles") },
+    { value: "admin", label: t("ui.roles.admin") },
+    { value: "manager", label: t("ui.roles.manager") },
+    { value: "agent", label: t("ui.roles.agent") },
+    { value: "viewer", label: t("ui.roles.viewer") },
   ];
 
   const statusOptions = [
-    { value: "all", label: "All Status" },
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
-    { value: "pending", label: "Pending" },
-    { value: "suspended", label: "Suspended" },
+    { value: "all", label: t("ui.filters.allStatus") },
+    { value: "active", label: t("ui.status.active") },
+    { value: "inactive", label: t("ui.status.inactive") },
+    { value: "pending", label: t("ui.status.pending") },
+    { value: "suspended", label: t("ui.status.suspended") },
   ];
 
   const clearFilters = () => {
@@ -87,7 +89,7 @@ export default function UserFilters({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Search users by name or email..."
+                placeholder={t("ui.filters.search")}
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-9"
@@ -101,8 +103,8 @@ export default function UserFilters({
               value={filters.role || "all"}
               onValueChange={(value) => onFiltersChange({ role: value === "all" ? "" : value })}
             >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Roles" />
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder={t("ui.filters.allRoles")} />
               </SelectTrigger>
               <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
                 {roleOptions.map((option) => (
@@ -120,8 +122,8 @@ export default function UserFilters({
               value={filters.status || "all"}
               onValueChange={(value) => onFiltersChange({ status: value === "all" ? "" : value })}
             >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Status" />
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder={t("ui.filters.allStatus")} />
               </SelectTrigger>
               <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
                 {statusOptions.map((option) => (
@@ -161,7 +163,7 @@ export default function UserFilters({
                 onClick={clearFilters}
               >
                 <X className="h-4 w-4 mr-2" />
-                Clear
+                {t("ui.filters.clear")}
               </Button>
             )}
           </div>
@@ -173,12 +175,12 @@ export default function UserFilters({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="department" className="text-xs uppercase text-muted-foreground">
-                  Department
+                  {t("ui.filters.department")}
                 </Label>
                 <Input
                   type="text"
                   id="department"
-                  placeholder="Filter by department"
+                  placeholder={t("ui.filters.departmentPlaceholder")}
                   value={filters.department}
                   onChange={(e) => onFiltersChange({ department: e.target.value })}
                 />
@@ -186,7 +188,7 @@ export default function UserFilters({
 
               <div className="space-y-2">
                 <Label htmlFor="isActive" className="text-xs uppercase text-muted-foreground">
-                  Account Status
+                  {t("ui.filters.accountStatus")}
                 </Label>
                 <Select
                   value={filters.isActive === null ? "all" : filters.isActive.toString()}
@@ -197,19 +199,19 @@ export default function UserFilters({
                   }
                 >
                   <SelectTrigger id="isActive">
-                    <SelectValue placeholder="All Accounts" />
+                    <SelectValue placeholder={t("ui.filters.allAccounts")} />
                   </SelectTrigger>
                   <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
-                    <SelectItem value="all">All Accounts</SelectItem>
-                    <SelectItem value="true">Active Accounts</SelectItem>
-                    <SelectItem value="false">Inactive Accounts</SelectItem>
+                    <SelectItem value="all">{t("ui.filters.allAccounts")}</SelectItem>
+                    <SelectItem value="true">{t("ui.filters.activeAccounts")}</SelectItem>
+                    <SelectItem value="false">{t("ui.filters.inactiveAccounts")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="isStaff" className="text-xs uppercase text-muted-foreground">
-                  Staff Status
+                  {t("ui.filters.staffStatus")}
                 </Label>
                 <Select
                   value={filters.isStaff === null ? "all" : filters.isStaff.toString()}
@@ -220,12 +222,12 @@ export default function UserFilters({
                   }
                 >
                   <SelectTrigger id="isStaff">
-                    <SelectValue placeholder="All Users" />
+                    <SelectValue placeholder={t("ui.filters.allUsers")} />
                   </SelectTrigger>
                   <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
-                    <SelectItem value="all">All Users</SelectItem>
-                    <SelectItem value="true">Staff Members</SelectItem>
-                    <SelectItem value="false">Regular Users</SelectItem>
+                    <SelectItem value="all">{t("ui.filters.allUsers")}</SelectItem>
+                    <SelectItem value="true">{t("ui.filters.staffMembers")}</SelectItem>
+                    <SelectItem value="false">{t("ui.filters.regularUsers")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -237,12 +239,12 @@ export default function UserFilters({
         {hasActiveFilters() && (
           <div className="mt-4 pt-4 border-t flex flex-wrap gap-2 items-center">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Active filters:
+              {t("ui.filters.active")}
             </span>
             <div className="flex flex-wrap gap-2">
               {filters.search && (
                 <Badge variant="secondary" className="gap-1">
-                  Search: &quot;{filters.search}&quot;
+                  {t("ui.filters.chipSearch")}: &quot;{filters.search}&quot;
                   <button
                     onClick={() => onFiltersChange({ search: "" })}
                     className="ml-1 hover:text-destructive"
@@ -253,7 +255,7 @@ export default function UserFilters({
               )}
               {filters.role && (
                 <Badge variant="secondary" className="gap-1">
-                  Role: {roleOptions.find((r) => r.value === filters.role)?.label}
+                  {t("ui.filters.chipRole")}: {roleOptions.find((r) => r.value === filters.role)?.label}
                   <button
                     onClick={() => onFiltersChange({ role: "" })}
                     className="ml-1 hover:text-destructive"
@@ -264,7 +266,7 @@ export default function UserFilters({
               )}
               {filters.status && (
                 <Badge variant="secondary" className="gap-1">
-                  Status: {statusOptions.find((s) => s.value === filters.status)?.label}
+                  {t("ui.filters.chipStatus")}: {statusOptions.find((s) => s.value === filters.status)?.label}
                   <button
                     onClick={() => onFiltersChange({ status: "" })}
                     className="ml-1 hover:text-destructive"
@@ -275,7 +277,7 @@ export default function UserFilters({
               )}
               {filters.department && (
                 <Badge variant="secondary" className="gap-1">
-                  Department: {filters.department}
+                  {t("ui.filters.department")}: {filters.department}
                   <button
                     onClick={() => onFiltersChange({ department: "" })}
                     className="ml-1 hover:text-destructive"
@@ -286,7 +288,7 @@ export default function UserFilters({
               )}
               {filters.isActive !== null && (
                 <Badge variant="secondary" className="gap-1">
-                  Account: {filters.isActive ? "Active" : "Inactive"}
+                  {t("ui.filters.chipAccount")}: {filters.isActive ? t("ui.status.active") : t("ui.status.inactive")}
                   <button
                     onClick={() => onFiltersChange({ isActive: null })}
                     className="ml-1 hover:text-destructive"
@@ -297,7 +299,7 @@ export default function UserFilters({
               )}
               {filters.isStaff !== null && (
                 <Badge variant="secondary" className="gap-1">
-                  Staff: {filters.isStaff ? "Yes" : "No"}
+                  {t("ui.table.staff")}: {filters.isStaff ? t("ui.yes") : t("ui.no")}
                   <button
                     onClick={() => onFiltersChange({ isStaff: null })}
                     className="ml-1 hover:text-destructive"

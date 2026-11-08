@@ -148,27 +148,27 @@ export default function UserForm({
   }, [fullUserData, user]);
 
   const statusOptions = [
-    { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
-    { value: "pending", label: "Pending" },
-    { value: "suspended", label: "Suspended" },
+    { value: "active", label: t("ui.status.active") },
+    { value: "inactive", label: t("ui.status.inactive") },
+    { value: "pending", label: t("ui.status.pending") },
+    { value: "suspended", label: t("ui.status.suspended") },
   ];
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) {
-      newErrors.email = "Email is required";
+      newErrors.email = t("ui.form.emailRequired");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = t("ui.form.emailInvalid");
     }
 
     if (!formData.first_name) {
-      newErrors.first_name = "First name is required";
+      newErrors.first_name = t("ui.form.firstNameRequired");
     }
 
     if (!formData.last_name) {
-      newErrors.last_name = "Last name is required";
+      newErrors.last_name = t("ui.form.lastNameRequired");
     }
 
     if (
@@ -226,7 +226,7 @@ export default function UserForm({
         await onSubmit(updateData);
       }
     } catch (err: any) {
-      setErrors({ submit: err.message || "Failed to save user" });
+      setErrors({ submit: err.message || t("ui.form.saveFailed") });
     } finally {
       setIsSubmitting(false);
     }
@@ -243,11 +243,11 @@ export default function UserForm({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Add New User" : "Edit User"}</DialogTitle>
+          <DialogTitle>{mode === "create" ? t("ui.form.createTitle") : t("ui.form.editTitle")}</DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Create a new user account. A secure password will be auto-generated and emailed to the user."
-              : `Update user information for ${user?.email}`}
+              ? t("ui.form.createDescription")
+              : t("ui.form.editDescription", { email: user?.email ?? "" })}
           </DialogDescription>
         </DialogHeader>
 
@@ -263,7 +263,7 @@ export default function UserForm({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
+              <Label htmlFor="email">{t("ui.form.email")} *</Label>
               <Input
                 id="email"
                 type="email"
@@ -285,7 +285,7 @@ export default function UserForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="first_name">First Name *</Label>
+              <Label htmlFor="first_name">{t("firstName")} *</Label>
               <Input
                 id="first_name"
                 type="text"
@@ -300,7 +300,7 @@ export default function UserForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name">Last Name *</Label>
+              <Label htmlFor="last_name">{t("lastName")} *</Label>
               <Input
                 id="last_name"
                 type="text"
@@ -315,7 +315,7 @@ export default function UserForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone_number">Phone Number</Label>
+              <Label htmlFor="phone_number">{t("ui.details.phone")}</Label>
               <Input
                 id="phone_number"
                 type="tel"
@@ -327,13 +327,13 @@ export default function UserForm({
 
             {mode === "edit" && (
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status">{t("ui.table.status")}</Label>
                 <Select
                   value={formData.status?.toString() || ""}
                   onValueChange={(value) => handleChange("status", value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={t("ui.form.selectStatus")} />
                   </SelectTrigger>
                   <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
                     {statusOptions.map((option) => (
@@ -348,16 +348,16 @@ export default function UserForm({
 
             {mode === "edit" && (
               <div className="space-y-2">
-                <Label htmlFor="preferred_language">Notification Language</Label>
+                <Label htmlFor="preferred_language">{t("ui.form.notificationLanguage")}</Label>
                 <Select
                   value={formData.preferred_language}
                   onValueChange={(value) => handleChange("preferred_language", value)}
                 >
                   <SelectTrigger id="preferred_language">
-                    <SelectValue placeholder="Select language" />
+                    <SelectValue placeholder={t("ui.form.selectLanguage")} />
                   </SelectTrigger>
                   <SelectContent className="bg-white" style={{ backgroundColor: 'white' }}>
-                    <SelectItem value={TENANT_LANGUAGE}>Tenant default</SelectItem>
+                    <SelectItem value={TENANT_LANGUAGE}>{t("ui.form.tenantDefault")}</SelectItem>
                     <SelectItem value="en">English</SelectItem>
                     <SelectItem value="ka">ქართული</SelectItem>
                   </SelectContent>
@@ -440,14 +440,14 @@ export default function UserForm({
 
           {/* Group Assignment Section */}
           <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-sm font-semibold">Group Assignment</h3>
+            <h3 className="text-sm font-semibold">{t("ui.form.groupAssignment")}</h3>
             <div className="space-y-2">
-              <Label htmlFor="tenant-groups">Tenant Groups</Label>
+              <Label htmlFor="tenant-groups">{t("ui.table.groups")}</Label>
               {(loadingGroups || loadingUserDetails) ? (
                 <div className="flex items-center justify-center py-8">
                   <Spinner className="h-6 w-6 mr-2" />
                   <p className="text-sm text-muted-foreground">
-                    {loadingUserDetails ? 'Loading user details...' : 'Loading groups...'}
+                    {loadingUserDetails ? t("ui.form.loadingUser") : t("ui.form.loadingGroups")}
                   </p>
                 </div>
               ) : (
@@ -457,11 +457,11 @@ export default function UserForm({
                     selectedGroupIds={formData.tenant_group_ids}
                     onChange={(groupIds) => handleChange("tenant_group_ids", groupIds)}
                     disabled={isSubmitting || !canManageGroups}
-                    placeholder="Select groups to assign to this user..."
+                    placeholder={t("ui.form.selectGroups")}
                   />
                   {!canManageGroups && (
                     <p className="text-xs text-muted-foreground">
-                      Only staff or users with the Manage Groups permission can change group membership.
+                      {t("ui.form.groupsLocked")}
                     </p>
                   )}
                 </>
@@ -472,7 +472,7 @@ export default function UserForm({
           {/* User Active Status (Edit Mode Only) */}
           {mode === "edit" && (
             <div className="space-y-4 pt-4 border-t">
-              <h3 className="text-sm font-semibold">User Status</h3>
+              <h3 className="text-sm font-semibold">{t("ui.bulk.userStatus")}</h3>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is_active"
@@ -480,7 +480,7 @@ export default function UserForm({
                   onCheckedChange={(checked) => handleChange("is_active", checked as boolean)}
                 />
                 <Label htmlFor="is_active" className="font-normal cursor-pointer">
-                  User is active
+                  {t("ui.form.isActive")}
                 </Label>
               </div>
             </div>
@@ -493,15 +493,15 @@ export default function UserForm({
               onClick={onClose}
               disabled={isSubmitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Spinner className="mr-2 h-4 w-4" />}
               {isSubmitting
-                ? "Saving..."
+                ? t("ui.form.saving")
                 : mode === "create"
-                  ? "Create User"
-                  : "Update User"}
+                  ? t("ui.form.create")
+                  : t("ui.form.update")}
             </Button>
           </DialogFooter>
         </form>

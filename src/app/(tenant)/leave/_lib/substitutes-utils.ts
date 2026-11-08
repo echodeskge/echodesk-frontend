@@ -92,3 +92,18 @@ export function fieldErrors(error: unknown): Record<string, string> {
   }
   return out
 }
+
+/**
+ * A per-type limit refusal (`{code: 'leave_type_limit', limit: 'per_month' | 'per_request', max}`
+ * next to the English `leave_type` message) as `{limit, max}`, or null for any other error.
+ */
+export function leaveTypeLimitError(error: unknown): { limit: "per_month" | "per_request"; max: string } | null {
+  const data = (error as { response?: { data?: unknown } } | null)?.response?.data
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null
+  const first = (v: unknown) => (Array.isArray(v) ? v[0] : v)
+  const record = data as Record<string, unknown>
+  if (first(record.code) !== "leave_type_limit") return null
+  const limit = first(record.limit)
+  if (limit !== "per_month" && limit !== "per_request") return null
+  return { limit, max: String(first(record.max) ?? "") }
+}

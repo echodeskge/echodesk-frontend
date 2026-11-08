@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
+import { useTranslations } from "next-intl";
 import { Eye, Pencil, RotateCw, Lock, Unlock, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface PaginationInfo {
@@ -52,6 +53,13 @@ export default function UserTable({
   pagination,
   onPageChange,
 }: UserTableProps) {
+  const t = useTranslations("users");
+  // Known statuses are translated; anything else is shown as sent.
+  const statusLabel = (status: string) =>
+    ["active", "inactive", "pending", "suspended"].includes(status.toLowerCase())
+      ? t(`ui.status.${status.toLowerCase()}`)
+      : status;
+
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       onSelectionChange(users.map((user) => user.id));
@@ -147,14 +155,14 @@ export default function UserTable({
                     onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
                   />
                 </th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Name</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Email</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Groups</th>
-                <th className="p-3 text-left font-semibold text-muted-foreground">Status</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.name")}</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.email")}</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.groups")}</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.status")}</th>
                 {showStaffColumn && (
-                  <th className="p-3 text-center font-semibold text-muted-foreground">Staff</th>
+                  <th className="p-3 text-center font-semibold text-muted-foreground">{t("ui.table.staff")}</th>
                 )}
-                <th className="p-3 text-left font-semibold text-muted-foreground">Actions</th>
+                <th className="p-3 text-left font-semibold text-muted-foreground">{t("ui.table.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -163,14 +171,14 @@ export default function UserTable({
                   <td colSpan={showStaffColumn ? 7 : 6} className="p-10 text-center text-muted-foreground">
                     <div className="flex items-center justify-center space-x-2">
                       <Spinner className="h-6 w-6" />
-                      <span>Loading users...</span>
+                      <span>{t("ui.table.loading")}</span>
                     </div>
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={showStaffColumn ? 7 : 6} className="p-10 text-center text-muted-foreground">
-                    No users found
+                    {t("ui.table.empty")}
                   </td>
                 </tr>
               ) : (
@@ -211,7 +219,7 @@ export default function UserTable({
                           ))}
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">No groups</span>
+                        <span className="text-xs text-muted-foreground">{t("ui.table.noGroups")}</span>
                       )}
                     </td>
                     <td className="p-3">
@@ -219,9 +227,7 @@ export default function UserTable({
                         variant={user.is_active ? "default" : "destructive"}
                         className="capitalize"
                       >
-                        {user.is_active
-                          ? user.status?.toString() || "Active"
-                          : "Inactive"}
+                        {statusLabel(user.is_active ? user.status?.toString() || "active" : "inactive")}
                       </Badge>
                     </td>
                     {showStaffColumn && (
@@ -232,7 +238,7 @@ export default function UserTable({
                           onCheckedChange={(checked) =>
                             onToggleStaff(user.id, checked as boolean)
                           }
-                          title={user.is_staff ? "Remove from booking staff" : "Add to booking staff"}
+                          title={user.is_staff ? t("ui.table.staffRemove") : t("ui.table.staffAdd")}
                         />
                       </td>
                     )}
@@ -242,7 +248,7 @@ export default function UserTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => onView(user)}
-                          title="View Details"
+                          title={t("ui.table.view")}
                           className="h-8 w-8 p-0"
                         >
                           <Eye className="h-4 w-4" />
@@ -251,7 +257,7 @@ export default function UserTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => onEdit(user)}
-                          title="Edit User"
+                          title={t("ui.table.edit")}
                           className="h-8 w-8 p-0"
                         >
                           <Pencil className="h-4 w-4" />
@@ -260,7 +266,7 @@ export default function UserTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => onSendNewPassword(user)}
-                          title="Send New Password"
+                          title={t("sendNewPassword")}
                           className="h-8 w-8 p-0"
                         >
                           <RotateCw className="h-4 w-4" />
@@ -274,7 +280,7 @@ export default function UserTable({
                               user.is_active ? "inactive" : "active"
                             )
                           }
-                          title={user.is_active ? "Deactivate" : "Activate"}
+                          title={user.is_active ? t("ui.table.deactivate") : t("ui.table.activate")}
                           className="h-8 w-8 p-0"
                         >
                           {user.is_active ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
@@ -283,7 +289,7 @@ export default function UserTable({
                           variant="ghost"
                           size="sm"
                           onClick={() => onDelete(user.id)}
-                          title="Delete User"
+                          title={t("ui.table.delete")}
                           className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -301,9 +307,11 @@ export default function UserTable({
       {pagination.totalPages > 1 && (
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 p-4 border-t bg-muted/30">
           <div className="text-sm text-muted-foreground">
-            Showing {(pagination.currentPage - 1) * 20 + 1} to{" "}
-            {Math.min(pagination.currentPage * 20, pagination.count)} of{" "}
-            {pagination.count} users
+            {t("ui.table.showing", {
+              from: (pagination.currentPage - 1) * 20 + 1,
+              to: Math.min(pagination.currentPage * 20, pagination.count),
+              count: pagination.count,
+            })}
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -313,7 +321,7 @@ export default function UserTable({
               disabled={pagination.currentPage === 1}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Previous
+              {t("ui.table.previous")}
             </Button>
 
             {renderPagination()}
@@ -324,7 +332,7 @@ export default function UserTable({
               onClick={() => onPageChange(pagination.currentPage + 1)}
               disabled={pagination.currentPage === pagination.totalPages}
             >
-              Next
+              {t("ui.table.next")}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>

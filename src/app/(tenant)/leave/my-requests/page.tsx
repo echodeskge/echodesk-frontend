@@ -46,6 +46,7 @@ import { fetchMySubstitutes, type SubstituteAssignment } from "../_lib/hr-api"
 import {
   buildSubstitutesPayload,
   fieldErrors,
+  leaveTypeLimitError,
   validateSubstituteRows,
   type SubstituteDraftRow,
 } from "../_lib/substitutes-utils"
@@ -214,9 +215,16 @@ export default function MyRequestsPage() {
     } catch (error) {
       // Keep the dialog open so the user can fix the input and retry.
       console.error("Failed to create request:", error)
-      setFormErrors(fieldErrors(error))
+      // A per-type limit (e.g. one day off a month) comes with a code: show it translated.
+      const limit = leaveTypeLimitError(error)
+      const limitMessage = limit ? t(`hr.limits.${limit.limit}`, { max: limit.max }) : null
+      const errors = fieldErrors(error)
+      delete errors.code
+      delete errors.limit
+      delete errors.max
+      setFormErrors(limitMessage ? { ...errors, leave_type: limitMessage } : errors)
       toast.error(t("myRequests.submitFailed"), {
-        description: getApiErrorMessage(error) || undefined,
+        description: limitMessage || getApiErrorMessage(error) || undefined,
       })
     } finally {
       setSubmitting(false)
