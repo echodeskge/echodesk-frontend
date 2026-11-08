@@ -45,6 +45,21 @@ export function useConversationTickets(key: ConversationKey | null, options: { e
   });
 }
 
+/** Tickets linked to any conversation of one client (`?client_id=`). */
+export function useClientTickets(clientId: number | null | undefined, options: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: [...conversationTicketKeys.all, "client", clientId ?? 0] as const,
+    queryFn: async () => {
+      const response = await axios.get("/api/social/conversations/tickets/", { params: { client_id: clientId } });
+      const data = response.data as ConversationTicket[] | { results?: ConversationTicket[] };
+      return Array.isArray(data) ? data : data?.results ?? [];
+    },
+    enabled: !!clientId && (options.enabled ?? true),
+    staleTime: 30_000,
+    retry: 1,
+  });
+}
+
 /** Create (or return the already linked) ticket for a social conversation. */
 export function useCreateConversationTicket() {
   const queryClient = useQueryClient();
@@ -55,6 +70,7 @@ export function useCreateConversationTicket() {
     },
     onSuccess: (_data, key) => {
       queryClient.invalidateQueries({ queryKey: conversationTicketKeys.list(key) });
+      queryClient.invalidateQueries({ queryKey: [...conversationTicketKeys.all, "client"] });
     },
   });
 }
