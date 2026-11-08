@@ -35,8 +35,13 @@ export function EmailListContentHeader({
   filter,
   simple = false,
 }: EmailListContentHeaderProps) {
-  const { selectedEmailIds, handleToggleSelectAllEmails, handleClearSelection, currentConnectionId } =
-    useEmailContext();
+  const {
+    selectedEmailIds,
+    handleToggleSelectAllEmails,
+    handleToggleSelectEmail,
+    handleClearSelection,
+    currentConnectionId,
+  } = useEmailContext();
   const emailAction = useEmailAction();
   const moveEmail = useMoveEmail();
   const t = useTranslations("email.list");
@@ -48,7 +53,8 @@ export function EmailListContentHeader({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const inTrash = isTrashFolder(filter);
   const unreadOnly = searchParams.get("unread") === "1";
-  const { folders } = useSidebarFolders(currentConnectionId ?? emails[0]?.connection_id);
+  const foldersConnectionId = currentConnectionId ?? emails[0]?.connection_id;
+  const { folders } = useSidebarFolders(foldersConnectionId);
   const archiveFolder = folders.find((f) => f.role === "archive");
 
   const pageEmailIds = emails.map((e) => e.id);
@@ -89,21 +95,39 @@ export function EmailListContentHeader({
     );
   }
 
+  /**
+   * Archive each selected message into ITS mailbox's archive folder: with
+   * "All accounts" the loaded folder list belongs to one mailbox only, so
+   * other mailboxes get the canonical "Archive" name, which the backend
+   * resolves through that mailbox's own archive folder (special-use role).
+   * Failures keep their rows selected and are reported.
+   */
   async function handleBulkArchive() {
     if (!archiveFolder) return;
-    try {
-      for (const email of selectedEmails) {
+    let done = 0;
+    let failed = 0;
+    for (const email of selectedEmails) {
+      try {
         await moveEmail.mutateAsync({
           message_id: email.message_id,
           source_folder: email.folder || "INBOX",
-          target_folder: archiveFolder.name,
+          target_folder:
+            email.connection_id === foldersConnectionId ? archiveFolder.name : "Archive",
           connection_id: email.connection_id,
         });
+        done += 1;
+        handleToggleSelectEmail(email.id);
+      } catch {
+        failed += 1;
       }
-      handleClearSelection();
-      toast({ title: t("archivedCount", { count: selectedEmails.length }) });
-    } catch {
-      toast({ title: tView("moveFailed"), variant: "destructive" });
+    }
+    if (failed === 0) {
+      toast({ title: t("archivedCount", { count: done }) });
+    } else {
+      toast({
+        title: t("archivePartial", { done, failed }),
+        variant: "destructive",
+      });
     }
   }
 

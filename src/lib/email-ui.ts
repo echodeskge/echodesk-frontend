@@ -89,3 +89,39 @@ export function fullTime(iso: string | null | undefined, locale: string): string
   const time = date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", hour12: false });
   return `${date.getDate()} ${monthShort(date.getMonth(), locale)} ${date.getFullYear()}, ${time}`;
 }
+
+/**
+ * The message a conversation-level Reply / Reply all / Forward acts on: the
+ * latest message the customer sent (not our own Sent copy, which would make
+ * Reply address ourselves). Falls back to the opened message.
+ */
+export function replyTarget<T extends { id: number; is_from_business?: boolean | null; timestamp?: string | null }>(
+  messages: T[],
+  opened: T
+): T {
+  let best: T | null = null;
+  for (const m of messages) {
+    if (m.is_from_business) continue;
+    if (!best || (m.timestamp ?? "") >= (best.timestamp ?? "")) best = m;
+  }
+  return best ?? opened;
+}
+
+/**
+ * Head row per conversation for the cross-folder views (Assigned to me /
+ * Unassigned / Ticketed), which list messages: keep the newest message of each
+ * (connection, thread) — rows keep their incoming order (newest first).
+ */
+export function groupByThread<T extends { id: number; connection_id?: number | null; thread_id?: string | null }>(
+  rows: T[]
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const row of rows) {
+    const key = row.thread_id ? `${row.connection_id ?? ""}:${row.thread_id}` : `id:${row.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}

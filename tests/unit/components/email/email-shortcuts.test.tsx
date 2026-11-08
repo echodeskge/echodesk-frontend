@@ -14,8 +14,8 @@ vi.mock("@/app/(tenant)/email/_hooks/use-email-context", () => ({
 
 import { useEmailShortcuts } from "@/app/(tenant)/email/_hooks/use-email-shortcuts";
 
-function Harness({ openId }: { openId: number | null }) {
-  useEmailShortcuts({ filter: "INBOX", openId });
+function Harness({ openId, composing = false }: { openId: number | null; composing?: boolean }) {
+  useEmailShortcuts({ filter: "INBOX", openId, composing });
   return <input aria-label="field" />;
 }
 
@@ -54,5 +54,13 @@ describe("useEmailShortcuts", () => {
     fireEvent.keyDown(getByLabelText("field"), { key: "j" });
     fireEvent.keyDown(window, { key: "k", metaKey: true });
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("does nothing while the composer is open", () => {
+    render(<Harness openId={7} composing />);
+    for (const key of ["j", "k", "e", "r", "c"]) fireEvent.keyDown(window, { key });
+    expect(push).not.toHaveBeenCalled();
+    expect(archive).not.toHaveBeenCalled();
+    expect(reply).not.toHaveBeenCalled();
   });
 });

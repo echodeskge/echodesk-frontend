@@ -16,6 +16,8 @@ const users = [
   { id: 2, name: "Giorgi K", initials: "GK", email: "g@x.ge" },
 ];
 let featureKeys: unknown = ["ticket_management"];
+let permissions: string[] = ["create_tickets"];
+const assignableEnabled = vi.fn();
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, params?: Record<string, unknown>) =>
@@ -25,11 +27,14 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast }) }));
 vi.mock("sonner", () => ({ toast: { success: (...a: unknown[]) => sonnerSuccess(...a) } }));
 vi.mock("@/hooks/useUserProfile", () => ({
-  useUserProfile: () => ({ data: { feature_keys: featureKeys } }),
+  useUserProfile: () => ({ data: { feature_keys: featureKeys, permissions_list: permissions } }),
 }));
 vi.mock("@/hooks/api/useSocial", () => ({
   useAssignEmailThread: () => ({ mutate: assignMutate, isPending: false }),
-  useEmailAssignableUsers: () => ({ data: users, isLoading: false }),
+  useEmailAssignableUsers: (_id: number, opts?: { enabled?: boolean }) => {
+    assignableEnabled(opts?.enabled);
+    return { data: opts?.enabled ? users : [], isLoading: false };
+  },
   useCreateTicketFromEmail: () => ({ mutate: createMutate, isPending: false }),
 }));
 
@@ -45,6 +50,14 @@ function email(overrides: Partial<EmailMessage> = {}): EmailMessage {
 
 describe("EmailAssignMenu", () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it("loads the agent list only once the dropdown opens", async () => {
+    const user = userEvent.setup();
+    render(<EmailAssignMenu email={email()} />);
+    expect(assignableEnabled).toHaveBeenLastCalledWith(false);
+    await user.click(screen.getByTestId("email-assign"));
+    expect(assignableEnabled).toHaveBeenLastCalledWith(true);
+  });
 
   it("assigns the conversation to the picked agent", async () => {
     assignMutate.mockImplementation((_v, opts) => opts.onSuccess({ assignee: users[1] }));
@@ -93,6 +106,7 @@ describe("EmailCreateTicketButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     featureKeys = ["ticket_management"];
+    permissions = ["create_tickets"];
   });
 
   it("creates a ticket from the conversation", () => {
@@ -102,6 +116,21 @@ describe("EmailCreateTicketButton", () => {
     fireEvent.click(screen.getByTestId("email-create-ticket"));
     expect(createMutate).toHaveBeenCalledWith({ connection_id: 4, thread_id: "t-1" }, expect.any(Object));
     expect(sonnerSuccess).toHaveBeenCalledWith('ticketCreated:{"id":55}', expect.any(Object));
+  });
+
+  it("says 'already linked' when the thread already had a ticket", () => {
+    createMutate.mockImplementation((_v, opts) =>
+      opts.onSuccess({ ticket: { id: 9, title: "Hi" }, created: false })
+    );
+    render(<EmailCreateTicketButton email={email()} />);
+    fireEvent.click(screen.getByTestId("email-create-ticket"));
+    expect(sonnerSuccess).toHaveBeenCalledWith('ticketAlreadyLinked:{"id":9}', expect.any(Object));
+  });
+
+  it("is hidden without the create_tickets permission", () => {
+    permissions = ["view_all_tickets"];
+    render(<EmailCreateTicketButton email={email()} />);
+    expect(screen.queryByTestId("email-create-ticket")).toBeNull();
   });
 
   it("shows the linked ticket instead of the button", () => {

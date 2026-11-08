@@ -11,7 +11,8 @@ import {
   useEmailThreadMessages,
   useMoveEmail,
 } from "@/hooks/api/useSocial";
-import { defaultExpandedIds, sortThreadMessages } from "@/lib/email-reading";
+import { defaultExpandedIds, isTrashFolder, sortThreadMessages } from "@/lib/email-reading";
+import { replyTarget } from "@/lib/email-ui";
 import { useEmailContext } from "../_hooks/use-email-context";
 import { useSidebarFolders } from "../_hooks/use-sidebar-folders";
 import { EmailNotFound } from "./email-not-found";
@@ -46,6 +47,8 @@ export function EmailView({ emailId, filter }: EmailViewProps) {
   );
 
   const emailAction = useEmailAction();
+  // Conversation-level reply goes to the customer's latest message.
+  const target = useMemo(() => (email ? replyTarget(messages, email) : undefined), [messages, email]);
 
   // Mark the messages shown expanded on open (opened + latest) as read.
   const unreadOnOpen = useMemo(() => {
@@ -65,14 +68,20 @@ export function EmailView({ emailId, filter }: EmailViewProps) {
   const qs = searchParams.toString();
   const listHref = `/email/${encodeURIComponent(filter)}${qs ? `?${qs}` : ""}`;
 
-  // Keyboard shortcuts (E archive, R reply) act on this conversation.
+  // Keyboard shortcuts (E archive — restore in Trash, R reply) act on this conversation.
   useEffect(() => {
     if (!email) return;
     const { archiveFolder } = archiveTargets(email, folders);
+    const replyId = target?.id ?? email.id;
     paneActions.current = {
-      reply: () => router.push(`/email/compose?reply_to=${email.id}`),
-      archive:
-        archiveFolder && email.message_id
+      reply: () => router.push(`/email/compose?reply_to=${replyId}`),
+      archive: isTrashFolder(email.folder)
+        ? () =>
+            emailAction.mutate(
+              { message_ids: [email.id], action: "restore" },
+              { onSuccess: () => router.push(listHref) }
+            )
+        : archiveFolder && email.message_id
           ? () =>
               moveEmail.mutate(
                 {
@@ -88,7 +97,7 @@ export function EmailView({ emailId, filter }: EmailViewProps) {
     return () => {
       paneActions.current = {};
     };
-  }, [email, folders, listHref]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [email, folders, listHref, target]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const backBar = (
     <button
@@ -135,7 +144,7 @@ export function EmailView({ emailId, filter }: EmailViewProps) {
         </div>
         <EmailThread key={emailId} messages={messages} openedId={emailId} filter={filter} />
         <div className="mt-4">
-          <EmailViewContentFooter email={email} filter={filter} />
+          <EmailViewContentFooter email={target ?? email} filter={filter} />
         </div>
       </div>
     </>

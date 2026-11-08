@@ -11,11 +11,20 @@ import { useEmailContext } from "./use-email-context";
  * R reply, C compose. Ignored while typing in a field or with a modifier key
  * (⌘K stays the global search).
  */
-export function useEmailShortcuts({ filter, openId }: { filter: string; openId: number | null }) {
+export function useEmailShortcuts({
+  filter,
+  openId,
+  composing = false,
+}: {
+  filter: string;
+  openId: number | null;
+  /** The composer is open in the pane: no shortcut may navigate away from it. */
+  composing?: boolean;
+}) {
   const router = useRouter();
   const { listOrder, paneActions } = useEmailContext();
-  const state = useRef({ filter, openId, listOrder });
-  state.current = { filter, openId, listOrder };
+  const state = useRef({ filter, openId, listOrder, composing });
+  state.current = { filter, openId, listOrder, composing };
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -23,7 +32,8 @@ export function useEmailShortcuts({ filter, openId }: { filter: string; openId: 
       if (isTypingTarget(e.target)) return;
       // Dialogs / menus own their keys.
       if (document.querySelector('[role="dialog"], [role="menu"], [role="alertdialog"]')) return;
-      const { filter: f, openId: id, listOrder: order } = state.current;
+      const { filter: f, openId: id, listOrder: order, composing: inComposer } = state.current;
+      if (inComposer) return;
       const key = e.key.toLowerCase();
       const open = (target: number | null) => {
         if (target != null) router.push(`/email/${encodeURIComponent(f)}/${target}`);

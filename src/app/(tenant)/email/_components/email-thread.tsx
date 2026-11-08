@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useFolderLabel } from "../_hooks/use-folder-label";
 import { EmailViewContentBody } from "./email-view-content-body";
 import { EmailViewContentHeader } from "./email-view-content-header";
+import { EmailViewContentFooter } from "./email-view-content-footer";
 
 interface EmailThreadProps {
   /** Conversation, oldest → newest (see sortThreadMessages). */
@@ -28,7 +29,7 @@ interface EmailThreadProps {
  * newest. The latest (and the one opened) start expanded; each card's header
  * toggles it.
  */
-export function EmailThread({ messages, openedId }: EmailThreadProps) {
+export function EmailThread({ messages, openedId, filter }: EmailThreadProps) {
   const t = useTranslations("email.view");
   const folderLabel = useFolderLabel();
   const defaults = useMemo(
@@ -97,6 +98,11 @@ export function EmailThread({ messages, openedId }: EmailThreadProps) {
             {expanded ? (
               <div className="pb-3.5 pe-3.5 ps-3.5 pt-1 sm:ps-14">
                 <EmailViewContentBody email={message} />
+                {collapsible && (
+                  <div className="mt-2 flex justify-end">
+                    <EmailViewContentFooter email={message} filter={filter} compact />
+                  </div>
+                )}
               </div>
             ) : (
               <p className="truncate pb-2.5 pe-3.5 ps-14 text-xs text-muted-foreground">

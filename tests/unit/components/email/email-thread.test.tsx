@@ -10,6 +10,8 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
   useLocale: () => "en",
 }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 // Each expanded message renders its body — stub it to a marker.
 vi.mock("@/app/(tenant)/email/_components/email-view-content-body", () => ({
   EmailViewContentBody: ({ email }: { email: EmailMessage }) => (
@@ -89,5 +91,15 @@ describe("EmailThread", () => {
     render(<EmailThread messages={[received]} openedId={1} filter="INBOX" />);
     expect(screen.getByTestId("expanded-1")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "collapse" })).toBeDisabled();
+  });
+
+  it("gives each expanded card of a conversation its own reply / forward", () => {
+    const messages = sortThreadMessages(
+      [msg(1, "2026-01-01T10:00:00Z"), msg(2, "2026-01-02T10:00:00Z")],
+      msg(2, "2026-01-02T10:00:00Z")
+    );
+    render(<EmailThread messages={messages} openedId={1} filter="INBOX" />);
+    fireEvent.click(screen.getAllByLabelText("forward")[0]);
+    expect(push).toHaveBeenCalledWith("/email/compose?forward=1");
   });
 });

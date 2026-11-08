@@ -142,6 +142,37 @@ describe("EmailViewContentBody", () => {
       expect(screen.queryByText("imagesBlocked")).toBeNull();
     });
 
+    it("shows images in mail our own mailbox sent (signature logos)", () => {
+      const email = makeEmail({
+        is_from_business: true,
+        body_html: '<p>x</p><img src="https://cdn.example.com/logo.png">',
+      });
+      const { container } = render(<EmailViewContentBody email={email} />);
+      expect(frameDoc(container).querySelector("img")?.getAttribute("src")).toBe("https://cdn.example.com/logo.png");
+      expect(screen.queryByText("imagesBlocked")).toBeNull();
+    });
+
+    it("always loads images hosted on our own storage", () => {
+      const url = "https://echodesk-spaces.fra1.digitaloceanspaces.com/media/sig/logo.png";
+      const email = makeEmail({ body_html: `<p>x</p><img src="${url}">` });
+      const { container } = render(<EmailViewContentBody email={email} />);
+      expect(frameDoc(container).querySelector("img")?.getAttribute("src")).toBe(url);
+      expect(screen.queryByText("imagesBlocked")).toBeNull();
+    });
+
+    it("remembers 'always show' for the sender", async () => {
+      window.localStorage.clear();
+      const html = '<p>x</p><img src="https://tracker.example.com/p.gif">';
+      const first = render(<EmailViewContentBody email={makeEmail({ from_email: "shop@x.ge", body_html: html })} />);
+      await userEvent.click(screen.getByText("alwaysShowImages"));
+      first.unmount();
+      const { container } = render(
+        <EmailViewContentBody email={makeEmail({ id: 99, from_email: "SHOP@x.ge", body_html: html })} />
+      );
+      expect(frameDoc(container).querySelector("img")?.getAttribute("src")).toBe("https://tracker.example.com/p.gif");
+      window.localStorage.clear();
+    });
+
     it("maps cid: images to attachment urls and hides them from the chips", () => {
       const email = makeEmail({
         body_html: '<img src="cid:logo@01D9">',

@@ -323,9 +323,25 @@ function formatAddressList(list: unknown): string {
   return Array.isArray(list) ? list.map((i) => formatAddress(i as AddressLike)).filter(Boolean).join("; ") : "";
 }
 
+// Chrome ships no Georgian month / weekday names in Intl ("2026 M11 8, Sun"),
+// so the quoted header is written out by hand for ka.
+const KA_MONTHS_LONG = [
+  "იანვარი", "თებერვალი", "მარტი", "აპრილი", "მაისი", "ივნისი",
+  "ივლისი", "აგვისტო", "სექტემბერი", "ოქტომბერი", "ნოემბერი", "დეკემბერი",
+];
+const KA_WEEKDAYS_LONG = ["კვირა", "ორშაბათი", "სამშაბათი", "ოთხშაბათი", "ხუთშაბათი", "პარასკევი", "შაბათი"];
+
+/** "ორშაბათი, 9 ნოემბერი 2026, 14:05" */
+export function formatSentDateKa(date: Date): string {
+  const hh = String(date.getHours()).padStart(2, "0");
+  const mm = String(date.getMinutes()).padStart(2, "0");
+  return `${KA_WEEKDAYS_LONG[date.getDay()]}, ${date.getDate()} ${KA_MONTHS_LONG[date.getMonth()]} ${date.getFullYear()}, ${hh}:${mm}`;
+}
+
 function formatSentDate(timestamp: string, locale?: string): string {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return timestamp || "";
+  if (locale && locale.toLowerCase().startsWith("ka")) return formatSentDateKa(date);
   try {
     return date.toLocaleString(locale, {
       weekday: "long",

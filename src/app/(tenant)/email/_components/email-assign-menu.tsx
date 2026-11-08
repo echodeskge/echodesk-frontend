@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Check, ChevronDown, UserPlus, UserX } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { isAxiosError } from "axios";
@@ -27,7 +28,10 @@ export function EmailAssignMenu({ email }: { email: EmailMessage }) {
   const t = useTranslations("email.view");
   const { toast } = useToast();
   const assign = useAssignEmailThread();
-  const { data: users = [], isLoading } = useEmailAssignableUsers(email.connection_id);
+  // The agent list loads only once the dropdown is opened (it is one request
+  // per mailbox, cached for a minute) — not on every message opened.
+  const [open, setOpen] = useState(false);
+  const { data: users = [], isLoading } = useEmailAssignableUsers(email.connection_id, { enabled: open });
   const current = email.assignee ?? null;
 
   function choose(userId: number | null) {
@@ -54,7 +58,7 @@ export function EmailAssignMenu({ email }: { email: EmailMessage }) {
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button type="button" className={tool} disabled={!email.thread_id || assign.isPending} data-testid="email-assign">
           {current ? (

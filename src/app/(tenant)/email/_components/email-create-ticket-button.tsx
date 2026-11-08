@@ -8,6 +8,7 @@ import { isAxiosError } from "axios";
 import { useCreateTicketFromEmail, type EmailMessage } from "@/hooks/api/useSocial";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { useToast } from "@/hooks/use-toast";
+import { profileHasPermission } from "@/lib/backendPermissions";
 import { toast as sonnerToast } from "sonner";
 import { EmailTicketChip } from "./email-ticket-chip";
 
@@ -27,7 +28,7 @@ export function hasFeatureKey(featureKeys: unknown, key: string): boolean {
   return Array.isArray(keys) && keys.includes(key);
 }
 
-/** Design "Create ticket" (or the linked ticket's chip). Needs ticket_management. */
+/** Design "Create ticket" (or the linked ticket's chip). Needs ticket_management + create_tickets (backend has_permission). */
 export function EmailCreateTicketButton({ email }: { email: EmailMessage }) {
   const t = useTranslations("email.view");
   const router = useRouter();
@@ -39,14 +40,15 @@ export function EmailCreateTicketButton({ email }: { email: EmailMessage }) {
     return <EmailTicketChip ticket={email.ticket} size="md" link className="mx-1" />;
   }
   if (!hasFeatureKey(profile?.feature_keys, "ticket_management")) return null;
+  if (!profileHasPermission(profile, "create_tickets")) return null;
 
   function handleCreate() {
     if (!email.thread_id) return;
     create.mutate(
       { connection_id: email.connection_id, thread_id: email.thread_id },
       {
-        onSuccess: ({ ticket }) =>
-          sonnerToast.success(t("ticketCreated", { id: ticket.id }), {
+        onSuccess: ({ ticket, created }) =>
+          sonnerToast.success(t(created === false ? "ticketAlreadyLinked" : "ticketCreated", { id: ticket.id }), {
             action: { label: t("openTicket"), onClick: () => router.push(`/tickets/${ticket.id}`) },
           }),
         onError: (error) => {

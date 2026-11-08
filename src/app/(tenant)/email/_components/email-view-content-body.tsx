@@ -7,7 +7,12 @@ import type { EmailMessage } from "@/hooks/api/useSocial";
 
 import { Button } from "@/components/ui/button";
 import { formatFileSize } from "@/lib/utils";
-import { prepareEmailHtml } from "@/lib/email-reading";
+import {
+  addTrustedImageSender,
+  isTrustedImageSender,
+  mediaOrigins,
+  prepareEmailHtml,
+} from "@/lib/email-reading";
 
 interface EmailViewContentBodyProps {
   email: EmailMessage;
@@ -152,8 +157,16 @@ export function EmailHtmlFrame({
 export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
   const hasHtml = !!email.body_html && email.body_html.trim().length > 0;
   const [showQuoted, setShowQuoted] = useState(true);
-  // Remote images are blocked per message until the user asks for them.
-  const [allowRemoteImages, setAllowRemoteImages] = useState(false);
+  // Remote images are blocked per message until the user asks for them —
+  // except in mail our own mailbox sent (our signature logos) and from
+  // senders the user chose to always trust. Images on our own file storage
+  // always load (trustedOrigins).
+  const autoAllow = !!email.is_from_business || isTrustedImageSender(email.from_email);
+  const [allowRemoteImages, setAllowRemoteImages] = useState(autoAllow);
+  useEffect(() => {
+    setAllowRemoteImages(!!email.is_from_business || isTrustedImageSender(email.from_email));
+  }, [email.id, email.is_from_business, email.from_email]);
+  const trustedOrigins = useMemo(() => mediaOrigins(), []);
   const t = useTranslations("email.view");
 
   const { body, quoted } = useMemo(
@@ -167,10 +180,11 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
         ? prepareEmailHtml(wrapHtmlQuotedSections(email.body_html), {
             attachments: email.attachments,
             allowRemoteImages,
+            trustedOrigins,
             extraCss: IFRAME_QUOTE_CSS,
           })
         : null,
-    [hasHtml, email.body_html, email.attachments, allowRemoteImages]
+    [hasHtml, email.body_html, email.attachments, allowRemoteImages, trustedOrigins]
   );
 
   // Inline images shown in the body (cid:) are not repeated as chips.
@@ -199,6 +213,20 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
               >
                 {t("showImages")}
               </Button>
+              {email.from_email && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => {
+                    addTrustedImageSender(email.from_email);
+                    setAllowRemoteImages(true);
+                  }}
+                >
+                  {t("alwaysShowImages")}
+                </Button>
+              )}
             </div>
           )}
           <EmailHtmlFrame

@@ -443,6 +443,66 @@ export function isRemoteUrl(value: string | null | undefined): boolean {
   return !!value && REMOTE_URL.test(value);
 }
 
+/** True when `url` is an https URL on one of `origins` (exact origin match). */
+export function isTrustedUrl(url: string | null | undefined, origins: readonly string[]): boolean {
+  if (!url || origins.length === 0) return false;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === "https:" && origins.includes(parsed.origin);
+  } catch {
+    return false;
+  }
+}
+
+const DEFAULT_MEDIA_ORIGINS = [
+  "https://echodesk-spaces.fra1.digitaloceanspaces.com",
+  "https://echodesk-spaces.fra1.cdn.digitaloceanspaces.com",
+];
+
+/** Our own file-storage origins (NEXT_PUBLIC_MEDIA_ORIGINS, comma separated, overrides the default). */
+export function mediaOrigins(): string[] {
+  const raw = process.env.NEXT_PUBLIC_MEDIA_ORIGINS;
+  if (raw && raw.trim()) {
+    return raw.split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean);
+  }
+  return DEFAULT_MEDIA_ORIGINS;
+}
+
+const TRUSTED_SENDERS_KEY = "echodesk.email.trustedImageSenders";
+
+function normalizeSender(email: string | null | undefined): string {
+  return (email || "").trim().toLowerCase();
+}
+
+/** Senders whose remote images the user chose to always show (this browser only). */
+export function getTrustedImageSenders(): string[] {
+  try {
+    const raw = window.localStorage.getItem(TRUSTED_SENDERS_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function isTrustedImageSender(email: string | null | undefined): boolean {
+  const key = normalizeSender(email);
+  return !!key && getTrustedImageSenders().includes(key);
+}
+
+export function addTrustedImageSender(email: string | null | undefined): void {
+  const key = normalizeSender(email);
+  if (!key) return;
+  try {
+    const list = getTrustedImageSenders();
+    if (!list.includes(key)) {
+      window.localStorage.setItem(TRUSTED_SENDERS_KEY, JSON.stringify([...list, key].slice(-500)));
+    }
+  } catch {
+    /* storage unavailable: the choice just isn't remembered */
+  }
+}
+
 /** Replace remote url(...) references in CSS text; returns the new text and the count. */
 export function blockRemoteCssUrls(css: string): { css: string; count: number } {
   let count = 0;
@@ -459,8 +519,11 @@ export function blockRemoteCssUrls(css: string): { css: string; count: number } 
  * backs up the markup rewriting above against forms it can't see (CSS
  * escapes such as `\\75rl(`, `@\\69mport`, …), so opens never reach trackers.
  */
-export function blockingCsp(attachments?: EmailAttachmentLike[] | null): string {
-  const origins = new Set<string>();
+export function blockingCsp(
+  attachments?: EmailAttachmentLike[] | null,
+  trustedOrigins: readonly string[] = []
+): string {
+  const origins = new Set<string>(trustedOrigins.filter((o) => /^https:\/\//.test(o)));
   for (const a of attachments ?? []) {
     const url = a?.url;
     if (!url || !REMOTE_URL.test(url)) continue;
@@ -490,6 +553,11 @@ export interface PreparedEmailHtml {
 export interface PrepareEmailHtmlOptions {
   attachments?: EmailAttachmentLike[] | null;
   allowRemoteImages?: boolean;
+  /**
+   * Origins whose <img src> always loads (our own file storage): signature
+   * logos and inline images we host are not tracking pixels.
+   */
+  trustedOrigins?: readonly string[];
   /** Extra CSS appended inside the iframe (quote styling etc.). */
   extraCss?: string;
 }
@@ -512,7 +580,7 @@ const BASE_IFRAME_CSS = `
  */
 export function prepareEmailHtml(
   html: string,
-  { attachments, allowRemoteImages = false, extraCss = "" }: PrepareEmailHtmlOptions = {}
+  { attachments, allowRemoteImages = false, trustedOrigins = [], extraCss = "" }: PrepareEmailHtmlOptions = {}
 ): PreparedEmailHtml {
   let blockedCount = 0;
   const inlineUrls = new Set<string>();
@@ -533,7 +601,7 @@ export function prepareEmailHtml(
         } else {
           node.removeAttribute("src");
         }
-      } else if (!allowRemoteImages && isRemoteUrl(src)) {
+      } else if (!allowRemoteImages && isRemoteUrl(src) && !isTrustedUrl(src, trustedOrigins)) {
         node.setAttribute("data-echodesk-blocked-src", src);
         node.removeAttribute("src");
         blockedCount += 1;
@@ -606,7 +674,7 @@ export function prepareEmailHtml(
 
   const srcDoc =
     "<!doctype html><html><head><meta charset=\"utf-8\">" +
-    (allowRemoteImages ? "" : `<meta http-equiv="Content-Security-Policy" content="${blockingCsp(attachments)}">`) +
+    (allowRemoteImages ? "" : `<meta http-equiv="Content-Security-Policy" content="${blockingCsp(attachments, trustedOrigins)}">`) +
     "<meta name=\"color-scheme\" content=\"light\">" +
     "<base target=\"_blank\">" +
     `<style>${BASE_IFRAME_CSS}${extraCss}</style>` +

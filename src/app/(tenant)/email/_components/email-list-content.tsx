@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+import { groupByThread } from "@/lib/email-ui";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Inbox, Loader2 } from "lucide-react";
@@ -101,14 +102,38 @@ export function EmailListContent({ filter, openId = null }: EmailListContentProp
       : rows;
   }, [isDrafts, draftsData, currentConnectionId]);
 
+  const unreadOnly = searchParams.get("unread") === "1";
+  const isView = isEmailViewRoute(filter);
+  // The opened row as last seen in the list: with the Unread toggle on,
+  // opening a message marks it read and the refetch would drop it — keep it
+  // in place until another message is opened (J/K and Newer/Older keep
+  // their position).
+  const stickyRef = useRef<{ email: EmailMessage; index: number } | null>(null);
+
   const emails: EmailMessage[] = useMemo(() => {
     if (isDrafts) return [];
-    return (
+    const fetched = (
       messagesData?.pages?.flatMap(
         (page) => (page as PaginatedEmailMessageList).results ?? []
       ) ?? []
     ) as EmailMessage[];
-  }, [isDrafts, messagesData]);
+    // Cross-folder views list messages: one row per conversation.
+    const rows = isView ? groupByThread(fetched) : fetched;
+    if (openId == null || stickyRef.current?.email.id !== openId) {
+      stickyRef.current = null;
+    }
+    const at = openId == null ? -1 : rows.findIndex((e) => e.id === openId);
+    if (at >= 0) {
+      stickyRef.current = { email: rows[at], index: at };
+      return rows;
+    }
+    if (unreadOnly && stickyRef.current) {
+      const out = rows.slice();
+      out.splice(Math.min(stickyRef.current.index, out.length), 0, stickyRef.current.email);
+      return out;
+    }
+    return rows;
+  }, [isDrafts, messagesData, isView, openId, unreadOnly]);
 
   const orderKey = emails.map((e) => e.id).join(",");
   useEffect(() => {

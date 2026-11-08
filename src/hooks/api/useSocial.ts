@@ -2247,7 +2247,7 @@ export function useCreateTicketFromEmail() {
   return useMutation({
     mutationFn: async (data: CreateTicketFromEmailRequest) => {
       const response = await axios.post('/api/social/email/threads/create-ticket/', data);
-      return response.data as { ticket: EmailThreadTicket };
+      return response.data as { ticket: EmailThreadTicket; created?: boolean };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });

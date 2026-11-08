@@ -5495,7 +5495,8 @@
       "emptyFolder": "ეს საქაღალდე ცარიელია",
       "nothingHere": "აქ არაფერია",
       "footerCount": "{loaded} / {total} წერილი",
-      "assignedTo": "მიბმულია: {name}"
+      "assignedTo": "მიბმულია: {name}",
+      "archivePartial": "დაარქივდა {done}, ვერ მოხერხდა {failed} — ისინი მონიშნული რჩება"
     },
     "view": {
       "backToList": "სიაში დაბრუნება",
@@ -5547,7 +5548,9 @@
       "createTicket": "ტიკეტის შექმნა",
       "ticketCreated": "ტიკეტი #{id} შეიქმნა",
       "openTicket": "გახსნა",
-      "ticketFailed": "ტიკეტი ვერ შეიქმნა"
+      "ticketFailed": "ტიკეტი ვერ შეიქმნა",
+      "alwaysShowImages": "ყოველთვის ჩვენება ამ გამგზავნისგან",
+      "ticketAlreadyLinked": "უკვე დაკავშირებულია ტიკეტთან #{id}"
     },
     "compose": {
       "title": "ახალი წერილი",

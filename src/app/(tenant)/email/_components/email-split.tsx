@@ -41,7 +41,7 @@ export function EmailSplit({ filter, children, paneOpen }: EmailSplitProps) {
     handleClearSelection();
   }, [filter, handleClearSelection]);
 
-  useEmailShortcuts({ filter, openId });
+  useEmailShortcuts({ filter, openId, composing: !!paneOpen || !!pathname?.endsWith("/compose") });
 
   return (
     <>

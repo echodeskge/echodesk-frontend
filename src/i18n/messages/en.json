@@ -5652,7 +5652,8 @@
       "emptyFolder": "This folder is empty",
       "nothingHere": "Nothing here",
       "footerCount": "{loaded} of {total} emails",
-      "assignedTo": "Assigned to {name}"
+      "assignedTo": "Assigned to {name}",
+      "archivePartial": "Archived {done}, {failed} failed — they stay selected"
     },
     "view": {
       "backToList": "Back to list",
@@ -5704,7 +5705,9 @@
       "createTicket": "Create ticket",
       "ticketCreated": "Ticket #{id} created",
       "openTicket": "Open",
-      "ticketFailed": "Couldn't create the ticket"
+      "ticketFailed": "Couldn't create the ticket",
+      "alwaysShowImages": "Always show from this sender",
+      "ticketAlreadyLinked": "Already linked to ticket #{id}"
     },
     "compose": {
       "title": "Compose Mail",
