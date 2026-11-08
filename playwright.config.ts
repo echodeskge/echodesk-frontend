@@ -18,7 +18,20 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /\.mobile\.spec\.ts$/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      // Mocked mobile checks (390px, touch). Only `*.mobile.spec.ts` files run
+      // here, so the desktop suite isn't executed twice.
+      name: "mobile",
+      testMatch: /\.mobile\.spec\.ts$/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        isMobile: true,
+      },
     },
   ],
   webServer: {
