@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import WhatsAppTemplatesList from "@/components/social/WhatsAppTemplatesList";
-
-export default function TemplatesPage() {
-  return <WhatsAppTemplatesList />;
+// Templates moved to Settings → Templates.
+export default function TemplatesRedirect() {
+  redirect("/settings/templates");
 }

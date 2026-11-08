@@ -301,6 +301,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     "settings/security": "settingsSecurity",
     "settings/social": "settingsSocial",
     "settings/social/connections": "settingsSocialConnections",
+    "settings/templates": "settingsTemplates",
     "settings/social/auto-posting": "settingsSocialAutoPosting",
     "settings/social/rating-statistics": "settingsSocialRatingStatistics",
     "settings/calls": "settingsCalls",
@@ -453,6 +454,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
     // /social/connections only forwards to /settings/social/connections (OAuth callbacks land here)
     if (currentPath === '/social/connections') {
+      return true;
+    }
+
+    // Old Templates links only forward to /settings/templates
+    if (currentPath === '/social/templates' || currentPath === '/social/templates/create') {
       return true;
     }
 

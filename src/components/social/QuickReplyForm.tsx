@@ -104,10 +104,10 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
       shortcut: shortcut.trim(),
       category: category.trim(),
       platforms: selectedPlatforms,
-      position: 0,
     };
 
     if (editingReply) {
+      // Editing keeps the reply's place in the order (no position reset).
       updateQuickReply.mutate(
         { id: editingReply.id, data },
         {
@@ -127,7 +127,7 @@ export function QuickReplyForm({ editingReply, onSuccess, onCancel }: QuickReply
         }
       );
     } else {
-      createQuickReply.mutate(data, {
+      createQuickReply.mutate({ ...data, position: 0 }, {
         onSuccess: () => {
           toast({
             title: t("created"),

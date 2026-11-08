@@ -87,6 +87,13 @@ const settingsNav: SettingsNavItem[] = [
     featureKey: "social_integrations",
   },
   {
+    id: "templates",
+    href: "/settings/templates",
+    icon: FileText,
+    labelKey: "nav.templates",
+    featureKey: "social_integrations",
+  },
+  {
     id: "social-rating-statistics",
     href: "/settings/social/rating-statistics",
     icon: BarChart3,

@@ -367,7 +367,8 @@
       "kpi": "Monthly goals and results",
       "payroll": "Salaries, substitution pay and the monthly payroll report",
       "myPayroll": "Your monthly pay breakdown",
-      "attendance": "Team attendance by day"
+      "attendance": "Team attendance by day",
+      "settingsTemplates": "WhatsApp message templates and saved replies"
     },
     "settingsSocial": "Social Settings",
     "settingsCalls": "Calls Settings",
@@ -408,7 +409,8 @@
     "attendance": "Attendance",
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode",
-    "clearSearch": "Clear search"
+    "clearSearch": "Clear search",
+    "settingsTemplates": "Templates"
   },
   "bugReport": {
     "title": "Report a Bug",
@@ -1649,7 +1651,40 @@
       "users": "Users",
       "groups": "Groups",
       "notifications": "Notifications",
-      "pbx": "PBX"
+      "pbx": "PBX",
+      "templates": "Templates"
+    },
+    "templatesPage": {
+      "title": "Templates",
+      "whatsappDescription": "Approved WhatsApp message templates for starting conversations.",
+      "repliesDescription": "Saved replies agents insert in chats and emails. Variables such as the customer's name are filled in when used.",
+      "tabs": {
+        "whatsapp": "WhatsApp templates",
+        "replies": "Saved replies"
+      },
+      "newTemplate": "New template",
+      "windowInfo": "WhatsApp requires an approved template to start a conversation with a number that hasn't messaged you in the last 24 hours.",
+      "use": "Use",
+      "useNeedsApproval": "Only approved templates can be sent",
+      "deleteTemplate": "Delete template {name}",
+      "deleteTitle": "Delete this template?",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "formSection": "Template",
+      "replies": {
+        "new": "New reply",
+        "colTitle": "Reply",
+        "colChannels": "Channels",
+        "colCategory": "Category",
+        "colUses": "Uses",
+        "moveUp": "Move up",
+        "moveDown": "Move down",
+        "reorderFailed": "Couldn't change the order",
+        "emptyHint": "Create replies your team uses often — they appear in the chat and email composers.",
+        "footer": "{count, plural, one {# reply} other {# replies}} · click a row to edit",
+        "deleteTitle": "Delete this saved reply?",
+        "deleteBody": "\"{title}\" will no longer be offered in the composers."
+      }
     }
   },
   "users": {

@@ -267,14 +267,7 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
     requiredFeatureKey: "social_integrations",
     isPremium: true,
   },
-  {
-    // WhatsApp message templates — create/sync approved templates used to
-    // start conversations with numbers that never messaged us.
-    id: "social/templates",
-    icon: "FileText",
-    requiredFeatureKey: "social_integrations",
-    isPremium: true,
-  },
+  // social/templates (WhatsApp templates + saved replies) moved to /settings/templates
   // social/connections, auto-posting, rating-statistics moved to /settings/social
   {
     id: "settings",
@@ -327,6 +320,12 @@ export const navigationConfig: Omit<NavigationItem, 'label' | 'description'>[] =
         id: "settings/social/auto-posting",
         icon: "Sparkles",
         requiredFeatureKey: "settings",
+      },
+      {
+        // WhatsApp message templates + saved replies (was the top-level "Templates" item).
+        id: "settings/templates",
+        icon: "FileText",
+        requiredFeatureKey: "social_integrations",
       },
       {
         id: "settings/social/rating-statistics",

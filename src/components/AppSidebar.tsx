@@ -174,7 +174,6 @@ const GROUP_OF: Record<string, NavGroup> = {
   "social/messages": "channels",
   "email": "channels",
   "social/clients": "channels",
-  "social/templates": "channels",
 }
 export function navGroupOf(id: string): NavGroup {
   if (GROUP_OF[id]) return GROUP_OF[id]
