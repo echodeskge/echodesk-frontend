@@ -29,6 +29,9 @@
   /* Call / softphone green from the EchoDesk Redesign (brighter than
      --success in dark mode). Used as bg-ed-green, text-ed-green, ... */
   --color-ed-green: hsl(var(--green));
+  /* Same green under the plain name the tickets redesign uses (checklist
+     progress bar, done steps): bg-green, text-green. --success is untouched. */
+  --color-green: hsl(var(--green));
 
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
@@ -191,6 +194,15 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Popover shadows from the EchoDesk Redesign (tickets): large for the board
+   switcher and filter popovers, small for the detail menu and pickers. */
+@utility shadow-popover-lg {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+@utility shadow-popover-sm {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 /* Keeps content clear of the floating dock launchers (bottom-right). */
