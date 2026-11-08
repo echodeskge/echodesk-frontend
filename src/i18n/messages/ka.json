@@ -7369,7 +7369,9 @@
         "cash": "ნაღდი",
         "card": "ბარათი",
         "bank_transfer": "საბანკო გადარიცხვა",
-        "online": "ონლაინ",
+        "paypal": "PayPal",
+        "stripe": "Stripe",
+        "manual": "ხელით",
         "other": "სხვა"
       },
       "reference": "საიდენტიფიკაციო ნომერი",

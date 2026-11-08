@@ -7369,7 +7369,9 @@
         "cash": "Cash",
         "card": "Card",
         "bank_transfer": "Bank transfer",
-        "online": "Online",
+        "paypal": "PayPal",
+        "stripe": "Stripe",
+        "manual": "Manual",
         "other": "Other"
       },
       "reference": "Reference",
