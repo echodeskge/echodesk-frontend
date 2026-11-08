@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslations } from "next-intl";
 import { Phone, PhoneMissed, X } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useCall } from "@/contexts/CallContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -21,9 +20,136 @@ import {
   onDockPopoverOpened,
 } from "@/components/TeamChat/floatingDock";
 import { IncomingCallNotification } from "./IncomingCallNotification";
+import { DockBadge, DockDot, dockLauncherClass } from "./dock-launcher";
+
+export type PhoneLauncherState = "in-call" | "ringing" | "ready" | "offline";
+
+export function phoneLauncherState(opts: { hasActiveCall: boolean; isRinging: boolean; sipRegistered: boolean }): PhoneLauncherState {
+  if (opts.isRinging) return "ringing";
+  if (opts.hasActiveCall) return "in-call";
+  return opts.sipRegistered ? "ready" : "offline";
+}
+
+const STATE_LABEL: Record<PhoneLauncherState, "phoneInCall" | "phoneRinging" | "phoneReady" | "phoneOffline"> = {
+  "in-call": "phoneInCall",
+  ringing: "phoneRinging",
+  ready: "phoneReady",
+  offline: "phoneOffline",
+};
+
+/**
+ * The floating phone launcher (dock slot 1). Presentational.
+ * - ringing: green with the ed-ring halo
+ * - in call: green, red dot
+ * - ready (SIP registered): green status dot
+ * - missed calls: destructive count badge (replaces the dot)
+ */
+export function PhoneLauncher({
+  state,
+  open,
+  missedCount,
+  onClick,
+}: {
+  state: PhoneLauncherState;
+  open: boolean;
+  missedCount: number;
+  onClick: () => void;
+}) {
+  const t = useTranslations("calls.dock");
+  const green = state === "in-call" || state === "ringing";
+  const label = [
+    open ? t("closePhone") : t("openPhone"),
+    t(STATE_LABEL[state]),
+    missedCount > 0 ? t("missedCount", { count: missedCount }) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <button
+      type="button"
+      className={cn(dockLauncherClass(open), "fixed", green && "bg-ed-green text-white", state === "ringing" && "motion-safe:animate-ed-ring")}
+      style={{
+        right: DOCK.RIGHT,
+        bottom: dockSlotBottom(DIALPAD_SLOT),
+        zIndex: DOCK.Z_INDEX.launcher,
+        width: DOCK.SLOT_SIZE,
+        height: DOCK.SLOT_SIZE,
+        ...(state === "ringing" ? ({ ["--ring-c" as string]: "var(--green)" } as CSSProperties) : null),
+      }}
+      onClick={onClick}
+      aria-label={label}
+      aria-expanded={open}
+      aria-haspopup="dialog"
+      title={label}
+      data-dialpad-trigger
+      data-phone-state={state}
+    >
+      <Phone className="h-4 w-4" aria-hidden />
+      {missedCount > 0 ? (
+        <DockBadge count={missedCount} testId="phone-missed-badge" />
+      ) : state === "ready" ? (
+        <DockDot className="bg-ed-green" testId="phone-ready-dot" />
+      ) : state === "in-call" ? (
+        <DockDot className="bg-destructive" testId="phone-in-call-dot" />
+      ) : null}
+    </button>
+  );
+}
+
+/** Missed-call toast (top-right), restyled to the redesign toast pattern. */
+export function MissedCallToast({
+  number,
+  time,
+  onCallBack,
+  onDismiss,
+}: {
+  number: string;
+  time: Date;
+  onCallBack: () => void;
+  onDismiss: () => void;
+}) {
+  const t = useTranslations("calls.dock");
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="w-full rounded-lg border bg-background p-3 text-foreground shadow-lg animate-in slide-in-from-top-2 duration-300"
+      data-testid="missed-call-toast"
+    >
+      <div className="flex items-start gap-2.5">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/12 text-destructive">
+          <PhoneMissed className="h-4 w-4" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium leading-5">{t("missedCall")}</p>
+          <p className="truncate text-xs text-muted-foreground tabular-nums">
+            {number} · {format(time, "HH:mm")}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label={t("dismiss")}
+          title={t("dismiss")}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onCallBack}
+        className="mt-2.5 flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-ed-green text-[13px] font-medium text-white transition hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        <Phone className="h-3.5 w-3.5" aria-hidden />
+        {t("callBack")}
+      </button>
+    </div>
+  );
+}
 
 export default function DialpadWidget() {
-  const t = useTranslations("calls");
   const { user } = useAuth();
   const { data: userProfile } = useUserProfile();
   const {
@@ -66,6 +192,20 @@ export default function DialpadWidget() {
   const isPanelOpen = isVisible && isDialpadOpen && !sidebarOpen;
   const hasActiveCall = !!activeCall;
 
+  // Missed calls since the phone was last opened (CallContext keeps only the
+  // latest one, so the count lives here). Opening the phone clears it.
+  const [missedCount, setMissedCount] = useState(0);
+  const lastMissed = useRef<Date | null>(null);
+  useEffect(() => {
+    if (missedCall && missedCall.time !== lastMissed.current) {
+      lastMissed.current = missedCall.time;
+      setMissedCount((n) => n + 1);
+    }
+  }, [missedCall]);
+  useEffect(() => {
+    if (isPanelOpen) setMissedCount(0);
+  }, [isPanelOpen]);
+
   // Tell the team chat dock whether the phone launcher occupies its slot, so
   // minimized chat bubbles stack above it instead of underneath.
   useEffect(() => {
@@ -96,84 +236,36 @@ export default function DialpadWidget() {
 
   return (
     <>
-      {/* Incoming call notification (renders at top-right on any page) */}
-      <IncomingCallNotification />
-
-      {/* Missed call notification */}
-      {missedCall && (
-        <div className="fixed top-4 right-4 z-[60] animate-in slide-in-from-top-2 duration-300">
-          <div className="bg-background border-2 border-red-500 rounded-lg shadow-2xl p-4 w-72">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <PhoneMissed className="h-5 w-5 text-red-500" />
-                <p className="text-sm font-semibold">{t("missedCall")}</p>
-              </div>
-              <button onClick={clearMissedCall} className="text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground mb-1">{missedCall.number}</p>
-            <p className="text-xs text-muted-foreground mb-2">{format(missedCall.time, "h:mm a")}</p>
-            <Button
-              size="sm"
-              className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => {
-                setDialNumber(missedCall.number);
-                setIsDialpadOpen(true);
-                clearMissedCall();
-              }}
-            >
-              <Phone className="h-4 w-4 mr-1" />
-              {t("callBack")}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Floating phone icon button — the dock slot directly above the
-          TeamChat icon (shared layout in TeamChat/floatingDock). */}
+      {/* Call toasts, top-right on any page. Stacked so a new incoming
+          call never covers (or hides under) an earlier missed-call toast. */}
       <div
-        className="fixed cursor-pointer"
-        style={{
-          right: DOCK.RIGHT,
-          bottom: dockSlotBottom(DIALPAD_SLOT),
-          zIndex: DOCK.Z_INDEX.launcher,
-        }}
-        data-dialpad-trigger
-        onClick={toggleDialpad}
+        className="pointer-events-none fixed right-4 top-4 z-[60] flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-2 [&>*]:pointer-events-auto"
+        data-testid="call-toasts"
       >
-        <div
-          className={cn(
-            "relative flex items-center justify-center rounded-full shadow-lg transition-all duration-200",
-            isDialpadOpen
-              ? "bg-primary/90 scale-95"
-              : hasActiveCall
-                ? "bg-green-600 hover:bg-green-700 hover:scale-105"
-                : "bg-primary hover:bg-primary/90 hover:scale-105"
-          )}
-          style={{ width: DOCK.SLOT_SIZE, height: DOCK.SLOT_SIZE }}
-        >
-          <Phone className={cn("h-4 w-4 text-primary-foreground", hasActiveCall && "animate-pulse")} />
+        <IncomingCallNotification />
 
-          {/* SIP registered indicator */}
-          {sipRegistered && !hasActiveCall && (
-            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
-          )}
-
-          {/* Active call pulse */}
-          {hasActiveCall && !isRinging && (
-            <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse" />
-          )}
-
-          {/* Ringing indicator */}
-          {isRinging && (
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500 border-2 border-background" />
-            </span>
-          )}
-        </div>
+        {missedCall && (
+          <MissedCallToast
+            number={missedCall.number}
+            time={missedCall.time}
+            onDismiss={clearMissedCall}
+            onCallBack={() => {
+              setDialNumber(missedCall.number);
+              setIsDialpadOpen(true);
+              clearMissedCall();
+            }}
+          />
+        )}
       </div>
+
+      {/* Floating phone launcher — the dock slot directly above the
+          TeamChat icon (shared layout in TeamChat/floatingDock). */}
+      <PhoneLauncher
+        state={phoneLauncherState({ hasActiveCall, isRinging, sipRegistered })}
+        open={isPanelOpen}
+        missedCount={missedCount}
+        onClick={toggleDialpad}
+      />
 
       {/* Dialpad popup — suppressed while the call sidebar is showing
           to avoid two overlapping call UIs. */}

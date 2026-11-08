@@ -1,90 +1,74 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export type SipState = "registered" | "connecting" | "disconnected";
+
+export function sipState(isRegistered: boolean, isConnecting?: boolean): SipState {
+  if (isConnecting) return "connecting";
+  return isRegistered ? "registered" : "disconnected";
+}
 
 interface SipStatusIndicatorProps {
   isRegistered: boolean;
   isConnecting?: boolean;
   sipServer?: string;
   extension?: string;
+  /** Dot only on narrow layouts (label + extension from sm up). */
   compact?: boolean;
+  className?: string;
 }
 
-export function SipStatusIndicator({
-  isRegistered,
-  isConnecting,
-  sipServer,
-  extension,
-  compact,
-}: SipStatusIndicatorProps) {
-  const t = useTranslations("calls");
+const DOT: Record<SipState, string> = {
+  registered: "bg-ed-green",
+  connecting: "bg-[#2563eb] motion-safe:animate-ed-blink",
+  disconnected: "bg-destructive",
+};
 
-  if (compact) {
-    return (
-      <div className="flex items-center gap-2">
-        {isConnecting ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
-        ) : isRegistered ? (
-          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-        ) : (
-          <XCircle className="h-3.5 w-3.5 text-destructive" />
-        )}
-        <Badge
-          variant={isConnecting ? "secondary" : isRegistered ? "default" : "destructive"}
-          className="text-xs"
-        >
-          {isConnecting
-            ? t("dashboard.connecting")
-            : isRegistered
-            ? `${t("dashboard.registered")}${extension ? ` (${extension})` : ""}`
-            : t("dashboard.disconnected")}
-        </Badge>
-      </div>
-    );
-  }
+const LABEL_KEY: Record<SipState, "sipRegistered" | "sipConnecting" | "sipDisconnected"> = {
+  registered: "sipRegistered",
+  connecting: "sipConnecting",
+  disconnected: "sipDisconnected",
+};
+
+/**
+ * SIP registration pill (EchoDesk Redesign): coloured dot, state label and
+ * the user's extension in mono. Non-interactive; announced politely when it
+ * changes.
+ */
+export function SipStatusIndicator({ isRegistered, isConnecting, sipServer, extension, compact, className }: SipStatusIndicatorProps) {
+  const t = useTranslations("calls.page");
+  const state = sipState(isRegistered, isConnecting);
+  const label = t(LABEL_KEY[state]);
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            {isConnecting ? (
-              <Loader2 className="h-5 w-5 animate-spin text-blue-600 flex-shrink-0" />
-            ) : isRegistered ? (
-              <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
-            ) : (
-              <XCircle className="h-5 w-5 text-destructive flex-shrink-0" />
-            )}
-            <div className="min-w-0">
-              <p className="font-semibold text-sm">{t("dashboard.sipStatus")}</p>
-              {sipServer && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {sipServer}
-                </p>
-              )}
-            </div>
-          </div>
-          <Badge
-            className="flex-shrink-0 whitespace-nowrap"
-            variant={
-              isConnecting
-                ? "secondary"
-                : isRegistered
-                ? "default"
-                : "destructive"
-            }
-          >
-            {isConnecting
-              ? t("dashboard.connecting")
-              : isRegistered
-              ? `${t("dashboard.registered")}${extension ? ` (${extension})` : ""}`
-              : t("dashboard.disconnected")}
-          </Badge>
-        </div>
-      </CardContent>
-    </Card>
+    <span
+      role="status"
+      aria-live="polite"
+      aria-label={t("sipStatus", { status: label })}
+      data-sip-state={state}
+      data-testid="sip-status"
+      className={cn(
+        "inline-flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border pl-[7px] pr-2 text-xs font-normal text-muted-foreground",
+        compact && "max-sm:w-6 max-sm:justify-center max-sm:px-0",
+        className
+      )}
+    >
+      <span className={cn("h-[7px] w-[7px] shrink-0 rounded-full", DOT[state])} aria-hidden />
+      <span aria-hidden className={cn(compact && "hidden sm:inline")}>
+        {label}
+      </span>
+      {extension && (
+        <span className={cn("font-mono text-foreground", compact && "hidden sm:inline")} aria-hidden>
+          {t("ext", { ext: extension })}
+        </span>
+      )}
+      {sipServer && !compact && (
+        <span className="hidden truncate md:inline" aria-hidden>
+          · {sipServer}
+        </span>
+      )}
+    </span>
   );
 }

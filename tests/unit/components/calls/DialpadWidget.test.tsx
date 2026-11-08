@@ -13,12 +13,22 @@ import userEvent from "@testing-library/user-event";
 // ---------------------------------------------------------------------------
 
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => {
+  useTranslations: () => (key: string, values?: Record<string, unknown>) => {
     const translations: Record<string, string> = {
       missedCall: "Missed Call",
       callBack: "Call Back",
+      dismiss: "Dismiss",
+      openPhone: "Open phone",
+      closePhone: "Close phone",
+      phoneInCall: "Call in progress",
+      phoneRinging: "Incoming call",
+      phoneReady: "Ready for calls",
+      phoneOffline: "Not registered",
+      missedCount: "{count} missed",
     };
-    return translations[key] || key;
+    let out = translations[key] || key;
+    for (const [k, v] of Object.entries(values ?? {})) out = out.replace(`{${k}}`, String(v));
+    return out;
   },
 }));
 
@@ -115,6 +125,9 @@ vi.mock("@/components/calls/IncomingCallNotification", () => ({
 // Mock date-fns format
 vi.mock("date-fns", () => ({
   format: (date: Date, formatStr: string) => {
+    if (formatStr === "HH:mm") {
+      return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+    }
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? "PM" : "AM";
@@ -280,18 +293,20 @@ describe("DialpadWidget", () => {
       mockCallContextValue.activeSipConfig = makeSipConfig();
     });
 
-    it("shows green indicator when SIP is registered and no active call", () => {
+    const trigger = () => document.querySelector("[data-dialpad-trigger]") as HTMLElement;
+
+    it("shows the green ready dot when SIP is registered and no active call", () => {
       mockCallContextValue.sipRegistered = true;
       mockCallContextValue.activeCall = null;
 
       render(<DialpadWidget />);
 
-      // Green dot indicator — find the span with bg-green-500
-      const greenDot = document.querySelector(".bg-green-500");
-      expect(greenDot).not.toBeNull();
+      expect(trigger()).toHaveAttribute("data-phone-state", "ready");
+      expect(screen.getByTestId("phone-ready-dot")).toHaveClass("bg-ed-green");
+      expect(trigger()).toHaveAccessibleName("Open phone · Ready for calls");
     });
 
-    it("shows red pulse indicator during active call (not ringing)", () => {
+    it("turns green with a red dot during an active call (not ringing)", () => {
       mockCallContextValue.sipRegistered = true;
       mockCallContextValue.activeCall = {
         id: "test",
@@ -306,12 +321,13 @@ describe("DialpadWidget", () => {
 
       render(<DialpadWidget />);
 
-      // Red pulse dot — find the span with bg-red-500 and animate-pulse
-      const redDot = document.querySelector(".bg-red-500.animate-pulse");
-      expect(redDot).not.toBeNull();
+      expect(trigger()).toHaveAttribute("data-phone-state", "in-call");
+      expect(trigger()).toHaveClass("bg-ed-green");
+      expect(screen.getByTestId("phone-in-call-dot")).toHaveClass("bg-destructive");
+      expect(trigger()).toHaveAccessibleName("Open phone · Call in progress");
     });
 
-    it("shows ping indicator during incoming ringing", () => {
+    it("rings (ed-ring halo on the button) during an incoming call", () => {
       mockCallContextValue.sipRegistered = true;
       mockCallContextValue.activeCall = {
         id: "test",
@@ -326,24 +342,45 @@ describe("DialpadWidget", () => {
 
       render(<DialpadWidget />);
 
-      // Ringing has animate-ping class
-      const pingDot = document.querySelector(".animate-ping");
-      expect(pingDot).not.toBeNull();
+      expect(trigger()).toHaveAttribute("data-phone-state", "ringing");
+      expect(trigger().className).toContain("motion-safe:animate-ed-ring");
+      expect(trigger().style.getPropertyValue("--ring-c")).toBe("var(--green)");
+      expect(document.querySelector(".animate-ping")).toBeNull();
     });
 
-    it("does not show green indicator when not registered", () => {
+    it("does not show the ready dot when not registered", () => {
       mockCallContextValue.sipRegistered = false;
       mockCallContextValue.activeCall = null;
 
       render(<DialpadWidget />);
 
-      // Should NOT have the small green status dot
-      // (The main button has bg-primary, not bg-green-500)
-      const trigger = document.querySelector("[data-dialpad-trigger]");
-      const greenDot = trigger?.querySelector(
-        ".bg-green-500.border-2.border-background"
-      );
-      expect(greenDot).toBeNull();
+      expect(trigger()).toHaveAttribute("data-phone-state", "offline");
+      expect(screen.queryByTestId("phone-ready-dot")).toBeNull();
+      expect(trigger()).toHaveAccessibleName("Open phone · Not registered");
+    });
+
+    it("reports the popup state through aria-expanded", () => {
+      mockCallContextValue.isDialpadOpen = true;
+      render(<DialpadWidget />);
+      expect(trigger()).toHaveAttribute("aria-expanded", "true");
+      expect(trigger().tagName).toBe("BUTTON");
+    });
+
+    it("counts missed calls on a destructive badge until the phone is opened", () => {
+      mockCallContextValue.sipRegistered = true;
+      mockCallContextValue.missedCall = { number: "+995555999888", time: new Date(2026, 3, 15, 14, 30) };
+      const { rerender } = render(<DialpadWidget />);
+      expect(screen.getByTestId("phone-missed-badge")).toHaveTextContent("1");
+      expect(screen.queryByTestId("phone-ready-dot")).toBeNull();
+
+      mockCallContextValue.missedCall = { number: "+995555111222", time: new Date(2026, 3, 15, 14, 40) };
+      rerender(<DialpadWidget />);
+      expect(screen.getByTestId("phone-missed-badge")).toHaveTextContent("2");
+      expect(trigger()).toHaveAccessibleName("Open phone · Ready for calls · 2 missed");
+
+      mockCallContextValue.isDialpadOpen = true;
+      rerender(<DialpadWidget />);
+      expect(screen.queryByTestId("phone-missed-badge")).toBeNull();
     });
   });
 
@@ -368,8 +405,8 @@ describe("DialpadWidget", () => {
       render(<DialpadWidget />);
 
       expect(screen.getByText("Missed Call")).toBeInTheDocument();
-      expect(screen.getByText("+995555999888")).toBeInTheDocument();
-      expect(screen.getByText("2:30 PM")).toBeInTheDocument();
+      expect(screen.getByText("+995555999888 · 14:30")).toBeInTheDocument();
+      expect(screen.getByTestId("missed-call-toast")).toHaveAttribute("role", "status");
     });
 
     it("shows Call Back button", () => {
@@ -408,11 +445,7 @@ describe("DialpadWidget", () => {
 
       render(<DialpadWidget />);
 
-      // The X/dismiss button is a small button next to the missed call title
-      const dismissButton = document.querySelector(
-        "button.text-muted-foreground"
-      ) as HTMLElement;
-      expect(dismissButton).not.toBeNull();
+      const dismissButton = screen.getByRole("button", { name: "Dismiss" });
 
       await user.click(dismissButton);
       expect(mockClearMissedCall).toHaveBeenCalledTimes(1);
@@ -481,6 +514,20 @@ describe("DialpadWidget", () => {
       expect(
         screen.getByTestId("incoming-call-notification")
       ).toBeInTheDocument();
+    });
+
+    it("stacks the incoming-call and missed-call toasts in one top-right column", () => {
+      mockCallContextValue.missedCall = { number: "+995555999888", time: new Date(2026, 3, 15, 14, 30) };
+      render(<DialpadWidget />);
+
+      const stack = screen.getByTestId("call-toasts");
+      expect(stack.className).toContain("fixed");
+      expect(stack.className).toContain("flex-col");
+      expect(stack).toContainElement(screen.getByTestId("incoming-call-notification"));
+      const missed = screen.getByTestId("missed-call-toast");
+      expect(stack).toContainElement(missed);
+      // The toast itself is no longer positioned on its own (no overlap).
+      expect(missed.className).not.toContain("fixed");
     });
   });
 });

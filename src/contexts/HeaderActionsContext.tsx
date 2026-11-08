@@ -5,6 +5,8 @@ import * as React from "react"
 /**
  * Page-provided pieces of the app header (tenant layout):
  * - `breadcrumb`: shown after the page title, separated by "/"
+ * - `meta`: a status element right after the title (no separator), e.g. the
+ *   SIP registration pill on Calls
  * - `primary`: the page's primary call to action (right side, before the divider)
  * - `icons`: page-specific icon buttons (right side, before theme / bell)
  *
@@ -15,6 +17,7 @@ import * as React from "react"
  */
 export interface HeaderSlot {
   breadcrumb?: React.ReactNode
+  meta?: React.ReactNode
   primary?: React.ReactNode
   icons?: React.ReactNode
 }

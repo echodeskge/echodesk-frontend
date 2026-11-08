@@ -46,6 +46,31 @@ describe("HeaderActionsContext", () => {
     expect(screen.queryByRole("button", { name: "Compose" })).toBeNull();
   });
 
+  it("carries a meta element (e.g. the Calls SIP pill) and clears it with the page", () => {
+    function MetaHeader() {
+      const slot = useHeaderSlot();
+      return <span data-testid="meta">{slot?.meta}</span>;
+    }
+    function MetaPage() {
+      useHeaderActions({ meta: <i>Registered</i> }, []);
+      return null;
+    }
+    function MetaApp() {
+      const [show, setShow] = useState(true);
+      return (
+        <HeaderActionsProvider>
+          <MetaHeader />
+          {show && <MetaPage />}
+          <button onClick={() => setShow(false)}>leave</button>
+        </HeaderActionsProvider>
+      );
+    }
+    render(<MetaApp />);
+    expect(screen.getByTestId("meta")).toHaveTextContent("Registered");
+    fireEvent.click(screen.getByRole("button", { name: "leave" }));
+    expect(screen.getByTestId("meta")).toBeEmptyDOMElement();
+  });
+
   it("is a no-op without a provider", () => {
     render(<Page label="x" />);
     expect(document.body).toBeInTheDocument();

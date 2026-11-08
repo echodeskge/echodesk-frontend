@@ -338,7 +338,7 @@ export function ClientsScreen() {
 
         {/* footer / pagination */}
         {total > 0 && (
-          <div className="flex h-9 shrink-0 items-center gap-2 border-t pl-4 pr-16 text-[11px] text-muted-foreground">
+          <div className="flex h-9 shrink-0 items-center gap-2 border-t pl-4 pe-fab-safe text-[11px] text-muted-foreground">
             <span className="tabular-nums" data-testid="clients-range">
               {ts("range", { from: range.from, to: range.to, total })}
             </span>

@@ -1,7 +1,9 @@
 'use client';
 
 import { MessageCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { DockBadge, dockLauncherClass } from '@/components/calls/dock-launcher';
 import { LAYOUT } from './FloatingChatContext';
 
 interface TeamChatIconProps {
@@ -10,39 +12,36 @@ interface TeamChatIconProps {
   isOpen: boolean;
 }
 
+/** Team chat launcher (dock slot 0) with the destructive unread badge. */
 export function TeamChatIcon({ unreadCount, onClick, isOpen }: TeamChatIconProps) {
+  const t = useTranslations('calls.dock');
+  const label = [
+    isOpen ? t('closeTeamChat') : t('openTeamChat'),
+    unreadCount > 0 ? t('unread', { count: unreadCount }) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
-    <div
-      className="fixed cursor-pointer"
+    <button
+      type="button"
+      className={cn(dockLauncherClass(isOpen), 'fixed')}
       style={{
         right: LAYOUT.MAIN_ICON.right,
         bottom: LAYOUT.MAIN_ICON.bottom,
         zIndex: LAYOUT.Z_INDEX.icon,
+        width: LAYOUT.MAIN_ICON.size,
+        height: LAYOUT.MAIN_ICON.size,
       }}
       data-teamchat-trigger
       onClick={onClick}
+      aria-label={label}
+      aria-expanded={isOpen}
+      aria-haspopup="dialog"
+      title={label}
     >
-      <div
-        className={cn(
-          'relative flex items-center justify-center rounded-full shadow-lg transition-all duration-200',
-          isOpen
-            ? 'bg-primary/90 scale-95'
-            : 'bg-primary hover:bg-primary/90 hover:scale-105'
-        )}
-        style={{
-          width: LAYOUT.MAIN_ICON.size,
-          height: LAYOUT.MAIN_ICON.size,
-        }}
-      >
-        <MessageCircle className="h-4 w-4 text-primary-foreground" />
-
-        {/* Unread badge */}
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-4 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </div>
-    </div>
+      <MessageCircle className="h-4 w-4" aria-hidden />
+      {unreadCount > 0 && <DockBadge count={unreadCount} testId="teamchat-unread-badge" />}
+    </button>
   );
 }

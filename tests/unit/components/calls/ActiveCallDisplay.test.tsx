@@ -1,101 +1,35 @@
 /**
- * Tests for ActiveCallDisplay component.
- * Verifies caller info rendering, call controls for different states,
- * transfer panel toggles, consultation state display, and button states.
+ * ActiveCallDisplay (softphone "in call" view, EchoDesk Redesign): caller
+ * identity, status badge per state, ringing halo, Accept / Decline, the
+ * Mute / Hold / Keypad / Transfer controls, DTMF pad, transfer box (agents,
+ * attended vs blind, external number), the consultation controls and End.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NextIntlClientProvider } from "next-intl";
+import React from "react";
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
-vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => {
-    const translations: Record<string, string> = {
-      incomingCall: "Incoming Call",
-      outgoingCall: "Outgoing Call",
-      onHold: "ON HOLD",
-      accept: "Accept",
-      decline: "Decline",
-      "dashboard.ringing": "Ringing",
-      "dashboard.connecting": "Connecting",
-      "dashboard.active": "Active",
-      "dashboard.ending": "Ending",
-      "dashboard.customerOnHold": "Customer on hold",
-      "dashboard.consultingWith": "Consulting with",
-      "dashboard.completeTransfer": "Transfer",
-      "dashboard.cancelTransfer": "Cancel",
-      "dashboard.merge": "Merge",
-      "dashboard.attendedTransfer": "Attended",
-      "dashboard.blindTransfer": "Blind",
-      "dashboard.transferTo": "Transfer to...",
-      "dashboard.noAgents": "No agents with phone assignments",
-      "dashboard.transferToNumber": "Transfer to external number",
-      "dashboard.transferToAgent": "Transfer to agent",
-      "dashboard.offline": "offline",
-    };
-    return translations[key] || key;
-  },
-}));
+import en from "@/i18n/messages/en.json";
+import ka from "@/i18n/messages/ka.json";
 
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: vi.fn(() => ({
-    user: { id: 1, is_staff: true },
-    token: "token",
-    isAuthenticated: true,
-    loading: false,
-    login: vi.fn(),
-    logout: vi.fn(),
-    checkAuth: vi.fn(),
-  })),
+  useAuth: vi.fn(() => ({ user: { id: 1, is_staff: true } })),
 }));
 
-// Mock axios for agent fetching
-vi.mock("@/api/axios", () => ({
-  default: {
-    get: vi.fn().mockResolvedValue({ data: { results: [] } }),
-  },
-}));
+const mockGet = vi.hoisted(() => vi.fn());
+vi.mock("@/api/axios", () => ({ default: { get: mockGet } }));
 
-import { ActiveCallDisplay } from "@/components/calls/ActiveCallDisplay";
+import { ActiveCallDisplay, callBadge } from "@/components/calls/ActiveCallDisplay";
 import type { TransferPhase, ConsultationCall } from "@/contexts/CallContext";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+type Props = React.ComponentProps<typeof ActiveCallDisplay>;
 
-interface ActiveCallDisplayTestProps {
-  phoneNumber?: string;
-  direction?: "incoming" | "outgoing";
-  status?: "ringing" | "connecting" | "active" | "ending";
-  duration?: number;
-  callerName?: string;
-  isOnHold?: boolean;
-  isMuted?: boolean;
-  transferPhase?: TransferPhase;
-  consultationCall?: ConsultationCall | null;
-  onEndCall?: () => void;
-  onToggleHold?: () => void;
-  onToggleMute?: () => void;
-  onAccept?: () => void;
-  onReject?: () => void;
-  onTransfer?: (targetNumber: string) => void;
-  onStartAttendedTransfer?: (
-    targetNumber: string,
-    targetName?: string
-  ) => void;
-  onCompleteTransfer?: () => void;
-  onCancelTransfer?: () => void;
-  onMergeConference?: () => void;
-}
-
-function renderActiveCallDisplay(overrides: ActiveCallDisplayTestProps = {}) {
-  const defaultProps = {
+function renderCall(overrides: Partial<Props> = {}, messages: Record<string, unknown> = en, locale = "en") {
+  const props: Props = {
     phoneNumber: "+995555123456",
-    direction: "incoming" as const,
-    status: "active" as const,
+    direction: "incoming",
+    status: "active",
     duration: 45,
     onEndCall: vi.fn(),
     onToggleHold: vi.fn(),
@@ -107,494 +41,322 @@ function renderActiveCallDisplay(overrides: ActiveCallDisplayTestProps = {}) {
     onCompleteTransfer: vi.fn(),
     onCancelTransfer: vi.fn(),
     onMergeConference: vi.fn(),
+    onSendDTMF: vi.fn(() => true),
     transferPhase: "idle" as TransferPhase,
     consultationCall: null,
     ...overrides,
   };
-
   return {
-    ...render(<ActiveCallDisplay {...defaultProps} />),
-    props: defaultProps,
+    ...render(
+      <NextIntlClientProvider locale={locale} messages={messages}>
+        <ActiveCallDisplay {...props} />
+      </NextIntlClientProvider>
+    ),
+    props,
   };
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+const assignments = {
+  data: {
+    results: [
+      { id: 1, user: 1, user_name: "Me", extension: "100", phone_number: "" },
+      { id: 2, user: 2, user_name: "Ana Lomidze", extension: "102", phone_number: "" },
+      { id: 3, user: 3, user_name: "Luka Tsiklauri", extension: "103", phone_number: "" },
+    ],
+  },
+};
+const extStatus = { data: { extensions: [{ extension: "102", status: "online" }, { extension: "103", status: "offline" }] } };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockGet.mockImplementation((url: string) =>
+    Promise.resolve(url.startsWith("/api/extensions/status") ? extStatus : assignments)
+  );
+});
+
+describe("callBadge", () => {
+  it("maps call states to the design's badge", () => {
+    expect(callBadge("incoming", "ringing")).toEqual({ key: "badgeIncoming", tone: "ringing" });
+    expect(callBadge("outgoing", "connecting")).toEqual({ key: "badgeCalling", tone: "ringing" });
+    expect(callBadge("outgoing", "ringing")).toEqual({ key: "badgeCalling", tone: "ringing" });
+    expect(callBadge("incoming", "active", true)).toEqual({ key: "badgeOnHold", tone: "held" });
+    expect(callBadge("incoming", "active")).toEqual({ key: "badgeConnected", tone: "active" });
+    expect(callBadge("incoming", "ending")).toEqual({ key: "badgeEnding", tone: "ending" });
+  });
+});
 
 describe("ActiveCallDisplay", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  // -----------------------------------------------------------------------
-  // Caller info
-  // -----------------------------------------------------------------------
-
-  describe("caller info", () => {
-    it("renders phone number", () => {
-      renderActiveCallDisplay({ phoneNumber: "+995555123456" });
-
+  describe("identity", () => {
+    it("shows the number as the name and 'Unknown caller' when there is no name", () => {
+      renderCall();
       expect(screen.getByText("+995555123456")).toBeInTheDocument();
+      expect(screen.getByText("Unknown caller")).toBeInTheDocument();
+      expect(screen.getByTestId("call-avatar")).toHaveTextContent("#");
     });
 
-    it("renders caller name when provided", () => {
-      renderActiveCallDisplay({
-        callerName: "John Doe",
-        phoneNumber: "+995555123456",
-      });
-
+    it("shows name, number and initials for a known caller", () => {
+      renderCall({ callerName: "John Doe" });
       expect(screen.getByText("John Doe")).toBeInTheDocument();
       expect(screen.getByText("+995555123456")).toBeInTheDocument();
+      expect(screen.getByTestId("call-avatar")).toHaveTextContent("JD");
     });
 
-    it("renders formatted duration for active calls", () => {
-      renderActiveCallDisplay({ status: "active", duration: 125 });
-
-      // 125 seconds = 02:05
-      expect(screen.getByText("02:05")).toBeInTheDocument();
+    it("formats the timer as mm:ss while active", () => {
+      renderCall({ duration: 125 });
+      expect(screen.getByTestId("call-timer")).toHaveTextContent("02:05");
     });
 
-    it("formats zero duration as 00:00", () => {
-      renderActiveCallDisplay({ status: "active", duration: 0 });
-
-      expect(screen.getByText("00:00")).toBeInTheDocument();
+    it("shows 'ringing' / 'calling' instead of a timer before the call connects", () => {
+      const { unmount } = renderCall({ status: "ringing" });
+      expect(screen.getByTestId("call-timer")).toHaveTextContent("ringing");
+      unmount();
+      renderCall({ status: "connecting", direction: "outgoing" });
+      expect(screen.getByTestId("call-timer")).toHaveTextContent("calling");
     });
 
-    it("shows incoming call title for incoming direction", () => {
-      renderActiveCallDisplay({ direction: "incoming" });
-
-      expect(screen.getByText("Incoming Call")).toBeInTheDocument();
+    it("labels the direction", () => {
+      const { unmount } = renderCall({ direction: "incoming" });
+      expect(screen.getByText("Incoming call")).toBeInTheDocument();
+      unmount();
+      renderCall({ direction: "outgoing" });
+      expect(screen.getByText("Outgoing call")).toBeInTheDocument();
     });
 
-    it("shows outgoing call title for outgoing direction", () => {
-      renderActiveCallDisplay({ direction: "outgoing" });
-
-      expect(screen.getByText("Outgoing Call")).toBeInTheDocument();
+    it("rings the avatar (green for incoming, foreground for outgoing) only while ringing", () => {
+      const { unmount } = renderCall({ status: "ringing" });
+      const avatar = screen.getByTestId("call-avatar");
+      expect(avatar.className).toContain("motion-safe:animate-ed-ring");
+      expect(avatar.style.getPropertyValue("--ring-c")).toBe("var(--green)");
+      unmount();
+      renderCall({ status: "connecting", direction: "outgoing" });
+      expect(screen.getByTestId("call-avatar").style.getPropertyValue("--ring-c")).toBe("var(--foreground)");
     });
 
-    it("shows ON HOLD badge when on hold", () => {
-      renderActiveCallDisplay({ isOnHold: true });
-
-      expect(screen.getByText("ON HOLD")).toBeInTheDocument();
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // Status badges
-  // -----------------------------------------------------------------------
-
-  describe("status badges", () => {
-    it("shows Ringing badge for ringing status", () => {
-      renderActiveCallDisplay({
-        status: "ringing",
-        direction: "incoming",
-      });
-
-      expect(screen.getByText("Ringing")).toBeInTheDocument();
-    });
-
-    it("shows Connecting badge for connecting status", () => {
-      renderActiveCallDisplay({ status: "connecting" });
-
-      expect(screen.getByText("Connecting")).toBeInTheDocument();
-    });
-
-    it("shows Active badge for active status", () => {
-      renderActiveCallDisplay({ status: "active" });
-
-      expect(screen.getByText("Active")).toBeInTheDocument();
-    });
-
-    it("shows Ending badge for ending status", () => {
-      renderActiveCallDisplay({ status: "ending" });
-
-      expect(screen.getByText("Ending")).toBeInTheDocument();
+    it("does not ring once connected", () => {
+      renderCall({ status: "active" });
+      expect(screen.getByTestId("call-avatar").className).not.toContain("animate-ed-ring");
     });
   });
 
-  // -----------------------------------------------------------------------
-  // Incoming ringing — accept/reject buttons
-  // -----------------------------------------------------------------------
-
-  describe("incoming ringing controls", () => {
-    it("shows accept and reject buttons for incoming ringing call", () => {
-      renderActiveCallDisplay({
-        direction: "incoming",
-        status: "ringing",
-      });
-
-      // The incoming ringing view shows two circular buttons
-      const buttons = screen.getAllByRole("button");
-      expect(buttons.length).toBeGreaterThanOrEqual(2);
+  describe("status badge", () => {
+    it.each([
+      [{ status: "ringing" as const }, "Incoming"],
+      [{ status: "connecting" as const, direction: "outgoing" as const }, "Calling…"],
+      [{ status: "active" as const }, "Connected"],
+      [{ status: "active" as const, isOnHold: true }, "On hold"],
+      [{ status: "ending" as const }, "Ending…"],
+    ])("%o → %s", (props, label) => {
+      renderCall(props);
+      const badge = screen.getByTestId("call-status-badge");
+      expect(badge).toHaveTextContent(label);
+      expect(badge).toHaveAttribute("aria-live", "polite");
     });
+  });
 
-    it("calls onAccept when accept button is clicked", async () => {
+  describe("incoming ringing", () => {
+    it("shows Decline and Accept instead of the controls", async () => {
       const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({
-        direction: "incoming",
-        status: "ringing",
-      });
-
-      // The green accept button is the second circular button
-      const buttons = screen.getAllByRole("button");
-      // Find the accept button (bg-green-600)
-      const acceptButton = buttons.find((btn) =>
-        btn.className.includes("bg-green-600")
-      );
-      expect(acceptButton).toBeDefined();
-
-      await user.click(acceptButton!);
+      const { props } = renderCall({ status: "ringing" });
+      expect(screen.queryByTestId("softphone-mute")).toBeNull();
+      expect(screen.queryByTestId("softphone-end")).toBeNull();
+      await user.click(screen.getByTestId("softphone-accept"));
       expect(props.onAccept).toHaveBeenCalledTimes(1);
-    });
-
-    it("calls onReject when reject button is clicked", async () => {
-      const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({
-        direction: "incoming",
-        status: "ringing",
-      });
-
-      // Find the destructive reject button
-      const buttons = screen.getAllByRole("button");
-      const rejectButton = buttons.find((btn) =>
-        btn.className.includes("rounded-full") &&
-        !btn.className.includes("bg-green-600")
-      );
-      expect(rejectButton).toBeDefined();
-
-      await user.click(rejectButton!);
+      await user.click(screen.getByTestId("softphone-decline"));
       expect(props.onReject).toHaveBeenCalledTimes(1);
     });
+
+    it("an outgoing call that is still ringing shows the controls and Cancel", () => {
+      renderCall({ status: "connecting", direction: "outgoing" });
+      expect(screen.queryByTestId("softphone-accept")).toBeNull();
+      expect(screen.getByTestId("softphone-end")).toHaveTextContent("Cancel");
+      expect(screen.getByTestId("softphone-mute")).toBeDisabled();
+    });
   });
 
-  // -----------------------------------------------------------------------
-  // Active call controls — mute, hold, transfer, end
-  // -----------------------------------------------------------------------
-
-  describe("active call controls", () => {
-    it("shows mute, hold, transfer, and end buttons for active call", () => {
-      renderActiveCallDisplay({ status: "active" });
-
-      // Should have 4 control buttons in the grid
-      const buttons = screen.getAllByRole("button");
-      expect(buttons.length).toBeGreaterThanOrEqual(4);
-    });
-
-    it("mute button triggers onToggleMute", async () => {
+  describe("controls", () => {
+    it("wires Mute, Hold and End", async () => {
       const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({ status: "active" });
-
-      // The first button in the grid is mute
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[0]);
+      const { props } = renderCall();
+      await user.click(screen.getByTestId("softphone-mute"));
+      await user.click(screen.getByTestId("softphone-hold"));
+      await user.click(screen.getByTestId("softphone-end"));
       expect(props.onToggleMute).toHaveBeenCalledTimes(1);
-    });
-
-    it("hold button triggers onToggleHold", async () => {
-      const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({ status: "active" });
-
-      // The second button in the grid is hold
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[1]);
       expect(props.onToggleHold).toHaveBeenCalledTimes(1);
+      expect(props.onEndCall).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId("softphone-end")).toHaveTextContent("End call");
     });
 
-    it("end call button triggers onEndCall", async () => {
-      const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({ status: "active" });
-
-      // The end call button is the 4th in the control grid
-      const buttons = screen.getAllByRole("button");
-      // Find by iterating - it's the last button in the 4-column grid
-      // that is not disabled
-      const gridButtons = buttons.filter(btn => !btn.closest('[class*="mt-3"]'));
-      const endCallButton = gridButtons[gridButtons.length - 1];
-      expect(endCallButton).toBeDefined();
-
-      await user.click(endCallButton!);
-      expect(props.onEndCall).toHaveBeenCalled();
+    it("reflects mute / hold as pressed toggles with swapped labels", () => {
+      renderCall({ isMuted: true, isOnHold: true });
+      expect(screen.getByTestId("softphone-mute")).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByTestId("softphone-mute")).toHaveTextContent("Unmute");
+      expect(screen.getByTestId("softphone-hold")).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByTestId("softphone-hold")).toHaveTextContent("Resume");
     });
 
-    it("disables mute button when status is not active", () => {
-      renderActiveCallDisplay({ status: "connecting" });
-
-      const buttons = screen.getAllByRole("button");
-      // First button (mute) should be disabled
-      expect(buttons[0]).toBeDisabled();
+    it("disables the controls unless the call is active", () => {
+      renderCall({ status: "ending" });
+      for (const id of ["softphone-mute", "softphone-hold", "softphone-keypad", "softphone-transfer"]) {
+        expect(screen.getByTestId(id)).toBeDisabled();
+      }
+      expect(screen.getByTestId("softphone-end")).toBeDisabled();
     });
 
-    it("disables hold button when status is not active", () => {
-      renderActiveCallDisplay({ status: "connecting" });
-
-      const buttons = screen.getAllByRole("button");
-      // Second button (hold) should be disabled
-      expect(buttons[1]).toBeDisabled();
-    });
-
-    it("disables end call button when status is ending", () => {
-      renderActiveCallDisplay({ status: "ending" });
-
-      const buttons = screen.getAllByRole("button");
-      const endCallButton = buttons.find((btn) =>
-        btn.className.includes("destructive")
-      );
-      expect(endCallButton).toBeDisabled();
+    it("disables Keypad without a DTMF handler and Transfer without a transfer handler", () => {
+      renderCall({ onSendDTMF: undefined, onTransfer: undefined });
+      expect(screen.getByTestId("softphone-keypad")).toBeDisabled();
+      expect(screen.getByTestId("softphone-transfer")).toBeDisabled();
     });
   });
 
-  // -----------------------------------------------------------------------
-  // Transfer panel
-  // -----------------------------------------------------------------------
-
-  describe("transfer panel", () => {
-    it("toggles transfer panel on transfer button click", async () => {
+  describe("DTMF keypad", () => {
+    it("sends tones and shows the last ones sent", async () => {
       const user = userEvent.setup();
-      renderActiveCallDisplay({ status: "active" });
-
-      // Transfer button is the 3rd button in the grid
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[2]);
-
-      // After clicking, the transfer panel should show
-      // It shows either "Attended" and "Blind" tabs
-      expect(screen.getByText("Attended")).toBeInTheDocument();
-      expect(screen.getByText("Blind")).toBeInTheDocument();
+      const { props } = renderCall();
+      await user.click(screen.getByTestId("softphone-keypad"));
+      const pad = screen.getByTestId("softphone-dtmf");
+      expect(within(pad).getByText("Tones are sent to the IVR")).toBeInTheDocument();
+      await user.click(within(pad).getByText("1"));
+      await user.click(within(pad).getByText("#"));
+      expect(props.onSendDTMF).toHaveBeenNthCalledWith(1, "1");
+      expect(props.onSendDTMF).toHaveBeenNthCalledWith(2, "#");
+      expect(within(pad).getByText("Sent: 1#")).toBeInTheDocument();
     });
 
-    it("shows attended and blind transfer tabs", async () => {
+    it("keypad and transfer are mutually exclusive", async () => {
       const user = userEvent.setup();
-      renderActiveCallDisplay({ status: "active" });
-
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[2]); // Open transfer panel
-
-      expect(screen.getByText("Attended")).toBeInTheDocument();
-      expect(screen.getByText("Blind")).toBeInTheDocument();
-    });
-
-    it("switches to blind transfer tab", async () => {
-      const user = userEvent.setup();
-      renderActiveCallDisplay({ status: "active" });
-
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[2]); // Open transfer panel
-
-      const blindTab = screen.getByText("Blind");
-      await user.click(blindTab);
-
-      // Blind tab should now be active
-      expect(blindTab.closest("button")).toBeDefined();
-    });
-
-    it("shows no agents message when agent list is empty", async () => {
-      const user = userEvent.setup();
-      renderActiveCallDisplay({ status: "active" });
-
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[2]); // Open transfer panel
-
-      // Default mode is agent, which should show no agents message
-      expect(
-        screen.getByText("No agents with phone assignments")
-      ).toBeInTheDocument();
-    });
-
-    it("shows external number input when switching to external mode", async () => {
-      const user = userEvent.setup();
-      renderActiveCallDisplay({ status: "active" });
-
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[2]); // Open transfer panel
-
-      // Click "Transfer to external number" button
-      const externalButton = screen.getByText("Transfer to external number");
-      await user.click(externalButton);
-
-      // Should show input field
-      expect(
-        screen.getByPlaceholderText("Transfer to...")
-      ).toBeInTheDocument();
-    });
-
-    it("disables transfer button when status is not active", () => {
-      renderActiveCallDisplay({ status: "connecting" });
-
-      const buttons = screen.getAllByRole("button");
-      // Transfer button (3rd) should be disabled
-      expect(buttons[2]).toBeDisabled();
+      renderCall();
+      await user.click(screen.getByTestId("softphone-keypad"));
+      expect(screen.getByTestId("softphone-dtmf")).toBeInTheDocument();
+      await user.click(screen.getByTestId("softphone-transfer"));
+      expect(screen.queryByTestId("softphone-dtmf")).toBeNull();
+      expect(screen.getByTestId("softphone-transfer-box")).toBeInTheDocument();
+      expect(screen.getByTestId("softphone-keypad")).toHaveAttribute("aria-pressed", "false");
     });
   });
 
-  // -----------------------------------------------------------------------
-  // Consultation state
-  // -----------------------------------------------------------------------
-
-  describe("consultation state", () => {
-    const consultationCall: ConsultationCall = {
-      targetNumber: "102",
-      targetName: "Agent Smith",
-      status: "active",
-      duration: 10,
-      logId: 99,
-    };
-
-    it("shows customer-on-hold card during consultation", () => {
-      renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall,
-        callerName: "John Doe",
-      });
-
-      expect(screen.getByText("Customer on hold")).toBeInTheDocument();
-    });
-
-    it("shows consulting-with target name", () => {
-      renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall,
-      });
-
-      expect(screen.getByText("Consulting with")).toBeInTheDocument();
-      expect(screen.getByText("Agent Smith")).toBeInTheDocument();
-    });
-
-    it("shows cancel, complete, and merge buttons during consultation", () => {
-      renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall,
-      });
-
-      expect(screen.getByText("Cancel")).toBeInTheDocument();
-      expect(screen.getByText("Transfer")).toBeInTheDocument();
-      expect(screen.getByText("Merge")).toBeInTheDocument();
-    });
-
-    it("calls onCancelTransfer when Cancel is clicked", async () => {
+  describe("transfer box", () => {
+    it("lists agents (own user excluded) with online state; offline agents are disabled", async () => {
       const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall,
-      });
+      renderCall();
+      await user.click(screen.getByTestId("softphone-transfer"));
+      const rows = await screen.findAllByTestId("transfer-agent");
+      expect(rows).toHaveLength(2);
+      expect(rows[0]).toHaveTextContent("Ana Lomidze");
+      expect(rows[0]).toHaveTextContent("ext 102");
+      expect(rows[0]).toBeEnabled();
+      expect(rows[1]).toBeDisabled();
+      expect(screen.queryByText("Me")).toBeNull();
+    });
 
-      await user.click(screen.getByText("Cancel"));
+    it("attended (default) starts a consultation with the agent", async () => {
+      const user = userEvent.setup();
+      const { props } = renderCall();
+      await user.click(screen.getByTestId("softphone-transfer"));
+      expect(screen.getByRole("radio", { name: "Attended" })).toHaveAttribute("aria-checked", "true");
+      await user.click((await screen.findAllByTestId("transfer-agent"))[0]);
+      expect(props.onStartAttendedTransfer).toHaveBeenCalledWith("102", "Ana Lomidze");
+      expect(props.onTransfer).not.toHaveBeenCalled();
+      expect(screen.queryByTestId("softphone-transfer-box")).toBeNull();
+    });
+
+    it("blind transfers straight to the agent", async () => {
+      const user = userEvent.setup();
+      const { props } = renderCall();
+      await user.click(screen.getByTestId("softphone-transfer"));
+      await user.click(screen.getByRole("radio", { name: "Blind" }));
+      await user.click((await screen.findAllByTestId("transfer-agent"))[0]);
+      expect(props.onTransfer).toHaveBeenCalledWith("102");
+      expect(props.onStartAttendedTransfer).not.toHaveBeenCalled();
+    });
+
+    it("shows the empty message when nobody has a phone", async () => {
+      const user = userEvent.setup();
+      mockGet.mockResolvedValue({ data: { results: [] } });
+      renderCall();
+      await user.click(screen.getByTestId("softphone-transfer"));
+      expect(await screen.findByText("No agents with phone assignments")).toBeInTheDocument();
+    });
+
+    it("transfers to an external number (button and Enter)", async () => {
+      const user = userEvent.setup();
+      const { props } = renderCall();
+      await user.click(screen.getByTestId("softphone-transfer"));
+      await user.click(screen.getByRole("radio", { name: "Blind" }));
+      await user.click(screen.getByText("Transfer to a number"));
+      expect(screen.getByTestId("transfer-submit")).toBeDisabled();
+      await user.type(screen.getByPlaceholderText("Number to transfer to"), "555000");
+      await user.click(screen.getByTestId("transfer-submit"));
+      expect(props.onTransfer).toHaveBeenCalledWith("555000");
+
+      // Reopening keeps the chosen mode (external number, blind).
+      await user.click(screen.getByTestId("softphone-transfer"));
+      await user.type(screen.getByPlaceholderText("Number to transfer to"), "777{Enter}");
+      await waitFor(() => expect(props.onTransfer).toHaveBeenCalledWith("777"));
+    });
+
+    it("is not offered during a consultation", () => {
+      renderCall({ transferPhase: "consulting", consultationCall: { targetNumber: "102", status: "ringing", duration: 0 } });
+      expect(screen.getByTestId("softphone-transfer")).toBeDisabled();
+    });
+  });
+
+  describe("consultation (attended transfer)", () => {
+    const consult = (status: ConsultationCall["status"], targetName?: string): Partial<Props> => ({
+      callerName: "John Doe",
+      isOnHold: true,
+      transferPhase: "consulting",
+      consultationCall: { targetNumber: "102", targetName, status, duration: 0 },
+    });
+
+    it("shows the held customer and who is being consulted", () => {
+      renderCall(consult("active", "Agent Smith"));
+      const box = screen.getByTestId("softphone-consultation");
+      expect(within(box).getByText("Customer on hold")).toBeInTheDocument();
+      expect(within(box).getByText("John Doe")).toBeInTheDocument();
+      expect(within(box).getByText("Consulting with")).toBeInTheDocument();
+      expect(within(box).getByText("Agent Smith")).toBeInTheDocument();
+      expect(within(box).getByText("Connected")).toBeInTheDocument();
+    });
+
+    it("falls back to the target number", () => {
+      renderCall(consult("ringing"));
+      expect(within(screen.getByTestId("softphone-consultation")).getByText("102")).toBeInTheDocument();
+    });
+
+    it("wires Cancel, Transfer and Merge", async () => {
+      const user = userEvent.setup();
+      const { props } = renderCall(consult("active"));
+      const box = screen.getByTestId("softphone-consultation");
+      await user.click(within(box).getByRole("button", { name: /Cancel/ }));
+      await user.click(within(box).getByRole("button", { name: /Transfer/ }));
+      await user.click(within(box).getByRole("button", { name: /Merge/ }));
       expect(props.onCancelTransfer).toHaveBeenCalledTimes(1);
-    });
-
-    it("calls onCompleteTransfer when Transfer is clicked", async () => {
-      const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall,
-      });
-
-      await user.click(screen.getByText("Transfer"));
       expect(props.onCompleteTransfer).toHaveBeenCalledTimes(1);
-    });
-
-    it("calls onMergeConference when Merge is clicked", async () => {
-      const user = userEvent.setup();
-      const { props } = renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall,
-      });
-
-      await user.click(screen.getByText("Merge"));
       expect(props.onMergeConference).toHaveBeenCalledTimes(1);
     });
 
-    it("disables complete transfer button when consultation is not active", () => {
-      const connectingConsultation: ConsultationCall = {
-        ...consultationCall,
-        status: "connecting",
-      };
-
-      renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall: connectingConsultation,
-      });
-
-      const transferButton = screen.getByText("Transfer").closest("button");
-      expect(transferButton).toBeDisabled();
-    });
-
-    it("disables merge button when consultation is not active", () => {
-      const ringingConsultation: ConsultationCall = {
-        ...consultationCall,
-        status: "ringing",
-      };
-
-      renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall: ringingConsultation,
-      });
-
-      const mergeButton = screen.getByText("Merge").closest("button");
-      expect(mergeButton).toBeDisabled();
-    });
-
-    it("shows consultation target number when no name provided", () => {
-      const noNameConsultation: ConsultationCall = {
-        ...consultationCall,
-        targetName: undefined,
-      };
-
-      renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall: noNameConsultation,
-      });
-
-      expect(screen.getByText("102")).toBeInTheDocument();
-    });
-
-    it("does not show transfer panel during consultation", () => {
-      renderActiveCallDisplay({
-        status: "active",
-        transferPhase: "consulting",
-        consultationCall,
-      });
-
-      // The regular transfer panel (with Attended/Blind tabs) should not show
-      expect(screen.queryByText("Attended")).not.toBeInTheDocument();
-      expect(screen.queryByText("Blind")).not.toBeInTheDocument();
+    it("only allows Transfer / Merge once the consulted agent answered", () => {
+      renderCall(consult("connecting"));
+      const box = screen.getByTestId("softphone-consultation");
+      expect(within(box).getByRole("button", { name: /Transfer/ })).toBeDisabled();
+      expect(within(box).getByRole("button", { name: /Merge/ })).toBeDisabled();
+      expect(within(box).getByRole("button", { name: /Cancel/ })).toBeEnabled();
     });
   });
 
-  // -----------------------------------------------------------------------
-  // Transfer number input
-  // -----------------------------------------------------------------------
+  it("offers caller details when a handler is given", async () => {
+    const user = userEvent.setup();
+    const onShowDetails = vi.fn();
+    renderCall({ onShowDetails });
+    await user.click(screen.getByRole("button", { name: "Caller details" }));
+    expect(onShowDetails).toHaveBeenCalledTimes(1);
+  });
 
-  describe("transfer number input", () => {
-    it("requires a number before the transfer submit button is enabled", async () => {
-      const user = userEvent.setup();
-      renderActiveCallDisplay({ status: "active" });
-
-      // Open transfer panel
-      const buttons = screen.getAllByRole("button");
-      await user.click(buttons[2]);
-
-      // Switch to external mode
-      const externalButton = screen.getByText("Transfer to external number");
-      await user.click(externalButton);
-
-      // The small transfer submit button next to input should be disabled when empty
-      const allButtons = screen.getAllByRole("button");
-      const submitTransferButtons = allButtons.filter(
-        (btn) => !btn.textContent && btn.closest(".flex.gap-2")
-      );
-      if (submitTransferButtons.length > 0) {
-        expect(submitTransferButtons[0]).toBeDisabled();
-      }
-    });
+  it("renders in Georgian", () => {
+    renderCall({ status: "ringing" }, ka, "ka");
+    expect(screen.getByText(ka.calls.phone.accept)).toBeInTheDocument();
+    expect(screen.getByText(ka.calls.phone.decline)).toBeInTheDocument();
+    expect(screen.getByTestId("call-status-badge")).toHaveTextContent(ka.calls.phone.badgeIncoming);
   });
 });

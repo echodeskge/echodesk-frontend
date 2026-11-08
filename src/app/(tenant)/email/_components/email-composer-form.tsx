@@ -963,7 +963,7 @@ export function EmailComposerForm() {
         </div>
 
         {/* Footer (52px): Send, Attach, Template · Save draft, Discard */}
-        <div className="flex h-[52px] shrink-0 items-center gap-1 border-t border-border ps-3 pe-3 sm:pe-16">
+        <div className="flex h-[52px] shrink-0 items-center gap-1 border-t border-border ps-3 pe-3 sm:pe-fab-safe">
           <Button type="submit" disabled={sendEmail.isPending} className="h-8 gap-1.5 px-3 text-[13px]">
             {sendEmail.isPending ? (
               <>

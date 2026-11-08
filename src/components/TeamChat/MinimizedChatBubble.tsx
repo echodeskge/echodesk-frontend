@@ -83,12 +83,12 @@ export function MinimizedChatBubble({ chat, index, isOnline }: MinimizedChatBubb
 
               {/* Online indicator */}
               {isOnline && (
-                <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
+                <span className="absolute bottom-0 right-0 h-[10px] w-[10px] rounded-full border-[1.5px] border-background bg-ed-green" />
               )}
 
               {/* Unread badge */}
               {chat.unreadCount > 0 && (
-                <span className="absolute -top-1 -left-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                <span className="absolute -left-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-[5px] text-[11px] font-semibold leading-none text-destructive-foreground ring-[1.5px] ring-background">
                   {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
                 </span>
               )}

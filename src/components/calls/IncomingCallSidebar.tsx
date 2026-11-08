@@ -25,7 +25,6 @@ import {
   User,
   Users,
   Mail,
-  Building2,
   Clock,
   FileText,
   Plus,
@@ -49,6 +48,7 @@ import type {
 } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
 import { format } from "date-fns";
+import { statusLabelKey } from "./call-format";
 
 interface PhoneLookupResponse {
   results: Array<{
@@ -75,7 +75,7 @@ export function IncomingCallSidebar() {
     useIncomingCallSidebar();
   const {
     activeCall, callDuration, handleEndCall, handleToggleMute, handleToggleHold,
-    transferCall, startAttendedTransfer, completeTransfer, cancelTransfer, mergeConference,
+    startAttendedTransfer, completeTransfer, cancelTransfer, mergeConference,
   } = useCall();
   const { openTicketCreate } = useTicketCreate();
 
@@ -196,22 +196,22 @@ export function IncomingCallSidebar() {
         <div className="p-4 border-b flex-shrink-0">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/[.08] text-primary">
                 {isCallActive ? (
                   activeCall?.direction === "outgoing" ? (
-                    <PhoneOutgoing className="h-5 w-5 text-primary" />
+                    <PhoneOutgoing className="h-[18px] w-[18px]" />
                   ) : (
-                    <PhoneIncoming className="h-5 w-5 text-primary" />
+                    <PhoneIncoming className="h-[18px] w-[18px]" />
                   )
                 ) : (
-                  <Phone className="h-5 w-5 text-muted-foreground" />
+                  <Phone className="h-[18px] w-[18px] text-muted-foreground" />
                 )}
               </div>
               <div className="min-w-0">
-                <h3 className="font-semibold truncate">
+                <h3 className="truncate text-[15px] font-semibold leading-5">
                   {clientName || client?.name || t("callDetail.unknownCaller")}
                 </h3>
-                <p className="text-sm text-muted-foreground">{phoneNumber}</p>
+                <p className="text-[13px] text-muted-foreground tabular-nums">{phoneNumber}</p>
               </div>
             </div>
             {/* SheetContent already renders a close X in the top-right corner;
@@ -222,21 +222,32 @@ export function IncomingCallSidebar() {
           {isCallActive && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Badge
-                  variant={activeCall.status === "ringing" ? "secondary" : "default"}
-                  className="animate-pulse"
+                <span
+                  aria-live="polite"
+                  className={
+                    activeCall.status === "ringing"
+                      ? "inline-flex h-[22px] items-center gap-1.5 rounded-full bg-primary/[.08] px-2 text-[11px] font-semibold text-foreground"
+                      : activeCall.isOnHold
+                        ? "inline-flex h-[22px] items-center gap-1.5 rounded-full bg-[#fd7e1420] px-2 text-[11px] font-semibold text-[#c2410c] dark:text-orange-400"
+                        : "inline-flex h-[22px] items-center gap-1.5 rounded-full bg-ed-green/12 px-2 font-mono text-[11px] font-semibold text-ed-green tabular-nums"
+                  }
                 >
+                  <span className={activeCall.status === "ringing" ? "h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-ed-blink-slow" : "h-1.5 w-1.5 rounded-full bg-current"} aria-hidden />
                   {activeCall.status === "ringing"
-                    ? t("logs.ringing")
-                    : formatDuration(callDuration)}
-                </Badge>
+                    ? t("phone.badgeIncoming")
+                    : activeCall.isOnHold
+                      ? t("phone.badgeOnHold")
+                      : formatDuration(callDuration)}
+                </span>
                 <div className="flex-1" />
                 <Button
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
                   onClick={handleToggleMute}
-                  title={activeCall.isMuted ? t("unmute") : t("mute")}
+                  title={activeCall.isMuted ? t("phone.unmute") : t("phone.mute")}
+                  aria-label={activeCall.isMuted ? t("phone.unmute") : t("phone.mute")}
+                  aria-pressed={!!activeCall.isMuted}
                 >
                   {activeCall.isMuted ? (
                     <MicOff className="h-4 w-4 text-destructive" />
@@ -249,10 +260,12 @@ export function IncomingCallSidebar() {
                   size="icon"
                   className="h-8 w-8"
                   onClick={handleToggleHold}
-                  title={activeCall.isOnHold ? t("resume") : t("hold")}
+                  title={activeCall.isOnHold ? t("phone.resume") : t("phone.hold")}
+                  aria-label={activeCall.isOnHold ? t("phone.resume") : t("phone.hold")}
+                  aria-pressed={!!activeCall.isOnHold}
                 >
                   {activeCall.isOnHold ? (
-                    <Play className="h-4 w-4 text-orange-500" />
+                    <Play className="h-4 w-4 text-[#c2410c] dark:text-orange-400" />
                   ) : (
                     <Pause className="h-4 w-4" />
                   )}
@@ -263,7 +276,9 @@ export function IncomingCallSidebar() {
                   className="h-8 w-8"
                   onClick={() => setShowTransfer(!showTransfer)}
                   disabled={activeCall.status !== "active" || activeCall.transferPhase === "consulting"}
-                  title={t("dashboard.attendedTransfer")}
+                  title={t("phone.transfer")}
+                  aria-label={t("phone.transfer")}
+                  aria-pressed={showTransfer}
                 >
                   <PhoneForwarded className="h-4 w-4" />
                 </Button>
@@ -272,7 +287,8 @@ export function IncomingCallSidebar() {
                   size="icon"
                   className="h-8 w-8"
                   onClick={handleEndCall}
-                  title={t("endCall")}
+                  title={t("phone.endCall")}
+                  aria-label={t("phone.endCall")}
                 >
                   <PhoneOff className="h-4 w-4" />
                 </Button>
@@ -358,7 +374,7 @@ export function IncomingCallSidebar() {
               <>
                 {/* Client Card */}
                 <section>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  <h4 className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-[.04em] text-muted-foreground">
                     {t("callDetail.clientInfo")}
                   </h4>
                   {client ? (
@@ -419,8 +435,8 @@ export function IncomingCallSidebar() {
                 {client && (
                   <>
                     <section>
-                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                        <FileText className="h-3 w-3 inline mr-1" />
+                      <h4 className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-[.04em] text-muted-foreground">
+                        <FileText className="h-3 w-3" aria-hidden />
                         {t("callDetail.recentTickets")}
                       </h4>
                       {recentTickets.length > 0 ? (
@@ -430,7 +446,7 @@ export function IncomingCallSidebar() {
                               key={ticket.id}
                               type="button"
                               onClick={() => router.push(`/boards`)}
-                              className="w-full flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-accent/50 transition-colors"
+                              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <span className="text-xs font-mono text-muted-foreground">
                                 #{ticket.id}
@@ -459,8 +475,8 @@ export function IncomingCallSidebar() {
 
                 {/* Call History with This Number */}
                 <section>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                    <Clock className="h-3 w-3 inline mr-1" />
+                  <h4 className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-[.04em] text-muted-foreground">
+                    <Clock className="h-3 w-3" aria-hidden />
                     {t("callDetail.recentCalls")}
                   </h4>
                   {recentCalls.length > 0 ? (
@@ -477,9 +493,9 @@ export function IncomingCallSidebar() {
                             {isMissed ? (
                               <PhoneMissed className="h-3.5 w-3.5 text-destructive flex-shrink-0" />
                             ) : dir === "inbound" ? (
-                              <PhoneIncoming className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                              <PhoneIncoming className="h-3.5 w-3.5 shrink-0 text-ed-green" />
                             ) : (
-                              <PhoneOutgoing className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
+                              <PhoneOutgoing className="h-3.5 w-3.5 shrink-0 text-[#2563eb] dark:text-[#60a5fa]" />
                             )}
                             <span className="text-xs text-muted-foreground flex-1">
                               {format(new Date(call.started_at), "MMM d, h:mm a")}
@@ -488,7 +504,7 @@ export function IncomingCallSidebar() {
                               variant={isMissed ? "destructive" : "secondary"}
                               className="text-[10px] px-1.5 py-0 h-4"
                             >
-                              {st}
+                              {statusLabelKey(st) ? t(`logs.${statusLabelKey(st)}`) : st}
                             </Badge>
                             {call.duration_display && (
                               <span className="text-[10px] text-muted-foreground">
@@ -510,10 +526,11 @@ export function IncomingCallSidebar() {
 
                 {/* Notes */}
                 <section>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                  <h4 className="mb-2 flex items-center gap-1 text-[11px] font-medium uppercase tracking-[.04em] text-muted-foreground">
                     {t("callDetail.notes")}
                   </h4>
                   <Textarea
+                    aria-label={t("callDetail.notes")}
                     value={notesText}
                     onChange={(e) => setNotesText(e.target.value)}
                     placeholder={t("logs.notesPlaceholder")}

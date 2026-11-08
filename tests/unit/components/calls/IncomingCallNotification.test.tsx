@@ -16,6 +16,9 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
       incomingCall: "Incoming Call",
+      "phone.incomingCall": "Incoming call",
+      "phone.unknownCaller": "Unknown caller",
+      "phone.incomingFrom": "Incoming call from {caller}",
       accept: "Accept",
       decline: "Decline",
       "callDetail.viewDetails": "View caller details",
@@ -195,14 +198,25 @@ describe("IncomingCallNotification", () => {
       expect(screen.getByText("+995574303444")).toBeInTheDocument();
     });
 
-    it("shows 'Incoming Call' when no caller name", () => {
+    it("shows 'Unknown caller' when no caller name", () => {
       mockCallContextValue.activeCall = makeIncomingRingingCall({
         callerName: undefined,
       });
 
       render(<IncomingCallNotification />);
 
-      expect(screen.getByText("Incoming Call")).toBeInTheDocument();
+      expect(screen.getByText("Unknown caller")).toBeInTheDocument();
+      expect(screen.getByText("Incoming call")).toBeInTheDocument();
+    });
+
+    it("is announced to assistive tech (role=alert, aria-live=assertive)", () => {
+      mockCallContextValue.activeCall = makeIncomingRingingCall();
+
+      render(<IncomingCallNotification />);
+
+      const alert = screen.getByRole("alert");
+      expect(alert).toHaveAttribute("aria-live", "assertive");
+      expect(alert).toHaveAttribute("aria-label", "Incoming call from {caller}");
     });
   });
 
@@ -315,14 +329,14 @@ describe("IncomingCallNotification", () => {
       expect(screen.getByText("Decline")).toBeInTheDocument();
     });
 
-    it("uses t('incomingCall') as fallback when no caller name", () => {
+    it("uses t('phone.unknownCaller') as fallback when no caller name", () => {
       mockCallContextValue.activeCall = makeIncomingRingingCall({
         callerName: undefined,
       });
 
       render(<IncomingCallNotification />);
 
-      expect(screen.getByText("Incoming Call")).toBeInTheDocument();
+      expect(screen.getByText("Unknown caller")).toBeInTheDocument();
     });
   });
 

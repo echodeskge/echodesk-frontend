@@ -24,8 +24,8 @@ export const DOCK = {
   BOTTOM: 12,
   /** Gap between the column and panels opened beside it */
   PANEL_GAP: 12,
-  /** Width of the dialpad popup panel */
-  DIALPAD_PANEL_WIDTH: 300,
+  /** Width of the dialpad (softphone) popup panel */
+  DIALPAD_PANEL_WIDTH: 320,
   /** Below this viewport width panels switch to a compact full-width layout */
   COMPACT_BREAKPOINT: 640,
   /**
@@ -42,6 +42,14 @@ export const dockSlotBottom = (i: number) => DOCK.BOTTOM + i * (DOCK.SLOT_SIZE +
 
 /** `right` (px) of the first panel opened beside the dock column. */
 export const DOCK_PANEL_RIGHT = DOCK.RIGHT + DOCK.SLOT_SIZE + DOCK.PANEL_GAP;
+
+/**
+ * Space the dock column takes from the right edge of the viewport. Content
+ * that sits at the bottom-right of a screen (composer Send buttons, pagers,
+ * toasts) pads by this so a launcher never covers it. The CSS variable
+ * `--fab-safe-right` and the `pe-fab-safe` utility (globals.css) mirror it.
+ */
+export const FAB_SAFE_RIGHT = DOCK_PANEL_RIGHT;
 
 /** Slot index the dialpad launcher occupies (directly above the chat icon). */
 export const DIALPAD_SLOT = 1;

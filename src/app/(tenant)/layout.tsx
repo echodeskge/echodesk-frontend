@@ -724,6 +724,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 </>
               )}
             </h1>
+            {headerSlot?.meta && <div className="ml-2 flex min-w-0 items-center">{headerSlot.meta}</div>}
             {showBoardSwitcher && (
               <>
                 <div className="ml-2">

@@ -26,6 +26,10 @@
   --color-success: hsl(var(--success));
   --color-success-foreground: hsl(var(--success-foreground));
 
+  /* Call / softphone green from the EchoDesk Redesign (brighter than
+     --success in dark mode). Used as bg-ed-green, text-ed-green, ... */
+  --color-ed-green: hsl(var(--green));
+
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
 
@@ -64,6 +68,9 @@
   --animate-collapsible-right: collapsible-right 0.2s ease-out;
   --animate-collapsible-left: collapsible-left 0.2s ease-out;
   --animate-shake: shake 0.5s ease-in-out;
+  --animate-ed-ring: ed-ring 1.4s ease-out infinite;
+  --animate-ed-blink: ed-blink 1s infinite;
+  --animate-ed-blink-slow: ed-blink 1.2s infinite;
 
   @keyframes accordion-down {
     from {
@@ -111,6 +118,24 @@
     }
     to {
       width: 0;
+    }
+  }
+  /* Ringing halo (softphone avatar, phone launcher). Colour comes from
+     --ring-c, an HSL triplet such as var(--green). */
+  @keyframes ed-ring {
+    0% {
+      box-shadow: 0 0 0 0 hsl(var(--ring-c, var(--green)) / 0.45);
+    }
+    100% {
+      box-shadow: 0 0 0 18px hsl(var(--ring-c, var(--green)) / 0);
+    }
+  }
+  @keyframes ed-blink {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.35;
     }
   }
   @keyframes shake {
@@ -168,6 +193,11 @@
   }
 }
 
+/* Keeps content clear of the floating dock launchers (bottom-right). */
+@utility pe-fab-safe {
+  padding-inline-end: var(--fab-safe-right);
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -197,6 +227,13 @@
   --destructive-foreground: 0 0% 98%;
   --success: 142.1 76.2% 36.3%;
   --success-foreground: 0 0% 98%;
+  --green: 142.1 76.2% 36.3%;
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Space the bottom-right dock (team chat + phone launchers) takes from the
+     right edge: RIGHT 12 + SLOT_SIZE 36 + PANEL_GAP 12. Composers, pagers and
+     toasts pad by this so the launchers never cover them. Mirrors
+     FAB_SAFE_RIGHT in components/TeamChat/floatingDock.ts. */
+  --fab-safe-right: 60px;
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
   --ring: 240 10% 3.9%;
@@ -250,6 +287,7 @@
   --destructive-foreground: 0 0% 98%;
   --success: 142.4 71.8% 29.2%;
   --success-foreground: 0 0% 98%;
+  --green: 142.4 71.8% 40%;
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;

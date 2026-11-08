@@ -536,9 +536,9 @@ export function MessagesBetaComposer({ conversation }: Props) {
 
   return (
     <div
-      // Right padding keeps Send clear of the floating call / chat widgets
+      // pe-fab-safe keeps Send clear of the floating call / chat launchers
       // that sit over the bottom-right corner of every page.
-      className="flex shrink-0 flex-col gap-2 border-t py-2.5 pl-3 pr-16"
+      className="flex shrink-0 flex-col gap-2 border-t py-2.5 pl-3 pe-fab-safe"
       data-testid="composer"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
