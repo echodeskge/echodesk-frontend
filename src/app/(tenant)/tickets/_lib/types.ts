@@ -209,7 +209,8 @@ export interface ViewerPermissions {
 export interface TicketCustomer {
   id: number;
   name: string;
-  email: string;
+  /** social_integrations.Client.email is nullable. */
+  email: string | null;
   phone: string;
 }
 
@@ -412,7 +413,8 @@ export interface TimerCurrent {
 
 export interface TimerConflict {
   code: "timer_running";
-  running: { id: number; ticket_id: number; ticket_title: string | null; started_at: string };
+  /** null only when a concurrent start won the race and has already stopped. */
+  running: { id: number; ticket_id: number; ticket_title: string | null; started_at: string } | null;
 }
 
 export interface TimeSummary {
