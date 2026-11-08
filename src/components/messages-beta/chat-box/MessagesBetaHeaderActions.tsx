@@ -29,7 +29,6 @@ import {
   useTransferChat,
 } from "@/hooks/api/useSocial";
 import { usePrefetchConversations, usePrefetchUnreadCount } from "@/hooks/api/usePrefetchSocial";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,11 +44,17 @@ import { registerEndedChat } from "../end-session-block";
 import { MessagesBetaTransferDialog } from "./MessagesBetaTransferDialog";
 import { MessagesBetaEndSessionDialog } from "./MessagesBetaEndSessionDialog";
 import { MessagesBetaDeleteDialog } from "./MessagesBetaDeleteDialog";
-import { MessagesBetaSummaryDialog } from "./MessagesBetaSummaryDialog";
 
 interface Props {
   conversation: ConversationRow;
 }
+
+const iconBtn =
+  "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50";
+const ghostBtn =
+  "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50";
+const primaryBtn =
+  "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50";
 
 /**
  * /messages-beta header actions. Mirrors the legacy chat-header-actions
@@ -81,7 +86,8 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const archiveMeta = useMessagesBetaStore(
     (s) => s.archivedByChatId[conversation.id] ?? null
   );
-  const wsState = useMessagesBetaStore((s) => s.wsState);
+  const showSummary = useMessagesBetaStore((s) => s.showSummary);
+  const setShowSummary = useMessagesBetaStore((s) => s.setShowSummary);
   const setShowArchived = useMessagesBetaStore((s) => s.setShowArchived);
   const selectChat = useMessagesBetaStore((s) => s.selectChat);
   const showClientPanel = useMessagesBetaStore((s) => s.showClientPanel);
@@ -94,7 +100,6 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
   const [transferOpen, setTransferOpen] = useState(false);
   const [endSessionOpen, setEndSessionOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const startSession = useStartSession();
   const transferChat = useTransferChat();
@@ -338,144 +343,101 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
     }
   };
 
-  const wsDotTitle =
-    wsState === "open"
-      ? t("wsConnected")
-      : wsState === "connecting" || wsState === "reconnecting"
-      ? t("wsReconnecting")
-      : t("wsOffline");
-
   return (
-    <div className="flex items-center gap-1">
-      {/* Connection-status dot — green when WS is open, amber while
-          reconnecting, red when down. Pure presentation, no clicks. */}
-      <span
-        className={cn(
-          "h-2 w-2 rounded-full mr-1 shrink-0",
-          wsState === "open" && "bg-emerald-500",
-          (wsState === "connecting" || wsState === "reconnecting") &&
-            "bg-amber-500 animate-pulse",
-          (wsState === "idle" || wsState === "down") && "bg-rose-500"
-        )}
-        title={wsDotTitle}
-        aria-label={wsDotTitle}
-      />
-
+    <div className="flex items-center gap-0.5">
       {!isAssignedToMe && !isAssignedToOther && (
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           onClick={handleAssignToMe}
           disabled={busy !== null}
+          className={primaryBtn}
+          aria-label={t("assignToMe")}
         >
-          <UserPlus className="h-4 w-4 mr-1" />
-          {t("assignToMe")}
-        </Button>
+          <UserPlus className="h-[13px] w-[13px]" />
+          <span className="hidden sm:inline">{t("assignToMe")}</span>
+        </button>
       )}
-      {/* End session replaces the old Unassign button. It unassigns AND
-          archives the chat (moves it to History) in one action — the
-          product's preferred close flow. Opening the confirm dialog keeps
-          the rating prompt + widget close behaviour intact. */}
+      {/* End session unassigns AND archives (moves to History); the confirm
+          dialog keeps the rating prompt + widget close behaviour. */}
       {isAssignedToMe && (
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           onClick={() => setEndSessionOpen(true)}
           onMouseEnter={handleEndSessionHover}
           disabled={busy !== null}
+          className={ghostBtn}
+          aria-label={t("endSession")}
         >
-          <PowerOff className="h-4 w-4 mr-1" />
-          {t("endSession")}
-        </Button>
+          <PowerOff className="h-[13px] w-[13px]" />
+          <span className="hidden sm:inline">{t("endSession")}</span>
+        </button>
       )}
       {isAssignedToOther && (
-        <span className="text-xs text-muted-foreground px-2">
+        <span className="hidden max-w-[160px] truncate px-1.5 text-xs text-muted-foreground lg:inline">
           {assignmentSlice?.assignedUserName
             ? t("assignedToWho", { name: assignmentSlice.assignedUserName })
             : t("assignedToAnotherAgent")}
         </span>
       )}
-
-      {hasAiCompanion && (
-        <Button
+      {isAdmin && isAssignedToOther && (
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setSummaryOpen(true)}
-          aria-label={t("aiSummary")}
-          title={t("aiSummary")}
-          className="px-2"
+          onClick={handleTakeOver}
+          disabled={busy !== null}
+          className={ghostBtn}
+          aria-label={t("takeOver")}
         >
-          <Sparkles className="h-4 w-4" />
-        </Button>
+          <UserCheck className="h-[13px] w-[13px]" />
+          <span className="hidden sm:inline">{t("takeOver")}</span>
+        </button>
       )}
 
-      <Button
+      <span className="mx-1 h-4 w-px bg-border" aria-hidden />
+
+      {hasAiCompanion && (
+        <button
+          type="button"
+          onClick={() => setShowSummary(!showSummary)}
+          aria-label={t("aiSummary")}
+          aria-pressed={showSummary}
+          title={t("aiSummary")}
+          className={cn(iconBtn, "hidden md:inline-flex", showSummary && "bg-muted text-foreground")}
+        >
+          <Sparkles className="h-[15px] w-[15px]" />
+        </button>
+      )}
+
+      <button
         type="button"
-        variant={showClientPanel ? "secondary" : "ghost"}
-        size="sm"
         onClick={() => setShowClientPanel(!showClientPanel)}
         aria-label={showClientPanel ? t("hideProfile") : t("viewProfile")}
         aria-pressed={showClientPanel}
+        className={cn(ghostBtn, showClientPanel && "bg-muted text-foreground")}
       >
-        <Contact className="h-4 w-4 mr-1" />
-        {t("profile")}
-      </Button>
+        <Contact className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">{t("profile")}</span>
+      </button>
 
-      {isAdmin && isAssignedToOther && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleTakeOver}
-          disabled={busy !== null}
-        >
-          <UserCheck className="h-4 w-4 mr-1" />
-          {t("takeOver")}
-        </Button>
-      )}
-
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="sm"
         onClick={handleArchiveToggle}
         disabled={busy !== null}
         aria-label={isArchived ? t("restoreFromArchive") : t("archive")}
+        title={isArchived ? t("restoreFromArchive") : t("archive")}
+        className={iconBtn}
       >
-        {isArchived ? (
-          <>
-            <ArchiveRestore className="h-4 w-4 mr-1" />
-            {t("restore")}
-          </>
-        ) : (
-          <>
-            <Archive className="h-4 w-4 mr-1" />
-            {t("archive")}
-          </>
-        )}
-      </Button>
+        {isArchived ? <ArchiveRestore className="h-[15px] w-[15px]" /> : <Archive className="h-[15px] w-[15px]" />}
+      </button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-label={t("moreActions")}
-            className="px-2"
-          >
+          <button type="button" aria-label={t("moreActions")} className={iconBtn}>
             <MoreVertical className="h-4 w-4" />
-          </Button>
+          </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          {/* Transfer (reassign): any agent can hand off a chat assigned
-              to THEM to a teammate — matches legacy chat-header-actions
-              (shown when isAssignedToMe). Admins can additionally reassign
-              a chat owned by another agent. Mirrors the backend
-              transfer_chat permission (assigned_user == me OR staff). */}
+          {/* Transfer: the holder can hand off; admins can reassign another
+              agent's chat (mirrors backend transfer_chat). */}
           {(isAssignedToMe || (isAdmin && isAssignedToOther)) && (
             <DropdownMenuItem onSelect={() => setTransferOpen(true)}>
               <Users className="h-4 w-4 mr-2" />
@@ -492,22 +454,21 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
               {t("startSession")}
             </DropdownMenuItem>
           )}
-          {/* AI companion pause/resume for this conversation. Resume also
-              clears a needs_human escalation, putting the bot back in
-              charge. Hidden for email (the AI never answers email). */}
+          {hasAiCompanion && (
+            <DropdownMenuItem className="md:hidden" onSelect={() => setShowSummary(!showSummary)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              {t("aiSummary")}
+            </DropdownMenuItem>
+          )}
           {hasAiCompanion && aiReplyablePlatform && (
             <DropdownMenuItem
               onSelect={() => void handleSetAiMode(aiPaused || conversation.aiState === "needs_human" ? "ai" : "off")}
               disabled={setAiMode.isPending}
             >
               <Bot className="h-4 w-4 mr-2" />
-              {aiPaused || conversation.aiState === "needs_human"
-                ? t("resumeAi")
-                : t("pauseAi")}
+              {aiPaused || conversation.aiState === "needs_human" ? t("resumeAi") : t("pauseAi")}
             </DropdownMenuItem>
           )}
-          {/* End session lives inline now (replaces the old Unassign
-              button) — not duplicated here. */}
           {isAdmin && (
             <>
               <DropdownMenuSeparator />
@@ -537,11 +498,6 @@ export function MessagesBetaHeaderActions({ conversation }: Props) {
       <MessagesBetaDeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
-        conversation={conversation}
-      />
-      <MessagesBetaSummaryDialog
-        open={summaryOpen}
-        onOpenChange={setSummaryOpen}
         conversation={conversation}
       />
     </div>

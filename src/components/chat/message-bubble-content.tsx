@@ -77,27 +77,6 @@ function processEmailHtml(html: string): string {
   )
 }
 
-function getPlatformBgClass(platform?: "facebook" | "instagram" | "whatsapp" | "email" | "widget" | "telegram") {
-  switch (platform) {
-    case "facebook":
-      return "bg-[#1877F2]" // Facebook blue
-    case "instagram":
-      return "bg-[#8C2FF5]" // Instagram purple
-    case "whatsapp":
-      return "bg-[#25D366]" // WhatsApp green
-    case "telegram":
-      return "bg-[#229ED9]" // Telegram blue
-    case "email":
-      return "bg-white border border-gray-200" // Email - white with border for better HTML rendering
-    case "widget":
-      // Tenant brands the widget themselves via brand_color; neutral blue here
-      // is fine until PR 5 gives agents a dedicated widget pill.
-      return "bg-primary"
-    default:
-      return "bg-primary"
-  }
-}
-
 export function MessageBubbleContent({
   message,
   isByCurrentUser,
@@ -203,15 +182,22 @@ export function MessageBubbleContent({
   return (
     <div
       className={cn(
-        "text-sm p-2 space-y-2 rounded-lg overflow-hidden",
-        "break-words",
-        isByCurrentUser
-          ? isEmailMessage
-            ? "bg-blue-50 border border-blue-200 text-gray-900 rounded-se-none"
-            : cn(getPlatformBgClass(platform), "text-white rounded-se-none")
-          : isEmailMessage
-            ? "bg-white border border-gray-200 text-gray-900 rounded-ss-none"
-            : "bg-[#EFEFEF] text-gray-900 rounded-ss-none"
+        "space-y-2 overflow-hidden break-words",
+        isEmailMessage
+          ? cn(
+              "rounded-lg p-2 text-sm",
+              isByCurrentUser
+                ? "bg-blue-50 border border-blue-200 text-gray-900 rounded-se-none"
+                : "bg-white border border-gray-200 text-gray-900 rounded-ss-none"
+            )
+          : cn(
+              // Design bubbles: 13/19, 8×12 padding, 14px radius with the
+              // tail corner at 4px; outgoing on primary, incoming on muted.
+              "whitespace-pre-wrap rounded-[14px] px-3 py-2 text-[13px] leading-[19px]",
+              isByCurrentUser
+                ? "rounded-br-[4px] bg-primary text-primary-foreground"
+                : "rounded-bl-[4px] bg-muted text-foreground"
+            )
       )}
     >
       {contentParts}

@@ -119,6 +119,7 @@ export interface MessagesBetaActions {
 
   // --- PR E: customer profile side rail ---
   setShowClientPanel: (v: boolean) => void;
+  setShowSummary: (v: boolean) => void;
 
   // --- Mobile sidebar drawer ---
   setIsMobileSidebarOpen: (v: boolean) => void;
@@ -159,6 +160,7 @@ const initialState: MessagesBetaState = {
 
   // PR E side-rail slice — closed by default; user opens via header toggle.
   showClientPanel: false,
+  showSummary: false,
 
   // Mobile sidebar drawer — closed by default; opens via hamburger.
   isMobileSidebarOpen: false,
@@ -482,7 +484,12 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
       ),
     })),
 
-  selectChat: (chatId) => set({ selectedChatId: chatId }),
+  selectChat: (chatId) =>
+    set((state) =>
+      state.selectedChatId === chatId
+        ? { selectedChatId: chatId }
+        : { selectedChatId: chatId, showSummary: false }
+    ),
 
   removeConversation: (chatId) =>
     set((state) => {
@@ -554,6 +561,7 @@ export const useMessagesBetaStore = create<MessagesBetaStore>((set) => ({
 
   // --- PR E: side-rail action ---
   setShowClientPanel: (v) => set({ showClientPanel: v }),
+  setShowSummary: (v) => set({ showSummary: v }),
 
   // --- Mobile sidebar drawer ---
   setIsMobileSidebarOpen: (v) => set({ isMobileSidebarOpen: v }),

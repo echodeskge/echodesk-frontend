@@ -1,18 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useMedia } from "react-use";
+import { cn } from "@/lib/utils";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-
+import { MessagesHeaderBridge } from "./MessagesHeaderBridge";
 import { MessagesBetaProvider } from "./MessagesBetaProvider";
 import { MessagesBetaChatBox } from "./chat-box/MessagesBetaChatBox";
 import { MessagesBetaSidebar } from "./sidebar/MessagesBetaSidebar";
@@ -152,49 +145,41 @@ export function MessagesChatBeta({ platforms }: Props) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [selectChat]);
 
-  // Mobile sidebar drawer wiring (mirrors chat-sidebar/index.tsx). On
-  // screens < md we hide the inline sidebar and surface it via a slide-in
-  // Sheet; the chat box's hamburger opens it, selecting a chat closes it.
-  // `useMedia` returns false during SSR; ssr-fallback to desktop layout to
-  // avoid hydration mismatch flicker.
-  const isMobile = useMedia("(max-width: 767px)", false);
-  const isMobileSidebarOpen = useMessagesBetaStore((s) => s.isMobileSidebarOpen);
-  const setIsMobileSidebarOpen = useMessagesBetaStore((s) => s.setIsMobileSidebarOpen);
+  // Mobile: the list and the chat swap places (design). A selected chat shows
+  // the chat pane with a back bar; going back clears the selection and the
+  // URL's chat id so the list reappears.
+  const handleBackToList = useCallback(() => {
+    selectChat(null);
+    if (typeof window !== "undefined") {
+      const root = window.location.pathname.startsWith("/social/messages")
+        ? "/social/messages"
+        : "/messages";
+      window.history.pushState(null, "", `${root}${window.location.search}`);
+    }
+  }, [selectChat]);
 
-  const handleSelectChatAndClose = useCallback(
-    (chatId: string) => {
-      handleSelectChat(chatId);
-      // Auto-close the drawer on mobile so the user lands directly in the
-      // chat — same UX as the legacy page.
-      if (isMobile) setIsMobileSidebarOpen(false);
-    },
-    [handleSelectChat, isMobile, setIsMobileSidebarOpen]
-  );
+  const hasChat = !!selectedChatId;
 
   return (
     <MessagesBetaProvider platforms={platforms}>
-      <div className="relative w-full flex gap-x-4 p-4 h-[80vh]">
-        {!isMobile && (
-          <MessagesBetaSidebar onSelectChat={handleSelectChatAndClose} platforms={platforms} />
-        )}
-        {isMobile && (
-          <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-            <SheetContent side="left" className="p-0 w-[90vw] max-w-sm">
-              <SheetHeader className="sr-only">
-                <SheetTitle>{t("conversationsTitle")}</SheetTitle>
-                <SheetDescription>{t("conversationsDescription")}</SheetDescription>
-              </SheetHeader>
-              <div className="h-full">
-                <MessagesBetaSidebar
-                  onSelectChat={handleSelectChatAndClose}
-                  platforms={platforms}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-        )}
-        <MessagesBetaChatBox />
-      </div>
+      <MessagesHeaderBridge platforms={platforms} />
+      <section
+        className="relative flex h-full min-h-0 w-full overflow-hidden bg-background"
+        aria-label={t("conversationsTitle")}
+        data-testid="messages-split"
+      >
+        <div
+          className={cn(
+            "min-h-0 w-full shrink-0 flex-col border-r md:flex md:w-[320px]",
+            hasChat ? "hidden" : "flex"
+          )}
+        >
+          <MessagesBetaSidebar onSelectChat={handleSelectChat} platforms={platforms} />
+        </div>
+        <div className={cn("min-h-0 min-w-0 flex-1 md:flex", hasChat ? "flex" : "hidden")}>
+          <MessagesBetaChatBox onBack={handleBackToList} />
+        </div>
+      </section>
     </MessagesBetaProvider>
   );
 }

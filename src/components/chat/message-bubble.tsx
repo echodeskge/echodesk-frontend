@@ -155,6 +155,26 @@ function MessageSourceIcon({ source, platform }: { source?: string; platform?: s
   )
 }
 
+/**
+ * Bubble meta time: "14:05" today, "07.11 14:05" on other days. Numeric, so
+ * it reads the same in every language (date-fns' relative text was English
+ * only); the thread's day dividers carry the full date.
+ */
+export function bubbleTime(value: Date | string | number, now: Date = new Date()): string {
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ""
+  const hh = String(d.getHours()).padStart(2, "0")
+  const mm = String(d.getMinutes()).padStart(2, "0")
+  const sameDay =
+    d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+  if (sameDay) return `${hh}:${mm}`
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  return d.getFullYear() === now.getFullYear()
+    ? `${day}.${month} ${hh}:${mm}`
+    : `${day}.${month}.${d.getFullYear()} ${hh}:${mm}`
+}
+
 // Staff member name for business-side messages
 function MessageAuthorBadge({ sentByName }: { sentByName?: string }) {
   if (!sentByName) return null
@@ -263,7 +283,7 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
             isByCurrentUser && "justify-end"
           )}>
             <span className="text-xs font-normal text-muted-foreground">
-              {formatDistanceToNow(message.createdAt, { addSuffix: true })}
+              {bubbleTime(message.createdAt)}
             </span>
           </div>
         </div>
@@ -282,7 +302,7 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
     >
       <div className={cn(
         "flex flex-col gap-1 overflow-hidden",
-        isEmail ? "max-w-full w-full" : "max-w-[320px]"
+        isEmail ? "max-w-full w-full" : "max-w-[min(68%,520px)]"
       )}>
         {/* Reply preview */}
         {(message.replyToText || message.replyToSenderName) && (
@@ -374,7 +394,7 @@ const MessageBubbleInner = forwardRef<HTMLLIElement, MessageBubbleProps>(
           )}
 
           <span className="text-xs font-normal text-muted-foreground">
-            {formatDistanceToNow(message.createdAt, { addSuffix: true })}
+            {bubbleTime(message.createdAt)}
           </span>
           {isByCurrentUser && message.status === "FAILED" && (
             <TooltipProvider>

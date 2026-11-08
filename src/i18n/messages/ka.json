@@ -2839,7 +2839,10 @@
       "verified": "დადასტურებული",
       "unverified": "დაუდასტურებელი",
       "bookings": "ჯავშნები"
-    }
+    },
+    "noClientsFound": "კლიენტი ვერ მოიძებნა",
+    "typeToSearch": "ჩაწერეთ საძიებლად…",
+    "clientsHeading": "კლიენტები"
   },
   "productAttributes": {
     "title": "პროდუქტის ატრიბუტები",
@@ -6204,7 +6207,11 @@
   "messagesBeta": {
     "page": {
       "conversationsTitle": "საუბრები",
-      "conversationsDescription": "აირჩიეთ საუბარი წასაკითხად ან საპასუხოდ."
+      "conversationsDescription": "აირჩიეთ საუბარი წასაკითხად ან საპასუხოდ.",
+      "live": "ონლაინ",
+      "reconnecting": "ხელახლა დაკავშირება…",
+      "offline": "კავშირი არ არის",
+      "newWhatsApp": "ახალი WhatsApp"
     },
     "platforms": {
       "widget": "ვებსაიტის ვიჯეტი"
@@ -6232,7 +6239,12 @@
       "noConversationsYet": "ჯერ საუბრები არ არის.",
       "noMessagesYet": "ჯერ შეტყობინებები არ არის…",
       "scrollForMore": "მეტისთვის გადააქოლეთ",
-      "aiNeedsHuman": "საჭიროა ოპერატორი"
+      "aiNeedsHuman": "საჭიროა ოპერატორი",
+      "history": "ისტორია",
+      "allChannels": "ყველა არხი",
+      "filterChannel": "მხოლოდ {channel}",
+      "assignedTo": "მიმაგრებულია: {name}",
+      "unreadCount": "{count} წაუკითხავი"
     },
     "newWhatsApp": {
       "title": "ახალი WhatsApp შეტყობინება",
@@ -6264,7 +6276,8 @@
         "US_MARKETING_PAUSED": "WhatsApp-მა შეაჩერა მარკეტინგული შაბლონები აშშ-ის ნომრებზე. გამოიყენეთ utility შაბლონი.",
         "TEMPLATE_PARAM_MISMATCH": "შაბლონის პარამეტრები არ ემთხვევა შაბლონს.",
         "SEND_FAILED_GENERIC": "შეტყობინების გაგზავნა ვერ მოხერხდა. სცადეთ თავიდან ან დაუკავშირდით მხარდაჭერას."
-      }
+      },
+      "useTemplate": "შაბლონის გაგზავნა: „{name}“"
     },
     "chatBox": {
       "selectAConversation": "დასაწყებად აირჩიეთ საუბარი.",
@@ -6273,7 +6286,8 @@
       "loadingConversation": "საუბრის ჩატვირთვა…",
       "movedToHistory": "ეს საუბარი ისტორიაში გადავიდა.",
       "movedToHistoryHint": "აქ ღია რჩება — მოგვიანებით იპოვით ისტორიის ხედში.",
-      "aiNeedsHuman": "AI ასისტენტმა ოპერატორის ჩართვა მოითხოვა"
+      "aiNeedsHuman": "AI ასისტენტმა ოპერატორის ჩართვა მოითხოვა",
+      "backToConversations": "საუბრები"
     },
     "thread": {
       "loadOlder": "ძველი შეტყობინებების ჩატვირთვა",
@@ -6281,7 +6295,9 @@
       "loadingMessages": "შეტყობინებების ჩატვირთვა…",
       "noMessages": "ჯერ შეტყობინებები არ არის.",
       "searchMessages": "შეტყობინებების ძებნა",
-      "scrollToBottom": "ბოლოში გადასვლა"
+      "scrollToBottom": "ბოლოში გადასვლა",
+      "today": "დღეს",
+      "yesterday": "გუშინ"
     },
     "composer": {
       "placeholder": "ჩაწერეთ შეტყობინება…",
@@ -6319,7 +6335,12 @@
       "humanAgentWindowBanner": "24-საათიანი ფანჯარა დაიხურა. ოპერატორის სახით პასუხის გაგზავნა კიდევ {hours} საათის განმავლობაში შეგიძლიათ. პასუხები Meta-ს Human Agent ტეგით იგზავნება.",
       "humanAgentWindowBannerNoHours": "24-საათიანი ფანჯარა დაიხურა. ოპერატორის სახით პასუხის გაგზავნა მომხმარებლის ბოლო შეტყობინებიდან 7 დღის განმავლობაში შეგიძლიათ. პასუხები Meta-ს Human Agent ტეგით იგზავნება.",
       "messagingWindowClosedBanner": "Meta პასუხის გაგზავნას მხოლოდ მომხმარებლის ბოლო შეტყობინებიდან 7 დღის განმავლობაში უშვებს (Human Agent-ის გარეშე — 24 საათის განმავლობაში). პასუხს შეძლებთ, როცა ის ხელახლა მოგწერთ.",
-      "placeholderWindowClosed": "ამ საუბარზე პასუხის გაგზავნა ამჟამად შეუძლებელია"
+      "placeholderWindowClosed": "ამ საუბარზე პასუხის გაგზავნა ამჟამად შეუძლებელია",
+      "emoji": "ემოჯი",
+      "savedReplies": "შენახული პასუხები",
+      "sendTemplate": "შაბლონის გაგზავნა",
+      "templateGateHint": "თუ მომხმარებელს ბოლო 24 საათში არ მოუწერია, WhatsApp მხოლოდ დამტკიცებული შაბლონის გაგზავნის საშუალებას იძლევა.",
+      "enterHint": "Enter — გაგზავნა, Shift+Enter — ახალი ხაზი"
     },
     "header": {
       "assignToMe": "მე მივინიჭო",
@@ -6401,6 +6422,37 @@
       "error": "შეჯამების შექმნა ვერ მოხერხდა. სცადეთ თავიდან.",
       "generatedAt": "შეიქმნა {time}",
       "previousSummaries": "წინა შეჯამებები"
+    },
+    "summaryCard": {
+      "title": "AI შეჯამება",
+      "close": "შეჯამების დახურვა",
+      "earlier": "წინა შეჯამებები"
+    },
+    "rail": {
+      "title": "კლიენტის პროფილი",
+      "close": "პროფილის დახურვა",
+      "contact": "კონტაქტი",
+      "channel": "არხი",
+      "handle": "იდენტიფიკატორი",
+      "email": "ელ-ფოსტა",
+      "phone": "ტელეფონი",
+      "tags": "თეგები",
+      "addTag": "დამატება",
+      "tagPlaceholder": "ახალი თეგი",
+      "removeTag": "თეგის წაშლა: {tag}",
+      "linkedTickets": "დაკავშირებული ტიკეტები",
+      "noTickets": "დაკავშირებული ტიკეტები ჯერ არ არის",
+      "createTicket": "ტიკეტის შექმნა",
+      "ticketCreated": "ტიკეტი #{id} შეიქმნა",
+      "ticketAlreadyLinked": "ეს საუბარი უკვე დაკავშირებულია ტიკეტთან #{id}",
+      "ticketFailed": "ტიკეტის შექმნა ვერ მოხერხდა",
+      "notes": "შენიშვნები",
+      "notesPlaceholder": "შიდა შენიშვნები კლიენტზე…",
+      "notesSaved": "შენახულია",
+      "saveFailed": "შენახვა ვერ მოხერხდა",
+      "needsClient": "თეგებისა და შენიშვნების დასამატებლად დააკავშირეთ ან შექმენით კლიენტი.",
+      "edit": "კლიენტის რედაქტირება",
+      "unlink": "კლიენტის მოხსნა"
     }
   },
   "publicBooking": {

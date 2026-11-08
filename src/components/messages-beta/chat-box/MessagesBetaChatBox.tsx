@@ -2,18 +2,18 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
-import { Bot, Menu, MessageCircleDashed } from "lucide-react";
+import { Bot, ChevronLeft, MessageSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import axios from "@/api/axios";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChatAvatar } from "@/components/chat/chat-avatar";
 import { getInitials } from "@/lib/utils";
 import type { UserType } from "@/components/chat/types";
 
 import { MessagesBetaComposer } from "../composer/MessagesBetaComposer";
 import { MessagesBetaClientRail } from "../client-rail/MessagesBetaClientRail";
+import { ChannelBadge, PLATFORM_BRAND } from "../platform-visuals";
+import { MessagesBetaSummaryCard } from "./MessagesBetaSummaryCard";
 import { MessagesBetaArchivedNotice } from "./MessagesBetaArchivedNotice";
 import { MessagesBetaHeaderActions } from "./MessagesBetaHeaderActions";
 import { MessagesBetaThread } from "./MessagesBetaThread";
@@ -61,8 +61,31 @@ const CURRENT_USER: UserType = {
   status: "online",
 };
 
-export function MessagesBetaChatBox() {
+interface ChatBoxProps {
+  /** Mobile back bar: return to the conversation list. */
+  onBack?: () => void;
+}
+
+/** Mobile-only 40px back bar (design: ChevronLeft + "Conversations"). */
+function BackBar({ onBack, label }: { onBack?: () => void; label: string }) {
+  if (!onBack) return null;
+  return (
+    <button
+      type="button"
+      onClick={onBack}
+      className="flex h-10 w-full shrink-0 items-center gap-1 border-b px-2 text-[13px] font-medium md:hidden"
+      data-testid="messages-back"
+    >
+      <ChevronLeft className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
+
+export function MessagesBetaChatBox({ onBack }: ChatBoxProps = {}) {
   const t = useTranslations("messagesBeta.chatBox");
+  const tPlatforms = useTranslations("messagesBeta.platforms");
+  const showSummary = useMessagesBetaStore((s) => s.showSummary);
   const selectedChatId = useMessagesBetaStore((s) => s.selectedChatId);
   const conversations = useMessagesBetaStore((s) => s.conversations);
   const messagesLoaded = useMessagesBetaStore((s) => s.messagesLoaded);
@@ -164,25 +187,14 @@ export function MessagesBetaChatBox() {
 
   if (!selectedChatId) {
     return (
-      <Card className="grow h-full">
-        <CardContent className="size-full flex flex-col justify-center items-center gap-2 p-0">
-          <MessageCircleDashed className="size-24 text-primary/50" />
-          <p className="text-muted-foreground">{t("selectAConversation")}</p>
-          {/* Mobile: when the sidebar lives in a Sheet, the empty state needs
-              its own opener. Desktop's persistent sidebar is right there so
-              we hide this. */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="md:hidden"
-            onClick={() => useMessagesBetaStore.getState().setIsMobileSidebarOpen(true)}
-          >
-            <Menu className="h-4 w-4 mr-2" />
-            {t("openConversations")}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex h-full min-h-0 w-full flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted">
+            <MessageSquare className="h-5 w-5 text-muted-foreground" />
+          </span>
+          <p className="text-[13px] text-muted-foreground">{t("selectAConversation")}</p>
+        </div>
+      </div>
     );
   }
 
@@ -190,74 +202,72 @@ export function MessagesBetaChatBox() {
     // bootstrapState !== "ready" → REST is still in flight; the
     // deep-link effect will fabricate a placeholder once it lands.
     return (
-      <Card className="grow h-full">
-        <CardContent className="size-full flex flex-col justify-center items-center gap-2 p-0">
-          <p className="text-muted-foreground">
-            {bootstrapState === "ready"
-              ? t("conversationNotFound")
-              : t("loadingConversation")}
+      <div className="flex h-full min-h-0 w-full flex-col">
+        <BackBar onBack={onBack} label={t("backToConversations")} />
+        <div className="flex flex-1 items-center justify-center p-6">
+          <p className="text-[13px] text-muted-foreground">
+            {bootstrapState === "ready" ? t("conversationNotFound") : t("loadingConversation")}
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
+  const brand = PLATFORM_BRAND[conversation.platform] ?? tPlatforms("widget");
+  const handle =
+    conversation.platform === "whatsapp" || conversation.platform === "telegram"
+      ? conversation.conversationKey
+      : null;
+  const sub = [brand, handle].filter(Boolean).join(" · ");
+
   return (
     <MessagesBetaChatContextShim>
-      <Card className="grow h-full flex flex-col overflow-hidden">
-        <CardHeader className="flex flex-row items-center space-y-0 gap-x-1.5 py-3 border-b border-border">
-          {/* Mobile-only hamburger — opens the sidebar drawer. Desktop's
-              persistent sidebar is always visible so the button hides. */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="md:hidden shrink-0"
-            aria-label={t("openConversations")}
-            onClick={() => useMessagesBetaStore.getState().setIsMobileSidebarOpen(true)}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-          <ChatAvatar
-            src={conversation.avatar}
-            fallback={getInitials(conversation.name)}
-            size={2}
-          />
-          <CardTitle>{conversation.name}</CardTitle>
-          <div className="ml-auto flex items-center">
-            <MessagesBetaHeaderActions conversation={conversation} />
-          </div>
-        </CardHeader>
-
-        <MessagesBetaArchivedNotice chatId={conversation.id} />
-
-        {/* AI companion escalation banner — the bot asked a human to take
-            over (includes "customer wants a call" requests, carried in the
-            reason). Resume/pause actions live in the header dropdown. */}
-        {conversation.aiState === "needs_human" && (
-          <div className="flex items-start gap-2 px-4 py-2 text-sm bg-amber-500/15 text-amber-900 dark:text-amber-200 border-b border-border">
-            <Bot className="h-4 w-4 mt-0.5 shrink-0" />
-            <div className="min-w-0">
-              <span className="font-medium">{t("aiNeedsHuman")}</span>
-              {conversation.aiReason ? (
-                <span className="block text-xs opacity-80 truncate">
-                  {conversation.aiReason}
-                </span>
-              ) : null}
+      <div className="relative flex h-full min-h-0 w-full">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-testid="messages-chat">
+          <BackBar onBack={onBack} label={t("backToConversations")} />
+          <header className="flex h-[52px] shrink-0 items-center gap-2.5 border-b pl-4 pr-3">
+            <span className="relative shrink-0">
+              <ChatAvatar
+                src={conversation.avatar}
+                fallback={getInitials(conversation.name)}
+                size={2}
+                round
+                fallbackClassName="bg-primary/10 font-semibold text-primary"
+                fallbackFontSize={0.6875}
+              />
+              <ChannelBadge platform={conversation.platform} size={14} />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate text-[13px] font-semibold leading-[18px]">{conversation.name}</span>
+              <span className="truncate text-[11px] leading-[14px] text-muted-foreground">{sub}</span>
+            </span>
+            {conversation.aiState === "needs_human" && (
+              <span
+                className="hidden h-5 shrink-0 items-center gap-1 rounded border border-[#f59e0b] px-1.5 text-[11px] font-semibold text-[#b45309] dark:text-amber-300 md:inline-flex"
+                title={conversation.aiReason || undefined}
+              >
+                <Bot className="h-[11px] w-[11px]" />
+                {t("aiNeedsHuman")}
+              </span>
+            )}
+            <div className="ml-auto flex items-center">
+              <MessagesBetaHeaderActions conversation={conversation} />
             </div>
-          </div>
-        )}
+          </header>
 
-        <MessagesBetaThread conversation={conversation} currentUser={CURRENT_USER} />
+          <MessagesBetaArchivedNotice chatId={conversation.id} />
 
-        <MessagesBetaComposer conversation={conversation} />
-      </Card>
+          {showSummary && <MessagesBetaSummaryCard conversation={conversation} />}
 
-      {/* PR E — Customer profile side rail. The legacy ClientDetailPanel is
-          a self-contained Sheet that overlays from the right; mounting it
-          as a sibling to the Card lets it slide in without competing for
-          the chat box's flex space. Beta store owns the open/close flag. */}
-      <MessagesBetaClientRail conversation={conversation} />
+          <MessagesBetaThread conversation={conversation} currentUser={CURRENT_USER} />
+
+          <MessagesBetaComposer conversation={conversation} />
+        </div>
+
+        {/* Client profile rail: an inline third column on desktop, an overlay
+            over the chat on mobile. The store owns the open flag. */}
+        <MessagesBetaClientRail conversation={conversation} />
+      </div>
     </MessagesBetaChatContextShim>
   );
 }

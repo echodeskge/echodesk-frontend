@@ -109,6 +109,8 @@ export interface MessagesBetaState {
   // --- PR E: customer profile side rail ---
   /** Toggles the legacy ClientDetailPanel mount inside the beta chat box. */
   showClientPanel: boolean;
+  /** Inline AI summary card under the chat header (cleared on chat change). */
+  showSummary: boolean;
 
   // --- Mobile sidebar drawer (parity with chat-sidebar/index.tsx Sheet) ---
   /** Open state for the slide-in sidebar drawer on screens < md. Desktop

@@ -1,19 +1,15 @@
 "use client";
 
-import { ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
-import { Facebook, Instagram, Loader2, Mail, MessageCircle , Send } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Loader2, MessageSquare } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChatAvatar } from "@/components/chat/chat-avatar";
 import { ChatListSkeleton } from "@/components/chat/chat-sidebar/ChatListSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSocialSettings } from "@/hooks/api/useSocial";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { emailInitials, listTime } from "@/lib/email-ui";
 import { cn, getInitials } from "@/lib/utils";
 
 import {
@@ -24,6 +20,7 @@ import {
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import { fetchConversationsPage, fetchMessagesForChat } from "../store/rest-bootstrap";
 import type { BetaPlatform, ConversationRow } from "../store/types";
+import { ChannelBadge } from "../platform-visuals";
 import { MessagesBetaSidebarHeader } from "./MessagesBetaSidebarHeader";
 
 type Tab = "all" | "assigned" | "archive";
@@ -32,24 +29,6 @@ interface Props {
   onSelectChat: (chatId: string) => void;
   platforms: BetaPlatform[];
 }
-
-const PLATFORM_ICON: Record<ConversationRow["platform"], ReactNode> = {
-  facebook: <Facebook className="h-3 w-3 text-white" />,
-  instagram: <Instagram className="h-3 w-3 text-white" />,
-  whatsapp: <MessageCircle className="h-3 w-3 text-white" />,
-  email: <Mail className="h-3 w-3 text-white" />,
-  widget: <MessageCircle className="h-3 w-3 text-white" />,
-  telegram: <Send className="h-3 w-3 text-white" />,
-};
-
-const PLATFORM_BG: Record<ConversationRow["platform"], string> = {
-  facebook: "bg-blue-600",
-  instagram: "bg-gradient-to-br from-purple-600 to-pink-600",
-  whatsapp: "bg-green-600",
-  email: "bg-red-600",
-  widget: "bg-indigo-600",
-  telegram: "bg-sky-500",
-};
 
 // Trigger the next-page fetch when the scroll viewport is within this many
 // pixels of the bottom. Matches legacy chat-sidebar-list.tsx:32 (100 px).
@@ -62,6 +41,7 @@ const ARCHIVED_PAGE_SIZE = 100;
 
 export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   const t = useTranslations("messagesBeta.sidebar");
+  const locale = useLocale();
   const { user } = useAuth();
   const { data: profile } = useUserProfile();
   const { data: settings } = useSocialSettings();
@@ -73,7 +53,6 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   const archivedNextPage = useMessagesBetaStore((s) => s.archivedNextPage);
   const setArchivedNextPage = useMessagesBetaStore((s) => s.setArchivedNextPage);
   const assignmentTab = useMessagesBetaStore((s) => s.assignmentTab);
-  const setAssignmentTab = useMessagesBetaStore((s) => s.setAssignmentTab);
   const showArchived = useMessagesBetaStore((s) => s.showArchived);
 
   // Subscribe to the slices that the tab selectors care about. Narrow
@@ -98,14 +77,6 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   // `assignmentTab` is preserved so toggling history off returns them where
   // they were.
   const tab: Tab = showArchived ? "archive" : assignmentTab;
-  const setTab = useCallback(
-    (next: Tab) => {
-      if (next === "archive") return; // Archive is reached via the header menu, not the tab strip.
-      setAssignmentTab(next);
-    },
-    [setAssignmentTab]
-  );
-
   // Admins (is_staff or is_superuser) bypass the hide_assigned_chats
   // filter so they can audit every conversation. Matches backend
   // unified_conversations carve-out (views.py:5559).
@@ -327,27 +298,12 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
   );
 
   return (
-    <aside className="h-full w-full md:w-96 shrink-0">
-      <Card className="h-full flex flex-col">
-        <MessagesBetaSidebarHeader platforms={platforms} />
-
-        {ctx.assignmentEnabled && !showArchived && (
-          <div className="px-3 py-2 border-b border-border">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="all">{t("tabAll")}</TabsTrigger>
-                <TabsTrigger value="assigned">
-                  {t("tabAssigned")}
-                  {assignedCount > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-primary/20 px-1.5 text-xs font-medium">
-                      {assignedCount}
-                    </span>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        )}
+    <aside className="flex h-full min-h-0 w-full flex-col" data-testid="messages-list">
+      <MessagesBetaSidebarHeader
+        platforms={platforms}
+        showTabs={ctx.assignmentEnabled}
+        assignedCount={assignedCount}
+      />
 
         {(() => {
           // Collapse the active-list vs archived-list state machines into one
@@ -378,22 +334,29 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
           return (
             <div
               ref={scrollContainerRef}
-              className="flex-1 min-h-0 overflow-auto"
+              className="min-h-0 flex-1 overflow-auto"
               onScroll={handleScroll}
             >
               {listLoading ? (
                 <ChatListSkeleton />
               ) : listError ? (
-                <p className="text-center text-destructive py-8">{t("failedToLoad")}</p>
+                <p className="py-8 text-center text-xs text-destructive">{t("failedToLoad")}</p>
               ) : (
-                <ul className="p-3 space-y-1.5">
+                <ul className="flex flex-col gap-0.5 p-1.5">
                   {listReady && visibleRows.length === 0 ? (
-                    <li className="text-center text-muted-foreground py-8">{emptyMessage}</li>
+                    <li className="flex flex-col items-center gap-2 px-4 py-14 text-center text-xs text-muted-foreground">
+                      <MessageSquare className="h-[22px] w-[22px]" />
+                      {emptyMessage}
+                    </li>
                   ) : (
                     <>
                       {visibleRows.map((row) => {
                         const unread = unreadByChatId[row.id] || 0;
                         const isActive = selectedChatId === row.id;
+                        const assignee = assignmentByChatId[row.id] ?? null;
+                        const assigneeName = assignee?.assignedUserId != null ? assignee.assignedUserName : null;
+                        const preview =
+                          row.lastMessage?.content?.replace(/\n+/g, " ") || t("noMessagesYet");
                         return (
                           <li key={row.id} data-chat-id={row.id}>
                             <button
@@ -402,71 +365,71 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
                               onMouseEnter={() => handleHoverPrefetch(row)}
                               aria-current={isActive ? "true" : undefined}
                               className={cn(
-                                buttonVariants({ variant: "ghost" }),
-                                // Unread chats get a muted background (lighter)
-                                unread > 0 && "bg-muted/60",
-                                // Active chat gets a darker background (overrides unread)
-                                isActive && "bg-primary/20 hover:bg-primary/25",
-                                // <button> defaults to text-align:center; the legacy
-                                // item is an <a> (left-aligned), so force it back.
-                                "h-fit w-full text-left"
+                                "flex w-full items-start gap-2.5 rounded-lg p-2 text-left transition-colors",
+                                isActive ? "bg-muted" : "hover:bg-muted/60"
                               )}
                             >
-                              <div className="w-full flex items-center gap-2">
-                                <div className="relative shrink-0">
-                                  <ChatAvatar
-                                    src={row.avatar}
-                                    fallback={getInitials(row.name)}
-                                    size={2.5}
-                                    className="shrink-0"
-                                  />
-                                  <div
+                              <span className="relative shrink-0">
+                                <ChatAvatar
+                                  src={row.avatar}
+                                  fallback={getInitials(row.name)}
+                                  size={2.5}
+                                  className="shrink-0"
+                                  round
+                                  fallbackClassName="bg-primary/10 font-semibold text-primary"
+                                  fallbackFontSize={0.75}
+                                />
+                                <ChannelBadge platform={row.platform} />
+                              </span>
+                              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                <span className="flex items-baseline gap-2">
+                                  <span
                                     className={cn(
-                                      "absolute -bottom-0.5 -right-0.5 rounded-full p-[3px] ring-2 ring-background",
-                                      PLATFORM_BG[row.platform]
+                                      "min-w-0 flex-1 truncate text-[13px] leading-[18px]",
+                                      unread > 0 ? "font-semibold" : "font-medium"
                                     )}
                                   >
-                                    {PLATFORM_ICON[row.platform]}
-                                  </div>
-                                </div>
-                                <div className="h-11 w-full grid grid-cols-[1fr_auto] gap-x-2">
-                                  <div className="min-w-0 grid text-left">
-                                    <span className={cn("truncate", unread > 0 && "font-semibold")}>
-                                      {row.name}
+                                    {row.name}
+                                  </span>
+                                  {row.lastMessage?.createdAt && (
+                                    <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+                                      {listTime(row.lastMessage.createdAt, locale)}
                                     </span>
+                                  )}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                  <span
+                                    className={cn(
+                                      "min-w-0 flex-1 truncate text-xs leading-4",
+                                      unread > 0 ? "font-medium text-foreground" : "text-muted-foreground"
+                                    )}
+                                  >
+                                    {preview}
+                                  </span>
+                                  {row.aiState === "needs_human" && (
+                                    <span className="inline-flex h-4 shrink-0 items-center rounded border border-[#f59e0b] px-[5px] text-[10px] font-semibold text-[#b45309] dark:text-amber-300">
+                                      {t("aiNeedsHuman")}
+                                    </span>
+                                  )}
+                                  {assigneeName && (
                                     <span
-                                      className={cn(
-                                        "text-xs truncate",
-                                        unread > 0
-                                          ? "text-foreground font-medium"
-                                          : "text-muted-foreground font-semibold"
-                                      )}
+                                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-muted text-[7px] font-semibold text-muted-foreground"
+                                      title={t("assignedTo", { name: assigneeName })}
+                                      aria-label={t("assignedTo", { name: assigneeName })}
                                     >
-                                      {row.lastMessage?.content?.replace(/\n+/g, " ") ||
-                                        t("noMessagesYet")}
+                                      {emailInitials(assigneeName)}
                                     </span>
-                                  </div>
-                                  <div className="flex flex-col items-end gap-1">
-                                    <span className="text-xs text-muted-foreground font-semibold whitespace-nowrap">
-                                      {formatDistanceToNow(
-                                        new Date(row.lastMessage?.createdAt ?? Date.now()),
-                                        { addSuffix: true }
-                                      )}
+                                  )}
+                                  {unread > 0 && (
+                                    <span
+                                      className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground"
+                                      aria-label={t("unreadCount", { count: unread })}
+                                    >
+                                      {unread}
                                     </span>
-                                    {unread > 0 && (
-                                      <Badge className="hover:bg-primary">{unread}</Badge>
-                                    )}
-                                    {row.aiState === "needs_human" && (
-                                      <Badge
-                                        variant="outline"
-                                        className="border-amber-500 text-amber-600 dark:text-amber-400 whitespace-nowrap"
-                                      >
-                                        {t("aiNeedsHuman")}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
+                                  )}
+                                </span>
+                              </span>
                             </button>
                           </li>
                         );
@@ -492,7 +455,6 @@ export function MessagesBetaSidebar({ onSelectChat, platforms }: Props) {
             </div>
           );
         })()}
-      </Card>
     </aside>
   );
 }

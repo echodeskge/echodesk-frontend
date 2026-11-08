@@ -31,6 +31,9 @@ vi.mock("@/hooks/api/useSocial", () => ({
     mockUseMessagingWindow(...args);
     return { data: mockWindow, refetch: mockRefetchWindow };
   },
+  useSendWhatsAppTemplateMessage: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useWhatsAppStatus: () => ({ data: undefined }),
+  useWhatsAppTemplates: () => ({ data: [], isLoading: false }),
 }));
 vi.mock("@/hooks/useTypingWebSocket", () => ({
   useTypingWebSocket: () => ({ sendTypingStart: vi.fn(), sendTypingStop: vi.fn() }),

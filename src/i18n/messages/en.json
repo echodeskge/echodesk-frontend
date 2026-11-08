@@ -2996,7 +2996,10 @@
       "verified": "Verified",
       "unverified": "Unverified",
       "bookings": "Bookings"
-    }
+    },
+    "noClientsFound": "No clients found",
+    "typeToSearch": "Type to search…",
+    "clientsHeading": "Clients"
   },
   "productAttributes": {
     "title": "Product Attributes",
@@ -6204,7 +6207,11 @@
   "messagesBeta": {
     "page": {
       "conversationsTitle": "Conversations",
-      "conversationsDescription": "Pick a conversation to read or reply."
+      "conversationsDescription": "Pick a conversation to read or reply.",
+      "live": "Live",
+      "reconnecting": "Reconnecting…",
+      "offline": "Offline",
+      "newWhatsApp": "New WhatsApp"
     },
     "platforms": {
       "widget": "Website widget"
@@ -6232,7 +6239,12 @@
       "noConversationsYet": "No conversations yet",
       "noMessagesYet": "No messages yet...",
       "scrollForMore": "Scroll for more",
-      "aiNeedsHuman": "Needs human"
+      "aiNeedsHuman": "Needs human",
+      "history": "History",
+      "allChannels": "All channels",
+      "filterChannel": "Show only {channel}",
+      "assignedTo": "Assigned to {name}",
+      "unreadCount": "{count} unread"
     },
     "newWhatsApp": {
       "title": "New WhatsApp message",
@@ -6264,7 +6276,8 @@
         "US_MARKETING_PAUSED": "WhatsApp has paused marketing templates to US numbers. Use a utility template.",
         "TEMPLATE_PARAM_MISMATCH": "The template parameters don't match the template.",
         "SEND_FAILED_GENERIC": "Couldn't send the message. Please try again or contact support."
-      }
+      },
+      "useTemplate": "Send template “{name}”"
     },
     "chatBox": {
       "selectAConversation": "Select a chat to start a conversation.",
@@ -6273,7 +6286,8 @@
       "loadingConversation": "Loading conversation…",
       "movedToHistory": "This chat has been moved to History.",
       "movedToHistoryHint": "It stays open here — you can find it later in the History view.",
-      "aiNeedsHuman": "The AI assistant asked for a human to take over"
+      "aiNeedsHuman": "The AI assistant asked for a human to take over",
+      "backToConversations": "Conversations"
     },
     "thread": {
       "loadOlder": "Load older messages",
@@ -6281,7 +6295,9 @@
       "loadingMessages": "Loading messages…",
       "noMessages": "No messages yet.",
       "searchMessages": "Search messages",
-      "scrollToBottom": "Scroll to latest"
+      "scrollToBottom": "Scroll to latest",
+      "today": "Today",
+      "yesterday": "Yesterday"
     },
     "composer": {
       "placeholder": "Type a message…",
@@ -6319,7 +6335,12 @@
       "humanAgentWindowBanner": "The 24-hour window has closed. You can still reply as a human agent for {hours} more hours. Replies are sent with Meta's Human Agent tag.",
       "humanAgentWindowBannerNoHours": "The 24-hour window has closed. You can still reply as a human agent within 7 days of the customer's last message. Replies are sent with Meta's Human Agent tag.",
       "messagingWindowClosedBanner": "Meta only allows replies within 7 days of the customer's last message (24 hours without Human Agent). You can reply once they write again.",
-      "placeholderWindowClosed": "Replies are closed for this conversation"
+      "placeholderWindowClosed": "Replies are closed for this conversation",
+      "emoji": "Emoji",
+      "savedReplies": "Saved replies",
+      "sendTemplate": "Send template",
+      "templateGateHint": "WhatsApp only allows an approved template when the customer hasn't written in the last 24 hours.",
+      "enterHint": "Enter to send, Shift+Enter for a new line"
     },
     "header": {
       "assignToMe": "Assign to me",
@@ -6401,6 +6422,37 @@
       "error": "Could not generate the summary. Please try again.",
       "generatedAt": "Generated {time}",
       "previousSummaries": "Previous summaries"
+    },
+    "summaryCard": {
+      "title": "AI summary",
+      "close": "Close summary",
+      "earlier": "Earlier summaries"
+    },
+    "rail": {
+      "title": "Client profile",
+      "close": "Close profile",
+      "contact": "Contact",
+      "channel": "Channel",
+      "handle": "ID",
+      "email": "Email",
+      "phone": "Phone",
+      "tags": "Tags",
+      "addTag": "Add",
+      "tagPlaceholder": "New tag",
+      "removeTag": "Remove tag {tag}",
+      "linkedTickets": "Linked tickets",
+      "noTickets": "No linked tickets yet",
+      "createTicket": "Create ticket",
+      "ticketCreated": "Ticket #{id} created",
+      "ticketAlreadyLinked": "This conversation is already linked to ticket #{id}",
+      "ticketFailed": "Couldn't create the ticket",
+      "notes": "Notes",
+      "notesPlaceholder": "Internal notes about this client…",
+      "notesSaved": "Saved",
+      "saveFailed": "Couldn't save",
+      "needsClient": "Link or create a client to add tags and notes.",
+      "edit": "Edit client",
+      "unlink": "Unlink client"
     }
   },
   "publicBooking": {

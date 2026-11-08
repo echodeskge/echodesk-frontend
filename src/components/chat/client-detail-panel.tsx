@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,8 @@ import {
 } from "@/hooks/api/useSocialClients";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { ClientNotesEditor, ClientTagsEditor, RailField, RailSection } from "./client-rail-sections";
 
 // Platform badge colors
 const platformColors: Record<string, string> = {
@@ -89,6 +91,11 @@ interface ClientDetailPanelProps {
   // Additional metadata from the chat
   chatEmail?: string;
   chatPhone?: string;
+  /** "sheet" (default) slides in from the right; "inline" renders the body
+   *  only, for the Messages screen's profile rail. */
+  variant?: "sheet" | "inline";
+  /** Inline only: extra sections (e.g. linked tickets) shown in the view. */
+  extraSections?: ReactNode;
 }
 
 // Extract platform-specific data for auto-fill
@@ -129,9 +136,13 @@ export function ClientDetailPanel(props: ClientDetailPanelProps) {
     chatProfilePic,
     chatEmail,
     chatPhone,
+    variant = "sheet",
+    extraSections,
   } = props;
+  const inline = variant === "inline";
 
   const t = useTranslations("socialClients");
+  const tRail = useTranslations(inline ? "messagesBeta.rail" : "socialClients");
   const { toast } = useToast();
   const [mode, setMode] = useState<PanelMode>("view");
   const [searchQuery, setSearchQuery] = useState("");
@@ -358,31 +369,13 @@ export function ClientDetailPanel(props: ClientDetailPanelProps) {
     return searchResults.results.filter((c: any) => c.id !== client?.id);
   }, [searchResults?.results, client?.id]);
 
-  return (
-    <Sheet open={isOpen} onOpenChange={handlePanelOpenChange}>
-      <SheetContent side="right" className="w-[400px] sm:w-[450px] p-6">
-        <SheetHeader>
-          <SheetTitle>
-            {mode === "search" ? t("linkExistingClient") || "Link Existing Client" :
-             mode === "create" ? t("createClient") :
-             mode === "edit" ? t("editClient") :
-             hasClient ? t("clientDetails") : t("createClient")}
-          </SheetTitle>
-          <SheetDescription>
-            {mode === "search" ? t("searchAndLinkDescription") || "Search for a client to link to this conversation" :
-             mode === "create" ? t("createClientFromChat") :
-             mode === "edit" ? t("editClientDescription") :
-             hasClient ? t("clientDetailsDescription") : t("noClientLinkedDescription")}
-          </SheetDescription>
-        </SheetHeader>
-
-        {isLoading ? (
+  const body = (isLoading ? (
           <div className="flex items-center justify-center h-48">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
         ) : mode === "search" ? (
           // Search for existing clients
-          <div className="mt-6 space-y-4">
+          <div className={cn(!inline && "mt-6", "space-y-4")}>
             <Command className="rounded-lg border">
               <CommandInput
                 placeholder={t("searchPlaceholder")}
@@ -397,11 +390,11 @@ export function ClientDetailPanel(props: ClientDetailPanelProps) {
                 ) : filteredSearchResults.length === 0 ? (
                   <CommandEmpty>
                     <p className="text-sm text-muted-foreground py-2">
-                      {searchQuery ? "No clients found" : "Type to search..."}
+                      {searchQuery ? t("noClientsFound") : t("typeToSearch")}
                     </p>
                   </CommandEmpty>
                 ) : (
-                  <CommandGroup heading="Clients">
+                  <CommandGroup heading={t("clientsHeading")}>
                     {filteredSearchResults.map((c: any) => (
                       <CommandItem
                         key={c.id}
@@ -443,7 +436,7 @@ export function ClientDetailPanel(props: ClientDetailPanelProps) {
           </div>
         ) : mode === "create" || mode === "edit" ? (
           // Create/Edit Form
-          <div className="mt-6 space-y-4">
+          <div className={cn(!inline && "mt-6", "space-y-4")}>
             <div className="grid gap-2">
               <Label htmlFor="name">{t("form.name")} *</Label>
               <Input
@@ -497,9 +490,70 @@ export function ClientDetailPanel(props: ClientDetailPanelProps) {
               </Button>
             </div>
           </div>
+        ) : inline && hasClient && client ? (
+          // Inline rail view (Messages redesign)
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col items-center gap-1 text-center">
+              <Avatar className="h-14 w-14">
+                {client.profile_picture && (
+                  <AvatarImage src={client.profile_picture} alt={client.name} className="rounded-full" />
+                )}
+                <AvatarFallback className="rounded-full bg-primary/10 text-lg font-semibold text-primary">
+                  {getInitials(client.name)}
+                </AvatarFallback>
+              </Avatar>
+              <h3 className="mt-1 text-sm font-semibold">{client.name}</h3>
+              <p className="text-xs text-muted-foreground">
+                {[platformLabels[platform] || platform, chatDisplayName && chatDisplayName !== client.name ? chatDisplayName : null]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+              <div className="mt-1 flex gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleStartEdit} aria-label={tRail("edit")} title={tRail("edit")}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={handleUnlink}
+                  disabled={isSaving}
+                  aria-label={tRail("unlink")}
+                  title={tRail("unlink")}
+                >
+                  <Unlink className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            <RailSection title={tRail("contact")} testId="rail-contact">
+              {client.email && <RailField label={tRail("email")} value={client.email} />}
+              {client.phone && <RailField label={tRail("phone")} value={client.phone} />}
+              {((client as any).social_accounts ?? []).map((account: any) => (
+                <RailField
+                  key={account.id}
+                  label={platformLabels[account.platform] || account.platform}
+                  value={account.display_name || account.platform_id}
+                />
+              ))}
+              {!client.email && !client.phone && !((client as any).social_accounts ?? []).length && (
+                <RailField label={tRail("handle")} value={platformId} />
+              )}
+            </RailSection>
+
+            <RailSection title={tRail("tags")} testId="rail-tags">
+              <ClientTagsEditor clientId={client.id} tags={(client as any).tags} />
+            </RailSection>
+
+            {extraSections}
+
+            <RailSection title={tRail("notes")} testId="rail-notes">
+              <ClientNotesEditor clientId={client.id} notes={client.notes} />
+            </RailSection>
+          </div>
         ) : hasClient && client ? (
           // Client Details View
-          <div className="mt-6 space-y-6">
+          <div className={cn(!inline && "mt-6", "space-y-6")}>
             {/* Client Header */}
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
@@ -588,7 +642,20 @@ export function ClientDetailPanel(props: ClientDetailPanelProps) {
           </div>
         ) : (
           // No Client - Options to create or search
-          <div className="mt-6 space-y-6">
+          <div className={cn(!inline && "mt-6", inline ? "space-y-4" : "space-y-6")}>
+            {inline ? (
+              <div className="flex flex-col items-center gap-1 text-center">
+                <Avatar className="h-14 w-14">
+                  {chatProfilePic && <AvatarImage src={chatProfilePic} alt="" className="rounded-full" />}
+                  <AvatarFallback className="rounded-full bg-primary/10 text-lg font-semibold text-primary">
+                    {chatDisplayName ? getInitials(chatDisplayName) : "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <h3 className="mt-1 text-sm font-semibold">{chatDisplayName || platformId}</h3>
+                <p className="text-xs text-muted-foreground">{platformLabels[platform] || platform}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{t("noClientLinkedDescription")}</p>
+              </div>
+            ) : (
             <div className="text-center py-8">
               <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
                 <Avatar className="h-12 w-12">
@@ -610,18 +677,76 @@ export function ClientDetailPanel(props: ClientDetailPanelProps) {
               </Badge>
               <p className="text-sm font-medium">{chatDisplayName || platformId}</p>
             </div>
+            )}
             <div className="space-y-2">
-              <Button className="w-full" onClick={handleStartSearch}>
+              <Button
+                className={cn("w-full", inline && "h-auto min-h-8 whitespace-normal py-1.5 text-xs")}
+                onClick={handleStartSearch}
+              >
                 <Search className="h-4 w-4 mr-2" />
                 {t("linkExistingClient") || "Link Existing Client"}
               </Button>
-              <Button variant="outline" className="w-full" onClick={handleStartCreate}>
+              <Button
+                variant="outline"
+                className={cn("w-full", inline && "h-auto min-h-8 whitespace-normal py-1.5 text-xs")}
+                onClick={handleStartCreate}
+              >
                 <UserPlus className="h-4 w-4 mr-2" />
                 {t("createClientForChat")}
               </Button>
             </div>
+            {inline && (
+              <>
+                <p className="text-center text-[11px] text-muted-foreground">{tRail("needsClient")}</p>
+                {extraSections}
+              </>
+            )}
+          </div>
+        )
+  );
+
+  if (inline) {
+    // Only the body: the Messages rail owns the frame and the close button.
+    return (
+      <div className="flex flex-col gap-4" data-testid="client-panel-inline">
+        {mode !== "view" && (
+          <div>
+            <h3 className="text-sm font-semibold">
+              {mode === "search" ? t("linkExistingClient") : mode === "create" ? t("createClient") : t("editClient")}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {mode === "search"
+                ? t("searchAndLinkDescription")
+                : mode === "create"
+                  ? t("createClientFromChat")
+                  : t("editClientDescription")}
+            </p>
           </div>
         )}
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <Sheet open={isOpen} onOpenChange={handlePanelOpenChange}>
+      <SheetContent side="right" className="w-[400px] sm:w-[450px] p-6">
+        <SheetHeader>
+          <SheetTitle>
+            {mode === "search" ? t("linkExistingClient") || "Link Existing Client" :
+             mode === "create" ? t("createClient") :
+             mode === "edit" ? t("editClient") :
+             hasClient ? t("clientDetails") : t("createClient")}
+          </SheetTitle>
+          <SheetDescription>
+            {mode === "search" ? t("searchAndLinkDescription") || "Search for a client to link to this conversation" :
+             mode === "create" ? t("createClientFromChat") :
+             mode === "edit" ? t("editClientDescription") :
+             hasClient ? t("clientDetailsDescription") : t("noClientLinkedDescription")}
+          </SheetDescription>
+        </SheetHeader>
+
+        {body}
       </SheetContent>
     </Sheet>
   );

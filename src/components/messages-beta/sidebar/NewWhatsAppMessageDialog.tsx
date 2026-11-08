@@ -67,6 +67,13 @@ const PHONE_RE = /^\+[1-9]\d{7,14}$/;
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /**
+   * Preselect this approved template (matched by name against the loaded
+   * templates), e.g. from Settings → Templates "Use". Once the number is known
+   * and the window is closed, the template step names it and the picker opens
+   * with it selected. Unset: unchanged behaviour.
+   */
+  initialTemplateName?: string;
 }
 
 /**
@@ -77,7 +84,7 @@ interface Props {
  * window we show a free-form composer; otherwise (a brand-new / cold number, where
  * Meta requires it) we require an approved template + an opt-in confirmation.
  */
-export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
+export function NewWhatsAppMessageDialog({ open, onOpenChange, initialTemplateName }: Props) {
   const t = useTranslations("messagesBeta.newWhatsApp");
   const { toast } = useToast();
   const { data: statusData } = useWhatsAppStatus();
@@ -283,10 +290,17 @@ export function NewWhatsAppMessageDialog({ open, onOpenChange }: Props) {
                 recipientNumber={trimmedPhone}
                 disabled={!canPickTemplate}
                 onSelect={handleTemplateSelected}
+                initialTemplateName={initialTemplateName}
                 trigger={
-                  <Button className="w-full" disabled={!canPickTemplate}>
+                  <Button
+                    className="w-full"
+                    disabled={!canPickTemplate}
+                    data-testid="wa-new-choose-template"
+                  >
                     <Send className="mr-2 h-4 w-4" />
-                    {t("chooseTemplate")}
+                    {initialTemplateName
+                      ? t("useTemplate", { name: initialTemplateName })
+                      : t("chooseTemplate")}
                   </Button>
                 }
               />

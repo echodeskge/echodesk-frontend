@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, History, Loader2, Search } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { ChatMessageSearch } from "@/components/chat/chat-message-search";
@@ -15,6 +15,7 @@ import { fetchMessagesForChat } from "../store/rest-bootstrap";
 import { selectMessagesForChat } from "../store/selectors";
 import { useMessagesBetaStore } from "../store/useMessagesBetaStore";
 import type { ConversationRow } from "../store/types";
+import { dayKey, dayLabel } from "../thread-dates";
 
 interface Props {
   conversation: ConversationRow;
@@ -41,6 +42,7 @@ const NEAR_BOTTOM_PX = 80;
  */
 export function MessagesBetaThread({ conversation, currentUser }: Props) {
   const t = useTranslations("messagesBeta.thread");
+  const locale = useLocale();
   const selectedChatId = conversation.id;
 
   const messagesByChatId = useMessagesBetaStore((s) => s.messagesByChatId);
@@ -304,18 +306,19 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
 
   return (
     <div className="relative flex flex-col flex-1 min-h-0">
-      <div className="flex items-center justify-end px-3 py-1 border-b">
+      {!isSearchOpen && (
         <Button
           type="button"
           variant="ghost"
-          size="sm"
-          onClick={() => setIsSearchOpen((v) => !v)}
+          size="icon"
+          onClick={() => setIsSearchOpen(true)}
           aria-label={t("searchMessages")}
-          className="h-8"
+          title={t("searchMessages")}
+          className="absolute right-3 top-2 z-10 h-7 w-7 bg-background/80 text-muted-foreground backdrop-blur"
         >
-          <Search className="h-4 w-4" />
+          <Search className="h-3.5 w-3.5" />
         </Button>
-      </div>
+      )}
 
       {isSearchOpen && (
         <ChatMessageSearch
@@ -330,7 +333,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
       <div
         ref={scrollAreaRef}
         onScroll={handleScroll}
-        className="flex-1 min-h-0 overflow-y-auto px-4 py-3"
+        className="flex-1 min-h-0 overflow-y-auto p-4"
       >
         {/* Load older messages — top of thread. Hidden once the deep fetch
             has run for this chat in this session. */}
@@ -366,8 +369,10 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
           <p className="text-xs text-muted-foreground py-4 text-center">{t("noMessages")}</p>
         )}
 
-        <ul ref={contentRef} className="flex flex-col gap-y-1.5">
+        <ul ref={contentRef} className="flex flex-col gap-y-2.5">
           {messages.map((message, idx) => {
+            const thisDay = dayKey(message.createdAt);
+            const showDivider = !!thisDay && thisDay !== dayKey(messages[idx - 1]?.createdAt);
             const isByCurrentUser = message.senderId === currentUser.id;
             // Fall back to the conversation-level avatar for any customer
             // sender (incoming) so MessageBubble doesn't render initials
@@ -385,7 +390,7 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
                   });
             const isHighlighted =
               matchingIndices[currentMatchIndex] === idx || idx === flashIndex;
-            return (
+            const bubble = (
               <MessageBubble
                 key={message.id || `idx-${idx}`}
                 ref={(el) => {
@@ -401,6 +406,20 @@ export function MessagesBetaThread({ conversation, currentUser }: Props) {
                 onQuoteClick={scrollToQuoted}
               />
             );
+            if (!showDivider) return bubble;
+            return [
+              <li
+                key={`day-${thisDay}`}
+                className="flex items-center gap-3 py-1 text-[11px] text-muted-foreground"
+                role="separator"
+                data-testid="thread-day-divider"
+              >
+                <span className="h-px flex-1 bg-border" />
+                {dayLabel(message.createdAt, locale, { today: t("today"), yesterday: t("yesterday") })}
+                <span className="h-px flex-1 bg-border" />
+              </li>,
+              bubble,
+            ];
           })}
         </ul>
       </div>

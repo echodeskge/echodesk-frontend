@@ -20,7 +20,8 @@ let mockAccounts: Array<Record<string, unknown>> = [];
 let mockWindowOpen = false;
 
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => (key: string, values?: Record<string, string>) =>
+    values?.name ? `${key}:${values.name}` : key,
 }));
 
 vi.mock("@/hooks/api/useSocial", () => ({
@@ -52,12 +53,14 @@ vi.mock("@/components/social/TemplateSelector", () => ({
     trigger,
     disabled,
     onSelect,
+    initialTemplateName,
   }: {
     trigger: React.ReactNode;
     disabled?: boolean;
     onSelect: (t: { id: number; name: string }, p: Record<string, string>) => void;
+    initialTemplateName?: string;
   }) => (
-    <div>
+    <div data-testid="template-selector" data-initial={initialTemplateName ?? ""}>
       {trigger}
       <button
         type="button"
@@ -210,5 +213,25 @@ describe("NewWhatsAppMessageDialog", () => {
     mockAccounts = [account(), account({ id: 2, waba_id: "waba2" })];
     rerender(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} />);
     expect(screen.getByTestId("account-select")).toBeInTheDocument();
+  });
+
+  describe("initialTemplateName", () => {
+    it("is unset by default: generic label, no preselection", async () => {
+      const user = userEvent.setup();
+      render(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} />);
+      await typePhone(user);
+      await screen.findByRole("button", { name: "chooseTemplate" });
+      expect(screen.getByTestId("template-selector")).toHaveAttribute("data-initial", "");
+    });
+
+    it("names the template on the template step and preselects it in the picker", async () => {
+      const user = userEvent.setup();
+      render(<NewWhatsAppMessageDialog open onOpenChange={vi.fn()} initialTemplateName="order_update" />);
+      await typePhone(user);
+      const trigger = await screen.findByRole("button", { name: "useTemplate:order_update" });
+      expect(screen.getByTestId("template-selector")).toHaveAttribute("data-initial", "order_update");
+      await user.click(screen.getByRole("checkbox"));
+      expect(trigger).not.toBeDisabled();
+    });
   });
 });

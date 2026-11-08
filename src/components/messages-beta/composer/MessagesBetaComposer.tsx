@@ -32,12 +32,16 @@ import { Button } from "@/components/ui/button";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { QuickReplySelector } from "@/components/social/QuickReplySelector";
+import TemplateSelector from "@/components/social/TemplateSelector";
+import type { WhatsAppMessageTemplate } from "@/api/generated";
+import { cn } from "@/lib/utils";
 import { QuickReplySuggestions } from "./QuickReplySuggestions";
 import {
   useAssignChat,
   useMessagingWindow,
   useSocialSettings,
   useStartSession,
+  useSendWhatsAppTemplateMessage,
 } from "@/hooks/api/useSocial";
 import { useTypingWebSocket } from "@/hooks/useTypingWebSocket";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,6 +94,9 @@ const COMPOSER_MAX_HEIGHT_PX = 160;
  * appending. This is the contract the rest of the beta page depends on
  * (avoids the duplicate-bubble class of bugs the legacy page has).
  */
+const composerIconBtn =
+  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50";
+
 export function MessagesBetaComposer({ conversation }: Props) {
   const t = useTranslations("messagesBeta.composer");
   const { user } = useAuth();
@@ -297,6 +304,27 @@ export function MessagesBetaComposer({ conversation }: Props) {
   );
 
   // --- Send. ---
+  // WhatsApp: approved templates are the only way to (re)open a thread
+  // after 24h of customer silence, so the composer always offers them.
+  const sendTemplate = useSendWhatsAppTemplateMessage();
+  const isWhatsApp = conversation.platform === "whatsapp";
+  const handleTemplateSelect = useCallback(
+    async (template: WhatsAppMessageTemplate, parameters: Record<string, string>) => {
+      try {
+        await sendTemplate.mutateAsync({
+          waba_id: conversation.accountId,
+          template_id: template.id!,
+          to_number: conversation.conversationKey,
+          parameters,
+        });
+        toast.success(t("templateSent"));
+      } catch (err: any) {
+        toast.error(err?.response?.data?.error || t("failedToSendTemplate"));
+      }
+    },
+    [sendTemplate, conversation.accountId, conversation.conversationKey, t]
+  );
+
   const submit = useCallback(async () => {
     const message = text.trim();
     if (!message && files.length === 0) return;
@@ -388,8 +416,8 @@ export function MessagesBetaComposer({ conversation }: Props) {
 
   if (widgetClosed) {
     return (
-      <div className="shrink-0 border-t border-border px-6 py-4 text-center">
-        <p className="text-xs text-muted-foreground">{t("conversationEnded")}</p>
+      <div className="shrink-0 border-t px-6 py-4 text-center">
+        <p className="text-[13px] text-muted-foreground">{t("conversationEnded")}</p>
       </div>
     );
   }
@@ -405,8 +433,8 @@ export function MessagesBetaComposer({ conversation }: Props) {
     // (amanati, 2026-04-23). The explicit path is "Restore" in the header.
     if (showArchived) {
       return (
-        <div className="shrink-0 border-t border-border px-6 py-4 text-center">
-          <p className="text-sm text-muted-foreground">{t("historyReadOnly")}</p>
+        <div className="shrink-0 border-t px-6 py-4 text-center" data-testid="composer-gate">
+          <p className="text-[13px] text-muted-foreground">{t("historyReadOnly")}</p>
           <p className="text-xs text-muted-foreground mt-1">{t("historyReadOnlyHint")}</p>
         </div>
       );
@@ -455,16 +483,21 @@ export function MessagesBetaComposer({ conversation }: Props) {
     };
 
     return (
-      <div className="shrink-0 border-t border-border px-6 py-4 flex flex-col items-center justify-center gap-3 text-center">
+      <div
+        className="flex shrink-0 flex-col items-center justify-center gap-2.5 border-t px-6 py-4 text-center"
+        data-testid="composer-gate"
+      >
         {!isAssigned && (
           <>
-            <p className="text-sm text-muted-foreground">{t("assignToStartMessaging")}</p>
+            <p className="text-[13px] text-muted-foreground">{t("assignToStartMessaging")}</p>
             <Button
               type="button"
+              size="sm"
+              className="h-8"
               onClick={handleAssignToMe}
               disabled={assignChat.isPending}
             >
-              <UserPlus className="h-4 w-4 mr-2" />
+              <UserPlus className="h-3.5 w-3.5 mr-1.5" />
               {assignChat.isPending ? t("assigning") : t("assignToMe")}
             </Button>
           </>
@@ -476,7 +509,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
             // tab, so requiring a rating before reopening would lock the
             // conversation forever.
             <>
-              <p className="text-sm text-muted-foreground">{t("sessionEnded")}</p>
+              <p className="text-[13px] text-muted-foreground">{t("sessionEnded")}</p>
               <Button
                 type="button"
                 onClick={handleStartNewSession}
@@ -486,12 +519,12 @@ export function MessagesBetaComposer({ conversation }: Props) {
               </Button>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground">{t("sessionEndedWaitingRating")}</p>
+            <p className="text-[13px] text-muted-foreground">{t("sessionEndedWaitingRating")}</p>
           )
         )}
 
         {isAssigned && !isAssignedToMe && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-[13px] text-muted-foreground">
             {assignmentSlice?.assignedUserName
               ? t("assignedToOther", { name: assignmentSlice.assignedUserName })
               : t("assignedToOther", { name: t("anotherAgent") })}
@@ -503,7 +536,10 @@ export function MessagesBetaComposer({ conversation }: Props) {
 
   return (
     <div
-      className="shrink-0 border-t border-border px-6 py-3 flex flex-col gap-2"
+      // Right padding keeps Send clear of the floating call / chat widgets
+      // that sit over the bottom-right corner of every page.
+      className="flex shrink-0 flex-col gap-2 border-t py-2.5 pl-3 pr-16"
+      data-testid="composer"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -624,14 +660,13 @@ export function MessagesBetaComposer({ conversation }: Props) {
       )}
 
       <div
-        className={`flex items-end gap-1 rounded-md border ${
+        className={cn(
+          "flex items-end gap-1.5 rounded-md border transition-colors",
           isDragOver ? "border-primary bg-primary/5" : "border-transparent"
-        } transition-colors`}
+        )}
       >
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
           onClick={() => fileInputRef.current?.click()}
           disabled={sending || windowClosed || conversation.platform === "widget"}
           aria-label={t("attachFile")}
@@ -640,9 +675,10 @@ export function MessagesBetaComposer({ conversation }: Props) {
               ? t("attachFileWidgetUnsupported")
               : t("attachFile")
           }
+          className={composerIconBtn}
         >
           <Paperclip className="h-4 w-4" />
-        </Button>
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -652,15 +688,15 @@ export function MessagesBetaComposer({ conversation }: Props) {
         />
 
         <EmojiPicker
+          buttonClassName={composerIconBtn}
           onEmojiClick={(data) => {
             setText((prev) => `${prev}${data.emoji}`);
             textareaRef.current?.focus();
           }}
         />
 
-        {/* QuickReplyPlatform doesn't include 'widget' — for widget chats we
-            fall back to 'all'-scoped replies so agents still get their saved
-            shortcuts. */}
+        {/* Saved replies. QuickReplyPlatform has no 'widget' — widget chats
+            fall back to 'all'-scoped replies. */}
         <QuickReplySelector
           platform={
             conversation.platform === "widget" ? "all" : conversation.platform
@@ -669,6 +705,26 @@ export function MessagesBetaComposer({ conversation }: Props) {
           agentName={user?.first_name || user?.email || ""}
           onSelect={handleQuickReplySelect}
         />
+
+        {isWhatsApp && (
+          <TemplateSelector
+            wabaId={conversation.accountId}
+            recipientNumber={conversation.conversationKey}
+            onSelect={(template, params) => void handleTemplateSelect(template, params)}
+            disabled={sendTemplate.isPending}
+            trigger={
+              <button
+                type="button"
+                className={composerIconBtn}
+                aria-label={t("sendTemplate")}
+                title={`${t("sendTemplate")} — ${t("templateGateHint")}`}
+                data-testid="composer-send-template"
+              >
+                <FileText className="h-4 w-4" />
+              </button>
+            }
+          />
+        )}
 
         <Textarea
           ref={textareaRef}
@@ -680,6 +736,7 @@ export function MessagesBetaComposer({ conversation }: Props) {
           }}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
+          title={t("enterHint")}
           placeholder={
             windowClosed
               ? t("placeholderWindowClosed")
@@ -687,16 +744,17 @@ export function MessagesBetaComposer({ conversation }: Props) {
                 ? t("placeholderDrop")
                 : t("placeholder")
           }
-          className="resize-none overflow-y-auto min-h-[40px] max-h-[160px]"
+          className="min-h-[36px] max-h-[160px] resize-none overflow-y-auto px-2.5 py-2 text-[13px] leading-[18px] shadow-none focus-visible:ring-[3px] focus-visible:ring-foreground/10"
           rows={1}
           disabled={sending || windowClosed}
         />
 
         <Button
           type="button"
+          size="icon"
           onClick={() => void submit()}
           disabled={sending || windowClosed || (!text.trim() && files.length === 0)}
-          className="shrink-0"
+          className="h-9 w-9 shrink-0"
           aria-label={t("sendMessage")}
         >
           {sending ? (

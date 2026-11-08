@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { WhatsAppMessageTemplate } from "@/api/generated";
 import { useWhatsAppStatus, useWhatsAppTemplates } from "@/hooks/api/useSocial";
 import {
@@ -37,6 +37,8 @@ interface TemplateSelectorProps {
   disabled?: boolean;
   /** WABA whose templates to list. Defaults to the first connected account. */
   wabaId?: string;
+  /** Preselect the approved template with this name when the picker opens. */
+  initialTemplateName?: string;
 }
 
 interface WhatsAppStatus {
@@ -59,6 +61,7 @@ export default function TemplateSelector({
   recipientNumber,
   disabled = false,
   wabaId: wabaIdProp,
+  initialTemplateName,
 }: TemplateSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,6 +131,15 @@ export default function TemplateSelector({
     setParameters({});
     setParameterErrors({});
   };
+
+  // Preselect `initialTemplateName` once the picker is open and the list has
+  // loaded (only when nothing is selected yet, so the user can still switch).
+  useEffect(() => {
+    if (!open || !initialTemplateName || selectedTemplate) return;
+    const match = approvedTemplates.find((t: WhatsAppMessageTemplate) => t.name === initialTemplateName);
+    if (match) handleTemplateClick(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialTemplateName, templates]);
 
   const handleClose = () => {
     setOpen(false);
