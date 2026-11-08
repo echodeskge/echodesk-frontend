@@ -9,8 +9,6 @@ import DOMPurify from "dompurify";
 import {
   Send,
   Loader2,
-  ChevronDown,
-  ChevronUp,
   X,
   Trash2,
   Paperclip,
@@ -48,10 +46,11 @@ import {
 import { prepareEmailHtml } from "@/lib/email-reading";
 import { useEmailContext } from "../_hooks/use-email-context";
 import { EmailHtmlFrame } from "./email-view-content-body";
+import { EmailTemplatePicker } from "./email-template-picker";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -60,7 +59,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FileDropzone } from "@/components/FileDropzone";
 import { EditableSignature } from "@/components/email/EditableSignature";
@@ -101,7 +99,7 @@ export function EmailComposerForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { currentConnectionId } = useEmailContext();
+  const { currentConnectionId, lastFilter } = useEmailContext();
   const t = useTranslations("email.compose");
   const locale = useLocale();
   const { data: emailStatus } = useEmailStatus();
@@ -168,6 +166,8 @@ export function EmailComposerForm() {
   const [draftId, setDraftId] = useState<number | null>(null);
   const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [discardOpen, setDiscardOpen] = useState(false);
+  const [showAttach, setShowAttach] = useState(false);
+  const { data: profile } = useUserProfile();
 
   const connections = useMemo(() => emailStatus?.connections || [], [emailStatus]);
 
@@ -652,21 +652,85 @@ export function EmailComposerForm() {
     );
   }
 
+  const composeTitle =
+    mode === "forward" ? t("titleForward") : mode === "reply" || mode === "replyAll" ? t("titleReply") : t("title");
+  const closeHref = originalViewHref ?? `/email/${encodeURIComponent(lastFilter || "INBOX")}`;
+  const fromConnection = connections.find((c) => c.id === form.watch("connection_id")) ?? connections[0];
+  const templateVariables = {
+    customer_name: originalEmail?.from_name || originalEmail?.from_email || undefined,
+    agent_name: [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || undefined,
+  };
+  const insertTemplate = (text: string) => {
+    const current = form.getValues("body_text") || "";
+    form.setValue("body_text", current.trim() ? `${current.replace(/\s+$/, "")}\n\n${text}` : text, {
+      shouldDirty: true,
+    });
+    scheduleAutosave();
+  };
+  const rowClass = "flex min-h-10 items-center gap-2 border-b border-border px-4";
+  const labelClass = "min-w-12 shrink-0 whitespace-nowrap pe-1 text-[13px] text-muted-foreground";
+  const chipInput = (
+    field: "to_emails" | "cc_emails" | "bcc_emails",
+    emails: string[],
+    value: string,
+    setValue: (v: string) => void,
+    placeholder: string,
+    label: string
+  ) => (
+    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1 py-1.5">
+      {emails.map((email) => (
+        <span key={email} className="inline-flex h-6 items-center gap-1 rounded-md bg-muted px-1.5 text-xs">
+          {email}
+          <X className="h-3 w-3 cursor-pointer text-muted-foreground hover:text-foreground" onClick={() => removeEmail(field, email)} />
+        </span>
+      ))}
+      <input
+        type="text"
+        aria-label={label}
+        className="min-w-[160px] flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
+        placeholder={emails.length === 0 ? placeholder : ""}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => handleKeyDown(e, field, value, setValue)}
+        onBlur={() => handleBlur(field, value, setValue)}
+      />
+    </div>
+  );
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="h-full flex flex-col justify-between gap-3"
+        className="flex min-h-0 flex-1 flex-col"
       >
-        <div className="px-3 space-y-3">
-          {/* From (Connection Select) */}
-          {connections.length > 1 && (
-            <FormField
-              control={form.control}
-              name="connection_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("from")}</FormLabel>
+        {/* Header (44px): title + close */}
+        <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border pe-2 ps-4">
+          <h2 className="text-[13px] font-semibold">{composeTitle}</h2>
+          <span className="text-[11px] text-muted-foreground" aria-live="polite">
+            {draftStatus === "saving" && t("draftSaving")}
+            {draftStatus === "saved" && t("draftSaved")}
+            {draftStatus === "error" && t("draftSaveFailed")}
+          </span>
+          <button
+            type="button"
+            onClick={() => router.push(closeHref)}
+            className="ms-auto inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label={t("close")}
+            title={t("close")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* From */}
+          <FormField
+            control={form.control}
+            name="connection_id"
+            render={({ field }) => (
+              <FormItem className={rowClass + " space-y-0"}>
+                <FormLabel className={labelClass + " font-normal"}>{t("from")}</FormLabel>
+                {connections.length > 1 ? (
                   <Select
                     value={field.value?.toString()}
                     onValueChange={(value) => {
@@ -678,7 +742,7 @@ export function EmailComposerForm() {
                     }}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-8 w-auto max-w-full border-0 px-0 text-[13px] shadow-none focus:ring-0">
                         <SelectValue placeholder={t("selectAccount")} />
                       </SelectTrigger>
                     </FormControl>
@@ -690,159 +754,73 @@ export function EmailComposerForm() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* To */}
-          <FormField
-            control={form.control}
-            name="to_emails"
-            render={() => (
-              <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel>{t("to")}</FormLabel>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-muted-foreground h-auto py-0"
-                    onClick={() => setShowCcBcc(!showCcBcc)}
-                  >
-                    {showCcBcc ? (
-                      <ChevronUp className="h-3 w-3 mr-1" />
-                    ) : (
-                      <ChevronDown className="h-3 w-3 mr-1" />
-                    )}
-                    {showCcBcc ? t("hideCcBcc") : t("showCcBcc")}
-                  </Button>
-                </div>
-                <FormControl>
-                  <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[40px] focus-within:ring-2 focus-within:ring-ring">
-                    {toEmails.map((email) => (
-                      <Badge key={email} variant="secondary" className="gap-1">
-                        {email}
-                        <X
-                          className="h-3 w-3 cursor-pointer"
-                          onClick={() => removeEmail("to_emails", email)}
-                        />
-                      </Badge>
-                    ))}
-                    <input
-                      type="text"
-                      className="flex-1 min-w-[200px] outline-none bg-transparent text-sm"
-                      placeholder={
-                        toEmails.length === 0 ? t("recipientPlaceholder") : ""
-                      }
-                      value={toInput}
-                      onChange={(e) => setToInput(e.target.value)}
-                      onKeyDown={(e) =>
-                        handleKeyDown(e, "to_emails", toInput, setToInput)
-                      }
-                      onBlur={() =>
-                        handleBlur("to_emails", toInput, setToInput)
-                      }
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
+                ) : (
+                  <span className="truncate text-[13px]">
+                    {fromConnection
+                      ? fromConnection.display_name
+                        ? `${fromConnection.display_name} <${fromConnection.email_address}>`
+                        : fromConnection.email_address
+                      : "—"}
+                  </span>
+                )}
               </FormItem>
             )}
           />
 
-          {/* CC */}
+          {/* To (+ Cc / Bcc toggle) */}
+          <FormField
+            control={form.control}
+            name="to_emails"
+            render={() => (
+              <FormItem className="space-y-0">
+                <div className={rowClass}>
+                  <FormLabel className={labelClass + " font-normal"}>{t("to")}</FormLabel>
+                  <FormControl>
+                    {chipInput("to_emails", toEmails, toInput, setToInput, t("recipientPlaceholder"), t("to"))}
+                  </FormControl>
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowCcBcc(!showCcBcc)}
+                    aria-expanded={showCcBcc}
+                  >
+                    {showCcBcc ? t("hideCcBcc") : t("showCcBcc")}
+                  </button>
+                </div>
+                <FormMessage className="px-4 pt-1 text-xs" />
+              </FormItem>
+            )}
+          />
+
           {showCcBcc && (
             <>
               <FormField
                 control={form.control}
                 name="cc_emails"
                 render={() => (
-                  <FormItem>
-                    <FormLabel>{t("cc")}</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[40px] focus-within:ring-2 focus-within:ring-ring">
-                        {ccEmails.map((email) => (
-                          <Badge
-                            key={email}
-                            variant="secondary"
-                            className="gap-1"
-                          >
-                            {email}
-                            <X
-                              className="h-3 w-3 cursor-pointer"
-                              onClick={() => removeEmail("cc_emails", email)}
-                            />
-                          </Badge>
-                        ))}
-                        <input
-                          type="text"
-                          className="flex-1 min-w-[200px] outline-none bg-transparent text-sm"
-                          placeholder={
-                            ccEmails.length === 0 ? t("ccPlaceholder") : ""
-                          }
-                          value={ccInput}
-                          onChange={(e) => setCcInput(e.target.value)}
-                          onKeyDown={(e) =>
-                            handleKeyDown(e, "cc_emails", ccInput, setCcInput)
-                          }
-                          onBlur={() =>
-                            handleBlur("cc_emails", ccInput, setCcInput)
-                          }
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
+                  <FormItem className="space-y-0">
+                    <div className={rowClass}>
+                      <FormLabel className={labelClass + " font-normal"}>{t("cc")}</FormLabel>
+                      <FormControl>
+                        {chipInput("cc_emails", ccEmails, ccInput, setCcInput, t("ccPlaceholder"), t("cc"))}
+                      </FormControl>
+                    </div>
+                    <FormMessage className="px-4 pt-1 text-xs" />
                   </FormItem>
                 )}
               />
-
-              {/* BCC */}
               <FormField
                 control={form.control}
                 name="bcc_emails"
                 render={() => (
-                  <FormItem>
-                    <FormLabel>{t("bcc")}</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-wrap gap-1 p-2 border rounded-md min-h-[40px] focus-within:ring-2 focus-within:ring-ring">
-                        {bccEmails.map((email) => (
-                          <Badge
-                            key={email}
-                            variant="secondary"
-                            className="gap-1"
-                          >
-                            {email}
-                            <X
-                              className="h-3 w-3 cursor-pointer"
-                              onClick={() => removeEmail("bcc_emails", email)}
-                            />
-                          </Badge>
-                        ))}
-                        <input
-                          type="text"
-                          className="flex-1 min-w-[200px] outline-none bg-transparent text-sm"
-                          placeholder={
-                            bccEmails.length === 0 ? t("bccPlaceholder") : ""
-                          }
-                          value={bccInput}
-                          onChange={(e) => setBccInput(e.target.value)}
-                          onKeyDown={(e) =>
-                            handleKeyDown(
-                              e,
-                              "bcc_emails",
-                              bccInput,
-                              setBccInput
-                            )
-                          }
-                          onBlur={() =>
-                            handleBlur("bcc_emails", bccInput, setBccInput)
-                          }
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
+                  <FormItem className="space-y-0">
+                    <div className={rowClass}>
+                      <FormLabel className={labelClass + " font-normal"}>{t("bcc")}</FormLabel>
+                      <FormControl>
+                        {chipInput("bcc_emails", bccEmails, bccInput, setBccInput, t("bccPlaceholder"), t("bcc"))}
+                      </FormControl>
+                    </div>
+                    <FormMessage className="px-4 pt-1 text-xs" />
                   </FormItem>
                 )}
               />
@@ -854,11 +832,19 @@ export function EmailComposerForm() {
             control={form.control}
             name="subject"
             render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Input type="text" placeholder={t("subject")} {...field} />
-                </FormControl>
-                <FormMessage />
+              <FormItem className="space-y-0">
+                <div className={rowClass}>
+                  <FormLabel className={labelClass + " font-normal"}>{t("subjectLabel")}</FormLabel>
+                  <FormControl>
+                    <input
+                      type="text"
+                      placeholder={t("subject")}
+                      className="h-10 min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
+                      {...field}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage className="px-4 pt-1 text-xs" />
               </FormItem>
             )}
           />
@@ -868,72 +854,67 @@ export function EmailComposerForm() {
             control={form.control}
             name="body_text"
             render={({ field }) => (
-              <FormItem>
-                <div className="rounded-md border border-input focus-within:ring-2 focus-within:ring-ring">
-                  <FormControl>
-                    <Textarea
-                      placeholder={t("messagePlaceholder")}
-                      className={
-                        (quoteHtml ? "min-h-[120px]" : "min-h-[200px]") +
-                        " resize-y border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                      }
-                      {...field}
-                    />
-                  </FormControl>
+              <FormItem className="space-y-0 px-4">
+                <FormControl>
+                  <Textarea
+                    placeholder={t("messagePlaceholder")}
+                    className="min-h-[200px] resize-y rounded-none border-0 px-0 py-3.5 text-[13px] leading-5 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    {...field}
+                  />
+                </FormControl>
 
-                  {signatureHtml !== null && !signatureLegacy && (
-                    <EditableSignature
-                      html={signatureHtml}
-                      resetKey={signatureKey}
-                      label={t("signatureLabel")}
-                      removeLabel={t("removeSignature")}
-                      onChange={(html) => {
-                        signatureRef.current = html;
-                        setSignatureHtml(html);
-                        scheduleAutosave();
-                      }}
-                      onRemove={() => {
-                        signatureRef.current = null;
-                        setSignatureHtml(null);
-                        scheduleAutosave();
-                      }}
-                    />
-                  )}
+                {signatureHtml !== null && !signatureLegacy && (
+                  <EditableSignature
+                    html={signatureHtml}
+                    resetKey={signatureKey}
+                    label={t("signatureLabel")}
+                    removeLabel={t("removeSignature")}
+                    onChange={(html) => {
+                      signatureRef.current = html;
+                      setSignatureHtml(html);
+                      scheduleAutosave();
+                    }}
+                    onRemove={() => {
+                      signatureRef.current = null;
+                      setSignatureHtml(null);
+                      scheduleAutosave();
+                    }}
+                  />
+                )}
 
-                  {quoteHtml && (
-                    <div className="space-y-1 px-3 pb-3">
-                      <button
-                        type="button"
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                        onClick={() => setShowQuoted(!showQuoted)}
+                {quoteHtml && (
+                  <div className="space-y-1 pb-3">
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => setShowQuoted(!showQuoted)}
+                    >
+                      {showQuoted ? t("hideQuoted") : t("showQuoted")}
+                    </button>
+                    {showQuoted && (
+                      <div
+                        data-testid="compose-quote"
+                        className="max-h-[400px] overflow-auto border-s-2 border-border py-2 ps-3"
                       >
-                        {showQuoted ? t("hideQuoted") : t("showQuoted")}
-                      </button>
-                      {showQuoted && (
-                        <div
-                          data-testid="compose-quote"
-                          className="max-h-[400px] overflow-auto rounded-md bg-muted/50 p-1"
-                        >
-                          <EmailHtmlFrame
-                            srcDoc={quotePreviewDoc}
-                            title={t("quotedOriginal")}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <FormMessage />
+                        <EmailHtmlFrame
+                          srcDoc={quotePreviewDoc}
+                          title={t("quotedOriginal")}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+                <FormMessage className="pb-2 text-xs" />
               </FormItem>
             )}
           />
 
           {/* Legacy backend: it appends the workspace signature itself */}
           {signatureLegacy && legacySignature?.is_enabled && legacySignature.signature_html && (
-            <div className="text-xs text-muted-foreground">
+            <div className="px-4 pb-3 text-xs text-muted-foreground">
               <span className="font-medium">{t("signatureNote")}</span>
               <div
-                className="mt-1 p-2 bg-muted rounded text-foreground"
+                className="mt-1 rounded bg-muted p-2 text-foreground"
                 dangerouslySetInnerHTML={{
                   __html: DOMPurify.sanitize(legacySignature.signature_html),
                 }}
@@ -943,71 +924,88 @@ export function EmailComposerForm() {
 
           {/* Attachments of the forwarded message (re-attached by the backend) */}
           {forwardedAttachments.length > 0 && (
-            <div className="space-y-1">
-              <FormLabel>{t("forwardedAttachments")}</FormLabel>
+            <div className="space-y-1 px-4 pb-3">
+              <p className="text-xs text-muted-foreground">{t("forwardedAttachments")}</p>
               <div className="flex flex-wrap gap-1.5" data-testid="forwarded-attachments">
                 {forwardedAttachments.map((att, i) => (
-                  <Badge key={`${att.filename}-${i}`} variant="outline" className="gap-1 font-normal">
-                    <Paperclip className="h-3 w-3" />
+                  <span
+                    key={`${att.filename}-${i}`}
+                    className="inline-flex h-[30px] items-center gap-1.5 rounded-md border border-border pe-2.5 ps-2 text-xs"
+                  >
+                    <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="max-w-[220px] truncate">{att.filename}</span>
                     {att.size ? (
-                      <span className="text-muted-foreground">{formatSize(att.size)}</span>
+                      <span className="text-[11px] text-muted-foreground">{formatSize(att.size)}</span>
                     ) : null}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Attachments */}
-          <div className="space-y-2">
-            <FormLabel>{t("attachments")}</FormLabel>
-            <FileDropzone
-              onFilesSelected={(files) =>
-                setAttachments((prev) => [...prev, ...files])
-              }
-              files={attachments.map((file) => ({ file }))}
-              onRemoveFile={(index) =>
-                setAttachments((prev) => prev.filter((_, i) => i !== index))
-              }
-              maxFiles={10}
-              maxSize={25 * 1024 * 1024}
-            />
-          </div>
+          {/* Attachments (shown once Attach is pressed or files were added) */}
+          {(showAttach || attachments.length > 0) && (
+            <div className="space-y-1 px-4 pb-4" data-testid="compose-attachments">
+              <p className="text-xs text-muted-foreground">{t("attachments")}</p>
+              <FileDropzone
+                onFilesSelected={(files) =>
+                  setAttachments((prev) => [...prev, ...files])
+                }
+                files={attachments.map((file) => ({ file }))}
+                onRemoveFile={(index) =>
+                  setAttachments((prev) => prev.filter((_, i) => i !== index))
+                }
+                maxFiles={10}
+                maxSize={25 * 1024 * 1024}
+              />
+            </div>
+          )}
         </div>
 
-        <div className="flex justify-between items-center gap-2 p-3 border-t border-border">
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label={t("discard")}
-              title={t("discard")}
-              onClick={() => setDiscardOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <span className="text-xs text-muted-foreground" aria-live="polite">
-              {draftStatus === "saving" && t("draftSaving")}
-              {draftStatus === "saved" && t("draftSaved")}
-              {draftStatus === "error" && t("draftSaveFailed")}
-            </span>
-          </div>
-
-          <Button type="submit" disabled={sendEmail.isPending}>
+        {/* Footer (52px): Send, Attach, Template · Save draft, Discard */}
+        <div className="flex h-[52px] shrink-0 items-center gap-1 border-t border-border ps-3 pe-3 sm:pe-16">
+          <Button type="submit" disabled={sendEmail.isPending} className="h-8 gap-1.5 px-3 text-[13px]">
             {sendEmail.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 {t("sending")}
               </>
             ) : (
               <>
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="h-3.5 w-3.5" />
                 {t("send")}
               </>
             )}
           </Button>
+          <button
+            type="button"
+            onClick={() => setShowAttach((v) => !v)}
+            aria-pressed={showAttach}
+            aria-label={t("attach")}
+            title={t("attach")}
+            className="ms-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            data-testid="email-attach"
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
+          <EmailTemplatePicker variables={templateVariables} onInsert={insertTemplate} />
+          <button
+            type="button"
+            onClick={() => void saveDraft()}
+            className="ms-auto inline-flex h-8 items-center rounded-md px-2.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            data-testid="email-save-draft"
+          >
+            {t("saveDraft")}
+          </button>
+          <button
+            type="button"
+            aria-label={t("discard")}
+            title={t("discard")}
+            onClick={() => setDiscardOpen(true)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </form>
 

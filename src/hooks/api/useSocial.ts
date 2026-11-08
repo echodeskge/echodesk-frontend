@@ -1742,7 +1742,27 @@ export interface EmailMessage {
   // Additional fields for thread view
   message_count?: number;
   unread_count?: number;
+  /** Agent the conversation (thread) is assigned to. */
+  assignee?: EmailThreadUser | null;
+  /** Ticket created from the conversation. */
+  ticket?: EmailThreadTicket | null;
 }
+
+/** An agent as shown on an email conversation (assignee / assign picker). */
+export interface EmailThreadUser {
+  id: number;
+  name: string;
+  initials: string;
+  email: string;
+}
+
+export interface EmailThreadTicket {
+  id: number;
+  title: string;
+}
+
+/** Saved views over conversations (folder column "Views"). */
+export type EmailThreadView = 'assigned_to_me' | 'unassigned' | 'ticketed';
 
 export interface EmailFolder {
   name: string;
@@ -1880,6 +1900,7 @@ export function useEmailMessages(filters?: {
 
 export function useInfiniteEmailMessages(filters?: {
   thread_id?: string;
+  view?: EmailThreadView;
   folder?: string;
   starred?: boolean;
   is_read?: boolean;
@@ -2166,6 +2187,71 @@ export function useEmailAction() {
       queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
       queryClient.invalidateQueries({ queryKey: socialKeys.unreadCount() });
       queryClient.invalidateQueries({ queryKey: emailFoldersPrefix() });
+    },
+  });
+}
+
+// ---- Conversation assignment / ticket ------------------------------------
+
+export const emailThreadKeys = {
+  assignable: (connectionId?: number | null) => ['social', 'emailThreads', 'assignable', connectionId ?? 'all'] as const,
+};
+
+/** Agents an email conversation can be assigned to (users with access to the mailbox). */
+export function useEmailAssignableUsers(connectionId?: number | null, options?: { enabled?: boolean }) {
+  return useQuery<EmailThreadUser[]>({
+    queryKey: emailThreadKeys.assignable(connectionId),
+    queryFn: async () => {
+      const response = await axios.get('/api/social/email/threads/assignable-users/', {
+        params: connectionId ? { connection_id: connectionId } : {},
+      });
+      const data = response.data as EmailThreadUser[] | { results?: EmailThreadUser[] };
+      return Array.isArray(data) ? data : data.results ?? [];
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 60 * 1000,
+  });
+}
+
+export interface AssignEmailThreadRequest {
+  connection_id: number;
+  thread_id: string;
+  /** null unassigns. */
+  user_id: number | null;
+}
+
+/** Assign (or unassign with user_id null) an email conversation. */
+export function useAssignEmailThread() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: AssignEmailThreadRequest) => {
+      const response = await axios.post('/api/social/email/threads/assign/', data);
+      return response.data as { assignee: EmailThreadUser | null };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
+    },
+  });
+}
+
+export interface CreateTicketFromEmailRequest {
+  connection_id: number;
+  thread_id: string;
+  column_id?: number;
+}
+
+/** Create a ticket from an email conversation (needs ticket_management). */
+export function useCreateTicketFromEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: CreateTicketFromEmailRequest) => {
+      const response = await axios.post('/api/social/email/threads/create-ticket/', data);
+      return response.data as { ticket: EmailThreadTicket };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailMessages() });
+      queryClient.invalidateQueries({ queryKey: socialKeys.emailThreads() });
     },
   });
 }

@@ -144,6 +144,15 @@ export function SidebarSearch({ items, iconFor, onAction, actionIds, onNavigate 
           {isMac ? "⌘K" : "Ctrl K"}
         </kbd>
       </button>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={t("search")}
+        title={t("search")}
+        className="hidden h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground group-data-[collapsible=icon]:flex"
+      >
+        <Search className="h-4 w-4" />
+      </button>
       <CommandDialog open={open} onOpenChange={setOpen} title={t("search")}>
         <CommandInput placeholder={t("searchPlaceholder")} />
         <CommandList>

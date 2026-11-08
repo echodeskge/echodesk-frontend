@@ -71,6 +71,11 @@ vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
+const mockQuickReplies = [
+  { id: 1, title: "Thanks", message: "Thanks {{customer_name}}!", platforms: ["email"] },
+  { id: 2, title: "WA only", message: "wa", platforms: ["whatsapp"] },
+];
+const mockUseQuickReply = vi.fn();
 vi.mock("@/hooks/api/useSocial", () => ({
   useSendEmail: () => ({
     mutateAsync: mockMutateAsync,
@@ -95,6 +100,11 @@ vi.mock("@/hooks/api/useSocial", () => ({
   useCreateEmailDraft: () => ({ mutateAsync: mockCreateDraft }),
   useUpdateEmailDraft: () => ({ mutateAsync: mockUpdateDraft }),
   useDeleteEmailDraft: () => ({ mutate: mockDeleteDraft }),
+  useQuickReplies: () => ({ data: mockQuickReplies, isLoading: false }),
+  useUseQuickReply: () => ({ mutate: mockUseQuickReply, isPending: false }),
+}));
+vi.mock("@/hooks/useUserProfile", () => ({
+  useUserProfile: () => ({ data: { first_name: "Nino", last_name: "Beridze" } }),
 }));
 
 vi.mock("@/app/(tenant)/email/_hooks/use-email-context", () => ({
@@ -389,10 +399,11 @@ describe("EmailComposerForm", () => {
   // -----------------------------------------------------------------------
 
   describe("connection selector", () => {
-    it("does not show connection selector for single account", () => {
+    it("shows a single account as static From text (no selector)", () => {
       render(<EmailComposerForm />);
 
-      expect(screen.queryByText("From")).not.toBeInTheDocument();
+      expect(screen.getByText("From")).toBeInTheDocument();
+      expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     });
   });
 
@@ -401,12 +412,13 @@ describe("EmailComposerForm", () => {
   // -----------------------------------------------------------------------
 
   describe("attachments", () => {
-    it("renders the attachment dropzone", () => {
+    it("shows the attachment dropzone after pressing Attach", async () => {
+      const user = userEvent.setup();
       render(<EmailComposerForm />);
 
-      expect(
-        screen.getByText("dragOrClick")
-      ).toBeInTheDocument();
+      expect(screen.queryByText("dragOrClick")).not.toBeInTheDocument();
+      await user.click(screen.getByTestId("email-attach"));
+      expect(screen.getByText("dragOrClick")).toBeInTheDocument();
     });
 
     it("includes selected files in the send payload", async () => {
@@ -423,6 +435,7 @@ describe("EmailComposerForm", () => {
         "Body text"
       );
 
+      await user.click(screen.getByTestId("email-attach"));
       const fileInput = container.querySelector(
         'input[type="file"]'
       ) as HTMLInputElement;
@@ -815,6 +828,36 @@ describe("EmailComposerForm", () => {
           })
         )
       );
+    });
+  });
+
+  describe("design footer", () => {
+    it("inserts an email template with the variables filled in", async () => {
+      mockUseQuickReply.mockImplementation((_vars: unknown, opts: { onSuccess: (r: { processed_message: string }) => void }) =>
+        opts.onSuccess({ processed_message: "Thanks Ann!" })
+      );
+      const user = userEvent.setup();
+      render(<EmailComposerForm />);
+
+      await user.click(screen.getByTestId("email-template"));
+      expect(screen.queryByText("WA only")).not.toBeInTheDocument();
+      await user.click(screen.getByText("Thanks"));
+
+      expect(mockUseQuickReply).toHaveBeenCalledWith(
+        { id: 1, variables: expect.objectContaining({ agent_name: "Nino Beridze" }) },
+        expect.any(Object)
+      );
+      expect(screen.getByPlaceholderText("Write your message...")).toHaveValue("Thanks Ann!");
+    });
+
+    it("saves a draft on Save draft", async () => {
+      mockCreateDraft.mockResolvedValue({ id: 99 });
+      const user = userEvent.setup();
+      render(<EmailComposerForm />);
+
+      await user.type(screen.getByPlaceholderText("Subject"), "Hello");
+      await user.click(screen.getByTestId("email-save-draft"));
+      await waitFor(() => expect(mockCreateDraft).toHaveBeenCalled());
     });
   });
 });

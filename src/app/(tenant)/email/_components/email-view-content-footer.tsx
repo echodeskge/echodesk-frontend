@@ -5,47 +5,33 @@ import { useTranslations } from "next-intl";
 import { Forward, Reply, ReplyAll } from "lucide-react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
-import { Button } from "@/components/ui/button";
-import { CardFooter } from "@/components/ui/card";
-
 interface EmailViewContentFooterProps {
   email: EmailMessage;
   filter: string;
 }
 
-export function EmailViewContentFooter({
-  email,
-  filter,
-}: EmailViewContentFooterProps) {
+const outline =
+  "inline-flex h-8 items-center gap-1.5 rounded-md border border-border bg-background px-3 text-[13px] font-medium transition-colors hover:bg-muted";
+
+/** Design outline Reply / Reply all / Forward buttons under the conversation. */
+export function EmailViewContentFooter({ email }: EmailViewContentFooterProps) {
   const router = useRouter();
   const t = useTranslations("email.view");
 
-  function handleReply() {
-    router.push(`/email/compose?reply_to=${email.id}`);
-  }
-
-  function handleReplyAll() {
-    router.push(`/email/compose?reply_all=${email.id}`);
-  }
-
-  function handleForward() {
-    router.push(`/email/compose?forward=${email.id}`);
-  }
-
   return (
-    <CardFooter className="flex-wrap p-3 pt-0 gap-1.5">
-      <Button variant="outline" onClick={handleReply}>
-        <Reply className="me-2 h-4 w-4" />
+    <div className="flex flex-wrap gap-1.5" data-testid="email-reply-actions">
+      <button type="button" className={outline} onClick={() => router.push(`/email/compose?reply_to=${email.id}`)}>
+        <Reply className="h-3.5 w-3.5" />
         <span>{t("reply")}</span>
-      </Button>
-      <Button variant="outline" onClick={handleReplyAll}>
-        <ReplyAll className="me-2 h-4 w-4" />
+      </button>
+      <button type="button" className={outline} onClick={() => router.push(`/email/compose?reply_all=${email.id}`)}>
+        <ReplyAll className="h-3.5 w-3.5" />
         <span>{t("replyAll")}</span>
-      </Button>
-      <Button variant="outline" onClick={handleForward}>
-        <Forward className="me-2 h-4 w-4" />
+      </button>
+      <button type="button" className={outline} onClick={() => router.push(`/email/compose?forward=${email.id}`)}>
+        <Forward className="h-3.5 w-3.5" />
         <span>{t("forward")}</span>
-      </Button>
-    </CardFooter>
+      </button>
+    </div>
   );
 }

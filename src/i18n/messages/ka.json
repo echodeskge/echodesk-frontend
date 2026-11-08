@@ -234,14 +234,24 @@
       "dark": "მუქი",
       "system": "სისტემური",
       "logout": "გასვლა",
-      "account": "ანგარიში"
+      "account": "ანგარიში",
+      "premiumFeature": "პრემიუმ ფუნქცია",
+      "premiumRequired": "{name} პრემიუმ პაკეტს საჭიროებს. გამოსაყენებლად განაახლეთ გამოწერა.",
+      "groups": {
+        "work": "სამუშაო",
+        "business": "ბიზნესი",
+        "channels": "არხები"
+      }
     },
     "mySubstitutes": "ჩემი შემცვლელები",
     "covering": "სხვების შეცვლა",
     "kpi": "KPI",
     "payroll": "ხელფასები",
     "myPayroll": "ჩემი ხელფასი",
-    "attendance": "დასწრება"
+    "attendance": "დასწრება",
+    "switchToLight": "ღია თემაზე გადართვა",
+    "switchToDark": "მუქ თემაზე გადართვა",
+    "clearSearch": "ძიების გასუფთავება"
   },
   "bugReport": {
     "title": "ბაგის რეპორტი",
@@ -4497,7 +4507,17 @@
         "title": "ბაგი გამოსწორებულია",
         "message": "თქვენი ბაგი გამოსწორებულია. მადლობა რეპორტისთვის!"
       }
-    }
+    },
+    "title": "შეტყობინებები",
+    "markAllRead": "ყველას წაკითხულად მონიშვნა",
+    "loading": "შეტყობინებები იტვირთება…",
+    "empty": "შეტყობინებები არ არის",
+    "clearRead": "წაკითხული შეტყობინებების წაშლა",
+    "bellUnread": "შეტყობინებები, {count} წაუკითხავი",
+    "justNow": "ახლა",
+    "minutesAgo": "{count} წთ",
+    "hoursAgo": "{count} სთ",
+    "daysAgo": "{count} დღე"
   },
   "notificationPreferences": {
     "title": "შეტყობინებების პარამეტრები",
@@ -5418,7 +5438,11 @@
       "sentItems": "გაგზავნილი",
       "deletedItems": "წაშლილი",
       "junk": "სპამი",
-      "archive": "არქივი"
+      "archive": "არქივი",
+      "views": "ხედები",
+      "assignedToMe": "ჩემზე მიბმული",
+      "unassigned": "მიუბმელი",
+      "ticketed": "ტიკეტად ქცეული"
     },
     "list": {
       "search": "ძიება...",
@@ -5459,7 +5483,19 @@
       "emailPermanentlyDeleted": "წერილი სამუდამოდ წაიშალა",
       "restore": "აღდგენა",
       "toPrefix": "ვის:",
-      "hasAttachments": "აქვს დანართი"
+      "hasAttachments": "აქვს დანართი",
+      "archivedCount": "{count, plural, one {# წერილი დაარქივდა} other {# წერილი დაარქივდა}}",
+      "selectedCount": "{count} მონიშნული",
+      "unreadOnly": "მხოლოდ წაუკითხავი",
+      "unread": "წაუკითხავი",
+      "draftsTitle": "მონახაზები",
+      "loadFailed": "წერილები ვერ ჩაიტვირთა",
+      "emptyDrafts": "შენახული მონახაზები არ არის",
+      "emptySearch": "ძიების შედეგად წერილი ვერ მოიძებნა",
+      "emptyFolder": "ეს საქაღალდე ცარიელია",
+      "nothingHere": "აქ არაფერია",
+      "footerCount": "{loaded} / {total} წერილი",
+      "assignedTo": "მიბმულია: {name}"
     },
     "view": {
       "backToList": "სიაში დაბრუნება",
@@ -5489,7 +5525,29 @@
       "messageBody": "ელ. წერილი",
       "conversationCount": "ამ მიმოწერაში {count} წერილია",
       "hasAttachments": "აქვს დანართი",
-      "collapse": "ჩაკეცვა"
+      "collapse": "ჩაკეცვა",
+      "emptyPane": "აირჩიეთ მიმოწერა წასაკითხად",
+      "shortcutMove": "გადასვლა",
+      "shortcutArchive": "დაარქივება",
+      "shortcutReply": "პასუხი",
+      "shortcutCompose": "ახალი წერილი",
+      "expand": "წერილის გაშლა",
+      "moveToInbox": "შემოსულებში დაბრუნება",
+      "deleteForever": "სამუდამოდ წაშლა",
+      "delete": "წაშლა",
+      "unread": "წაუკითხავი",
+      "newer": "უფრო ახალი",
+      "older": "უფრო ძველი",
+      "assign": "მიბმა",
+      "unassign": "მიბმის მოხსნა",
+      "assignedToToast": "მიებმა: {name}",
+      "unassignedToast": "მიმოწერას მიბმა მოეხსნა",
+      "assignFailed": "მიმოწერის მიბმა ვერ მოხერხდა",
+      "noAssignableUsers": "მისაბმელი თანამშრომელი არ არის",
+      "createTicket": "ტიკეტის შექმნა",
+      "ticketCreated": "ტიკეტი #{id} შეიქმნა",
+      "openTicket": "გახსნა",
+      "ticketFailed": "ტიკეტი ვერ შეიქმნა"
     },
     "compose": {
       "title": "ახალი წერილი",
@@ -5540,7 +5598,21 @@
       "draftLoadFailed": "ამ მონახაზის გახსნა ვერ მოხერხდა. შესაძლოა უკვე გაიგზავნა ან წაიშალა.",
       "sentWithProblems": "გაიგზავნა, პრობლემებით",
       "refusedRecipients": "ფოსტის სერვერმა არ მიიღო: {list}.",
-      "quotedOriginal": "ციტირებული ორიგინალი წერილი"
+      "quotedOriginal": "ციტირებული ორიგინალი წერილი",
+      "titleForward": "გადაგზავნა",
+      "titleReply": "პასუხი",
+      "close": "დახურვა",
+      "subjectLabel": "თემა",
+      "attach": "ფაილის მიმაგრება",
+      "saveDraft": "მონახაზის შენახვა",
+      "template": "შაბლონი",
+      "insertTemplate": "შაბლონის ჩასმა",
+      "searchTemplates": "შაბლონების ძიება…",
+      "noTemplates": "ელფოსტის შაბლონები ჯერ არ არის"
+    },
+    "header": {
+      "switchAccount": "ანგარიშის შეცვლა",
+      "pickFolder": "საქაღალდის არჩევა"
     }
   },
   "seo": {

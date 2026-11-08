@@ -7,8 +7,6 @@ import type { DynamicIconNameType } from "@/types";
 import { cn, formatUnreadCount } from "@/lib/utils";
 
 import { useEmailContext } from "../_hooks/use-email-context";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import { DynamicIcon } from "@/components/dynamic-icon";
 
 interface EmailSidebarItemProps {
@@ -17,15 +15,19 @@ interface EmailSidebarItemProps {
   iconName: string;
   isActive: boolean;
   unreadCount?: number;
+  /** Bold foreground count (Inbox); other folders show a muted one. */
+  strongCount?: boolean;
   lucideIcon?: LucideIcon;
 }
 
+/** Design folder row: 30px, icon, label, unread count. */
 export function EmailSidebarItem({
   name,
   displayName,
   iconName,
   isActive,
   unreadCount = 0,
+  strongCount = false,
   lucideIcon: LucideIconComponent,
 }: EmailSidebarItemProps) {
   const { setIsEmailSidebarOpen } = useEmailContext();
@@ -45,24 +47,30 @@ export function EmailSidebarItem({
       <button
         type="button"
         className={cn(
-          buttonVariants({ variant: "ghost" }),
-          "w-full justify-start",
-          isActive && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+          "flex h-[30px] w-full items-center gap-2 rounded-md px-2 text-[13px] text-foreground/85 transition-colors hover:bg-muted hover:text-foreground",
+          isActive && "bg-muted font-medium text-foreground"
         )}
         onClick={handleClick}
         aria-current={isActive ? "true" : undefined}
       >
         {LucideIconComponent ? (
-          <LucideIconComponent className="me-2 h-4 w-4" />
+          <LucideIconComponent className="h-[15px] w-[15px] shrink-0 text-muted-foreground" />
         ) : (
           <DynamicIcon
             name={iconName as DynamicIconNameType}
-            className="me-2 h-4 w-4"
+            className="h-[15px] w-[15px] shrink-0 text-muted-foreground"
           />
         )}
-        <span className="capitalize">{displayName}</span>
+        <span className="min-w-0 flex-1 truncate text-start capitalize">{displayName}</span>
         {!!formattedCount && (
-          <Badge className="ms-auto">{formattedCount}</Badge>
+          <span
+            className={cn(
+              "text-[11px] tabular-nums",
+              strongCount ? "font-semibold text-foreground" : "text-muted-foreground"
+            )}
+          >
+            {formattedCount}
+          </span>
         )}
       </button>
     </li>

@@ -1,7 +1,6 @@
 /**
- * Tests for EmailListRowDesktop component.
- * Verifies rendering of sender info, subject, dates, star toggle,
- * checkbox selection, navigation, and dropdown actions.
+ * Tests for the design conversation row (EmailListRow): sender, subject,
+ * time, tag / ticket chip, assignee, star, selection and navigation.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
@@ -31,9 +30,11 @@ vi.mock("next-intl", () => ({
       new: "New",
       toPrefix: "To:",
       hasAttachments: "Has attachments",
+      deleteEmail: "Delete email",
     };
     return translations[key] || key;
   },
+  useLocale: () => "en",
 }));
 
 vi.mock("next/navigation", () => ({
@@ -46,6 +47,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/hooks/api/useSocial", () => ({
   useEmailAction: () => ({ mutate: mockMutate, isPending: false }),
 }));
+vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 vi.mock("@/app/(tenant)/email/_hooks/use-email-context", () => ({
   useEmailContext: () => ({
@@ -60,7 +62,7 @@ vi.mock("@/app/(tenant)/email/_hooks/use-email-context", () => ({
   }),
 }));
 
-import { EmailListRowDesktop } from "@/app/(tenant)/email/_components/email-list-row-desktop";
+import { EmailListRow } from "@/app/(tenant)/email/_components/email-list-row";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
 // ---------------------------------------------------------------------------
@@ -110,21 +112,19 @@ function makeEmailMessage(
 
 function renderRow(
   emailOverrides: Partial<EmailMessage> = {},
-  props: { filter?: string; isSelected?: boolean } = {}
+  props: { filter?: string; isSelected?: boolean; isOpen?: boolean } = {}
 ) {
   const email = makeEmailMessage(emailOverrides);
-  // Wrap in a table structure since the component renders <TableRow>
   return {
     ...render(
-      <table>
-        <tbody>
-          <EmailListRowDesktop
-            email={email}
-            filter={props.filter ?? "INBOX"}
-            isSelected={props.isSelected ?? false}
-          />
-        </tbody>
-      </table>
+      <ul>
+        <EmailListRow
+          email={email}
+          filter={props.filter ?? "INBOX"}
+          isSelected={props.isSelected ?? false}
+          isOpen={props.isOpen ?? false}
+        />
+      </ul>
     ),
     email,
   };
@@ -134,7 +134,7 @@ function renderRow(
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("EmailListRowDesktop", () => {
+describe("EmailListRow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -168,12 +168,10 @@ describe("EmailListRowDesktop", () => {
       expect(screen.getByText("(No subject)")).toBeInTheDocument();
     });
 
-    it("renders formatted date", () => {
-      renderRow({ timestamp: "2025-01-15T10:00:00Z" });
+    it("renders a short date for older years", () => {
+      renderRow({ timestamp: "2020-01-15T10:00:00Z" });
 
-      // formatDate uses date-fns format "PP" which outputs locale-specific date
-      const dateCell = screen.getByText(/Jan/);
-      expect(dateCell).toBeInTheDocument();
+      expect(screen.getByText("15.01.2020")).toBeInTheDocument();
     });
 
     it("renders sender avatar with initials", () => {
@@ -314,7 +312,7 @@ describe("EmailListRowDesktop", () => {
       const user = userEvent.setup();
       renderRow({ id: 42 });
 
-      const row = screen.getByRole("row");
+      const row = screen.getByRole("listitem");
       await user.click(row);
 
       expect(mockPush).toHaveBeenCalledWith("/email/INBOX/42");
@@ -324,7 +322,7 @@ describe("EmailListRowDesktop", () => {
       const user = userEvent.setup();
       const { email } = renderRow({ is_read: false, id: 7 });
 
-      const row = screen.getByRole("row");
+      const row = screen.getByRole("listitem");
       await user.click(row);
 
       expect(mockMutate).toHaveBeenCalledWith({
@@ -337,7 +335,7 @@ describe("EmailListRowDesktop", () => {
       const user = userEvent.setup();
       renderRow({ is_read: true, id: 7 });
 
-      const row = screen.getByRole("row");
+      const row = screen.getByRole("listitem");
       await user.click(row);
 
       // Should navigate but not call mark_read
@@ -349,7 +347,7 @@ describe("EmailListRowDesktop", () => {
       const user = userEvent.setup();
       renderRow({ id: 5 }, { filter: "[Gmail]/All Mail" });
 
-      const row = screen.getByRole("row");
+      const row = screen.getByRole("listitem");
       await user.click(row);
 
       expect(mockPush).toHaveBeenCalledWith(
@@ -366,9 +364,7 @@ describe("EmailListRowDesktop", () => {
     it("renders read rows in normal weight without the unread marker", () => {
       renderRow({ is_read: true });
 
-      const row = screen.getByRole("row");
-      const classes = row.className.split(/\s+/);
-      expect(classes).not.toContain("bg-muted");
+      const row = screen.getByRole("listitem");
       expect(row.getAttribute("data-unread")).toBeNull();
       expect(screen.getByText("John Doe").className).toContain("font-normal");
     });
@@ -376,12 +372,34 @@ describe("EmailListRowDesktop", () => {
     it("renders unread rows bold with an unread accent bar", () => {
       renderRow({ is_read: false });
 
-      const row = screen.getByRole("row");
-      const classes = row.className.split(/\s+/);
-      expect(classes).not.toContain("bg-muted");
-      expect(classes).toContain("border-s-primary");
+      const row = screen.getByRole("listitem");
       expect(row.getAttribute("data-unread")).toBe("true");
-      expect(screen.getByText("John Doe").className).toContain("font-bold");
+      expect(screen.getByText("John Doe").className).toContain("font-semibold");
+      expect(row.querySelector("span[aria-hidden].bg-primary\\/70")).not.toBeNull();
+    });
+
+    it("highlights the conversation open in the reading pane", () => {
+      renderRow({ is_read: true }, { isOpen: true });
+
+      const row = screen.getByRole("listitem");
+      expect(row).toHaveAttribute("aria-current", "true");
+      expect(row.className).toContain("bg-muted");
+    });
+  });
+
+  describe("assignee and ticket", () => {
+    it("shows the assignee's initials with a tooltip", () => {
+      renderRow({ assignee: { id: 3, name: "Nino Beridze", initials: "NB", email: "n@x.ge" } });
+
+      expect(screen.getByText("NB")).toBeInTheDocument();
+      expect(screen.getByLabelText("assignedTo")).toBeInTheDocument();
+    });
+
+    it("shows the ticket chip instead of the New / Answered tag", () => {
+      renderRow({ ticket: { id: 1234, title: "Printer" } });
+
+      expect(screen.getByText("#1234")).toBeInTheDocument();
+      expect(screen.queryByText("New")).toBeNull();
     });
   });
 
@@ -419,56 +437,12 @@ describe("EmailListRowDesktop", () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // Dropdown menu
-  // -----------------------------------------------------------------------
-
-  describe("dropdown menu", () => {
-    it("renders more actions button", () => {
-      renderRow();
-
-      expect(
-        screen.getByLabelText("More actions")
-      ).toBeInTheDocument();
-    });
-
-    it("shows mark as read option for unread email", async () => {
-      const user = userEvent.setup();
-      renderRow({ is_read: false });
-
-      const menuButton = screen.getByLabelText("More actions");
-      await user.click(menuButton);
-
-      expect(screen.getByText("Mark as read")).toBeInTheDocument();
-    });
-
-    it("shows mark as unread option for read email", async () => {
-      const user = userEvent.setup();
-      renderRow({ is_read: true });
-
-      const menuButton = screen.getByLabelText("More actions");
-      await user.click(menuButton);
-
-      expect(screen.getByText("Mark as unread")).toBeInTheDocument();
-    });
-
-    it("shows delete option", async () => {
+  describe("row actions", () => {
+    it("has a hover delete button that does not open the row", async () => {
       const user = userEvent.setup();
       renderRow();
 
-      const menuButton = screen.getByLabelText("More actions");
-      await user.click(menuButton);
-
-      expect(screen.getByText("Delete")).toBeInTheDocument();
-    });
-
-    it("menu button click does not trigger row navigation", async () => {
-      const user = userEvent.setup();
-      renderRow();
-
-      const menuButton = screen.getByLabelText("More actions");
-      await user.click(menuButton);
-
+      await user.click(screen.getByLabelText("Delete email"));
       expect(mockPush).not.toHaveBeenCalled();
     });
   });

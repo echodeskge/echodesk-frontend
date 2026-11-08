@@ -1,10 +1,6 @@
-import { EmailList } from "../_components/email-list";
+import { EmailEmptyPane } from "../_components/email-empty-pane";
 
-export default async function EmailFilterPage(props: {
-  params: Promise<{ filter: string }>;
-}) {
-  const params = await props.params;
-  // Decode in case the filter contains URL-encoded characters (e.g. spaces in "Sent Items")
-  const filter = decodeURIComponent(params.filter);
-  return <EmailList filter={filter} />;
+/** No conversation open: the reading pane shows its empty state. */
+export default function EmailFilterPage() {
+  return <EmailEmptyPane />;
 }

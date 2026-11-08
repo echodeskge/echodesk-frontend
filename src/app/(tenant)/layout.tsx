@@ -59,6 +59,7 @@ import { Plus, Volume2, VolumeX, Sun, Moon, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { webRouteForNotificationLink } from "@/lib/notificationLinks";
+import { HeaderActionsProvider, useHeaderSlot } from "@/contexts/HeaderActionsContext";
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -629,7 +630,14 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Deeper routes of a top-level page (e.g. /email/INBOX/12) belong to that page.
+  if (!currentMenuItem && pathParts[0]) {
+    currentMenuItem = visibleMenuItems.find((item) => item.id === pathParts[0]);
+  }
+  const activeMenuId = currentMenuItem?.id ?? currentView;
+
   const pageTitle = currentMenuItem?.label || t("dashboard");
+  const headerSlot = useHeaderSlot();
 
   // Check if we should show board switcher (always show on tickets page, even with no boards)
   const showBoardSwitcher = currentView === "tickets";
@@ -683,25 +691,36 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      style={{ "--sidebar-width": "15rem", "--sidebar-width-icon": "3.25rem" } as React.CSSProperties}
+    >
       <div className="flex h-screen w-full bg-background overflow-hidden">
         <AppSidebar
           tenant={tenantInfo as any}
           userProfile={userProfile || null}
           visibleMenuItems={visibleMenuItems}
-          currentView={currentView}
+          currentView={activeMenuId}
           onMenuClick={handleMenuClick}
           onPrefetch={(viewId) => router.prefetch(`/${viewId}`)}
           onLogout={handleLogout}
         />
 
         <SidebarInset className="flex flex-col h-screen overflow-hidden">
-          <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4 bg-background sticky top-0 z-10 left-0 right-0">
-            <SidebarTrigger className="-ml-1" />
-            <h1 className="text-lg font-semibold">{pageTitle}</h1>
+          <header className="sticky top-0 left-0 right-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background px-3">
+            <SidebarTrigger className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-foreground" />
+            <span aria-hidden className="h-4 w-px bg-border" />
+            <h1 className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold">
+              <span className={headerSlot?.breadcrumb ? "hidden truncate sm:inline" : "truncate"}>{pageTitle}</span>
+              {headerSlot?.breadcrumb && (
+                <>
+                  <span aria-hidden className="hidden font-normal text-muted-foreground sm:inline">/</span>
+                  {headerSlot.breadcrumb}
+                </>
+              )}
+            </h1>
             {showBoardSwitcher && (
               <>
-                <div className="ml-4">
+                <div className="ml-2">
                   <BoardSwitcher
                     selectedBoardId={selectedBoardId}
                     boards={boards}
@@ -719,12 +738,13 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                     placeholder={t("searchTickets")}
                     value={ticketSearchQuery}
                     onChange={(e) => setTicketSearchQuery(e.target.value)}
-                    className="h-8 w-48 rounded-md border border-input bg-background pl-8 pr-8 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="h-8 w-48 rounded-md border border-input bg-background pl-8 pr-8 text-[13px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   />
                   {ticketSearchQuery && (
                     <button
                       onClick={() => setTicketSearchQuery("")}
                       className="absolute right-2 top-1/2 -translate-y-1/2"
+                      aria-label={t("clearSearch")}
                     >
                       <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                     </button>
@@ -732,52 +752,53 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 </div>
               </>
             )}
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-1.5">
               {/* Active Users Indicator - Only show on tickets page */}
               {isTicketsPage && (
                 <BoardCollaborationIndicators
                   activeUsers={boardActiveUsers}
                 />
               )}
+              {headerSlot?.primary}
+              {headerSlot?.primary && <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />}
+              {headerSlot?.icons}
               {/* Quick Create Task Button */}
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 onClick={() => openTicketCreate()}
                 title={t("createTask")}
+                aria-label={t("createTask")}
               >
-                <Plus className="h-5 w-5" />
+                <Plus className="h-4 w-4" />
               </Button>
               {/* Sound Mute Toggle Button */}
               <Button
                 variant="ghost"
                 size="icon"
+                className="hidden h-8 w-8 text-muted-foreground hover:text-foreground sm:inline-flex"
                 onClick={() => {
                   const newEnabled = getNotificationSound().toggle();
                   setIsSoundMuted(!newEnabled);
                 }}
                 title={isSoundMuted ? t("unmute") : t("mute")}
+                aria-label={isSoundMuted ? t("unmute") : t("mute")}
               >
-                {isSoundMuted ? (
-                  <VolumeX className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <Volume2 className="h-5 w-5" />
-                )}
+                {isSoundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </Button>
               {/* Dark/Light Mode Toggle */}
               <Button
                 variant="ghost"
                 size="icon"
+                className="hidden h-8 w-8 text-muted-foreground hover:text-foreground sm:inline-flex"
                 onClick={() => setMode(resolvedMode === 'dark' ? 'light' : 'dark')}
-                title={resolvedMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={resolvedMode === 'dark' ? t("switchToLight") : t("switchToDark")}
+                aria-label={resolvedMode === 'dark' ? t("switchToLight") : t("switchToDark")}
               >
-                {resolvedMode === 'dark' ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
+                {resolvedMode === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
-              <MessengerBell />
+              <MessengerBell className="h-8 w-8 text-muted-foreground hover:text-foreground" />
               <NotificationBell
                 onNotificationClick={(notification) => {
                   // Navigate to ticket if ticket_id exists, else to the
@@ -791,7 +812,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
                 }}
               />
             </div>
-          </div>
+          </header>
 
           <div className="flex-1 bg-background overflow-auto">
             <BoardCollaborationProvider
@@ -866,7 +887,9 @@ export default function TenantLayout({
           <TicketCreateProvider>
             <BugReportProvider>
               <BoardProvider>
-                <TenantLayoutContent>{children}</TenantLayoutContent>
+                <HeaderActionsProvider>
+                  <TenantLayoutContent>{children}</TenantLayoutContent>
+                </HeaderActionsProvider>
               </BoardProvider>
             </BugReportProvider>
           </TicketCreateProvider>

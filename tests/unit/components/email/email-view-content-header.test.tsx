@@ -14,6 +14,7 @@ vi.mock("next-intl", () => ({
     const translations: Record<string, string> = { to: "To" };
     return translations[key] || key;
   },
+  useLocale: () => "en",
 }));
 
 import { EmailViewContentHeader } from "@/app/(tenant)/email/_components/email-view-content-header";

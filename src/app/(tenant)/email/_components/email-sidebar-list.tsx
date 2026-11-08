@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Star } from "lucide-react";
+import { CircleDashed, Star, Ticket, UserCheck } from "lucide-react";
 
 import { useEmailMessages } from "@/hooks/api/useSocial";
 import type { FolderRole } from "@/lib/email-reading";
@@ -28,10 +28,11 @@ const ROLE_ICON: Record<Exclude<FolderRole, "custom">, string> = {
  * Drafts opens the EchoDesk drafts list (virtual "drafts" route).
  */
 export function EmailSidebarList() {
-  const { currentConnectionId } = useEmailContext();
+  const { currentConnectionId, lastFilter } = useEmailContext();
   const params = useParams();
   const rawFilter = params.filter as string | undefined;
-  const filterParam = rawFilter ? decodeURIComponent(rawFilter) : undefined;
+  // Compose has no folder in the URL: keep the folder the list shows.
+  const filterParam = rawFilter ? decodeURIComponent(rawFilter) : lastFilter;
   const t = useTranslations("email.sidebar");
   const folderLabel = useFolderLabel();
 
@@ -55,19 +56,21 @@ export function EmailSidebarList() {
 
   const { folders, isLoading } = useSidebarFolders(currentConnectionId, dbFolders);
 
+  const views = [
+    { name: "starred", label: t("starred"), icon: Star },
+    { name: "assigned", label: t("assignedToMe"), icon: UserCheck },
+    { name: "unassigned", label: t("unassigned"), icon: CircleDashed },
+    { name: "ticketed", label: t("ticketed"), icon: Ticket },
+  ];
+
   return (
-    <ul className="p-3 pt-0">
-      <nav className="space-y-1.5">
-        {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-9 bg-muted animate-pulse rounded-md"
-            />
-          ))
-        ) : (
-          <>
-            {folders.map((folder) => (
+    <nav className="flex flex-col gap-0.5" aria-label={t("title")}>
+      <ul className="flex flex-col gap-0.5">
+        {isLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <li key={i} className="h-[30px] animate-pulse rounded-md bg-muted" />
+            ))
+          : folders.map((folder) => (
               <EmailSidebarItem
                 key={`${folder.role}:${folder.name}`}
                 name={folder.name}
@@ -80,24 +83,25 @@ export function EmailSidebarList() {
                 isActive={filterParam === folder.name}
                 // Outlook shows no unread count on Sent Items.
                 unreadCount={folder.role === "sent" ? 0 : folder.unreadCount}
+                strongCount={folder.role === "inbox"}
               />
             ))}
-
-            <div>
-              <h4 className="mt-4 mb-1 ms-4 text-sm font-medium text-muted-foreground">
-                {t("virtual")}
-              </h4>
-              <EmailSidebarItem
-                name="starred"
-                displayName={t("starred")}
-                iconName="Star"
-                isActive={filterParam === "starred"}
-                lucideIcon={Star}
-              />
-            </div>
-          </>
-        )}
-      </nav>
-    </ul>
+      </ul>
+      <h4 className="mt-2 flex h-6 items-center px-2 text-[11px] font-medium uppercase tracking-[.04em] text-muted-foreground">
+        {t("views")}
+      </h4>
+      <ul className="flex flex-col gap-0.5">
+        {views.map((view) => (
+          <EmailSidebarItem
+            key={view.name}
+            name={view.name}
+            displayName={view.label}
+            iconName={view.name}
+            isActive={filterParam === view.name}
+            lucideIcon={view.icon}
+          />
+        ))}
+      </ul>
+    </nav>
   );
 }

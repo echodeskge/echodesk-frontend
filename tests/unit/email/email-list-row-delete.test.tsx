@@ -14,9 +14,11 @@ const toast = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, back: vi.fn() }),
   useParams: () => ({}),
+  useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => "en",
 }));
 vi.mock("@/hooks/api/useSocial", () => ({
   useEmailAction: () => ({ mutate, isPending: false }),
@@ -28,7 +30,7 @@ vi.mock("@/app/(tenant)/email/_hooks/use-email-context", () => ({
   useEmailContext: () => ({ handleToggleSelectEmail: vi.fn() }),
 }));
 
-import { EmailListRowDesktop } from "@/app/(tenant)/email/_components/email-list-row-desktop";
+import { EmailListRow } from "@/app/(tenant)/email/_components/email-list-row";
 
 const email = {
   id: 42,
@@ -43,19 +45,17 @@ const email = {
 
 function renderRow(filter = "INBOX", overrides: Partial<EmailMessage> = {}) {
   return render(
-    <table>
-      <tbody>
-        <EmailListRowDesktop
-          email={{ ...email, ...overrides }}
-          filter={filter}
-          isSelected={false}
-        />
-      </tbody>
-    </table>
+    <ul>
+      <EmailListRow
+        email={{ ...email, ...overrides }}
+        filter={filter}
+        isSelected={false}
+      />
+    </ul>
   );
 }
 
-describe("EmailListRowDesktop trash button", () => {
+describe("EmailListRow trash button", () => {
   beforeEach(() => {
     push.mockReset();
     mutate.mockReset();

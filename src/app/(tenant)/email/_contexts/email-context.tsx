@@ -1,7 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useState } from "react";
-import type { ReactNode } from "react";
+import { createContext, useCallback, useRef, useState } from "react";
+import type { MutableRefObject, ReactNode } from "react";
+
+/** Actions the open conversation registers for keyboard shortcuts (E / R). */
+export interface EmailPaneActions {
+  archive?: () => void;
+  reply?: () => void;
+}
 
 export interface EmailContextType {
   selectedEmailIds: number[];
@@ -12,6 +18,13 @@ export interface EmailContextType {
   handleToggleSelectEmail: (id: number) => void;
   handleToggleSelectAllEmails: (ids: number[]) => void;
   handleClearSelection: () => void;
+  /** Folder / view route last shown in the list (compose keeps it beside the composer). */
+  lastFilter: string;
+  setLastFilter: (filter: string) => void;
+  /** Ids of the rows currently in the list, top to bottom (newer / older, J / K). */
+  listOrder: number[];
+  setListOrder: (ids: number[]) => void;
+  paneActions: MutableRefObject<EmailPaneActions>;
 }
 
 export const EmailContext = createContext<EmailContextType | undefined>(
@@ -24,6 +37,15 @@ export function EmailProvider({ children }: { children: ReactNode }) {
     null
   );
   const [isEmailSidebarOpen, setIsEmailSidebarOpen] = useState(false);
+  const [lastFilter, setLastFilter] = useState("INBOX");
+  const [listOrder, setListOrderState] = useState<number[]>([]);
+  const paneActions = useRef<EmailPaneActions>({});
+
+  const setListOrder = useCallback((ids: number[]) => {
+    setListOrderState((prev) =>
+      prev.length === ids.length && prev.every((id, i) => id === ids[i]) ? prev : ids
+    );
+  }, []);
 
   const handleToggleSelectEmail = useCallback((id: number) => {
     setSelectedEmailIds((prev) =>
@@ -54,6 +76,11 @@ export function EmailProvider({ children }: { children: ReactNode }) {
         handleToggleSelectEmail,
         handleToggleSelectAllEmails,
         handleClearSelection,
+        lastFilter,
+        setLastFilter,
+        listOrder,
+        setListOrder,
+        paneActions,
       }}
     >
       {children}

@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { ImageOff, Paperclip } from "lucide-react";
+import { File, ImageOff } from "lucide-react";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
-import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatFileSize } from "@/lib/utils";
 import { prepareEmailHtml } from "@/lib/email-reading";
@@ -183,7 +182,7 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
   return (
     <>
       {hasHtml && prepared ? (
-        <CardContent className="space-y-2">
+        <div className="space-y-2">
           {prepared.blockedCount > 0 && !allowRemoteImages && (
             <div
               className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground"
@@ -206,10 +205,10 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
             srcDoc={prepared.srcDoc}
             title={email.subject || t("messageBody")}
           />
-        </CardContent>
+        </div>
       ) : (
-        <CardContent className="space-y-3">
-          <div className="whitespace-pre-wrap break-words">{body}</div>
+        <div className="max-w-[680px] space-y-3">
+          <div className="whitespace-pre-wrap break-words text-[13px] leading-5 [text-wrap:pretty]">{body}</div>
           {quoted && (
             <div className="space-y-1">
               <button
@@ -228,35 +227,26 @@ export function EmailViewContentBody({ email }: EmailViewContentBodyProps) {
               )}
             </div>
           )}
-        </CardContent>
+        </div>
       )}
 
       {visibleAttachments.length > 0 && (
-        <div className="px-6 py-3 border-t border-border">
-          <p className="text-sm font-medium text-muted-foreground mb-2">
-            {t("attachments", { count: visibleAttachments.length })}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {visibleAttachments.map((attachment, index) => (
-              <a
-                key={index}
-                href={attachment.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-2 border rounded-md text-sm hover:bg-muted transition-colors"
-              >
-                <Paperclip className="h-4 w-4 text-muted-foreground" />
-                <span className="truncate max-w-[200px]">
-                  {attachment.filename}
-                </span>
-                {attachment.size > 0 && (
-                  <span className="text-muted-foreground text-xs">
-                    ({formatFileSize(attachment.size)})
-                  </span>
-                )}
-              </a>
-            ))}
-          </div>
+        <div className="mt-3 flex flex-wrap gap-1.5" aria-label={t("attachments", { count: visibleAttachments.length })}>
+          {visibleAttachments.map((attachment, index) => (
+            <a
+              key={index}
+              href={attachment.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-[30px] items-center gap-1.5 rounded-md border border-border pe-2.5 ps-2 text-xs transition-colors hover:bg-muted"
+            >
+              <File className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="max-w-[200px] truncate">{attachment.filename}</span>
+              {attachment.size > 0 && (
+                <span className="text-[11px] text-muted-foreground">{formatFileSize(attachment.size)}</span>
+              )}
+            </a>
+          ))}
         </div>
       )}
     </>

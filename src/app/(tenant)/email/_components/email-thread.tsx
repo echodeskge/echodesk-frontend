@@ -11,11 +11,10 @@ import {
   messageSnippet,
   toSidebarFolder,
 } from "@/lib/email-reading";
-import { cn, formatDate, getInitials } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import { useFolderLabel } from "../_hooks/use-folder-label";
-import { EmailViewContent } from "./email-view-content";
+import { EmailViewContentBody } from "./email-view-content-body";
+import { EmailViewContentHeader } from "./email-view-content-header";
 
 interface EmailThreadProps {
   /** Conversation, oldest → newest (see sortThreadMessages). */
@@ -25,11 +24,11 @@ interface EmailThreadProps {
 }
 
 /**
- * Outlook conversation view: every message of the thread (incl. our Sent
- * replies) oldest → newest; the latest (and the one opened) start expanded,
- * earlier ones are collapsed to a one-line summary and expand on click.
+ * Design conversation: one card per message (incl. our Sent replies), oldest →
+ * newest. The latest (and the one opened) start expanded; each card's header
+ * toggles it.
  */
-export function EmailThread({ messages, openedId, filter }: EmailThreadProps) {
+export function EmailThread({ messages, openedId }: EmailThreadProps) {
   const t = useTranslations("email.view");
   const folderLabel = useFolderLabel();
   const defaults = useMemo(
@@ -43,13 +42,14 @@ export function EmailThread({ messages, openedId, filter }: EmailThreadProps) {
     !collapsible || (id in overrides ? overrides[id] : defaults.has(id));
 
   function toggle(id: number) {
+    if (!collapsible) return;
     setOverrides((prev) => ({ ...prev, [id]: !isExpanded(id) }));
   }
 
   const opened = messages.find((m) => m.id === openedId);
 
   return (
-    <div className="space-y-2" data-testid="email-thread">
+    <div className="flex flex-col gap-3" data-testid="email-thread">
       {collapsible && (
         <p className="text-xs text-muted-foreground">
           {t("conversationCount", { count: messages.length })}
@@ -58,88 +58,52 @@ export function EmailThread({ messages, openedId, filter }: EmailThreadProps) {
       {messages.map((message) => {
         const expanded = isExpanded(message.id);
         const folder = toSidebarFolder(message.folder);
-        const showFolder =
-          !!folder && !!opened && message.folder !== opened.folder;
-        const sender = message.from_name || message.from_email;
-
-        if (!expanded) {
-          return (
-            <button
-              key={message.id}
-              type="button"
-              onClick={() => toggle(message.id)}
-              aria-expanded={false}
-              data-testid={`thread-message-${message.id}`}
-              className={cn(
-                "w-full flex items-center gap-2 rounded-md border border-border px-3 py-2 text-start hover:bg-muted transition-colors",
-                !message.is_read && "border-s-4 border-s-primary"
-              )}
-            >
-              <Avatar className="h-7 w-7">
-                <AvatarFallback className="text-xs">
-                  {getInitials(sender)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "truncate text-sm",
-                      !message.is_read ? "font-semibold" : "font-medium"
-                    )}
-                  >
-                    {sender}
-                  </span>
-                  {showFolder && folder && (
-                    <Badge variant="outline" className="shrink-0 text-[10px]">
-                      {folderLabel(folder)}
-                    </Badge>
-                  )}
-                  {hasAttachments(message) && (
-                    <Paperclip
-                      className="h-3 w-3 shrink-0 text-muted-foreground"
-                      aria-label={t("hasAttachments")}
-                    />
-                  )}
-                </div>
-                <p className="truncate text-xs text-muted-foreground">
-                  {messageSnippet(message)}
-                </p>
-              </div>
-              <span className="shrink-0 text-xs text-muted-foreground">
-                {formatDate(message.timestamp)}
-              </span>
-            </button>
-          );
-        }
+        const showFolder = !!folder && !!opened && message.folder !== opened.folder;
 
         return (
-          <div
+          <article
             key={message.id}
             data-testid={`thread-message-${message.id}`}
-            aria-expanded={true}
-            className={cn(collapsible && "rounded-md border border-border")}
+            aria-expanded={expanded}
+            className={cn(
+              "overflow-hidden rounded-lg border border-border bg-card",
+              !message.is_read && !expanded && "border-s-[3px] border-s-primary"
+            )}
           >
-            {collapsible && (
-              <div className="flex items-center justify-between px-3 pt-2">
-                {showFolder && folder ? (
-                  <Badge variant="outline" className="text-[10px]">
+            <button
+              type="button"
+              onClick={() => toggle(message.id)}
+              disabled={!collapsible}
+              aria-label={expanded ? t("collapse") : t("expand")}
+              className={cn(
+                "flex w-full items-center gap-2.5 px-3.5 py-2.5 text-start",
+                collapsible && "hover:bg-muted/40"
+              )}
+            >
+              <EmailViewContentHeader email={message} />
+            </button>
+            {(showFolder || (!expanded && hasAttachments(message))) && (
+              <div className="-mt-1 flex items-center gap-1.5 pb-2 pe-3.5 ps-14">
+                {showFolder && folder && (
+                  <span className="rounded border border-border px-1.5 text-[10px] text-muted-foreground">
                     {folderLabel(folder)}
-                  </Badge>
-                ) : (
-                  <span />
+                  </span>
                 )}
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => toggle(message.id)}
-                >
-                  {t("collapse")}
-                </button>
+                {!expanded && hasAttachments(message) && (
+                  <Paperclip className="h-3 w-3 text-muted-foreground" aria-label={t("hasAttachments")} />
+                )}
               </div>
             )}
-            <EmailViewContent email={message} filter={filter} />
-          </div>
+            {expanded ? (
+              <div className="pb-3.5 pe-3.5 ps-3.5 pt-1 sm:ps-14">
+                <EmailViewContentBody email={message} />
+              </div>
+            ) : (
+              <p className="truncate pb-2.5 pe-3.5 ps-14 text-xs text-muted-foreground">
+                {messageSnippet(message)}
+              </p>
+            )}
+          </article>
         );
       })}
     </div>

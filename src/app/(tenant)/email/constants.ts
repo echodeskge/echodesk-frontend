@@ -24,8 +24,20 @@ export function getFolderIcon(folderName: string): string {
   return "Folder";
 }
 
+/** Saved views over conversations: route name → backend `view` filter. */
+export const EMAIL_VIEWS = {
+  assigned: "assigned_to_me",
+  unassigned: "unassigned",
+  ticketed: "ticketed",
+} as const;
+export type EmailViewRoute = keyof typeof EMAIL_VIEWS;
+
+export function isEmailViewRoute(name: string): name is EmailViewRoute {
+  return Object.prototype.hasOwnProperty.call(EMAIL_VIEWS, name);
+}
+
 /** Virtual folder names that don't map to real IMAP folders */
-export const VIRTUAL_FOLDERS = ["starred", "drafts"] as const;
+export const VIRTUAL_FOLDERS = ["starred", "drafts", "assigned", "unassigned", "ticketed"] as const;
 export type VirtualFolder = (typeof VIRTUAL_FOLDERS)[number];
 
 export function isVirtualFolder(name: string): name is VirtualFolder {

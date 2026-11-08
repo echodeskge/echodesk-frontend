@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Badge } from '@/components/ui/badge'
+import { useTranslations } from 'next-intl'
 import { NotificationList } from '@/components/NotificationList'
 import { showNotificationToast } from '@/components/NotificationToast'
 import { notificationsList } from '@/api/generated/api'
@@ -29,6 +29,7 @@ interface NotificationBellProps {
 
 export function NotificationBell({ onNotificationClick }: NotificationBellProps) {
   const router = useRouter()
+  const t = useTranslations('notificationList')
   const [isOpen, setIsOpen] = useState(false)
   const [notifications, setNotifications] = useState<NotificationData[]>([])
   const [loading, setLoading] = useState(false)
@@ -220,32 +221,28 @@ export function NotificationBell({ onNotificationClick }: NotificationBellProps)
           variant="ghost"
           size="icon"
           className={cn(
-            "relative",
+            "relative h-8 w-8 text-muted-foreground hover:text-foreground data-[state=open]:bg-muted data-[state=open]:text-foreground",
             shouldPulse && "animate-shake"
           )}
-          aria-label="Notifications"
+          aria-label={unreadCount > 0 ? t("bellUnread", { count: unreadCount }) : t("title")}
+          title={t("title")}
         >
-          <Bell className={cn(
-            "h-5 w-5 transition-transform",
-            shouldPulse && "scale-110"
-          )} />
+          <Bell className={cn("h-4 w-4 transition-transform", shouldPulse && "scale-110")} />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
+            <span
+              data-testid="notification-dot"
               className={cn(
-                "absolute -top-1 -right-1 h-5 min-w-5 flex items-center justify-center p-0 text-xs transition-all",
-                shouldPulse && "animate-pulse scale-110"
+                "absolute right-[7px] top-[6px] h-[7px] w-[7px] rounded-full border-[1.5px] border-background bg-destructive",
+                shouldPulse && "animate-pulse"
               )}
-            >
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
+            />
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="w-[400px] p-0"
-        sideOffset={8}
+        className="w-[340px] max-w-[calc(100vw-24px)] rounded-lg p-0"
+        sideOffset={6}
       >
         <NotificationList
           notifications={notifications}

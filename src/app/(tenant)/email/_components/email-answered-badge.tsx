@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /**
@@ -27,15 +26,16 @@ export function EmailAnsweredBadge({
   const answered = !!email.has_business_reply || email.is_answered;
 
   return (
-    <Badge
-      variant={answered ? "outline" : "default"}
+    <span
       className={cn(
-        "shrink-0 text-xs",
-        answered && "border-green-600/40 text-green-700 dark:text-green-400",
+        "inline-flex h-4 shrink-0 items-center rounded border px-[5px] text-[10px] font-semibold leading-none",
+        answered
+          ? "border-green-600/30 bg-green-500/10 text-green-700 dark:text-green-400"
+          : "border-primary/20 bg-primary/10 text-primary",
         className
       )}
     >
       {answered ? t("answered") : t("new")}
-    </Badge>
+    </span>
   );
 }

@@ -470,7 +470,7 @@ describe("EmailViewContentBody", () => {
       render(<EmailViewContentBody email={email} />);
 
       // formatFileSize(5000) = "5 KB"
-      expect(screen.getByText("(5 KB)")).toBeInTheDocument();
+      expect(screen.getByText("5 KB")).toBeInTheDocument();
     });
 
     it("does not render size when size is 0", () => {
@@ -578,7 +578,8 @@ describe("EmailViewContentBody", () => {
 
       render(<EmailViewContentBody email={email} />);
 
-      expect(screen.getByText("Attachments (2)")).toBeInTheDocument();
+      // Design: chips only; the count is the group's accessible label.
+      expect(screen.getByLabelText("Attachments (2)")).toBeInTheDocument();
     });
   });
 });

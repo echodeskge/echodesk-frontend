@@ -1,10 +1,8 @@
 "use client";
 
-import { useMedia } from "react-use";
 import { useTranslations } from "next-intl";
 
 import { useEmailContext } from "../_hooks/use-email-context";
-import { Card } from "@/components/ui/card";
 import {
   Sheet,
   SheetContent,
@@ -12,43 +10,28 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { EmailSidebarHeader } from "./email-sidebar-header";
 import { EmailConnectionSelector } from "./email-connection-selector";
 import { EmailSidebarList } from "./email-sidebar-list";
 
+/**
+ * Mobile folder picker (opened from the header folder label). On desktop the
+ * folders live in the split's folder column.
+ */
 export function EmailSidebar() {
   const { isEmailSidebarOpen, setIsEmailSidebarOpen } = useEmailContext();
-  const isMediumOrSmaller = useMedia("(max-width: 767px)");
   const t = useTranslations("email.sidebar");
-
-  const sidebarContent = (
-    <>
-      <EmailSidebarHeader />
-      <EmailConnectionSelector />
-      <div className="flex-1 overflow-y-auto">
-        <EmailSidebarList />
-      </div>
-    </>
-  );
-
-  if (!isMediumOrSmaller) {
-    return (
-      <aside>
-        <Card className="h-full max-h-[calc(100vh-6rem)] w-72 flex flex-col border border-border overflow-hidden">
-          {sidebarContent}
-        </Card>
-      </aside>
-    );
-  }
 
   return (
     <Sheet open={isEmailSidebarOpen} onOpenChange={setIsEmailSidebarOpen}>
-      <SheetContent side="left" className="p-0 flex flex-col">
-        <SheetHeader className="sr-only">
-          <SheetTitle>{t("title")}</SheetTitle>
-          <SheetDescription>{t("description")}</SheetDescription>
+      <SheetContent side="left" className="flex w-[280px] flex-col gap-0 p-0">
+        <SheetHeader className="border-b px-3 py-3">
+          <SheetTitle className="text-[13px] font-semibold">{t("title")}</SheetTitle>
+          <SheetDescription className="sr-only">{t("description")}</SheetDescription>
         </SheetHeader>
-        {sidebarContent}
+        <EmailConnectionSelector />
+        <div className="flex-1 overflow-y-auto px-2 py-2">
+          <EmailSidebarList />
+        </div>
       </SheetContent>
     </Sheet>
   );

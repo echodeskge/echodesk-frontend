@@ -8,6 +8,8 @@ import {
   isVirtualFolder,
   FOLDER_ICON_MAP,
   VIRTUAL_FOLDERS,
+  EMAIL_VIEWS,
+  isEmailViewRoute,
   PAGE_SIZE,
 } from "@/app/(tenant)/email/constants";
 
@@ -131,12 +133,19 @@ describe("email constants", () => {
   // -------------------------------------------------------------------------
 
   describe("VIRTUAL_FOLDERS", () => {
-    it("contains exactly 'starred' and 'drafts'", () => {
-      expect(VIRTUAL_FOLDERS).toEqual(["starred", "drafts"]);
+    it("contains starred, drafts and the conversation views", () => {
+      expect(VIRTUAL_FOLDERS).toEqual(["starred", "drafts", "assigned", "unassigned", "ticketed"]);
     });
 
-    it("has length 2", () => {
-      expect(VIRTUAL_FOLDERS).toHaveLength(2);
+    it("maps view routes to the backend view filter", () => {
+      expect(EMAIL_VIEWS).toEqual({
+        assigned: "assigned_to_me",
+        unassigned: "unassigned",
+        ticketed: "ticketed",
+      });
+      expect(isEmailViewRoute("assigned")).toBe(true);
+      expect(isEmailViewRoute("INBOX")).toBe(false);
+      expect(isEmailViewRoute("toString")).toBe(false);
     });
   });
 

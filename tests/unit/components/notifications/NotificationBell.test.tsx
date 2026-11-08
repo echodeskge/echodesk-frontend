@@ -23,14 +23,17 @@ import type { Notification as NotificationData } from "@/api/generated/interface
 // ---------------------------------------------------------------------------
 
 // Mock next-intl
+const EN: Record<string, string> = { title: "Notifications", empty: "No notifications" };
 vi.mock("next-intl", () => ({
   useTranslations: () => {
     const t = (key: string, params?: Record<string, any>) => {
+      if (key === "bellUnread") return `Notifications, ${params?.count} unread`;
       if (params) return `${key}:${JSON.stringify(params)}`;
-      return key;
+      return EN[key] ?? key;
     };
     return t;
   },
+  useFormatter: () => ({ relativeTime: () => "5 minutes ago" }),
 }));
 
 // Mock next/navigation
@@ -119,6 +122,12 @@ import { NotificationBell } from "@/components/NotificationBell";
 // Tests
 // ---------------------------------------------------------------------------
 
+/** Design: a 7px dot on the bell; the count is in its accessible name. */
+function expectUnread(count: number) {
+  expect(screen.getByTestId("notification-dot")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: `Notifications, ${count} unread` })).toBeInTheDocument();
+}
+
 describe("NotificationBell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -134,42 +143,40 @@ describe("NotificationBell", () => {
     expect(button).toBeInTheDocument();
   });
 
-  it("hides badge when unread count is 0", () => {
+  it("hides the unread dot when unread count is 0", () => {
     mockWsUnreadCount.mockReturnValue(0);
     render(<NotificationBell />);
-    // Badge should not be rendered when count is 0
-    const badges = screen.queryAllByText(/\d+/);
-    expect(badges).toHaveLength(0);
+    expect(screen.queryByTestId("notification-dot")).not.toBeInTheDocument();
   });
 
-  it("shows badge with unread count when > 0", () => {
+  it("shows the dot with unread count when > 0", () => {
     mockWsUnreadCount.mockReturnValue(5);
     render(<NotificationBell />);
-    expect(screen.getByText("5")).toBeInTheDocument();
+    expectUnread(5);
   });
 
-  it("shows '99+' when unread count exceeds 99", () => {
+  it("announces counts above 99", () => {
     mockWsUnreadCount.mockReturnValue(150);
     render(<NotificationBell />);
-    expect(screen.getByText("99+")).toBeInTheDocument();
+    expectUnread(150);
   });
 
   it("shows exact count at 99", () => {
     mockWsUnreadCount.mockReturnValue(99);
     render(<NotificationBell />);
-    expect(screen.getByText("99")).toBeInTheDocument();
+    expectUnread(99);
   });
 
-  it("shows badge with count of 1", () => {
+  it("shows the dot with count of 1", () => {
     mockWsUnreadCount.mockReturnValue(1);
     render(<NotificationBell />);
-    expect(screen.getByText("1")).toBeInTheDocument();
+    expectUnread(1);
   });
 
-  it("shows '99+' at exactly 100", () => {
+  it("announces a count of 100", () => {
     mockWsUnreadCount.mockReturnValue(100);
     render(<NotificationBell />);
-    expect(screen.getByText("99+")).toBeInTheDocument();
+    expectUnread(100);
   });
 
   it("opens popover on click", async () => {
@@ -242,7 +249,7 @@ describe("NotificationBell", () => {
     mockUnreadCount.mockReturnValue(7);
 
     render(<NotificationBell />);
-    expect(screen.getByText("7")).toBeInTheDocument();
+    expectUnread(7);
   });
 
   it("prefers WS count when connected", () => {
@@ -252,7 +259,7 @@ describe("NotificationBell", () => {
 
     render(<NotificationBell />);
     // Should show WS count (3), not polling count (10)
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expectUnread(3);
   });
 
   it("calls onNotificationClick when provided and notification is clicked", async () => {

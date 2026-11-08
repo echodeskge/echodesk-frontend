@@ -1,62 +1,75 @@
 "use client";
 
 import { useState } from "react";
-import { EllipsisVertical } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Archive, Check, Mail, MailOpen, Minus, RotateCcw, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { CheckedState } from "@radix-ui/react-checkbox";
 import type { EmailMessage } from "@/hooks/api/useSocial";
 
 import { useEmailContext } from "../_hooks/use-email-context";
-import { useEmailAction } from "@/hooks/api/useSocial";
+import { useEmailAction, useMoveEmail } from "@/hooks/api/useSocial";
 import { useToast } from "@/hooks/use-toast";
-import { isTrashFolder } from "@/lib/email-reading";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { classifyFolderRole, isTrashFolder } from "@/lib/email-reading";
+import { cn } from "@/lib/utils";
+import { useSidebarFolders } from "../_hooks/use-sidebar-folders";
 import { EmailDeleteConfirmDialog } from "./email-delete-confirm-dialog";
+import { EmailListSearchForm } from "./email-list-search-form";
 
 interface EmailListContentHeaderProps {
   emails: EmailMessage[];
   /** Current folder route — in Trash, delete is permanent and Restore is offered. */
   filter?: string;
+  /** Drafts list: search / unread / bulk actions don't apply. */
+  simple?: boolean;
 }
 
+const iconButton =
+  "inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50";
+
+/**
+ * Design list toolbar (44px): select-all checkbox, then either the search box
+ * and the Unread toggle, or "N selected" with Mark as read / Archive / Delete.
+ */
 export function EmailListContentHeader({
   emails,
   filter,
+  simple = false,
 }: EmailListContentHeaderProps) {
-  const { selectedEmailIds, handleToggleSelectAllEmails, handleClearSelection } =
+  const { selectedEmailIds, handleToggleSelectAllEmails, handleClearSelection, currentConnectionId } =
     useEmailContext();
   const emailAction = useEmailAction();
+  const moveEmail = useMoveEmail();
   const t = useTranslations("email.list");
   const tView = useTranslations("email.view");
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const inTrash = isTrashFolder(filter);
+  const unreadOnly = searchParams.get("unread") === "1";
+  const { folders } = useSidebarFolders(currentConnectionId ?? emails[0]?.connection_id);
+  const archiveFolder = folders.find((f) => f.role === "archive");
 
   const pageEmailIds = emails.map((e) => e.id);
-  const selectedOnPage = pageEmailIds.filter((id) =>
-    selectedEmailIds.includes(id)
-  );
+  const selectedOnPage = pageEmailIds.filter((id) => selectedEmailIds.includes(id));
   const hasSelection = selectedOnPage.length > 0;
+  const allSelected = hasSelection && selectedOnPage.length === pageEmailIds.length;
+  const selectedEmails = emails.filter((e) => selectedOnPage.includes(e.id));
+  const canArchive =
+    !!archiveFolder &&
+    selectedEmails.length > 0 &&
+    selectedEmails.every((e) => !!e.message_id && classifyFolderRole(e.folder) !== "archive");
 
-  let isCheckboxChecked: CheckedState;
-  if (selectedOnPage.length === pageEmailIds.length && pageEmailIds.length > 0) {
-    isCheckboxChecked = true;
-  } else if (selectedOnPage.length > 0) {
-    isCheckboxChecked = "indeterminate";
-  } else {
-    isCheckboxChecked = false;
+  function toggleUnread() {
+    const params = new URLSearchParams(searchParams.toString());
+    if (unreadOnly) params.delete("unread");
+    else params.set("unread", "1");
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
   }
 
-  function handleBulkAction(
-    action: "delete" | "mark_read" | "mark_unread" | "restore"
-  ) {
+  function handleBulkAction(action: "delete" | "mark_read" | "mark_unread" | "restore") {
     if (selectedOnPage.length === 0) return;
     emailAction.mutate(
       { message_ids: selectedOnPage, action },
@@ -76,42 +89,97 @@ export function EmailListContentHeader({
     );
   }
 
+  async function handleBulkArchive() {
+    if (!archiveFolder) return;
+    try {
+      for (const email of selectedEmails) {
+        await moveEmail.mutateAsync({
+          message_id: email.message_id,
+          source_folder: email.folder || "INBOX",
+          target_folder: archiveFolder.name,
+          connection_id: email.connection_id,
+        });
+      }
+      handleClearSelection();
+      toast({ title: t("archivedCount", { count: selectedEmails.length }) });
+    } catch {
+      toast({ title: tView("moveFailed"), variant: "destructive" });
+    }
+  }
+
   return (
-    <div className="flex items-center justify-between p-1 ps-3 border-b border-border md:p-2 md:ps-4">
-      <Checkbox
-        checked={isCheckboxChecked}
-        onCheckedChange={() => handleToggleSelectAllEmails(pageEmailIds)}
-        aria-label={t("selectAll")}
-      />
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => e.stopPropagation()}
-            aria-label={t("emailActions")}
-            disabled={!hasSelection}
-          >
-            <EllipsisVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => handleBulkAction("mark_read")}>
-            {t("markAsRead")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleBulkAction("mark_unread")}>
-            {t("markAsUnread")}
-          </DropdownMenuItem>
-          {inTrash && (
-            <DropdownMenuItem onClick={() => handleBulkAction("restore")}>
-              {t("restore")}
-            </DropdownMenuItem>
+    <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border pe-2.5 ps-3">
+      {!simple && (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={allSelected ? true : hasSelection ? "mixed" : false}
+          aria-label={t("selectAll")}
+          disabled={pageEmailIds.length === 0}
+          onClick={() => handleToggleSelectAllEmails(pageEmailIds)}
+          className={cn(
+            "flex h-4 w-4 shrink-0 items-center justify-center rounded border border-input transition-colors disabled:opacity-50",
+            hasSelection && "border-primary bg-primary text-primary-foreground"
           )}
-          <DropdownMenuItem onClick={() => setDeleteOpen(true)}>
-            {inTrash ? t("deletePermanently") : t("delete")}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        >
+          {allSelected ? <Check className="h-3 w-3" /> : hasSelection ? <Minus className="h-3 w-3" /> : null}
+        </button>
+      )}
+      {hasSelection ? (
+        <>
+          <span className="text-xs font-medium" aria-live="polite">
+            {t("selectedCount", { count: selectedOnPage.length })}
+          </span>
+          <div className="ms-auto flex items-center gap-0.5">
+            <button type="button" className={iconButton} title={t("markAsRead")} aria-label={t("markAsRead")} onClick={() => handleBulkAction("mark_read")}>
+              <MailOpen className="h-[15px] w-[15px]" />
+            </button>
+            <button type="button" className={iconButton} title={t("markAsUnread")} aria-label={t("markAsUnread")} onClick={() => handleBulkAction("mark_unread")}>
+              <Mail className="h-[15px] w-[15px]" />
+            </button>
+            {canArchive && (
+              <button type="button" className={iconButton} title={tView("archive")} aria-label={tView("archive")} onClick={handleBulkArchive} disabled={moveEmail.isPending}>
+                <Archive className="h-[15px] w-[15px]" />
+              </button>
+            )}
+            {inTrash && (
+              <button type="button" className={iconButton} title={t("restore")} aria-label={t("restore")} onClick={() => handleBulkAction("restore")}>
+                <RotateCcw className="h-[15px] w-[15px]" />
+              </button>
+            )}
+            <button
+              type="button"
+              className={cn(iconButton, "hover:bg-destructive/10 hover:text-destructive")}
+              title={inTrash ? t("deletePermanently") : t("delete")}
+              aria-label={inTrash ? t("deletePermanently") : t("delete")}
+              onClick={() => setDeleteOpen(true)}
+            >
+              <Trash2 className="h-[15px] w-[15px]" />
+            </button>
+          </div>
+        </>
+      ) : simple ? (
+        <span className="text-xs font-medium text-muted-foreground">{t("draftsTitle")}</span>
+      ) : (
+        <>
+          <EmailListSearchForm />
+          <button
+            type="button"
+            onClick={toggleUnread}
+            aria-pressed={unreadOnly}
+            title={t("unreadOnly")}
+            className={cn(
+              "inline-flex h-7 shrink-0 items-center gap-1 rounded-md border px-2 text-xs transition-colors",
+              unreadOnly
+                ? "border-border bg-muted text-foreground"
+                : "border-dashed border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            <Mail className="h-3 w-3" />
+            {t("unread")}
+          </button>
+        </>
+      )}
       <EmailDeleteConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

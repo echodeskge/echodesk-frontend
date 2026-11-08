@@ -391,14 +391,24 @@
       "dark": "Dark",
       "system": "System",
       "logout": "Log out",
-      "account": "Account"
+      "account": "Account",
+      "premiumFeature": "Premium feature",
+      "premiumRequired": "{name} needs a premium plan. Upgrade your subscription to use it.",
+      "groups": {
+        "work": "Work",
+        "business": "Business",
+        "channels": "Channels"
+      }
     },
     "mySubstitutes": "My Substitutes",
     "covering": "Covering for Others",
     "kpi": "KPIs",
     "payroll": "Payroll",
     "myPayroll": "My Payslip",
-    "attendance": "Attendance"
+    "attendance": "Attendance",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode",
+    "clearSearch": "Clear search"
   },
   "bugReport": {
     "title": "Report a Bug",
@@ -4654,7 +4664,17 @@
         "title": "Bug report fixed",
         "message": "Your reported bug has been fixed. Thank you for the report!"
       }
-    }
+    },
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "loading": "Loading notifications…",
+    "empty": "No notifications",
+    "clearRead": "Clear read notifications",
+    "bellUnread": "Notifications, {count} unread",
+    "justNow": "now",
+    "minutesAgo": "{count} min",
+    "hoursAgo": "{count} h",
+    "daysAgo": "{count} d"
   },
   "notificationPreferences": {
     "title": "Notification Preferences",
@@ -5575,7 +5595,11 @@
       "sentItems": "Sent Items",
       "deletedItems": "Deleted Items",
       "junk": "Junk Email",
-      "archive": "Archive"
+      "archive": "Archive",
+      "views": "Views",
+      "assignedToMe": "Assigned to me",
+      "unassigned": "Unassigned",
+      "ticketed": "Ticketed"
     },
     "list": {
       "search": "Search...",
@@ -5616,7 +5640,19 @@
       "emailPermanentlyDeleted": "Email permanently deleted",
       "restore": "Restore",
       "toPrefix": "To:",
-      "hasAttachments": "Has attachments"
+      "hasAttachments": "Has attachments",
+      "archivedCount": "{count, plural, one {# email archived} other {# emails archived}}",
+      "selectedCount": "{count} selected",
+      "unreadOnly": "Unread only",
+      "unread": "Unread",
+      "draftsTitle": "Drafts",
+      "loadFailed": "Couldn't load emails",
+      "emptyDrafts": "No saved drafts",
+      "emptySearch": "No emails match your search",
+      "emptyFolder": "This folder is empty",
+      "nothingHere": "Nothing here",
+      "footerCount": "{loaded} of {total} emails",
+      "assignedTo": "Assigned to {name}"
     },
     "view": {
       "backToList": "Back to list",
@@ -5646,7 +5682,29 @@
       "messageBody": "Email message",
       "conversationCount": "{count, plural, one {# message} other {# messages}} in this conversation",
       "hasAttachments": "Has attachments",
-      "collapse": "Collapse"
+      "collapse": "Collapse",
+      "emptyPane": "Select a conversation to read it",
+      "shortcutMove": "to move",
+      "shortcutArchive": "archive",
+      "shortcutReply": "reply",
+      "shortcutCompose": "new email",
+      "expand": "Expand message",
+      "moveToInbox": "Move to inbox",
+      "deleteForever": "Delete forever",
+      "delete": "Delete",
+      "unread": "Unread",
+      "newer": "Newer",
+      "older": "Older",
+      "assign": "Assign",
+      "unassign": "Unassign",
+      "assignedToToast": "Assigned to {name}",
+      "unassignedToast": "Conversation unassigned",
+      "assignFailed": "Couldn't assign the conversation",
+      "noAssignableUsers": "No one to assign",
+      "createTicket": "Create ticket",
+      "ticketCreated": "Ticket #{id} created",
+      "openTicket": "Open",
+      "ticketFailed": "Couldn't create the ticket"
     },
     "compose": {
       "title": "Compose Mail",
@@ -5697,7 +5755,21 @@
       "draftLoadFailed": "This draft could not be opened. It may have been sent or deleted.",
       "sentWithProblems": "Sent, with problems",
       "refusedRecipients": "The mail server did not accept: {list}.",
-      "quotedOriginal": "Quoted original message"
+      "quotedOriginal": "Quoted original message",
+      "titleForward": "Forward",
+      "titleReply": "Reply",
+      "close": "Close",
+      "subjectLabel": "Subject",
+      "attach": "Attach files",
+      "saveDraft": "Save draft",
+      "template": "Template",
+      "insertTemplate": "Insert template",
+      "searchTemplates": "Search templates…",
+      "noTemplates": "No email templates yet"
+    },
+    "header": {
+      "switchAccount": "Switch account",
+      "pickFolder": "Choose folder"
     }
   },
   "seo": {

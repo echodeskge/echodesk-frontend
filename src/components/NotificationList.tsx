@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell, Check, Trash2, MessageCircle, UserPlus, FileEdit, AlertCircle, Bug } from 'lucide-react'
+import { Bell, Trash2, MessageCircle, UserPlus, FileEdit, AlertCircle, Bug } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -114,6 +114,17 @@ export function NotificationList({
   const router = useRouter()
   const t = useTranslations('notificationList')
   const tPrefs = useTranslations('notificationPreferences')
+  const now = Date.now()
+  // Short relative time with our own strings (browsers ship no Georgian relative-time data).
+  const ago = (iso?: string | null) => {
+    if (!iso) return ''
+    const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000))
+    if (minutes < 1) return t('justNow')
+    if (minutes < 60) return t('minutesAgo', { count: minutes })
+    const hours = Math.round(minutes / 60)
+    if (hours < 24) return t('hoursAgo', { count: hours })
+    return t('daysAgo', { count: Math.round(hours / 24) })
+  }
 
   // Memoize grouped notifications
   const groupedNotifications = useMemo(
@@ -187,85 +198,70 @@ export function NotificationList({
   const unreadCount = notifications.filter(n => !n.is_read).length
 
   return (
-    <div className="flex flex-col h-full max-h-[600px]">
+    <div className="flex max-h-[460px] flex-col">
       {/* Header */}
-      <div className="px-4 py-3 border-b">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-sm">Notifications</h3>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={handleMarkAllRead}
-            >
-              <Check className="h-3 w-3 mr-1" />
-              Mark all read
-            </Button>
-          )}
-        </div>
+      <div className="flex h-10 shrink-0 items-center justify-between border-b px-3">
+        <h3 className="text-[13px] font-semibold">{t('title')}</h3>
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            className="text-xs text-muted-foreground hover:text-foreground"
+            onClick={handleMarkAllRead}
+          >
+            {t('markAllRead')}
+          </button>
+        )}
       </div>
 
       {/* Notification List */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="max-h-[360px] flex-1">
         {loading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Loading notifications...
-          </div>
+          <div className="p-8 text-center text-xs text-muted-foreground">{t('loading')}</div>
         ) : groupedNotifications.length === 0 ? (
-          <div className="p-8 text-center">
-            <Bell className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-50" />
-            <p className="text-sm text-muted-foreground">No notifications</p>
+          <div className="flex flex-col items-center gap-2 p-8 text-center">
+            <Bell className="h-8 w-8 text-muted-foreground opacity-50" />
+            <p className="text-xs text-muted-foreground">{t('empty')}</p>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="flex flex-col p-1">
             {groupedNotifications.map((notification) => {
               const grouped = notification as GroupedNotification
               const bugText = getBugReportText(notification)
               const groupCount = grouped._groupCount
+              const unread = !notification.is_read
               return (
                 <button
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={cn(
-                    'w-full text-left p-4 hover:bg-muted/50 transition-colors',
-                    !notification.is_read && 'bg-blue-50/50 dark:bg-blue-950/20'
+                    'flex w-full gap-2.5 rounded-md p-2 text-left transition-colors hover:bg-muted',
+                    unread && 'bg-primary/[0.04] dark:bg-primary/[0.08]'
                   )}
                 >
-                  <div className="flex gap-3">
-                    <div className={cn(
-                      'flex-shrink-0 mt-1',
-                      getNotificationColor(notification.notification_type as any)
-                    )}>
-                      {getNotificationIcon(notification.notification_type as any)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className={cn(
-                          'text-sm font-medium',
-                          !notification.is_read && 'font-semibold'
-                        )}>
-                          {bugText?.title ?? notification.title}
-                        </p>
-                        {groupCount && groupCount > 1 && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                            {tPrefs('groupedUpdates', { count: groupCount })}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {bugText?.message ?? notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {notification.time_ago} ago
-                      </p>
-                    </div>
-                    {!notification.is_read && (
-                      <div className="flex-shrink-0">
-                        <div className="h-2 w-2 rounded-full bg-blue-600" />
-                      </div>
-                    )}
-                  </div>
+                  <span className={cn(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted [&>svg]:h-[13px] [&>svg]:w-[13px]',
+                    getNotificationColor(notification.notification_type as any)
+                  )}>
+                    {getNotificationIcon(notification.notification_type as any)}
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="flex items-center gap-1.5">
+                      <span className={cn('truncate text-xs leading-4', unread ? 'font-semibold' : 'font-medium')}>
+                        {bugText?.title ?? notification.title}
+                      </span>
+                      {groupCount && groupCount > 1 && (
+                        <Badge variant="secondary" className="h-4 px-1.5 py-0 text-[10px]">
+                          {tPrefs('groupedUpdates', { count: groupCount })}
+                        </Badge>
+                      )}
+                    </span>
+                    <span className="line-clamp-2 text-[11px] leading-4 text-muted-foreground">
+                      {bugText?.message ?? notification.message}
+                    </span>
+                  </span>
+                  <span className="shrink-0 whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
+                    {ago(notification.created_at)}
+                  </span>
                 </button>
               )
             })}
@@ -277,15 +273,15 @@ export function NotificationList({
       {notifications.length > 0 && (
         <>
           <Separator />
-          <div className="p-2">
+          <div className="p-1">
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-center text-xs"
+              className="h-7 w-full justify-center text-xs text-muted-foreground"
               onClick={handleClearAll}
             >
-              <Trash2 className="h-3 w-3 mr-1" />
-              Clear read notifications
+              <Trash2 className="me-1 h-3 w-3" />
+              {t('clearRead')}
             </Button>
           </div>
         </>

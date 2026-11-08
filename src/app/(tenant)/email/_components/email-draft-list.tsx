@@ -12,7 +12,6 @@ import { draftComposeHref, normalizeAddressList } from "@/lib/email-compose";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,13 +34,13 @@ interface EmailDraftListProps {
  */
 export function EmailDraftList({ drafts }: EmailDraftListProps) {
   return (
-    <ScrollArea className="h-[calc(100vh-16.5rem)]">
+    <div className="min-h-0 flex-1 overflow-y-auto">
       <ul className="divide-y divide-border" data-testid="email-draft-list">
         {drafts.map((draft) => (
           <EmailDraftRow key={draft.id} draft={draft} />
         ))}
       </ul>
-    </ScrollArea>
+    </div>
   );
 }
 
@@ -79,7 +78,7 @@ function EmailDraftRow({ draft }: { draft: EmailDraft }) {
 
   return (
     <li
-      className="group flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-muted/60"
+      className="group flex cursor-pointer items-center gap-2.5 px-3 py-2.5 hover:bg-muted/50"
       onClick={open}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -88,18 +87,18 @@ function EmailDraftRow({ draft }: { draft: EmailDraft }) {
       <Pencil className="h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-destructive">
+          <span className="text-[11px] font-semibold text-destructive">
             {t("draftLabel")}
           </span>
-          <span className="line-clamp-1 break-all font-medium">
+          <span className="line-clamp-1 break-all text-[13px] font-medium">
             {recipients.length > 0 ? recipients.join(", ") : t("noRecipients")}
           </span>
         </div>
-        <span className="line-clamp-1 break-all text-sm text-muted-foreground">
+        <span className="line-clamp-1 break-all text-xs text-muted-foreground">
           {draft.subject || t("noSubject")}
         </span>
       </div>
-      <span className="shrink-0 text-sm text-muted-foreground">
+      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
         {formatDate(draft.updated_at)}
       </span>
       <span

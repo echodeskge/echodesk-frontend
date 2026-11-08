@@ -8,10 +8,11 @@ import type { EmailMessage } from "@/hooks/api/useSocial";
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => "en",
 }));
-// Each expanded message renders its full content — stub it to a marker.
-vi.mock("@/app/(tenant)/email/_components/email-view-content", () => ({
-  EmailViewContent: ({ email }: { email: EmailMessage }) => (
+// Each expanded message renders its body — stub it to a marker.
+vi.mock("@/app/(tenant)/email/_components/email-view-content-body", () => ({
+  EmailViewContentBody: ({ email }: { email: EmailMessage }) => (
     <div data-testid={`expanded-${email.id}`}>{email.subject}</div>
   ),
 }));
@@ -76,16 +77,17 @@ describe("EmailThread", () => {
     const messages = sortThreadMessages([received, followUp]);
     render(<EmailThread messages={messages} openedId={3} filter="INBOX" />);
 
-    fireEvent.click(screen.getByTestId("thread-message-1"));
+    // Each card's header toggles it.
+    fireEvent.click(screen.getByRole("button", { name: "expand" }));
     expect(screen.getByTestId("expanded-1")).toBeInTheDocument();
 
-    fireEvent.click(screen.getAllByText("collapse")[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "collapse" })[0]);
     expect(screen.queryByTestId("expanded-1")).toBeNull();
   });
 
   it("renders a single message expanded without collapse controls", () => {
     render(<EmailThread messages={[received]} openedId={1} filter="INBOX" />);
     expect(screen.getByTestId("expanded-1")).toBeInTheDocument();
-    expect(screen.queryByText("collapse")).toBeNull();
+    expect(screen.getByRole("button", { name: "collapse" })).toBeDisabled();
   });
 });

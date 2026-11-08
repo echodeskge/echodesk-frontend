@@ -1,5 +1,5 @@
-import { EmailComposer } from "../_components/email-composer";
+import { EmailComposeSplit } from "../_components/email-compose-split";
 
 export default function ComposePage() {
-  return <EmailComposer />;
+  return <EmailComposeSplit />;
 }

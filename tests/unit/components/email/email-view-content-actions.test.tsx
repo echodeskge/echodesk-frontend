@@ -15,6 +15,17 @@ let folderData: Array<{ name: string; display_name: string }> = [];
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, back: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+let listOrder: number[] = [];
+vi.mock("@/app/(tenant)/email/_hooks/use-email-context", () => ({
+  useEmailContext: () => ({ listOrder }),
+}));
+vi.mock("@/app/(tenant)/email/_components/email-assign-menu", () => ({
+  EmailAssignMenu: () => <span data-testid="assign-menu" />,
+}));
+vi.mock("@/app/(tenant)/email/_components/email-create-ticket-button", () => ({
+  EmailCreateTicketButton: () => <span data-testid="create-ticket" />,
 }));
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string) => key,
@@ -42,6 +53,7 @@ function email(overrides: Partial<EmailMessage> = {}): EmailMessage {
 describe("EmailViewContentActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    listOrder = [];
     folderData = [
       { name: "INBOX", display_name: "INBOX" },
       { name: "INBOX.Archive", display_name: "Archive" },
@@ -133,5 +145,37 @@ describe("EmailViewContentActions", () => {
       },
       expect.any(Object)
     );
+  });
+
+  it("shows Move to inbox instead of Archive for an archived message", () => {
+    render(<EmailViewContentActions email={email({ folder: "INBOX.Archive" })} filter="INBOX.Archive" />);
+    expect(screen.queryByRole("button", { name: /^archive$/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /moveToInbox/ }));
+    expect(moveMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ source_folder: "INBOX.Archive", target_folder: "INBOX" }),
+      expect.any(Object)
+    );
+  });
+
+  it("opens the newer / older conversation from the list order", () => {
+    listOrder = [3, 7, 9];
+    render(<EmailViewContentActions email={email()} filter="INBOX" />);
+    fireEvent.click(screen.getByRole("button", { name: "newer" }));
+    expect(push).toHaveBeenLastCalledWith("/email/INBOX/3");
+    fireEvent.click(screen.getByRole("button", { name: "older" }));
+    expect(push).toHaveBeenLastCalledWith("/email/INBOX/9");
+  });
+
+  it("disables newer / older at the ends of the list", () => {
+    listOrder = [7];
+    render(<EmailViewContentActions email={email()} filter="INBOX" />);
+    expect(screen.getByRole("button", { name: "newer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "older" })).toBeDisabled();
+  });
+
+  it("renders the assign and create-ticket controls", () => {
+    render(<EmailViewContentActions email={email()} filter="INBOX" />);
+    expect(screen.getByTestId("assign-menu")).toBeInTheDocument();
+    expect(screen.getByTestId("create-ticket")).toBeInTheDocument();
   });
 });

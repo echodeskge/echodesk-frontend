@@ -20,7 +20,7 @@ export function EmailConnectionSelector() {
 
   if (isLoading) {
     return (
-      <div className="px-3 pb-2">
+      <div className="px-3 pt-3">
         <div className="h-9 bg-muted animate-pulse rounded-md" />
       </div>
     );
@@ -30,7 +30,7 @@ export function EmailConnectionSelector() {
 
   if (connections.length === 0) {
     return (
-      <div className="px-3 pb-2">
+      <div className="px-3 pt-3">
         <p className="text-sm text-muted-foreground text-center py-2">
           {t("noAccounts")}
         </p>
@@ -40,7 +40,7 @@ export function EmailConnectionSelector() {
 
   if (connections.length === 1) {
     return (
-      <div className="px-3 pb-2">
+      <div className="px-3 pt-3">
         <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground bg-muted rounded-md">
           <Mail className="h-4 w-4 shrink-0" />
           <span className="truncate">{connections[0].email_address}</span>
@@ -50,7 +50,7 @@ export function EmailConnectionSelector() {
   }
 
   return (
-    <div className="px-3 pb-2">
+    <div className="px-3 pt-3">
       <Select
         value={currentConnectionId?.toString() ?? "all"}
         onValueChange={(val) =>

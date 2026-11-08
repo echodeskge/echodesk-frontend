@@ -20,7 +20,10 @@ vi.mock("next-intl", () => ({
       inbox: "Inbox",
       starred: "Starred",
       drafts: "Drafts",
-      virtual: "Virtual",
+      views: "Views",
+      assignedToMe: "Assigned to me",
+      unassigned: "Unassigned",
+      ticketed: "Ticketed",
       sentItems: "Sent Items",
       deletedItems: "Deleted Items",
       junk: "Junk Email",
@@ -47,6 +50,7 @@ vi.mock("@/app/(tenant)/email/_hooks/use-email-context", () => ({
     handleToggleSelectEmail: vi.fn(),
     handleToggleSelectAllEmails: vi.fn(),
     handleClearSelection: vi.fn(),
+    lastFilter: "INBOX",
   }),
 }));
 
@@ -117,7 +121,7 @@ describe("EmailSidebarList", () => {
       const { container } = render(<EmailSidebarList />);
 
       const skeletons = container.querySelectorAll(".animate-pulse");
-      expect(skeletons.length).toBe(5);
+      expect(skeletons.length).toBe(6);
     });
   });
 
@@ -318,12 +322,24 @@ describe("EmailSidebarList", () => {
       expect(screen.getByText("Drafts")).toBeInTheDocument();
     });
 
-    it("shows virtual folders section header", () => {
+    it("shows the Views section with the conversation views", () => {
       setupFolders([{ name: "INBOX", display_name: "INBOX" }]);
 
       render(<EmailSidebarList />);
 
-      expect(screen.getByText("Virtual")).toBeInTheDocument();
+      expect(screen.getByText("Views")).toBeInTheDocument();
+      expect(screen.getByText("Assigned to me")).toBeInTheDocument();
+      expect(screen.getByText("Unassigned")).toBeInTheDocument();
+      expect(screen.getByText("Ticketed")).toBeInTheDocument();
+    });
+
+    it("opens a view route when a view is clicked", () => {
+      setupFolders([{ name: "INBOX", display_name: "INBOX" }]);
+
+      render(<EmailSidebarList />);
+
+      screen.getByText("Assigned to me").closest("button")!.click();
+      expect(mockRouterPush).toHaveBeenCalledWith("/email/assigned");
     });
   });
 
@@ -345,7 +361,7 @@ describe("EmailSidebarList", () => {
         btn.textContent?.includes("Inbox")
       );
       expect(inboxButton).toBeDefined();
-      expect(inboxButton?.className).toContain("bg-primary");
+      expect(inboxButton).toHaveAttribute("aria-current", "true");
     });
 
     it("does not mark non-active folders with primary color", () => {
@@ -361,7 +377,7 @@ describe("EmailSidebarList", () => {
         btn.textContent?.includes("Sent")
       );
       expect(sentButton).toBeDefined();
-      expect(sentButton?.className).not.toContain("bg-primary");
+      expect(sentButton).not.toHaveAttribute("aria-current");
     });
 
     it("marks starred as active when filter is starred", () => {
@@ -374,7 +390,7 @@ describe("EmailSidebarList", () => {
         btn.textContent?.includes("Starred")
       );
       expect(starredButton).toBeDefined();
-      expect(starredButton?.className).toContain("bg-primary");
+      expect(starredButton).toHaveAttribute("aria-current", "true");
     });
   });
 
