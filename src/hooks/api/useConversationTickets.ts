@@ -16,8 +16,11 @@ export interface ConversationKey {
 
 export interface ConversationTicket {
   id: number;
-  title: string;
-  status?: string | null;
+  /** null when the viewer can't see the ticket's board */
+  title: string | null;
+  /** column (status) name; null when the board is hidden from the viewer */
+  column?: string | null;
+  platform?: string | null;
   created_at?: string | null;
 }
 
