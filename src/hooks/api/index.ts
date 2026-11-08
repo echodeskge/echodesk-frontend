@@ -1,5 +1,4 @@
-// Ticket hooks
-export * from './useTickets';
+// Ticket hooks live in src/app/(tenant)/tickets/_hooks (tickets redesign).
 
 // Social/Facebook hooks
 export * from './useSocial';

@@ -3,7 +3,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { timeLogsList } from '@/api/generated';
 import axios from '@/api/axios';
-import { ticketKeys } from './useTickets';
+import { tk } from '@/app/(tenant)/tickets/_lib/query-keys';
+
+/** Refresh the ticket detail and its time-in-status panel after a time-log write. */
+function invalidateTicketTime(queryClient: ReturnType<typeof useQueryClient>, ticketId: string | number) {
+  const id = Number(ticketId);
+  if (!Number.isFinite(id) || id <= 0) return;
+  queryClient.invalidateQueries({ queryKey: tk.ticket(id) });
+  queryClient.invalidateQueries({ queryKey: tk.timeSummary(id) });
+}
 
 // Query keys
 export const timeLogKeys = {
@@ -40,7 +48,7 @@ export function useCreateTimeLog() {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ticketKeys.detail(variables.ticket) });
+      invalidateTicketTime(queryClient, variables.ticket);
     },
   });
 }
@@ -64,7 +72,7 @@ export function useUpdateTimeLog() {
     },
     onSuccess: (data) => {
       if (data.ticket) {
-        queryClient.invalidateQueries({ queryKey: ticketKeys.detail(data.ticket) });
+        invalidateTicketTime(queryClient, data.ticket);
       }
     },
   });
@@ -79,7 +87,7 @@ export function useDeleteTimeLog() {
       return { data: response.data, ticketId };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ticketKeys.detail(result.ticketId) });
+      invalidateTicketTime(queryClient, result.ticketId);
     },
   });
 }

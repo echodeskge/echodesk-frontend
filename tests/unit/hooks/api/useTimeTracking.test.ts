@@ -20,23 +20,6 @@ vi.mock("@/api/generated", () => ({
   timeLogsList: vi.fn(),
 }));
 
-// Mock ticketKeys from useTickets
-vi.mock("@/hooks/api/useTickets", () => ({
-  ticketKeys: {
-    all: ["tickets"] as const,
-    lists: () => ["tickets", "list"] as const,
-    list: (filters: Record<string, any>) => ["tickets", "list", filters] as const,
-    details: () => ["tickets", "detail"] as const,
-    detail: (id: string) => ["tickets", "detail", id] as const,
-    history: (id: string) => ["tickets", "detail", id, "history"] as const,
-    boards: ["boards"] as const,
-    board: (id: string) => ["boards", id] as const,
-    kanban: (id: string) => ["boards", "kanban", id] as const,
-    columns: ["columns"] as const,
-    tags: ["tags"] as const,
-  },
-}));
-
 import {
   useTimeLogs,
   useCreateTimeLog,
@@ -44,11 +27,14 @@ import {
   useDeleteTimeLog,
 } from "@/hooks/api/useTimeTracking";
 import axiosInstance from "@/api/axios";
+import { tk } from "@/app/(tenant)/tickets/_lib/query-keys";
 
 const mockAxiosGet = vi.mocked(axiosInstance.get);
 const mockAxiosPost = vi.mocked(axiosInstance.post);
 const mockAxiosPatch = vi.mocked(axiosInstance.patch);
 const mockAxiosDelete = vi.mocked(axiosInstance.delete);
+
+let lastClient: QueryClient;
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -57,6 +43,7 @@ function createWrapper() {
       mutations: { retry: false },
     },
   });
+  lastClient = queryClient;
   return ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
 }
@@ -211,6 +198,51 @@ describe("useTimeTracking", () => {
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
+    });
+  });
+
+  describe("cache invalidation uses the tickets redesign keys", () => {
+    it("create invalidates tk.ticket and tk.timeSummary for that ticket", async () => {
+      mockAxiosPost.mockResolvedValue({ data: { id: 1, ticket: "5" } });
+      const wrapper = createWrapper();
+      const spy = vi.spyOn(lastClient, "invalidateQueries");
+      const { result } = renderHook(() => useCreateTimeLog(), { wrapper });
+
+      await act(async () => {
+        result.current.mutate({ ticket: "5", time_spent: "00:10:00" });
+      });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(spy).toHaveBeenCalledWith({ queryKey: tk.ticket(5) });
+      expect(spy).toHaveBeenCalledWith({ queryKey: tk.timeSummary(5) });
+    });
+
+    it("update invalidates by the response's ticket id", async () => {
+      mockAxiosPatch.mockResolvedValue({ data: { id: 3, ticket: 9 } });
+      const wrapper = createWrapper();
+      const spy = vi.spyOn(lastClient, "invalidateQueries");
+      const { result } = renderHook(() => useUpdateTimeLog(), { wrapper });
+
+      await act(async () => {
+        result.current.mutate({ id: "3", data: { description: "x" } });
+      });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(spy).toHaveBeenCalledWith({ queryKey: ["ticket", 9] });
+    });
+
+    it("delete invalidates the ticket it was given", async () => {
+      mockAxiosDelete.mockResolvedValue({ data: null });
+      const wrapper = createWrapper();
+      const spy = vi.spyOn(lastClient, "invalidateQueries");
+      const { result } = renderHook(() => useDeleteTimeLog(), { wrapper });
+
+      await act(async () => {
+        result.current.mutate({ id: "3", ticketId: "12" });
+      });
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+      expect(spy).toHaveBeenCalledWith({ queryKey: tk.timeSummary(12) });
     });
   });
 });

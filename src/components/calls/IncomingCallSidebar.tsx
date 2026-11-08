@@ -36,14 +36,12 @@ import { toast } from "sonner";
 import { useIncomingCallSidebar } from "@/contexts/IncomingCallSidebarContext";
 import { useCall } from "@/contexts/CallContext";
 import { useTicketCreate } from "@/contexts/TicketCreateContext";
-import {
-  callLogsPartialUpdate,
-  ticketsList,
-} from "@/api/generated/api";
+import { callLogsPartialUpdate } from "@/api/generated/api";
 import type {
   Client,
   CallLog,
   PaginatedCallLogList,
+  PaginatedTicketListList,
   TicketList,
 } from "@/api/generated/interfaces";
 import axios from "@/api/axios";
@@ -117,17 +115,11 @@ export function IncomingCallSidebar() {
       // Fetch recent tickets if client found
       if (matchedClient) {
         try {
-          const ticketsResult = await ticketsList(
-            undefined, // assignedGroups
-            undefined, // assignedTo
-            undefined, // board
-            undefined, // column
-            undefined, // createdBy
-            "-created_at",
-            1,
-            5,
-            undefined, // priority
-            matchedClient.name
+          // Named params (WS2): the generated ticketsList takes positional
+          // arguments whose order shifts whenever a filter is documented.
+          const { data: ticketsResult } = await axios.get<PaginatedTicketListList>(
+            "/api/tickets/",
+            { params: { search: matchedClient.name, page_size: 5, ordering: "-created_at" } }
           );
           setRecentTickets(ticketsResult.results || []);
         } catch {
