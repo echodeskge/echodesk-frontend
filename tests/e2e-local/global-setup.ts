@@ -7,9 +7,9 @@ import http from "node:http";
 import { API_HOST, API_ORIGIN, API_PORT, APP, isLocalHost } from "./fixtures/env";
 import { tokenFor } from "./fixtures/session";
 
-function probe(options: http.RequestOptions): Promise<number> {
+function probe(options: http.RequestOptions, timeout = 10_000): Promise<number> {
   return new Promise((resolve, reject) => {
-    const req = http.request({ timeout: 10_000, ...options }, (res) => {
+    const req = http.request({ timeout, ...options }, (res) => {
       res.resume();
       res.on("end", () => resolve(res.statusCode ?? 0));
     });
@@ -42,7 +42,8 @@ export default async function globalSetup() {
   }
 
   try {
-    const webStatus = await probe({ host: web.hostname, port: Number(web.port || 80), path: "/", method: "GET" });
+    // `next dev` compiles a route on first hit, which can take well over 10s.
+    const webStatus = await probe({ host: web.hostname, port: Number(web.port || 80), path: "/", method: "GET" }, 120_000);
     if (webStatus >= 500) throw new Error(`HTTP ${webStatus}`);
   } catch (e) {
     throw new Error(`Local web app ${APP} is not reachable (${(e as Error).message}). Start localdev/frontend.sh.`);
