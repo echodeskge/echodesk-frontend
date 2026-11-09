@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import axios from "@/api/axios"
@@ -20,7 +21,12 @@ import {
   leaveButton,
   type StatItem,
 } from "./_components/ui"
-import { NewRequestDialog } from "./my-requests/_components/new-request-dialog"
+// Loaded on first open: the dialog (form, substitutes editor, user list) is
+// most of this page's JavaScript and most visits never open it.
+const NewRequestDialog = dynamic(
+  () => import("./my-requests/_components/new-request-dialog").then((m) => m.NewRequestDialog),
+  { ssr: false }
+)
 
 // `null` = not loaded (still loading, failed, or not available to this user).
 interface DashboardStats {
@@ -62,6 +68,9 @@ export default function LeaveDashboard() {
   const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS)
   const [loaded, setLoaded] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  // Mount the dialog only once it has been opened (it then stays mounted for the close animation).
+  const [dialogMounted, setDialogMounted] = useState(false)
+  if (isDialogOpen && !dialogMounted) setDialogMounted(true)
   // Team tile is only shown to users the manager endpoint accepts.
   const [showTeamCard, setShowTeamCard] = useState(false)
   const { features } = useLeaveFeatures()
@@ -283,11 +292,13 @@ export default function LeaveDashboard() {
         </SectionCard>
       </LeavePage>
 
-      <NewRequestDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onSubmitted={() => fetchStats()}
-      />
+      {dialogMounted && (
+        <NewRequestDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onSubmitted={() => fetchStats()}
+        />
+      )}
     </>
   )
 }
