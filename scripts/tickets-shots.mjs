@@ -117,7 +117,7 @@ const SCREENS = {
     ref: { file: "B-detail.rendered.html", query: { files: "true" } },
     ready: '[data-testid="ticket-detail"][data-state="ready"]',
     act: async (page) => {
-      await page.locator('[data-slot="checklist-card"], [data-testid="checklist-card"]').first().scrollIntoViewIfNeeded();
+      await page.locator('[data-slot="checklist-items"]').first().scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);
     },
   },
