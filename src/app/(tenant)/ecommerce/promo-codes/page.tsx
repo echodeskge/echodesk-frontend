@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ecommerceAdminPromoCodesList,
@@ -10,42 +10,8 @@ import {
   ecommerceAdminPromoCodesDestroy,
 } from "@/api/generated";
 import type { PromoCode, PromoCodeRequest } from "@/api/generated/interfaces";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -56,9 +22,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Tag, Search } from "lucide-react";
+import { Plus, Tag } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/utils";
-import { isoToDateTimeLocal } from "../_components/ui/format";
+import { cn } from "@/lib/utils";
+import {
+  CURRENCY_SIGN,
+  EcEmptyState,
+  EcPage,
+  EcTable,
+  EcommerceHeaderBridge,
+  FormField,
+  FormGrid,
+  FormSection,
+  FormSheet,
+  FormSwitchRow,
+  Segmented,
+  Toolbar,
+  ToolbarSearch,
+  ToolbarSpacer,
+  ecField,
+  isoToDateTimeLocal,
+  rdButton,
+} from "../_components/ui";
+import { getPromoColumns } from "./_components/promo-columns";
+
+type StatusFilter = "all" | "active" | "inactive" | "expired";
+type TypeFilter = "all" | "percentage" | "fixed";
+
+/**
+ * Keeps the row ends (status, actions) and the pager clear of the floating
+ * team-chat / phone launchers (bottom right, `--fab-safe-right`): rows and the
+ * header pad their end from 768px; on phones the list gets bottom room so the
+ * last row can scroll above the launchers.
+ */
+const FAB_CLEAR = "md:[&_[role=row]]:pe-[var(--fab-safe-right)] max-md:[&_[role=rowgroup]]:pb-24"
 
 const EMPTY_FORM: PromoCodeRequest = {
   code: "",
@@ -73,13 +70,17 @@ const EMPTY_FORM: PromoCodeRequest = {
 
 export default function PromoCodesPage() {
   const t = useTranslations("promoCodes");
+  const tu = useTranslations("ecommerceUi");
+  const locale = useLocale();
 
   const [codes, setCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingCode, setEditingCode] = useState<PromoCode | null>(null);
@@ -90,9 +91,12 @@ export default function PromoCodesPage() {
   const fetchCodes = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await ecommerceAdminPromoCodesList();
       setCodes(response.results || []);
+      setLoaded(true);
     } catch (error) {
+      setError(error);
       toast.error(getApiErrorMessage(error, t("fetchError")));
     } finally {
       setLoading(false);
@@ -109,19 +113,6 @@ export default function PromoCodesPage() {
 
   const isMaxedOut = (code: PromoCode): boolean => {
     return code.max_uses !== undefined && code.max_uses !== null && code.times_used >= code.max_uses;
-  };
-
-  const getStatusBadge = (code: PromoCode) => {
-    if (!code.is_active) {
-      return <Badge variant="secondary">{t("inactive")}</Badge>;
-    }
-    if (isExpired(code)) {
-      return <Badge variant="destructive">{t("expired")}</Badge>;
-    }
-    if (isMaxedOut(code)) {
-      return <Badge variant="outline">{t("maxedOut")}</Badge>;
-    }
-    return <Badge variant="default">{t("active")}</Badge>;
   };
 
   const filteredCodes = codes.filter((code) => {
@@ -222,277 +213,211 @@ export default function PromoCodesPage() {
     setEditingCode(null);
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const now = new Date();
+  const columns = getPromoColumns({ t, locale, now, onEdit: handleEdit, onDelete: setDeletingCode });
+  const filtered = !!searchQuery || typeFilter !== "all" || statusFilter !== "all";
+  const clearFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("all");
+    setStatusFilter("all");
   };
-
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-9 w-64 mb-2" />
-            <Skeleton className="h-5 w-96" />
-          </div>
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // First load = skeleton; refetches after a save keep the rows on screen.
+  const showSkeleton = !loaded && loading;
+  const isPercentage = String(form.discount_type) === "percentage";
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
-        </div>
-        <Button className="gap-2" onClick={handleAdd}>
-          <Plus className="h-4 w-4" />
-          {t("addCode")}
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div>
-              <CardTitle>{t("codesTitle")}</CardTitle>
-              <CardDescription>
-                {t("codesFound", { count: filteredCodes.length })}
-              </CardDescription>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t("searchPlaceholder")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder={t("filterByType")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("types.all")}</SelectItem>
-                  <SelectItem value="fixed">{t("types.fixed")}</SelectItem>
-                  <SelectItem value="percentage">{t("types.percentage")}</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder={t("filterByStatus")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("statuses.all")}</SelectItem>
-                  <SelectItem value="active">{t("statuses.active")}</SelectItem>
-                  <SelectItem value="inactive">{t("statuses.inactive")}</SelectItem>
-                  <SelectItem value="expired">{t("statuses.expired")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {filteredCodes.length === 0 ? (
-            <div className="text-center py-12">
-              <Tag className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-4 text-lg font-semibold">{t("emptyTitle")}</h3>
-              <p className="text-muted-foreground mt-2">
-                {searchQuery || typeFilter !== "all" || statusFilter !== "all"
-                  ? t("emptyFiltered")
-                  : t("emptyDescription")}
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("table.code")}</TableHead>
-                    <TableHead>{t("table.type")}</TableHead>
-                    <TableHead>{t("table.value")}</TableHead>
-                    <TableHead>{t("table.minOrder")}</TableHead>
-                    <TableHead>{t("table.usage")}</TableHead>
-                    <TableHead>{t("table.validFrom")}</TableHead>
-                    <TableHead>{t("table.validUntil")}</TableHead>
-                    <TableHead>{t("table.status")}</TableHead>
-                    <TableHead className="text-right">{t("table.actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCodes.map((code) => (
-                    <TableRow key={code.id}>
-                      <TableCell className="font-mono font-medium">
-                        {code.code}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {String(code.discount_type) === "percentage"
-                            ? t("types.percentage")
-                            : t("types.fixed")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {String(code.discount_type) === "percentage"
-                          ? `${code.discount_value}%`
-                          : `${parseFloat(code.discount_value).toFixed(2)}`}
-                      </TableCell>
-                      <TableCell>
-                        {code.min_order_amount
-                          ? `${parseFloat(code.min_order_amount).toFixed(2)}`
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {code.times_used}
-                        {code.max_uses !== undefined && code.max_uses !== null
-                          ? ` / ${code.max_uses}`
-                          : ""}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatDate(code.valid_from)}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {formatDate(code.valid_until)}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(code)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(code)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDeletingCode(code)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <>
+      <EcommerceHeaderBridge
+        sub={loaded ? t("codesFound", { count: filteredCodes.length }) : null}
+        primary={{ label: t("addCode"), icon: Plus, onClick: handleAdd, testId: "promo-add" }}
+      />
+      <EcPage fill testId="promo-codes-page">
+        <Toolbar testId="promo-toolbar">
+          <Segmented<StatusFilter>
+            ariaLabel={t("filterByStatus")}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            testId="promo-status-filter"
+            options={[
+              { value: "all", label: tu("all") },
+              { value: "active", label: t("statuses.active") },
+              { value: "inactive", label: t("statuses.inactive") },
+              { value: "expired", label: t("statuses.expired") },
+            ]}
+          />
+          <Segmented<TypeFilter>
+            ariaLabel={t("filterByType")}
+            value={typeFilter}
+            onChange={setTypeFilter}
+            testId="promo-type-filter"
+            options={[
+              { value: "all", label: t("types.all") },
+              { value: "percentage", label: t("types.percentage") },
+              { value: "fixed", label: t("types.fixed") },
+            ]}
+          />
+          <ToolbarSpacer />
+          <ToolbarSearch
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder={t("searchPlaceholder")}
+            clearLabel={tu("clearSearch")}
+            testId="promo-search"
+          />
+        </Toolbar>
+        <EcTable
+          ariaLabel={t("codesTitle")}
+          variant="fill"
+          columns={columns}
+          rows={showSkeleton ? undefined : filteredCodes}
+          rowKey={(c) => c.id}
+          error={loaded ? undefined : error}
+          onRetry={fetchCodes}
+          onRowClick={handleEdit}
+          testId="promo-table"
+          className={FAB_CLEAR}
+          empty={
+            filtered ? (
+              <EcEmptyState
+                icon={Tag}
+                title={t("emptyTitle")}
+                description={t("emptyFiltered")}
+                action={
+                  <button type="button" className={rdButton.outlineSm} onClick={clearFilters}>
+                    {tu("clearFilters")}
+                  </button>
+                }
+              />
+            ) : (
+              <EcEmptyState
+                icon={Tag}
+                title={t("emptyTitle")}
+                description={t("emptyDescription")}
+                action={
+                  <button type="button" className={rdButton.primarySm} onClick={handleAdd}>
+                    <Plus className="h-3.5 w-3.5" aria-hidden />
+                    {t("addCode")}
+                  </button>
+                }
+              />
+            )
+          }
+          footer={loaded && codes.length > 0 ? <span>{t("codesFound", { count: filteredCodes.length })}</span> : undefined}
+        />
+      </EcPage>
 
       {/* Add/Edit Sheet */}
-      <Sheet open={sheetOpen} onOpenChange={handleCloseSheet}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>
-              {editingCode ? t("editCode") : t("addCode")}
-            </SheetTitle>
-            <SheetDescription>
-              {editingCode ? t("editCodeDesc") : t("addCodeDesc")}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 px-4 flex-1 overflow-y-auto">
-            <div className="space-y-2">
-              <Label htmlFor="promo-code">{t("form.code")}</Label>
-              <Input
-                id="promo-code"
-                value={form.code}
-                onChange={(e) =>
-                  setForm({ ...form, code: e.target.value.toUpperCase() })
-                }
-                placeholder="SUMMER2024"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promo-discount-type">{t("form.discountType")}</Label>
-              <Select
-                value={String(form.discount_type)}
-                onValueChange={(val) =>
-                  setForm({
-                    ...form,
-                    discount_type: val as unknown as PromoCodeRequest["discount_type"],
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">{t("types.percentage")}</SelectItem>
-                  <SelectItem value="fixed">{t("types.fixed")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promo-discount-value">{t("form.discountValue")}</Label>
-              <Input
-                id="promo-discount-value"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.discount_value}
-                onChange={(e) =>
-                  setForm({ ...form, discount_value: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promo-min-order">{t("form.minOrderAmount")}</Label>
-              <Input
-                id="promo-min-order"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.min_order_amount || ""}
-                onChange={(e) =>
-                  setForm({ ...form, min_order_amount: e.target.value })
-                }
-                placeholder={t("form.minOrderPlaceholder")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promo-max-uses">{t("form.maxUses")}</Label>
-              <Input
-                id="promo-max-uses"
-                type="number"
-                min="0"
-                value={form.max_uses ?? ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    max_uses: e.target.value ? parseInt(e.target.value) : undefined,
-                  })
-                }
-                placeholder={t("form.maxUsesPlaceholder")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promo-valid-from">{t("form.validFrom")}</Label>
+      <FormSheet
+        open={sheetOpen}
+        onOpenChange={(open) => !open && handleCloseSheet()}
+        title={editingCode ? t("editCode") : t("addCode")}
+        description={editingCode ? t("editCodeDesc") : t("addCodeDesc")}
+        size="md"
+        onSubmit={handleSave}
+        submitting={saving}
+        submitLabel={saving ? t("saving") : t("save")}
+        cancelLabel={t("cancel")}
+        testId="promo-sheet"
+      >
+        <FormSection title={t("form.sectionCode")} hint={t("form.codeHint")}>
+          <FormField label={t("form.code")} htmlFor="promo-code" required>
+            <Input
+              id="promo-code"
+              value={form.code}
+              onChange={(e) =>
+                setForm({ ...form, code: e.target.value.toUpperCase() })
+              }
+              placeholder="SUMMER2024"
+              autoComplete="off"
+              spellCheck={false}
+              className={cn(ecField.input, "font-mono uppercase tracking-wide")}
+            />
+          </FormField>
+        </FormSection>
+        <FormSection title={t("form.sectionDiscount")}>
+          <FormField label={t("form.discountType")}>
+            <Segmented
+              size="md"
+              ariaLabel={t("form.discountType")}
+              value={isPercentage ? "percentage" : "fixed"}
+              onChange={(val) =>
+                setForm({
+                  ...form,
+                  discount_type: val as unknown as PromoCodeRequest["discount_type"],
+                })
+              }
+              options={[
+                { value: "percentage", label: t("types.percentage") },
+                { value: "fixed", label: t("types.fixed") },
+              ]}
+              testId="promo-form-type"
+              className="self-start"
+            />
+          </FormField>
+          <FormGrid>
+            <FormField label={t("form.discountValue")} htmlFor="promo-discount-value" required>
+              <div className="relative">
+                <Input
+                  id="promo-discount-value"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={form.discount_value}
+                  onChange={(e) =>
+                    setForm({ ...form, discount_value: e.target.value })
+                  }
+                  className={cn(ecField.input, "pe-8 tabular-nums")}
+                />
+                <span aria-hidden className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {isPercentage ? "%" : CURRENCY_SIGN}
+                </span>
+              </div>
+            </FormField>
+            <FormField label={t("form.minOrderAmount")} htmlFor="promo-min-order">
+              <div className="relative">
+                <Input
+                  id="promo-min-order"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  value={form.min_order_amount || ""}
+                  onChange={(e) =>
+                    setForm({ ...form, min_order_amount: e.target.value })
+                  }
+                  placeholder={t("form.minOrderPlaceholder")}
+                  className={cn(ecField.input, "pe-8 tabular-nums")}
+                />
+                <span aria-hidden className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                  {CURRENCY_SIGN}
+                </span>
+              </div>
+            </FormField>
+          </FormGrid>
+        </FormSection>
+        <FormSection title={t("form.sectionLimits")}>
+          <FormField label={t("form.maxUses")} htmlFor="promo-max-uses">
+            <Input
+              id="promo-max-uses"
+              type="number"
+              min="0"
+              inputMode="numeric"
+              value={form.max_uses ?? ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  max_uses: e.target.value ? parseInt(e.target.value) : undefined,
+                })
+              }
+              placeholder={t("form.maxUsesPlaceholder")}
+              className={cn(ecField.input, "tabular-nums sm:max-w-[50%]")}
+            />
+          </FormField>
+        </FormSection>
+        <FormSection title={t("form.sectionValidity")}>
+          <FormGrid>
+            <FormField label={t("form.validFrom")} htmlFor="promo-valid-from" required>
               <Input
                 id="promo-valid-from"
                 type="datetime-local"
@@ -500,10 +425,10 @@ export default function PromoCodesPage() {
                 onChange={(e) =>
                   setForm({ ...form, valid_from: e.target.value })
                 }
+                className={cn(ecField.input, "tabular-nums")}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="promo-valid-until">{t("form.validUntil")}</Label>
+            </FormField>
+            <FormField label={t("form.validUntil")} htmlFor="promo-valid-until" required>
               <Input
                 id="promo-valid-until"
                 type="datetime-local"
@@ -511,29 +436,23 @@ export default function PromoCodesPage() {
                 onChange={(e) =>
                   setForm({ ...form, valid_until: e.target.value })
                 }
+                className={cn(ecField.input, "tabular-nums")}
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="promo-is-active"
-                checked={form.is_active ?? true}
-                onCheckedChange={(checked) =>
-                  setForm({ ...form, is_active: checked })
-                }
-              />
-              <Label htmlFor="promo-is-active">{t("form.isActive")}</Label>
-            </div>
-          </div>
-          <SheetFooter>
-            <Button variant="outline" onClick={handleCloseSheet}>
-              {t("cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? t("saving") : t("save")}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+            </FormField>
+          </FormGrid>
+        </FormSection>
+        <FormSection title={t("form.sectionStatus")}>
+          <FormSwitchRow label={t("form.isActive")} help={t("form.activeHint")} htmlFor="promo-is-active">
+            <Switch
+              id="promo-is-active"
+              checked={form.is_active ?? true}
+              onCheckedChange={(checked) =>
+                setForm({ ...form, is_active: checked })
+              }
+            />
+          </FormSwitchRow>
+        </FormSection>
+      </FormSheet>
 
       {/* Delete Confirmation */}
       <AlertDialog
@@ -560,6 +479,6 @@ export default function PromoCodesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
