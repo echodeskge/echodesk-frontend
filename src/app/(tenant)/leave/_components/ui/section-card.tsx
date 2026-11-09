@@ -81,7 +81,7 @@ export function FieldRow({
       )}
       data-testid={testId}
     >
-      <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-0.5">
+      <div className="flex min-w-0 flex-col gap-0.5 sm:flex-[1_1_240px]">
         <Label {...(htmlFor ? { htmlFor } : {})} className="text-[13px] font-medium">
           {label}
         </Label>

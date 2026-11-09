@@ -12,17 +12,7 @@ import {
   leaveAdminPublicHolidaysUpdate,
 } from "@/api/generated/api"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Loader2, CalendarRange } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, CalendarRange, Flag } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -30,11 +20,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -42,8 +29,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Flag } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
 import { loadGeorgianHolidays } from "../_lib/hr-api"
+import { filterHolidaysByYear, holidayYears } from "../_lib/lv04-utils"
+import {
+  LeaveEmptyState,
+  LeaveHeaderBridge,
+  LeavePage,
+  LeavePageHeader,
+  LeaveTable,
+  LeaveToolbar,
+  Segmented,
+  TonePill,
+  formatLeaveDate,
+  leaveButton,
+  type LeaveColumn,
+} from "../_components/ui"
+import { DialogField, SwitchList, SwitchRow, dialogControl } from "../_components/lv04/dialog-fields"
 
 type LocalizedText = { en?: string; ka?: string } | string | null | undefined
 
@@ -73,7 +76,12 @@ export default function PublicHolidaysPage() {
   const t = useTranslations("leave")
   const locale = useLocale()
   const [holidays, setHolidays] = useState<PublicHoliday[]>([])
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
+  // A failed list load shows the error state (with retry) instead of an empty table.
+  const [loadError, setLoadError] = useState<unknown>(null)
+  // Client-side year filter over the loaded list ("all" = everything, as before).
+  const [year, setYear] = useState("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingHoliday, setEditingHoliday] = useState<PublicHoliday | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -124,9 +132,11 @@ export default function PublicHolidaysPage() {
       // Positional: (appliesToAll, isRecurring, lang, ordering, page, pageSize, year)
       const response = await leaveAdminPublicHolidaysList(undefined, undefined, undefined, "date", undefined, 100)
       setHolidays(unwrapList<PublicHoliday>(response))
+      setLoadError(null)
     } catch (error) {
       console.error("Failed to fetch holidays:", error)
       setHolidays([])
+      setLoadError(error)
       toast.error(t("shared.loadFailed"), {
         description: getApiErrorMessage(error) || undefined,
       })
@@ -227,40 +237,204 @@ export default function PublicHolidaysPage() {
     })
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
+
+  const retry = () => {
+    setLoading(true)
+    setLoadError(null)
+    fetchHolidays()
   }
 
+  const closeDialog = () => {
+    setIsDialogOpen(false)
+    setEditingHoliday(null)
+    resetForm()
+  }
+
+  const openCreate = () => {
+    setEditingHoliday(null)
+    resetForm()
+    setIsDialogOpen(true)
+  }
+
+  const years = holidayYears(holidays)
+  // A year that disappeared after a delete falls back to every year.
+  const activeYear = year !== "all" && !years.includes(Number(year)) ? "all" : year
+  const visible = filterHolidaysByYear(holidays, activeYear)
+
+  const columns: LeaveColumn<PublicHoliday>[] = [
+    {
+      id: "date",
+      header: t("publicHolidays.tableDate"),
+      width: "128px",
+      mobile: "meta",
+      cell: (holiday) => (
+        <span className="tabular-nums" data-testid="holiday-date">
+          {formatLeaveDate(holiday.date, locale, { year: "always" })}
+        </span>
+      ),
+    },
+    {
+      id: "name",
+      header: t("publicHolidays.tableName"),
+      width: "minmax(0,1fr)",
+      mobile: "title",
+      cell: (holiday) => <span className="truncate font-medium">{holidayName(holiday)}</span>,
+    },
+    {
+      id: "recurring",
+      header: t("publicHolidays.tableRecurring"),
+      width: "128px",
+      mobile: "end",
+      cell: (holiday) =>
+        holiday.is_recurring ? (
+          <TonePill tone="info">{t("publicHolidays.annual")}</TonePill>
+        ) : (
+          <TonePill tone="neutral">{t("publicHolidays.oneTime")}</TonePill>
+        ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("publicHolidays.tableActions")}</span>,
+      width: "60px",
+      align: "end",
+      mobile: "end",
+      cell: (holiday) => {
+        const name = holidayName(holiday)
+        return (
+          <span className="flex items-center gap-0.5">
+            <button
+              type="button"
+              className={leaveButton.ghostIconSm}
+              disabled={busyId === holiday.id}
+              onClick={() => handleEdit(holiday)}
+              aria-label={t("lv04.editHoliday", { name })}
+              title={t("hr.common.edit")}
+              data-testid="holiday-edit"
+            >
+              {busyId === holiday.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              type="button"
+              className={cn(leaveButton.ghostIconSm, "hover:bg-destructive/10 hover:text-destructive")}
+              disabled={busyId === holiday.id}
+              onClick={() => handleDelete(holiday.id)}
+              aria-label={t("lv04.deleteHoliday", { name })}
+              title={t("hr.common.delete")}
+              data-testid="holiday-delete"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </span>
+        )
+      },
+    },
+  ]
+
+  const loaded = !loading && !loadError
+  const newLabel = t("publicHolidays.newHoliday")
+  const georgianLabel = t("hr.holidays.loadGeorgian")
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{t("publicHolidays.title")}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t("publicHolidays.description")}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-        <Dialog open={georgianOpen} onOpenChange={setGeorgianOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <Flag className="h-4 w-4 mr-2" />
-              {t("hr.holidays.loadGeorgian")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[400px]">
-            <DialogHeader>
-              <DialogTitle>{t("hr.holidays.loadGeorgianTitle")}</DialogTitle>
-              <DialogDescription>{t("hr.holidays.loadGeorgianDesc")}</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-2 py-2">
-              <Label>{t("hr.holidays.year")}</Label>
+    <>
+      <LeaveHeaderBridge
+        sub={loaded ? t("lv04.holidaysCount", { count: holidays.length }) : null}
+        // The page header carries both buttons on wider screens.
+        primary={isMobile ? { label: newLabel, icon: Plus, onClick: openCreate, testId: "holidays-new-header" } : null}
+        secondary={
+          isMobile
+            ? [{ label: georgianLabel, icon: Flag, onClick: () => setGeorgianOpen(true), testId: "holidays-georgian-header" }]
+            : []
+        }
+      />
+      <LeavePage width="wide" testId="public-holidays-page">
+        <LeavePageHeader
+          icon={CalendarRange}
+          title={t("publicHolidays.title")}
+          description={t("publicHolidays.description")}
+          action={
+            <div className="hidden items-center gap-2 md:flex">
+              <button
+                type="button"
+                onClick={() => setGeorgianOpen(true)}
+                className={leaveButton.outline}
+                data-testid="holidays-georgian"
+              >
+                <Flag className="h-3.5 w-3.5" aria-hidden />
+                {georgianLabel}
+              </button>
+              <button type="button" onClick={openCreate} className={leaveButton.primary} data-testid="holidays-new">
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                {newLabel}
+              </button>
+            </div>
+          }
+        />
+
+        {loaded && years.length > 1 && (
+          <LeaveToolbar inset className="min-h-0">
+            <Segmented
+              ariaLabel={t("lv04.yearFilter")}
+              value={activeYear}
+              onChange={setYear}
+              testId="holidays-year"
+              options={[
+                { value: "all", label: t("lv04.allYears"), count: holidays.length },
+                ...years.map((y) => ({
+                  value: String(y),
+                  label: String(y),
+                  count: filterHolidaysByYear(holidays, String(y)).length,
+                })),
+              ]}
+            />
+          </LeaveToolbar>
+        )}
+
+        <LeaveTable
+          variant="card"
+          ariaLabel={t("publicHolidays.cardTitle")}
+          columns={columns}
+          rows={loading ? undefined : visible}
+          rowKey={(holiday) => holiday.id}
+          onRowClick={(holiday) => {
+            if (busyId !== holiday.id) handleEdit(holiday)
+          }}
+          error={loadError}
+          onRetry={retry}
+          skeletonRows={6}
+          testId="holidays-table"
+          empty={
+            <LeaveEmptyState
+              icon={CalendarRange}
+              title={t("publicHolidays.noHolidays")}
+              description={t("publicHolidays.addFirstHoliday")}
+              action={
+                <button type="button" onClick={openCreate} className={leaveButton.primary}>
+                  <Plus className="h-3.5 w-3.5" aria-hidden />
+                  {t("publicHolidays.createHoliday")}
+                </button>
+              }
+            />
+          }
+          footer={
+            loaded && visible.length > 0 ? (
+              <span className="truncate">
+                {t("lv04.holidaysCount", { count: visible.length })} · {t("lv04.clickToEdit")}
+              </span>
+            ) : undefined
+          }
+        />
+      </LeavePage>
+
+      <Dialog open={georgianOpen} onOpenChange={setGeorgianOpen}>
+        <DialogContent className="gap-0 p-0 sm:max-w-[400px]" data-testid="holidays-georgian-dialog">
+          <DialogHeader className="border-b px-5 py-4 text-start">
+            <DialogTitle className="text-base">{t("hr.holidays.loadGeorgianTitle")}</DialogTitle>
+            <DialogDescription className="text-[13px]">{t("hr.holidays.loadGeorgianDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="px-5 py-4">
+            <DialogField label={t("hr.holidays.year")} htmlFor="georgian-year">
               <Select value={georgianYear} onValueChange={setGeorgianYear}>
-                <SelectTrigger>
+                <SelectTrigger id="georgian-year" className={cn(dialogControl, "w-full tabular-nums")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -271,200 +445,98 @@ export default function PublicHolidaysPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setGeorgianOpen(false)}>
-                {t("shared.cancel")}
-              </Button>
-              <Button type="button" onClick={handleLoadGeorgian} disabled={loadingGeorgian}>
-                {loadingGeorgian && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {t("hr.holidays.load")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={(open) => {
-            setIsDialogOpen(open)
-            if (!open) {
-              setEditingHoliday(null)
-              resetForm()
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              {t("publicHolidays.newHoliday")}
+            </DialogField>
+          </div>
+          <DialogFooter className="gap-2 border-t px-5 py-3">
+            <Button type="button" variant="outline" size="sm" className="h-8" onClick={() => setGeorgianOpen(false)}>
+              {t("shared.cancel")}
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingHoliday ? t("publicHolidays.editHoliday") : t("publicHolidays.createHoliday")}
-                </DialogTitle>
-                <DialogDescription>
-                  {t("publicHolidays.dialogDescription")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name_en">{t("publicHolidays.nameEnglish")}</Label>
-                    <Input
-                      id="name_en"
-                      value={formData.name_en}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name_en: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="name_ka">{t("publicHolidays.nameGeorgian")}</Label>
-                    <Input
-                      id="name_ka"
-                      value={formData.name_ka}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name_ka: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
+            <Button type="button" size="sm" className="h-8" onClick={handleLoadGeorgian} disabled={loadingGeorgian}>
+              {loadingGeorgian && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {t("hr.holidays.load")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="date">{t("publicHolidays.date")}</Label>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) {
+            setEditingHoliday(null)
+            resetForm()
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto p-0 sm:max-w-[500px]" data-testid="holiday-dialog">
+          <form onSubmit={handleSubmit}>
+            <DialogHeader className="border-b px-5 py-4 text-start">
+              <DialogTitle className="text-base">
+                {editingHoliday ? t("publicHolidays.editHoliday") : t("publicHolidays.createHoliday")}
+              </DialogTitle>
+              <DialogDescription className="text-[13px]">{t("publicHolidays.dialogDescription")}</DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col gap-4 px-5 py-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <DialogField label={t("publicHolidays.nameEnglish")} htmlFor="name_en">
                   <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, date: e.target.value })
-                    }
+                    id="name_en"
+                    className={dialogControl}
+                    value={formData.name_en}
+                    onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
                     required
                   />
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="is_recurring"
-                      checked={formData.is_recurring}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, is_recurring: checked })
-                      }
-                    />
-                    <Label htmlFor="is_recurring">{t("publicHolidays.recurringAnnually")}</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="applies_to_all"
-                      checked={formData.applies_to_all}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, applies_to_all: checked })
-                      }
-                    />
-                    <Label htmlFor="applies_to_all">{t("publicHolidays.appliesToAll")}</Label>
-                  </div>
-                </div>
+                </DialogField>
+                <DialogField label={t("publicHolidays.nameGeorgian")} htmlFor="name_ka">
+                  <Input
+                    id="name_ka"
+                    className={dialogControl}
+                    value={formData.name_ka}
+                    onChange={(e) => setFormData({ ...formData, name_ka: e.target.value })}
+                    required
+                  />
+                </DialogField>
               </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsDialogOpen(false)
-                    setEditingHoliday(null)
-                    resetForm()
-                  }}
-                >
-                  {t("publicHolidays.cancel")}
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {editingHoliday ? t("publicHolidays.update") : t("publicHolidays.create")} {t("publicHolidays.holiday")}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-        </div>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("publicHolidays.cardTitle")}</CardTitle>
-          <CardDescription>
-            {t("publicHolidays.cardDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {holidays.length === 0 ? (
-            <div className="text-center py-12">
-              <CalendarRange className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">{t("publicHolidays.noHolidays")}</h3>
-              <p className="text-muted-foreground mb-4">
-                {t("publicHolidays.addFirstHoliday")}
-              </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t("publicHolidays.createHoliday")}
-              </Button>
+              <DialogField label={t("publicHolidays.date")} htmlFor="date">
+                <Input
+                  id="date"
+                  type="date"
+                  className={cn(dialogControl, "tabular-nums sm:w-[200px]")}
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                />
+              </DialogField>
+
+              <SwitchList>
+                <SwitchRow
+                  id="is_recurring"
+                  label={t("publicHolidays.recurringAnnually")}
+                  checked={formData.is_recurring}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
+                />
+                <SwitchRow
+                  id="applies_to_all"
+                  label={t("publicHolidays.appliesToAll")}
+                  checked={formData.applies_to_all}
+                  onCheckedChange={(checked) => setFormData({ ...formData, applies_to_all: checked })}
+                />
+              </SwitchList>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("publicHolidays.tableName")}</TableHead>
-                  <TableHead>{t("publicHolidays.tableDate")}</TableHead>
-                  <TableHead>{t("publicHolidays.tableRecurring")}</TableHead>
-                  <TableHead>{t("publicHolidays.tableActions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {holidays.map((holiday) => (
-                  <TableRow key={holiday.id}>
-                    <TableCell>{holidayName(holiday)}</TableCell>
-                    <TableCell>
-                      {new Date(holiday.date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {holiday.is_recurring ? (
-                        <Badge variant="default">{t("publicHolidays.annual")}</Badge>
-                      ) : (
-                        <Badge variant="outline">{t("publicHolidays.oneTime")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busyId === holiday.id}
-                          onClick={() => handleEdit(holiday)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={busyId === holiday.id}
-                          onClick={() => handleDelete(holiday.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            <DialogFooter className="gap-2 border-t px-5 py-3">
+              <Button type="button" variant="outline" size="sm" className="h-8" onClick={closeDialog}>
+                {t("publicHolidays.cancel")}
+              </Button>
+              <Button type="submit" size="sm" className="h-8" disabled={submitting} data-testid="holiday-submit">
+                {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {editingHoliday ? t("publicHolidays.update") : t("publicHolidays.create")} {t("publicHolidays.holiday")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
