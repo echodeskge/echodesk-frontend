@@ -1,0 +1,16 @@
+{
+  "en": {
+    "products": {
+      "addProductSheet": {
+        "nameRequired": "Fill in the product name in at least one language"
+      }
+    }
+  },
+  "ka": {
+    "products": {
+      "addProductSheet": {
+        "nameRequired": "შეავსეთ პროდუქტის სახელი ერთ ენაზე მაინც"
+      }
+    }
+  }
+}

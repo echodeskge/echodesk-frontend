@@ -168,6 +168,14 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
       return;
     }
     try {
+      // At least one language must be filled for the name. Checked before
+      // anything else: a toast alone inside the loop below did not stop the save.
+      const names = (data.name ?? {}) as Record<string, string>;
+      if (!Object.values(names).some((value) => typeof value === "string" && value.trim())) {
+        toast.error(t("nameRequired"));
+        return;
+      }
+
       // Auto-fill logic: Find first filled language for each field
       const fields = ['name', 'description', 'short_description'] as const;
 
@@ -182,12 +190,6 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
             firstFilledValue = fieldData[langCode];
             break;
           }
-        }
-
-        // Validate: At least one language must be filled for name
-        if (fieldName === 'name' && !firstFilledValue) {
-          toast.error("Please fill at least one language for the product name");
-          return;
         }
 
         // Fill empty languages with first filled value
