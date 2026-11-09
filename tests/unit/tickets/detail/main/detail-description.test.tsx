@@ -76,6 +76,12 @@ describe("DetailDescription", () => {
     expect(p.textContent).toBe("Line one\nLine two");
   });
 
+  it("lets a long unbroken word (a URL) wrap, so the edit pencil stays on screen at 390", () => {
+    setup({ description: "https://example.com/" + "a".repeat(120), description_format: "plain" });
+    const p = document.querySelector('[data-slot="detail-description-text"]')!;
+    expect(p).toHaveClass("min-w-0", "[overflow-wrap:anywhere]");
+  });
+
   it("shows the placeholder when the description is empty (or an empty editor doc)", () => {
     const { unmount } = setup({ description: "", rich_description: undefined });
     expect(screen.getByText("Add a description…")).toBeInTheDocument();

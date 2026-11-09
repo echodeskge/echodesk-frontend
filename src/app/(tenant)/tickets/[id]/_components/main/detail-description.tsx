@@ -129,12 +129,12 @@ export function DetailDescription({ ticket, canEdit }: DetailDescriptionProps) {
   ) : source.isHtml ? (
     <div
       data-slot="detail-description-html"
-      className="prose prose-sm max-w-none flex-1 break-words text-sm leading-[22px] text-foreground dark:prose-invert [&_a]:text-primary [&_a]:underline"
+      className="prose prose-sm min-w-0 max-w-none flex-1 break-words [overflow-wrap:anywhere] text-sm leading-[22px] text-foreground dark:prose-invert [&_a]:text-primary [&_a]:underline"
       // Sanitised above (DOMPurify).
       dangerouslySetInnerHTML={{ __html: safeHtml }}
     />
   ) : (
-    <p data-slot="detail-description-text" className="flex-1 whitespace-pre-wrap break-words text-sm leading-[22px] text-foreground">
+    <p data-slot="detail-description-text" className="min-w-0 flex-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sm leading-[22px] text-foreground">
       {source.value}
     </p>
   );
