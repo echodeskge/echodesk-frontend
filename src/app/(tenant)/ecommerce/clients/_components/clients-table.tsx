@@ -1,38 +1,27 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  SortingState,
-  VisibilityState,
-  RowSelectionState,
-  flexRender,
-} from "@tanstack/react-table"
+import { useLocale, useTranslations } from "next-intl"
 import { UserX } from "lucide-react"
+import type { EcommerceClientList } from "@/api/generated/interfaces"
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DataTableServerPagination } from "@/components/ui/data-table/data-table-pagination"
-import { EcommerceClientList } from "@/api/generated/interfaces"
+  EcEmptyState,
+  EcPagination,
+  EcTable,
+  rdButton,
+} from "@/app/(tenant)/ecommerce/_components/ui"
+import { nextSort, sortClients, type ClientSort, type ClientSortKey } from "../_lib/sort"
 import { getClientColumns } from "./clients-table-columns"
 import { ClientsTableToolbar } from "./clients-table-toolbar"
+
+/**
+ * Keeps the row ends (status, actions) and the pager clear of the floating
+ * team-chat / phone launchers (bottom right, `--fab-safe-right`): rows and the
+ * header pad their end from 768px; on phones the list gets bottom room so the
+ * last row can scroll above the launchers.
+ */
+const FAB_CLEAR = "md:[&_[role=row]]:pe-[var(--fab-safe-right)] max-md:[&_[role=rowgroup]]:pb-24"
 
 interface ClientsTableProps {
   data: EcommerceClientList[]
@@ -40,21 +29,30 @@ interface ClientsTableProps {
   page: number
   pageSize: number
   loading: boolean
+  error?: unknown
+  onRetry?: () => void
   searchQuery: string
   statusFilter: string
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   onSearchChange: (search: string) => void
   onStatusFilterChange: (status: string) => void
-  t: (key: string) => string
+  t: (key: string, values?: Record<string, string | number>) => string
 }
 
+/**
+ * Clients list body (`EcPage fill`): toolbar pinned, the table scrolls, paging
+ * in the footer. Rows open the client. Sorting works on the loaded page (as
+ * the old column headers did).
+ */
 export function ClientsTable({
   data,
   totalCount,
   page,
   pageSize,
   loading,
+  error,
+  onRetry,
   searchQuery,
   statusFilter,
   onPageChange,
@@ -64,136 +62,72 @@ export function ClientsTable({
   t,
 }: ClientsTableProps) {
   const router = useRouter()
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const locale = useLocale()
+  const tu = useTranslations("ecommerceUi")
+  const [sort, setSort] = useState<ClientSort | null>(null)
 
-  const columns = useMemo(() => getClientColumns({ t }), [t])
+  const onSort = useCallback((key: ClientSortKey) => setSort((s) => nextSort(s, key)), [])
+  const columns = useMemo(() => getClientColumns({ t, locale, sort, onSort }), [t, locale, sort, onSort])
+  const rows = useMemo(() => sortClients(data, sort), [data, sort])
 
-  const table = useReactTable({
-    data,
-    columns,
-    pageCount: Math.max(1, Math.ceil(totalCount / pageSize)),
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      pagination: { pageIndex: page - 1, pageSize },
-    },
-    manualPagination: true,
-    enableRowSelection: true,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  })
-
-  const dataKey = data.map((d) => d.id).join(",")
-  useMemo(() => {
-    setRowSelection({})
-  }, [dataKey])
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader className="flex-row flex-wrap justify-between items-center gap-2 space-y-0">
-          <Skeleton className="h-6 w-32" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-9 w-32" />
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="space-y-0">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="border-b px-4 py-3">
-                <Skeleton className="h-5 w-full" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    )
+  const filtered = !!searchQuery || statusFilter !== "all"
+  const clearFilters = () => {
+    onSearchChange("")
+    onStatusFilterChange("all")
   }
 
   return (
-    <Card>
-      <CardHeader className="flex-row flex-wrap justify-between items-center gap-2 space-y-0">
-        <CardTitle>{t("tableTitle")}</CardTitle>
-        <ClientsTableToolbar
-          table={table}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          onSearchChange={onSearchChange}
-          onStatusFilterChange={onStatusFilterChange}
-          t={t}
-        />
-      </CardHeader>
-      <CardContent className="p-0">
-        {data.length === 0 ? (
-          <div className="text-center py-12">
-            <UserX className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">{t("noClients")}</h3>
-          </div>
-        ) : (
-          <ScrollArea
-            orientation="horizontal"
-            className="w-[calc(100vw-2.25rem)] md:w-auto"
-          >
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="cursor-pointer"
-                    onClick={() =>
-                      router.push(`/ecommerce/clients/${row.original.id}`)
-                    }
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
-      </CardContent>
-      {data.length > 0 && (
-        <CardFooter className="block py-3">
-          <DataTableServerPagination
-            page={page}
-            pageSize={pageSize}
-            totalCount={totalCount}
-            onPageChange={onPageChange}
-            onPageSizeChange={onPageSizeChange}
-          />
-        </CardFooter>
-      )}
-    </Card>
+    <>
+      <ClientsTableToolbar
+        searchQuery={searchQuery}
+        statusFilter={statusFilter}
+        onSearchChange={onSearchChange}
+        onStatusFilterChange={onStatusFilterChange}
+        t={t}
+        clearSearchLabel={tu("clearSearch")}
+        allLabel={tu("all")}
+      />
+      <EcTable
+        ariaLabel={t("tableTitle")}
+        variant="fill"
+        columns={columns}
+        rows={rows}
+        rowKey={(c) => c.id}
+        loading={loading}
+        error={error}
+        onRetry={onRetry}
+        onRowClick={(c) => router.push(`/ecommerce/clients/${c.id}`)}
+        testId="clients-table"
+          className={FAB_CLEAR}
+        empty={
+          filtered ? (
+            <EcEmptyState
+              icon={UserX}
+              title={tu("noMatches")}
+              description={tu("noMatchesHint")}
+              action={
+                <button type="button" className={rdButton.outlineSm} onClick={clearFilters}>
+                  {tu("clearFilters")}
+                </button>
+              }
+            />
+          ) : (
+            <EcEmptyState icon={UserX} title={t("noClients")} />
+          )
+        }
+        footer={
+          !error && totalCount > 0 ? (
+            <EcPagination
+              page={page}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              onPageChange={onPageChange}
+              onPageSizeChange={onPageSizeChange}
+              className="pe-11"
+            />
+          ) : undefined
+        }
+      />
+    </>
   )
 }
