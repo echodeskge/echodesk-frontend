@@ -22,6 +22,10 @@ import {
   type BoardWithColor,
 } from "./admin-api";
 
+/** Georgian tab names are longer than three equal tabs (even in the 600px dialog): they wrap to two lines instead of truncating; no icon below `sm`. */
+const TAB_TRIGGER = "h-auto min-h-[30px] gap-1.5 whitespace-normal py-1 leading-tight";
+const TAB_LABEL = "text-center text-xs sm:text-[13px]";
+
 interface Option {
   id: number;
   label: string;
@@ -230,18 +234,18 @@ export function BoardUserManager({ board, open, onClose }: BoardUserManagerProps
               </p>
             )}
             <Tabs defaultValue="order-users" className="gap-3">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="order-users" className="gap-1.5">
-                  <UserCog className="size-3.5" aria-hidden />
-                  <span className="truncate">{t("orderUsers")}</span>
+              <TabsList className="grid h-auto w-full grid-cols-3">
+                <TabsTrigger value="order-users" className={TAB_TRIGGER}>
+                  <UserCog className="hidden size-3.5 shrink-0 sm:block" aria-hidden />
+                  <span className={TAB_LABEL}>{t("orderUsers")}</span>
                 </TabsTrigger>
-                <TabsTrigger value="board-users" className="gap-1.5">
-                  <Users className="size-3.5" aria-hidden />
-                  <span className="truncate">{t("boardUsers")}</span>
+                <TabsTrigger value="board-users" className={TAB_TRIGGER}>
+                  <Users className="hidden size-3.5 shrink-0 sm:block" aria-hidden />
+                  <span className={TAB_LABEL}>{t("boardUsers")}</span>
                 </TabsTrigger>
-                <TabsTrigger value="board-groups" className="gap-1.5">
-                  <Shield className="size-3.5" aria-hidden />
-                  <span className="truncate">{t("boardGroups")}</span>
+                <TabsTrigger value="board-groups" className={TAB_TRIGGER}>
+                  <Shield className="hidden size-3.5 shrink-0 sm:block" aria-hidden />
+                  <span className={TAB_LABEL}>{t("boardGroups")}</span>
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="order-users" className="space-y-3">
