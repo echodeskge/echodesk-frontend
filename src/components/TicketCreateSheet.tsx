@@ -165,10 +165,6 @@ function isEmptyValue(v: unknown): boolean {
   return v === undefined || v === null || v === "";
 }
 
-function userName(u: Pick<User, "first_name" | "last_name" | "email"> & { full_name?: string }): string {
-  return u.full_name?.trim() || `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email;
-}
-
 function clientName(c: Pick<SocialClientList, "name" | "full_name" | "email" | "phone"> | undefined | null): string {
   if (!c) return "";
   return c.name?.trim() || c.full_name?.trim() || c.email || c.phone || "";
