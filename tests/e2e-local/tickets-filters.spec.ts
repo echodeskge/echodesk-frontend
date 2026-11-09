@@ -8,7 +8,7 @@
  */
 import { expect, test, type Page, type Response } from "@playwright/test";
 import { resetFixtures } from "./fixtures/session";
-import { fx, openBoardIn } from "./fixtures/board";
+import { fx, kanban, openBoardIn } from "./fixtures/board";
 
 type KanbanBody = { tickets_by_column: Record<string, { id: number; priority: string }[]> };
 
@@ -204,7 +204,78 @@ test.describe("Filters, sort and views", () => {
     await check();
   });
 
-  // W2: the saved-view rows render only with flags.listViewEnabled and open the list view (FE-08).
-  test.fixme("sidebar view Urgent opens the list view with chips active and matching count", async () => {});
-  test.fixme("the active view row is highlighted", async () => {});
+  // W2: the saved-view rows render with flags.listViewEnabled and open the list view (FE-08).
+  test("sidebar view Urgent opens the list view with chips active and matching count", async ({ context }) => {
+    const { support } = fx().boards;
+    const page = await openBoardIn(context, "admin", support.id);
+    const urgent = page.getByTestId("sidebar-view-urgent");
+    await expect(urgent).toBeVisible();
+    await expect(urgent).not.toHaveAttribute("data-active", "true");
+
+    const countsWait = page.waitForResponse(
+      (r) => r.url().includes(`/api/tickets/column_counts/?board=${support.id}`) && /priority__in=(critical(,|%2C)high|high(,|%2C)critical)/.test(r.url()),
+    );
+    await urgent.click();
+    await expect(page).toHaveURL(/[?&]view=list(&|$)/);
+    const sp = new URL(page.url()).searchParams;
+    expect(sp.get("board")).toBe(String(support.id));
+    expect(sp.get("priority")?.split(",").sort()).toEqual(["critical", "high"]);
+    await expect(page.getByTestId("ticket-list")).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByTestId("tickets-screen")).toHaveAttribute("data-state", "list");
+    const counts = ((await (await countsWait).json()) as { counts: Record<string, number> }).counts;
+
+    // Priority chip active with both values ("Critical +1" or "High +1").
+    await expect(chip(page, "priority")).toHaveAttribute("data-active", "true");
+    await expect(chip(page, "priority")).toContainText("+1");
+
+    // Rows: all high or critical, and as many as the toolbar count and the group totals.
+    const rows = page.getByTestId("list-row");
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThan(0);
+    await expect(rows).toHaveCount(total);
+    await expect(page.getByTestId("toolbar-count")).toHaveText(total === 1 ? "1 ticket" : `${total} tickets`);
+    for (const p of await page.locator('[data-testid="list-row"] [data-slot="priority-icon"]').all()) {
+      expect(["critical", "high"]).toContain(await p.getAttribute("data-priority"));
+    }
+
+    // The sidebar count is view_counts.urgent: open tickets only (A5), so it equals
+    // the rows outside closed columns.
+    const k = await kanban(support.id);
+    const open = new Set(k.columns.filter((c) => !c.is_closed_status).map((c) => c.id));
+    const openRows = await rows.evaluateAll(
+      (els, ids) => els.filter((e) => ids.includes(Number((e as HTMLElement).dataset.columnId))).length,
+      [...open],
+    );
+    await expect(urgent.locator("span").last()).toHaveText(String(openRows));
+  });
+
+  test("the active view row is highlighted", async ({ context }) => {
+    const { support } = fx().boards;
+    const page = await openBoardIn(context, "agent", support.id);
+    const mine = page.getByTestId("sidebar-view-mine");
+    await mine.click();
+    await expect(page).toHaveURL(/[?&]view=list&assignee=me$/);
+    await expect(page.getByTestId("ticket-list")).toBeVisible({ timeout: 45_000 });
+    await expect(mine).toHaveAttribute("data-active", "true");
+    await expect(mine).toHaveAttribute("aria-current", "page");
+    for (const other of ["unassigned", "urgent", "dueThisWeek"]) {
+      await expect(page.getByTestId(`sidebar-view-${other}`)).toHaveAttribute("data-active", "false");
+    }
+    // View landing: the Assignee chip shows "Me".
+    await expect(chip(page, "assignee")).toHaveAttribute("data-active", "true");
+    await expect(chip(page, "assignee").locator('[data-slot="filter-chip-value"]')).toHaveText("Me");
+
+    // Changing a filter by hand leaves the view: no row is highlighted any more.
+    await chip(page, "priority").click();
+    await option(page, "priority", "low").click();
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/[?&]priority=low/);
+    await expect(mine).toHaveAttribute("data-active", "false");
+
+    // Due this week lands on the list with the Due chip shown and active (DC2).
+    await page.getByTestId("sidebar-view-dueThisWeek").click();
+    await expect(page).toHaveURL(/[?&]due=week$/);
+    await expect(page.getByTestId("sidebar-view-dueThisWeek")).toHaveAttribute("data-active", "true");
+    await expect(chip(page, "due")).toHaveAttribute("data-active", "true");
+  });
 });
