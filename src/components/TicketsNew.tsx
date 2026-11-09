@@ -6,7 +6,6 @@ import { useBoards } from "@/hooks/useBoards";
 import { useKanbanBoard } from "@/hooks/useKanbanBoard";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuth } from "@/contexts/AuthContext";
-import { useBoard } from "@/contexts/BoardContext";
 import { KanbanProvider } from "./kanban-new/kanban-context";
 import { Kanban } from "./kanban-new/components/kanban";
 import { Spinner } from "@/components/ui/spinner";
@@ -28,7 +27,9 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
   const { data: boards, isLoading: boardsLoading, error: boardsError } = useBoards();
   const { data: kanbanBoardData, isLoading: kanbanLoading, error: kanbanError } = useKanbanBoard(selectedBoardId);
   const { user } = useAuth();
-  const { ticketSearchQuery } = useBoard();
+  // FE-03 removed the header search (BoardContext.ticketSearchQuery); FE-06
+  // replaces this legacy screen with the toolbar search (`?q`) in the same wave.
+  const ticketSearchQuery: string = "";
   const [showCreateBoardSheet, setShowCreateBoardSheet] = useState(false);
   const debouncedSearch = useDebounce(ticketSearchQuery, 300);
 

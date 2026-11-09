@@ -1,6 +1,6 @@
 /**
  * Tests for BoardContext.
- * Verifies board selection persistence to localStorage and search query state.
+ * Verifies board selection persistence to localStorage (search moved to the URL).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
@@ -99,41 +99,39 @@ describe("BoardContext", () => {
     });
   });
 
-  describe("ticketSearchQuery", () => {
-    it("defaults to empty string", () => {
+  describe("search state removed (plan E19, critic 15)", () => {
+    it("no longer exposes ticketSearchQuery or its setter", () => {
       const { result } = renderHook(() => useBoard(), {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.ticketSearchQuery).toBe("");
+      expect(Object.keys(result.current).sort()).toEqual(["selectedBoardId", "setSelectedBoardId"]);
+      expect("ticketSearchQuery" in result.current).toBe(false);
+    });
+  });
+
+  describe("storage robustness", () => {
+    it("ignores a non-numeric stored value", () => {
+      localStorage.setItem(STORAGE_KEY, "abc");
+      const { result } = renderHook(() => useBoard(), { wrapper: createWrapper() });
+      expect(result.current.selectedBoardId).toBeNull();
     });
 
-    it("updates search query state", () => {
-      const { result } = renderHook(() => useBoard(), {
-        wrapper: createWrapper(),
+    it("works when localStorage throws", () => {
+      const get = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+        throw new Error("blocked");
       });
-
+      const set = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+        throw new Error("blocked");
+      });
+      const { result } = renderHook(() => useBoard(), { wrapper: createWrapper() });
+      expect(result.current.selectedBoardId).toBeNull();
       act(() => {
-        result.current.setTicketSearchQuery("urgent bug");
+        result.current.setSelectedBoardId(3);
       });
-
-      expect(result.current.ticketSearchQuery).toBe("urgent bug");
-    });
-
-    it("can clear search query", () => {
-      const { result } = renderHook(() => useBoard(), {
-        wrapper: createWrapper(),
-      });
-
-      act(() => {
-        result.current.setTicketSearchQuery("search term");
-      });
-      expect(result.current.ticketSearchQuery).toBe("search term");
-
-      act(() => {
-        result.current.setTicketSearchQuery("");
-      });
-      expect(result.current.ticketSearchQuery).toBe("");
+      expect(result.current.selectedBoardId).toBe(3);
+      get.mockRestore();
+      set.mockRestore();
     });
   });
 });
