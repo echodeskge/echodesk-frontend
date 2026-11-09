@@ -53,8 +53,10 @@ import type { TimerSectionProps } from "../../[id]/_components/section-contracts
 type Running = NonNullable<TimerConflict["running"]>;
 
 const BASE =
-  "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-xs font-medium leading-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 max-sm:gap-1 max-sm:px-2 text-xs font-medium leading-5 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50";
 const IDLE = "border-border bg-transparent text-foreground";
+/** Phones, nothing logged yet: a 28px Play square (the header row has no room for "00:00:00", DC20). */
+const COMPACT_IDLE = "max-sm:w-7 max-sm:justify-center max-sm:px-0";
 const RUNNING = "border-primary bg-primary text-primary-foreground";
 const LONG = "border-amber-500 bg-amber-500 text-white dark:border-amber-400 dark:bg-amber-400 dark:text-amber-950";
 
@@ -114,6 +116,7 @@ export function TimerButton({ ticketId }: TimerSectionProps) {
   };
 
   const label = running ? t("stop") : t("start");
+  const compactIdle = !running && mine <= 0;
   const Icon = running ? Pause : Play;
 
   const button = (
@@ -128,10 +131,10 @@ export function TimerButton({ ticketId }: TimerSectionProps) {
       title={longRunning ? undefined : label}
       disabled={!snapshot || busy}
       onClick={toggle}
-      className={cn(BASE, running ? (longRunning ? LONG : RUNNING) : IDLE)}
+      className={cn(BASE, running ? (longRunning ? LONG : RUNNING) : IDLE, compactIdle && COMPACT_IDLE)}
     >
       <Icon aria-hidden="true" size={13} className="shrink-0" />
-      <span data-testid="timer-text" className="font-mono tabular-nums">
+      <span data-testid="timer-text" className={cn("font-mono tabular-nums", compactIdle && "max-sm:hidden")}>
         {formatTimer(mine)}
       </span>
       {longRunning && <span className="sr-only">{t("longRunningHint")}</span>}

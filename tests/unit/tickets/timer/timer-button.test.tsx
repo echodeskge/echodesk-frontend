@@ -72,6 +72,20 @@ describe("TimerButton: idle", () => {
     expect(screen.getByTestId("timer-text").className).toMatch(/tabular-nums/);
   });
 
+  it("phones: idle with nothing logged is a Play square; any logged time shows the clock (W3 FE-INT)", async () => {
+    setup(snapshot());
+    const { unmount } = renderTimer(<TimerButton ticketId={10} />);
+    const b = await button();
+    expect(b.className).toMatch(/max-sm:w-7/);
+    expect(screen.getByTestId("timer-text").className).toMatch(/max-sm:hidden/);
+    unmount();
+    setup(snapshot({ my_total_seconds: 60 }));
+    renderTimer(<TimerButton ticketId={10} />);
+    const b2 = await button();
+    expect(b2.className).not.toMatch(/max-sm:w-7/);
+    expect(screen.getByTestId("timer-text").className).not.toMatch(/max-sm:hidden/);
+  });
+
   it("shows my total through formatTimer, not the ticket total", async () => {
     setup(snapshot({ my_total_seconds: 3725, total_seconds: 99999 }));
     renderTimer(<TimerButton ticketId={10} />);

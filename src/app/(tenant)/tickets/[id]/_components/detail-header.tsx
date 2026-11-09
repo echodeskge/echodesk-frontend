@@ -125,7 +125,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
             <ArrowLeft aria-hidden="true" size={14} className="shrink-0" />
             <span className="hidden max-w-[180px] truncate sm:inline">{boardName}</span>
           </Link>
-          <span aria-hidden="true" className="text-[13px] font-normal text-muted-foreground">
+          <span aria-hidden="true" className="hidden text-[13px] font-normal text-muted-foreground sm:inline">
             /
           </span>
           <span data-testid="detail-id" className="shrink-0 font-mono text-[13px] font-semibold">

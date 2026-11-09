@@ -79,8 +79,11 @@ describe("Composer", () => {
     expect(avatar.className).toMatch(/\bbg-primary\b/);
     expect(avatar.className).toMatch(/text-primary-foreground/);
     const bar = document.querySelector('[data-slot="composer"]')!;
-    expect(bar.className).toMatch(/px-4/);
-    expect(bar.className).toMatch(/sm:px-10/);
+    expect(bar.className).toMatch(/\bpl-4\b/);
+    expect(bar.className).toMatch(/sm:pl-10/);
+    // Post stays clear of the floating call / chat launchers until the rail takes the right side (lg).
+    expect(bar.className).toMatch(/\bpe-fab-safe\b/);
+    expect(bar.className).toMatch(/lg:pe-10/);
     expect(bar.className).toMatch(/pt-3/);
     expect(bar.className).toMatch(/pb-3\.5/);
   });

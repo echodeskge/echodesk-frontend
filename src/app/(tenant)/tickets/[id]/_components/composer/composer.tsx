@@ -206,7 +206,7 @@ function ComposerInner({ ticket }: ComposerProps) {
       data-ticket-id={ticket.id}
       data-internal={internal}
       data-focused={focused}
-      className="border-t bg-background px-4 pb-3.5 pt-3 text-sm sm:px-10"
+      className="border-t bg-background pb-3.5 pl-4 pe-fab-safe pt-3 text-sm sm:pl-10 lg:pe-10"
       style={keyboardInset ? { paddingBottom: `${14 + keyboardInset}px` } : undefined}
     >
       <div className="flex max-w-[780px] gap-2.5">
