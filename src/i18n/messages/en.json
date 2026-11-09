@@ -917,7 +917,27 @@
       "customer": "Customer",
       "customerPlaceholder": "Link a client",
       "openTicket": "Open ticket",
-      "attachmentFailed": "Couldn't upload {name}"
+      "attachmentFailed": "Couldn't upload {name}",
+      "title": "New ticket",
+      "submit": "Create ticket",
+      "creating": "Creating…",
+      "created": "Ticket #{id} created",
+      "error": "Couldn't create the ticket",
+      "formFailed": "The ticket was created, but the form couldn't be saved",
+      "titlePlaceholder": "Ticket title",
+      "descriptionPlaceholder": "Add a description…",
+      "status": "Status",
+      "assignees": "Assignees",
+      "groups": "Groups",
+      "noDueDate": "No due date",
+      "clearDate": "Clear date",
+      "customerSearch": "Search clients…",
+      "noClients": "No clients found",
+      "removeCustomer": "Remove customer",
+      "noColumns": "This board has no columns",
+      "noBoards": "You don't have access to any boards",
+      "form": "Form",
+      "formItems": "List items"
     },
     "presence": {
       "viewing": "{count, plural, one {# person is viewing} other {# people are viewing}}",
@@ -938,7 +958,8 @@
       "saveError": "Couldn't save the change",
       "forbidden": "You don't have permission to do that",
       "boardAccessLost": "You no longer have access to this board"
-    }
+    },
+    "mentionSuggestions": "People you can mention"
   },
   "labels": {
     "title": "Manage Labels",
@@ -954,7 +975,16 @@
     "placeholder": {
       "name": "e.g., Bug, Feature, Priority",
       "description": "What does this label represent?"
-    }
+    },
+    "edit": "Edit label",
+    "delete": "Delete label",
+    "deleteConfirmTitle": "Delete this label?",
+    "deleteConfirmBody": "\"{name}\" is removed from every ticket that uses it.",
+    "duplicateName": "A label with this name already exists",
+    "saveError": "Couldn't save the label",
+    "deleteError": "Couldn't delete the label",
+    "selectColor": "Select colour {color}",
+    "colorHex": "Colour code"
   },
   "calls": {
     "title": "Calls",
@@ -7237,7 +7267,15 @@
         "clickToEdit": "Click to edit",
         "save": "Save",
         "cancel": "Cancel",
-        "saveHint": "Ctrl+Enter to save, Esc to cancel"
+        "saveHint": "Ctrl+Enter to save, Esc to cancel",
+        "openedNoName": "opened {date}",
+        "titleLabel": "Title",
+        "descriptionLabel": "Description",
+        "editDescription": "Edit the description"
+      },
+      "realtime": {
+        "deleted": "This ticket was deleted",
+        "deletedBy": "{name} deleted this ticket"
       }
     },
     "checklist": {
@@ -7250,7 +7288,9 @@
       "checkedBy": "Checked by {name} · {time}",
       "undo": "Undo",
       "empty": "No items yet",
-      "reorder": "Drag to reorder"
+      "reorder": "Drag to reorder",
+      "editItem": "Edit item",
+      "progress": "{done} of {total} done"
     },
     "attachments": {
       "title": "Attachments",
@@ -7264,7 +7304,10 @@
       "tooMany": "You can upload up to {max} files at once",
       "uploading": "Uploading…",
       "uploadFailed": "Couldn't upload {name}",
-      "dropHere": "Drop files to attach them"
+      "dropHere": "Drop files to attach them",
+      "meta": "{size} · {name}",
+      "uploadingFile": "Uploading {name}",
+      "download": "Download {name}"
     },
     "activity": {
       "title": "Activity",
@@ -7316,7 +7359,12 @@
         "payment_due_date": "the payment due date",
         "is_paid": "the payment status",
         "other": "a field"
-      }
+      },
+      "noComments": "No comments yet",
+      "noHistory": "No changes recorded yet",
+      "saveError": "Couldn't save the comment",
+      "deleteError": "Couldn't delete the comment",
+      "deleted": "Comment deleted"
     },
     "composer": {
       "internalNote": "Internal note",
@@ -7365,7 +7413,13 @@
         "collaborator": "Collaborator",
         "reviewer": "Reviewer",
         "observer": "Observer"
-      }
+      },
+      "selected": "selected",
+      "roles": "Roles",
+      "roleOf": "{name}: {role}",
+      "searchClients": "Search clients",
+      "changeDueDate": "Change due date",
+      "dueDateOverdue": "Overdue · {date}"
     },
     "customer": {
       "title": "Customer",
@@ -7373,7 +7427,9 @@
       "chats": "Chats",
       "email": "Email",
       "phone": "Phone",
-      "noContact": "No contact details"
+      "noContact": "No contact details",
+      "conversation": "{platform} conversation",
+      "widget": "Website chat"
     },
     "forms": {
       "title": "Forms",
@@ -7384,7 +7440,31 @@
       "parentForm": "Parent form",
       "childForms": "Child forms",
       "submitted": "Form submitted",
-      "submitError": "Couldn't submit the form"
+      "submitError": "Couldn't submit the form",
+      "notFilled": "Not filled",
+      "submittedBy": "{name} · {date}",
+      "dialog": {
+        "loading": "Loading the form…",
+        "loadError": "Couldn't load the form",
+        "selectItems": "Select items from the lists",
+        "loadingLists": "Loading the lists…",
+        "selectItem": "Select an item…",
+        "search": "Search…",
+        "noItems": "No items found",
+        "clearSelection": "Clear selection",
+        "emptyList": "This list has no items",
+        "customFields": "Fields",
+        "cancel": "Cancel",
+        "submit": "Submit form",
+        "submitting": "Submitting…",
+        "submitError": "Couldn't submit the form. Please try again.",
+        "submitted": "Submitted",
+        "submittedBy": "Submitted by",
+        "date": "Date",
+        "noData": "No form data was submitted",
+        "selectedItems": "Selected items",
+        "signatureAlt": "{field} signature"
+      }
     },
     "payment": {
       "title": "Payment",
@@ -7411,7 +7491,19 @@
       "notes": "Notes",
       "save": "Save payment",
       "recorded": "Payment recorded",
-      "recordError": "Couldn't record the payment"
+      "recordError": "Couldn't record the payment",
+      "status": "Status",
+      "partiallyPaid": "Partly paid",
+      "overpaid": "Overpaid",
+      "noPaymentRequired": "No payment needed",
+      "payments": "Payments",
+      "noPayments": "No payments yet",
+      "paymentLine": "{amount} · {method} · {date}",
+      "processedBy": "Recorded by {name}",
+      "amountInvalid": "Enter an amount greater than 0",
+      "detailsError": "The payment was recorded, but its method and notes couldn't be saved",
+      "recordTitle": "Record a payment",
+      "recordBody": "The amount is added to what this ticket has been paid."
     },
     "timer": {
       "start": "Start timer",
@@ -7430,7 +7522,14 @@
       "timeInStatus": "Time in status",
       "currentlyIn": "Currently in {column}",
       "active": "Running",
-      "error": "Couldn't update the timer"
+      "error": "Couldn't update the timer",
+      "switchBody": "Only one timer can run at a time. Stop it and start the timer here?",
+      "longRunningHint": "Running for more than 8 hours. Stop it if you're done.",
+      "byPerson": "By person",
+      "noStatusTime": "No time in status recorded yet",
+      "sessions": "{count, plural, one {# session} other {# sessions}}",
+      "notTracked": "Time isn't tracked in this status",
+      "loadFailed": "Couldn't load the logged time"
     },
     "history": {
       "title": "History & transfers",
