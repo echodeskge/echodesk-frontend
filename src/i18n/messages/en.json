@@ -5426,7 +5426,8 @@
       "upcomingHolidays": "Upcoming Holidays",
       "next30Days": "Next 30 days",
       "quickActions": "Quick Actions",
-      "quickActionsDescription": "Navigate to different sections"
+      "quickActionsDescription": "Navigate to different sections",
+      "reviewCovering": "Review"
     },
     "myRequests": {
       "title": "My Leave Requests",
@@ -5448,7 +5449,17 @@
       "cancelRequest": "Cancel request",
       "confirmCancel": "Are you sure you want to cancel this leave request?",
       "cancelled": "Leave request cancelled",
-      "cancelFailed": "Could not cancel the leave request"
+      "cancelFailed": "Could not cancel the leave request",
+      "period": "Period",
+      "count": "{count, plural, one {# request} other {# requests}}",
+      "rowHint": "click a row to see the details",
+      "filters": {
+        "label": "Filter by status",
+        "all": "All",
+        "active": "Active",
+        "approved": "Approved",
+        "closed": "Closed"
+      }
     },
     "myBalance": {
       "title": "My Leave Balance",
@@ -5496,7 +5507,11 @@
       "rejectFailed": "Could not reject the leave request",
       "commentsRequired": "Comments (required)",
       "rejectCommentsRequired": "Please add a comment explaining the rejection",
-      "detailsLoadFailed": "Could not load the request details"
+      "detailsLoadFailed": "Could not load the request details",
+      "pendingSub": "{count} pending",
+      "emptyPendingTitle": "Nothing is waiting for you",
+      "emptyPendingHint": "New requests from your team will show up here.",
+      "showAll": "Show all requests"
     },
     "allRequests": {
       "title": "All Leave Requests",
@@ -5504,7 +5519,8 @@
       "filterByStatus": "Filter by status",
       "filterAll": "All Requests",
       "cardDescription": "Complete list of all leave requests",
-      "noMatchDescription": "No leave requests match the selected filter"
+      "noMatchDescription": "No leave requests match the selected filter",
+      "filterAllShort": "All"
     },
     "hr": {
       "common": {
@@ -5525,7 +5541,8 @@
         "delete": "Delete",
         "loading": "Loading...",
         "noData": "Nothing to show",
-        "total": "Total"
+        "total": "Total",
+        "employeesCount": "{count, plural, one {# employee} other {# employees}}"
       },
       "kpi": {
         "title": "KPIs",
@@ -5595,7 +5612,13 @@
         "returned": "Returned to the employee",
         "deleted": "KPI deleted",
         "confirmDelete": "Delete the draft KPI \"{title}\"?",
-        "actionFailed": "Action failed"
+        "actionFailed": "Action failed",
+        "scopeLabel": "Whose goals",
+        "stats": {
+          "goals": "Goals",
+          "met": "Met target",
+          "metHint": "{percent} of goals"
+        }
       },
       "attendance": {
         "title": "Attendance",
@@ -5617,7 +5640,8 @@
           "not_employed": "Not employed",
           "unknown": "No data",
           "leave": "Leave"
-        }
+        },
+        "departmentLabel": "Filter by department"
       },
       "settings": {
         "title": "HR features",
@@ -5782,7 +5806,8 @@
           "selectedDays": "{count} days selected",
           "saved": "Worked days saved",
           "saveFailed": "Could not save worked days",
-          "empty": "No substitutes on approved leave in this month."
+          "empty": "No substitutes on approved leave in this month.",
+          "otherMonths": "{count, plural, one {+# month} other {+# months}}"
         },
         "my": {
           "title": "My Payslip",
@@ -5792,8 +5817,11 @@
           "noRow": "No payroll data for you this month.",
           "substitutionsTitle": "Substitution pay",
           "substitutionsDescription": "Days you covered for colleagues this month.",
-          "amount": "Amount"
-        }
+          "amount": "Amount",
+          "breakdown": "Breakdown",
+          "ofScheduled": "of {count} scheduled"
+        },
+        "tabsLabel": "Payroll sections"
       },
       "substituteStatus": {
         "pending": "Waiting",
@@ -5827,7 +5855,9 @@
           "duplicate": "Each colleague can be added only once.",
           "self": "You cannot be your own substitute.",
           "tooMany": "You can add at most 50 substitutes."
-        }
+        },
+        "count": "{count, plural, one {# substitute} other {# substitutes}}",
+        "unsaved": "Unsaved changes"
       },
       "covering": {
         "title": "Covering for Others",
@@ -5847,7 +5877,9 @@
         "accepted": "You accepted to cover this request",
         "declined": "You declined; the request was rejected",
         "respondFailed": "Could not save your answer",
-        "dashboardBanner": "{count, plural, one {# leave request is} other {# leave requests are}} waiting for your answer as a substitute"
+        "dashboardBanner": "{count, plural, one {# leave request is} other {# leave requests are}} waiting for your answer as a substitute",
+        "awaitingSub": "{count} awaiting your answer",
+        "answer": "Answer"
       },
       "detail": {
         "title": "Leave request",
@@ -5878,12 +5910,49 @@
           "substitute_skipped": "Pending consents skipped",
           "substitute_worked_days_set": "Substitute worked days updated",
           "other": "Updated"
-        }
+        },
+        "period": "Period"
       },
       "limits": {
         "per_month": "This leave type can be requested at most {max} time(s) per month",
         "per_request": "This leave type allows at most {max} working day(s) per request"
       }
+    },
+    "ui": {
+      "errorTitle": "Couldn't load the data",
+      "errorHint": "Check your connection and try again.",
+      "retry": "Try again",
+      "featureDisabledHint": "An administrator can turn it on in Settings → Leave settings.",
+      "clearSearch": "Clear search",
+      "noMatches": "Nothing matches these filters",
+      "noMatchesHint": "Try another status or clear the search.",
+      "clearFilters": "Clear filters",
+      "days": "{count, plural, one {# day} other {# days}}"
+    },
+    "requests": {
+      "searchPlaceholder": "Search employee or leave type",
+      "count": "{count, plural, one {# request} other {# requests}}",
+      "noAccessTitle": "You don't have access to these requests",
+      "noAccessHint": "Ask an administrator if you need this list."
+    },
+    "lv04": {
+      "typesCount": "{count, plural, one {# leave type} other {# leave types}}",
+      "holidaysCount": "{count, plural, one {# holiday} other {# holidays}}",
+      "clickToEdit": "click a row to edit",
+      "allYears": "All years",
+      "yearFilter": "Filter by year",
+      "payrollSection": "Payroll",
+      "payrollHint": "Used by the payroll report and substitution pay",
+      "unsaved": "You have unsaved changes",
+      "allSaved": "All changes saved",
+      "loadFailedBanner": "Settings couldn't be loaded, so saving is turned off to avoid overwriting them.",
+      "limits": "Limits",
+      "allocation": "Allocation",
+      "rules": "Rules",
+      "editType": "Edit {name}",
+      "deleteType": "Delete {name}",
+      "editHoliday": "Edit {name}",
+      "deleteHoliday": "Delete {name}"
     }
   },
   "bookingsAvailability": {
