@@ -127,7 +127,7 @@ export function FilterMenu({
                       className={cn(
                         "flex size-3.5 shrink-0 items-center justify-center rounded-[4px] border",
                         multi ? "" : "rounded-full",
-                        isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                        isSelected ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50",
                       )}
                     >
                       {isSelected && <Check size={10} strokeWidth={3} />}
