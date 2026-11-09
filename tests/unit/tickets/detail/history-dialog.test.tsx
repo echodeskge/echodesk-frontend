@@ -8,7 +8,7 @@ vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: vi.fn(), patch: v
 import axios from "@/api/axios";
 import { HistoryDialog, historySentence } from "@/app/(tenant)/tickets/[id]/_components/history-dialog";
 import type { HistoryEntry } from "@/app/(tenant)/tickets/_lib/types";
-import { renderDetail, routeAxios } from "./helpers";
+import { page, renderDetail, routeAxios } from "./helpers";
 
 const nino = { id: 4, email: "nino@x.ge", first_name: "Nino", last_name: "Beridze" } as unknown as HistoryEntry["user"];
 
@@ -75,6 +75,27 @@ describe("HistoryDialog", () => {
     routeAxios(axios, { get: { "/api/tickets/10/history/": () => [] } });
     renderDetail(<HistoryDialog ticketId={10} open onOpenChange={() => {}} />);
     expect(await screen.findByText("No history yet")).toBeInTheDocument();
+  });
+
+  it("names the column ids of status changes from the board's columns (W3 FE-INT)", async () => {
+    routeAxios(axios, {
+      get: {
+        "/api/tickets/10/history/": () => [
+          row({ id: 9, action: "status_changed", field_name: "column_id", old_value: "11", new_value: "12" }),
+        ],
+        "/api/columns/": () => page([{ id: 11, name: "To Do", position: 1 }, { id: 12, name: "In Progress", position: 2 }]),
+        "/api/users/": () => page([]),
+        "/api/boards/": () => ({ id: 1, order_users: [], board_users: [], board_groups: [] }),
+        "/api/tags/": () => page([]),
+        "/api/tenant-groups/": () => page([]),
+        "/api/departments/": () => page([]),
+      },
+    });
+    renderDetail(<HistoryDialog ticketId={10} boardId={1} open onOpenChange={() => {}} />);
+    const dialog = await screen.findByTestId("history-dialog");
+    const item = await within(dialog).findByText(/In Progress/);
+    expect(item).toHaveTextContent(/To Do/);
+    expect(item.textContent).not.toMatch(/\b11\b|\b12\b/);
   });
 
   it("does not fetch while closed", () => {

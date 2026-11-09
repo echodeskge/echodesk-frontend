@@ -13,9 +13,11 @@ import { useLocale, useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTicketHistory } from "../../_hooks/use-ticket";
+import { useTicketPickers } from "../../_hooks/use-ticket-pickers";
 import { formatDateTime, formatShortDate } from "../../_lib/format";
 import { isTicketPriority } from "../../_lib/priority";
 import type { HistoryEntry } from "../../_lib/types";
+import { resolveHistoryEntry, type EventLookups } from "./activity/activity-format";
 
 type Translate = (key: string, values?: Record<string, string | number>) => string;
 
@@ -102,14 +104,29 @@ export interface HistoryDialogProps {
   ticketId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** The ticket's board: names the column / assignee / department ids in the rows. */
+  boardId?: number | null;
 }
 
-export function HistoryDialog({ ticketId, open, onOpenChange }: HistoryDialogProps) {
+export function HistoryDialog({ ticketId, open, onOpenChange, boardId }: HistoryDialogProps) {
   const t = useTranslations("ticketsScreen.activity");
   const tHistory = useTranslations("ticketsScreen.history");
   const tTickets = useTranslations("tickets");
   const locale = useLocale();
   const history = useTicketHistory(ticketId, { enabled: open });
+  // Status / assignee / department rows store ids: name them like the feed does.
+  const pickers = useTicketPickers(boardId ?? null, { enabled: open && !!boardId });
+  const lookups = useMemo<EventLookups>(() => {
+    const users = new Map<string, string>();
+    for (const u of pickers.users) {
+      users.set(String(u.id), u.full_name?.trim() || `${u.first_name ?? ""} ${u.last_name ?? ""}`.trim() || u.email);
+    }
+    return {
+      columns: new Map(pickers.columns.map((c) => [String(c.id), c.name])),
+      users,
+      departments: new Map(pickers.departments.map((d) => [String(d.id), d.name])),
+    };
+  }, [pickers.columns, pickers.users, pickers.departments]);
 
   const rows = useMemo(
     () =>
@@ -147,7 +164,7 @@ export function HistoryDialog({ ticketId, open, onOpenChange }: HistoryDialogPro
                     className="flex items-start gap-2.5 border-b py-2 text-[13px] leading-5 last:border-b-0"
                   >
                     <Icon aria-hidden="true" size={14} className="mt-[3px] shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 flex-1 break-words">{historySentence(entry, labels)}</span>
+                    <span className="min-w-0 flex-1 break-words">{historySentence(resolveHistoryEntry(entry, lookups), labels)}</span>
                     <time
                       dateTime={entry.created_at}
                       className="shrink-0 whitespace-nowrap text-xs tabular-nums text-muted-foreground"

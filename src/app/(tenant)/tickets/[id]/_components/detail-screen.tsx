@@ -205,7 +205,12 @@ function ReadyDetail({ ticket, nav }: { ticket: TicketDetail; nav: ReturnType<ty
           pending={transfer.pending}
         />
       )}
-      <HistoryDialog ticketId={ticket.id} open={historyOpen} onOpenChange={setHistoryOpen} />
+      <HistoryDialog
+        ticketId={ticket.id}
+        boardId={ticket.board?.id ?? ticket.column?.board ?? null}
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+      />
       {perms.can_delete && (
         <DeleteTicketDialog
           ticketId={ticket.id}

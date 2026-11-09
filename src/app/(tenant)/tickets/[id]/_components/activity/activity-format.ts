@@ -61,6 +61,21 @@ function resolve(raw: string | null, field: string, lookups: EventLookups): stri
   return stripHtml(value);
 }
 
+/**
+ * A `/history/` row with its id values (column, assignee, department) named,
+ * for the History & transfers dialog (same rules as the feed).
+ */
+export function resolveHistoryEntry(entry: HistoryEntry, lookups: EventLookups): HistoryEntry {
+  const field = entry.field_name || "";
+  if (!ID_FIELDS[field]) return entry;
+  return {
+    ...entry,
+    field_name: FIELD_ALIASES[field] ?? field,
+    old_value: resolve(entry.old_value, field, lookups),
+    new_value: resolve(entry.new_value, field, lookups),
+  };
+}
+
 /** Marks where the actor's name sits in the translated sentence. */
 const NAME_MARK = "⁣⁣";
 
