@@ -1,158 +1,138 @@
 "use client"
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { DataTableColumnHeader } from "@/components/ui/data-table/data-table-column-header"
-import { ProductList } from "@/api/generated/interfaces"
-import { PRODUCT_STATUS_BADGE_VARIANTS, PRODUCT_STATUS_LABEL_KEYS } from "../_data/constants"
+import type { ProductList } from "@/api/generated/interfaces"
+import {
+  IdText,
+  MoneyCell,
+  ProductStatusPill,
+  ProductThumb,
+  localizedText,
+  type EcColumn,
+} from "@/app/(tenant)/ecommerce/_components/ui"
+import { cn } from "@/lib/utils"
+import { numericValue, type SortState, type SortValue } from "../_lib/table-kit"
 import { ProductsTableRowActions } from "./products-table-row-actions"
-import { ProductThumb } from "../../_components/ui/product-thumb"
+import { SortHeader } from "./table-kit"
 
-interface ColumnOptions {
-  t: (key: string) => string
-  locale: string
-  onEdit: (productId: number) => void
+type T = (key: string, values?: Record<string, string | number>) => string
+
+/** Product name in the UI language (then English, then any), or the "unnamed" text. */
+export function productName(product: Pick<ProductList, "name">, locale: string, unnamed: string): string {
+  return localizedText(product.name as Parameters<typeof localizedText>[0], locale) || unnamed
 }
 
-function getProductName(product: ProductList, locale: string): string {
-  const name = product.name
-  if (!name) return "Unnamed Product"
-  if (typeof name === "object") {
-    const nameObj = name as Record<string, string>
-    return nameObj[locale] || nameObj.en || "Unnamed Product"
+/** Stock tone: sold out red, low amber (same rule as before: `is_in_stock` / `is_low_stock`). */
+export function stockTone(product: Pick<ProductList, "is_in_stock" | "is_low_stock">): "out" | "low" | "ok" {
+  if (!product.is_in_stock) return "out"
+  if (product.is_low_stock) return "low"
+  return "ok"
+}
+
+/** Columns a viewer may hide from the "View" menu (the product column always shows). */
+export const HIDEABLE_PRODUCT_COLUMNS = ["sku", "price", "quantity", "status"] as const
+
+export function productSortAccessors(locale: string): Record<string, (p: ProductList) => SortValue> {
+  return {
+    name: (p) => productName(p, locale, ""),
+    sku: (p) => p.sku,
+    price: (p) => numericValue(p.price),
+    quantity: (p) => p.quantity ?? null,
+    status: (p) => String(p.status ?? ""),
   }
-  if (typeof name === "string") return name
-  return "Unnamed Product"
 }
 
 export function getProductColumns({
   t,
   locale,
+  sort,
+  onSortChange,
   onEdit,
-}: ColumnOptions): ColumnDef<ProductList>[] {
-  return [
+  hidden,
+}: {
+  /** `products` namespace. */
+  t: T
+  locale: string
+  sort: SortState | null
+  onSortChange: (sort: SortState | null) => void
+  onEdit: (productId: number) => void
+  hidden: ReadonlySet<string>
+}): EcColumn<ProductList>[] {
+  const unnamed = t("unnamed")
+  const header = (id: string, label: string, align: "start" | "end" = "start") => (
+    <SortHeader id={id} label={label} sort={sort} onSortChange={onSortChange} align={align} />
+  )
+  const columns: EcColumn<ProductList>[] = [
     {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label={`Select ${getProductName(row.original, locale)}`}
-          onClick={(e) => e.stopPropagation()}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "name",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("columns.product")} />
-      ),
-      cell: ({ row }) => {
-        const product = row.original
-        const name = getProductName(product, locale)
+      id: "name",
+      header: header("name", t("columns.product")),
+      width: "minmax(0,2.4fr)",
+      mobile: "title",
+      cell: (p) => {
+        const name = productName(p, locale, unnamed)
         return (
-          <div className="flex items-center gap-3">
-            <ProductThumb src={product.image} alt={name} size={40} />
-            <span className="inline-block max-w-44 truncate font-medium">
+          <span className="flex min-w-0 items-center gap-2.5">
+            <ProductThumb src={p.image} alt="" size={32} />
+            <span className="truncate font-medium" title={name}>
               {name}
             </span>
-          </div>
-        )
-      },
-      enableHiding: false,
-    },
-    {
-      accessorKey: "sku",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("sku")} />
-      ),
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.sku}</span>
-      ),
-    },
-    {
-      accessorKey: "price",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("price")} />
-      ),
-      cell: ({ row }) => {
-        const product = row.original
-        const price = `₾${parseFloat(product.price).toFixed(2)}`
-        const compareAt = product.compare_at_price
-          ? `₾${parseFloat(product.compare_at_price).toFixed(2)}`
-          : null
-        return (
-          <div>
-            <span className="font-medium">{price}</span>
-            {compareAt && (
-              <span className="ml-2 text-sm text-muted-foreground line-through">
-                {compareAt}
-              </span>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "quantity",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("columns.stock")} />
-      ),
-      cell: ({ row }) => {
-        const product = row.original
-        const qty = product.quantity
-        const isLow = product.is_low_stock
-        const isOut = !product.is_in_stock
-        return (
-          <span
-            className={
-              isOut
-                ? "text-destructive font-medium"
-                : isLow
-                  ? "text-orange-600 font-medium"
-                  : ""
-            }
-          >
-            {qty}
           </span>
         )
       },
     },
     {
-      accessorKey: "status",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("columns.status")} />
-      ),
-      cell: ({ row }) => {
-        const status = String(row.original.status || "draft")
-        const variant = PRODUCT_STATUS_BADGE_VARIANTS[status] || "secondary"
-        return <Badge variant={variant}>{t(PRODUCT_STATUS_LABEL_KEYS[status] || status)}</Badge>
+      id: "sku",
+      header: header("sku", t("sku")),
+      width: "minmax(0,1fr)",
+      mobile: "meta",
+      cell: (p) => <IdText className="text-muted-foreground" title={p.sku}>{p.sku}</IdText>,
+    },
+    {
+      id: "price",
+      header: header("price", t("price"), "end"),
+      width: "minmax(0,1fr)",
+      align: "end",
+      mobile: "end",
+      cell: (p) => <MoneyCell value={p.price} compare={p.compare_at_price} className="font-medium" />,
+    },
+    {
+      id: "quantity",
+      header: header("quantity", t("columns.stock"), "end"),
+      width: "84px",
+      align: "end",
+      mobile: "meta",
+      cell: (p) => {
+        const tone = stockTone(p)
+        return (
+          <span
+            className={cn(
+              "tabular-nums",
+              tone === "out" && "font-medium text-destructive",
+              tone === "low" && "font-medium text-amber-700 dark:text-amber-400"
+            )}
+            data-stock={tone}
+            title={tone === "out" ? t("outOfStock") : tone === "low" ? t("lowStock") : undefined}
+          >
+            <span className="@3xl:hidden">{t("stockShort", { count: p.quantity ?? 0 })}</span>
+            <span className="hidden @3xl:inline">{p.quantity ?? 0}</span>
+          </span>
+        )
       },
     },
     {
+      id: "status",
+      header: header("status", t("columns.status")),
+      width: "120px",
+      mobile: "meta",
+      cell: (p) => <ProductStatusPill status={String(p.status ?? "draft")} />,
+    },
+    {
       id: "actions",
-      header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => (
-        <ProductsTableRowActions
-          productId={row.original.id}
-          onEdit={onEdit}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
+      header: <span className="sr-only">{t("columns.actions")}</span>,
+      width: "36px",
+      align: "end",
+      mobile: "hidden",
+      cell: (p) => <ProductsTableRowActions productId={p.id} onEdit={onEdit} />,
     },
   ]
+  return columns.filter((c) => !hidden.has(c.id))
 }

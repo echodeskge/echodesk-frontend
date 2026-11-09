@@ -2,15 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { useEffect } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from "@/components/ui/sheet";
+import { useTranslations } from "next-intl";
 import {
   Form,
   FormControl,
@@ -21,12 +13,13 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { FormGrid, FormSection, FormSwitchRow, FormSheet } from "@/app/(tenant)/ecommerce/_components/ui";
+import { rhf } from "@/components/products/form-kit";
 import { useCreateLanguage, useUpdateLanguage } from "@/hooks/useLanguages";
 import type { Language } from "@/api/generated";
-import type { Locale } from "@/lib/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface AddLanguageSheetProps {
   open: boolean;
@@ -50,7 +43,6 @@ export function AddLanguageSheet({
   onOpenChange,
   editingLanguage,
 }: AddLanguageSheetProps) {
-  const locale = useLocale() as Locale;
   const t = useTranslations("languages.addLanguageSheet");
   const tCommon = useTranslations("common");
   const createLanguage = useCreateLanguage();
@@ -123,178 +115,141 @@ export function AddLanguageSheet({
       form.reset();
       onOpenChange(false);
     } catch (error) {
+      // e.g. a code that already exists: show the API's reason (it was only logged).
       console.error("Failed to save language:", error);
+      toast.error(getApiErrorMessage(error, t("saveFailed")));
     }
   };
 
+  const saving = createLanguage.isPending || updateLanguage.isPending;
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="p-0 w-full sm:max-w-[600px]">
-        <ScrollArea className="h-full">
-          <div className="p-6">
-            <SheetHeader>
-              <SheetTitle>
-                {isEditing ? t("editTitle") : t("title")}
-              </SheetTitle>
-              <SheetDescription>
-                {isEditing ? t("editDescription") : t("description")}
-              </SheetDescription>
-            </SheetHeader>
+    <Form {...form}>
+      <FormSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title={isEditing ? t("editTitle") : t("title")}
+        description={isEditing ? t("editDescription") : t("description")}
+        size="md"
+        testId="ec-language-sheet"
+        onSubmit={() => void form.handleSubmit(onSubmit)()}
+        submitting={saving}
+        submitLabel={isEditing ? tCommon("save") : tCommon("create")}
+        cancelLabel={tCommon("cancel")}
+      >
+        <FormSection>
+          {/* Language Code */}
+          <FormField
+            control={form.control}
+            name="code"
+            rules={{ required: t("validation.codeRequired") }}
+            render={({ field }) => (
+              <FormItem className={rhf.item}>
+                <FormLabel className={rhf.label}>
+                  {t("code")}
+                  <span aria-hidden className="text-destructive">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder={t("codePlaceholder")}
+                    maxLength={10}
+                    disabled={isEditing && editingLanguage?.is_default}
+                    className={`${rhf.input} max-w-[200px] font-mono`}
+                  />
+                </FormControl>
+                <FormDescription className={rhf.help}>{t("codeHelp")}</FormDescription>
+                <FormMessage className={rhf.message} />
+              </FormItem>
+            )}
+          />
 
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
-                <div className="space-y-6">
-                  {/* Language Code */}
-                <FormField
-                  control={form.control}
-                  name="code"
-                  rules={{ required: t("validation.codeRequired") }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("code")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t("codePlaceholder")}
-                          maxLength={10}
-                          disabled={isEditing && editingLanguage?.is_default}
-                        />
-                      </FormControl>
-                      <FormDescription>{t("codeHelp")}</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <FormGrid>
+            {/* Language Name - English */}
+            <FormField
+              control={form.control}
+              name="name.en"
+              rules={{ required: t("validation.nameEnRequired") }}
+              render={({ field }) => (
+                <FormItem className={rhf.item}>
+                  <FormLabel className={rhf.label}>
+                    {t("nameEn")}
+                    <span aria-hidden className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder={t("nameEnPlaceholder")} className={rhf.input} />
+                  </FormControl>
+                  <FormMessage className={rhf.message} />
+                </FormItem>
+              )}
+            />
 
-                {/* Language Name - English */}
-                <FormField
-                  control={form.control}
-                  name="name.en"
-                  rules={{ required: t("validation.nameEnRequired") }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("nameEn")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t("nameEnPlaceholder")}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            {/* Language Name - Georgian */}
+            <FormField
+              control={form.control}
+              name="name.ka"
+              rules={{ required: t("validation.nameKaRequired") }}
+              render={({ field }) => (
+                <FormItem className={rhf.item}>
+                  <FormLabel className={rhf.label}>
+                    {t("nameKa")}
+                    <span aria-hidden className="text-destructive">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder={t("nameKaPlaceholder")} className={rhf.input} />
+                  </FormControl>
+                  <FormMessage className={rhf.message} />
+                </FormItem>
+              )}
+            />
+          </FormGrid>
 
-                {/* Language Name - Georgian */}
-                <FormField
-                  control={form.control}
-                  name="name.ka"
-                  rules={{ required: t("validation.nameKaRequired") }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("nameKa")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder={t("nameKaPlaceholder")}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {/* Sort Order */}
+          <FormField
+            control={form.control}
+            name="sort_order"
+            render={({ field }) => (
+              <FormItem className={rhf.item}>
+                <FormLabel className={rhf.label}>{t("sortOrder")}</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    type="number"
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                    className={`${rhf.input} max-w-[120px] tabular-nums`}
+                  />
+                </FormControl>
+                <FormDescription className={rhf.help}>{t("sortOrderHelp")}</FormDescription>
+                <FormMessage className={rhf.message} />
+              </FormItem>
+            )}
+          />
+        </FormSection>
 
-                {/* Sort Order */}
-                <FormField
-                  control={form.control}
-                  name="sort_order"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("sortOrder")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          type="number"
-                          onChange={(e) =>
-                            field.onChange(parseInt(e.target.value) || 0)
-                          }
-                        />
-                      </FormControl>
-                      <FormDescription>{t("sortOrderHelp")}</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <FormSection title={t("settings")}>
+          {/* Is Default */}
+          <FormField
+            control={form.control}
+            name="is_default"
+            render={({ field }) => (
+              <FormSwitchRow label={t("isDefault")} help={t("isDefaultHelp")} htmlFor="ec-language-default">
+                <Switch id="ec-language-default" checked={field.value} onCheckedChange={field.onChange} />
+              </FormSwitchRow>
+            )}
+          />
 
-                {/* Is Default */}
-                <FormField
-                  control={form.control}
-                  name="is_default"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          {t("isDefault")}
-                        </FormLabel>
-                        <FormDescription>
-                          {t("isDefaultHelp")}
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                {/* Is Active */}
-                <FormField
-                  control={form.control}
-                  name="is_active"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          {t("isActive")}
-                        </FormLabel>
-                        <FormDescription>
-                          {t("isActiveHelp")}
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                </div>
-
-                <SheetFooter className="gap-2 pt-6">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    {tCommon("cancel")}
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createLanguage.isPending || updateLanguage.isPending}
-                  >
-                    {isEditing ? tCommon("save") : tCommon("create")}
-                  </Button>
-                </SheetFooter>
-              </form>
-            </Form>
-          </div>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
+          {/* Is Active */}
+          <FormField
+            control={form.control}
+            name="is_active"
+            render={({ field }) => (
+              <FormSwitchRow label={t("isActive")} help={t("isActiveHelp")} htmlFor="ec-language-active">
+                <Switch id="ec-language-active" checked={field.value} onCheckedChange={field.onChange} />
+              </FormSwitchRow>
+            )}
+          />
+        </FormSection>
+      </FormSheet>
+    </Form>
   );
 }

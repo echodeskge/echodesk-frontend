@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useLocale } from "next-intl";
-import { Label } from "@/components/ui/label";
+import { useLocale, useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -12,8 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { TonePill, humanize, localizedText, rdButton } from "@/app/(tenant)/ecommerce/_components/ui";
+import { cn } from "@/lib/utils";
+import { rhf } from "./form-kit";
 import { useAttributes } from "@/hooks/useAttributes";
 import type { AttributeDefinition } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
@@ -39,6 +39,8 @@ export function AttributeSelector({
   disabled = false,
 }: AttributeSelectorProps) {
   const locale = useLocale() as Locale;
+  const t = useTranslations("products.attributeSelector");
+  const tTypes = useTranslations("productAttributes.types");
 
   // Fetch all active attributes
   const { data: attributesData } = useAttributes({} as any);
@@ -46,17 +48,13 @@ export function AttributeSelector({
   const attributes = attributesData?.results || [];
 
   // Get attribute name in current locale
-  const getAttributeName = (attribute: AttributeDefinition) => {
-    if (typeof attribute.name === "object" && attribute.name !== null) {
-      return (attribute.name as any)[locale] || (attribute.name as any).en || "Unnamed";
-    }
-    return attribute.name || "Unnamed";
-  };
+  const getAttributeName = (attribute: AttributeDefinition) =>
+    localizedText(attribute.name as Parameters<typeof localizedText>[0], locale) || attribute.key || t("unnamed");
 
   // Get option label in current locale
   const getOptionLabel = (option: any) => {
     if (typeof option === "object" && option !== null) {
-      return option[locale] || option.en || option.value || "Unnamed";
+      return option[locale] || option.en || option.value || t("unnamed");
     }
     return String(option);
   };
@@ -148,24 +146,15 @@ export function AttributeSelector({
           <div className="flex items-center gap-2">
             <Input
               type="text"
-              placeholder={`Enter ${getAttributeName(attribute).toLowerCase()}`}
+              placeholder={t("valuePlaceholder")}
               value={currentValue || ""}
               onChange={(e) =>
                 handleAttributeChange(attribute.id, attributeType, e.target.value)
               }
               disabled={disabled}
-              className="flex-1"
+              className={cn(rhf.input, "min-w-0 flex-1")}
             />
-            {isSet && (
-              <button
-                type="button"
-                onClick={() => handleRemoveAttribute(attribute.id)}
-                className="text-muted-foreground hover:text-destructive"
-                disabled={disabled}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            {isSet && clearButton(attribute)}
           </div>
         );
 
@@ -175,27 +164,18 @@ export function AttributeSelector({
             <Input
               type="number"
               step="any"
-              placeholder={`Enter ${getAttributeName(attribute).toLowerCase()}`}
+              placeholder={t("valuePlaceholder")}
               value={currentValue || ""}
               onChange={(e) =>
                 handleAttributeChange(attribute.id, attributeType, e.target.value)
               }
               disabled={disabled}
-              className="flex-1"
+              className={cn(rhf.input, "min-w-0 flex-1")}
             />
             {attribute.unit && (
-              <span className="text-sm text-muted-foreground">{attribute.unit}</span>
+              <span className="text-xs text-muted-foreground">{attribute.unit}</span>
             )}
-            {isSet && (
-              <button
-                type="button"
-                onClick={() => handleRemoveAttribute(attribute.id)}
-                className="text-muted-foreground hover:text-destructive"
-                disabled={disabled}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            {isSet && clearButton(attribute)}
           </div>
         );
 
@@ -209,13 +189,13 @@ export function AttributeSelector({
               }
               disabled={disabled}
             />
-            <span className="text-sm">{currentValue ? "Yes" : "No"}</span>
+            <span className="text-[13px]">{currentValue ? t("yes") : t("no")}</span>
           </div>
         );
 
       case "select":
         if (!attribute.options || !Array.isArray(attribute.options)) {
-          return <span className="text-sm text-muted-foreground">No options available</span>;
+          return <span className="text-xs text-muted-foreground">{t("noOptions")}</span>;
         }
         return (
           <div className="flex items-center gap-2">
@@ -226,8 +206,8 @@ export function AttributeSelector({
               }
               disabled={disabled}
             >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder={`Select ${getAttributeName(attribute).toLowerCase()}`} />
+              <SelectTrigger className={cn(rhf.select, "min-w-0 flex-1")}>
+                <SelectValue placeholder={t("choose")} />
               </SelectTrigger>
               <SelectContent>
                 {attribute.options.map((option: any, idx: number) => (
@@ -237,31 +217,25 @@ export function AttributeSelector({
                 ))}
               </SelectContent>
             </Select>
-            {isSet && (
-              <button
-                type="button"
-                onClick={() => handleRemoveAttribute(attribute.id)}
-                className="text-muted-foreground hover:text-destructive"
-                disabled={disabled}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            {isSet && clearButton(attribute)}
           </div>
         );
 
       case "multiselect":
         if (!attribute.options || !Array.isArray(attribute.options)) {
-          return <span className="text-sm text-muted-foreground">No options available</span>;
+          return <span className="text-xs text-muted-foreground">{t("noOptions")}</span>;
         }
         const selectedValues = (currentValue as string[]) || [];
         return (
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
+          <div className="flex min-w-0 flex-col gap-2">
+            <div className="flex flex-wrap gap-1.5 empty:hidden">
               {selectedValues.map((val: string) => {
                 const option = attribute.options?.find((opt: any) => opt.value === val);
                 return (
-                  <Badge key={val} variant="secondary">
+                  <span
+                    key={val}
+                    className="inline-flex h-6 items-center gap-1 rounded-md border bg-muted/60 ps-2 pe-1 text-xs"
+                  >
                     {option ? getOptionLabel(option) : val}
                     <button
                       type="button"
@@ -269,12 +243,14 @@ export function AttributeSelector({
                         const newValues = selectedValues.filter((v) => v !== val);
                         handleAttributeChange(attribute.id, attributeType, newValues);
                       }}
-                      className="ml-1 hover:text-destructive"
+                      className="inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground hover:bg-background hover:text-destructive"
                       disabled={disabled}
+                      aria-label={t("removeValue", { value: option ? getOptionLabel(option) : val })}
+                      title={t("removeValue", { value: option ? getOptionLabel(option) : val })}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3 w-3" aria-hidden />
                     </button>
-                  </Badge>
+                  </span>
                 );
               })}
             </div>
@@ -290,8 +266,8 @@ export function AttributeSelector({
               }}
               disabled={disabled}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Add option" />
+              <SelectTrigger className={rhf.select}>
+                <SelectValue placeholder={t("addValue")} />
               </SelectTrigger>
               <SelectContent>
                 {attribute.options
@@ -316,7 +292,8 @@ export function AttributeSelector({
                 handleAttributeChange(attribute.id, attributeType, e.target.value)
               }
               disabled={disabled}
-              className="w-20 h-10 p-1"
+              className="h-[34px] w-14 shrink-0 p-1"
+              aria-label={getAttributeName(attribute)}
             />
             <Input
               type="text"
@@ -326,18 +303,9 @@ export function AttributeSelector({
               }
               placeholder="#000000"
               disabled={disabled}
-              className="flex-1 font-mono"
+              className={cn(rhf.input, "min-w-0 flex-1 font-mono")}
             />
-            {isSet && (
-              <button
-                type="button"
-                onClick={() => handleRemoveAttribute(attribute.id)}
-                className="text-muted-foreground hover:text-destructive"
-                disabled={disabled}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            {isSet && clearButton(attribute)}
           </div>
         );
 
@@ -351,66 +319,58 @@ export function AttributeSelector({
                 handleAttributeChange(attribute.id, attributeType, e.target.value)
               }
               disabled={disabled}
-              className="flex-1"
+              className={cn(rhf.input, "min-w-0 flex-1")}
             />
-            {isSet && (
-              <button
-                type="button"
-                onClick={() => handleRemoveAttribute(attribute.id)}
-                className="text-muted-foreground hover:text-destructive"
-                disabled={disabled}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
+            {isSet && clearButton(attribute)}
           </div>
         );
 
       default:
-        return <span className="text-sm text-muted-foreground">Unknown type</span>;
+        return <span className="text-xs text-muted-foreground">{t("unsupported")}</span>;
     }
   };
 
+  const clearButton = (attribute: AttributeDefinition) => (
+    <button
+      type="button"
+      onClick={() => handleRemoveAttribute(attribute.id)}
+      className={cn(rdButton.ghostIconSm, "hover:text-destructive")}
+      disabled={disabled}
+      aria-label={t("clear", { name: getAttributeName(attribute) })}
+      title={t("clear", { name: getAttributeName(attribute) })}
+    >
+      <X className="h-3.5 w-3.5" aria-hidden />
+    </button>
+  );
+
   if (attributes.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed rounded-lg">
-        No attributes available. Create attributes first.
+      <div className="rounded-lg border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
+        {t("empty")}
       </div>
     );
   }
 
+  // One bordered list (the design's settings rows): name, required and type
+  // on the left (above the control on phones), the value control on the right.
   return (
-    <div className="space-y-4">
-      <div>
-        <Label className="text-base font-semibold">Product Attributes</Label>
-        <p className="text-xs text-muted-foreground mt-1">
-          Define specific characteristics for this product
-        </p>
-      </div>
-
-      <div className="space-y-3">
-        {attributes.map((attribute) => (
+    <div className="divide-y overflow-hidden rounded-lg border" data-testid="ec-attribute-selector">
+      {attributes.map((attribute) => {
+        const type = String(attribute.attribute_type);
+        return (
           <div
             key={attribute.id}
-            className="border rounded-lg p-3 space-y-2 bg-muted/20"
+            className="grid min-w-0 gap-2 px-3 py-2.5 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)] sm:items-start sm:gap-4"
           >
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium">
-                {getAttributeName(attribute)}
-              </Label>
-              {attribute.is_required && (
-                <Badge variant="destructive" className="text-xs">
-                  Required
-                </Badge>
-              )}
-              <Badge variant="outline" className="text-xs">
-                {String(attribute.attribute_type)}
-              </Badge>
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:min-h-[34px]">
+              <span className="truncate text-[13px] font-medium">{getAttributeName(attribute)}</span>
+              {attribute.is_required && <TonePill tone="danger">{t("required")}</TonePill>}
+              <TonePill tone="neutral">{tTypes.has(type) ? tTypes(type) : humanize(type)}</TonePill>
             </div>
-            {renderAttributeInput(attribute)}
+            <div className="min-w-0">{renderAttributeInput(attribute)}</div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }

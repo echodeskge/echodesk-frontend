@@ -1,52 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useLocale, useTranslations } from "next-intl";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from "@/components/ui/sheet";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2 } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
+import { Form } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useCreateAttribute } from "@/hooks/useAttributes";
 import { useLanguages } from "@/hooks/useLanguages";
-import type { AttributeDefinition, Language } from "@/api/generated";
-import type { Locale } from "@/lib/i18n";
+import type { AttributeDefinition } from "@/api/generated";
 import { getApiErrorMessage } from "@/lib/utils";
-
-interface AttributeOption {
-  value: string;
-  [key: string]: string; // Language codes as keys
-}
+import { EcLoading, FormSheet } from "@/app/(tenant)/ecommerce/_components/ui";
+import { AttributeFormSections } from "./AttributeFormSections";
+import type { AttributeOption } from "./OptionsManager";
 
 interface AddAttributeSheetProps {
   open: boolean;
@@ -54,10 +19,8 @@ interface AddAttributeSheetProps {
 }
 
 export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps) {
-  const locale = useLocale() as Locale;
   const t = useTranslations("productAttributes.addAttributeSheet");
   const tCommon = useTranslations("common");
-  const tTypes = useTranslations("productAttributes.types");
   const createAttribute = useCreateAttribute();
 
   // Fetch active languages
@@ -70,8 +33,6 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
 
   // Options state (for select/multiselect types)
   const [options, setOptions] = useState<AttributeOption[]>([]);
-  const [newOptionValue, setNewOptionValue] = useState("");
-  const [newOptionLabels, setNewOptionLabels] = useState<Record<string, string>>({});
 
   const form = useForm<Partial<AttributeDefinition>>({
     defaultValues: {
@@ -114,98 +75,38 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
   useEffect(() => {
     if (open && activeLanguages.length > 0) {
       form.reset(buildDefaultValues());
+      lastGeneratedKey.current = "";
       setOptions([]);
-      setNewOptionValue("");
-
-      // Initialize empty labels for all languages
-      const emptyLabels: Record<string, string> = {};
-      activeLanguages.forEach((lang) => {
-        emptyLabels[lang.code] = "";
-      });
-      setNewOptionLabels(emptyLabels);
     }
   }, [open, activeLanguages.length]);
 
   // Watch all name fields to auto-generate key from first filled language
   const nameValues = form.watch("name");
+  // watch() hands back the same (mutated) object on every keystroke, so an
+  // effect on it never re-ran and the key stayed empty until save: depend on
+  // the typed text instead, and keep following the name until the key is
+  // typed by hand (it no longer equals the last generated one).
+  const nameKey = JSON.stringify(nameValues ?? {});
+  const lastGeneratedKey = useRef("");
 
   // Auto-generate key from first filled language name
   useEffect(() => {
-    if (open && nameValues && typeof nameValues === "object" && !form.getValues("key")) {
-      // Find first non-empty name value
-      const firstFilledName = Object.values(nameValues).find((val) => typeof val === 'string' && val?.trim());
-      if (firstFilledName && typeof firstFilledName === 'string') {
-        const generatedKey = firstFilledName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "_")
-          .replace(/(^_|_$)/g, "");
-        form.setValue("key", generatedKey);
-      }
-    }
-  }, [nameValues, open, form]);
-
-  // Helper to get language name
-  const getLanguageName = (lang: Language) => {
-    if (typeof lang.name === "object" && lang.name !== null) {
-      return (lang.name as any)[locale] || (lang.name as any).en || lang.code;
-    }
-    return lang.name || lang.code;
-  };
-
-  // Add new option
-  const handleAddOption = () => {
-    if (!newOptionValue.trim()) {
-      toast.error("Please enter a value for the option");
-      return;
-    }
-
-    // Check if at least one language label is filled
-    const hasAnyLabel = Object.values(newOptionLabels).some((label) => label.trim());
-    if (!hasAnyLabel) {
-      toast.error("Please enter at least one language label");
-      return;
-    }
-
-    // Create new option with all language labels
-    const newOption: AttributeOption = { value: newOptionValue.trim() };
-
-    // Find first filled label for auto-fill
-    let firstFilledLabel = "";
-    for (const langCode of Object.keys(newOptionLabels)) {
-      if (newOptionLabels[langCode]?.trim()) {
-        firstFilledLabel = newOptionLabels[langCode].trim();
-        break;
-      }
-    }
-
-    // Set all language labels (auto-fill empty ones with first filled label)
-    activeLanguages.forEach((lang) => {
-      const label = newOptionLabels[lang.code]?.trim();
-      newOption[lang.code] = label || firstFilledLabel;
-    });
-
-    setOptions([...options, newOption]);
-    setNewOptionValue("");
-
-    // Reset all label inputs
-    const emptyLabels: Record<string, string> = {};
-    activeLanguages.forEach((lang) => {
-      emptyLabels[lang.code] = "";
-    });
-    setNewOptionLabels(emptyLabels);
-  };
-
-  // Remove option
-  const removeOption = (index: number) => {
-    const newOptions = options.filter((_, i) => i !== index);
-    setOptions(newOptions);
-  };
-
-  // Get option label for display (use first available language)
-  const getOptionLabel = (option: AttributeOption) => {
-    // Try current locale first, then English, then first available language, then value
-    return option[locale] || option.en || activeLanguages.map((lang) => option[lang.code]).find(Boolean) || option.value;
-  };
+    if (!open || !nameValues || typeof nameValues !== "object") return;
+    const current = form.getValues("key") || "";
+    if (current && current !== lastGeneratedKey.current) return;
+    // Find first non-empty name value
+    const firstFilledName = Object.values(nameValues).find((val) => typeof val === "string" && val?.trim());
+    const generatedKey =
+      typeof firstFilledName === "string"
+        ? firstFilledName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/(^_|_$)/g, "")
+        : "";
+    lastGeneratedKey.current = generatedKey;
+    form.setValue("key", generatedKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nameKey stands for nameValues
+  }, [nameKey, open, form]);
 
   const onSubmit = async (data: Partial<AttributeDefinition>) => {
     try {
@@ -221,7 +122,7 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
         }
 
         if (!firstFilledValue) {
-          toast.error("Please fill at least one language for the attribute name");
+          toast.error(t("nameRequired"));
           return;
         }
 
@@ -248,14 +149,14 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
 
       // Validate key is required
       if (!data.key?.trim()) {
-        toast.error("Please provide a key for the attribute");
+        toast.error(t("keyRequired"));
         return;
       }
 
       // Handle options for multiselect type
       if (String(attributeType) === "multiselect") {
         if (options.length === 0) {
-          toast.error("Please add at least one option for multiselect type");
+          toast.error(t("optionsRequired"));
           return;
         }
         data.options = options as any;
@@ -270,362 +171,42 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
       onOpenChange(false);
     } catch (error: any) {
       console.error("Failed to create attribute:", error);
-      toast.error(getApiErrorMessage(error, "Failed to create attribute"));
+      toast.error(getApiErrorMessage(error, t("createFailed")));
     }
   };
 
   if (languagesLoading || activeLanguages.length === 0) {
     return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="p-0 w-full sm:max-w-4xl" side="right">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      <FormSheet open={open} onOpenChange={onOpenChange} title={t("title")} description={t("description")} size="lg" testId="ec-attribute-add-sheet">
+        <EcLoading className="py-16" />
+      </FormSheet>
     );
   }
 
-  const showOptionsSection = String(attributeType) === "multiselect";
-
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        className="p-0 w-full sm:max-w-4xl"
-        side="right"
+    <Form {...form}>
+      <FormSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title={t("title")}
+        description={t("description")}
+        size="lg"
+        testId="ec-attribute-add-sheet"
+        onSubmit={() => void form.handleSubmit(onSubmit)()}
+        submitting={createAttribute.isPending}
+        submitLabel={createAttribute.isPending ? t("creating") : t("createAttribute")}
+        cancelLabel={tCommon("cancel")}
       >
-        <div className="flex h-full">
-          {/* Main Form */}
-          <div className="flex-1 border-r">
-            <ScrollArea className="h-full">
-              <div className="p-6">
-                <SheetHeader>
-                  <SheetTitle>{t("title")}</SheetTitle>
-                  <SheetDescription>{t("description")}</SheetDescription>
-                </SheetHeader>
-
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
-                    {/* Attribute Name - All Languages */}
-                    <div className="space-y-3">
-                      <FormLabel className="text-base font-semibold">
-                        {t("nameEn")}
-                      </FormLabel>
-                      <FormDescription>
-                        {t("fillInAtLeastOneLanguage")}
-                      </FormDescription>
-
-                      {activeLanguages.map((lang) => (
-                        <FormField
-                          key={lang.code}
-                          control={form.control}
-                          name={`name.${lang.code}` as any}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm text-muted-foreground">
-                                {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder={t("nameInLanguage", { lang: lang.code })}
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Key */}
-                    <FormField
-                      control={form.control}
-                      name="key"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("keyLabel")} <span className="text-destructive">*</span></FormLabel>
-                          <FormControl>
-                            <Input placeholder={t("keyPlaceholder")} {...field} required />
-                          </FormControl>
-                          <FormDescription>{t("keyDescription")}</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Attribute Type */}
-                    <FormField
-                      control={form.control}
-                      name="attribute_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t("attributeType")}</FormLabel>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                              if (value !== "multiselect") {
-                                setOptions([]);
-                              }
-                            }}
-                            defaultValue={String(field.value)}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder={t("selectType")} />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="multiselect">
-                                {tTypes("multiselect")}
-                              </SelectItem>
-                              <SelectItem value="number">{tTypes("number")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Unit (for number type) */}
-                    {String(attributeType) === "number" && (
-                      <FormField
-                        control={form.control}
-                        name="unit"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>{t("unitLabel")}</FormLabel>
-                            <FormControl>
-                              <Input placeholder={t("unitPlaceholder")} {...field} />
-                            </FormControl>
-                            <FormDescription>{t("unitDescription")}</FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-
-                    {/* Checkboxes */}
-                    <div className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="is_required"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>{t("requiredLabel")}</FormLabel>
-                              <FormDescription>{t("requiredDescription")}</FormDescription>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="is_filterable"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>{t("filterableLabel")}</FormLabel>
-                              <FormDescription>
-                                {t("filterableDescription")}
-                              </FormDescription>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="is_active"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>{t("activeLabel")}</FormLabel>
-                              <FormDescription>{t("activeDescription")}</FormDescription>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <SheetFooter className="mt-6">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                      >
-                        {tCommon("cancel")}
-                      </Button>
-                      <Button type="submit" disabled={createAttribute.isPending}>
-                        {createAttribute.isPending ? t("creating") : t("createAttribute")}
-                      </Button>
-                    </SheetFooter>
-                  </form>
-                </Form>
-              </div>
-            </ScrollArea>
-          </div>
-
-          {/* Sidebar for Options */}
-          {showOptionsSection && (
-            <div className="w-80 bg-muted/30">
-              <ScrollArea className="h-full">
-                <div className="p-6 space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2">{t("attributeValues")}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t("attributeValuesDescription")}
-                    </p>
-                  </div>
-
-                  <Separator />
-
-                  {/* Add New Option Form */}
-                  <div className="space-y-3">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold">{t("valueIdentifier")}</Label>
-                      <Input
-                        placeholder={t("valueIdentifierPlaceholder")}
-                        value={newOptionValue}
-                        onChange={(e) => setNewOptionValue(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && e.ctrlKey) {
-                            e.preventDefault();
-                            handleAddOption();
-                          }
-                        }}
-                        className="font-mono text-sm"
-                      />
-                    </div>
-
-                    <Separator />
-
-                    {/* All language labels */}
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold">{t("labelsAllLanguages")}</Label>
-                      {activeLanguages.map((lang) => (
-                        <div key={lang.code} className="space-y-1">
-                          <Label className="text-xs text-muted-foreground">
-                            {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                          </Label>
-                          <Input
-                            placeholder={t("labelPlaceholder", { lang: lang.code })}
-                            value={newOptionLabels[lang.code] || ""}
-                            onChange={(e) =>
-                              setNewOptionLabels({
-                                ...newOptionLabels,
-                                [lang.code]: e.target.value,
-                              })
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && e.ctrlKey) {
-                                e.preventDefault();
-                                handleAddOption();
-                              }
-                            }}
-                          />
-                        </div>
-                      ))}
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {t("fillAtLeastOneLabel")}
-                      </p>
-                    </div>
-
-                    <Button
-                      type="button"
-                      onClick={handleAddOption}
-                      className="w-full"
-                      size="sm"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t("addValue")} ({t("addValueHint")})
-                    </Button>
-                  </div>
-
-                  <Separator />
-
-                  {/* Options List */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold">
-                        {t("valuesCount", { count: options.length })}
-                      </h4>
-                    </div>
-
-                    {options.length === 0 ? (
-                      <div className="text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-                        {t("noValuesYet")}
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {options.map((option, index) => (
-                          <Card key={index} className="p-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1 space-y-1 min-w-0">
-                                <div className="text-sm font-medium truncate">
-                                  {getOptionLabel(option)}
-                                </div>
-                                <div className="text-xs text-muted-foreground font-mono truncate">
-                                  {option.value}
-                                </div>
-                                {/* Show all languages as badges */}
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {activeLanguages.map((lang) => {
-                                    if (option[lang.code]) {
-                                      return (
-                                        <Badge
-                                          key={lang.code}
-                                          variant="secondary"
-                                          className="text-xs"
-                                        >
-                                          {lang.code.toUpperCase()}: {option[lang.code]}
-                                        </Badge>
-                                      );
-                                    }
-                                    return null;
-                                  })}
-                                </div>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeOption(index)}
-                                className="shrink-0 h-8 w-8"
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
+        <AttributeFormSections
+          form={form}
+          languages={activeLanguages}
+          options={options}
+          onOptionsChange={setOptions}
+          onTypeChange={(value) => {
+            if (value !== "multiselect") setOptions([]);
+          }}
+        />
+      </FormSheet>
+    </Form>
   );
 }

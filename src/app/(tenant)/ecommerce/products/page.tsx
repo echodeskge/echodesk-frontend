@@ -3,22 +3,26 @@
 import { useState, useCallback, useEffect } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Plus } from "lucide-react"
 import { useProducts, useProduct } from "@/hooks/useProducts"
 import { AddProductSheet } from "@/components/products/AddProductSheet"
 import { EditProductSheet } from "@/components/products/EditProductSheet"
 import { toast } from "sonner"
 import axiosInstance from "@/api/axios"
 import type { Locale } from "@/lib/i18n"
+import { PRODUCT_STATUS_LABEL_KEYS } from "./_data/constants"
 import { ProductsTable } from "./_components/products-table"
+import { ProductsTableToolbar } from "./_components/products-table-toolbar"
+import { HIDEABLE_PRODUCT_COLUMNS } from "./_components/products-table-columns"
 import { getApiErrorMessage } from "@/lib/utils"
+import {
+  BulkBar,
+  EcPage,
+  EcommerceHeaderBridge,
+  StatStrip,
+  formatCount,
+  rdButton,
+} from "@/app/(tenant)/ecommerce/_components/ui"
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -40,10 +44,12 @@ export default function ProductsPage() {
     new Set()
   )
   const [bulkActionLoading, setBulkActionLoading] = useState(false)
+  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
 
   const {
     data: productsData,
     isLoading,
+    error: productsError,
     refetch,
   } = useProducts({
     search: searchQuery || undefined,
@@ -89,6 +95,8 @@ export default function ProductsPage() {
   const products = productsData?.results || []
   const totalCount = productsData?.count || 0
   const lowStockCount = products.filter((p) => p.is_low_stock).length
+  const outOfStockCount = products.filter((p) => !p.is_in_stock).length
+  const filtered = !!searchQuery || lowStockOnly || statusFilter !== "all"
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value)
@@ -120,6 +128,16 @@ export default function ProductsPage() {
     setSelectedProductIds(new Set())
   }, [])
 
+  // "Clear filters" on the no-matches state: everything, every status.
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("")
+    setStatusFilter("all")
+    setLowStockOnly(false)
+    setStockFilter(null)
+    setPage(1)
+    setSelectedProductIds(new Set())
+  }, [])
+
   const handleEditProduct = useCallback((productId: number) => {
     setSelectedProductId(productId)
     setIsEditProductOpen(true)
@@ -139,81 +157,99 @@ export default function ProductsPage() {
           status: newStatus,
         })
         toast.success(
-          `${selectedProductIds.size} products updated to ${newStatus}`
+          t("bulkActions.updated", {
+            count: selectedProductIds.size,
+            status: t(PRODUCT_STATUS_LABEL_KEYS[newStatus] || newStatus),
+          })
         )
         setSelectedProductIds(new Set())
         refetch()
       } catch (error) {
-        toast.error(getApiErrorMessage(error, "Failed to update products. Please try again."))
+        toast.error(getApiErrorMessage(error, t("bulkActions.updateFailed")))
       } finally {
         setBulkActionLoading(false)
       }
     },
-    [selectedProductIds, refetch]
+    [selectedProductIds, refetch, t]
   )
 
+  const columnLabels = HIDEABLE_PRODUCT_COLUMNS.map((id) => ({
+    id,
+    label: id === "sku" ? t("sku") : id === "price" ? t("price") : id === "quantity" ? t("columns.stock") : t("columns.status"),
+  }))
+
   return (
-    <section className="container p-4">
+    <EcPage fill testId="ec-products-page">
+      <EcommerceHeaderBridge
+        sub={productsData ? t("countLabel", { count: totalCount }) : null}
+        primary={{ label: t("addProduct"), icon: Plus, onClick: () => setIsAddProductOpen(true), testId: "ec-products-add" }}
+      />
+
+      <StatStrip
+        loading={!productsData && isLoading}
+        testId="ec-products-stats"
+        items={[
+          { key: "total", label: t("stats.matching"), value: productsData ? formatCount(totalCount) : null },
+          { key: "low", label: t("stats.lowStockPage"), value: productsData ? formatCount(lowStockCount) : null, hint: t("stats.pageHint") },
+          { key: "out", label: t("stats.outOfStockPage"), value: productsData ? formatCount(outOfStockCount) : null, hint: t("stats.pageHint") },
+        ]}
+      />
+
+      {selectedProductIds.size > 0 ? (
+        <BulkBar
+          count={selectedProductIds.size}
+          label={t("bulkActions.selected", { count: selectedProductIds.size })}
+          clearLabel={t("bulkActions.clear")}
+          onClear={() => setSelectedProductIds(new Set())}
+        >
+          <span className="hidden text-xs text-muted-foreground sm:inline">{t("bulkActions.setStatus")}</span>
+          {(["active", "draft", "inactive"] as const).map((status) => (
+            <button
+              key={status}
+              type="button"
+              className={rdButton.outlineSm}
+              disabled={bulkActionLoading}
+              onClick={() => handleBulkStatusChange(status)}
+              data-testid={`ec-products-bulk-${status}`}
+            >
+              {t(PRODUCT_STATUS_LABEL_KEYS[status])}
+            </button>
+          ))}
+        </BulkBar>
+      ) : (
+        <ProductsTableToolbar
+          searchQuery={searchQuery}
+          statusFilter={statusFilter}
+          lowStockOnly={lowStockOnly}
+          lowStockCount={lowStockCount}
+          onSearchChange={handleSearchChange}
+          onStatusFilterChange={handleStatusFilterChange}
+          onLowStockToggle={handleLowStockToggle}
+          columns={columnLabels}
+          hiddenColumns={hiddenColumns}
+          onHiddenColumnsChange={setHiddenColumns}
+        />
+      )}
+
       <ProductsTable
-        data={products}
+        data={productsData ? products : undefined}
         totalCount={totalCount}
         page={page}
         pageSize={pageSize}
         loading={isLoading}
-        searchQuery={searchQuery}
-        statusFilter={statusFilter}
-        lowStockOnly={lowStockOnly}
-        lowStockCount={lowStockCount}
+        error={productsError}
+        onRetry={() => refetch()}
+        filtered={filtered}
         locale={locale}
+        selected={selectedProductIds}
+        hiddenColumns={hiddenColumns}
+        onSelectionChange={handleSelectionChange}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
-        onSearchChange={handleSearchChange}
-        onStatusFilterChange={handleStatusFilterChange}
-        onLowStockToggle={handleLowStockToggle}
         onAddProduct={() => setIsAddProductOpen(true)}
         onEditProduct={handleEditProduct}
-        onSelectionChange={handleSelectionChange}
-        t={t}
+        onClearFilters={handleClearFilters}
       />
-
-      {/* Floating Bulk Actions Bar */}
-      {selectedProductIds.size > 0 && (
-        <div
-          className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform"
-          role="region"
-          aria-live="polite"
-          aria-label="Selection actions"
-        >
-          <div className="flex items-center gap-3 rounded-lg border bg-background px-6 py-3 shadow-lg">
-            <span className="text-sm font-medium">
-              {t("bulkActions.selected").replace(
-                "{count}",
-                String(selectedProductIds.size)
-              )}
-            </span>
-            <Select
-              onValueChange={(value) => handleBulkStatusChange(value)}
-              disabled={bulkActionLoading}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder={t("bulkActions.changeStatus")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">{t("active")}</SelectItem>
-                <SelectItem value="draft">{t("draft")}</SelectItem>
-                <SelectItem value="inactive">{t("inactive")}</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setSelectedProductIds(new Set())}
-            >
-              {t("bulkActions.clear")}
-            </Button>
-          </div>
-        </div>
-      )}
 
       <AddProductSheet
         open={isAddProductOpen}
@@ -224,6 +260,6 @@ export default function ProductsPage() {
         onOpenChange={setIsEditProductOpen}
         product={selectedProduct || null}
       />
-    </section>
+    </EcPage>
   )
 }

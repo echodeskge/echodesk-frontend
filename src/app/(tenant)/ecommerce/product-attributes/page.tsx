@@ -20,10 +20,14 @@ import type { Locale } from "@/lib/i18n"
 import type { AttributeDefinition } from "@/api/generated"
 import { AttributesTable } from "./_components/attributes-table"
 import { getApiErrorMessage } from "@/lib/utils"
+import { Plus } from "lucide-react"
+import { EcPage, EcommerceHeaderBridge } from "@/app/(tenant)/ecommerce/_components/ui"
+import { attributeName } from "./_components/attributes-table-columns"
 
 export default function ProductAttributesPage() {
   const locale = useLocale() as Locale
   const t = useTranslations("productAttributes")
+  const tc = useTranslations("common")
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [selectedAttribute, setSelectedAttribute] =
@@ -31,20 +35,10 @@ export default function ProductAttributesPage() {
   const [deletingAttribute, setDeletingAttribute] =
     useState<AttributeDefinition | null>(null)
 
-  const { data: attributesData, isLoading } = useAttributes({})
+  const { data: attributesData, error: attributesError, refetch } = useAttributes({})
   const deleteAttribute = useDeleteAttribute()
 
   const attributes = attributesData?.results || []
-
-  const getLocalizedName = (name: unknown): string => {
-    if (!name) return "Unnamed"
-    if (typeof name === "string") return name
-    if (typeof name === "object") {
-      const obj = name as Record<string, string>
-      return obj[locale] || obj.en || Object.values(obj)[0] || "Unnamed"
-    }
-    return "Unnamed"
-  }
 
   const handleEdit = useCallback((attribute: AttributeDefinition) => {
     setSelectedAttribute(attribute)
@@ -59,24 +53,28 @@ export default function ProductAttributesPage() {
     if (!deletingAttribute) return
     try {
       await deleteAttribute.mutateAsync(deletingAttribute.id)
-      toast.success("Attribute deleted successfully")
+      toast.success(t("deleted"))
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Failed to delete attribute"))
+      toast.error(getApiErrorMessage(error, t("deleteFailed")))
     } finally {
       setDeletingAttribute(null)
     }
   }
 
   return (
-    <section className="container p-4">
+    <EcPage width="wide" testId="ec-attributes-page">
+      <EcommerceHeaderBridge
+        sub={attributesData ? t("countLabel", { count: attributes.length }) : null}
+        primary={{ label: t("addAttribute"), icon: Plus, onClick: () => setIsAddOpen(true), testId: "ec-attributes-add" }}
+      />
       <AttributesTable
-        data={attributes}
-        loading={isLoading}
+        data={attributesData ? attributes : undefined}
+        error={attributesError}
+        onRetry={() => refetch()}
         locale={locale}
         onAdd={() => setIsAddOpen(true)}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        t={t}
       />
 
       {/* Delete Confirmation */}
@@ -88,22 +86,20 @@ export default function ProductAttributesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Attribute</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;
-              {deletingAttribute
-                ? getLocalizedName(deletingAttribute.name)
-                : ""}
-              &quot;? This action cannot be undone.
+              {t("deleteDialog.description", {
+                name: deletingAttribute ? attributeName(deletingAttribute, locale) : "",
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -115,6 +111,6 @@ export default function ProductAttributesPage() {
         onOpenChange={setIsEditOpen}
         attribute={selectedAttribute}
       />
-    </section>
+    </EcPage>
   )
 }

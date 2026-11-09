@@ -1,207 +1,155 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
+import { Plus, SearchX, Tags } from "lucide-react"
+import type { AttributeDefinition } from "@/api/generated"
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  SortingState,
-  VisibilityState,
-  ColumnFiltersState,
-  flexRender,
-} from "@tanstack/react-table"
-import { Search, Plus, Tags } from "lucide-react"
+  EcEmptyState,
+  EcPagination,
+  EcTable,
+  Toolbar,
+  ToolbarSearch,
+  ToolbarSpacer,
+  rdButton,
+} from "@/app/(tenant)/ecommerce/_components/ui"
+import { pageSlice, sortRows, type SortState } from "../../products/_lib/table-kit"
+import { ColumnsMenu } from "../../products/_components/table-kit"
 import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DataTableViewOptions } from "@/components/ui/data-table/data-table-column-toggle"
-import { DataTableServerPagination } from "@/components/ui/data-table/data-table-pagination"
-import { AttributeDefinition } from "@/api/generated"
-import { getAttributeColumns } from "./attributes-table-columns"
+  HIDEABLE_ATTRIBUTE_COLUMNS,
+  attributeSortAccessors,
+  getAttributeColumns,
+  matchesAttribute,
+} from "./attributes-table-columns"
 
 interface AttributesTableProps {
-  data: AttributeDefinition[]
-  loading: boolean
+  /** `undefined` while loading. */
+  data: AttributeDefinition[] | undefined
+  error?: unknown
+  onRetry?: () => void
   locale: string
   onAdd: () => void
   onEdit: (attribute: AttributeDefinition) => void
   onDelete: (attribute: AttributeDefinition) => void
-  t: (key: string) => string
 }
 
-export function AttributesTable({
-  data,
-  loading,
-  locale,
-  onAdd,
-  onEdit,
-  onDelete,
-  t,
-}: AttributesTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+const DEFAULT_PAGE_SIZE = 10
+
+/**
+ * Attributes list (design LIST PAGE): inset toolbar with search (name in any
+ * language or key) and the column menu, then a bordered table card. The
+ * whole list is loaded once, so search, sorting and paging run here (as
+ * with TanStack before; 10 per page by default).
+ */
+export function AttributesTable({ data, error, onRetry, locale, onAdd, onEdit, onDelete }: AttributesTableProps) {
+  const t = useTranslations("productAttributes")
+  const tc = useTranslations("common")
+  const tu = useTranslations("ecommerceUi")
+  const [search, setSearch] = useState("")
+  const [sort, setSort] = useState<SortState | null>(null)
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+
+  useEffect(() => setPage(1), [search])
+
+  const filtered = useMemo(
+    () => (data ? sortRows(data.filter((a) => matchesAttribute(a, search)), sort, attributeSortAccessors(locale)) : undefined),
+    [data, search, sort, locale]
+  )
+  const pageCount = Math.max(1, Math.ceil((filtered?.length ?? 0) / pageSize))
+  const currentPage = Math.min(page, pageCount)
+  const rows = filtered ? pageSlice(filtered, currentPage, pageSize) : undefined
 
   const columns = useMemo(
-    () => getAttributeColumns({ t, locale, onEdit, onDelete }),
-    [t, locale, onEdit, onDelete]
+    () =>
+      getAttributeColumns({
+        t,
+        tc,
+        moreLabel: tu("moreActions"),
+        locale,
+        sort,
+        onSortChange: setSort,
+        onEdit,
+        onDelete,
+        hidden,
+      }),
+    [t, tc, tu, locale, sort, onEdit, onDelete, hidden]
   )
 
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      columnFilters,
-    },
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-  })
+  const columnLabels = HIDEABLE_ATTRIBUTE_COLUMNS.map((id) => ({
+    id,
+    label:
+      id === "type" ? t("table.type") : id === "options" ? t("options") : id === "flags" ? t("properties") : t("table.status"),
+  }))
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader className="flex-row flex-wrap justify-between items-center gap-2 space-y-0">
-          <Skeleton className="h-6 w-40" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-60" />
-            <Skeleton className="h-9 w-24" />
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="border-b px-4 py-3">
-              <Skeleton className="h-5 w-full" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+  const empty =
+    search.trim() && (data?.length ?? 0) > 0 ? (
+      <EcEmptyState
+        icon={SearchX}
+        title={tu("noMatches")}
+        description={tu("noMatchesHint")}
+        action={
+          <button type="button" className={rdButton.outlineSm} onClick={() => setSearch("")}>
+            {tu("clearSearch")}
+          </button>
+        }
+      />
+    ) : (
+      <EcEmptyState
+        icon={Tags}
+        title={t("noAttributesYet")}
+        description={t("noAttributesDescription")}
+        action={
+          <button type="button" className={rdButton.primary} onClick={onAdd}>
+            <Plus className="h-3.5 w-3.5" aria-hidden />
+            {t("createFirstAttribute")}
+          </button>
+        }
+      />
     )
-  }
 
   return (
-    <Card>
-      <CardHeader className="flex-row flex-wrap justify-between items-center gap-2 space-y-0">
-        <CardTitle>{t("tableTitle")}</CardTitle>
-        <div className="flex items-center gap-2 max-md:w-full max-md:flex-wrap">
-          <div className="relative max-md:w-full">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t("searchPlaceholder")}
-              value={
-                (table.getColumn("name")?.getFilterValue() as string) ?? ""
-              }
-              onChange={(e) =>
-                table.getColumn("name")?.setFilterValue(e.target.value)
-              }
-              className="h-9 pl-8 max-md:w-full md:w-60"
-              aria-label="Search attributes"
+    <>
+      <Toolbar inset testId="ec-attributes-toolbar">
+        <ToolbarSearch
+          value={search}
+          onChange={setSearch}
+          placeholder={t("searchPlaceholder")}
+          clearLabel={tu("clearSearch")}
+          className="max-w-[320px]"
+          testId="ec-attributes-search"
+        />
+        <ToolbarSpacer />
+        <ColumnsMenu columns={columnLabels} hidden={hidden} onChange={setHidden} />
+      </Toolbar>
+      <EcTable<AttributeDefinition>
+        variant="card"
+        ariaLabel={t("tableTitle")}
+        columns={columns}
+        rows={rows}
+        rowKey={(a) => a.id}
+        error={error}
+        onRetry={onRetry}
+        onRowClick={onEdit}
+        empty={empty}
+        skeletonRows={5}
+        testId="ec-attributes-table"
+        footer={
+          !error && (filtered?.length ?? 0) > 0 ? (
+            <EcPagination
+              page={currentPage}
+              pageSize={pageSize}
+              totalCount={filtered?.length ?? 0}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size)
+                setPage(1)
+              }}
             />
-          </div>
-          <DataTableViewOptions table={table} />
-          <Button size="sm" className="h-9" onClick={onAdd}>
-            <Plus className="me-2 h-3.5 w-3.5" />
-            {t("addAttribute")}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        {data.length === 0 ? (
-          <div className="text-center py-12">
-            <Tags className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">
-              {t("noAttributesYet")}
-            </h3>
-            <p className="text-muted-foreground mt-2">
-              {t("noAttributesDescription")}
-            </p>
-          </div>
-        ) : (
-          <ScrollArea
-            orientation="horizontal"
-            className="w-[calc(100vw-2.25rem)] md:w-auto"
-          >
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      No results.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
-      </CardContent>
-      {data.length > 0 && (
-        <CardFooter className="block py-3">
-          <DataTableServerPagination
-            page={table.getState().pagination.pageIndex + 1}
-            pageSize={table.getState().pagination.pageSize}
-            totalCount={data.length}
-            onPageChange={(p) => table.setPageIndex(p - 1)}
-            onPageSizeChange={(s) => table.setPageSize(s)}
-          />
-        </CardFooter>
-      )}
-    </Card>
+          ) : undefined
+        }
+      />
+    </>
   )
 }

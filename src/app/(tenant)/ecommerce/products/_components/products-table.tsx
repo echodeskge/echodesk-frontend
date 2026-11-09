@@ -1,237 +1,146 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
+import { Package, Plus, SearchX } from "lucide-react"
+import type { ProductList } from "@/api/generated/interfaces"
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  SortingState,
-  VisibilityState,
-  RowSelectionState,
-  flexRender,
-} from "@tanstack/react-table"
-import { Package } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DataTableServerPagination } from "@/components/ui/data-table/data-table-pagination"
-import { ProductList } from "@/api/generated/interfaces"
-import { getProductColumns } from "./products-table-columns"
-import { ProductsTableToolbar } from "./products-table-toolbar"
+  EcEmptyState,
+  EcPagination,
+  EcTable,
+  rdButton,
+  selectionColumn,
+} from "@/app/(tenant)/ecommerce/_components/ui"
+import { sortRows, type SortState } from "../_lib/table-kit"
+import { getProductColumns, productName, productSortAccessors } from "./products-table-columns"
 
 interface ProductsTableProps {
-  data: ProductList[]
+  /** `undefined` while the first page loads. */
+  data: ProductList[] | undefined
   totalCount: number
   page: number
   pageSize: number
   loading: boolean
-  searchQuery: string
-  statusFilter: string
-  lowStockOnly: boolean
-  lowStockCount: number
+  error?: unknown
+  onRetry?: () => void
+  filtered: boolean
   locale: string
+  selected: ReadonlySet<number>
+  hiddenColumns: ReadonlySet<string>
+  onSelectionChange: (ids: Set<number>) => void
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
-  onSearchChange: (search: string) => void
-  onStatusFilterChange: (status: string) => void
-  onLowStockToggle: () => void
   onAddProduct: () => void
   onEditProduct: (productId: number) => void
-  onSelectionChange: (selectedIds: Set<number>) => void
-  t: (key: string) => string
+  onClearFilters: () => void
 }
 
+/**
+ * The products table: select, product (32px thumb + name), SKU, price
+ * (struck old price), stock (amber when low, red when sold out), status and
+ * the row menu. Row click opens the edit sheet. Sorting applies to the
+ * loaded page, as before. Footer: range, rows per page, paging.
+ */
 export function ProductsTable({
   data,
   totalCount,
   page,
   pageSize,
   loading,
-  searchQuery,
-  statusFilter,
-  lowStockOnly,
-  lowStockCount,
+  error,
+  onRetry,
+  filtered,
   locale,
+  selected,
+  hiddenColumns,
+  onSelectionChange,
   onPageChange,
   onPageSizeChange,
-  onSearchChange,
-  onStatusFilterChange,
-  onLowStockToggle,
   onAddProduct,
   onEditProduct,
-  onSelectionChange,
-  t,
+  onClearFilters,
 }: ProductsTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const t = useTranslations("products")
+  const tu = useTranslations("ecommerceUi")
+  const [sort, setSort] = useState<SortState | null>(null)
 
-  const columns = useMemo(
-    () => getProductColumns({ t, locale, onEdit: onEditProduct }),
-    [t, locale, onEditProduct]
+  const rows = useMemo(
+    () => (data ? sortRows(data, sort, productSortAccessors(locale)) : undefined),
+    [data, sort, locale]
   )
 
-  const table = useReactTable({
-    data,
-    columns,
-    pageCount: Math.max(1, Math.ceil(totalCount / pageSize)),
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      pagination: { pageIndex: page - 1, pageSize },
-    },
-    manualPagination: true,
-    enableRowSelection: true,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: (updater) => {
-      const newSelection =
-        typeof updater === "function" ? updater(rowSelection) : updater
-      setRowSelection(newSelection)
-      const selectedIds = new Set<number>()
-      Object.keys(newSelection).forEach((rowIndex) => {
-        if (newSelection[rowIndex]) {
-          const product = data[parseInt(rowIndex)]
-          if (product) selectedIds.add(product.id)
-        }
-      })
-      onSelectionChange(selectedIds)
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  })
+  const columns = useMemo(
+    () => [
+      selectionColumn<ProductList>({
+        rows: rows ?? [],
+        getId: (p) => p.id,
+        selected,
+        onChange: onSelectionChange,
+        selectAllLabel: tu("selectAll"),
+        selectRowLabel: (p) => tu("selectRow", { name: productName(p, locale, t("unnamed")) }),
+      }),
+      ...getProductColumns({ t, locale, sort, onSortChange: setSort, onEdit: onEditProduct, hidden: hiddenColumns }),
+    ],
+    [rows, selected, onSelectionChange, tu, t, locale, sort, onEditProduct, hiddenColumns]
+  )
 
-  const dataKey = data.map((d) => d.id).join(",")
-  useMemo(() => {
-    setRowSelection({})
-  }, [dataKey])
+  const empty = filtered ? (
+    <EcEmptyState
+      icon={SearchX}
+      title={tu("noMatches")}
+      description={tu("noMatchesHint")}
+      action={
+        <button type="button" className={rdButton.outlineSm} onClick={onClearFilters}>
+          {tu("clearFilters")}
+        </button>
+      }
+    />
+  ) : (
+    <EcEmptyState
+      icon={Package}
+      title={t("noProductsYet")}
+      description={t("noProductsDescription")}
+      action={
+        <button type="button" className={rdButton.primary} onClick={onAddProduct}>
+          <Plus className="h-3.5 w-3.5" aria-hidden />
+          {t("createFirstProduct")}
+        </button>
+      }
+    />
+  )
 
-  const selectedCount = Object.keys(rowSelection).filter(
-    (k) => rowSelection[k]
-  ).length
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader className="flex-row flex-wrap justify-between items-center gap-2 space-y-0">
-          <Skeleton className="h-6 w-32" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-60" />
-            <Skeleton className="h-9 w-32" />
-            <Skeleton className="h-9 w-24" />
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="space-y-0">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="border-b px-4 py-3">
-                <Skeleton className="h-5 w-full" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+  const showFooter = !error && (rows?.length ?? 0) > 0
 
   return (
-    <Card>
-      <CardHeader className="flex-row flex-wrap justify-between items-center gap-2 space-y-0">
-        <CardTitle>{t("tableTitle")}</CardTitle>
-        <ProductsTableToolbar
-          table={table}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          lowStockOnly={lowStockOnly}
-          lowStockCount={lowStockCount}
-          onSearchChange={onSearchChange}
-          onStatusFilterChange={onStatusFilterChange}
-          onLowStockToggle={onLowStockToggle}
-          onAddProduct={onAddProduct}
-          t={t}
-        />
-      </CardHeader>
-      <CardContent className="p-0">
-        {data.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">{t("noProductsYet")}</h3>
-            <p className="text-muted-foreground mt-2">
-              {t("noProductsDescription")}
-            </p>
-          </div>
-        ) : (
-          <ScrollArea
-            orientation="horizontal"
-            className="w-[calc(100vw-2.25rem)] md:w-auto"
-          >
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="cursor-pointer"
-                    onClick={() => onEditProduct(row.original.id)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
-      </CardContent>
-      {data.length > 0 && (
-        <CardFooter className="block py-3">
-          <DataTableServerPagination
+    <EcTable<ProductList>
+      variant="fill"
+      ariaLabel={t("tableTitle")}
+      columns={columns}
+      rows={rows}
+      rowKey={(p) => p.id}
+      loading={loading && !data}
+      error={error}
+      onRetry={onRetry}
+      onRowClick={(p) => onEditProduct(p.id)}
+      isRowSelected={(p) => selected.has(p.id)}
+      empty={empty}
+      skeletonRows={10}
+      testId="ec-products-table"
+      footer={
+        showFooter ? (
+          <EcPagination
             page={page}
             pageSize={pageSize}
             totalCount={totalCount}
-            selectedCount={selectedCount}
+            selectedCount={selected.size}
             onPageChange={onPageChange}
             onPageSizeChange={onPageSizeChange}
+            // The pinned footer sits under the app's floating call / team-chat
+            // buttons (bottom right): keep the page buttons clear of them.
+            className="pe-14"
           />
-        </CardFooter>
-      )}
-    </Card>
+        ) : undefined
+      }
+    />
   )
 }
