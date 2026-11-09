@@ -1,18 +1,9 @@
 "use client"
 
-import { Package } from "lucide-react"
+import { Package, Trophy } from "lucide-react"
 import { useLocale } from "next-intl"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { localizedName, type Translator } from "../_lib/labels"
+import { EcEmptyState, InfoCard, MoneyCell, formatCount, localizedText } from "../../_components/ui"
+import type { Translator } from "../_lib/labels"
 
 interface TopProduct {
   product__name: Record<string, string> | string
@@ -25,72 +16,59 @@ interface TopProductsCardProps {
   t: Translator
 }
 
-function formatCurrency(amount: number) {
-  return `₾${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
+const ROW = "grid grid-cols-[20px_minmax(0,1fr)_56px_96px] items-center gap-3 px-4"
 
+/**
+ * Best sellers: rank, name, units sold, revenue. A compact grid instead of the
+ * data table: the card is half width, where the table would switch to its
+ * two-line phone layout.
+ */
 export function TopProductsCard({ products, t }: TopProductsCardProps) {
   const locale = useLocale()
-  if (products.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("topProducts.title")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8">
-            <Package className="h-10 w-10 text-muted-foreground opacity-50" />
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("topProducts.empty")}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("topProducts.title")}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea
-          orientation="horizontal"
-          className="w-[calc(100vw-2.25rem)] md:w-auto"
-        >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8">#</TableHead>
-                <TableHead>{t("topProducts.product")}</TableHead>
-                <TableHead className="text-end">
-                  {t("topProducts.sold")}
-                </TableHead>
-                <TableHead className="text-end">
-                  {t("topProducts.revenue")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product, index) => (
-                <TableRow key={index}>
-                  <TableCell className="text-muted-foreground">
-                    {index + 1}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {localizedName(product.product__name, locale, t("topProducts.unknown"))}
-                  </TableCell>
-                  <TableCell className="text-end">{product.sold}</TableCell>
-                  <TableCell className="text-end font-medium">
-                    {formatCurrency(product.revenue)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+    <InfoCard title={t("topProducts.title")} icon={<Trophy />} flush testId="ec-dash-top-products">
+      {products.length === 0 ? (
+        <EcEmptyState icon={Package} title={t("topProducts.empty")} className="py-8" />
+      ) : (
+        <div role="table" aria-label={t("topProducts.title")}>
+          <div
+            role="row"
+            className={`${ROW} h-8 border-b text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground`}
+          >
+            <span role="columnheader">#</span>
+            <span role="columnheader" className="truncate">
+              {t("topProducts.product")}
+            </span>
+            <span role="columnheader" className="truncate text-end">
+              {t("topProducts.sold")}
+            </span>
+            <span role="columnheader" className="truncate text-end">
+              {t("topProducts.revenue")}
+            </span>
+          </div>
+          {products.map((p, index) => (
+            <div
+              key={index}
+              role="row"
+              className={`${ROW} h-10 border-b text-[13px] last:border-b-0`}
+              data-testid="ec-dash-top-product"
+            >
+              <span role="cell" className="text-xs text-muted-foreground tabular-nums">
+                {index + 1}
+              </span>
+              <span role="cell" className="truncate font-medium">
+                {localizedText(p.product__name, locale, t("topProducts.unknown"))}
+              </span>
+              <span role="cell" className="text-end tabular-nums">
+                {formatCount(p.sold)}
+              </span>
+              <span role="cell" className="text-end">
+                <MoneyCell value={p.revenue} className="font-medium" />
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </InfoCard>
   )
 }

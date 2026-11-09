@@ -1,8 +1,7 @@
 "use client"
 
-import { Users, UserPlus, UserCheck } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Users } from "lucide-react"
+import { InfoCard, formatCount } from "../../_components/ui"
 import type { Translator } from "../_lib/labels"
 
 interface CustomerInsightsCardProps {
@@ -14,51 +13,24 @@ interface CustomerInsightsCardProps {
   t: Translator
 }
 
+/** Three mini figures: all customers, new this month, returning. */
 export function CustomerInsightsCard({ insights, t }: CustomerInsightsCardProps) {
   const items = [
-    {
-      icon: Users,
-      label: t("customerInsights.total"),
-      value: insights.total,
-      color: "bg-blue-100 text-blue-700",
-    },
-    {
-      icon: UserPlus,
-      label: t("customerInsights.new"),
-      value: insights.new,
-      color: "bg-green-100 text-green-700",
-    },
-    {
-      icon: UserCheck,
-      label: t("customerInsights.returning"),
-      value: insights.returning,
-      color: "bg-purple-100 text-purple-700",
-    },
+    { key: "total", label: t("customerInsights.total"), value: insights.total },
+    { key: "new", label: t("customerInsights.new"), value: insights.new },
+    { key: "returning", label: t("customerInsights.returning"), value: insights.returning },
   ]
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("customerInsights.title")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {items.map((item) => (
-            <div key={item.label} className="flex items-center gap-3">
-              <Badge
-                variant="secondary"
-                className={`h-10 w-10 shrink-0 items-center justify-center rounded-lg p-0 ${item.color}`}
-              >
-                <item.icon className="h-5 w-5" />
-              </Badge>
-              <div>
-                <p className="text-2xl font-bold">{item.value.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">{item.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <InfoCard title={t("customerInsights.title")} icon={<Users />} testId="ec-dash-customers">
+      <dl className="grid grid-cols-3 gap-3 py-1">
+        {items.map((item) => (
+          <div key={item.key} className="flex min-w-0 flex-col gap-0.5">
+            <dt className="line-clamp-2 break-words text-xs leading-4 text-muted-foreground">{item.label}</dt>
+            <dd className="text-2xl font-semibold leading-7 tabular-nums tracking-[-.02em]">{formatCount(item.value)}</dd>
+          </div>
+        ))}
+      </dl>
+    </InfoCard>
   )
 }

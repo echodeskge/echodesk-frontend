@@ -3,7 +3,9 @@
 import { useTranslations } from "next-intl"
 import { useQuery } from "@tanstack/react-query"
 import axiosInstance from "@/api/axios"
-import { Loader2, ShoppingCart } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { isForbiddenError } from "@/components/redesign/states"
+import { EcErrorState, EcPage } from "../_components/ui"
 import { OverviewCards } from "./_components/overview-cards"
 import { SalesTrendChart } from "./_components/sales-trend-chart"
 import { CustomerInsightsCard } from "./_components/customer-insights-card"
@@ -53,82 +55,71 @@ interface AnalyticsData {
   }>
 }
 
+function CardSkeleton({ height }: { height: number }) {
+  return (
+    <div className="rounded-lg border bg-card">
+      <div className="flex h-11 items-center border-b px-4">
+        <Skeleton className="h-3 w-32" />
+      </div>
+      <div className="p-4">
+        <Skeleton className="w-full" style={{ height }} />
+      </div>
+    </div>
+  )
+}
+
 export default function EcommerceDashboardPage() {
   const t = useTranslations("ecommerceAnalytics")
-  const tOrders = useTranslations("ecommerceOrders")
 
   const {
     data: analytics,
     isLoading,
     isError,
+    error,
+    refetch,
   } = useQuery<AnalyticsData>({
     queryKey: ["ecommerce-analytics"],
-    queryFn: () =>
-      axiosInstance
-        .get("/api/ecommerce/admin/orders/analytics/")
-        .then((r) => r.data),
+    queryFn: () => axiosInstance.get("/api/ecommerce/admin/orders/analytics/").then((r) => r.data),
     staleTime: 60 * 1000,
   })
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    )
-  }
-
-  if (isError || !analytics) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24">
-        <ShoppingCart className="h-12 w-12 text-muted-foreground opacity-50" />
-        <p className="mt-4 text-muted-foreground">{t("errorLoading")}</p>
-      </div>
-    )
-  }
-
   return (
-    <section className="container grid gap-4 p-4 md:grid-cols-2">
-      {/* Overview KPI Cards */}
-      <div className="col-span-full">
-        <OverviewCards
-          revenue={analytics.revenue}
-          orders={analytics.orders}
-          avgOrderValue={analytics.avg_order_value}
-          t={t}
-        />
+    <EcPage width="full" testId="ec-dashboard">
+      <div className="flex w-full max-w-[1200px] min-w-0 flex-col gap-4">
+        {isLoading ? (
+          <>
+            <OverviewCards loading t={t} />
+            <div className="grid gap-4 lg:grid-cols-2" aria-busy>
+              <CardSkeleton height={64} />
+              <CardSkeleton height={64} />
+            </div>
+            <CardSkeleton height={240} />
+          </>
+        ) : isError || !analytics ? (
+          <div className="rounded-lg border bg-card">
+            <EcErrorState error={error} description={isForbiddenError(error) ? undefined : t("errorLoading")} onRetry={() => refetch()} />
+          </div>
+        ) : (
+          <>
+            <OverviewCards
+              revenue={analytics.revenue}
+              orders={analytics.orders}
+              avgOrderValue={analytics.avg_order_value}
+              t={t}
+            />
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+              <CustomerInsightsCard insights={analytics.customer_insights} t={t} />
+              <RevenueByMethodCard data={analytics.revenue_by_method} t={t} />
+            </div>
+            <SalesTrendChart data={analytics.sales_trend} t={t} />
+            <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start">
+              <OrderStatusChart statusBreakdown={analytics.order_status_breakdown} t={t} />
+              <TopProductsCard products={analytics.top_products} t={t} />
+            </div>
+            <RecentOrdersCard orders={analytics.recent_orders} t={t} />
+          </>
+        )}
       </div>
-
-      {/* Customer Insights + Revenue by Method */}
-      <CustomerInsightsCard
-        insights={analytics.customer_insights}
-        t={t}
-      />
-      <RevenueByMethodCard
-        data={analytics.revenue_by_method}
-        t={t}
-      />
-
-      {/* Sales Trend — full width */}
-      <div className="col-span-full">
-        <SalesTrendChart data={analytics.sales_trend} t={t} />
-      </div>
-
-      {/* Order Status + Top Products */}
-      <OrderStatusChart
-        statusBreakdown={analytics.order_status_breakdown}
-        t={t}
-      />
-      <TopProductsCard products={analytics.top_products} t={t} />
-
-      {/* Recent Orders — full width */}
-      <div className="col-span-full">
-        <RecentOrdersCard
-          orders={analytics.recent_orders}
-          t={t}
-          tOrders={tOrders}
-        />
-      </div>
-    </section>
+    </EcPage>
   )
 }

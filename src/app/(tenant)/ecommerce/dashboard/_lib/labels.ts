@@ -4,7 +4,7 @@ import { dateOnlyToLocalDate } from "@/app/(tenant)/tickets/_lib/format"
 
 /** The slice of a next-intl translator the dashboard cards use. */
 export interface Translator {
-  (key: string): string
+  (key: string, values?: Record<string, string | number>): string
   has: (key: string) => boolean
 }
 
