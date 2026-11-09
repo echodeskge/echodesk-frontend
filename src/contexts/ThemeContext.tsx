@@ -101,7 +101,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--secondary-foreground', '0 0% 98%');
 
     // Accent
-    root.style.setProperty('--accent', accentColor);
+    // The tenant accent is a light-mode colour (hover/highlight surfaces); in
+    // dark mode it made highlighted rows near-white under white text, so dark
+    // keeps the stock dark accent (as the sidebar background already does).
+    root.style.setProperty('--accent', isDark ? '240 3.7% 15.9%' : accentColor);
     root.style.setProperty('--accent-foreground', isDark ? '0 0% 98%' : '240 5.9% 10%');
 
     // Radius

@@ -292,6 +292,18 @@ describe("ThemeContext", () => {
       expect(result.current.appearance).toEqual(customAppearance);
     });
 
+    it("applies the tenant accent in light mode only; dark keeps the dark accent", () => {
+      const { result } = renderHook(() => useTheme(), { wrapper: createWrapper() });
+      act(() => {
+        result.current.setAppearance({ accent_color: "40 90% 90%", sidebar_order: [], updated_at: "2026-01-01T00:00:00Z" } as any);
+        result.current.setMode("light");
+      });
+      expect(document.documentElement.style.getPropertyValue("--accent")).toBe("40 90% 90%");
+      act(() => result.current.setMode("dark"));
+      expect(document.documentElement.style.getPropertyValue("--accent")).toBe("240 3.7% 15.9%");
+      expect(document.documentElement.style.getPropertyValue("--accent-foreground")).toBe("0 0% 98%");
+    });
+
     it("clears appearance when set to null", () => {
       const { result } = renderHook(() => useTheme(), {
         wrapper: createWrapper(),
