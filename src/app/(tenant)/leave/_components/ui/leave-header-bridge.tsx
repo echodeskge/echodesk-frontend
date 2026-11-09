@@ -93,7 +93,8 @@ export function LeaveHeaderBridge({ breadcrumb, sub, primary, secondary = [] }: 
         </span>
       ) : undefined,
       meta: sub ? (
-        <span className="truncate text-xs text-muted-foreground" data-testid="leave-header-sub">
+        // Hidden on phones: the page title needs the room (it was cut to "My Reque…").
+        <span className="hidden truncate text-xs text-muted-foreground sm:inline" data-testid="leave-header-sub">
           · {sub}
         </span>
       ) : undefined,
