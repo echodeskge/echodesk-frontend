@@ -208,6 +208,10 @@ describe("count, search, sort, clear", () => {
   it("shows the ICU count, and hides it while unknown", () => {
     const { unmount } = renderToolbar({ count: 1 });
     expect(screen.getByTestId("toolbar-count")).toHaveTextContent("1 ticket");
+    // Below xl the count and the sort label give their room to the filter chips.
+    expect(screen.getByTestId("toolbar-count").className).toContain("hidden");
+    expect(screen.getByTestId("toolbar-count").className).toContain("xl:inline");
+    expect(screen.getByTestId("toolbar-sort").querySelector("span")!.className).toBe("hidden xl:inline");
     unmount();
     renderToolbar({ count: null });
     expect(screen.queryByTestId("toolbar-count")).toBeNull();
@@ -231,10 +235,11 @@ describe("count, search, sort, clear", () => {
     }
   });
 
-  it("the search input is 220px on desktop and collapses behind an icon on mobile", async () => {
+  it("the search input is 220px on desktop (160px below xl) and collapses behind an icon on mobile", async () => {
     renderToolbar();
     const input = screen.getByTestId("toolbar-search-input");
-    expect(input.className).toContain("sm:w-[220px]");
+    expect(input.className).toContain("w-[160px]");
+    expect(input.className).toContain("xl:w-[220px]");
     expect(input.parentElement!.className).toContain("hidden sm:block");
     const open = screen.getByTestId("toolbar-search-open");
     expect(open.className).toContain("sm:hidden");

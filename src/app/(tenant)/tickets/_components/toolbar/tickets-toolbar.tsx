@@ -177,7 +177,7 @@ export function TicketsToolbar({ count, users, tags, listViewEnabled = flags.lis
 
       <div className="flex shrink-0 items-center gap-2">
         {count !== null && (
-          <span data-testid="toolbar-count" className="hidden whitespace-nowrap text-xs tabular-nums text-muted-foreground md:inline">
+          <span data-testid="toolbar-count" className="hidden whitespace-nowrap text-xs tabular-nums text-muted-foreground xl:inline">
             {t("toolbar.count", { count })}
           </span>
         )}
@@ -198,7 +198,7 @@ export function TicketsToolbar({ count, users, tags, listViewEnabled = flags.lis
           className="inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowUpDown aria-hidden="true" size={13} />
-          <span className="hidden sm:inline">{sortLabel}</span>
+          <span className="hidden xl:inline">{sortLabel}</span>
         </button>
         <button
           type="button"

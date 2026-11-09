@@ -100,7 +100,7 @@ export function ToolbarSearch({ value, onChange, placeholder, openLabel, clearLa
           onBlur={() => {
             if (!text) setExpanded(false);
           }}
-          className="h-7 w-[160px] rounded-md border border-input bg-background pl-[26px] pr-7 text-xs outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 sm:w-[220px] [&::-webkit-search-cancel-button]:hidden"
+          className="h-7 w-[160px] rounded-md border border-input bg-background pl-[26px] pr-7 text-xs outline-none transition-[border-color,box-shadow] placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 xl:w-[220px] [&::-webkit-search-cancel-button]:hidden"
         />
         {text && (
           <button
