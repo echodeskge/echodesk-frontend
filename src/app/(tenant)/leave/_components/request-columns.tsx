@@ -10,7 +10,7 @@ import {
   formatLeaveRange,
   parseDays,
   type LeaveColumn,
-} from "../../_components/ui"
+} from "./ui"
 
 /** The list fields every approvals table shows (LeaveRequestListSerializer and the covering list). */
 export interface RequestRowBase {

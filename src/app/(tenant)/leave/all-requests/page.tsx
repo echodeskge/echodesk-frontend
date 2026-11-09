@@ -20,7 +20,7 @@ import {
   ToolbarSearch,
   leaveButton,
 } from "../_components/ui"
-import { requestColumns } from "../team-requests/_components/request-columns"
+import { requestColumns } from "../_components/request-columns"
 
 // Shape of LeaveRequestListSerializer: flat ids/names, no nested objects and
 // no `reason` / employee e-mail (those are only on the detail endpoint).

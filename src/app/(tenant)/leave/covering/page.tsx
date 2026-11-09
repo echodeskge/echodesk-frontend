@@ -26,7 +26,7 @@ import {
   substituteStatusTone,
   type LeaveColumn,
 } from "../_components/ui"
-import { requestColumns } from "../team-requests/_components/request-columns"
+import { requestColumns } from "../_components/request-columns"
 
 type CoveringTab = "awaiting" | "all"
 

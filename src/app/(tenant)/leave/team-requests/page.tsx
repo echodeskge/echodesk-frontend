@@ -28,7 +28,7 @@ import {
   leaveButton,
 } from "../_components/ui"
 import { DecisionDialog } from "./_components/decision-dialog"
-import { requestColumns } from "./_components/request-columns"
+import { requestColumns } from "../_components/request-columns"
 
 // Shape of LeaveRequestListSerializer: flat ids/names. `reason` and the
 // employee e-mail only exist on the detail endpoint and are loaded when the
