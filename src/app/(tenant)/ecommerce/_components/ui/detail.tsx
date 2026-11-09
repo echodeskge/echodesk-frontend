@@ -79,7 +79,7 @@ export function InfoRows({ rows, className }: { rows: { key: string; label: Reac
         .map((r) => (
           <div key={r.key} className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1.5">
             <dt className="text-xs text-muted-foreground">{r.label}</dt>
-            <dd className="min-w-0 break-words text-end text-[13px]">{r.value}</dd>
+            <dd className="min-w-0 text-end text-[13px] [overflow-wrap:anywhere]">{r.value}</dd>
           </div>
         ))}
     </dl>
