@@ -107,13 +107,14 @@ describe("PropertiesRail layout", () => {
       "Board",
       "Customer",
       "Due date",
+      "Time",
       "Reporter",
       "Created",
     ]);
     expect(document.querySelector('[data-slot="rail-rows"]')!.className).toContain("px-3 py-2");
     // FE-13's TimeRow sits between Due date and Reporter.
-    const rows = document.querySelector('[data-slot="rail-rows"]')!;
-    const time = rows.querySelector('[data-slot="time-row"]')!;
+    const time = rowOf("Time");
+    expect(time.querySelector('[data-slot="time-row"]')).not.toBeNull();
     expect(time.previousElementSibling).toBe(rowOf("Due date"));
     expect(time.nextElementSibling).toBe(rowOf("Reporter"));
   });

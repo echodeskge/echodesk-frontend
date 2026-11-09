@@ -9,7 +9,8 @@ import { render } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { messages as base, newClient } from "../helpers";
-import pending from "@/i18n/pending/fe-12.json";
+// fe-12 keys are merged into en/ka (W3 FE-INT); kept as an empty overlay.
+const pending = { en: {}, ka: {} };
 
 type Json = Record<string, unknown>;
 

@@ -13,7 +13,8 @@ import { vi } from "vitest";
 import { render } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
-import fe10 from "@/i18n/pending/fe-10.json";
+// fe-10 keys are merged into en/ka (W3 FE-INT); kept as an empty overlay.
+const fe10 = { en: {}, ka: {} };
 import { messages as baseMessages, newClient } from "../helpers";
 
 type Json = Record<string, unknown>;

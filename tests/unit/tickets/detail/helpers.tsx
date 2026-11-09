@@ -18,7 +18,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import en from "@/i18n/messages/en.json";
 import ka from "@/i18n/messages/ka.json";
-import pending from "@/i18n/pending/fe-09.json";
+// fe-09 keys are merged into en/ka (W3 FE-INT); kept as an empty overlay.
+const pending = { en: {}, ka: {} };
 import { HeaderActionsProvider, useHeaderSlot } from "@/contexts/HeaderActionsContext";
 import type { TicketDetail } from "@/app/(tenant)/tickets/_lib/types";
 
@@ -314,3 +315,16 @@ export function makeTicket(over: Partial<TicketDetail> = {}): TicketDetail {
     ...over,
   };
 }
+
+/**
+ * Section stand-ins for the shell tests (W3 FE-INT). The real FE-10..FE-13
+ * sections now replace FE-09's stubs and fetch their own data; the shell
+ * tests only check placement, so they mock the sections back to markers.
+ */
+export const sectionMocks = {
+  main: { DetailMain: ({ ticket }: { ticket: { title: string } }) => <div data-slot="detail-main"><h2>{ticket.title}</h2></div> },
+  feed: { ActivityFeed: ({ ticketId }: { ticketId: number }) => <section data-slot="activity-feed" data-ticket-id={ticketId} /> },
+  composer: { Composer: ({ ticket }: { ticket: { id: number } }) => <div data-slot="composer" data-ticket-id={ticket.id} /> },
+  rail: { PropertiesRail: ({ ticket }: { ticket: { id: number } }) => <div data-slot="properties-rail" data-ticket-id={ticket.id} /> },
+  timer: { TimerButton: ({ ticketId }: { ticketId: number }) => <span data-slot="timer-button" data-ticket-id={ticketId} aria-hidden="true" /> },
+};

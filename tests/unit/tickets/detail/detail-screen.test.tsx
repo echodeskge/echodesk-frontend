@@ -11,6 +11,11 @@ vi.mock("@/api/axios", () => ({ default: { get: vi.fn(), post: vi.fn(), patch: v
 vi.mock("@/services/auth", () => ({ authService: { isAuthenticated: () => true } }));
 vi.mock("@/hooks/useUserProfile", () => ({ useUserProfile: () => ({ data: { id: 1, is_staff: true } }) }));
 vi.mock("@/app/(tenant)/tickets/_contexts/tickets-realtime-context", async () => (await import("./helpers")).realtimeMock);
+vi.mock("@/app/(tenant)/tickets/[id]/_components/main/detail-main", async () => (await import("./helpers")).sectionMocks.main);
+vi.mock("@/app/(tenant)/tickets/[id]/_components/activity/activity-feed", async () => (await import("./helpers")).sectionMocks.feed);
+vi.mock("@/app/(tenant)/tickets/[id]/_components/composer/composer", async () => (await import("./helpers")).sectionMocks.composer);
+vi.mock("@/app/(tenant)/tickets/[id]/_components/rail/properties-rail", async () => (await import("./helpers")).sectionMocks.rail);
+vi.mock("@/app/(tenant)/tickets/_components/timer/timer-button", async () => (await import("./helpers")).sectionMocks.timer);
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 vi.mock("@/components/ticket-detail/TicketDetailPage", () => ({
   TicketDetailPage: () => <div data-testid="legacy-detail" />,

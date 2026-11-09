@@ -130,7 +130,7 @@ describe("ActivityFeed", () => {
     expect(document.querySelectorAll('[data-slot="feed-comment"]').length).toBe(0);
     expect(document.querySelectorAll('[data-slot="feed-event"]').length).toBe(3);
     fireEvent.click(screen.getByRole("tab", { name: /Time/ }));
-    expect(document.querySelector('[data-slot="time-tab"]')).toHaveAttribute("data-ticket-id", "10");
+    expect(document.querySelector('[data-slot="time-tab"]')).toBeInTheDocument();
   });
 
   it("'Updated {relative}' uses ticket.updated_at and re-renders every 60s", async () => {

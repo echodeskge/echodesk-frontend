@@ -4,7 +4,8 @@
  * profile, and activity fixtures.
  */
 import { vi } from "vitest";
-import pending from "@/i18n/pending/fe-11.json";
+// fe-11 keys are merged into en/ka (W3 FE-INT); kept as an empty overlay.
+const pending = { en: {}, ka: {} };
 import type { ActivityComment, ActivityEvent } from "@/app/(tenant)/tickets/_lib/types";
 import { messages } from "./helpers";
 

@@ -12,7 +12,8 @@ import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import en from "@/i18n/messages/en.json";
 import ka from "@/i18n/messages/ka.json";
-import pending from "@/i18n/pending/fe-14.json";
+// fe-14 keys are merged into en/ka (W3 FE-INT); kept as an empty overlay.
+const pending = { en: {}, ka: {} };
 
 // ---------------------------------------------------------------------------
 // mocks

@@ -12,8 +12,10 @@ import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import en from "@/i18n/messages/en.json";
 import ka from "@/i18n/messages/ka.json";
-import fe09 from "@/i18n/pending/fe-09.json";
-import fe13 from "@/i18n/pending/fe-13.json";
+// fe-09 keys are merged into en/ka (W3 FE-INT); kept as an empty overlay.
+const fe09 = { en: {}, ka: {} };
+// fe-13 keys are merged into en/ka (W3 FE-INT); kept as an empty overlay.
+const fe13 = { en: {}, ka: {} };
 import type { TimeEntry, TimerState, TimeSummary } from "@/app/(tenant)/tickets/_lib/types";
 
 type Json = Record<string, unknown>;
