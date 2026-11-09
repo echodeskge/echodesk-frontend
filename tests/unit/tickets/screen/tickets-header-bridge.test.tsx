@@ -145,14 +145,14 @@ describe("board switcher", () => {
     renderBridge({ current: 2 });
     const trigger = await openSwitcher();
     expect(trigger).toHaveAttribute("data-state", "open");
-    expect(trigger.className).toContain("bg-accent");
+    expect(trigger.className).toContain("bg-muted");
     const menu = await screen.findByTestId("board-switcher-menu");
     expect(menu.className).toContain("w-[260px]");
     expect(menu.className).toContain("shadow-popover-lg");
     const rows = within(menu).getAllByRole("menuitem").filter((r) => r.hasAttribute("data-selected"));
     expect(rows.map((r) => r.textContent)).toEqual(["Support7", "Sales4Current board", "Internal12"]);
     expect(rows[1]).toHaveAttribute("aria-current", "true");
-    expect(rows[1].className).toContain("bg-accent");
+    expect(rows[1].className).toContain("bg-muted");
     expect(rows[0]).not.toHaveAttribute("aria-current");
     expect(rows.every((r) => r.querySelector('[data-slot="color-dot"]'))).toBe(true);
   });

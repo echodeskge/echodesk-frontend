@@ -14,6 +14,11 @@
  *   Board settings…, each only when its handler is given (permission gating
  *   happens in the bridge).
  * - Below `sm` the same content is a bottom Sheet (DC40).
+ *
+ * The design's `accent` fills use `muted` here: same colour in light mode, but
+ * ThemeContext keeps `--accent` light in dark mode (with a light foreground),
+ * which made accent rows unreadable there. `ROW_HIGHLIGHT` also overrides the
+ * shadcn item focus fill for the same reason.
  */
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Plus, Settings, SlidersHorizontal, Users, type LucideIcon } from "lucide-react";
@@ -28,6 +33,9 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { cn } from "@/lib/utils";
 import { ColorDot } from "../primitives/color-dot";
 import { BELOW_SM, useMediaQuery } from "./use-media-query";
+
+/** Focus/hover fill for menu rows (see the note above on `accent` in dark mode). */
+export const ROW_HIGHLIGHT = "focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground";
 
 export interface SwitcherBoard {
   id: number;
@@ -101,9 +109,9 @@ export function BoardSwitcher({
       data-state={open ? "open" : "closed"}
       onClick={asSheet ? () => setOpen(true) : undefined}
       className={cn(
-        "-ml-1 inline-flex h-7 min-w-0 max-w-[50vw] cursor-pointer items-center gap-1.5 rounded-md px-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-accent sm:max-w-[320px]",
+        "-ml-1 inline-flex h-7 min-w-0 max-w-[50vw] cursor-pointer items-center gap-1.5 rounded-md px-2 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted sm:max-w-[320px]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        open && "bg-accent",
+        open && "bg-muted",
       )}
     >
       <ColorDot color={current?.color} size={8} />
@@ -166,7 +174,7 @@ export function BoardSwitcher({
               onSelect={() => pick(b.id)}
               aria-current={selected ? "true" : undefined}
               data-selected={selected ? "true" : "false"}
-              className={cn("h-8 gap-2 px-2 text-[13px]", selected && "bg-accent font-medium")}
+              className={cn("h-8 gap-2 px-2 text-[13px]", ROW_HIGHLIGHT, selected && "bg-muted font-medium")}
             >
               <BoardRowContent board={b} />
               {selected && <span className="sr-only">{labels.current}</span>}
@@ -175,7 +183,7 @@ export function BoardSwitcher({
         })}
         {actions.length > 0 && <DropdownMenuSeparator />}
         {actions.map((a) => (
-          <DropdownMenuItem key={a.key} onSelect={() => run(a)} className="h-8 gap-2 px-2 text-[13px]" data-action={a.key}>
+          <DropdownMenuItem key={a.key} onSelect={() => run(a)} className={cn("h-8 gap-2 px-2 text-[13px]", ROW_HIGHLIGHT)} data-action={a.key}>
             <a.icon aria-hidden="true" size={14} className="text-muted-foreground" />
             <span className="truncate">{a.label}</span>
           </DropdownMenuItem>
@@ -216,8 +224,8 @@ function SheetRow({
       aria-current={selected ? "true" : undefined}
       data-selected={selected ? "true" : "false"}
       className={cn(
-        "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-sm transition-colors hover:bg-accent",
-        selected && "bg-accent font-medium",
+        "flex h-10 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-sm transition-colors hover:bg-muted",
+        selected && "bg-muted font-medium",
       )}
     >
       {children}

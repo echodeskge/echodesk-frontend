@@ -92,6 +92,9 @@ describe("Assignee chip", () => {
     expect(c.querySelector('[data-slot="filter-chip-value"]')).toHaveTextContent("Me +2");
     expect(c.querySelector('[data-slot="filter-chip-plus"]')).toBeNull();
     expect(c.className).toContain("border-solid");
+    // muted, not accent: ThemeContext keeps --accent light in dark mode.
+    expect(c.className.split(/\s+/)).toContain("bg-muted");
+    expect(c.className.split(/\s+/)).not.toContain("bg-accent");
   });
 
   it("an inactive chip is dashed with a trailing Plus", () => {

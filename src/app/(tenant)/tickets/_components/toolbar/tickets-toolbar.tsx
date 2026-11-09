@@ -23,7 +23,7 @@ import type { DueFilter, TagRef } from "../../_lib/types";
 import { PriorityIcon } from "../primitives/priority";
 import { VDivider } from "../primitives/section-label";
 import { ViewSegment } from "../primitives/view-segment";
-import { FilterMenu, type FilterOption } from "./filter-menu";
+import { FilterMenu, ITEM_HIGHLIGHT, type FilterOption } from "./filter-menu";
 import { ToolbarSearch } from "./toolbar-search";
 
 export const UNASSIGNED_OPTION = "__unassigned";
@@ -62,9 +62,9 @@ export function TicketsToolbar({ count, users, tags, listViewEnabled = flags.lis
 
   // Assignee: Me, the users, Unassigned (multi). "Unassigned" is its own URL flag.
   const assigneeOptions: FilterOption[] = [
-    { value: "me", label: t("filters.me"), avatarName: t("filters.me") },
+    { value: "me", label: t("filters.me"), icon: <OptionIcon /> },
     ...users.map((u) => ({ value: String(u.id), label: u.name, avatarName: u.name })),
-    { value: UNASSIGNED_OPTION, label: t("filters.unassigned") },
+    { value: UNASSIGNED_OPTION, label: t("filters.unassigned"), icon: <OptionIcon dashed /> },
   ];
   const assigneeSelected = [...filters.assignee, ...(filters.unassigned ? [UNASSIGNED_OPTION] : [])];
   const onAssignee = (next: string[]) =>
@@ -98,7 +98,7 @@ export function TicketsToolbar({ count, users, tags, listViewEnabled = flags.lis
         setTimeout(() => setDueOpen(true), 0);
       }}
       data-testid="more-filters"
-      className="h-[30px] cursor-pointer gap-2 px-2 text-[13px]"
+      className={cn("h-[30px] cursor-pointer gap-2 px-2 text-[13px]", ITEM_HIGHLIGHT)}
     >
       <ListFilter aria-hidden="true" size={14} className="text-muted-foreground" />
       <span>{t("filters.moreFilters")}</span>
@@ -195,7 +195,7 @@ export function TicketsToolbar({ count, users, tags, listViewEnabled = flags.lis
           title={t("toolbar.sortLabel", { sort: sortLabel })}
           data-testid="toolbar-sort"
           data-sort={sort}
-          className="inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="inline-flex h-7 shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowUpDown aria-hidden="true" size={13} />
           <span className="hidden sm:inline">{sortLabel}</span>
@@ -208,7 +208,7 @@ export function TicketsToolbar({ count, users, tags, listViewEnabled = flags.lis
           title={t("toolbar.clear")}
           data-testid="toolbar-clear"
           className={cn(
-            "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground",
           )}
         >
@@ -216,5 +216,20 @@ export function TicketsToolbar({ count, users, tags, listViewEnabled = flags.lis
         </button>
       </div>
     </div>
+  );
+}
+
+/** 18px round icon for the Me / Unassigned options, aligned with the user avatars. */
+function OptionIcon({ dashed = false }: { dashed?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex size-[18px] shrink-0 items-center justify-center rounded-full text-muted-foreground",
+        dashed ? "border border-dashed border-muted-foreground/50" : "bg-muted",
+      )}
+    >
+      <UserRound size={11} />
+    </span>
   );
 }

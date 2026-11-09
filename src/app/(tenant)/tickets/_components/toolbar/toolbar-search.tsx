@@ -71,7 +71,7 @@ export function ToolbarSearch({ value, onChange, placeholder, openLabel, clearLa
         title={openLabel}
         data-testid="toolbar-search-open"
         className={cn(
-          "inline-flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:hidden",
+          "inline-flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:hidden",
           open && "hidden",
         )}
       >
@@ -111,7 +111,7 @@ export function ToolbarSearch({ value, onChange, placeholder, openLabel, clearLa
             }}
             aria-label={clearLabel}
             title={clearLabel}
-            className="absolute right-1 top-1/2 inline-flex size-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="absolute right-1 top-1/2 inline-flex size-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             <X aria-hidden="true" size={12} />
           </button>

@@ -23,6 +23,9 @@ import { ColorDot } from "../primitives/color-dot";
 import { FilterChip } from "../primitives/filter-chip";
 import { initials } from "../primitives/initials";
 
+/** cmdk's active row: `muted` instead of `accent` (see the FilterChip note below). */
+export const ITEM_HIGHLIGHT = "data-[selected=true]:bg-muted data-[selected=true]:text-foreground";
+
 export interface FilterOption {
   value: string;
   label: string;
@@ -97,6 +100,8 @@ export function FilterMenu({
           data-filter={id}
           aria-haspopup="dialog"
           aria-expanded={open}
+          // `muted`, not the primitive's `accent`: ThemeContext keeps --accent light in dark mode.
+          className={cn("hover:bg-muted", active && "bg-muted")}
         />
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={4} className="w-[240px] p-0 shadow-popover-lg" data-filter-menu={id}>
@@ -115,7 +120,7 @@ export function FilterMenu({
                     aria-selected={isSelected}
                     data-option={o.value}
                     data-checked={isSelected ? "true" : "false"}
-                    className="h-[30px] cursor-pointer gap-2 px-2 text-[13px]"
+                    className={cn("h-[30px] cursor-pointer gap-2 px-2 text-[13px]", ITEM_HIGHLIGHT)}
                   >
                     <span
                       aria-hidden="true"
