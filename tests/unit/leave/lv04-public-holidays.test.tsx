@@ -91,4 +91,12 @@ describe("LV-04 public holidays page", () => {
     expect(await screen.findByTestId("leave-error")).toBeInTheDocument()
     expect(screen.queryByText("No holidays")).toBeNull()
   })
+
+  it("a 403 hides the create and Georgian-holiday buttons", async () => {
+    h.api.leaveAdminPublicHolidaysList.mockRejectedValueOnce(Object.assign(new Error("forbidden"), { response: { status: 403 } }))
+    renderLeave(<PublicHolidaysPage />)
+    expect(await screen.findByTestId("leave-error")).toHaveAttribute("data-forbidden", "true")
+    expect(screen.queryByTestId("holidays-new")).toBeNull()
+    expect(screen.queryByTestId("holidays-georgian")).toBeNull()
+  })
 })

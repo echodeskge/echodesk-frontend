@@ -462,6 +462,8 @@ export default function LeaveTypesPage() {
   ]
 
   const loaded = !loading && !loadError
+  // Non-admins get a 403 and the "no access" state: don't offer a create that can only fail.
+  const canCreate = !isForbidden(loadError)
   const newLabel = t("leaveTypes.newLeaveType")
 
   return (
@@ -469,7 +471,7 @@ export default function LeaveTypesPage() {
       <LeaveHeaderBridge
         sub={loaded ? t("lv04.typesCount", { count: leaveTypes.length }) : null}
         // The page header carries the button on wider screens.
-        primary={isMobile ? { label: newLabel, icon: Plus, onClick: openCreate, testId: "leave-types-new-header" } : null}
+        primary={isMobile && canCreate ? { label: newLabel, icon: Plus, onClick: openCreate, testId: "leave-types-new-header" } : null}
       />
       <LeavePage width="wide" testId="leave-types-page">
         <LeavePageHeader
@@ -477,15 +479,17 @@ export default function LeaveTypesPage() {
           title={t("leaveTypes.title")}
           description={t("leaveTypes.description")}
           action={
-            <button
-              type="button"
-              onClick={openCreate}
-              className={cn(leaveButton.primary, "hidden md:inline-flex")}
-              data-testid="leave-types-new"
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden />
-              {newLabel}
-            </button>
+            canCreate ? (
+              <button
+                type="button"
+                onClick={openCreate}
+                className={cn(leaveButton.primary, "hidden md:inline-flex")}
+                data-testid="leave-types-new"
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                {newLabel}
+              </button>
+            ) : null
           }
         />
 

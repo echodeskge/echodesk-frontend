@@ -335,6 +335,8 @@ export default function PublicHolidaysPage() {
   ]
 
   const loaded = !loading && !loadError
+  // Non-admins get a 403 and the "no access" state: don't offer actions that can only fail.
+  const canCreate = !isForbidden(loadError)
   const newLabel = t("publicHolidays.newHoliday")
   const georgianLabel = t("hr.holidays.loadGeorgian")
 
@@ -343,9 +345,9 @@ export default function PublicHolidaysPage() {
       <LeaveHeaderBridge
         sub={loaded ? t("lv04.holidaysCount", { count: holidays.length }) : null}
         // The page header carries both buttons on wider screens.
-        primary={isMobile ? { label: newLabel, icon: Plus, onClick: openCreate, testId: "holidays-new-header" } : null}
+        primary={isMobile && canCreate ? { label: newLabel, icon: Plus, onClick: openCreate, testId: "holidays-new-header" } : null}
         secondary={
-          isMobile
+          isMobile && canCreate
             ? [{ label: georgianLabel, icon: Flag, onClick: () => setGeorgianOpen(true), testId: "holidays-georgian-header" }]
             : []
         }
@@ -356,21 +358,23 @@ export default function PublicHolidaysPage() {
           title={t("publicHolidays.title")}
           description={t("publicHolidays.description")}
           action={
-            <div className="hidden items-center gap-2 md:flex">
-              <button
-                type="button"
-                onClick={() => setGeorgianOpen(true)}
-                className={leaveButton.outline}
-                data-testid="holidays-georgian"
-              >
-                <Flag className="h-3.5 w-3.5" aria-hidden />
-                {georgianLabel}
-              </button>
-              <button type="button" onClick={openCreate} className={leaveButton.primary} data-testid="holidays-new">
-                <Plus className="h-3.5 w-3.5" aria-hidden />
-                {newLabel}
-              </button>
-            </div>
+            canCreate ? (
+              <div className="hidden items-center gap-2 md:flex">
+                <button
+                  type="button"
+                  onClick={() => setGeorgianOpen(true)}
+                  className={leaveButton.outline}
+                  data-testid="holidays-georgian"
+                >
+                  <Flag className="h-3.5 w-3.5" aria-hidden />
+                  {georgianLabel}
+                </button>
+                <button type="button" onClick={openCreate} className={leaveButton.primary} data-testid="holidays-new">
+                  <Plus className="h-3.5 w-3.5" aria-hidden />
+                  {newLabel}
+                </button>
+              </div>
+            ) : null
           }
         />
 

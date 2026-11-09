@@ -95,6 +95,8 @@ describe("LV-04 leave types page", () => {
     expect(err).toHaveTextContent("ამ გვერდზე წვდომა არ გაქვთ")
     expect(within(err).queryByRole("button")).toBeNull()
     expect(h.toast.error).not.toHaveBeenCalled()
+    // No "New leave type" for a user who can't create one.
+    expect(screen.queryByTestId("leave-types-new")).toBeNull()
   })
 
   it("creates from the header button with an empty form", async () => {
