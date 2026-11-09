@@ -117,7 +117,12 @@ export const serverColumn = (k: KanbanPayload, columnId: number) =>
   (k.tickets_by_column[String(columnId)] ?? []).map((c) => c.id);
 
 /** A board with its own columns and tickets, for tests that change board structure. */
-export async function createScratchBoard(name: string, columns: string[], tickets: { title: string; priority?: string; column: number }[] = []) {
+export async function createScratchBoard(
+  name: string,
+  columns: string[],
+  tickets: { title: string; priority?: string; column: number }[] = [],
+  opts: { closedColumns?: number[] } = {},
+) {
   const board = await api<{ id: number; name: string }>("POST", "/api/boards/", { name, description: "e2e-local scratch", color: "#0ea5e9" });
   const cols: { id: number; name: string }[] = [];
   for (const [i, colName] of columns.entries()) {
@@ -128,7 +133,7 @@ export async function createScratchBoard(name: string, columns: string[], ticket
         position: i,
         color: "#64748b",
         is_default: i === 0,
-        is_closed_status: false,
+        is_closed_status: opts.closedColumns?.includes(i) ?? false,
         track_time: false,
       }),
     );
