@@ -117,7 +117,12 @@ export function MessageBubbleContent({
   // Add images if present
   if (message.images && message.images.length > 0) {
     contentParts.push(
-      <MessageBubbleContentImages key="images" images={message.images} />
+      <MessageBubbleContentImages
+        key="images"
+        images={message.images}
+        message={message}
+        platform={platform}
+      />
     )
   }
 

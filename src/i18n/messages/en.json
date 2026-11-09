@@ -1522,6 +1522,7 @@
     "humanAgentReplyHint": "Sent by a person after the 24-hour window, with Meta's Human Agent tag.",
     "automated": "Automated",
     "automatedHint": "Sent automatically by EchoDesk (auto-reply, AI assistant or rating request), not by a person.",
+    "imageUnavailable": "Image no longer available",
     "composeEmail": {
       "title": "Compose email",
       "from": "From",
