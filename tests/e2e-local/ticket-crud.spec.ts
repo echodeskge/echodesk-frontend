@@ -1,7 +1,7 @@
 /**
  * Ticket create, edit, delete (plan FE-16 §5.2), against the local B2 backend.
- * The create flows are FE-14's and run now; edit and delete belong to FE-09
- * and FE-10 (detail) and stay test.fixme until FE-INT turns them on in W3.
+ * The create flows are FE-14's. Editing lives in ticket-crud-edit.spec.ts
+ * (FE-10); delete from the detail ⋮ menu was turned on by FE-INT in W3.
  */
 import path from "node:path";
 import os from "node:os";
@@ -10,6 +10,7 @@ import { expect, test } from "@playwright/test";
 import { APP } from "./fixtures/env";
 import { resetFixtures } from "./fixtures/session";
 import { api, card, column, fx, kanban, openBoardIn, serverColumn } from "./fixtures/board";
+import { openDetail } from "./fixtures/detail";
 import { anySocialClient, createSheet, getTicket, liveBoard, pick, submitAndGetId, waitSheetReady } from "./fixtures/create";
 
 function tmpFile(name: string, body: string): string {
@@ -160,8 +161,31 @@ test.describe("Ticket create, edit, delete", () => {
     expect(text).not.toMatch(/\btickets\.[a-zA-Z]|\bcreate\.[a-zA-Z]/);
   });
 
-  test.fixme("edit the title and rich description; bold survives a reload", async () => {});
-  test.fixme("a 300-character title wraps", async () => {});
-  test.fixme("admin deletes a ticket", async () => {});
-  test.fixme("agent: delete is hidden", async () => {});
+  // "edit the title and rich description" and "a long title wraps" are in ticket-crud-edit.spec.ts.
+
+  test("admin deletes a ticket", async ({ context }) => {
+    const { support } = fx().boards;
+    const created = await api<{ id: number }>("POST", "/api/tickets/", {
+      title: `E2E delete me ${Date.now()}`,
+      description: "",
+      priority: "low",
+      column_id: support.columns.new,
+    });
+    const page = await openDetail(context, "admin", created.id, "en");
+    await page.getByTestId("detail-more").click();
+    await page.getByTestId("detail-menu-delete").click();
+    const dialog = page.getByTestId("delete-ticket-dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: /delete/i }).click();
+    await expect(page).toHaveURL(new RegExp(`/tickets\\?board=${support.id}`), { timeout: 15_000 });
+    await expect.poll(() => api("GET", `/api/tickets/${created.id}/`).then(() => "exists", () => "gone")).toBe("gone");
+    await expect(card(page, created.id)).toHaveCount(0);
+  });
+
+  test("agent: delete is hidden", async ({ context }) => {
+    const page = await openDetail(context, "agent", fx().tickets["E2E-001"].id, "en");
+    await page.getByTestId("detail-more").click();
+    await expect(page.getByTestId("detail-menu-history")).toBeVisible();
+    await expect(page.getByTestId("detail-menu-delete")).toHaveCount(0);
+  });
 });

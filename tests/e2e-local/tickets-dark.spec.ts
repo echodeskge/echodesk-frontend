@@ -5,16 +5,21 @@
  */
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { resetFixtures } from "./fixtures/session";
-import { card, fx, openBoardIn } from "./fixtures/board";
+import { api, card, fx, openBoardIn } from "./fixtures/board";
+import { openDetail, railTrigger } from "./fixtures/detail";
 
 /** Effective background (alpha-composited up the tree) and text colour of an element. */
 function colours(locator: Locator) {
   return locator.evaluate((el) => {
+    // Any CSS colour (rgb, oklch, color-mix…) → RGBA through a 1×1 canvas.
+    const ctx = Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d")!;
     const parse = (c: string) => {
-      const m = c.match(/rgba?\(([^)]+)\)/);
-      if (!m) return [0, 0, 0, 0];
-      const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
-      return [p[0], p[1], p[2], p[3] ?? 1];
+      if (!c || c === "transparent" || c === "rgba(0, 0, 0, 0)") return [0, 0, 0, 0];
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = c;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r, g, b, a / 255];
     };
     const layers: number[][] = [];
     for (let n: Element | null = el; n; n = n.parentElement) layers.push(parse(getComputedStyle(n).backgroundColor));
@@ -92,9 +97,44 @@ test.describe("Dark mode", () => {
     await expectDarkSurface(page, columnMenu, "column menu");
     await page.keyboard.press("Escape");
 
-    // The rail is part of the new detail page (W3).
+    // The rail: see "detail rail and pickers" (W3).
+  });
+
+  test("detail rail and pickers (W3)", async ({ context }) => {
+    const page = await openDetail(context, "admin", fx().tickets["E2E-001"].id, "en", "dark");
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expectDarkSurface(page, page.locator('[data-slot="properties-rail"]'), "rail");
+    await expectDarkSurface(page, page.locator('[data-slot="rail-rows"] [data-slot="property-row"] > span').first(), "rail label");
+    await expectDarkSurface(page, page.locator('[data-slot="detail-main"]'), "main column");
+    await expectDarkSurface(page, page.locator('[data-slot="status-track"]'), "status track");
+    await expectDarkSurface(page, page.locator('[data-slot="detail-composer"]'), "composer");
+    // A picker with its selected option.
+    await railTrigger(page, "Priority").click();
+    const pop = page.locator('[data-slot="property-picker-content"]');
+    await expectDarkSurface(page, pop, "picker");
+    // cmdk highlights the first option (data-selected); FE-12 noted it turned white in dark mode.
+    const highlighted = pop.locator('[data-slot="property-picker-option"][data-selected="true"]').first();
+    await expect(highlighted).toBeVisible();
+    const { bg } = await colours(highlighted);
+    expect(luminance(bg), `highlighted picker option bg ${bg}`).toBeLessThan(0.2);
+    await page.keyboard.press("Escape");
+    // The ⋮ menu.
+    await page.getByTestId("detail-more").click();
+    await expectDarkSurface(page, page.getByTestId("detail-menu"), "detail menu");
+    await page.keyboard.press("Escape");
   });
 
   // W3: the composer and activity feed (FE-11).
-  test.fixme("Internal badge text contrast is at least 4.5", async () => {});
+  test("Internal badge text contrast is at least 4.5", async ({ context }) => {
+    const id = fx().tickets["E2E-001"].id;
+    await api("POST", "/api/comments/", { ticket: id, comment: `E2E dark internal ${Date.now()}`, is_internal: true });
+    const page = await openDetail(context, "admin", id, "en", "dark");
+    const badge = page.locator('[data-slot="internal-badge"]').first();
+    await expect(badge).toBeVisible();
+    const { bg, fg } = await colours(badge);
+    expect(contrast(bg, fg), `Internal badge: fg ${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    // The internal bubble is a dark amber tint, not a light surface.
+    const bubble = page.locator('[data-slot="feed-comment"][data-internal="true"]').first();
+    await expect(bubble).toBeVisible();
+  });
 });

@@ -1,11 +1,13 @@
 /**
  * Mobile 390 (plan FE-16 §5.2), mobile-390 project, against the local B2
- * backend. The board part is turned on by FE-INT in W1; the detail part waits
- * for the new detail page (W3).
+ * backend. The board part is turned on by FE-INT in W1; the detail part by
+ * FE-INT in W3.
  */
 import { expect, test } from "@playwright/test";
 import { resetFixtures } from "./fixtures/session";
+import { openDetail } from "./fixtures/detail";
 import {
+  api,
   card,
   column,
   createScratchBoard,
@@ -184,9 +186,77 @@ test.describe("Mobile 390", () => {
   });
 
   // W3: the new detail page.
-  test.fixme("the detail header row has scrollWidth <= clientWidth (DC20)", async () => {});
-  test.fixme("the status track scrolls with the current step visible", async () => {});
-  test.fixme("the rail is stacked under the main column", async () => {});
-  test.fixme("the composer stays visible after focusing (viewport resize)", async () => {});
-  test.fixme("the J/K buttons are tappable", async () => {});
+  test.describe("detail", () => {
+    test("the detail header row has scrollWidth <= clientWidth (DC20)", async ({ context }) => {
+      const id = fx().tickets["E2E-001"].id;
+      const page = await openDetail(context, "admin", id, "ka");
+      const row = page.locator("header").filter({ has: page.getByTestId("detail-id") }).first();
+      await expect(page.getByTestId("detail-id")).toHaveText(`#${id}`);
+      const fit = await row.evaluate((el) => {
+        const over: string[] = [];
+        for (const n of [el, ...el.querySelectorAll<HTMLElement>("*")]) {
+          if (n.scrollWidth > n.clientWidth + 1 && getComputedStyle(n).overflowX !== "auto") over.push(n.className.toString().slice(0, 60));
+        }
+        return { sw: el.scrollWidth, cw: el.clientWidth, over };
+      });
+      expect(fit.sw, "header row").toBeLessThanOrEqual(fit.cw);
+      // The ticket number is not clipped.
+      const idBox = await page.getByTestId("detail-id").evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
+      expect(idBox.sw).toBeLessThanOrEqual(idBox.cw);
+      expect(await insideViewport(page, page.getByTestId("detail-more"))).toBe(true);
+      expect(await pageOverflowX(page)).toBeLessThanOrEqual(0);
+    });
+
+    test("the status track scrolls with the current step visible", async ({ context }) => {
+      const id = fx().tickets["E2E-007"].id; // Support → Waiting (3rd of 4 steps)
+      const page = await openDetail(context, "admin", id, "en");
+      const track = page.locator('[data-slot="status-track"]');
+      const { sw, cw } = await track.evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
+      expect(sw).toBeGreaterThan(cw);
+      const current = track.locator('[data-slot="status-step"][aria-current="step"]');
+      await expect(current).toContainText("Waiting");
+      await expect.poll(() => insideViewport(page, current)).toBe(true);
+      expect(await pageOverflowX(page)).toBeLessThanOrEqual(0);
+    });
+
+    test("the rail is stacked under the main column", async ({ context }) => {
+      const page = await openDetail(context, "admin", fx().tickets["E2E-001"].id, "en");
+      const main = (await page.locator('[data-slot="detail-main"]').boundingBox())!;
+      const rail = (await page.locator('[data-slot="detail-rail"]').boundingBox())!;
+      expect(rail.y).toBeGreaterThanOrEqual(main.y + main.height - 1);
+      expect(rail.width).toBeGreaterThan(340);
+      expect(rail.x + rail.width).toBeLessThanOrEqual(391);
+    });
+
+    test("the composer stays visible after focusing (viewport resize)", async ({ context }) => {
+      const page = await openDetail(context, "admin", fx().tickets["E2E-001"].id, "en");
+      const composer = page.locator('[data-slot="detail-composer"]');
+      await composer.locator("textarea").first().tap();
+      await expect(composer.locator("textarea").first()).toBeFocused();
+      // The software keyboard takes ~40% of the screen.
+      await page.setViewportSize({ width: 390, height: 500 });
+      await expect.poll(() => insideViewport(page, composer.locator("textarea").first())).toBe(true);
+      await expect.poll(() => insideViewport(page, page.locator('[data-slot="composer-post"]'))).toBe(true);
+      expect(await pageOverflowX(page)).toBeLessThanOrEqual(0);
+    });
+
+    test("the J/K buttons are tappable", async ({ context }) => {
+      // Phones: prev / next sit in the ⋮ menu (no room in the header row).
+      const { support } = fx().boards;
+      const id = fx().tickets["E2E-001"].id;
+      const nav = await api<{ prev_id: number | null; next_id: number | null }>("GET", `/api/tickets/${id}/navigation/?board=${support.id}`);
+      const page = await openDetail(context, "admin", id, "en");
+      await page.goto(`/tickets/${id}?board=${support.id}`);
+      await expect(page.getByTestId("ticket-detail")).toHaveAttribute("data-state", "ready", { timeout: 45_000 });
+      const [item, target] = nav.next_id ? ["detail-menu-next", nav.next_id] : ["detail-menu-prev", nav.prev_id];
+      await page.getByTestId("detail-more").tap();
+      const entry = page.getByTestId(item);
+      await expect(entry).toBeVisible();
+      expect(await insideViewport(page, page.getByTestId("detail-menu"))).toBe(true);
+      // 30px rows once the menu's zoom-in animation settles.
+      await expect.poll(async () => Math.round((await entry.boundingBox())!.height)).toBeGreaterThanOrEqual(30);
+      await entry.tap();
+      await expect(page).toHaveURL(new RegExp(`/tickets/${target}\\?board=${support.id}`));
+    });
+  });
 });

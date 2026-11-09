@@ -5,6 +5,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { resetFixtures } from "./fixtures/session";
 import { api, boardsLite, fx, kanban, openBoardIn } from "./fixtures/board";
+import { openDetail, railTrigger } from "./fixtures/detail";
 
 /** User-entered strings may be Latin: board, column, ticket, tag and user names. */
 async function allowlist(boardId: number): Promise<string[]> {
@@ -100,7 +101,47 @@ test.describe("Georgian", () => {
     expect(listDates.length).toBeGreaterThan(0);
     for (const d of listDates) expect(d).toMatch(/^\d{1,2} [ა-ჿ]{3}/);
 
-    // The new detail page (W3) is added to this check in its wave.
+    // The new detail page (W3): header, status track, main column, feed, composer and rail, plus menus.
+    const t = fx().tickets["E2E-001"];
+    const detail = await api<{
+      title: string;
+      description: string;
+      reporter?: { name?: string; email?: string } | null;
+      customer?: { name: string } | null;
+      checklist_items: { text: string }[];
+      attachments: { filename?: string; original_filename?: string }[];
+      assignments: { user: { first_name?: string; last_name?: string; email: string } }[];
+      tags: { name: string }[];
+    }>("GET", `/api/tickets/${t.id}/`, undefined, "agent");
+    const detailWords = [
+      detail.title,
+      detail.description,
+      detail.reporter?.name ?? "",
+      detail.customer?.name ?? "",
+      ...detail.checklist_items.map((i) => i.text),
+      ...detail.attachments.map((a) => a.original_filename ?? a.filename ?? ""),
+      ...detail.assignments.map((a) => `${a.user.first_name ?? ""} ${a.user.last_name ?? ""}`.trim()),
+      ...detail.tags.map((x) => x.name),
+    ].filter(Boolean);
+    // Every user's name, short name ("Mariam L.") and initials: the detail shows assignees, reporters and the composer avatar.
+    const users = (await api<{ results: { first_name?: string; last_name?: string }[] }>("GET", "/api/users/?page_size=200")).results;
+    for (const u of users) {
+      const [f, l] = [(u.first_name ?? "").trim(), (u.last_name ?? "").trim()];
+      if (f && l) detailWords.push(`${f} ${l}`, `${f} ${l[0]}.`, `${f[0]}${l[0]}`.toUpperCase());
+      detailWords.push(f, l);
+    }
+    const detailAllowed = [...detailWords.filter(Boolean), ...allowed].sort((a, b) => b.length - a.length);
+    const dpage = await openDetail(context, "agent", t.id, "ka");
+    await expect(dpage.locator('[data-slot="activity-feed"]')).toBeVisible();
+    expect(await latinWords(dpage, ['[data-testid="ticket-detail"]', "header"], detailAllowed), "detail").toEqual([]);
+    await dpage.getByTestId("detail-more").click();
+    expect(await latinWords(dpage, ['[data-testid="detail-menu"]'], detailAllowed), "detail menu").toEqual([]);
+    await dpage.keyboard.press("Escape");
+    await railTrigger(dpage, "პრიორიტეტი").click();
+    expect(await latinWords(dpage, ['[data-slot="property-picker-content"]'], detailAllowed), "priority picker").toEqual([]);
+    await dpage.keyboard.press("Escape");
+    // Created date in the rail uses Georgian months.
+    await expect(dpage.locator('[data-slot="rail-rows"]')).toContainText(/\d{1,2} [ა-ჿ]{3}/);
   });
 
   test("card dates use Georgian months", async ({ context }) => {
