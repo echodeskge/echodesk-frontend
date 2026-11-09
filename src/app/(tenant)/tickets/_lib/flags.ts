@@ -13,5 +13,5 @@ export interface TicketsFlags {
 
 export const flags: TicketsFlags = {
   listViewEnabled: true,
-  detailRedesignEnabled: false,
+  detailRedesignEnabled: true,
 };
