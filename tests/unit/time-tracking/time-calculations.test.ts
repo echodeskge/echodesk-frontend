@@ -1,5 +1,6 @@
 /**
- * Tests for time tracking calculation functions from TimeTracking.tsx.
+ * Tests for the duration formatter used by the tickets time panels
+ * (`tickets/_lib/format.ts`; re-pointed from the old TimeTracking component, F17).
  *
  * Covers:
  * - formatDuration: seconds -> human-readable string ("2h 30m", "45m", "30s")
@@ -7,7 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { formatDuration } from "@/components/TimeTracking";
+import { formatDuration } from "@/app/(tenant)/tickets/_lib/format";
 
 // ---------------------------------------------------------------------------
 // Tests: formatDuration
