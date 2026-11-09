@@ -65,6 +65,26 @@ const withReference = !process.argv.includes("--no-reference");
 /** App screens: url + an optional "ready" selector + design reference. */
 const SCREENS = {
   board: { url: `/tickets?board=${boardId}`, ref: { a: "1a Board view" } },
+  // W1: the board with the switcher open (menu on desktop, Sheet below sm) and
+  // with the Assignee filter popover open.
+  switcher: {
+    url: `/tickets?board=${boardId}`,
+    ref: { a: "1a Board view" },
+    act: async (page) => {
+      await page.locator('[data-testid="board-switcher"]').click();
+      await page.waitForSelector('[data-testid="board-switcher-menu"], [data-testid="board-switcher-sheet"]');
+      await page.waitForTimeout(400);
+    },
+  },
+  filters: {
+    url: `/tickets?board=${boardId}&priority=high`,
+    ref: { a: "1a Board view" },
+    act: async (page) => {
+      await page.locator('button[data-filter="assignee"]').click();
+      await page.waitForSelector('[data-filter-menu="assignee"]');
+      await page.waitForTimeout(300);
+    },
+  },
   list: { url: `/tickets?board=${boardId}&view=list`, ref: { a: "1b List view" } },
   detail: { url: `/tickets/${ticketId}`, ref: { file: "B-detail.rendered.html" } },
 };
@@ -103,6 +123,22 @@ async function newAppContext(browser, who, locale, theme, width) {
   const user = await apiGet(who, "/api/auth/profile/");
   await ctx.addCookies([{ name: "NEXT_LOCALE", value: locale, url: APP }]);
   await ctx.route("**/*", (r) => (ALLOWED.test(r.request().url()) ? r.continue() : r.abort()));
+  // The local tenant reports api_url without the port; point the app's sockets at the local API.
+  await ctx.route("**/api/tenant/config/**", async (route) => {
+    const res = await route.fetch();
+    let body = await res.text();
+    try {
+      const json = JSON.parse(body);
+      const fix = (o) => {
+        if (o && typeof o === "object") for (const k of Object.keys(o)) k === "api_url" ? (o[k] = `http://${API_HOST}`) : fix(o[k]);
+      };
+      fix(json);
+      body = JSON.stringify(json);
+    } catch {
+      // not JSON
+    }
+    await route.fulfill({ response: res, body });
+  });
   await ctx.addInitScript(
     ([token, profile, tenant, mode]) => {
       localStorage.setItem("dev_tenant", tenant);
@@ -185,6 +221,7 @@ try {
               .goto(APP + SCREENS[screen].url, { waitUntil: "networkidle", timeout: 120_000 })
               .catch(() => index.errors.push(`${name}: networkidle timeout`));
             await page.waitForTimeout(1500);
+            if (SCREENS[screen].act) await SCREENS[screen].act(page).catch((e) => index.errors.push(`${name}: act failed (${e.message.slice(0, 120)})`));
             const appShot = path.join(OUT, "app", `${name}.png`);
             await page.screenshot({ path: appShot });
             await ctx.close();
