@@ -39,6 +39,21 @@ test.describe("Mobile 390", () => {
     await expect(page.getByTestId("board-viewers")).toBeHidden();
   });
 
+  test("list view: no horizontal scroll, header hidden, two-line rows (DC18)", async ({ context }) => {
+    const page = await openBoardIn(context, "admin", fx().boards.support.id);
+    await page.goto(`/tickets?board=${fx().boards.support.id}&view=list`);
+    await expect(page.getByTestId("ticket-list")).toBeVisible({ timeout: 45_000 });
+    const row = page.getByTestId("list-row").first();
+    await expect(row).toBeVisible();
+    expect(await pageOverflowX(page)).toBeLessThanOrEqual(0);
+    const list = page.getByTestId("ticket-list");
+    expect(await list.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await expect(page.getByTestId("list-header")).toBeHidden();
+    // Two lines: taller than the 40px desktop row, and the title still visible.
+    expect((await row.boundingBox())!.height).toBeGreaterThan(40);
+    await expect(row.getByTestId("list-row-title")).toBeVisible();
+  });
+
   test("board columns snap-scroll", async ({ context }) => {
     const page = await openBoardIn(context, "admin", fx().boards.support.id);
     const board = page.getByTestId("kanban-board");

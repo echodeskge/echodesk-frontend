@@ -88,7 +88,19 @@ test.describe("Georgian", () => {
     expect(await latinWords(page, ['[data-testid="card-menu-open"]'], allowed)).toEqual([]);
     await page.keyboard.press("Escape");
 
-    // The list (W2) and the new detail page (W3) are added to this check in their waves.
+    // The list (W2): header, group rows and rows, plus the sidebar views.
+    await page.goto(`/tickets?board=${support.id}&view=list`);
+    await expect(page.getByTestId("ticket-list")).toBeVisible({ timeout: 45_000 });
+    await expect(page.getByTestId("list-row").first()).toBeVisible();
+    expect(
+      await latinWords(page, ['[data-testid="tickets-screen"]', '[data-testid="sidebar-boards"]', '[data-testid="sidebar-views"]', "header"], allowed),
+      "list view",
+    ).toEqual([]);
+    const listDates = await page.getByTestId("list-row-date").allInnerTexts();
+    expect(listDates.length).toBeGreaterThan(0);
+    for (const d of listDates) expect(d).toMatch(/^\d{1,2} [ა-ჿ]{3}/);
+
+    // The new detail page (W3) is added to this check in its wave.
   });
 
   test("card dates use Georgian months", async ({ context }) => {
