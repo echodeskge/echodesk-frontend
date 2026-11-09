@@ -6,7 +6,8 @@
  * made the change can recognise its own echo and skip re-applying it.
  *
  * Created in W0 (FE-01b) because the api module attaches the header; FE-02
- * owns it from W1 and wires `isOwnMutation` into the realtime context.
+ * owns it from W1. Writers call `issueMutationId()` and pass the id to the
+ * `api.ts` function; realtime consumers call `isOwnEvent(frame)`.
  */
 
 const TTL_MS = 30_000;
@@ -41,6 +42,21 @@ export function isOwnMutation(id: string | null | undefined, now: number = Date.
   if (!id) return false;
   prune(now);
   return remembered.has(id);
+}
+
+/**
+ * A fresh id that is already remembered: the one call a write needs before
+ * passing the id to an `api.ts` function (which sends it as the header).
+ */
+export function issueMutationId(now: number = Date.now()): string {
+  const id = newMutationId();
+  rememberMutation(id, now);
+  return id;
+}
+
+/** True when a board event is the echo of a write this tab made (E11). */
+export function isOwnEvent(event: { client_mutation_id?: string | null } | null | undefined, now?: number): boolean {
+  return isOwnMutation(event?.client_mutation_id, now);
 }
 
 export function mutationHeaders(id?: string | null): Record<string, string> {
