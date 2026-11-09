@@ -205,9 +205,8 @@ export function PropertyPicker<T>(props: PropertyPickerProps<T>) {
           {showSearch && (
             <CommandInput placeholder={searchPlaceholder} className="h-8 py-1 text-[13px]" />
           )}
-          <CommandList className="max-h-[280px]">
+          <CommandList className="max-h-[280px] [&_[cmdk-list-sizer]]:flex [&_[cmdk-list-sizer]]:flex-col [&_[cmdk-list-sizer]]:gap-0.5">
             {showSearch && <CommandEmpty className="py-3 text-center text-xs text-muted-foreground">{emptyText}</CommandEmpty>}
-            <div role="presentation" className="flex flex-col gap-0.5">
               {options.map((o, i) => {
                 const active = isSelected(o.value);
                 return (
@@ -241,7 +240,6 @@ export function PropertyPicker<T>(props: PropertyPickerProps<T>) {
                   </CommandItem>
                 );
               })}
-            </div>
           </CommandList>
           {footer && (
             <>

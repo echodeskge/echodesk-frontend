@@ -33,11 +33,11 @@ export function PropertyRow({ label, children, fixed = false, className }: Prope
         data-slot="property-row"
         className={cn(
           "relative grid grid-cols-[92px_minmax(0,1fr)] items-start gap-2 border-b last:border-b-0",
-          fixed ? "py-[9px] text-xs" : "min-h-[38px] py-[7px]",
+          fixed ? "py-[9px] text-xs leading-5" : "min-h-[38px] py-[7px]",
           className,
         )}
       >
-        <span id={labelId} className={cn("text-xs text-muted-foreground", !fixed && "pt-1")}>
+        <span id={labelId} className={cn("text-xs leading-5 text-muted-foreground", !fixed && "pt-1")}>
           {label}
         </span>
         <div className="min-w-0">{children}</div>

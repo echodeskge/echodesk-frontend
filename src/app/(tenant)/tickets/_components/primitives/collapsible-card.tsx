@@ -74,9 +74,9 @@ export function CollapsibleCard({
           >
             <ChevronRight aria-hidden="true" size={14} />
           </span>
-          <span className="text-[13px] font-semibold">{title}</span>
+          <span className="text-[13px] font-semibold leading-5">{title}</span>
           {summary != null && (
-            <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+            <span className="flex min-w-0 flex-1 items-center gap-1.5 text-xs leading-5 text-muted-foreground tabular-nums">
               {summary}
             </span>
           )}
