@@ -52,7 +52,7 @@ import { SignatureCanvas } from "@/components/SignatureCanvas";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { FileDropzone, type UploadedFile } from "@/components/FileDropzone";
 import { cn } from "@/lib/utils";
-import { ColorDot, PropertyPicker, PropertyPill, PropertyRow, type PickerOption } from "@/app/(tenant)/tickets/_components/primitives";
+import { ColorDot, PriorityPill, PropertyPicker, PropertyPill, PropertyRow, type PickerOption } from "@/app/(tenant)/tickets/_components/primitives";
 import { getAllPages, errorStatus, uploadAttachment } from "@/app/(tenant)/tickets/_lib/api";
 import { issueMutationId, mutationHeaders } from "@/app/(tenant)/tickets/_lib/mutation-id";
 import { getPriorityStyle, PRIORITY_OPTIONS, type TicketPriority } from "@/app/(tenant)/tickets/_lib/priority";
@@ -173,6 +173,12 @@ function clientName(c: Pick<SocialClientList, "name" | "full_name" | "email" | "
 // ---------------------------------------------------------------------------
 // sheet
 // ---------------------------------------------------------------------------
+
+/**
+ * The rail's PropertyRow with a wider label column: the sheet has room, and
+ * Georgian labels ("შემსრულებლები") don't fit the rail's 92px.
+ */
+const ROW = "grid-cols-[112px_minmax(0,1fr)]";
 
 export function TicketCreateSheet() {
   const { isOpen, selectedBoard, selectedColumn, options, closeTicketCreate } = useTicketCreate();
@@ -347,8 +353,16 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
   const canSubmit = !saving && !!title.trim() && !!boardId && !!columnId && !missingRequired;
 
   // --- submit ---------------------------------------------------------------
-  const submit = async (e: React.FormEvent) => {
+  const submitRef = useRef<HTMLButtonElement>(null);
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // Only the Create button submits. Shared pieces inside the form render
+    // plain <button>s without type="button" (MultiUserAssignment, the label
+    // manager trigger), and portalled dialogs' submits bubble here through
+    // React; none of them may create the ticket.
+    if (e.target !== e.currentTarget) return;
+    const submitter = (e.nativeEvent as SubmitEvent).submitter;
+    if (submitter !== submitRef.current) return;
     if (!canSubmit || !boardId || !columnId) return;
     setSaving(true);
     let created: Ticket;
@@ -455,13 +469,13 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
               className={cn(
                 "field-sizing-content min-h-[40px] resize-none rounded-md border-transparent px-2 py-1.5 shadow-none",
                 "text-xl font-semibold leading-7 tracking-[-0.02em]",
-                "hover:border-border focus-visible:border-ring",
+                "hover:border-border focus-visible:border-input focus-visible:ring-[3px] focus-visible:ring-foreground/10",
               )}
             />
           </div>
 
           <div className="rounded-lg border px-3" data-testid="create-properties">
-            <PropertyRow label={t("board")}>
+            <PropertyRow className={ROW} label={t("board")}>
               {boardsQuery.isSuccess && boards.length === 0 ? (
                 <span className="text-xs text-muted-foreground">{t("create.noBoards")}</span>
               ) : (
@@ -481,7 +495,7 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
               )}
             </PropertyRow>
 
-            <PropertyRow label={t("create.status")}>
+            <PropertyRow className={ROW} label={t("create.status")}>
               {noColumns ? (
                 <span className="text-xs text-muted-foreground" data-testid="create-no-columns">
                   {t("create.noColumns")}
@@ -500,18 +514,19 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
               )}
             </PropertyRow>
 
-            <PropertyRow label={t("priorityLabel")}>
+            <PropertyRow className={ROW} label={t("priorityLabel")}>
               <PropertyPicker<TicketPriority>
                 options={priorityOptions}
                 value={priority}
                 onChange={setPriority}
+                renderPill={(o) => <PriorityPill priority={o.value} />}
                 placeholder={t("priorityLabel")}
                 disabled={saving}
                 className="create-priority-picker"
               />
             </PropertyRow>
 
-            <PropertyRow label={t("create.assignees")}>
+            <PropertyRow className={ROW} label={t("create.assignees")}>
               <div className="py-0.5" data-testid="create-assignees">
                 <MultiUserAssignment
                   users={users}
@@ -527,7 +542,7 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
             </PropertyRow>
 
             {groupOptions.length > 0 && (
-              <PropertyRow label={t("create.groups")}>
+              <PropertyRow className={ROW} label={t("create.groups")}>
                 <PropertyPicker<number>
                   multi
                   options={groupOptions}
@@ -542,9 +557,9 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
               </PropertyRow>
             )}
 
-            <PropertyRow label={t("labels")}>
-              <div className="flex items-start gap-1">
-                <div className="min-w-0 flex-1">
+            <PropertyRow className={ROW} label={t("labels")}>
+              <div className="flex flex-wrap items-start gap-1">
+                <div className="min-w-[120px] flex-1">
                   <PropertyPicker<number>
                     multi
                     options={tagOptions}
@@ -558,13 +573,13 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
                     className="create-labels-picker"
                   />
                 </div>
-                <div className="shrink-0 [&_button]:h-[26px] [&_button]:px-1.5 [&_button]:text-xs">
+                <div className="shrink-0 [&_button]:h-[26px] [&_button]:border-transparent [&_button]:px-1.5 [&_button]:text-xs [&_button]:font-normal [&_button]:text-muted-foreground [&_button]:bg-transparent [&_button]:shadow-none dark:[&_button]:border-transparent dark:[&_button]:bg-transparent [&_button:hover]:bg-muted/40 [&_button:hover]:text-foreground">
                   <LabelManagementDialog />
                 </div>
               </div>
             </PropertyRow>
 
-            <PropertyRow label={t("create.dueDate")}>
+            <PropertyRow className={ROW} label={t("create.dueDate")}>
               <div className="flex items-center gap-1">
                 <DatePicker
                   id="create-ticket-due"
@@ -573,7 +588,8 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
                   placeholder={t("create.noDueDate")}
                   disabled={saving}
                   className={cn(
-                    "-ml-1.5 h-[26px] border-transparent px-1.5 text-xs shadow-none hover:border-border hover:bg-muted/40",
+                    "-ml-1.5 h-[26px] border-transparent bg-transparent px-1.5 text-xs normal-case shadow-none hover:border-border hover:bg-muted/40",
+                    "dark:border-transparent dark:bg-transparent dark:hover:border-border dark:hover:bg-muted/40",
                     "[&_svg]:mr-1 [&_svg]:size-3.5",
                   )}
                 />
@@ -595,7 +611,7 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
             </PropertyRow>
 
             {perms.hasSocialFeature && (
-              <PropertyRow label={t("create.customer")}>
+              <PropertyRow className={ROW} label={t("create.customer")}>
                 <CustomerPicker value={customerId} onChange={setCustomerId} disabled={saving} />
               </PropertyRow>
             )}
@@ -716,7 +732,7 @@ function TicketCreateForm({ open, passedBoardId, passedColumnId, options, onBusy
           <Button type="button" variant="outline" className="flex-1" onClick={onDone} disabled={saving}>
             {tCommon("cancel")}
           </Button>
-          <Button type="submit" className="flex-1" disabled={!canSubmit} data-testid="create-submit">
+          <Button ref={submitRef} type="submit" className="flex-1" disabled={!canSubmit} data-testid="create-submit">
             {saving ? <Spinner className="size-4" /> : <Plus className="size-4" />}
             {saving ? t("create.creating") : t("create.submit")}
           </Button>

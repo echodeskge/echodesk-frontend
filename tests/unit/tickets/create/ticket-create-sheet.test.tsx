@@ -61,7 +61,8 @@ vi.mock("@/components/FileDropzone", () => ({
   ),
 }));
 vi.mock("@/components/LabelManagementDialog", () => ({
-  LabelManagementDialog: () => <button type="button">manage-labels</button>,
+  // No type="button", like the real trigger: it must not submit the sheet.
+  LabelManagementDialog: () => <button>manage-labels</button>,
 }));
 vi.mock("@/components/SignatureCanvas", () => ({ SignatureCanvas: () => <div data-testid="signature" /> }));
 vi.mock("@/components/ui/date-picker", () => ({
@@ -336,6 +337,18 @@ describe("TicketCreateSheet", () => {
     await typeTitle("Printer jam");
     expect(submitBtn()).toBeEnabled();
     expect(screen.getByTestId("create-title")).toBeRequired();
+  });
+
+  it("buttons without type=button inside the sheet (label manager, assignee picker) never create the ticket", async () => {
+    renderSheet();
+    open({ id: 1, name: "Support" } as never);
+    await waitColumn("In Progress");
+    await typeTitle("Not yet");
+    fireEvent.click(screen.getByText("manage-labels"));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(h.post).not.toHaveBeenCalled();
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(h.post).toHaveBeenCalledTimes(1));
   });
 
   it("offers exactly four priorities (no urgent) and defaults to medium", async () => {
