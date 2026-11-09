@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { Loader2, Save } from "lucide-react"
+import { Loader2, Save, UserCheck } from "lucide-react"
 import { getApiErrorMessage } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { fetchMySubstitutes, replaceMySubstitutes, type SubstituteAssignment } from "../_lib/hr-api"
 import {
   buildSubstitutesPayload,
@@ -17,6 +15,7 @@ import { useLeaveFeatures } from "../_lib/useLeaveFeatures"
 import { FeatureGate } from "../_components/FeatureGate"
 import { SubstituteRowsEditor } from "../_components/SubstituteRowsEditor"
 import { useLiteUsers } from "../_components/UserPicker"
+import { LeaveErrorState, LeaveLoading, LeavePage, LeavePageHeader, SectionCard, leaveButton } from "../_components/ui"
 
 const toRows = (items: SubstituteAssignment[]): SubstituteDraftRow[] =>
   [...items]
@@ -39,19 +38,26 @@ function MySubstitutesEditor({ selfId }: { selfId?: number }) {
   const [saved, setSaved] = useState<string>("[]")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  // A failed load must not show an empty editor: saving it would replace
+  // (PUT .../replace/) the user's real list with whatever they typed.
+  const [loadError, setLoadError] = useState<unknown>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    setLoading(true)
     fetchMySubstitutes()
       .then((items) => {
         const initial = toRows(items)
         setRows(initial)
         setSaved(JSON.stringify(initial))
+        setLoadError(null)
       })
-      .catch((error) =>
+      .catch((error) => {
+        setLoadError(error)
         toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
-      )
+      })
       .finally(() => setLoading(false))
-  }, [t])
+  }, [t, attempt])
 
   const dirty = JSON.stringify(rows) !== saved
 
@@ -75,41 +81,49 @@ function MySubstitutesEditor({ selfId }: { selfId?: number }) {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
-
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{t("hr.substitutes.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("hr.substitutes.description")}</p>
+    <LeavePage width="narrow" gap={20} testId="my-substitutes-page">
+      <LeavePageHeader icon={UserCheck} title={t("hr.substitutes.title")} description={t("hr.substitutes.description")} />
+      {loading ? (
+        <LeaveLoading />
+      ) : loadError ? (
+        <div className="rounded-[10px] border bg-card">
+          <LeaveErrorState error={loadError} onRetry={() => setAttempt((n) => n + 1)} />
         </div>
-        <Button onClick={handleSave} disabled={saving || !dirty}>
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          {t("hr.common.save")}
-        </Button>
-      </div>
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("hr.substitutes.listTitle")}</CardTitle>
-          <CardDescription>{t("hr.substitutes.listDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent>
+      ) : (
+        <SectionCard
+          title={t("hr.substitutes.listTitle")}
+          hint={t("hr.substitutes.count", { count: rows.length })}
+          testId="my-substitutes-card"
+        >
+          <p className="border-b px-4 py-2.5 text-xs leading-[17px] text-muted-foreground">{t("hr.substitutes.listDescription")}</p>
           <SubstituteRowsEditor
             rows={rows}
             onChange={setRows}
             users={users}
             selfId={selfId}
             disabled={saving || usersLoading}
+            className="p-4"
           />
-        </CardContent>
-      </Card>
-    </div>
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t bg-muted/20 px-4 py-2.5">
+            {dirty && (
+              <span className="text-xs text-muted-foreground" data-testid="my-substitutes-dirty">
+                {t("hr.substitutes.unsaved")}
+              </span>
+            )}
+            <button
+              type="button"
+              className={leaveButton.primary}
+              onClick={handleSave}
+              disabled={saving || !dirty}
+              data-testid="my-substitutes-save"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Save className="h-3.5 w-3.5" aria-hidden />}
+              {t("hr.common.save")}
+            </button>
+          </div>
+        </SectionCard>
+      )}
+    </LeavePage>
   )
 }

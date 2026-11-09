@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
 import axios from "@/api/axios"
@@ -12,30 +12,23 @@ import {
 import { getApiErrorMessage } from "@/lib/utils"
 import { useMyAccess } from "@/hooks/useMyAccess"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, XCircle, Loader2, User, Calendar } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import { Check, CheckCircle2, Inbox, Lock, SearchX, Users, X, XCircle } from "lucide-react"
 import { useDeepLinkId } from "../_lib/useDeepLinkId"
+import { canDecideRequest, filterTeamRequests, isForbidden, teamRequestStats, type TeamFilter } from "../_lib/lv02-utils"
 import { LeaveRequestDetailDialog } from "../_components/LeaveRequestDetailDialog"
-import { LeaveStatusBadge } from "../_components/LeaveStatusBadge"
+import {
+  LeaveEmptyState,
+  LeaveHeaderBridge,
+  LeavePage,
+  LeaveTable,
+  LeaveToolbar,
+  Segmented,
+  StatStrip,
+  ToolbarSearch,
+  leaveButton,
+} from "../_components/ui"
+import { DecisionDialog } from "./_components/decision-dialog"
+import { requestColumns } from "./_components/request-columns"
 
 // Shape of LeaveRequestListSerializer: flat ids/names. `reason` and the
 // employee e-mail only exist on the detail endpoint and are loaded when the
@@ -70,10 +63,12 @@ export default function TeamRequestsPage() {
   const locale = useLocale()
   // Nobody but a superuser may approve or reject their own leave request.
   const { userId, isSuperuser } = useMyAccess()
-  const canDecide = (request: LeaveRequest) =>
-    request.status === "pending" && (isSuperuser || request.employee !== userId)
+  const canDecide = (request: LeaveRequest) => canDecideRequest(request, userId, isSuperuser)
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<unknown>(null)
+  const [filter, setFilter] = useState<TeamFilter>("pending")
+  const [search, setSearch] = useState("")
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null)
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null)
   const [comments, setComments] = useState("")
@@ -89,6 +84,7 @@ export default function TeamRequestsPage() {
 
   useEffect(() => {
     fetchRequests()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchRequests = async () => {
@@ -102,17 +98,24 @@ export default function TeamRequestsPage() {
       setRequests(list)
       const count = (response.data as { count?: unknown } | null)?.count
       setTotalCount(typeof count === "number" ? count : list.length)
+      setLoadError(null)
     } catch (error) {
-      // Non-managers get 403 here: show the empty state and say why.
+      // Non-managers get 403 here: show the error state and say why.
       console.error("Failed to fetch requests:", error)
       setRequests([])
       setTotalCount(0)
+      setLoadError(error)
       toast.error(t("shared.loadFailed"), {
         description: getApiErrorMessage(error) || undefined,
       })
     } finally {
       setLoading(false)
     }
+  }
+
+  const retry = () => {
+    setLoading(true)
+    fetchRequests()
   }
 
   const closeDialog = () => {
@@ -174,146 +177,119 @@ export default function TeamRequestsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
+  const stats = teamRequestStats(requests, totalCount)
+  const shown = useMemo(() => filterTeamRequests(requests, filter, search), [requests, filter, search])
 
-  const pendingRequests = requests.filter((r) => r.status === "pending")
+  const columns = requestColumns<LeaveRequest>({
+    t,
+    locale,
+    actions: (request) =>
+      canDecide(request) ? (
+        <span className="flex gap-1.5">
+          <button
+            type="button"
+            className={leaveButton.dangerSm}
+            onClick={() => openActionDialog(request, "reject")}
+            data-testid="team-reject"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden />
+            {t("teamRequests.reject")}
+          </button>
+          <button
+            type="button"
+            className={leaveButton.primarySm}
+            onClick={() => openActionDialog(request, "approve")}
+            data-testid="team-approve"
+          >
+            <Check className="h-3.5 w-3.5" aria-hidden />
+            {t("teamRequests.approve")}
+          </button>
+        </span>
+      ) : null,
+  })
+
+  // Non-managers get 403: say so instead of "check your connection".
+  const forbidden = isForbidden(loadError)
+  const failed = !!loadError
+  const empty = forbidden ? (
+    <LeaveEmptyState icon={Lock} title={t("requests.noAccessTitle")} description={t("requests.noAccessHint")} />
+  ) : requests.length === 0 ? (
+    <LeaveEmptyState
+      icon={Users}
+      title={t("teamRequests.noRequestsTitle")}
+      description={t("teamRequests.noRequestsDescription")}
+    />
+  ) : search.trim() ? (
+    <LeaveEmptyState
+      icon={SearchX}
+      title={t("ui.noMatches")}
+      description={t("ui.noMatchesHint")}
+      action={
+        <button type="button" className={leaveButton.outlineSm} onClick={() => setSearch("")}>
+          {t("ui.clearFilters")}
+        </button>
+      }
+    />
+  ) : (
+    <LeaveEmptyState
+      icon={Inbox}
+      title={t("teamRequests.emptyPendingTitle")}
+      description={t("teamRequests.emptyPendingHint")}
+      action={
+        <button type="button" className={leaveButton.outlineSm} onClick={() => setFilter("all")}>
+          {t("teamRequests.showAll")}
+        </button>
+      }
+    />
+  )
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t("teamRequests.title")}</h1>
-        <p className="text-muted-foreground mt-1">
-          {t("teamRequests.description")}
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("teamRequests.pendingApproval")}</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{pendingRequests.length}</div>
-            <p className="text-xs text-muted-foreground">{t("teamRequests.requireYourAction")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("teamRequests.totalRequests")}</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCount}</div>
-            <p className="text-xs text-muted-foreground">{t("teamRequests.fromYourTeam")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("shared.status.approved")}</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {requests.filter((r) => r.status.includes("approved")).length}
-            </div>
-            <p className="text-xs text-muted-foreground">{t("teamRequests.thisPeriod")}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("shared.leaveRequests")}</CardTitle>
-          <CardDescription>
-            {t("teamRequests.cardDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {requests.length === 0 ? (
-            <div className="text-center py-12">
-              <User className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">{t("teamRequests.noRequestsTitle")}</h3>
-              <p className="text-muted-foreground">
-                {t("teamRequests.noRequestsDescription")}
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("shared.employee")}</TableHead>
-                  <TableHead>{t("shared.leaveType")}</TableHead>
-                  <TableHead>{t("shared.startDate")}</TableHead>
-                  <TableHead>{t("shared.endDate")}</TableHead>
-                  <TableHead>{t("shared.days")}</TableHead>
-                  <TableHead>{t("shared.statusLabel")}</TableHead>
-                  <TableHead>{t("shared.actions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((request) => (
-                  <TableRow
-                    key={request.id}
-                    className="cursor-pointer"
-                    onClick={() => setDetailId(request.id)}
-                  >
-                    <TableCell>
-                      <div className="font-medium">{request.employee_name}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        style={{ backgroundColor: request.leave_type_color || undefined }}
-                        className="text-white"
-                      >
-                        {request.leave_type_name}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(request.start_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(request.end_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{request.total_days}</TableCell>
-                    <TableCell><LeaveStatusBadge status={request.status} /></TableCell>
-                    <TableCell>
-                      {canDecide(request) && (
-                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={() => openActionDialog(request, "approve")}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1" />
-                            {t("teamRequests.approve")}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => openActionDialog(request, "reject")}
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            {t("teamRequests.reject")}
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+    <>
+      <LeaveHeaderBridge sub={loading || loadError ? null : t("teamRequests.pendingSub", { count: stats.pending })} />
+      <LeavePage fill testId="team-requests-page">
+        <StatStrip
+          loading={loading}
+          testId="team-requests-stats"
+          items={[
+            { key: "pending", label: t("teamRequests.pendingApproval"), value: loadError ? null : stats.pending, hint: t("teamRequests.requireYourAction") },
+            { key: "total", label: t("teamRequests.totalRequests"), value: loadError ? null : stats.total, hint: t("teamRequests.fromYourTeam") },
+            { key: "approved", label: t("shared.status.approved"), value: loadError ? null : stats.approved, hint: t("teamRequests.thisPeriod") },
+          ]}
+        />
+        <LeaveToolbar>
+          <Segmented<TeamFilter>
+            ariaLabel={t("allRequests.filterByStatus")}
+            value={filter}
+            onChange={setFilter}
+            testId="team-requests-filter"
+            options={[
+              { value: "pending", label: t("shared.status.pending"), count: loading || failed ? null : stats.pending },
+              { value: "all", label: t("allRequests.filterAllShort"), count: loading || failed ? null : requests.length },
+            ]}
+          />
+          <ToolbarSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={t("requests.searchPlaceholder")}
+            clearLabel={t("ui.clearSearch")}
+            className="ms-auto max-w-none sm:max-w-[260px]"
+            testId="team-requests-search"
+          />
+        </LeaveToolbar>
+        <LeaveTable
+          ariaLabel={t("teamRequests.title")}
+          columns={columns}
+          rows={loading ? undefined : shown}
+          rowKey={(r) => r.id}
+          onRowClick={(r) => setDetailId(r.id)}
+          isRowSelected={(r) => r.id === detailId}
+          error={forbidden ? null : loadError}
+          onRetry={retry}
+          empty={empty}
+          footer={!loading && !failed ? <span>{t("requests.count", { count: shown.length })}</span> : undefined}
+          testId="team-requests-table"
+        />
+      </LeavePage>
 
       <LeaveRequestDetailDialog
         requestId={detailId}
@@ -333,12 +309,12 @@ export default function TeamRequestsPage() {
           }
           return (
             <>
-              <Button variant="destructive" onClick={() => open("reject")}>
-                <XCircle className="h-4 w-4 mr-1" />
+              <Button variant="outline" className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => open("reject")}>
+                <XCircle className="me-1 h-3.5 w-3.5" />
                 {t("teamRequests.reject")}
               </Button>
               <Button onClick={() => open("approve")}>
-                <CheckCircle2 className="h-4 w-4 mr-1" />
+                <CheckCircle2 className="me-1 h-3.5 w-3.5" />
                 {t("teamRequests.approve")}
               </Button>
             </>
@@ -346,84 +322,16 @@ export default function TeamRequestsPage() {
         }}
       />
 
-      <Dialog
-        open={selectedRequest !== null}
-        onOpenChange={(open) => {
-          if (!open) closeDialog()
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {actionType === "approve" ? t("teamRequests.approveDialogTitle") : t("teamRequests.rejectDialogTitle")}
-            </DialogTitle>
-            <DialogDescription asChild>
-              <div className="text-sm text-muted-foreground">
-                {selectedRequest && (
-                  <div className="space-y-2 mt-2">
-                    <p>
-                      <strong>{t("shared.employee")}:</strong> {selectedRequest.employee_name}
-                      {selectedExtra?.employee_email ? ` (${selectedExtra.employee_email})` : ""}
-                    </p>
-                    <p>
-                      <strong>{t("shared.leaveType")}:</strong> {selectedRequest.leave_type_name}
-                    </p>
-                    <p>
-                      <strong>{t("teamRequests.duration")}:</strong>{" "}
-                      {new Date(selectedRequest.start_date).toLocaleDateString()} -{" "}
-                      {new Date(selectedRequest.end_date).toLocaleDateString()} (
-                      {t("teamRequests.totalDays", { count: selectedRequest.total_days })})
-                    </p>
-                    {selectedExtra?.reason && (
-                      <p>
-                        <strong>{t("shared.reason")}:</strong> {selectedExtra.reason}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="comments">
-                {actionType === "reject"
-                  ? t("teamRequests.commentsRequired")
-                  : t("teamRequests.commentsOptional")}
-              </Label>
-              <Textarea
-                id="comments"
-                placeholder={t("teamRequests.commentsPlaceholder")}
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>
-              {t("shared.cancel")}
-            </Button>
-            <Button
-              variant={actionType === "approve" ? "default" : "destructive"}
-              onClick={handleAction}
-              disabled={submitting}
-            >
-              {actionType === "approve" ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  {t("teamRequests.confirmApproval")}
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-4 w-4 mr-2" />
-                  {t("teamRequests.confirmRejection")}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      <DecisionDialog
+        request={selectedRequest}
+        action={actionType}
+        extra={selectedExtra}
+        comments={comments}
+        onCommentsChange={setComments}
+        submitting={submitting}
+        onConfirm={handleAction}
+        onClose={closeDialog}
+      />
+    </>
   )
 }

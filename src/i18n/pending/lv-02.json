@@ -1,0 +1,66 @@
+{
+  "en": {
+    "leave": {
+      "requests": {
+        "searchPlaceholder": "Search employee or leave type",
+        "count": "{count, plural, one {# request} other {# requests}}",
+        "noAccessTitle": "You don't have access to these requests",
+        "noAccessHint": "Ask an administrator if you need this list."
+      },
+      "teamRequests": {
+        "pendingSub": "{count} pending",
+        "emptyPendingTitle": "Nothing is waiting for you",
+        "emptyPendingHint": "New requests from your team will show up here.",
+        "showAll": "Show all requests"
+      },
+      "allRequests": {
+        "filterAllShort": "All"
+      },
+      "hr": {
+        "detail": {
+          "period": "Period"
+        },
+        "covering": {
+          "awaitingSub": "{count} awaiting your answer",
+          "answer": "Answer"
+        },
+        "substitutes": {
+          "count": "{count, plural, one {# substitute} other {# substitutes}}",
+          "unsaved": "Unsaved changes"
+        }
+      }
+    }
+  },
+  "ka": {
+    "leave": {
+      "requests": {
+        "searchPlaceholder": "თანამშრომლის ან ტიპის ძიება",
+        "count": "{count} მოთხოვნა",
+        "noAccessTitle": "ამ მოთხოვნებზე წვდომა არ გაქვთ",
+        "noAccessHint": "თუ ეს სია გჭირდებათ, მიმართეთ ადმინისტრატორს."
+      },
+      "teamRequests": {
+        "pendingSub": "{count} მოლოდინში",
+        "emptyPendingTitle": "თქვენს გადაწყვეტილებას არაფერი ელოდება",
+        "emptyPendingHint": "გუნდის ახალი მოთხოვნები აქ გამოჩნდება.",
+        "showAll": "ყველა მოთხოვნის ჩვენება"
+      },
+      "allRequests": {
+        "filterAllShort": "ყველა"
+      },
+      "hr": {
+        "detail": {
+          "period": "პერიოდი"
+        },
+        "covering": {
+          "awaitingSub": "{count} ელოდება თქვენს პასუხს",
+          "answer": "პასუხი"
+        },
+        "substitutes": {
+          "count": "{count} შემცვლელი",
+          "unsaved": "შეუნახავი ცვლილებები"
+        }
+      }
+    }
+  }
+}
