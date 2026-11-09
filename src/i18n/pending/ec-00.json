@@ -1,0 +1,54 @@
+{
+  "en": {
+    "ecommerceUi": {
+      "errorTitle": "Couldn't load this page",
+      "errorHint": "Check your connection and try again.",
+      "noAccessTitle": "No access",
+      "noAccessHint": "You don't have permission to see this. Ask an administrator for access.",
+      "retry": "Try again",
+      "loading": "Loading…",
+      "active": "Active",
+      "inactive": "Inactive",
+      "all": "All",
+      "clearSearch": "Clear search",
+      "noMatches": "Nothing matches these filters",
+      "noMatchesHint": "Try another search or clear the filters.",
+      "clearFilters": "Clear filters",
+      "selectAll": "Select all on this page",
+      "selectRow": "Select {name}",
+      "selected": "{count} selected",
+      "clearSelection": "Clear selection",
+      "range": "{from}–{to} of {total}",
+      "actions": "Actions",
+      "moreActions": "More actions",
+      "back": "Back",
+      "noImage": "No image"
+    }
+  },
+  "ka": {
+    "ecommerceUi": {
+      "errorTitle": "გვერდი ვერ ჩაიტვირთა",
+      "errorHint": "შეამოწმეთ ინტერნეტთან კავშირი და სცადეთ ხელახლა.",
+      "noAccessTitle": "წვდომა არ გაქვთ",
+      "noAccessHint": "ამის სანახავად უფლება არ გაქვთ. წვდომისთვის მიმართეთ ადმინისტრატორს.",
+      "retry": "ხელახლა ცდა",
+      "loading": "იტვირთება…",
+      "active": "აქტიური",
+      "inactive": "არააქტიური",
+      "all": "ყველა",
+      "clearSearch": "ძიების გასუფთავება",
+      "noMatches": "ფილტრებს არაფერი შეესაბამება",
+      "noMatchesHint": "სცადეთ სხვა საძიებო სიტყვა ან გაასუფთავეთ ფილტრები.",
+      "clearFilters": "ფილტრების გასუფთავება",
+      "selectAll": "ამ გვერდზე ყველას მონიშვნა",
+      "selectRow": "მონიშვნა: {name}",
+      "selected": "მონიშნულია {count}",
+      "clearSelection": "მონიშვნის მოხსნა",
+      "range": "{total}-დან {from}–{to}",
+      "actions": "მოქმედებები",
+      "moreActions": "სხვა მოქმედებები",
+      "back": "უკან",
+      "noImage": "სურათი არ არის"
+    }
+  }
+}
