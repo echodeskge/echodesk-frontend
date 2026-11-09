@@ -84,6 +84,10 @@ export const TicketCard = forwardRef<HTMLDivElement, TicketCardProps>(function T
   const locale = useLocale();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  // The preview never sits on top of a menu or a drag.
+  const showPreview = previewOpen && !isDragging && !menuOpen && !contextOpen;
   const href = ticketHref(card.id, query);
 
   const open = useCallback(() => router.push(href), [router, href]);
@@ -183,7 +187,12 @@ export const TicketCard = forwardRef<HTMLDivElement, TicketCardProps>(function T
 
       {/* Row 2 */}
       {card.description_preview ? (
-        <HoverCard openDelay={HOVER_PREVIEW_DELAY_MS} closeDelay={0} open={isDragging ? false : undefined}>
+        <HoverCard
+          openDelay={HOVER_PREVIEW_DELAY_MS}
+          closeDelay={0}
+          open={showPreview}
+          onOpenChange={setPreviewOpen}
+        >
           <HoverCardTrigger asChild>
             <p className="line-clamp-2 break-words text-[13px] font-medium leading-[18px]" data-testid="card-title">
               {card.title}
@@ -277,7 +286,7 @@ export const TicketCard = forwardRef<HTMLDivElement, TicketCardProps>(function T
   );
 
   return (
-    <ContextMenuPrimitive.Root modal={false}>
+    <ContextMenuPrimitive.Root modal={false} onOpenChange={setContextOpen}>
       <ContextMenuPrimitive.Trigger asChild disabled={isDragging || isCoarsePointer()}>
         {body}
       </ContextMenuPrimitive.Trigger>

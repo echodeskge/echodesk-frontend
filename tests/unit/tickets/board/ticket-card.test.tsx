@@ -130,6 +130,15 @@ describe("TicketCard rows", () => {
       "Steps: reset password, then sign in.",
     );
   });
+  it("closes the preview when a menu opens", async () => {
+    const user = userEvent.setup();
+    renderIntl(<TicketCard card={card({ description_preview: "Preview text" })} />);
+    await user.hover(screen.getByTestId("card-title"));
+    await screen.findByTestId("card-preview", {}, { timeout: 1500 });
+    fireEvent.contextMenu(screen.getByTestId("ticket-card"));
+    await screen.findByTestId("card-context-menu");
+    await waitFor(() => expect(screen.queryByTestId("card-preview")).toBeNull());
+  });
 });
 
 describe("TicketCard actions (RM7)", () => {
