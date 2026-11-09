@@ -24,11 +24,31 @@ import {
   deleteAttachment,
   uploadAttachment,
 } from "../../../_lib/api";
-import { newMutationId, rememberMutation } from "../../../_lib/mutation-id";
+import axios from "@/api/axios";
+import { mutationHeaders, newMutationId, rememberMutation } from "../../../_lib/mutation-id";
 import { tk } from "../../../_lib/query-keys";
 import type { TicketChecklistItem, TicketDetail } from "../../../_lib/types";
 import { invalidateTicketCollections, ticketErrorKey } from "../../../_hooks/use-ticket-mutations";
-import { MAX_FILE_MB, MAX_FILES, moveChecklistItem, nextChecklistPosition, reorderTargetPosition, sortChecklist, validateFiles } from "./main-utils";
+import {
+  FIRST_CHECKLIST_POSITION,
+  MAX_FILE_MB,
+  MAX_FILES,
+  checklistNeedsRenumber,
+  moveChecklistItem,
+  nextChecklistPosition,
+  reorderTargetPosition,
+  sortChecklist,
+  validateFiles,
+} from "./main-utils";
+
+/**
+ * `PATCH checklist-items/{id}/ {position}`. `api.ts`'s checklistUpdate only
+ * types `text`, and api.ts belongs to the data-layer WP, so this one call
+ * lives here.
+ */
+async function checklistSetPosition(id: number, position: number, mutationId: string): Promise<void> {
+  await axios.patch(`/api/checklist-items/${id}/`, { position }, { headers: mutationHeaders(mutationId) });
+}
 
 function mid(): string {
   const id = newMutationId();
@@ -168,10 +188,21 @@ export function useChecklistMutations(ticketId: number) {
     const list = items();
     if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return;
     const item = list[from];
-    const position = reorderTargetPosition(list, from, to);
     cache.update((prev) => withChecklist(prev, moveChecklistItem(sortChecklist(prev.checklist_items), from, to)));
     try {
-      await checklistReorder(item.id, position, mid());
+      // Positions must be 1..n, strictly increasing, for the server's shift.
+      let ordered = list;
+      if (checklistNeedsRenumber(list)) {
+        await Promise.all(
+          list.map((it, i) =>
+            it.position === i + FIRST_CHECKLIST_POSITION
+              ? null
+              : checklistSetPosition(it.id, i + FIRST_CHECKLIST_POSITION, mid()),
+          ),
+        );
+        ordered = list.map((it, i) => ({ ...it, position: i + FIRST_CHECKLIST_POSITION }));
+      }
+      await checklistReorder(item.id, reorderTargetPosition(ordered, from, to), mid());
       // The server renumbers its neighbours: take its positions.
       cache.refetch();
       cache.settled();

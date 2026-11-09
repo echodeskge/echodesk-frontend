@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type KeyboardEvent } from "react";
-import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Draggable, Droppable, type DraggableProvidedDragHandleProps, type DropResult } from "@hello-pangea/dnd";
 import { Check, Plus, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -75,7 +75,6 @@ export function ChecklistCard({ ticketId, items }: ChecklistCardProps) {
                     <div
                       ref={drag.innerRef}
                       {...drag.draggableProps}
-                      {...drag.dragHandleProps}
                       className={cn(
                         "rounded-md",
                         snapshot.isDragging && "bg-card shadow-md ring-1 ring-border",
@@ -83,6 +82,7 @@ export function ChecklistCard({ ticketId, items }: ChecklistCardProps) {
                     >
                       <ChecklistRow
                         item={item}
+                        dragHandleProps={drag.dragHandleProps}
                         onToggle={() => void m.toggle(item)}
                         onRename={(text) => void m.rename(item, text)}
                         onRemove={() => void m.remove(item)}
@@ -103,11 +103,14 @@ export function ChecklistCard({ ticketId, items }: ChecklistCardProps) {
 
 function ChecklistRow({
   item,
+  dragHandleProps,
   onToggle,
   onRename,
   onRemove,
 }: {
   item: TicketChecklistItem;
+  /** The text is the drag handle (mouse, touch, and Space + arrows from the keyboard). */
+  dragHandleProps?: DraggableProvidedDragHandleProps | null;
   onToggle: () => void;
   onRename: (text: string) => void;
   onRemove: () => void;
@@ -167,13 +170,14 @@ function ChecklistRow({
         />
       ) : (
         <span
+          {...(dragHandleProps ?? {})}
           data-slot="checklist-text"
           onDoubleClick={() => {
             setDraft(item.text);
             setEditing(true);
           }}
           className={cn(
-            "min-w-0 flex-1 truncate text-[13px] leading-5",
+            "min-w-0 flex-1 cursor-grab truncate rounded-sm text-[13px] leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             item.is_checked ? "text-muted-foreground line-through" : "text-foreground",
           )}
         >

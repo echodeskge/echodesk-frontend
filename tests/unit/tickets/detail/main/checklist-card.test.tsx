@@ -26,7 +26,7 @@ import { useQuery } from "@tanstack/react-query";
 import { tk } from "@/app/(tenant)/tickets/_lib/query-keys";
 import type { TicketChecklistItem, TicketDetail } from "@/app/(tenant)/tickets/_lib/types";
 import { ChecklistCard } from "@/app/(tenant)/tickets/[id]/_components/main/checklist-card";
-import { reorderTargetPosition } from "@/app/(tenant)/tickets/[id]/_components/main/main-utils";
+import { checklistNeedsRenumber, nextChecklistPosition, reorderTargetPosition } from "@/app/(tenant)/tickets/[id]/_components/main/main-utils";
 import { makeTicket, newClient, routeAxios } from "../helpers";
 import { renderMain } from "./main-helpers";
 
@@ -47,10 +47,10 @@ function item(id: number, text: string, position: number, over: Partial<TicketCh
 }
 
 const ITEMS = [
-  item(1, "Collect a SIP trace", 0, { is_checked: true, checked_by: { id: 4, name: "Giorgi G." }, checked_at: "2025-03-05T10:07:00Z" }),
-  item(2, "Compare session timers", 1),
-  item(3, "Patch pjsip.conf", 2),
-  item(4, "Confirm with the customer", 3),
+  item(1, "Collect a SIP trace", 1, { is_checked: true, checked_by: { id: 4, name: "Giorgi G." }, checked_at: "2025-03-05T10:07:00Z" }),
+  item(2, "Compare session timers", 2),
+  item(3, "Patch pjsip.conf", 3),
+  item(4, "Confirm with the customer", 4),
 ];
 
 let nextId = 100;
@@ -149,7 +149,7 @@ describe("ChecklistCard", () => {
     const undo = toastMock.mock.calls[0][1].action.onClick as () => void;
     undo();
     await waitFor(() =>
-      expect(vi.mocked(axios.post)).toHaveBeenCalledWith("/api/checklist-items/", { ticket: 10, text: "Patch pjsip.conf", position: 2 }, expect.anything()),
+      expect(vi.mocked(axios.post)).toHaveBeenCalledWith("/api/checklist-items/", { ticket: 10, text: "Patch pjsip.conf", position: 3 }, expect.anything()),
     );
     await waitFor(() => expect(rows()).toHaveLength(4));
     expect(rows()[2]).toHaveTextContent("Patch pjsip.conf");
@@ -184,7 +184,7 @@ describe("ChecklistCard", () => {
     await userEvent.type(add, "Call the customer back{Enter}");
     expect(add).toHaveValue("");
     await waitFor(() =>
-      expect(vi.mocked(axios.post)).toHaveBeenCalledWith("/api/checklist-items/", { ticket: 10, text: "Call the customer back", position: 4 }, expect.anything()),
+      expect(vi.mocked(axios.post)).toHaveBeenCalledWith("/api/checklist-items/", { ticket: 10, text: "Call the customer back", position: 5 }, expect.anything()),
     );
     await waitFor(() => expect(rows()).toHaveLength(5));
     expect(rows()[4]).toHaveTextContent("Call the customer back");
@@ -199,18 +199,34 @@ describe("ChecklistCard", () => {
     dnd.onDragEnd!({ source: { index: 3 }, destination: { index: 0 }, draggableId: "checklist-item-4" });
     await waitFor(() => expect(rows()[0]).toHaveTextContent("Confirm with the customer"));
     await waitFor(() =>
-      expect(vi.mocked(axios.patch)).toHaveBeenCalledWith("/api/checklist-items/4/reorder/", { position: 0 }, expect.anything()),
+      expect(vi.mocked(axios.patch)).toHaveBeenCalledWith("/api/checklist-items/4/reorder/", { position: 1 }, expect.anything()),
     );
+    // Positions were already 1..n: no renumbering requests.
+    expect(vi.mocked(axios.patch).mock.calls.filter(([u, b]) => /\/checklist-items\/\d+\/$/.test(String(u)) && "position" in (b as object))).toHaveLength(0);
     // A drop outside the list does nothing.
     dnd.onDragEnd!({ source: { index: 0 }, destination: null });
     expect(vi.mocked(axios.patch).mock.calls.filter(([u]) => String(u).endsWith("/reorder/"))).toHaveLength(1);
   });
 
-  it("reorderTargetPosition uses the neighbour's position, or the index when positions collide", () => {
-    const gappy = [item(1, "a", 0), item(2, "b", 5), item(3, "c", 10)];
-    expect(reorderTargetPosition(gappy, 0, 2)).toBe(10);
-    const flat = [item(1, "a", 0), item(2, "b", 0), item(3, "c", 0)];
-    expect(reorderTargetPosition(flat, 0, 2)).toBe(2);
+  it("positions start at 1 (the server saves 0 as max + 1); 0s and duplicates are renumbered first", async () => {
+    expect(reorderTargetPosition([item(1, "a", 1), item(2, "b", 5), item(3, "c", 10)], 2, 0)).toBe(1);
+    expect(reorderTargetPosition([item(1, "a", 1), item(2, "b", 5), item(3, "c", 10)], 0, 2)).toBe(10);
+    expect(checklistNeedsRenumber([item(1, "a", 1), item(2, "b", 2)])).toBe(false);
+    expect(checklistNeedsRenumber([item(1, "a", 0), item(2, "b", 1)])).toBe(true);
+    expect(checklistNeedsRenumber([item(1, "a", 1), item(2, "b", 1)])).toBe(true);
+    expect(nextChecklistPosition([])).toBe(1);
+
+    setup([item(1, "a", 0), item(2, "b", 0), item(3, "c", 0)]);
+    dnd.onDragEnd!({ source: { index: 2 }, destination: { index: 0 } });
+    await waitFor(() =>
+      expect(vi.mocked(axios.patch)).toHaveBeenCalledWith("/api/checklist-items/3/reorder/", { position: 1 }, expect.anything()),
+    );
+    const renumbered = vi.mocked(axios.patch).mock.calls.filter(([u]) => /\/checklist-items\/\d+\/$/.test(String(u)));
+    expect(renumbered.map(([u, b]) => [u, b])).toEqual([
+      ["/api/checklist-items/1/", { position: 1 }],
+      ["/api/checklist-items/2/", { position: 2 }],
+      ["/api/checklist-items/3/", { position: 3 }],
+    ]);
   });
 
   it("an empty list shows only the add row", () => {

@@ -147,22 +147,33 @@ export function sortChecklist(items: TicketChecklistItem[] | null | undefined): 
   );
 }
 
-/** Position for a new item: after the last one. */
+/**
+ * Server quirk: `ChecklistItem.save()` treats position 0 as "unset" and moves
+ * the item to max + 1, so usable positions start at 1.
+ */
+export const FIRST_CHECKLIST_POSITION = 1;
+
+/** Position for a new item: after the last one (never 0, see above). */
 export function nextChecklistPosition(items: TicketChecklistItem[]): number {
-  return items.reduce((max, i) => Math.max(max, (i.position ?? 0) + 1), 0);
+  return items.reduce((max, i) => Math.max(max, (i.position ?? 0) + 1), FIRST_CHECKLIST_POSITION);
+}
+
+/**
+ * True when the positions can't drive the server's `reorder/` shift: a 0
+ * (saved as max + 1) or duplicates (legacy rows). Renumber 1..n first.
+ */
+export function checklistNeedsRenumber(items: TicketChecklistItem[]): boolean {
+  return items.some((item, i) => (item.position ?? 0) < FIRST_CHECKLIST_POSITION || (i > 0 && (item.position ?? 0) <= (items[i - 1].position ?? 0)));
 }
 
 /**
  * The `position` to send to `reorder/` when the item at `from` is dropped at
- * `to` (indexes in server order). The server shifts the items between the old
- * and the new position, so the target neighbour's position is the answer; when
- * positions collide (legacy rows all at 0) the index is the best guess.
+ * `to` (indexes in server order, positions strictly increasing from 1). The
+ * server shifts the items between the old and the new position, so the
+ * target neighbour's position is the answer.
  */
-export function reorderTargetPosition(items: TicketChecklistItem[], from: number, to: number): number {
-  const positions = items.map((i) => i.position ?? 0);
-  const distinct = new Set(positions).size === positions.length;
-  if (!distinct) return to;
-  return positions[to];
+export function reorderTargetPosition(items: TicketChecklistItem[], _from: number, to: number): number {
+  return Math.max(FIRST_CHECKLIST_POSITION, items[to]?.position ?? to + FIRST_CHECKLIST_POSITION);
 }
 
 /** Move an item and renumber positions locally (optimistic order). */
@@ -170,7 +181,7 @@ export function moveChecklistItem(items: TicketChecklistItem[], from: number, to
   const next = [...items];
   const [moved] = next.splice(from, 1);
   next.splice(to, 0, moved);
-  return next.map((item, index) => ({ ...item, position: index }));
+  return next.map((item, index) => ({ ...item, position: index + FIRST_CHECKLIST_POSITION }));
 }
 
 export function checklistProgress(items: TicketChecklistItem[]): { done: number; total: number; percent: number } {
