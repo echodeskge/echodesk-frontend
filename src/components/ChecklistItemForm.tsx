@@ -57,7 +57,9 @@ export default function ChecklistItemForm({
           position: 0,
           created_at: '',
           updated_at: '',
-          created_by: { id: 0, email: '', first_name: '', last_name: '' }
+          created_by: { id: 0, email: '', first_name: '', last_name: '' },
+          checked_by: null,
+          checked_at: null
         };
         
         savedItem = await checklistItemsCreate(createData);
