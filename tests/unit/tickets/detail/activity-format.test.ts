@@ -38,6 +38,12 @@ describe("stripHtml", () => {
 });
 
 describe("eventParts", () => {
+  it("joins the Georgian subject marker onto the system actor (სისტემამ, not სისტემა-მა)", () => {
+    const text = eventText(event({ user: null } as never), labels("ka"));
+    expect(text.startsWith("სისტემამ ")).toBe(true);
+    expect(text).not.toContain("-მა");
+  });
+
   it("splits the sentence around the actor's name", () => {
     expect(eventParts(event(), labels())).toEqual({ before: "", name: "Nino Beridze", after: " created the ticket" });
   });

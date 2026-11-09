@@ -121,7 +121,19 @@ export function eventParts(
   const sentence = historySentence(entry, labels);
   const at = sentence.indexOf(NAME_MARK);
   if (at === -1) return { before: "", name, after: ` ${sentence}` };
-  return { before: sentence.slice(0, at), name, after: sentence.slice(at + NAME_MARK.length) };
+  let after = sentence.slice(at + NAME_MARK.length);
+  let shown = name;
+  // Georgian marks the subject with "{name}-მა". For the system actor
+  // ("სისტემა") the correct form is the joined "სისტემამ", not "სისტემა-მა".
+  if (isSystemUser(event.user) && shown.endsWith("ა") && after.startsWith("-მა")) {
+    shown = `${shown}მ`;
+    after = after.slice(3);
+  }
+  return { before: sentence.slice(0, at), name: shown, after };
+}
+
+function isSystemUser(user: ActivityItem["user"] | null | undefined): boolean {
+  return !user || user.id === null || user.id === undefined;
 }
 
 export function eventText(event: ActivityEvent, labels: HistoryLabels, lookups?: EventLookups): string {
