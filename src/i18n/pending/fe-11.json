@@ -1,0 +1,36 @@
+{
+  "en": {
+    "tickets": {
+      "mentionSuggestions": "People you can mention"
+    },
+    "ticketsScreen": {
+      "activity": {
+        "noComments": "No comments yet",
+        "noHistory": "No changes recorded yet",
+        "saveError": "Couldn't save the comment",
+        "deleteError": "Couldn't delete the comment",
+        "deleted": "Comment deleted"
+      },
+      "composer": {
+        "label": "Comment"
+      }
+    }
+  },
+  "ka": {
+    "tickets": {
+      "mentionSuggestions": "ვისი მონიშვნაც შეგიძლიათ"
+    },
+    "ticketsScreen": {
+      "activity": {
+        "noComments": "კომენტარები ჯერ არ არის",
+        "noHistory": "ცვლილებები ჯერ არ დაფიქსირებულა",
+        "saveError": "კომენტარის შენახვა ვერ მოხერხდა",
+        "deleteError": "კომენტარის წაშლა ვერ მოხერხდა",
+        "deleted": "კომენტარი წაიშალა"
+      },
+      "composer": {
+        "label": "კომენტარი"
+      }
+    }
+  }
+}
