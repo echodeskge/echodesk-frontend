@@ -56,6 +56,7 @@ export default function ProductsPage() {
     low_stock: (lowStockOnly && !stockFilter) || undefined,
     stock: (lowStockOnly && stockFilter) || undefined,
     page,
+    page_size: pageSize,
   })
 
   // Deep links from notifications: ?status=&stock= (low-stock digest) and
