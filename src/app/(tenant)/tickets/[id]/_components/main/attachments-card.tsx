@@ -64,7 +64,7 @@ export function AttachmentsCard({
           e.stopPropagation();
           input.current?.click();
         }}
-        className="inline-flex h-[26px] items-center gap-[5px] rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="inline-flex h-[26px] items-center gap-[5px] rounded-md px-2 text-xs leading-5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <Upload aria-hidden="true" size={13} />
         {t("upload")}
@@ -149,7 +149,8 @@ function AttachmentTile({
 }) {
   const t = useTranslations("ticketsScreen.attachments");
   const Icon = fileIcon(attachment.content_type, attachment.filename);
-  const image = isImageType(attachment.content_type) && !!attachment.file_url;
+  const [broken, setBroken] = useState(false);
+  const image = isImageType(attachment.content_type) && !!attachment.file_url && !broken;
   const previewable = isPreviewable(attachment.content_type);
   const uploader = userName(attachment.uploaded_by);
   const size = formatFileSize(attachment.file_size);
@@ -172,6 +173,7 @@ function AttachmentTile({
             src={attachment.file_url}
             alt=""
             loading="lazy"
+            onError={() => setBroken(true)}
             className="size-[30px] shrink-0 rounded-md bg-muted object-cover"
           />
         ) : (
@@ -181,7 +183,7 @@ function AttachmentTile({
         )}
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-xs font-medium leading-5">{attachment.filename}</span>
-          <span className="truncate text-[11px] leading-4 text-muted-foreground tabular-nums">
+          <span className="truncate text-[11px] leading-5 text-muted-foreground tabular-nums">
             {uploader ? t("meta", { size, name: uploader }) : size}
           </span>
         </span>

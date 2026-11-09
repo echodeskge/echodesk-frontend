@@ -149,6 +149,10 @@ describe("AttachmentsCard", () => {
     expect(pcap.querySelector("img")).toBeNull();
     expect(pcap.querySelector("svg")).toBeTruthy();
     expect(pcap).toHaveTextContent("1.2 MB · Luka M");
+    // A thumbnail that fails to load falls back to the type icon.
+    fireEvent.error(img.querySelector("img")!);
+    expect(img.querySelector("img")).toBeNull();
+    expect(img.querySelector("svg")).toBeTruthy();
     expect(formatFileSize(500)).toBe("1 KB");
     expect(formatFileSize(25 * 1024 * 1024)).toBe("25 MB");
   });
