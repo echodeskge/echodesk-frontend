@@ -1,14 +1,13 @@
 "use client"
 
-import Image from "next/image"
 import { ColumnDef } from "@tanstack/react-table"
-import { Package } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTableColumnHeader } from "@/components/ui/data-table/data-table-column-header"
 import { ProductList } from "@/api/generated/interfaces"
 import { PRODUCT_STATUS_BADGE_VARIANTS, PRODUCT_STATUS_LABEL_KEYS } from "../_data/constants"
 import { ProductsTableRowActions } from "./products-table-row-actions"
+import { ProductThumb } from "../../_components/ui/product-thumb"
 
 interface ColumnOptions {
   t: (key: string) => string
@@ -66,19 +65,7 @@ export function getProductColumns({
         const name = getProductName(product, locale)
         return (
           <div className="flex items-center gap-3">
-            {product.image ? (
-              <Image
-                src={product.image}
-                alt={name}
-                width={40}
-                height={40}
-                className="aspect-square rounded-lg object-cover"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                <Package className="h-5 w-5 text-muted-foreground" />
-              </div>
-            )}
+            <ProductThumb src={product.image} alt={name} size={40} />
             <span className="inline-block max-w-44 truncate font-medium">
               {name}
             </span>

@@ -1,6 +1,5 @@
 "use client"
 
-import Image from "next/image"
 import { useLocale } from "next-intl"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -15,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { formatCurrency, getCourierInfo } from "../../_lib/utils"
 import { OrderDetail } from "../../_types"
+import { ProductThumb } from "../../../_components/ui/product-thumb"
 
 type Localized = string | Record<string, string> | null | undefined
 
@@ -96,13 +96,7 @@ export function OrderItemsCard({ order, t }: OrderItemsCardProps) {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         {productImage && (
-                          <Image
-                            src={productImage}
-                            alt={String(productName)}
-                            width={36}
-                            height={36}
-                            className="aspect-square rounded-md object-cover"
-                          />
+                          <ProductThumb src={productImage} alt={String(productName)} size={40} className="size-9" />
                         )}
                         <div>
                           <span className="text-sm font-medium">
