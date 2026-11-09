@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   ecommerceAdminShippingMethodsList,
@@ -10,35 +10,8 @@ import {
   ecommerceAdminShippingMethodsDestroy,
 } from "@/api/generated";
 import type { ShippingMethod, ShippingMethodRequest } from "@/api/generated/interfaces";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +24,24 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Truck } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/utils";
+import {
+  ActivePill,
+  EcEmptyState,
+  EcPage,
+  EcTable,
+  EcommerceHeaderBridge,
+  FormField,
+  FormGrid,
+  FormSection,
+  FormSheet,
+  FormSwitchRow,
+  ecField,
+  localizedText,
+  rdButton,
+  type EcColumn,
+} from "../_components/ui";
+import { MoneyInput } from "./_components/money-input";
+import { ShippingPriceCell, formatEta } from "./_lib/shipping";
 
 const EMPTY_FORM: ShippingMethodRequest = {
   name: { en: "", ka: "" },
@@ -62,11 +53,17 @@ const EMPTY_FORM: ShippingMethodRequest = {
   position: 0,
 };
 
+type Bilingual = { en?: string; ka?: string };
+const asBilingual = (value: unknown): Bilingual =>
+  typeof value === "object" && value !== null ? (value as Bilingual) : {};
+
 export default function ShippingMethodsPage() {
   const t = useTranslations("shippingMethods");
+  const locale = useLocale();
 
   const [methods, setMethods] = useState<ShippingMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown>(null);
   const [saving, setSaving] = useState(false);
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -80,7 +77,9 @@ export default function ShippingMethodsPage() {
       setLoading(true);
       const response = await ecommerceAdminShippingMethodsList();
       setMethods(response.results || []);
+      setLoadError(null);
     } catch (error) {
+      setLoadError(error);
       toast.error(getApiErrorMessage(error, t("fetchError")));
     } finally {
       setLoading(false);
@@ -89,13 +88,21 @@ export default function ShippingMethodsPage() {
 
   useEffect(() => {
     fetchMethods();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getName = (method: ShippingMethod): string => {
     if (typeof method.name === "object" && method.name !== null) {
-      return method.name.en || method.name.ka || "";
+      return localizedText(method.name as Record<string, string>, locale);
     }
     return String(method.name || "");
+  };
+
+  const getDescription = (method: ShippingMethod): string => {
+    if (typeof method.description === "object" && method.description !== null) {
+      return localizedText(method.description as Record<string, string>, locale);
+    }
+    return String(method.description || "");
   };
 
   const handleAdd = () => {
@@ -154,285 +161,282 @@ export default function ShippingMethodsPage() {
     setEditingMethod(null);
   };
 
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <Skeleton className="h-9 w-64 mb-2" />
-            <Skeleton className="h-5 w-96" />
-          </div>
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const setName = (lang: "en" | "ka", value: string) =>
+    setForm({ ...form, name: { ...asBilingual(form.name), [lang]: value } });
+  const setDescription = (lang: "en" | "ka", value: string) =>
+    setForm({ ...form, description: { ...asBilingual(form.description), [lang]: value } });
+
+  const columns: EcColumn<ShippingMethod>[] = [
+    {
+      id: "name",
+      header: t("table.name"),
+      width: "minmax(0,1.6fr)",
+      mobile: "title",
+      cell: (m) => {
+        const description = getDescription(m);
+        return (
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate font-medium">{getName(m)}</span>
+            {description && (
+              <span className="hidden truncate text-xs text-muted-foreground @3xl:block">{description}</span>
+            )}
+          </span>
+        );
+      },
+    },
+    {
+      id: "price",
+      header: t("table.price"),
+      width: "100px",
+      align: "end",
+      mobile: "meta",
+      cell: (m) => {
+        const eta = formatEta(m.estimated_days, (count) => t("daysCount", { count }));
+        return (
+          <span className="inline-flex flex-wrap items-center gap-x-1.5 tabular-nums">
+            <ShippingPriceCell value={m.price} freeLabel={t("free")} />
+            {/* Below 768px the free-over amount and the delivery time join the price line. */}
+            {m.free_shipping_threshold && (
+              <span className="@3xl:hidden">
+                · {t("freeOverShort")} <ShippingPriceCell value={m.free_shipping_threshold} />
+              </span>
+            )}
+            {eta && <span className="@3xl:hidden">· {eta}</span>}
+          </span>
+        );
+      },
+    },
+    {
+      id: "free",
+      header: t("table.freeOver"),
+      width: "110px",
+      align: "end",
+      mobile: "hidden",
+      cell: (m) =>
+        m.free_shipping_threshold ? (
+          <ShippingPriceCell value={m.free_shipping_threshold} />
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: "eta",
+      header: t("table.estimatedDays"),
+      width: "120px",
+      align: "end",
+      mobile: "hidden",
+      cell: (m) => {
+        const eta = formatEta(m.estimated_days, (count) => t("daysCount", { count }));
+        return eta ? <span className="tabular-nums">{eta}</span> : <span className="text-muted-foreground">—</span>;
+      },
+    },
+    {
+      id: "position",
+      header: t("table.position"),
+      width: "72px",
+      align: "end",
+      mobile: "hidden",
+      numeric: true,
+      muted: true,
+      cell: (m) => m.position ?? 0,
+    },
+    {
+      id: "status",
+      header: t("table.status"),
+      width: "100px",
+      mobile: "end",
+      cell: (m) => <ActivePill active={m.is_active} />,
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("table.actions")}</span>,
+      width: "64px",
+      align: "end",
+      mobile: "actions",
+      cell: (m) => (
+        <span className="flex items-center justify-end gap-0.5">
+          <button
+            type="button"
+            className={rdButton.ghostIconSm}
+            onClick={() => handleEdit(m)}
+            aria-label={t("editAria", { name: getName(m) })}
+            title={t("editMethod")}
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={`${rdButton.ghostIconSm} hover:text-destructive`}
+            onClick={() => setDeletingMethod(m)}
+            aria-label={t("deleteAria", { name: getName(m) })}
+            title={t("deleteDialog.confirm")}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </span>
+      ),
+    },
+  ];
+
+  const showEmpty = !loading && !loadError && methods.length === 0;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
-        </div>
-        <Button className="gap-2" onClick={handleAdd}>
-          <Plus className="h-4 w-4" />
-          {t("addMethod")}
-        </Button>
-      </div>
-
-      {/* Table */}
-      {methods.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-primary/10 p-6 mb-4">
-              <Truck className="h-12 w-12 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">{t("emptyTitle")}</h3>
-            <p className="text-muted-foreground text-center mb-6 max-w-md">
-              {t("emptyDescription")}
-            </p>
-            <Button className="gap-2" onClick={handleAdd}>
-              <Plus className="h-4 w-4" />
-              {t("addFirst")}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("tableTitle")}</CardTitle>
-            <CardDescription>
-              {t("totalMethods", { count: methods.length })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("table.name")}</TableHead>
-                  <TableHead>{t("table.price")}</TableHead>
-                  <TableHead>{t("table.estimatedDays")}</TableHead>
-                  <TableHead>{t("table.freeThreshold")}</TableHead>
-                  <TableHead>{t("table.status")}</TableHead>
-                  <TableHead className="text-right">{t("table.actions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {methods.map((method) => (
-                  <TableRow key={method.id}>
-                    <TableCell className="font-medium">{getName(method)}</TableCell>
-                    <TableCell>{method.price ? `${parseFloat(method.price).toFixed(2)}` : "-"}</TableCell>
-                    <TableCell>
-                      {method.estimated_days
-                        ? t("daysCount", { count: method.estimated_days })
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {method.free_shipping_threshold
-                        ? `${parseFloat(method.free_shipping_threshold).toFixed(2)}`
-                        : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {method.is_active ? (
-                        <Badge variant="default">{t("active")}</Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("inactive")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(method)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeletingMethod(method)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+    <>
+      <EcommerceHeaderBridge
+        sub={!loading && !loadError ? t("totalMethods", { count: methods.length }) : null}
+        primary={{ label: t("addMethod"), icon: Plus, onClick: handleAdd, testId: "shipping-add" }}
+      />
+      <EcPage width="wide" testId="shipping-methods-page">
+        {showEmpty ? (
+          <div className="rounded-[10px] border bg-card">
+            <EcEmptyState
+              icon={Truck}
+              title={t("emptyTitle")}
+              description={t("emptyDescription")}
+              action={
+                <button type="button" className={rdButton.primary} onClick={handleAdd}>
+                  <Plus className="h-3.5 w-3.5" aria-hidden />
+                  {t("addFirst")}
+                </button>
+              }
+            />
+          </div>
+        ) : (
+          <EcTable
+            ariaLabel={t("tableTitle")}
+            variant="card"
+            columns={columns}
+            rows={loading && methods.length === 0 ? undefined : methods}
+            rowKey={(m) => m.id}
+            onRowClick={handleEdit}
+            error={loadError}
+            onRetry={fetchMethods}
+            skeletonRows={4}
+            testId="shipping-methods-table"
+            footer={
+              !loadError && methods.length > 0 ? (
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {t("totalMethods", { count: methods.length })}
+                </span>
+              ) : undefined
+            }
+          />
+        )}
+      </EcPage>
 
       {/* Add/Edit Sheet */}
-      <Sheet open={sheetOpen} onOpenChange={handleCloseSheet}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>
-              {editingMethod ? t("editMethod") : t("addMethod")}
-            </SheetTitle>
-            <SheetDescription>
-              {editingMethod ? t("editMethodDesc") : t("addMethodDesc")}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 px-4 flex-1 overflow-y-auto">
-            <div className="space-y-2">
-              <Label htmlFor="shipping-name-en">{t("form.nameEn")}</Label>
+      <FormSheet
+        open={sheetOpen}
+        onOpenChange={(open) => !open && handleCloseSheet()}
+        title={editingMethod ? t("editMethod") : t("addMethod")}
+        description={editingMethod ? t("editMethodDesc") : t("addMethodDesc")}
+        size="md"
+        onSubmit={handleSave}
+        submitting={saving}
+        submitLabel={saving ? t("saving") : t("save")}
+        cancelLabel={t("cancel")}
+        testId="shipping-sheet"
+      >
+        <FormSection title={t("form.sectionName")}>
+          <FormGrid>
+            <FormField label={t("form.nameEn")} htmlFor="shipping-name-en">
               <Input
                 id="shipping-name-en"
+                className={ecField.input}
                 value={typeof form.name === "object" ? form.name?.en || "" : form.name || ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    name: {
-                      ...(typeof form.name === "object" ? form.name : {}),
-                      en: e.target.value,
-                    },
-                  })
-                }
+                onChange={(e) => setName("en", e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-name-ka">{t("form.nameKa")}</Label>
+            </FormField>
+            <FormField label={t("form.nameKa")} htmlFor="shipping-name-ka">
               <Input
                 id="shipping-name-ka"
+                className={ecField.input}
                 value={typeof form.name === "object" ? form.name?.ka || "" : ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    name: {
-                      ...(typeof form.name === "object" ? form.name : {}),
-                      ka: e.target.value,
-                    },
-                  })
-                }
+                onChange={(e) => setName("ka", e.target.value)}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-desc-en">{t("form.descriptionEn")}</Label>
-              <Input
-                id="shipping-desc-en"
-                value={
-                  typeof form.description === "object"
-                    ? form.description?.en || ""
-                    : form.description || ""
-                }
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    description: {
-                      ...(typeof form.description === "object" ? form.description : {}),
-                      en: e.target.value,
-                    },
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-desc-ka">{t("form.descriptionKa")}</Label>
-              <Input
-                id="shipping-desc-ka"
-                value={
-                  typeof form.description === "object"
-                    ? form.description?.ka || ""
-                    : ""
-                }
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    description: {
-                      ...(typeof form.description === "object" ? form.description : {}),
-                      ka: e.target.value,
-                    },
-                  })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-price">{t("form.price")}</Label>
-              <Input
+            </FormField>
+          </FormGrid>
+          <FormField label={t("form.descriptionEn")} htmlFor="shipping-desc-en">
+            <Input
+              id="shipping-desc-en"
+              className={ecField.input}
+              value={
+                typeof form.description === "object"
+                  ? form.description?.en || ""
+                  : form.description || ""
+              }
+              onChange={(e) => setDescription("en", e.target.value)}
+            />
+          </FormField>
+          <FormField label={t("form.descriptionKa")} htmlFor="shipping-desc-ka">
+            <Input
+              id="shipping-desc-ka"
+              className={ecField.input}
+              value={typeof form.description === "object" ? form.description?.ka || "" : ""}
+              onChange={(e) => setDescription("ka", e.target.value)}
+            />
+          </FormField>
+        </FormSection>
+
+        <FormSection title={t("form.sectionPricing")}>
+          <FormGrid>
+            <FormField label={t("form.price")} htmlFor="shipping-price" help={t("form.priceHelp")}>
+              <MoneyInput
                 id="shipping-price"
-                type="number"
-                step="0.01"
-                min="0"
                 value={form.price || ""}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                onChange={(value) => setForm({ ...form, price: value })}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-free-threshold">{t("form.freeShippingThreshold")}</Label>
-              <Input
+            </FormField>
+            <FormField
+              label={t("form.freeShippingThreshold")}
+              htmlFor="shipping-free-threshold"
+              help={t("form.freeShippingPlaceholder")}
+            >
+              <MoneyInput
                 id="shipping-free-threshold"
-                type="number"
-                step="0.01"
-                min="0"
                 value={form.free_shipping_threshold || ""}
-                onChange={(e) =>
-                  setForm({ ...form, free_shipping_threshold: e.target.value })
-                }
-                placeholder={t("form.freeShippingPlaceholder")}
+                onChange={(value) => setForm({ ...form, free_shipping_threshold: value })}
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-estimated-days">{t("form.estimatedDays")}</Label>
+            </FormField>
+          </FormGrid>
+        </FormSection>
+
+        <FormSection title={t("form.sectionDelivery")}>
+          <FormGrid>
+            <FormField label={t("form.estimatedDays")} htmlFor="shipping-estimated-days">
               <Input
                 id="shipping-estimated-days"
                 type="number"
                 min="0"
+                className={`${ecField.input} tabular-nums`}
                 value={form.estimated_days ?? ""}
                 onChange={(e) =>
                   setForm({ ...form, estimated_days: parseInt(e.target.value) || 0 })
                 }
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="shipping-position">{t("form.position")}</Label>
+            </FormField>
+            <FormField label={t("form.position")} htmlFor="shipping-position" help={t("form.positionHelp")}>
               <Input
                 id="shipping-position"
                 type="number"
                 min="0"
+                className={`${ecField.input} tabular-nums`}
                 value={form.position ?? ""}
                 onChange={(e) =>
                   setForm({ ...form, position: parseInt(e.target.value) || 0 })
                 }
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="shipping-is-active"
-                checked={form.is_active ?? true}
-                onCheckedChange={(checked) =>
-                  setForm({ ...form, is_active: checked })
-                }
-              />
-              <Label htmlFor="shipping-is-active">{t("form.isActive")}</Label>
-            </div>
-          </div>
-          <SheetFooter>
-            <Button variant="outline" onClick={handleCloseSheet}>
-              {t("cancel")}
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? t("saving") : t("save")}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+            </FormField>
+          </FormGrid>
+          <FormSwitchRow label={t("form.isActive")} help={t("form.isActiveHelp")} htmlFor="shipping-is-active">
+            <Switch
+              id="shipping-is-active"
+              checked={form.is_active ?? true}
+              onCheckedChange={(checked) => setForm({ ...form, is_active: checked })}
+            />
+          </FormSwitchRow>
+        </FormSection>
+      </FormSheet>
 
       {/* Delete Confirmation */}
       <AlertDialog
@@ -459,6 +463,6 @@ export default function ShippingMethodsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
