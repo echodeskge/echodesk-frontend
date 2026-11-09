@@ -58,19 +58,20 @@ import { HeaderActionsProvider, useHeaderSlot } from "@/contexts/HeaderActionsCo
 /**
  * Keeps `BoardContext.selectedBoardId` in sync with `/tickets?board=` (plan
  * E19): the URL is the source of truth on the tickets screens, and global
- * consumers (create sheet, board admin host) read the context. Isolated in
- * its own Suspense boundary because it reads `useSearchParams`.
+ * consumers (create sheet, board admin host) read the context. Mounted at
+ * the top of the tenant tree (before the layout's loading skeleton) so the
+ * URL board wins over the default-board fallback; isolated in its own
+ * Suspense boundary because it reads `useSearchParams`.
  */
-function BoardUrlSync({ onBoard }: { onBoard: (id: number) => void }) {
+function BoardUrlSync() {
+  const { setSelectedBoardId } = useBoard();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const raw = pathname?.startsWith("/tickets") ? searchParams?.get("board") : null;
   const boardParam = raw && /^\d+$/.test(raw) && Number(raw) > 0 ? Number(raw) : null;
   useEffect(() => {
-    if (boardParam !== null) onBoard(boardParam);
-    // onBoard is a state setter (stable); only a URL change re-syncs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boardParam]);
+    if (boardParam !== null) setSelectedBoardId(boardParam);
+  }, [boardParam, setSelectedBoardId]);
   return null;
 }
 
@@ -392,7 +393,11 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     if (!boardsLite) return;
     if (selectedBoardId !== null && boardsLite.some((b) => b.id === selectedBoardId)) return;
     const fallback = boardsLite.find((b) => b.is_default)?.id ?? boardsLite[0]?.id ?? null;
-    if (fallback !== selectedBoardId) setSelectedBoardId(fallback);
+    // Functional update: a board set in the same commit (URL sync) is checked
+    // against the list instead of being overwritten by this render's value.
+    setSelectedBoardId((current) =>
+      current !== null && boardsLite.some((b) => b.id === current) ? current : fallback,
+    );
   }, [boardsLite, selectedBoardId, setSelectedBoardId]);
 
   // IDs that are sidebar actions (open dialogs), not navigable pages
@@ -745,9 +750,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
       {/* Board dialogs (create, settings, users, columns) are mounted by
           BoardAdminHost, which wraps this tree (see TenantLayout). */}
-      <Suspense fallback={null}>
-        <BoardUrlSync onBoard={setSelectedBoardId} />
-      </Suspense>
 
       {/* Floating Dialpad Widget (above Team Chat) */}
       {userProfile?.id && <DialpadWidget />}
@@ -781,6 +783,9 @@ export default function TenantLayout({
           <TicketCreateProvider>
             <BugReportProvider>
               <BoardProvider>
+                <Suspense fallback={null}>
+                  <BoardUrlSync />
+                </Suspense>
                 <BoardAdminHost>
                   <HeaderActionsProvider>
                     <TenantLayoutContent>{children}</TenantLayoutContent>

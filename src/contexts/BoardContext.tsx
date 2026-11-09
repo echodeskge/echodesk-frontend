@@ -16,7 +16,8 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 
 interface BoardContextType {
   selectedBoardId: number | null;
-  setSelectedBoardId: (id: number | null) => void;
+  /** A plain state setter: accepts a value or an updater function. */
+  setSelectedBoardId: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 const BoardContext = createContext<BoardContextType | undefined>(undefined);
