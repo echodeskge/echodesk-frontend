@@ -424,7 +424,7 @@ export default function KpiPage() {
     {
       id: "status",
       header: t("shared.statusLabel"),
-      width: "136px",
+      width: locale === "ka" ? "172px" : "136px",
       mobile: "end",
       cell: (g) => (
         <TonePill tone={kpiStatusTone(g.status)} dot>
