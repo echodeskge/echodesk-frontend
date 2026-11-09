@@ -127,7 +127,8 @@ describe("ChecklistCard", () => {
 
   it("toggling calls toggle_check, updates the bar and shows 'checked by' as a tooltip", async () => {
     const { client } = setup();
-    expect(rows()[0]).toHaveAttribute("title", "Checked by Giorgi G. · Mar 5, 2025, 14:07");
+    // The hour depends on the machine's timezone (CI runs in UTC), so only the minutes are fixed.
+    expect(rows()[0].getAttribute("title")).toMatch(/^Checked by Giorgi G\. · Mar 5, 2025, \d{2}:07$/);
     await userEvent.click(within(rows()[1]).getByRole("checkbox"));
     await waitFor(() =>
       expect(vi.mocked(axios.patch)).toHaveBeenCalledWith("/api/checklist-items/2/toggle_check/", {}, expect.objectContaining({ headers: { "X-Client-Mutation": expect.any(String) } })),
