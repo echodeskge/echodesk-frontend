@@ -57,6 +57,11 @@ type Props = {
   defaultCenter?: [number, number];
   /** Map height. Defaults to 280px so a Card section doesn't grow too tall. */
   heightPx?: number;
+  /**
+   * Translated helper texts (the component has no intl namespace of its own).
+   * English defaults keep other callers working.
+   */
+  labels?: { dropPin?: string; movePin?: string; loading?: string };
 };
 
 /**
@@ -75,6 +80,7 @@ export function MiniMapPicker({
   label,
   defaultCenter = DEFAULT_CENTER,
   heightPx = 280,
+  labels,
 }: Props) {
   const center = useMemo<[number, number]>(() => {
     if (typeof latitude === "number" && typeof longitude === "number") {
@@ -113,16 +119,16 @@ export function MiniMapPicker({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <MapPin className="h-3.5 w-3.5" />
+          <MapPin className="h-3.5 w-3.5" aria-hidden />
           {label ||
             (hasPin
-              ? "Click or drag to update the pin"
-              : "Click on the map to drop a pin")}
+              ? labels?.movePin ?? "Click or drag to update the pin"
+              : labels?.dropPin ?? "Click on the map to drop a pin")}
         </span>
         {hasPin && (
-          <span className="font-mono">
+          <span className="font-mono tabular-nums">
             {latitude!.toFixed(6)}, {longitude!.toFixed(6)}
           </span>
         )}
@@ -134,7 +140,7 @@ export function MiniMapPicker({
         {!iconReady ? (
           <div className="flex h-full w-full items-center justify-center bg-muted/40 text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Loading map…
+            {labels?.loading ?? "Loading map…"}
           </div>
         ) : (
           <MapContainer
