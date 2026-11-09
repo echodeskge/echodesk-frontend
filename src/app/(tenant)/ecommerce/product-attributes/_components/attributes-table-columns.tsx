@@ -31,6 +31,21 @@ export function getAttributeColumns({
   return [
     {
       accessorKey: "name",
+      // `name` is a {lang: text} object: the automatic filter for objects is
+      // strict equality, so any search text hid every row. Match the search
+      // against the name in every language and the key ("by name or key").
+      filterFn: (row, _columnId, value) => {
+        const query = String(value ?? "").trim().toLowerCase()
+        if (!query) return true
+        const name = row.original.name as unknown
+        const names =
+          name && typeof name === "object"
+            ? Object.values(name as Record<string, string>)
+            : [String(name ?? "")]
+        return [...names, row.original.key ?? ""].some((text) =>
+          String(text ?? "").toLowerCase().includes(query)
+        )
+      },
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("table.name")} />
       ),
