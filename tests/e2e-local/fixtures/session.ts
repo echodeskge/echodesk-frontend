@@ -83,6 +83,33 @@ export async function lockDownNetwork(context: BrowserContext): Promise<string[]
   return blocked;
 }
 
+/**
+ * The local demo tenant reports `api_url` without the port, so every app
+ * socket (boards, notifications, chat) dials :80 and fails. Rewrite it to the
+ * local API origin, so `data-ws-ready` can turn true (FE-02 note, W1).
+ */
+export async function fixTenantConfig(context: BrowserContext) {
+  await context.route("**/api/tenant/config/**", async (route) => {
+    const res = await route.fetch();
+    let body = await res.text();
+    try {
+      const json = JSON.parse(body);
+      const fix = (o: unknown) => {
+        if (!o || typeof o !== "object") return;
+        for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
+          if (k === "api_url") (o as Record<string, unknown>)[k] = `http://${API_HOST}`;
+          else fix(v);
+        }
+      };
+      fix(json);
+      body = JSON.stringify(json);
+    } catch {
+      // not JSON: pass it through unchanged
+    }
+    await route.fulfill({ response: res, body });
+  });
+}
+
 export interface SignInOptions {
   theme?: "light" | "dark";
 }
@@ -91,6 +118,7 @@ export async function signIn(context: BrowserContext, who: Who, locale: Locale =
   const user = await apiGet(who, "/api/auth/profile/");
   await context.addCookies([{ name: "NEXT_LOCALE", value: locale, url: APP }]);
   const blocked = await lockDownNetwork(context);
+  await fixTenantConfig(context);
   await context.addInitScript(
     ([token, profile, tenant, theme]) => {
       localStorage.setItem("dev_tenant", tenant as string);
