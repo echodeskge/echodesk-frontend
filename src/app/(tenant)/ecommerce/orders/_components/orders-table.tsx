@@ -104,6 +104,8 @@ export function OrdersTable({
             selectedCount={selected.size}
             onPageChange={onPageChange}
             onPageSizeChange={onPageSizeChange}
+            // keeps prev / next clear of the floating team-chat button (36px at 12px from the corner)
+            className="pe-10"
           />
         ) : undefined
       }
