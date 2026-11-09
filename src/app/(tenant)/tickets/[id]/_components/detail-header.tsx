@@ -225,6 +225,29 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
                 {labels.history}
               </DropdownMenuItem>
               {belowSm && (
+                <>
+                  {/* Phones: prev/next move into the menu (no room in the header row, DC20). */}
+                  <DropdownMenuItem
+                    className="h-[30px] gap-2 px-2 text-[13px]"
+                    data-testid="detail-menu-prev"
+                    disabled={!prevId}
+                    onSelect={() => handlers.current.onPrev()}
+                  >
+                    <ChevronUp aria-hidden="true" size={14} />
+                    {labels.prev}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="h-[30px] gap-2 px-2 text-[13px]"
+                    data-testid="detail-menu-next"
+                    disabled={!nextId}
+                    onSelect={() => handlers.current.onNext()}
+                  >
+                    <ChevronDown aria-hidden="true" size={14} />
+                    {labels.next}
+                  </DropdownMenuItem>
+                </>
+              )}
+              {belowSm && (
                 <DropdownMenuItem
                   className="h-[30px] gap-2 px-2 text-[13px]"
                   data-testid="detail-menu-copy-link"

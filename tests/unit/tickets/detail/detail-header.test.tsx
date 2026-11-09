@@ -178,6 +178,18 @@ describe("copy link", () => {
     renderDetail(<DetailHeaderBridge {...props()} />);
     const menu = await openMenu();
     expect(within(menu).queryByTestId("detail-menu-copy-link")).toBeNull();
+    expect(within(menu).queryByTestId("detail-menu-next")).toBeNull();
+  });
+
+  it("below sm, prev / next live in the ⋮ menu (W3 FE-INT)", async () => {
+    mockMatchMedia((q) => q === "(max-width: 639px)");
+    const p = props();
+    renderDetail(<DetailHeaderBridge {...p} />);
+    expect(screen.queryByTestId("detail-next")).toBeNull();
+    await userEvent.click(within(await openMenu()).getByTestId("detail-menu-next"));
+    expect(p.onNext).toHaveBeenCalledTimes(1);
+    await userEvent.click(within(await openMenu()).getByTestId("detail-menu-prev"));
+    expect(p.onPrev).toHaveBeenCalledTimes(1);
   });
 });
 
