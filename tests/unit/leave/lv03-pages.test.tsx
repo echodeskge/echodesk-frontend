@@ -243,3 +243,19 @@ describe("My payslip page (LV-03)", () => {
     expect(screen.getByText("ამ თვისთვის თქვენი სახელფასო მონაცემები არ არის.")).toBeTruthy()
   })
 })
+
+describe("KPI detail (LV-03 bug fix)", () => {
+  it("does not reopen when closed while the detail is still loading", async () => {
+    api.fetchKpis.mockResolvedValue([goal({ id: 7, title: "Calls answered" })])
+    let resolve: (g: KpiGoal) => void = () => {}
+    api.fetchKpi.mockImplementation(() => new Promise<KpiGoal>((r) => (resolve = r)))
+    renderLeave(<KpiPage />)
+    fireEvent.click(await screen.findByTestId("kpi-row"))
+    const dialog = await screen.findByRole("dialog")
+    fireEvent.keyDown(dialog, { key: "Escape" })
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+    resolve(goal({ id: 7, title: "Calls answered" }))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.queryByRole("dialog")).toBeNull()
+  })
+})

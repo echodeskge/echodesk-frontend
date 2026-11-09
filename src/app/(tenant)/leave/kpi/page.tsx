@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
 import {
@@ -153,19 +153,32 @@ export default function KpiPage() {
     if (enabled) load()
   }, [enabled, load])
 
+  // Bumped when a detail load starts or the dialog closes: a response for a
+  // dialog the user already closed (or a newer row) is dropped instead of
+  // reopening the dialog.
+  const detailRequest = useRef(0)
   const openDetail = useCallback(
     async (id: number) => {
+      const request = ++detailRequest.current
       setDetailLoading(true)
       try {
-        setDetail(await fetchKpi(id))
+        const goal = await fetchKpi(id)
+        if (request === detailRequest.current) setDetail(goal)
       } catch (error) {
-        toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
+        if (request === detailRequest.current) {
+          toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
+        }
       } finally {
-        setDetailLoading(false)
+        if (request === detailRequest.current) setDetailLoading(false)
       }
     },
     [t]
   )
+  const closeDetail = () => {
+    detailRequest.current += 1
+    setDetailLoading(false)
+    setDetail(null)
+  }
 
   // Notification deep link: /leave/kpi?id=<kpiId>
   useEffect(() => {
@@ -735,7 +748,7 @@ export default function KpiPage() {
       </Dialog>
 
       {/* Detail */}
-      <Dialog open={!!detail || detailLoading} onOpenChange={(o) => !o && setDetail(null)}>
+      <Dialog open={!!detail || detailLoading} onOpenChange={(o) => !o && closeDetail()}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]" data-testid="kpi-detail">
           {detailLoading && !detail ? (
             <div className="flex h-40 items-center justify-center">
