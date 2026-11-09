@@ -3,12 +3,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { Loader2, Pencil, Trash2 } from "lucide-react"
-import { getApiErrorMessage } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { HandCoins, Loader2, Pencil, Trash2 } from "lucide-react"
+import { cn, getApiErrorMessage } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -18,8 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { UserPicker, useLiteUsers } from "../../_components/UserPicker"
 import {
   deleteSubstitutionRate,
@@ -30,6 +24,17 @@ import {
 } from "../../_lib/hr-api"
 import { formatMoney } from "../../_lib/hr-utils"
 import { isValidAmount, normalizeCurrency } from "../../_lib/payroll-utils"
+import {
+  LeaveEmptyState,
+  LeaveTable,
+  PersonCell,
+  SectionCard,
+  Segmented,
+  TonePill,
+  leaveButton,
+  type LeaveColumn,
+} from "../../_components/ui"
+import { MoneyCell } from "./money"
 
 export function RatesTab() {
   const t = useTranslations("leave")
@@ -38,6 +43,7 @@ export function RatesTab() {
   const [owner, setOwner] = useState<number | null>(null)
   const [rows, setRows] = useState<SubstitutionRate[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [editing, setEditing] = useState<SubstitutionRate | null>(null)
   const [form, setForm] = useState<{ mode: RateMode; amount: string; currency: string }>({
     mode: "day",
@@ -49,10 +55,12 @@ export function RatesTab() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       setRows(await fetchSubstitutionRates(owner ?? undefined))
     } catch (error) {
       setRows([])
+      setLoadError(error)
       toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
     } finally {
       setLoading(false)
@@ -106,96 +114,128 @@ export function RatesTab() {
     }
   }
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between space-y-0">
-        <div>
-          <CardTitle>{t("hr.payroll.rates.title")}</CardTitle>
-          <CardDescription>{t("hr.payroll.rates.description")}</CardDescription>
-        </div>
-        <div className="w-full sm:w-64">
-          <UserPicker
-            users={users}
-            value={owner}
-            onChange={setOwner}
-            allowClear
-            placeholder={t("hr.payroll.rates.allOwners")}
-          />
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : rows.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">{t("hr.payroll.rates.empty")}</p>
+  const columns: LeaveColumn<SubstitutionRate>[] = [
+    {
+      id: "owner",
+      header: t("hr.payroll.rates.owner"),
+      width: "minmax(150px,1fr)",
+      mobile: "title",
+      cell: (row) => <PersonCell name={row.owner_name} />,
+    },
+    {
+      id: "substitute",
+      header: t("hr.payroll.rates.substitute"),
+      width: "minmax(130px,1fr)",
+      mobile: "meta",
+      cell: (row) => <span className="truncate">{row.substitute_name}</span>,
+    },
+    {
+      id: "task",
+      header: t("hr.payroll.rates.task"),
+      width: "minmax(0,1.6fr)",
+      mobile: "meta",
+      muted: true,
+      cell: (row) => (
+        <span className="truncate" title={row.task}>
+          {row.task}
+        </span>
+      ),
+    },
+    {
+      id: "rate",
+      header: t("hr.payroll.rates.rate"),
+      width: "170px",
+      align: "end",
+      mobile: "end",
+      cell: (row) =>
+        row.rate ? (
+          <span className="flex items-baseline gap-1 whitespace-nowrap">
+            <MoneyCell amount={formatMoney(row.rate.amount, locale)} currency={row.rate.currency} />
+            <span className="text-[11px] text-muted-foreground">/ {t(`hr.payroll.rates.per.${row.rate.mode}`)}</span>
+          </span>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("hr.payroll.rates.owner")}</TableHead>
-                  <TableHead>{t("hr.payroll.rates.substitute")}</TableHead>
-                  <TableHead>{t("hr.payroll.rates.task")}</TableHead>
-                  <TableHead>{t("hr.payroll.rates.rate")}</TableHead>
-                  <TableHead className="w-[100px]" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">{row.owner_name}</TableCell>
-                    <TableCell>{row.substitute_name}</TableCell>
-                    <TableCell className="max-w-[320px] whitespace-normal">{row.task}</TableCell>
-                    <TableCell>
-                      {row.rate ? (
-                        <span>
-                          {formatMoney(row.rate.amount, locale)} {row.rate.currency}{" "}
-                          <span className="text-muted-foreground">
-                            / {t(`hr.payroll.rates.per.${row.rate.mode}`)}
-                          </span>
-                        </span>
-                      ) : (
-                        <Badge variant="outline">{t("hr.payroll.rates.noRate")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-1">
-                        <Button size="icon" variant="ghost" aria-label={t("hr.common.edit")} onClick={() => openEdit(row)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        {row.rate && (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            aria-label={t("hr.payroll.rates.remove")}
-                            disabled={removingId === row.id}
-                            onClick={() => handleRemove(row)}
-                          >
-                            {removingId === row.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <TonePill tone="neutral">{t("hr.payroll.rates.noRate")}</TonePill>
+        ),
+    },
+    {
+      id: "actions",
+      header: "",
+      width: "64px",
+      align: "end",
+      mobile: "actions",
+      cell: (row) => (
+        <span className="flex items-center gap-1">
+          <button
+            type="button"
+            className={leaveButton.ghostIconSm}
+            aria-label={t("hr.common.edit")}
+            title={t("hr.common.edit")}
+            onClick={() => openEdit(row)}
+          >
+            <Pencil className="h-3.5 w-3.5" aria-hidden />
+          </button>
+          {row.rate && (
+            <button
+              type="button"
+              className={cn(leaveButton.ghostIconSm, "hover:bg-destructive/10 hover:text-destructive")}
+              aria-label={t("hr.payroll.rates.remove")}
+              title={t("hr.payroll.rates.remove")}
+              disabled={removingId === row.id}
+              onClick={() => handleRemove(row)}
+            >
+              {removingId === row.id ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" aria-hidden />
+              )}
+            </button>
+          )}
+        </span>
+      ),
+    },
+  ]
+
+  return (
+    <>
+      <SectionCard
+        testId="payroll-rates"
+        title={t("hr.payroll.rates.title")}
+        hint={t("hr.payroll.rates.description")}
+        actions={
+          <div className="w-[170px] sm:w-[200px]">
+            <UserPicker
+              users={users}
+              value={owner}
+              onChange={setOwner}
+              allowClear
+              placeholder={t("hr.payroll.rates.allOwners")}
+              className="h-7 px-2 text-xs"
+            />
           </div>
-        )}
-      </CardContent>
+        }
+      >
+        <LeaveTable
+          variant="flush"
+          ariaLabel={t("hr.payroll.rates.title")}
+          testId="rates-table"
+          rowTestId="rate-row"
+          columns={columns}
+          rows={loading ? undefined : rows}
+          rowKey={(row) => row.id}
+          onRowClick={openEdit}
+          error={loadError}
+          onRetry={load}
+          skeletonRows={4}
+          empty={<LeaveEmptyState icon={HandCoins} title={t("hr.payroll.rates.empty")} />}
+        />
+      </SectionCard>
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
         <DialogContent className="sm:max-w-[460px]">
-          <form onSubmit={handleSave}>
+          <form onSubmit={handleSave} className="grid gap-4">
             <DialogHeader>
-              <DialogTitle>{t("hr.payroll.rates.editTitle")}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-base">{t("hr.payroll.rates.editTitle")}</DialogTitle>
+              <DialogDescription className="text-[13px]">
                 {editing &&
                   t("hr.payroll.rates.editDescription", {
                     substitute: editing.substitute_name,
@@ -203,38 +243,49 @@ export function RatesTab() {
                   })}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              {editing && <p className="text-sm rounded-md bg-muted p-3">{editing.task}</p>}
-              <div className="grid gap-2">
-                <Label>{t("hr.payroll.rates.mode")}</Label>
-                <Select value={form.mode} onValueChange={(v) => setForm({ ...form, mode: v as RateMode })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="day">{t("hr.payroll.rates.modeDay")}</SelectItem>
-                    <SelectItem value="month">{t("hr.payroll.rates.modeMonth")}</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
+            <div className="grid gap-4">
+              {editing && (
+                <p className="whitespace-pre-wrap break-words rounded-md bg-muted px-3 py-2.5 text-[13px]">{editing.task}</p>
+              )}
+              <div className="grid gap-1.5">
+                <span className="text-[13px] font-medium">{t("hr.payroll.rates.mode")}</span>
+                <Segmented
+                  size="md"
+                  stretch
+                  ariaLabel={t("hr.payroll.rates.mode")}
+                  value={form.mode}
+                  onChange={(v) => setForm({ ...form, mode: v })}
+                  options={[
+                    { value: "day" as RateMode, label: t("hr.payroll.rates.modeDay") },
+                    { value: "month" as RateMode, label: t("hr.payroll.rates.modeMonth") },
+                  ]}
+                  testId="rate-mode"
+                />
+                <p className="text-xs leading-[17px] text-muted-foreground">
                   {form.mode === "day" ? t("hr.payroll.rates.modeDayHint") : t("hr.payroll.rates.modeMonthHint")}
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <div className="grid gap-2 col-span-2">
-                  <Label htmlFor="rate-amount">{t("hr.payroll.rates.amount")}</Label>
+                <div className="col-span-2 grid gap-1.5">
+                  <label htmlFor="rate-amount" className="text-[13px] font-medium">
+                    {t("hr.payroll.rates.amount")}
+                  </label>
                   <Input
                     id="rate-amount"
+                    className="h-[34px] text-[13px] tabular-nums"
                     inputMode="decimal"
                     value={form.amount}
                     onChange={(e) => setForm({ ...form, amount: e.target.value })}
                     required
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="rate-currency">{t("hr.payroll.columns.currency")}</Label>
+                <div className="grid gap-1.5">
+                  <label htmlFor="rate-currency" className="text-[13px] font-medium">
+                    {t("hr.payroll.columns.currency")}
+                  </label>
                   <Input
                     id="rate-currency"
+                    className="h-[34px] font-mono text-[13px] uppercase"
                     maxLength={3}
                     placeholder={t("hr.payroll.rates.currencyDefault")}
                     value={form.currency}
@@ -242,20 +293,20 @@ export function RatesTab() {
                   />
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">{t("hr.payroll.rates.appliesHint")}</p>
+              <p className="text-xs leading-[17px] text-muted-foreground">{t("hr.payroll.rates.appliesHint")}</p>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditing(null)}>
+            <DialogFooter className="gap-2">
+              <button type="button" className={leaveButton.outline} onClick={() => setEditing(null)}>
                 {t("hr.common.cancel")}
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              </button>
+              <button type="submit" className={leaveButton.primary} disabled={saving}>
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                 {t("hr.common.save")}
-              </Button>
+              </button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   )
 }

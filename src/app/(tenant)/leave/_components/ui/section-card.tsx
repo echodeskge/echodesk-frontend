@@ -38,7 +38,7 @@ export function SectionCard({
           {title}
         </span>
         {hint && <span className="min-w-0 text-xs text-muted-foreground">· {hint}</span>}
-        {actions && <div className="ms-auto flex shrink-0 items-center gap-1.5">{actions}</div>}
+        {actions && <div className="ms-auto flex max-w-full flex-wrap items-center justify-end gap-1.5">{actions}</div>}
       </div>
       <div className={bodyClassName}>{children}</div>
     </section>

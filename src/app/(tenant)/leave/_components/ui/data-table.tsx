@@ -40,6 +40,8 @@ export interface LeaveTableProps<T> {
   /** Opens the row (detail). Clicks on buttons, links and inputs inside the row are ignored. */
   onRowClick?: (row: T) => void
   isRowSelected?: (row: T) => boolean
+  /** Extra classes for one row (e.g. a muted, bold totals row). */
+  rowClassName?: (row: T) => string | undefined
   loading?: boolean
   /** A load error: replaces the body with the error state (and `onRetry`). */
   error?: unknown
@@ -93,6 +95,7 @@ export function LeaveTable<T>({
   rowKey,
   onRowClick,
   isRowSelected,
+  rowClassName,
   loading,
   error,
   onRetry,
@@ -213,7 +216,8 @@ export function LeaveTable<T>({
             "flex min-h-[52px] flex-col justify-center gap-1 border-b px-4 py-2 text-[13px] @3xl:h-10 @3xl:min-h-0 @3xl:items-center @3xl:py-0",
             grid,
             clickable && "cursor-pointer outline-none hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
-            selected && "bg-muted/50"
+            selected && "bg-muted/50",
+            rowClassName?.(row)
           )}
         >
           <span role="none" className="flex min-w-0 items-center gap-2 @3xl:contents">
