@@ -156,6 +156,12 @@ describe("Attendance page (LV-03)", () => {
 
   it("needs the attendance feature and leave-manager rights", () => {
     features.value.isLeaveManager = false
+    const { unmount } = renderLeave(<AttendancePage />)
+    // Feature on, no role: "no access", not "turned off in leave settings".
+    expect(screen.getByTestId("leave-no-access")).toHaveTextContent("You don't have access to this page")
+    expect(screen.queryByTestId("leave-feature-off")).toBeNull()
+    unmount()
+    features.value.features = { ...features.value.features, attendance: false }
     renderLeave(<AttendancePage />)
     expect(screen.getByTestId("leave-feature-off")).toBeTruthy()
     expect(api.fetchAttendance).not.toHaveBeenCalled()
@@ -205,8 +211,13 @@ describe("Payroll page (LV-03)", () => {
 
   it("is locked for users who cannot manage payroll", () => {
     features.value.features = { ...features.value.features, can_manage_payroll: false }
+    const { unmount } = renderLeave(<PayrollPage />)
+    expect(screen.getByTestId("leave-no-access")).toBeTruthy()
+    unmount()
+    features.value.features = { ...features.value.features, payroll: false, substitution_pay: false }
     renderLeave(<PayrollPage />)
     expect(screen.getByTestId("leave-feature-off")).toBeTruthy()
+    expect(api.fetchPayrollReport).not.toHaveBeenCalled()
   })
 })
 

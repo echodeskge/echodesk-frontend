@@ -5927,7 +5927,9 @@
       "noMatches": "Nothing matches these filters",
       "noMatchesHint": "Try another status or clear the search.",
       "clearFilters": "Clear filters",
-      "days": "{count, plural, one {# day} other {# days}}"
+      "days": "{count, plural, one {# day} other {# days}}",
+      "noAccessTitle": "You don't have access to this page",
+      "noAccessHint": "Ask an administrator if you need it."
     },
     "requests": {
       "searchPlaceholder": "Search employee or leave type",

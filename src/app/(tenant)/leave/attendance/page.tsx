@@ -123,7 +123,7 @@ export default function AttendancePage() {
   const rows = grid?.rows ?? []
 
   return (
-    <FeatureGate loaded={loaded} allowed={enabled}>
+    <FeatureGate loaded={loaded} allowed={enabled} featureOn={Boolean(features?.attendance)}>
       <LeaveHeaderBridge sub={formatPeriod(period, locale)} />
       <LeavePage fill testId="attendance-page">
         <LeaveToolbar testId="attendance-toolbar">

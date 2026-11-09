@@ -33,7 +33,7 @@ export default function PayrollPage() {
   const [period, setPeriod] = useState(currentPeriod())
 
   return (
-    <FeatureGate loaded={loaded} allowed={Boolean(features?.can_manage_payroll) && tabs.length > 0}>
+    <FeatureGate loaded={loaded} allowed={Boolean(features?.can_manage_payroll) && tabs.length > 0} featureOn={tabs.length > 0}>
       <LeaveHeaderBridge breadcrumb={active ? t(`hr.payroll.tabs.${active}`) : null} />
       <LeavePage testId="payroll-page">
         <LeaveToolbar inset testId="payroll-toolbar">

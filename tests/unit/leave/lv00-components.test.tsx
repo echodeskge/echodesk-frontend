@@ -294,6 +294,32 @@ describe("shared leave components", () => {
     expect(box.textContent).not.toMatch(/[A-Za-z]/)
     expect(box).toHaveTextContent("მონაცემები ვერ ჩაიტვირთა")
   })
+
+  it("LeaveErrorState shows 'no access' without a retry for a 403", () => {
+    const onRetry = vi.fn()
+    const forbidden = Object.assign(new Error("Request failed with status code 403"), { response: { status: 403 } })
+    const { unmount } = renderLeave(<LeaveErrorState error={forbidden} onRetry={onRetry} />, "ka")
+    const box = screen.getByTestId("leave-error")
+    expect(box).toHaveAttribute("data-forbidden", "true")
+    expect(box).toHaveTextContent("ამ გვერდზე წვდომა არ გაქვთ")
+    expect(box.textContent).not.toMatch(/[A-Za-z]/)
+    expect(screen.queryByRole("button")).toBeNull()
+    unmount()
+    renderLeave(<LeaveErrorState error={new Error("Network Error")} onRetry={onRetry} />)
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }))
+    expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it("FeatureGate says 'no access' when the feature is on but the role is missing", () => {
+    renderLeave(
+      <FeatureGate loaded allowed={false} featureOn>
+        <p>secret</p>
+      </FeatureGate>
+    )
+    expect(screen.getByTestId("leave-no-access")).toHaveTextContent("You don't have access to this page")
+    expect(screen.queryByTestId("leave-feature-off")).toBeNull()
+    expect(screen.queryByText("secret")).toBeNull()
+  })
 })
 
 describe("lv-00 pending catalog", () => {

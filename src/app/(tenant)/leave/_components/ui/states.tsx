@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { useTranslations } from "next-intl"
-import { AlertCircle, Loader2, RotateCw, type LucideIcon } from "lucide-react"
+import { AlertCircle, Loader2, Lock, RotateCw, type LucideIcon } from "lucide-react"
 import { EmptyState } from "@/app/(tenant)/tickets/_components/primitives/empty-state"
 import { getApiErrorMessage } from "@/lib/utils"
 import { cn } from "@/lib/utils"
@@ -54,15 +54,17 @@ export function LeaveErrorState({
 }) {
   const t = useTranslations("leave.ui")
   const detail = error ? getApiErrorMessage(error) : ""
+  // A 403 is not a connection problem: say so, and don't offer a retry that can't help.
+  const forbidden = (error as { response?: { status?: number } } | null | undefined)?.response?.status === 403
   return (
-    <div data-testid={testId} className="contents" title={detail || undefined}>
+    <div data-testid={testId} data-forbidden={forbidden || undefined} className="contents" title={detail || undefined}>
       <EmptyState
-        icon={AlertCircle}
-        title={title ?? t("errorTitle")}
-        description={description ?? t("errorHint")}
+        icon={forbidden ? Lock : AlertCircle}
+        title={title ?? t(forbidden ? "noAccessTitle" : "errorTitle")}
+        description={description ?? t(forbidden ? "noAccessHint" : "errorHint")}
         className={cn("py-12", className)}
         action={
-          onRetry ? (
+          onRetry && !forbidden ? (
             <button type="button" onClick={onRetry} className={leaveButton.outlineSm}>
               <RotateCw className="h-3.5 w-3.5" aria-hidden />
               {t("retry")}
