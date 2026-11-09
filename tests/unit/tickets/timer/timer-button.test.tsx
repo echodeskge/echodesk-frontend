@@ -97,6 +97,15 @@ describe("TimerButton: idle", () => {
   });
 });
 
+describe("TimerButton: robustness", () => {
+  it("survives a malformed timer payload (shows 00:00:00)", async () => {
+    routeAxios(axios, { get: { "/api/tickets/10/timer/": () => ({ detail: "x" }), "/api/tickets/10/": () => TICKET } });
+    renderTimer(<TimerButton ticketId={10} />);
+    await button();
+    expect(screen.getByTestId("timer-text")).toHaveTextContent("00:00:00");
+  });
+});
+
 describe("TimerButton: running (RM1)", () => {
   it("ticks every second from server_now + the local offset, whatever the client clock says", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });

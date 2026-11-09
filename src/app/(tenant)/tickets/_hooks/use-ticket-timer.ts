@@ -85,11 +85,25 @@ export function liveTotals(snapshot: TimerSnapshot, now: number = Date.now()) {
   return { mine, total, byUser };
 }
 
+/** Fill missing fields, so an unexpected payload never breaks the header. */
+export function normalizeTimerState(raw: Partial<TimerState> | null | undefined, fetchedAt: number): TimerSnapshot {
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+  return {
+    running: raw?.running ?? null,
+    my_total_seconds: num(raw?.my_total_seconds),
+    total_seconds: num(raw?.total_seconds),
+    server_now: typeof raw?.server_now === "string" ? raw.server_now : new Date(fetchedAt).toISOString(),
+    by_user: Array.isArray(raw?.by_user) ? raw.by_user : [],
+    entries: Array.isArray(raw?.entries) ? raw.entries : [],
+    fetched_at: fetchedAt,
+  };
+}
+
 /** The `tk.timer(id)` query (A14). */
 export function useTicketTimer(id: number | null | undefined, options: { enabled?: boolean } = {}) {
   return useQuery<TimerSnapshot>({
     queryKey: tk.timer(id ?? 0),
-    queryFn: async () => ({ ...(await timerGet(id as number)), fetched_at: Date.now() }),
+    queryFn: async () => normalizeTimerState(await timerGet(id as number), Date.now()),
     enabled: options.enabled !== false && validId(id),
     retry: retryUnlessDenied,
     staleTime: 30_000,
@@ -100,7 +114,16 @@ export function useTicketTimer(id: number | null | undefined, options: { enabled
 export function useTicketTimeSummary(id: number | null | undefined, options: { enabled?: boolean } = {}) {
   return useQuery<TimeSummarySnapshot>({
     queryKey: tk.timeSummary(id ?? 0),
-    queryFn: async () => ({ ...(await getTimeSummary(id as number)), fetched_at: Date.now() }),
+    queryFn: async () => {
+      const raw = await getTimeSummary(id as number);
+      return {
+        ...raw,
+        total_seconds: typeof raw?.total_seconds === "number" ? raw.total_seconds : 0,
+        active: raw?.active ?? null,
+        by_column: Array.isArray(raw?.by_column) ? raw.by_column : [],
+        fetched_at: Date.now(),
+      };
+    },
     enabled: options.enabled !== false && validId(id),
     retry: retryUnlessDenied,
     staleTime: 30_000,

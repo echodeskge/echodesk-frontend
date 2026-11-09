@@ -144,44 +144,52 @@ export function TimerButton({ ticketId }: TimerSectionProps) {
           tooltip only opens once the run passes 8 hours. */}
       <Tooltip open={longRunning ? undefined : false}>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent sideOffset={6}>{t("longRunningHint")}</TooltipContent>
+        {longRunning && <TooltipContent sideOffset={6}>{t("longRunningHint")}</TooltipContent>}
       </Tooltip>
       <AlertDialog open={conflict !== null} onOpenChange={(open) => !open && setConflict(null)}>
-        <AlertDialogContent data-testid="timer-switch-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {conflict?.ticket_title
-                ? t("runningElsewhere", { id: conflict.ticket_id, title: conflict.ticket_title })
-                : t("runningElsewhereNoTitle", { id: conflict?.ticket_id ?? "" })}
-            </AlertDialogTitle>
-            <AlertDialogDescription>{t("switchBody")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-2">
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-            <Button
-              type="button"
-              variant="outline"
-              data-testid="timer-open-other"
-              onClick={() => {
-                const id = conflict?.ticket_id;
-                setConflict(null);
-                if (id) router.push(`/tickets/${id}`);
-              }}
-            >
-              {t("openTicket")}
-            </Button>
-            <AlertDialogAction
-              data-testid="timer-switch-here"
-              onClick={(e) => {
-                e.preventDefault();
-                switchHere();
-              }}
-            >
-              {t("switchHere")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        {/* Rendered only while open: strings are looked up when needed. */}
+        {conflict && (
+          <SwitchDialogContent
+            running={conflict}
+            onOpen={() => {
+              setConflict(null);
+              router.push(`/tickets/${conflict.ticket_id}`);
+            }}
+            onSwitch={switchHere}
+          />
+        )}
       </AlertDialog>
     </>
+  );
+}
+
+function SwitchDialogContent({ running, onOpen, onSwitch }: { running: Running; onOpen: () => void; onSwitch: () => void }) {
+  const t = useTranslations("ticketsScreen.timer");
+  return (
+    <AlertDialogContent data-testid="timer-switch-dialog">
+      <AlertDialogHeader>
+        <AlertDialogTitle>
+          {running.ticket_title
+            ? t("runningElsewhere", { id: running.ticket_id, title: running.ticket_title })
+            : t("runningElsewhereNoTitle", { id: running.ticket_id })}
+        </AlertDialogTitle>
+        <AlertDialogDescription>{t("switchBody")}</AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter className="gap-2 sm:gap-2">
+        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+        <Button type="button" variant="outline" data-testid="timer-open-other" onClick={onOpen}>
+          {t("openTicket")}
+        </Button>
+        <AlertDialogAction
+          data-testid="timer-switch-here"
+          onClick={(e) => {
+            e.preventDefault();
+            onSwitch();
+          }}
+        >
+          {t("switchHere")}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
   );
 }
