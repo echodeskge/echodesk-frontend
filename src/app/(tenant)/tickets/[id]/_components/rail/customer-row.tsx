@@ -19,7 +19,7 @@ import { PICKER_POPOVER, PropertyPill } from "../../../_components/primitives/pr
 import { PropertyRow, usePropertyRowLabelId } from "../../../_components/primitives/property-row";
 import { initials } from "../../../_components/primitives/initials";
 import type { TicketCustomer, TicketDetail, ViewerPermissions } from "../../../_lib/types";
-import { railTriggerClass, useEditingPresence, useRailPatch } from "./rail-shared";
+import { railTriggerClass, useEditingPresence, useRailPatch, RailLabel } from "./rail-shared";
 
 const SEARCH_DEBOUNCE_MS = 250;
 const RESULT_LIMIT = 20;
@@ -137,7 +137,7 @@ export function CustomerRow({ ticket, perms }: { ticket: TicketDetail; perms: Vi
   };
 
   return (
-    <PropertyRow label={t("customer")}>
+    <PropertyRow label={<RailLabel>{t("customer")}</RailLabel>}>
       <CustomerTrigger
         open={open}
         onOpenChange={change}

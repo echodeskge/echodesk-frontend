@@ -23,7 +23,7 @@ import { PRIORITY_OPTIONS, getPriorityStyle, type TicketPriority } from "../../.
 import { tk } from "../../../_lib/query-keys";
 import type { TicketDetail, ViewerPermissions } from "../../../_lib/types";
 import { closedColumnIds, useBoardColumns } from "../status-track-bar";
-import { useEditingPresence, useRailPatch } from "./rail-shared";
+import { useEditingPresence, useRailPatch, RailLabel } from "./rail-shared";
 
 interface RowProps {
   ticket: TicketDetail;
@@ -70,7 +70,7 @@ export function StatusRow({ ticket, perms }: RowProps) {
   };
 
   return (
-    <PropertyRow label={t("status")}>
+    <PropertyRow label={<RailLabel>{t("status")}</RailLabel>}>
       <PropertyPicker
         options={options}
         value={ticket.column?.id ?? null}
@@ -98,7 +98,7 @@ export function PriorityRow({ ticket, perms }: RowProps) {
   const current = getPriorityStyle(ticket.priority).value;
 
   return (
-    <PropertyRow label={t("priority")}>
+    <PropertyRow label={<RailLabel>{t("priority")}</RailLabel>}>
       <PropertyPicker
         options={options}
         value={current}
@@ -131,7 +131,7 @@ export function DepartmentRow({ ticket, perms }: RowProps) {
   const value = ticket.assigned_department?.id ?? NO_DEPARTMENT;
 
   return (
-    <PropertyRow label={t("department")}>
+    <PropertyRow label={<RailLabel>{t("department")}</RailLabel>}>
       <PropertyPicker
         options={options}
         value={value}

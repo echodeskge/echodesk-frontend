@@ -218,13 +218,13 @@ export function LabelManagementDialog({ open, onOpenChange, hideTrigger = false 
 
               <div className="space-y-2">
                 <Label>{t('color')}</Label>
-                <div className="grid grid-cols-9 gap-2">
+                <div className="flex flex-wrap gap-2">
                   {DEFAULT_COLORS.map((color) => (
                     <button
                       key={color}
                       type="button"
                       className={cn(
-                        "w-8 h-8 rounded border-2 transition-all hover:scale-110",
+                        "size-7 shrink-0 rounded border-2 transition-all hover:scale-110",
                         formData.color === color
                           ? "border-foreground ring-2 ring-offset-2 ring-foreground"
                           : "border-transparent"

@@ -98,6 +98,20 @@ export function RailSection({ label, action, gap = 8, children, className, ...re
   );
 }
 
+/**
+ * A row label that never spills into the value column: the 92px column fits
+ * "Assignees" but not long single Georgian words ("შემსრულებლები"), which
+ * would otherwise overflow under the pills. Truncates with the full text as
+ * a tooltip.
+ */
+export function RailLabel({ children }: { children: string }) {
+  return (
+    <span className="block truncate" title={children}>
+      {children}
+    </span>
+  );
+}
+
 export function userName(u: { first_name?: string | null; last_name?: string | null; email?: string | null; name?: string | null } | null | undefined): string {
   if (!u) return "";
   if (u.name) return u.name;

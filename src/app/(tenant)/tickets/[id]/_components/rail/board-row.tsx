@@ -13,7 +13,7 @@ import { PropertyRow } from "../../../_components/primitives/property-row";
 import { useBoardsLite } from "../../../_hooks/use-boards-lite";
 import type { TicketDetail, ViewerPermissions } from "../../../_lib/types";
 import { TransferConfirmDialog, useTicketTransfer } from "../transfer-menu";
-import { useEditingPresence } from "./rail-shared";
+import { useEditingPresence, RailLabel } from "./rail-shared";
 
 export function BoardRow({ ticket, perms }: { ticket: TicketDetail; perms: ViewerPermissions }) {
   const t = useTranslations("ticketsScreen.rail");
@@ -32,7 +32,7 @@ export function BoardRow({ ticket, perms }: { ticket: TicketDetail; perms: Viewe
   if (!perms.can_transfer) return null;
 
   return (
-    <PropertyRow label={t("board")}>
+    <PropertyRow label={<RailLabel>{t("board")}</RailLabel>}>
       <PropertyPicker
         options={options}
         value={ticket.board?.id ?? null}

@@ -25,7 +25,7 @@ import { PropertyRow } from "../../../_components/primitives/property-row";
 import { initials } from "../../../_components/primitives/initials";
 import { useTicketPickers } from "../../../_hooks/use-ticket-pickers";
 import type { TicketDetail, TicketDetailAssignment, ViewerPermissions } from "../../../_lib/types";
-import { useEditingPresence, useRailPatch, userName } from "./rail-shared";
+import { useEditingPresence, useRailPatch, userName, RailLabel } from "./rail-shared";
 
 export const ROLES: TicketAssignmentRoleEnum[] = ["primary", "collaborator", "reviewer", "observer"];
 
@@ -186,20 +186,16 @@ export function AssigneesRow({ ticket, perms }: { ticket: TicketDetail; perms: V
           const name = userName(user);
           return (
             <label key={user.id} className="flex h-[30px] items-center gap-2 rounded-md px-1 text-[13px]">
-              <span
-                aria-hidden="true"
-                className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-primary/10 text-[7px] font-semibold leading-none text-primary"
-              >
-                {initials(name)}
+              <span className="min-w-0 flex-1 truncate" title={name}>
+                {shortName(name)}
               </span>
-              <span className="min-w-0 flex-1 truncate">{name}</span>
-              <span className="sr-only">{t("role.label")}</span>
               <select
                 data-testid={`assignee-role-${user.id}`}
                 value={role}
                 disabled={!canEdit}
                 onChange={(e) => setRole(user.id, e.target.value as TicketAssignmentRoleEnum)}
-                className="h-6 max-w-[110px] shrink-0 rounded-md border bg-background px-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={t("roleOf", { name, role: t(`role.${role}`) })}
+                className="h-6 w-[84px] shrink-0 truncate rounded-md border bg-background px-1 text-[11px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {ROLES.map((r) => (
                   <option key={r} value={r}>
@@ -214,7 +210,7 @@ export function AssigneesRow({ ticket, perms }: { ticket: TicketDetail; perms: V
     ) : undefined;
 
   return (
-    <PropertyRow label={t("assignees")}>
+    <PropertyRow label={<RailLabel>{t("assignees")}</RailLabel>}>
       <PropertyPicker<number>
         multi
         options={options}

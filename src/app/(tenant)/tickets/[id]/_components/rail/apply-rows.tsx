@@ -21,7 +21,7 @@ import { PropertyPicker, type PickerOption } from "../../../_components/primitiv
 import { PropertyRow } from "../../../_components/primitives/property-row";
 import { useTicketPickers } from "../../../_hooks/use-ticket-pickers";
 import type { TicketDetail, ViewerPermissions } from "../../../_lib/types";
-import { useEditingPresence, useRailPatch } from "./rail-shared";
+import { useEditingPresence, useRailPatch, RailLabel } from "./rail-shared";
 
 interface ApplyPickerProps {
   options: PickerOption<number>[];
@@ -70,16 +70,16 @@ export function ApplyPicker({ options, value, onApply, placeholder, disabled, on
       selectedLabel={t("selected")}
       footer={
         <div
-          className="flex items-center justify-between gap-2 px-1 pb-0.5"
+          className="flex flex-col gap-1 pb-0.5"
           data-testid={`${testId}-footer`}
           // cmdk handles Enter and arrows on the Command root; keep them on these buttons.
           onKeyDown={(e) => e.stopPropagation()}
         >
-          <div className="min-w-0">{extra?.(close)}</div>
+          {extra?.(close)}
           <Button
             type="button"
             size="sm"
-            className="h-7 px-2.5 text-xs"
+            className="h-7 w-full px-2.5 text-xs"
             data-testid={`${testId}-apply`}
             onClick={() => {
               if (!sameSet(draft, value)) onApply(draft);
@@ -110,7 +110,7 @@ export function LabelsRow({ ticket, perms }: { ticket: TicketDetail; perms: View
   }, [tags, ticket.tags]);
 
   return (
-    <PropertyRow label={t("labels")}>
+    <PropertyRow label={<RailLabel>{t("labels")}</RailLabel>}>
       <ApplyPicker
         testId="labels-picker"
         options={options}
@@ -131,13 +131,13 @@ export function LabelsRow({ ticket, perms }: { ticket: TicketDetail; perms: View
           <button
             type="button"
             data-testid="manage-labels"
-            className="inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="flex h-[30px] w-full min-w-0 items-center gap-2 rounded-md px-2 text-left text-[13px] text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={() => {
               close();
               setManageOpen(true);
             }}
           >
-            <Settings2 aria-hidden="true" size={13} />
+            <Settings2 aria-hidden="true" size={14} className="shrink-0" />
             <span className="truncate">{t("manageLabels")}</span>
           </button>
         )}
@@ -164,7 +164,7 @@ export function GroupsRow({ ticket, perms }: { ticket: TicketDetail; perms: View
   if (!perms.can_change_groups) return null;
 
   return (
-    <PropertyRow label={t("groups")}>
+    <PropertyRow label={<RailLabel>{t("groups")}</RailLabel>}>
       <ApplyPicker
         testId="groups-picker"
         options={options}

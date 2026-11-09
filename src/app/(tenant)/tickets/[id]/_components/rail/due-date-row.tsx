@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { PropertyRow } from "../../../_components/primitives/property-row";
 import { formatShortDate, parseDateOnly } from "../../../_lib/format";
 import type { TicketDetail, ViewerPermissions } from "../../../_lib/types";
-import { useRailPatch } from "./rail-shared";
+import { useRailPatch, RailLabel } from "./rail-shared";
 
 export function openNativePicker(input: HTMLInputElement | null) {
   if (!input) return;
@@ -55,7 +55,7 @@ export function DueDateRow({ ticket, perms }: { ticket: TicketDetail; perms: Vie
   const label = value ? (overdue ? t("dueDateOverdue", { date: text }) : text) : t("notSet");
 
   return (
-    <PropertyRow label={t("dueDate")}>
+    <PropertyRow label={<RailLabel>{t("dueDate")}</RailLabel>}>
       <div className="relative -ml-1.5 flex w-[calc(100%+6px)] items-center gap-1" data-testid="due-date-row">
         <button
           type="button"

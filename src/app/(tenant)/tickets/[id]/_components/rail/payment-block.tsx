@@ -314,10 +314,12 @@ export function PaymentBlock({ ticket, perms }: { ticket: TicketDetail; perms: V
             <span
               data-slot="payment-due"
               data-overdue={overdue ? "true" : "false"}
-              className={cn("inline-flex items-center gap-1", overdue && "font-medium text-destructive")}
+              className={cn("flex flex-wrap items-center gap-x-1", overdue && "font-medium text-destructive")}
             >
-              {overdue && <AlertCircle aria-hidden="true" size={12} />}
-              {formatShortDate(ticket.payment_due_date, locale, { year: "auto" })}
+              <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                {overdue && <AlertCircle aria-hidden="true" size={12} />}
+                {formatShortDate(ticket.payment_due_date, locale, { year: "auto" })}
+              </span>
               {overdue && <span>· {t("overdue")}</span>}
             </span>
           </Line>

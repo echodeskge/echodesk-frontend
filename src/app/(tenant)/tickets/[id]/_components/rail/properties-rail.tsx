@@ -32,7 +32,7 @@ import { CustomerSection } from "./customer-section";
 import { DueDateRow } from "./due-date-row";
 import { FormsSection } from "./forms-section";
 import { PaymentBlock } from "./payment-block";
-import { userName } from "./rail-shared";
+import { RailLabel, userName } from "./rail-shared";
 import { DepartmentRow, PriorityRow, StatusRow } from "./simple-rows";
 
 function reporterOf(ticket: TicketDetail): { name: string; initials: string } | null {
@@ -61,7 +61,7 @@ export function PropertiesRail({ ticket, perms }: PropertiesRailProps) {
         <CustomerRow ticket={ticket} perms={perms} />
         <DueDateRow ticket={ticket} perms={perms} />
         <TimeRow ticketId={ticket.id} />
-        <PropertyRow label={t("reporter")} fixed>
+        <PropertyRow label={<RailLabel>{t("reporter")}</RailLabel>} fixed>
           {reporter ? (
             <span className="flex min-w-0 items-center gap-1.5" data-testid="rail-reporter">
               <span
@@ -76,7 +76,7 @@ export function PropertiesRail({ ticket, perms }: PropertiesRailProps) {
             <span className="text-muted-foreground">—</span>
           )}
         </PropertyRow>
-        <PropertyRow label={t("created")} fixed>
+        <PropertyRow label={<RailLabel>{t("created")}</RailLabel>} fixed>
           <span className="block tabular-nums" data-testid="rail-created" title={ticket.created_at}>
             {formatShortDate(ticket.created_at, locale, { year: "auto" })}
           </span>
