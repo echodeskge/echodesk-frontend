@@ -2,47 +2,17 @@
 
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-} from "@/components/ui/sheet";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-  FormDescription,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Switch } from "@/components/ui/switch";
+import { Form } from "@/components/ui/form";
 import { useCreateProduct } from "@/hooks/useProducts";
 import { useLanguages } from "@/hooks/useLanguages";
-import type { ProductCreateUpdate, ProductCreateUpdateRequest, Language } from "@/api/generated";
-import type { Locale } from "@/lib/i18n";
-import { ImageGalleryPicker } from "@/components/ImageGalleryPicker";
-import { DescriptionField, ShippingFields, normalizeShipping } from "@/components/products/ProductExtraFields";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { AttributeSelector, type AttributeValue } from "./AttributeSelector";
+import type { ProductCreateUpdate, ProductCreateUpdateRequest } from "@/api/generated";
+import { normalizeShipping } from "@/components/products/ProductExtraFields";
+import { type AttributeValue } from "./AttributeSelector";
 import { StagedVariantManager, createStagedVariants, type StagedVariant } from "./VariantManager";
-import { Separator } from "@/components/ui/separator";
+import { ProductFormSections } from "./ProductFormSections";
+import { EcLoading, FormSheet } from "@/app/(tenant)/ecommerce/_components/ui";
 import { getApiErrorMessage } from "@/lib/utils";
 
 /**
@@ -60,7 +30,6 @@ interface AddProductSheetProps {
 }
 
 export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
-  const locale = useLocale() as Locale;
   const t = useTranslations("products.addProductSheet");
   const tCommon = useTranslations("common");
   const createProduct = useCreateProduct();
@@ -154,14 +123,6 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
     }
   }, [selectedLangName, open, skuManuallyEdited, form, selectedLanguage]);
 
-  // Helper to get language name
-  const getLanguageName = (lang: Language) => {
-    if (typeof lang.name === "object" && lang.name !== null) {
-      return lang.name[locale] || lang.name.en || lang.code;
-    }
-    return lang.name || lang.code;
-  };
-
   const onSubmit = async (data: Partial<ProductCreateUpdate>) => {
     if (variantFormOpen) {
       toast.error(t("finishVariantFirst"));
@@ -236,295 +197,48 @@ export function AddProductSheet({ open, onOpenChange }: AddProductSheetProps) {
     }
   };
 
-  // Show loading state while fetching languages
+  // Loading languages: the sheet opens with a spinner, as before.
   if (languagesLoading || activeLanguages.length === 0) {
     return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="p-0 w-full sm:max-w-lg" side="right">
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner />
-          </div>
-        </SheetContent>
-      </Sheet>
+      <FormSheet open={open} onOpenChange={onOpenChange} title={t("title")} description={t("description")} size="xl" testId="ec-product-add-sheet">
+        <EcLoading className="py-16" />
+      </FormSheet>
     );
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="p-0 w-full sm:max-w-lg" side="right">
-        <ScrollArea className="h-full">
-          <div className="p-6">
-            <SheetHeader>
-              <SheetTitle>{t("title")}</SheetTitle>
-              <SheetDescription>
-                {t("description")}
-              </SheetDescription>
-            </SheetHeader>
-
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 mt-6">
-                {/* Language Selector */}
-                <div className="flex items-center gap-2">
-                  <FormLabel className="text-sm font-medium">{t("language")}:</FormLabel>
-                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {activeLanguages.map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          {getLanguageName(lang)} ({lang.code.toUpperCase()})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription className="text-xs ml-auto">
-                    {t("fillAtLeastOneLanguage")}
-                  </FormDescription>
-                </div>
-
-                {/* Product Name - Selected Language */}
-                {/* `as any` below: react-hook-form Path<T> cannot resolve dynamic
-                    object keys like `name.${lang}` on a `Record<string, string>` field.
-                    This is a known RHF limitation with JSON/i18n fields. */}
-                <FormField
-                  key={`name-${selectedLanguage}`}
-                  control={form.control}
-                  name={`name.${selectedLanguage}` as any}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("productName")} *</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("namePlaceholder")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* SKU */}
-                <FormField
-                  control={form.control}
-                  name="sku"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("sku")}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t("skuPlaceholder")}
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            setSkuManuallyEdited(true);
-                          }}
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        {t("skuDescription")}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Short Description - Selected Language */}
-                {/* `as any`: same RHF Path<T> limitation as above for i18n keys */}
-                <FormField
-                  key={`short_description-${selectedLanguage}`}
-                  control={form.control}
-                  name={`short_description.${selectedLanguage}` as any}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("shortDescription")}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t("shortDescPlaceholder")}
-                          className="resize-none"
-                          rows={2}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Full description - selected language */}
-                <DescriptionField form={form} language={selectedLanguage} />
-
-                {/* Pricing */}
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("priceLari")}</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="compare_at_price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("oldPrice")}</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="cost_price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("costPrice")}</FormLabel>
-                        <FormControl>
-                          <Input type="number" step="0.01" placeholder={t("pricePlaceholder")} {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Inventory */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="quantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("quantity")}</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="0" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="low_stock_threshold"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("lowStockThreshold")}</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="10" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <ShippingFields form={form} />
-
-                {/* Product Images */}
-                <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("productImages")}</FormLabel>
-                      <FormControl>
-                        <ImageGalleryPicker
-                          value={field.value || ""}
-                          onChange={field.onChange}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Product Attributes */}
-                <div className="border-t pt-4 mt-4">
-                  <AttributeSelector
-                    value={attributes}
-                    onChange={setAttributes}
-                  />
-                </div>
-
-                {/* Variants (saved together with the product) */}
-                <Separator className="my-2" />
-                <StagedVariantManager
-                  value={stagedVariants}
-                  onChange={setStagedVariants}
-                  onEditingChange={setVariantFormOpen}
-                />
-
-                {/* Status */}
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("status")}</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("selectStatus")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="draft">{t("statusDraft")}</SelectItem>
-                          <SelectItem value="active">{t("statusActive")}</SelectItem>
-                          <SelectItem value="inactive">{t("statusInactive")}</SelectItem>
-                          <SelectItem value="out_of_stock">{t("statusOutOfStock")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Featured Product */}
-                <FormField
-                  control={form.control}
-                  name="is_featured"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">{t("featuredProduct")}</FormLabel>
-                        <FormDescription>
-                          {t("featuredProductDescription")}
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <SheetFooter className="mt-6">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                  >
-                    {tCommon("cancel")}
-                  </Button>
-                  <Button type="submit" disabled={createProduct.isPending}>
-                    {createProduct.isPending ? t("creating") : t("createProduct")}
-                  </Button>
-                </SheetFooter>
-              </form>
-            </Form>
-          </div>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
+    <Form {...form}>
+      <FormSheet
+        open={open}
+        onOpenChange={onOpenChange}
+        title={t("title")}
+        description={t("description")}
+        size="xl"
+        testId="ec-product-add-sheet"
+        onSubmit={() => void form.handleSubmit(onSubmit)()}
+        submitting={createProduct.isPending}
+        submitLabel={createProduct.isPending ? t("creating") : t("createProduct")}
+        cancelLabel={tCommon("cancel")}
+      >
+        <ProductFormSections
+          form={form}
+          languages={activeLanguages}
+          language={selectedLanguage}
+          onLanguageChange={setSelectedLanguage}
+          onSkuEdited={() => setSkuManuallyEdited(true)}
+          creating
+          attributes={attributes}
+          onAttributesChange={setAttributes}
+          variants={
+            /* Variants (saved together with the product) */
+            <StagedVariantManager
+              value={stagedVariants}
+              onChange={setStagedVariants}
+              onEditingChange={setVariantFormOpen}
+            />
+          }
+        />
+      </FormSheet>
+    </Form>
   );
 }

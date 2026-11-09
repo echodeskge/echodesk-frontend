@@ -2,9 +2,10 @@
 
 import { useTranslations } from "next-intl";
 import type { UseFormReturn } from "react-hook-form";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { rhf } from "./form-kit";
 
 export interface ProductDimensions {
   length?: number | string | null;
@@ -26,59 +27,63 @@ export function DescriptionField({ form, language }: { form: AnyForm; language: 
       control={form.control}
       name={`description.${language}` as any}
       render={({ field }) => (
-        <FormItem>
-          <FormLabel>{t("fullDescription")}</FormLabel>
+        <FormItem className={rhf.item}>
+          <FormLabel className={rhf.label}>{t("fullDescription")}</FormLabel>
           <FormControl>
-            <Textarea placeholder={t("fullDescriptionPlaceholder")} rows={6} {...field} value={field.value || ""} />
+            <Textarea
+              placeholder={t("fullDescriptionPlaceholder")}
+              rows={6}
+              {...field}
+              value={field.value || ""}
+              className="min-h-[120px] text-[13px]"
+            />
           </FormControl>
-          <p className="text-xs text-muted-foreground">{t("fullDescriptionHint")}</p>
-          <FormMessage />
+          <FormDescription className={rhf.help}>{t("fullDescriptionHint")}</FormDescription>
+          <FormMessage className={rhf.message} />
         </FormItem>
       )}
     />
   );
 }
 
-/** Weight and parcel size, which the courier quote is priced on. */
+/**
+ * Weight and parcel size, which the courier quote is priced on. The section
+ * title and hint (`shipping.title` / `shipping.hint`) are the caller's
+ * `FormSection`; this renders the four fields (two per row on phones).
+ */
 export function ShippingFields({ form }: { form: AnyForm }) {
   const t = useTranslations("products");
   return (
-    <div className="space-y-3 border-t pt-4">
-      <div>
-        <p className="text-sm font-medium">{t("shipping.title")}</p>
-        <p className="text-xs text-muted-foreground">{t("shipping.hint")}</p>
-      </div>
-      <div className="grid grid-cols-4 gap-3">
+    <div className="grid min-w-0 grid-cols-2 gap-3 sm:grid-cols-4">
+      <FormField
+        control={form.control}
+        name={"weight" as any}
+        render={({ field }) => (
+          <FormItem className={rhf.item}>
+            <FormLabel className={rhf.label}>{t("shipping.weightKg")}</FormLabel>
+            <FormControl>
+              <Input type="number" step="0.01" min="0" placeholder="0.50" {...field} value={field.value ?? ""} className={`${rhf.input} tabular-nums`} />
+            </FormControl>
+            <FormMessage className={rhf.message} />
+          </FormItem>
+        )}
+      />
+      {(["length", "width", "height"] as const).map((side) => (
         <FormField
+          key={side}
           control={form.control}
-          name={"weight" as any}
+          name={`dimensions.${side}` as any}
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("shipping.weightKg")}</FormLabel>
+            <FormItem className={rhf.item}>
+              <FormLabel className={rhf.label}>{t(`shipping.${side}Cm`)}</FormLabel>
               <FormControl>
-                <Input type="number" step="0.01" min="0" placeholder="0.50" {...field} value={field.value ?? ""} />
+                <Input type="number" step="0.1" min="0" placeholder="0" {...field} value={field.value ?? ""} className={`${rhf.input} tabular-nums`} />
               </FormControl>
-              <FormMessage />
+              <FormMessage className={rhf.message} />
             </FormItem>
           )}
         />
-        {(["length", "width", "height"] as const).map((side) => (
-          <FormField
-            key={side}
-            control={form.control}
-            name={`dimensions.${side}` as any}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t(`shipping.${side}Cm`)}</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.1" min="0" placeholder="0" {...field} value={field.value ?? ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        ))}
-      </div>
+      ))}
     </div>
   );
 }
