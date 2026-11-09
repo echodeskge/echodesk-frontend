@@ -95,7 +95,7 @@ export function FormSheet({
   )
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className={cn("w-full gap-0 p-0", WIDTHS[size])} data-testid={testId}>
+      <SheetContent side="right" className={cn("w-full gap-0 p-0", WIDTHS[size])} data-testid={testId} closeLabel={tc("close")}>
         <div className="flex min-h-14 shrink-0 flex-col justify-center gap-0.5 border-b px-4 py-3 pe-12 sm:px-5">
           <SheetTitle className="text-[15px] font-semibold leading-5">{title}</SheetTitle>
           {description ? (

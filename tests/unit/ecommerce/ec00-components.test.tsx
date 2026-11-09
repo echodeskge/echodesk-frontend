@@ -225,6 +225,11 @@ describe("FormSheet", () => {
     expect(change).toHaveBeenCalledWith(false)
   })
 
+  it("names the corner close button in the interface language", () => {
+    renderEc(<FormSheet open onOpenChange={vi.fn()} title="ახალი" submitLabel="შენახვა" onSubmit={vi.fn()}><p>x</p></FormSheet>, "ka")
+    expect(within(screen.getByTestId("ec-form-sheet")).getByRole("button", { name: "დახურვა" })).toBeInTheDocument()
+  })
+
   it("does not submit while saving", () => {
     const submit = vi.fn()
     renderEc(
