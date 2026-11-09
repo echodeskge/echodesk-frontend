@@ -80,7 +80,9 @@ export interface DetailRealtimeOptions {
 export function useDetailRealtime({ ticketId, backHref }: DetailRealtimeOptions): void {
   const qc = useQueryClient();
   const router = useRouter();
-  const t = useTranslations("ticketsScreen.detail.realtime");
+  // The parent namespace, so nothing is looked up before a delete arrives
+  // (the `realtime` keys live in pending/fe-09.json until FE-INT merges them).
+  const t = useTranslations("ticketsScreen.detail");
   const { setBoardId } = useTicketsRealtime();
   const backRef = useRef(backHref);
   useEffect(() => {
@@ -134,7 +136,7 @@ export function useDetailRealtime({ ticketId, backHref }: DetailRealtimeOptions)
             if (event.to_board_id) setBoardId(event.to_board_id);
             break;
           }
-          toast.info(event.deleted_by_name ? t("deletedBy", { name: event.deleted_by_name }) : t("deleted"));
+          toast.info(event.deleted_by_name ? t("realtime.deletedBy", { name: event.deleted_by_name }) : t("realtime.deleted"));
           router.push(backRef.current);
           break;
         default:

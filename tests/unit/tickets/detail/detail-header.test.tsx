@@ -134,6 +134,14 @@ describe("prev / next", () => {
     expect(screen.getByTestId("detail-next")).toBeEnabled();
   });
 
+  it("are hidden below sm (the global header icons leave no room)", () => {
+    mockMatchMedia((q) => q === "(max-width: 639px)");
+    renderDetail(<DetailHeaderBridge {...props()} />);
+    expect(screen.queryByTestId("detail-prev")).toBeNull();
+    expect(screen.queryByTestId("detail-next")).toBeNull();
+    expect(screen.getByTestId("detail-id")).toBeInTheDocument();
+  });
+
   it("call the handlers", async () => {
     const p = props();
     renderDetail(<DetailHeaderBridge {...p} />);

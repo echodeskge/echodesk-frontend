@@ -4,8 +4,9 @@
  * Fills the app header for the detail page (plan E22, FE-09):
  * - `breadcrumb`: back (board name) / `#id` (mono) · "x of n" (hidden below sm);
  * - `meta`: the "X is editing" presence chip (hidden below md);
- * - `icons`: prev / next (K / J), the timer (FE-13), copy link (inside ⋮
- *   below sm, DC20) and the ⋮ menu: Transfer to board (only with
+ * - `icons`: prev / next (K / J; hidden below sm, where the global header
+ *   icons leave no room), the timer (FE-13), copy link (inside ⋮ below sm,
+ *   DC20) and the ⋮ menu: Transfer to board (only with
  *   `can_transfer`, DC19), History & transfers, Delete (only with `can_delete`).
  *
  * The tenant header renders the slot outside the tickets route providers.
@@ -119,7 +120,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
             aria-label={labels.back}
             title={labels.back}
             data-testid="detail-back"
-            className="-ml-1 inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-2 text-[13px] font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="-ml-1 inline-flex h-7 min-w-0 shrink-0 items-center gap-1.5 rounded-md px-2 text-[13px] font-normal text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             <ArrowLeft aria-hidden="true" size={14} className="shrink-0" />
             <span className="hidden max-w-[180px] truncate sm:inline">{boardName}</span>
@@ -127,7 +128,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
           <span aria-hidden="true" className="text-[13px] font-normal text-muted-foreground">
             /
           </span>
-          <span data-testid="detail-id" className="font-mono text-[13px] font-semibold">
+          <span data-testid="detail-id" className="shrink-0 font-mono text-[13px] font-semibold">
             #{ticketId}
           </span>
           {labels.position && (
@@ -151,29 +152,33 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
       ) : undefined,
       icons: withRouteIntl(
         <span data-slot="detail-icons" className="flex items-center gap-1">
-          <button
-            type="button"
-            className={ICON_BUTTON}
-            aria-label={labels.prev}
-            title={labels.prev}
-            disabled={!prevId}
-            data-testid="detail-prev"
-            onClick={() => handlers.current.onPrev()}
-          >
-            <ChevronUp aria-hidden="true" size={15} />
-          </button>
-          <button
-            type="button"
-            className={ICON_BUTTON}
-            aria-label={labels.next}
-            title={labels.next}
-            disabled={!nextId}
-            data-testid="detail-next"
-            onClick={() => handlers.current.onNext()}
-          >
-            <ChevronDown aria-hidden="true" size={15} />
-          </button>
-          <span aria-hidden="true" className="mx-1.5 h-4 w-px bg-border" />
+          {!belowSm && (
+            <>
+              <button
+                type="button"
+                className={ICON_BUTTON}
+                aria-label={labels.prev}
+                title={labels.prev}
+                disabled={!prevId}
+                data-testid="detail-prev"
+                onClick={() => handlers.current.onPrev()}
+              >
+                <ChevronUp aria-hidden="true" size={15} />
+              </button>
+              <button
+                type="button"
+                className={ICON_BUTTON}
+                aria-label={labels.next}
+                title={labels.next}
+                disabled={!nextId}
+                data-testid="detail-next"
+                onClick={() => handlers.current.onNext()}
+              >
+                <ChevronDown aria-hidden="true" size={15} />
+              </button>
+              <span aria-hidden="true" className="mx-1.5 h-4 w-px bg-border" />
+            </>
+          )}
           <TimerButton ticketId={ticketId} />
           {!belowSm && (
             <button
