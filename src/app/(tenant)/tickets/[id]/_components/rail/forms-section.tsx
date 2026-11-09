@@ -16,12 +16,15 @@ import { useLocale, useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { TicketFormSubmission } from "@/api/generated/interfaces";
-import { ChildFormFillDialog } from "@/components/ChildFormFillDialog";
-import { FormSubmissionViewDialog } from "@/components/FormSubmissionViewDialog";
+import dynamic from "next/dynamic";
 import { formatShortDate } from "../../../_lib/format";
 import { tk } from "../../../_lib/query-keys";
 import type { TicketDetail } from "../../../_lib/types";
 import { RailSection, userName } from "./rail-shared";
+
+// The form dialogs load when opened (kept out of the detail's first-load JS).
+const ChildFormFillDialog = dynamic(() => import("@/components/ChildFormFillDialog").then((m) => m.ChildFormFillDialog));
+const FormSubmissionViewDialog = dynamic(() => import("@/components/FormSubmissionViewDialog").then((m) => m.FormSubmissionViewDialog));
 
 interface ChildFormRef {
   id: number;

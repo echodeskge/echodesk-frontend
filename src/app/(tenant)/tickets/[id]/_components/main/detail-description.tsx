@@ -4,12 +4,17 @@ import { useMemo, useState, type KeyboardEvent, type MouseEvent } from "react";
 import DOMPurify from "dompurify";
 import { Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { RichTextEditor } from "@/components/RichTextEditor";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import { useTicketsRealtime } from "../../../_contexts/tickets-realtime-context";
 import { useTicketMutations } from "../../../_hooks/use-ticket-mutations";
 import type { TicketDetail } from "../../../_lib/types";
 import { descriptionEditorHtml, descriptionSource, isEmptyHtml } from "./main-utils";
+
+// TipTap loads only when someone edits (keeps it out of the detail's first-load JS).
+const RichTextEditor = dynamic(() => import("@/components/RichTextEditor").then((m) => m.RichTextEditor), {
+  loading: () => <div aria-hidden="true" className="min-h-[136px] rounded-[8px] border border-input bg-background" />,
+});
 
 export interface DetailDescriptionProps {
   ticket: Pick<TicketDetail, "id" | "description" | "rich_description" | "description_format">;
