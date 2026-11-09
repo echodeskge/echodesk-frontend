@@ -7,6 +7,7 @@ import { expect, test } from "@playwright/test";
 import { APP } from "./fixtures/env";
 import { resetFixtures, signIn } from "./fixtures/session";
 import { fx, openBoardIn } from "./fixtures/board";
+import { openDetail, railRow } from "./fixtures/detail";
 
 test.describe("Permissions", () => {
   // RM8: every spec file starts from freshly reset fixtures.
@@ -52,8 +53,26 @@ test.describe("Permissions", () => {
   // W3: the new detail page (FE-09 shell, FE-12 rail).
   test.fixme("a direct URL to a Restricted ticket shows the 404 state", async () => {});
   test.fixme("an Open-board ticket opens (E2)", async () => {});
-  test.fixme("the groups row is hidden", async () => {});
-  test.fixme("payment Record is hidden", async () => {});
+  // FE-12 (skips itself while flags.detailRedesignEnabled is off).
+  test("the groups row is hidden", async ({ context }) => {
+    const page = await openDetail(context, "agent", fx().tickets["E2E-001"].id, "en");
+    await expect(railRow(page, "Status")).toBeVisible();
+    await expect(railRow(page, "Groups")).toHaveCount(0);
+  });
+
+  test("payment Record is hidden", async ({ context }) => {
+    const page = await openDetail(context, "agent", fx().tickets["E2E-010"].id, "en");
+    await expect(page.getByTestId("payment-block")).toBeVisible();
+    await expect(page.getByTestId("record-payment")).toHaveCount(0);
+  });
   test.fixme("Transfer is hidden without can_transfer", async () => {});
-  test.fixme("without the social feature: customer row, section and Saved reply are hidden", async () => {});
+  test("without the social feature: customer row, section and Saved reply are hidden", async ({ context }) => {
+    const variant = (fx() as unknown as { variant?: { agent_without_social?: boolean } }).variant;
+    test.skip(!variant?.agent_without_social, "the fixtures' agent has the social feature (variant.agent_without_social is false)");
+    const page = await openDetail(context, "agent", fx().tickets["E2E-006"].id, "en");
+    await expect(railRow(page, "Status")).toBeVisible();
+    await expect(railRow(page, "Customer")).toHaveCount(0);
+    await expect(page.getByTestId("customer-section")).toHaveCount(0);
+    await expect(page.getByTestId("composer-saved-reply")).toHaveCount(0);
+  });
 });

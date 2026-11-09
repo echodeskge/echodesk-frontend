@@ -16,13 +16,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { SignatureCanvas } from "@/components/SignatureCanvas";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -37,8 +30,8 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { TicketForm, ListItemMinimal } from "@/api/generated/interfaces";
+import { useTranslations } from "next-intl";
+import type { TicketForm } from "@/api/generated/interfaces";
 import { ticketFormsRetrieve, itemListsRetrieve, formSubmissionsCreate } from "@/api/generated/api";
 
 interface ChildFormFillDialogProps {
@@ -73,6 +66,7 @@ export function ChildFormFillDialog({
   ticketId,
   onSuccess,
 }: ChildFormFillDialogProps) {
+  const t = useTranslations("ticketsScreen.forms.dialog");
   const [childForm, setChildForm] = useState<TicketForm | null>(null);
   const [selectedItems, setSelectedItems] = useState<Record<number, number | null>>({});
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
@@ -94,14 +88,14 @@ export function ChildFormFillDialog({
         setChildForm(fullForm);
       } catch (error) {
         console.error("Error fetching child form:", error);
-        setError("Failed to load form details");
+        setError(t("loadError"));
       } finally {
         setLoadingForm(false);
       }
     };
 
     fetchChildForm();
-  }, [open, childFormId]);
+  }, [open, childFormId, t]);
 
   // Fetch items for child form's lists
   useEffect(() => {
@@ -161,7 +155,7 @@ export function ChildFormFillDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting child form:", error);
-      setError("Failed to submit form. Please try again.");
+      setError(t("submitError"));
     } finally {
       setLoading(false);
     }
@@ -192,7 +186,7 @@ export function ChildFormFillDialog({
           <div className="flex items-center justify-center py-16">
             <div className="flex items-center space-x-2">
               <Spinner className="h-6 w-6" />
-              <span className="text-muted-foreground">Loading form...</span>
+              <span className="text-muted-foreground">{t("loading")}</span>
             </div>
           </div>
         </DialogContent>
@@ -201,7 +195,20 @@ export function ChildFormFillDialog({
   }
 
   if (!childForm) {
-    return null;
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("loadError")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              {t("cancel")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   }
 
   return (
@@ -225,10 +232,10 @@ export function ChildFormFillDialog({
             {/* Item Lists from Child Form */}
             {formListsWithItems.length > 0 && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">Select Items from Lists</Label>
+                <Label className="text-base font-semibold">{t("selectItems")}</Label>
                 {loadingLists ? (
                   <div className="border rounded-lg p-3 text-center text-sm text-muted-foreground">
-                    Loading lists...
+                    {t("loadingLists")}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -285,23 +292,23 @@ export function ChildFormFillDialog({
                                         )}
                                       </span>
                                     ) : (
-                                      "Select item..."
+                                      t("selectItem")
                                     )}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-full p-0" align="start">
                                   <Command>
-                                    <CommandInput placeholder="Search..." />
+                                    <CommandInput placeholder={t("search")} />
                                     <CommandList>
-                                      <CommandEmpty>No items found</CommandEmpty>
+                                      <CommandEmpty>{t("noItems")}</CommandEmpty>
                                       <CommandGroup>
                                         {selectedItemId && (
                                           <CommandItem
                                             value="none"
                                             onSelect={() => selectItemForList(list.id, null)}
                                           >
-                                            <span className="text-muted-foreground italic">Clear selection</span>
+                                            <span className="text-muted-foreground italic">{t("clearSelection")}</span>
                                           </CommandItem>
                                         )}
                                         {flatItems.map((item) => (
@@ -340,7 +347,8 @@ export function ChildFormFillDialog({
                                   size="icon"
                                   onClick={() => selectItemForList(list.id, null)}
                                   className="shrink-0"
-                                  title="Clear selection"
+                                  title={t("clearSelection")}
+                                  aria-label={t("clearSelection")}
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
@@ -348,7 +356,7 @@ export function ChildFormFillDialog({
                             </div>
                           ) : (
                             <div className="text-sm text-muted-foreground italic border rounded-lg p-3">
-                              No items in this list
+                              {t("emptyList")}
                             </div>
                           )}
                         </div>
@@ -362,13 +370,13 @@ export function ChildFormFillDialog({
             {/* Custom Fields from Child Form */}
             {childForm.custom_fields && Array.isArray(childForm.custom_fields) && childForm.custom_fields.length > 0 && (
               <div className="space-y-4">
-                <Label className="text-base font-semibold">Custom Fields</Label>
+                <Label className="text-base font-semibold">{t("customFields")}</Label>
                 <div className="space-y-3">
                   {childForm.custom_fields.map((field: any, index: number) => (
                     <div key={field.name || index} className="space-y-2">
                       <Label htmlFor={field.name}>
                         {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                        {field.required && <span className="text-destructive ml-1">*</span>}
                       </Label>
 
                       {field.type === "string" && (
@@ -435,7 +443,7 @@ export function ChildFormFillDialog({
                 onClick={handleClose}
                 disabled={loading}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button
                 type="submit"
@@ -444,10 +452,10 @@ export function ChildFormFillDialog({
                 {loading ? (
                   <>
                     <Spinner className="mr-2 h-4 w-4" />
-                    Submitting...
+                    {t("submitting")}
                   </>
                 ) : (
-                  "Submit Form"
+                  t("submit")
                 )}
               </Button>
             </div>

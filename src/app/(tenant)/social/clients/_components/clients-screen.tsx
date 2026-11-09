@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Loader2, Plus, Search, UserRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useHeaderActions } from "@/contexts/HeaderActionsContext";
-import { useSocialClientCustomFields, useSocialClients } from "@/hooks/api/useSocialClients";
+import { useSocialClient, useSocialClientCustomFields, useSocialClients } from "@/hooks/api/useSocialClients";
 import { useMyAccess } from "@/hooks/useMyAccess";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,58 @@ export interface ClientRow {
   is_verified?: boolean | null;
   booking_count?: number | null;
   created_at?: string | null;
+}
+
+/** `?client=<id>` (the ticket rail's "Open client") → a positive integer id, or null. */
+export function parseClientParam(raw: string | null | undefined): number | null {
+  if (!raw || !/^\d+$/.test(raw)) return null;
+  const n = Number(raw);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
+/**
+ * Deep link: `?client=<id>` opens the detail rail for that client on mount
+ * (and when the param changes). An id the API doesn't know (404) is ignored:
+ * the rail closes and the param is dropped; closing the rail drops it too.
+ * Its own component in a Suspense boundary, because it reads `useSearchParams`.
+ */
+function ClientDeepLink({
+  setOpenId,
+  clearRef,
+}: {
+  setOpenId: (id: number | null) => void;
+  clearRef: React.MutableRefObject<() => void>;
+}) {
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const linkedId = parseClientParam(params?.get("client"));
+  const { isError } = useSocialClient(linkedId ?? 0, { enabled: linkedId !== null });
+
+  const clearParam = useCallback(() => {
+    if (!params?.has("client")) return;
+    const next = new URLSearchParams(params.toString());
+    next.delete("client");
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [params, pathname, router]);
+
+  useEffect(() => {
+    clearRef.current = clearParam;
+  }, [clearRef, clearParam]);
+
+  useEffect(() => {
+    if (linkedId !== null) setOpenId(linkedId);
+  }, [linkedId, setOpenId]);
+
+  useEffect(() => {
+    if (linkedId !== null && isError) {
+      setOpenId(null);
+      clearParam();
+    }
+  }, [isError, linkedId, setOpenId, clearParam]);
+
+  return null;
 }
 
 const GRID = "grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_150px_110px_110px_90px] items-center";
@@ -97,6 +150,11 @@ export function ClientsScreen() {
   const [openId, setOpenId] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<EditableClient | null>(null);
+  const clearDeepLink = useRef<() => void>(() => {});
+  const closeRail = () => {
+    setOpenId(null);
+    clearDeepLink.current();
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(searchInput.trim()), 400);
@@ -155,6 +213,9 @@ export function ClientsScreen() {
   return (
     <section className="relative flex h-full min-h-0 w-full overflow-hidden" data-testid="clients-screen">
       <ClientsHeaderBridge onCreate={openCreate} />
+      <Suspense fallback={null}>
+        <ClientDeepLink setOpenId={setOpenId} clearRef={clearDeepLink} />
+      </Suspense>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* stats strip */}
@@ -267,11 +328,12 @@ export function ClientsScreen() {
                     key={row.id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => setOpenId(selected ? null : row.id)}
+                    onClick={() => (selected ? closeRail() : setOpenId(row.id))}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        setOpenId(selected ? null : row.id);
+                        if (selected) closeRail();
+                        else setOpenId(row.id);
                       }
                     }}
                     aria-pressed={selected}
@@ -375,12 +437,12 @@ export function ClientsScreen() {
           bookingCount={openRow?.booking_count}
           canDelete={canManageSocialSettings}
           customFieldLabels={customFieldLabels}
-          onClose={() => setOpenId(null)}
+          onClose={closeRail}
           onEdit={(client) => {
             setEditing(client);
             setFormOpen(true);
           }}
-          onDeleted={() => setOpenId(null)}
+          onDeleted={closeRail}
           className="absolute inset-0 z-20 w-full md:static md:z-auto md:w-[340px] md:shrink-0"
         />
       )}

@@ -1,0 +1,136 @@
+{
+  "en": {
+    "ticketsScreen": {
+      "rail": {
+        "selected": "selected",
+        "roles": "Roles",
+        "roleOf": "{name}: {role}",
+        "searchClients": "Search clients",
+        "changeDueDate": "Change due date",
+        "dueDateOverdue": "Overdue · {date}"
+      },
+      "customer": {
+        "conversation": "{platform} conversation",
+        "widget": "Website chat"
+      },
+      "forms": {
+        "notFilled": "Not filled",
+        "submittedBy": "{name} · {date}",
+        "dialog": {
+          "loading": "Loading the form…",
+          "loadError": "Couldn't load the form",
+          "selectItems": "Select items from the lists",
+          "loadingLists": "Loading the lists…",
+          "selectItem": "Select an item…",
+          "search": "Search…",
+          "noItems": "No items found",
+          "clearSelection": "Clear selection",
+          "emptyList": "This list has no items",
+          "customFields": "Fields",
+          "cancel": "Cancel",
+          "submit": "Submit form",
+          "submitting": "Submitting…",
+          "submitError": "Couldn't submit the form. Please try again.",
+          "submitted": "Submitted",
+          "submittedBy": "Submitted by",
+          "date": "Date",
+          "noData": "No form data was submitted",
+          "selectedItems": "Selected items",
+          "signatureAlt": "{field} signature"
+        }
+      },
+      "payment": {
+        "status": "Status",
+        "partiallyPaid": "Partly paid",
+        "overpaid": "Overpaid",
+        "noPaymentRequired": "No payment needed",
+        "payments": "Payments",
+        "noPayments": "No payments yet",
+        "paymentLine": "{amount} · {method} · {date}",
+        "processedBy": "Recorded by {name}",
+        "amountInvalid": "Enter an amount greater than 0",
+        "detailsError": "The payment was recorded, but its method and notes couldn't be saved",
+        "recordTitle": "Record a payment",
+        "recordBody": "The amount is added to what this ticket has been paid."
+      }
+    },
+    "labels": {
+      "edit": "Edit label",
+      "delete": "Delete label",
+      "deleteConfirmTitle": "Delete this label?",
+      "deleteConfirmBody": "\"{name}\" is removed from every ticket that uses it.",
+      "duplicateName": "A label with this name already exists",
+      "saveError": "Couldn't save the label",
+      "deleteError": "Couldn't delete the label",
+      "selectColor": "Select colour {color}",
+      "colorHex": "Colour code"
+    }
+  },
+  "ka": {
+    "ticketsScreen": {
+      "rail": {
+        "selected": "არჩეულია",
+        "roles": "როლები",
+        "roleOf": "{name}: {role}",
+        "searchClients": "კლიენტის ძიება",
+        "changeDueDate": "ვადის შეცვლა",
+        "dueDateOverdue": "ვადაგადაცილებული · {date}"
+      },
+      "customer": {
+        "conversation": "{platform} მიმოწერა",
+        "widget": "საიტის ჩატი"
+      },
+      "forms": {
+        "notFilled": "შეუვსებელია",
+        "submittedBy": "{name} · {date}",
+        "dialog": {
+          "loading": "ფორმა იტვირთება…",
+          "loadError": "ფორმის ჩატვირთვა ვერ მოხერხდა",
+          "selectItems": "აირჩიეთ ელემენტები სიებიდან",
+          "loadingLists": "სიები იტვირთება…",
+          "selectItem": "აირჩიეთ ელემენტი…",
+          "search": "ძიება…",
+          "noItems": "ელემენტები ვერ მოიძებნა",
+          "clearSelection": "არჩევანის გასუფთავება",
+          "emptyList": "ამ სიაში ელემენტები არ არის",
+          "customFields": "ველები",
+          "cancel": "გაუქმება",
+          "submit": "ფორმის გაგზავნა",
+          "submitting": "იგზავნება…",
+          "submitError": "ფორმის გაგზავნა ვერ მოხერხდა. სცადეთ თავიდან.",
+          "submitted": "გაგზავნილია",
+          "submittedBy": "გამგზავნი",
+          "date": "თარიღი",
+          "noData": "ფორმის მონაცემები არ გაგზავნილა",
+          "selectedItems": "არჩეული ელემენტები",
+          "signatureAlt": "ხელმოწერა: {field}"
+        }
+      },
+      "payment": {
+        "status": "სტატუსი",
+        "partiallyPaid": "ნაწილობრივ გადახდილია",
+        "overpaid": "ზედმეტად გადახდილია",
+        "noPaymentRequired": "გადახდა არ არის საჭირო",
+        "payments": "გადახდები",
+        "noPayments": "გადახდები ჯერ არ არის",
+        "paymentLine": "{amount} · {method} · {date}",
+        "processedBy": "დააფიქსირა: {name}",
+        "amountInvalid": "შეიყვანეთ 0-ზე მეტი თანხა",
+        "detailsError": "გადახდა დაფიქსირდა, მაგრამ მეთოდი და შენიშვნა ვერ შეინახა",
+        "recordTitle": "გადახდის დაფიქსირება",
+        "recordBody": "თანხა დაემატება ამ ბილეთზე უკვე გადახდილს."
+      }
+    },
+    "labels": {
+      "edit": "ლეიბლის რედაქტირება",
+      "delete": "ლეიბლის წაშლა",
+      "deleteConfirmTitle": "წაიშალოს ეს ლეიბლი?",
+      "deleteConfirmBody": "„{name}“ მოიხსნება ყველა ბილეთიდან, სადაც გამოიყენება.",
+      "duplicateName": "ამ სახელით ლეიბლი უკვე არსებობს",
+      "saveError": "ლეიბლის შენახვა ვერ მოხერხდა",
+      "deleteError": "ლეიბლის წაშლა ვერ მოხერხდა",
+      "selectColor": "ფერის არჩევა: {color}",
+      "colorHex": "ფერის კოდი"
+    }
+  }
+}

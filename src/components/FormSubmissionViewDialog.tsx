@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { TicketFormSubmission } from "@/api/generated/interfaces";
+import { useLocale, useTranslations } from "next-intl";
+import { formatDateTime } from "@/app/(tenant)/tickets/_lib/format";
 
 interface FormSubmissionViewDialogProps {
   open: boolean;
@@ -20,6 +22,14 @@ export function FormSubmissionViewDialog({
   onOpenChange,
   submission,
 }: FormSubmissionViewDialogProps) {
+  const t = useTranslations("ticketsScreen.forms.dialog");
+  const locale = useLocale();
+  const submitter = `${submission.submitted_by?.first_name ?? ""} ${submission.submitted_by?.last_name ?? ""}`.trim() || submission.submitted_by?.email || "—";
+  const fieldLabels = new Map<string, string>(
+    (Array.isArray(submission.form?.custom_fields) ? (submission.form.custom_fields as { name?: string; label?: string }[]) : [])
+      .filter((f) => f && f.name)
+      .map((f) => [f.name as string, f.label || (f.name as string)]),
+  );
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -27,21 +37,20 @@ export function FormSubmissionViewDialog({
           <DialogTitle className="flex items-center gap-2">
             {submission.form?.title}
             <Badge variant="outline" className="ml-2">
-              Submitted
+              {t("submitted")}
             </Badge>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
           {/* Submitted by and date */}
-          <div className="flex gap-4 text-sm text-muted-foreground border-b pb-3">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground border-b pb-3">
             <div>
-              <span className="font-medium">Submitted by:</span>{" "}
-              {submission.submitted_by?.first_name} {submission.submitted_by?.last_name}
+              <span className="font-medium">{t("submittedBy")}:</span> {submitter}
             </div>
             <div>
-              <span className="font-medium">Date:</span>{" "}
-              {new Date(submission.submitted_at).toLocaleString()}
+              <span className="font-medium">{t("date")}:</span>{" "}
+              {formatDateTime(submission.submitted_at, locale, { year: "always" })}
             </div>
           </div>
 
@@ -53,15 +62,15 @@ export function FormSubmissionViewDialog({
 
                 return (
                   <div key={key} className="border rounded-lg p-4">
-                    <div className="font-medium text-sm mb-2 capitalize">
-                      {key.replace(/_/g, ' ')}
+                    <div className={`font-medium text-sm mb-2${fieldLabels.has(key) ? "" : " capitalize"}`}>
+                      {fieldLabels.get(key) ?? key.replace(/_/g, ' ')}
                     </div>
                     <div className="text-sm">
                       {isSignature ? (
                         <div className="border rounded p-2 bg-muted/30">
                           <img
                             src={value}
-                            alt={`${key} signature`}
+                            alt={t("signatureAlt", { field: key.replace(/_/g, " ") })}
                             className="max-w-full h-auto max-h-48"
                           />
                         </div>
@@ -77,7 +86,7 @@ export function FormSubmissionViewDialog({
             </div>
           ) : (
             <div className="text-sm text-muted-foreground text-center py-8">
-              No form data submitted
+              {t("noData")}
             </div>
           )}
 
@@ -100,7 +109,7 @@ export function FormSubmissionViewDialog({
                 return Object.entries(itemsByList).map(([listId, items]) => {
                   // Find the list name from form's item_lists
                   const list = submission.form?.item_lists?.find(l => l.id === Number(listId));
-                  const listName = list?.title || 'Selected Items';
+                  const listName = list?.title || t("selectedItems");
 
                   return (
                     <div key={listId} className="border rounded-lg p-4">

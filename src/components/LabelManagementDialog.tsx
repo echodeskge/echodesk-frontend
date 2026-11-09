@@ -20,6 +20,17 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_COLORS = [
@@ -48,7 +59,26 @@ interface LabelFormData {
   description: string;
 }
 
-export function LabelManagementDialog() {
+export interface LabelManagementDialogProps {
+  /** Controlled open state (the ticket rail opens it from "Manage labels…"). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Render no trigger button (controlled use). */
+  hideTrigger?: boolean;
+}
+
+/** True when a DRF 400 body says the label name is taken (names are unique per tenant). */
+export function isDuplicateNameError(error: unknown): boolean {
+  const res = (error as { response?: { status?: number; data?: unknown } } | null)?.response;
+  if (res?.status !== 400) return false;
+  const data = res.data as Record<string, unknown> | undefined;
+  const name = data?.name;
+  if (Array.isArray(name) ? name.length > 0 : typeof name === "string") return true;
+  const text = JSON.stringify(data ?? "").toLowerCase();
+  return text.includes("unique") || text.includes("already exists");
+}
+
+export function LabelManagementDialog({ open, onOpenChange, hideTrigger = false }: LabelManagementDialogProps = {}) {
   const t = useTranslations('labels');
   const tCommon = useTranslations('common');
   const { data: tagsData, isLoading } = useTags();
@@ -56,7 +86,14 @@ export function LabelManagementDialog() {
   const updateTag = useUpdateTag();
   const deleteTag = useDeleteTag();
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const isOpen = open ?? openState;
+  const setIsOpen = (next: boolean) => {
+    if (open === undefined) setOpenState(next);
+    onOpenChange?.(next);
+  };
+  const [formError, setFormError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Tag | null>(null);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [formData, setFormData] = useState<LabelFormData>({
     name: "",
@@ -73,6 +110,7 @@ export function LabelManagementDialog() {
       description: "",
     });
     setEditingTag(null);
+    setFormError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,11 +139,12 @@ export function LabelManagementDialog() {
       }
       resetForm();
     } catch (error) {
-      console.error("Error saving label:", error);
+      setFormError(isDuplicateNameError(error) ? t('duplicateName') : t('saveError'));
     }
   };
 
   const handleEdit = (tag: Tag) => {
+    setFormError(null);
     setEditingTag(tag);
     setFormData({
       name: tag.name,
@@ -114,24 +153,36 @@ export function LabelManagementDialog() {
     });
   };
 
-  const handleDelete = async (tagId: number) => {
-    if (confirm("Are you sure you want to delete this label?")) {
-      try {
-        await deleteTag.mutateAsync(tagId);
-      } catch (error) {
-        console.error("Error deleting label:", error);
-      }
+  const confirmDelete = async () => {
+    const tag = pendingDelete;
+    if (!tag) return;
+    try {
+      await deleteTag.mutateAsync(tag.id);
+      if (editingTag?.id === tag.id) resetForm();
+      setPendingDelete(null);
+    } catch {
+      setPendingDelete(null);
+      toast.error(t('deleteError'));
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="mr-2 h-4 w-4" />
-          {t('title')}
-        </Button>
-      </DialogTrigger>
+    <>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(next) => {
+        if (!next) resetForm();
+        setIsOpen(next);
+      }}
+    >
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Plus className="mr-2 h-4 w-4" />
+            {t('title')}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle>{t('title')}</DialogTitle>
@@ -150,29 +201,38 @@ export function LabelManagementDialog() {
                   id="name"
                   placeholder={t('placeholder.name')}
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormError(null);
+                    setFormData({ ...formData, name: e.target.value });
+                  }}
+                  aria-invalid={formError ? true : undefined}
+                  aria-describedby={formError ? "label-form-error" : undefined}
                   required
                 />
+                {formError && (
+                  <p id="label-form-error" role="alert" className="text-xs text-destructive">
+                    {formError}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label>{t('color')}</Label>
-                <div className="grid grid-cols-9 gap-2">
+                <div className="flex flex-wrap gap-2">
                   {DEFAULT_COLORS.map((color) => (
                     <button
                       key={color}
                       type="button"
                       className={cn(
-                        "w-8 h-8 rounded border-2 transition-all hover:scale-110",
+                        "size-7 shrink-0 rounded border-2 transition-all hover:scale-110",
                         formData.color === color
                           ? "border-foreground ring-2 ring-offset-2 ring-foreground"
                           : "border-transparent"
                       )}
                       style={{ backgroundColor: color }}
                       onClick={() => setFormData({ ...formData, color })}
-                      aria-label={`Select color ${color}`}
+                      aria-label={t('selectColor', { color })}
+                      aria-pressed={formData.color === color}
                     />
                   ))}
                 </div>
@@ -183,6 +243,7 @@ export function LabelManagementDialog() {
                     onChange={(e) =>
                       setFormData({ ...formData, color: e.target.value })
                     }
+                    aria-label={t('color')}
                     className="w-20 h-10"
                   />
                   <Input
@@ -192,6 +253,7 @@ export function LabelManagementDialog() {
                       setFormData({ ...formData, color: e.target.value })
                     }
                     placeholder="#RRGGBB"
+                    aria-label={t('colorHex')}
                     className="flex-1 font-mono"
                   />
                 </div>
@@ -299,14 +361,18 @@ export function LabelManagementDialog() {
                             variant="ghost"
                             onClick={() => handleEdit(tag)}
                             disabled={deleteTag.isPending}
+                            aria-label={t('edit')}
+                            title={t('edit')}
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleDelete(tag.id)}
+                            onClick={() => setPendingDelete(tag)}
                             disabled={deleteTag.isPending}
+                            aria-label={t('delete')}
+                            title={t('delete')}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -322,5 +388,27 @@ export function LabelManagementDialog() {
         </div>
       </DialogContent>
     </Dialog>
+    <AlertDialog open={pendingDelete !== null} onOpenChange={(o) => !o && !deleteTag.isPending && setPendingDelete(null)}>
+      <AlertDialogContent data-testid="label-delete-confirm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('deleteConfirmTitle')}</AlertDialogTitle>
+          <AlertDialogDescription>{t('deleteConfirmBody', { name: pendingDelete?.name ?? '' })}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleteTag.isPending}>{tCommon('cancel')}</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={deleteTag.isPending}
+            onClick={(e) => {
+              e.preventDefault();
+              void confirmDelete();
+            }}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {tCommon('delete')}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
