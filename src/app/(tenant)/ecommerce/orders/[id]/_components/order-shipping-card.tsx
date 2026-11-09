@@ -1,17 +1,21 @@
 "use client"
 
-import { ExternalLink, MapPin, Truck } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
+import { ExternalLink, Truck } from "lucide-react"
+import { useLocale } from "next-intl"
+import { IdText, InfoCard, InfoRows, localizedText } from "../../../_components/ui"
 import { OrderDetail } from "../../_types"
 import { getCourierInfo } from "../../_lib/utils"
 
+type Translate = (key: string, values?: Record<string, string | number>) => string
+
 interface OrderShippingCardProps {
   order: OrderDetail
-  t: (key: string) => string
+  t: Translate
 }
 
+/** Delivery address, shipping method, tracking number, courier and the tracking link. */
 export function OrderShippingCard({ order, t }: OrderShippingCardProps) {
+  const locale = useLocale()
   const address = order.delivery_address
   const shipping = order.shipping_method_details
   const courier = getCourierInfo(order.payment_metadata)
@@ -20,104 +24,76 @@ export function OrderShippingCard({ order, t }: OrderShippingCardProps) {
 
   if (!address && !shipping && !hasTracking) return null
 
+  const shippingName = shipping
+    ? localizedText(shipping.name as Record<string, string> | string, locale, t("detail.shippingMethod"))
+    : ""
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="h-5 w-5" />
-          {t("detail.deliveryAddress")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <InfoCard title={t("detail.deliveryAddress")} icon={<Truck />} testId="ec-order-shipping">
+      <div className="flex flex-col gap-2">
         {address && (
-          <div className="space-y-1">
-            {address.label && (
-              <p className="font-medium">{address.label}</p>
-            )}
-            <p className="text-sm">{address.address}</p>
-            <p className="text-sm">{address.city}</p>
+          <address className="flex flex-col gap-0.5 text-[13px] not-italic [overflow-wrap:anywhere]">
+            {address.label && <span className="font-medium">{address.label}</span>}
+            {address.address && <span>{address.address}</span>}
+            {address.city && <span>{address.city}</span>}
             {address.extra_instructions && (
-              <p className="text-sm text-muted-foreground italic mt-2">
-                {address.extra_instructions}
-              </p>
+              <span className="mt-1 text-xs italic text-muted-foreground">{address.extra_instructions}</span>
             )}
-          </div>
+          </address>
         )}
-
-        {shipping && (
-          <>
-            <Separator />
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">
-                  {t("detail.shippingMethod")}
-                </span>
-              </div>
-              <p className="text-sm">
-                {typeof shipping.name === "object"
-                  ? shipping.name.en || shipping.name.ka || "Shipping"
-                  : shipping.name}
-              </p>
-              {shipping.estimated_days && (
-                <p className="text-sm text-muted-foreground">
-                  {t("detail.estimatedDays").replace(
-                    "{days}",
-                    String(shipping.estimated_days)
-                  )}
-                </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {hasTracking && (
-          <>
-            <Separator />
-            <div className="space-y-2">
-              <span className="text-sm font-medium">
-                {t("detail.tracking")}
-              </span>
-              {order.tracking_number && (
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {t("detail.tracking")}
-                  </span>
-                  <span className="text-sm font-mono">
-                    {order.tracking_number}
-                  </span>
-                </div>
-              )}
-              {courierName && (
-                <div className="flex justify-between gap-4">
-                  <span className="text-sm text-muted-foreground">
-                    {t("detail.courierProvider")}
-                  </span>
-                  <span className="text-sm text-right">
-                    {courierName}
-                    {courier.booked && courier.chosen && (
-                      <span className="block text-xs text-muted-foreground">
-                        {t("detail.customerChose").replace("{courier}", courier.chosen)}
+        {(shipping || hasTracking) && (
+          <InfoRows
+            className={address ? "border-t pt-1" : undefined}
+            rows={[
+              {
+                key: "method",
+                label: t("detail.shippingMethod"),
+                value: (
+                  <span className="flex flex-col items-end">
+                    <span>{shippingName}</span>
+                    {shipping?.estimated_days ? (
+                      <span className="text-xs text-muted-foreground">
+                        {t("detail.estimatedDays", { days: String(shipping.estimated_days) })}
                       </span>
+                    ) : null}
+                  </span>
+                ),
+                hidden: !shipping,
+              },
+              {
+                key: "tracking",
+                label: t("detail.tracking"),
+                value: <IdText className="whitespace-normal">{order.tracking_number}</IdText>,
+                hidden: !order.tracking_number,
+              },
+              {
+                key: "courier",
+                label: t("detail.courierProvider"),
+                value: (
+                  <span className="flex flex-col items-end">
+                    <span>{courierName}</span>
+                    {courier.booked && courier.chosen && (
+                      <span className="text-xs text-muted-foreground">{t("detail.customerChose", { courier: courier.chosen })}</span>
                     )}
                   </span>
-                </div>
-              )}
-              {courier.trackingUrl && (
-                <a
-                  href={courier.trackingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                >
-                  {t("detail.trackShipment")}
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
-            </div>
-          </>
+                ),
+                hidden: !courierName,
+              },
+            ]}
+          />
         )}
-      </CardContent>
-    </Card>
+        {courier.trackingUrl && (
+          <a
+            href={courier.trackingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 self-start text-[13px] text-primary hover:underline"
+          >
+            {t("detail.trackShipment")}
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+          </a>
+        )}
+      </div>
+    </InfoCard>
   )
 }

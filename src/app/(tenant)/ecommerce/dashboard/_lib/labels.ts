@@ -1,9 +1,10 @@
 import { format } from "date-fns"
 import { enUS, ka } from "date-fns/locale"
+import { dateOnlyToLocalDate } from "@/app/(tenant)/tickets/_lib/format"
 
 /** The slice of a next-intl translator the dashboard cards use. */
 export interface Translator {
-  (key: string): string
+  (key: string, values?: Record<string, string | number>): string
   has: (key: string) => boolean
 }
 
@@ -19,9 +20,13 @@ export function labelOr(t: Translator, key: string, raw: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-/** Short day label for chart axes: "Oct 05" in English, "5 ოქტ" in Georgian. */
+/**
+ * Short day label for chart axes: "Oct 05" in English, "5 ოქტ" in Georgian.
+ * The API sends calendar days ("2026-10-05"); `new Date()` reads those as UTC
+ * midnight, which is the previous day west of UTC, so parse them as local days.
+ */
 export function formatShortDay(date: string, locale: string): string {
-  const d = new Date(date)
+  const d = dateOnlyToLocalDate(date) ?? new Date(date)
   if (Number.isNaN(d.getTime())) return "—"
   return locale === "ka"
     ? format(d, "d MMM", { locale: ka })

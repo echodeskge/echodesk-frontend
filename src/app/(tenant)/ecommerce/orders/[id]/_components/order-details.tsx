@@ -1,9 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,11 +11,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { DetailLayout } from "../../../_components/ui"
 import { OrderDetail } from "../../_types"
 import { OrderHeaderCard } from "./order-header-card"
 import { OrderItemsCard } from "./order-items-card"
 import { OrderNotesCard } from "./order-notes-card"
 import { OrderCustomerCard } from "./order-customer-card"
+import { OrderShippingCard } from "./order-shipping-card"
 import { OrderPaymentCard } from "./order-payment-card"
 import { OrderTimelineCard } from "./order-timeline-card"
 
@@ -31,7 +30,7 @@ interface OrderDetailsProps {
   onStatusChange: (status: string) => Promise<void>
   onMarkPaid: () => Promise<void>
   onRefund: () => Promise<void>
-  t: (key: string) => string
+  t: ((key: string, values?: Record<string, string | number>) => string) & { has?: (key: string) => boolean }
 }
 
 export function OrderDetails({
@@ -69,17 +68,13 @@ export function OrderDetails({
     await onRefund()
   }
 
-  return (
-    <div className="space-y-4">
-      <Button variant="ghost" size="sm" asChild>
-        <Link href="/ecommerce/orders">
-          <ChevronLeft className="me-1 h-4 w-4" />
-          {t("detail.backToOrders")}
-        </Link>
-      </Button>
+  const pendingLabel = pendingStatus ? (t.has?.(`status.${pendingStatus}`) === false ? pendingStatus : t(`status.${pendingStatus}`)) : ""
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="space-y-4 md:col-span-2">
+  return (
+    <>
+      <DetailLayout
+        testId="ec-order-detail"
+        header={
           <OrderHeaderCard
             order={order}
             updatingStatus={updatingStatus}
@@ -87,22 +82,29 @@ export function OrderDetails({
             onStatusChange={handleStatusChangeRequest}
             t={t}
           />
-          <OrderItemsCard order={order} t={t} />
-          <OrderNotesCard order={order} t={t} />
-        </div>
-        <div className="space-y-4">
-          <OrderCustomerCard order={order} t={t} />
-          <OrderPaymentCard
-            order={order}
-            refunding={refunding}
-            isManager={isManager}
-            onMarkPaid={onMarkPaid}
-            onRefund={handleRefundRequest}
-            t={t}
-          />
-          <OrderTimelineCard order={order} t={t} />
-        </div>
-      </div>
+        }
+        main={
+          <>
+            <OrderItemsCard order={order} t={t} />
+            <OrderNotesCard order={order} t={t} />
+          </>
+        }
+        rail={
+          <>
+            <OrderCustomerCard order={order} t={t} />
+            <OrderShippingCard order={order} t={t} />
+            <OrderPaymentCard
+              order={order}
+              refunding={refunding}
+              isManager={isManager}
+              onMarkPaid={onMarkPaid}
+              onRefund={handleRefundRequest}
+              t={t}
+            />
+            <OrderTimelineCard order={order} t={t} />
+          </>
+        }
+      />
 
       {/* Status Change Confirmation Dialog */}
       <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
@@ -112,10 +114,7 @@ export function OrderDetails({
               {t("detail.confirmStatusChange")}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("detail.confirmStatusDescription").replace(
-                "{status}",
-                pendingStatus || ""
-              )}
+              {t("detail.confirmStatusDescription", { status: pendingLabel })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -149,6 +148,6 @@ export function OrderDetails({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }

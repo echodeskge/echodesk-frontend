@@ -1,234 +1,114 @@
 "use client"
 
-import { useMemo } from "react"
-import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  SortingState,
-  VisibilityState,
-  RowSelectionState,
-  flexRender,
-} from "@tanstack/react-table"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ShoppingCart } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Skeleton } from "@/components/ui/skeleton"
-import { DataTableServerPagination } from "@/components/ui/data-table/data-table-pagination"
-import { OrderListItem } from "../_types"
 import { useLocale } from "next-intl"
-import { getOrderColumns } from "./orders-table-columns"
-import { OrdersTableToolbar } from "./orders-table-toolbar"
+import { SearchX, ShoppingCart } from "lucide-react"
+import { EcEmptyState, EcPagination, EcTable, rdButton } from "../../_components/ui"
+import { OrderListItem } from "../_types"
+import { getOrderColumns, orderSortValue } from "./orders-table-columns"
+import { sortRows, type SortState } from "./sort-header"
+
+type Translate = (key: string, values?: Record<string, string | number>) => string
 
 interface OrdersTableProps {
-  data: OrderListItem[]
+  data: OrderListItem[] | undefined
   totalCount: number
   page: number
   pageSize: number
   loading: boolean
-  searchQuery: string
-  statusFilter: string
+  error?: unknown
+  onRetry: () => void
+  filtered: boolean
+  onClearFilters: () => void
+  selected: ReadonlySet<number>
+  onSelectionChange: (selectedIds: Set<number>) => void
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
-  onSearchChange: (search: string) => void
-  onStatusFilterChange: (status: string) => void
-  onSelectionChange: (selectedIds: Set<number>) => void
-  onExportAll: () => void
-  t: (key: string) => string
+  t: Translate
+  tUi: Translate
 }
 
+/** Orders list (fills the page height and scrolls; paging footer). Row click opens the order. */
 export function OrdersTable({
   data,
   totalCount,
   page,
   pageSize,
   loading,
-  searchQuery,
-  statusFilter,
+  error,
+  onRetry,
+  filtered,
+  onClearFilters,
+  selected,
+  onSelectionChange,
   onPageChange,
   onPageSizeChange,
-  onSearchChange,
-  onStatusFilterChange,
-  onSelectionChange,
-  onExportAll,
   t,
+  tUi,
 }: OrdersTableProps) {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
-
   const router = useRouter()
-
   const locale = useLocale()
+  const [sort, setSort] = useState<SortState | null>(null)
+  const rows = useMemo(() => (data ? sortRows(data, sort, orderSortValue) : undefined), [data, sort])
 
-  const columns = useMemo(
-    () => getOrderColumns({ t, locale }),
-    [t, locale]
-  )
-
-  const table = useReactTable({
-    data,
-    columns,
-    pageCount: Math.max(1, Math.ceil(totalCount / pageSize)),
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      pagination: { pageIndex: page - 1, pageSize },
-    },
-    manualPagination: true,
-    enableRowSelection: true,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: (updater) => {
-      const newSelection =
-        typeof updater === "function" ? updater(rowSelection) : updater
-      setRowSelection(newSelection)
-      // Convert row selection to Set of order IDs
-      const selectedIds = new Set<number>()
-      Object.keys(newSelection).forEach((rowIndex) => {
-        if (newSelection[rowIndex]) {
-          const order = data[parseInt(rowIndex)]
-          if (order) selectedIds.add(order.id)
-        }
-      })
-      onSelectionChange(selectedIds)
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+  const columns = getOrderColumns({
+    t,
+    tUi,
+    locale,
+    rows: rows ?? [],
+    selected,
+    onSelectionChange,
+    sort,
+    onSort: setSort,
   })
 
-  // Reset row selection when data changes (page change, filter, etc.)
-  const dataKey = data.map((d) => d.id).join(",")
-  useMemo(() => {
-    setRowSelection({})
-  }, [dataKey])
-
-  const selectedCount = Object.keys(rowSelection).filter(
-    (k) => rowSelection[k]
-  ).length
-
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader className="flex-row justify-between items-center gap-x-1.5 space-y-0">
-          <Skeleton className="h-6 w-32" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-9 w-40" />
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="space-y-0">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="border-b px-4 py-3">
-                <Skeleton className="h-5 w-full" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+  const showFooter = !error && !!data && data.length > 0
 
   return (
-    <Card>
-      <CardHeader className="flex-row flex-wrap justify-between items-center gap-2 space-y-0">
-        <CardTitle>{t("ordersTitle")}</CardTitle>
-        <OrdersTableToolbar
-          table={table}
-          searchQuery={searchQuery}
-          statusFilter={statusFilter}
-          onSearchChange={onSearchChange}
-          onStatusFilterChange={onStatusFilterChange}
-          onExportAll={onExportAll}
-          t={t}
-        />
-      </CardHeader>
-      <CardContent className="p-0">
-        {data.length === 0 ? (
-          <div className="text-center py-12">
-            <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">{t("noOrders")}</h3>
-            <p className="text-muted-foreground mt-2">
-              {searchQuery || statusFilter !== "all"
-                ? t("noOrdersFiltered")
-                : t("noOrdersYet")}
-            </p>
-          </div>
+    <EcTable
+      variant="fill"
+      columns={columns}
+      rows={rows}
+      rowKey={(o) => o.id}
+      loading={loading}
+      error={error}
+      onRetry={onRetry}
+      isRowSelected={(o) => selected.has(o.id)}
+      onRowClick={(o) => router.push(`/ecommerce/orders/${o.id}`)}
+      ariaLabel={t("ordersTitle")}
+      skeletonRows={10}
+      testId="ec-orders-table"
+      empty={
+        filtered ? (
+          <EcEmptyState
+            icon={SearchX}
+            title={tUi("noMatches")}
+            description={t("noOrdersFiltered")}
+            action={
+              <button type="button" className={rdButton.outlineSm} onClick={onClearFilters}>
+                {tUi("clearFilters")}
+              </button>
+            }
+          />
         ) : (
-          <ScrollArea
-            orientation="horizontal"
-            className="w-[calc(100vw-2.25rem)] md:w-auto"
-          >
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="cursor-pointer"
-                    onClick={() => router.push(`/ecommerce/orders/${row.original.id}`)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        )}
-      </CardContent>
-      {data.length > 0 && (
-        <CardFooter className="block py-3">
-          <DataTableServerPagination
+          <EcEmptyState icon={ShoppingCart} title={t("noOrders")} description={t("noOrdersYet")} />
+        )
+      }
+      footer={
+        showFooter ? (
+          <EcPagination
             page={page}
             pageSize={pageSize}
             totalCount={totalCount}
-            selectedCount={selectedCount}
+            selectedCount={selected.size}
             onPageChange={onPageChange}
             onPageSizeChange={onPageSizeChange}
+            // keeps prev / next clear of the floating team-chat button (36px at 12px from the corner)
+            className="pe-10"
           />
-        </CardFooter>
-      )}
-    </Card>
+        ) : undefined
+      }
+    />
   )
 }

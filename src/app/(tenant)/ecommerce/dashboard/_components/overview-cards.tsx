@@ -1,92 +1,75 @@
 "use client"
 
-import {
-  HandCoins,
-  ShoppingBag,
-  BadgePercent,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { StatGrid, formatCount, formatMoney, formatPercent, type StatItem } from "../../_components/ui"
 import type { Translator } from "../_lib/labels"
 
+export interface PeriodTotals {
+  today: number
+  week: number
+  month: number
+  total: number
+  change: number
+}
+
 interface OverviewCardsProps {
-  revenue: { today: number; week: number; month: number; total: number; change: number }
-  orders: { today: number; week: number; month: number; total: number; change: number }
-  avgOrderValue: number
+  revenue?: PeriodTotals
+  orders?: PeriodTotals
+  avgOrderValue?: number
+  loading?: boolean
   t: Translator
 }
 
-function formatLargeNumber(amount: number) {
-  if (amount >= 1000000) return `₾${(amount / 1000000).toFixed(2)}M`
-  if (amount >= 1000) return `₾${(amount / 1000).toFixed(1)}K`
-  return `₾${amount.toFixed(2)}`
+/** "+12.5%" / "-3%": the change of the last 30 days against the 30 before (backend `change`). */
+export function formatChange(change: number): string {
+  return `${change > 0 ? "+" : ""}${formatPercent(change)}`
 }
 
-export function OverviewCards({ revenue, orders, avgOrderValue, t }: OverviewCardsProps) {
-  const metrics = [
+function changeHint(change: number | undefined, t: OverviewCardsProps["t"]): Pick<StatItem, "hint" | "hintTone"> {
+  if (!change) return {}
+  return {
+    hint: t("overview.vsPrevious", { change: formatChange(change) }),
+    hintTone: change > 0 ? "success" : "danger",
+  }
+}
+
+/** Compact money with the exact amount as the tooltip (₾4.0K, title ₾4,038.00). */
+function Compact({ value }: { value: number | undefined }) {
+  return <span title={formatMoney(value)}>{formatMoney(value, { compact: true })}</span>
+}
+
+/**
+ * The four overview numbers as STATS tiles: total revenue, revenue of the
+ * last 30 days (with its change), total orders (with its change), average
+ * order value.
+ */
+export function OverviewCards({ revenue, orders, avgOrderValue, loading, t }: OverviewCardsProps) {
+  const items: StatItem[] = [
     {
+      key: "totalRevenue",
       label: t("overview.totalRevenue"),
-      value: formatLargeNumber(revenue.total),
-      change: revenue.change,
-      icon: HandCoins,
+      value: revenue ? <Compact value={revenue.total} /> : null,
+      testId: "ec-dash-total-revenue",
     },
     {
+      key: "monthRevenue",
       label: t("overview.monthRevenue"),
-      value: formatLargeNumber(revenue.month),
-      change: revenue.change,
-      icon: BadgePercent,
+      value: revenue ? <Compact value={revenue.month} /> : null,
+      ...changeHint(revenue?.change, t),
+      testId: "ec-dash-month-revenue",
     },
     {
+      key: "totalOrders",
       label: t("overview.totalOrders"),
-      value: orders.total.toLocaleString(),
-      change: orders.change,
-      icon: ShoppingBag,
+      value: orders ? formatCount(orders.total) : null,
+      ...changeHint(orders?.change, t),
+      testId: "ec-dash-total-orders",
     },
     {
+      key: "avgOrderValue",
       label: t("overview.avgOrderValue"),
-      value: `₾${avgOrderValue.toFixed(2)}`,
-      change: 0,
-      icon: HandCoins,
+      value: avgOrderValue === undefined ? null : formatMoney(avgOrderValue),
+      testId: "ec-dash-avg-order",
     },
   ]
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-      {metrics.map((metric) => (
-        <Card key={metric.label}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
-                <metric.icon className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-            {metric.change !== 0 && (
-              <Badge
-                variant="secondary"
-                className={
-                  metric.change > 0
-                    ? "bg-green-100 text-green-700 hover:bg-green-100"
-                    : "bg-red-100 text-red-700 hover:bg-red-100"
-                }
-              >
-                {metric.change > 0 ? (
-                  <TrendingUp className="mr-1 h-3 w-3" />
-                ) : (
-                  <TrendingDown className="mr-1 h-3 w-3" />
-                )}
-                {metric.change > 0 ? "+" : ""}
-                {metric.change}%
-              </Badge>
-            )}
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">{metric.label}</p>
-            <p className="text-2xl font-bold">{metric.value}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
+  return <StatGrid items={items} loading={loading} className="grid-cols-2 md:grid-cols-4" testId="ec-dash-overview" />
 }

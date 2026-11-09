@@ -6,17 +6,23 @@ import { useTranslations } from "next-intl"
 import { ecommerceAdminOrdersList } from "@/api/generated"
 import axiosInstance from "@/api/axios"
 import { toast } from "sonner"
+import { Download } from "lucide-react"
 import { getApiErrorMessage } from "@/lib/utils"
 import type { BulkUpdateStatusResponse } from "@/api/generated/interfaces"
 import { OrderListItem } from "./_types"
 import { OrdersTable } from "./_components/orders-table"
 import { OrdersBulkActionsBar } from "./_components/orders-bulk-actions-bar"
+import { OrdersTableToolbar } from "./_components/orders-table-toolbar"
+import { EcPage, EcommerceHeaderBridge } from "../_components/ui"
 
 const DEFAULT_PAGE_SIZE = 20
 
 export default function EcommerceOrdersPage() {
   const t = useTranslations("ecommerceOrders")
-  const [orders, setOrders] = useState<OrderListItem[]>([])
+  const tUi = useTranslations("ecommerceUi")
+  // undefined until the first load finishes (table skeleton)
+  const [orders, setOrders] = useState<OrderListItem[] | undefined>(undefined)
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -31,6 +37,7 @@ export default function EcommerceOrdersPage() {
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true)
+      setLoadError(null)
       const statusParam =
         statusFilter === "all"
           ? undefined
@@ -59,12 +66,13 @@ export default function EcommerceOrdersPage() {
       )
       setOrders((response.results || []) as unknown as OrderListItem[])
       setTotalCount(response.count || 0)
-    } catch {
-      toast.error("Failed to load orders")
+    } catch (error) {
+      setLoadError(error)
+      toast.error(t("toast.loadFailed"))
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, statusFilter, page, pageSize])
+  }, [searchQuery, statusFilter, page, pageSize, t])
 
   useEffect(() => {
     fetchOrders()
@@ -109,17 +117,17 @@ export default function EcommerceOrdersPage() {
           }
         )
         if (response.data?.payment_url) {
-          toast.success("Redirecting to payment page...")
+          toast.success(t("toast.paymentRedirect"))
           window.location.href = response.data.payment_url
         } else {
-          toast.success("Payment initiated successfully")
+          toast.success(t("toast.paymentInitiated"))
           await fetchOrders()
         }
       } catch (error) {
-        toast.error(getApiErrorMessage(error, "Failed to initiate payment. Please try again."))
+        toast.error(getApiErrorMessage(error, t("toast.paymentFailed")))
       }
     },
-    [fetchOrders]
+    [fetchOrders, t]
   )
 
   const handleBulkStatusUpdate = useCallback(
@@ -135,32 +143,36 @@ export default function EcommerceOrdersPage() {
           }
         )
         toast.success(
-          `${data?.updated ?? selectedOrderIds.size} orders updated to ${status}`
+          t("toast.updated", {
+            count: data?.updated ?? selectedOrderIds.size,
+            status: t.has(`status.${status}`) ? t(`status.${status}`) : status,
+          })
         )
         // Final (cancelled/refunded) orders and orders paid meanwhile are skipped.
         const skipped = data?.skipped || []
         if (skipped.length > 0) {
           toast.warning(
-            `${skipped.length} orders were skipped: ${skipped
-              .map((s) => `#${s.id} (${s.error})`)
-              .join(", ")}`
+            t("toast.skipped", {
+              count: skipped.length,
+              list: skipped.map((s) => `#${s.id} (${s.error})`).join(", "),
+            })
           )
         }
         await fetchOrders()
         setSelectedOrderIds(new Set())
       } catch (error) {
         // e.g. 403 when a paid order is in the selection and the user is not a manager
-        toast.error(getApiErrorMessage(error, "Failed to update orders. Please try again."))
+        toast.error(getApiErrorMessage(error, t("toast.updateFailed")))
       } finally {
         setBulkActionLoading(false)
       }
     },
-    [selectedOrderIds, fetchOrders]
+    [selectedOrderIds, fetchOrders, t]
   )
 
   const handleExportSelected = useCallback(() => {
     try {
-      const selected = orders.filter((o) => selectedOrderIds.has(o.id))
+      const selected = (orders ?? []).filter((o) => selectedOrderIds.has(o.id))
       const csvQuote = (value: string) => `"${value.replace(/"/g, '""')}"`
       const headers = [
         "Order Number",
@@ -185,11 +197,11 @@ export default function EcommerceOrdersPage() {
         .join("\n")
       const blob = new Blob([csv], { type: "text/csv" })
       downloadBlob(blob, `orders-export-${new Date().toISOString().slice(0, 10)}.csv`)
-      toast.success(`Exported ${selected.length} orders`)
+      toast.success(t("toast.exportedSelected", { count: selected.length }))
     } catch {
-      toast.error("Failed to export orders")
+      toast.error(t("toast.exportFailed"))
     }
-  }, [orders, selectedOrderIds])
+  }, [orders, selectedOrderIds, t])
 
   const handleExportAllCSV = useCallback(async () => {
     try {
@@ -199,41 +211,62 @@ export default function EcommerceOrdersPage() {
       )
       const blob = new Blob([response.data], { type: "text/csv" })
       downloadBlob(blob, `all-orders-${new Date().toISOString().slice(0, 10)}.csv`)
-      toast.success("Orders exported successfully")
+      toast.success(t("toast.exported"))
     } catch {
-      toast.error("Failed to export orders")
+      toast.error(t("toast.exportFailed"))
     }
-  }, [])
+  }, [t])
+
+  const filtered = searchQuery !== "" || statusFilter !== "all"
+  const handleClearFilters = useCallback(() => {
+    handleSearchChange("")
+    handleStatusFilterChange("all")
+  }, [handleSearchChange, handleStatusFilterChange])
 
   return (
-    <section className="container p-4">
-      {/* Orders Table */}
+    <EcPage fill testId="ec-orders">
+      <EcommerceHeaderBridge
+        sub={orders ? t("ordersFound", { count: totalCount }) : null}
+        secondary={[{ label: t("exportCsv"), icon: Download, onClick: handleExportAllCSV, testId: "ec-orders-export" }]}
+      />
+      {selectedOrderIds.size > 0 ? (
+        <OrdersBulkActionsBar
+          selectedCount={selectedOrderIds.size}
+          loading={bulkActionLoading}
+          onMarkShipped={() => handleBulkStatusUpdate("shipped")}
+          onMarkDelivered={() => handleBulkStatusUpdate("delivered")}
+          onExportSelected={handleExportSelected}
+          onClear={() => setSelectedOrderIds(new Set())}
+          t={t}
+          tUi={tUi}
+        />
+      ) : (
+        <OrdersTableToolbar
+          searchQuery={searchQuery}
+          statusFilter={statusFilter}
+          onSearchChange={handleSearchChange}
+          onStatusFilterChange={handleStatusFilterChange}
+          t={t}
+          tUi={tUi}
+        />
+      )}
       <OrdersTable
         data={orders}
         totalCount={totalCount}
         page={page}
         pageSize={pageSize}
         loading={loading}
-        searchQuery={searchQuery}
-        statusFilter={statusFilter}
+        error={loadError}
+        onRetry={fetchOrders}
+        filtered={filtered}
+        onClearFilters={handleClearFilters}
+        selected={selectedOrderIds}
+        onSelectionChange={handleSelectionChange}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
-        onSearchChange={handleSearchChange}
-        onStatusFilterChange={handleStatusFilterChange}
-        onSelectionChange={handleSelectionChange}
-        onExportAll={handleExportAllCSV}
         t={t}
+        tUi={tUi}
       />
-
-      {/* Floating Bulk Actions Bar */}
-      <OrdersBulkActionsBar
-        selectedCount={selectedOrderIds.size}
-        loading={bulkActionLoading}
-        onMarkShipped={() => handleBulkStatusUpdate("shipped")}
-        onMarkDelivered={() => handleBulkStatusUpdate("delivered")}
-        onExportSelected={handleExportSelected}
-        t={t}
-      />
-    </section>
+    </EcPage>
   )
 }

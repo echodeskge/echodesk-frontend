@@ -1,34 +1,46 @@
 "use client"
 
 import Link from "next/link"
-import { PackageX, ArrowLeft } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { ArrowLeft, PackageX } from "lucide-react"
+import { EcEmptyState, EcErrorState, rdButton } from "../../../_components/ui"
 
 interface OrderNotFoundProps {
   t: (key: string) => string
+  /** A load error other than 404: shows the error state with retry instead. */
+  error?: unknown
+  onRetry?: () => void
 }
 
-export function OrderNotFound({ t }: OrderNotFoundProps) {
+function BackLink({ label }: { label: string }) {
   return (
-    <div className="p-6">
-      <Card>
-        <CardContent className="py-12 text-center">
-          <PackageX className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold">
-            {t("detail.orderNotFound")}
-          </h3>
-          <p className="text-muted-foreground mt-2">
-            {t("detail.orderNotFoundDescription")}
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/ecommerce/orders">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("detail.backToOrders")}
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+    <Link href="/ecommerce/orders" className={rdButton.outlineSm}>
+      <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" aria-hidden />
+      {label}
+    </Link>
+  )
+}
+
+/** 404 / load error for the order page, with a way back to the list. */
+export function OrderNotFound({ t, error, onRetry }: OrderNotFoundProps) {
+  return (
+    <section className="w-full p-4 sm:p-6">
+      <div className="flex max-w-[1200px] flex-col items-center rounded-lg border bg-card">
+        {error ? (
+          <>
+            <EcErrorState error={error} onRetry={onRetry} />
+            <div className="-mt-6 pb-8">
+              <BackLink label={t("detail.backToOrders")} />
+            </div>
+          </>
+        ) : (
+          <EcEmptyState
+            icon={PackageX}
+            title={t("detail.orderNotFound")}
+            description={t("detail.orderNotFoundDescription")}
+            action={<BackLink label={t("detail.backToOrders")} />}
+          />
+        )}
+      </div>
+    </section>
   )
 }

@@ -49,7 +49,8 @@ describe("OrderItemsCard", () => {
     expect(screen.getByText("ყავისფერი · ფერი: ყავისფერი")).toBeInTheDocument()
     expect(screen.getByText("SATIN_BROWN")).toBeInTheDocument()
     expect(screen.queryByText(/Variant ID/)).not.toBeInTheDocument()
-    expect(screen.getByRole("img")).toHaveAttribute("src", "https://cdn.example.com/brown.jpg")
+    // the thumb is decorative (alt="", the name is next to it), so it has no img role
+    expect(document.querySelector("img")).toHaveAttribute("src", "https://cdn.example.com/brown.jpg")
   })
 
   it("falls back gracefully when the API has no variant details yet", () => {
