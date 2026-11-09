@@ -1,32 +1,26 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
+import { Calendar, SearchX } from "lucide-react"
 import axios from "@/api/axios"
 import { getApiErrorMessage } from "@/lib/utils"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { LEAVE_STATUSES } from "../_lib/hr-utils"
+import { matchesRequestSearch } from "../_lib/lv02-utils"
 import { useDeepLinkId } from "../_lib/useDeepLinkId"
 import { LeaveRequestDetailDialog } from "../_components/LeaveRequestDetailDialog"
-import { LeaveStatusBadge } from "../_components/LeaveStatusBadge"
-import { Loader2, Calendar } from "lucide-react"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  LeaveEmptyState,
+  LeaveHeaderBridge,
+  LeavePage,
+  LeaveTable,
+  LeaveToolbar,
+  Segmented,
+  ToolbarSearch,
+  leaveButton,
+} from "../_components/ui"
+import { requestColumns } from "../team-requests/_components/request-columns"
 
 // Shape of LeaveRequestListSerializer: flat ids/names, no nested objects and
 // no `reason` / employee e-mail (those are only on the detail endpoint).
@@ -55,8 +49,10 @@ export default function AllRequestsPage() {
   const locale = useLocale()
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  // Bumped after the detail dialog changes a request, to reload the list.
+  const [search, setSearch] = useState("")
+  // Bumped after the detail dialog changes a request (or on retry), to reload the list.
   const [reloadKey, setReloadKey] = useState(0)
   const [deepLinkId, clearDeepLink] = useDeepLinkId()
   const [detailId, setDetailId] = useState<number | null>(null)
@@ -80,11 +76,15 @@ export default function AllRequestsPage() {
             page_size: 100,
           },
         })
-        if (!ignore) setRequests(unwrapList<LeaveRequest>(response.data))
+        if (!ignore) {
+          setRequests(unwrapList<LeaveRequest>(response.data))
+          setLoadError(null)
+        }
       } catch (error) {
         if (ignore) return
         console.error("Failed to fetch requests:", error)
         setRequests([])
+        setLoadError(error)
         toast.error(t("shared.loadFailed"), {
           description: getApiErrorMessage(error) || undefined,
         })
@@ -100,99 +100,76 @@ export default function AllRequestsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, locale, reloadKey])
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">{t("allRequests.title")}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t("allRequests.description")}
-          </p>
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t("allRequests.filterByStatus")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("allRequests.filterAll")}</SelectItem>
-            {LEAVE_STATUSES.map((status) => (
-              <SelectItem key={status} value={status}>
-                {t(`shared.status.${status}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+  const shown = useMemo(() => requests.filter((r) => matchesRequestSearch(r, search)), [requests, search])
+  const columns = requestColumns<LeaveRequest>({ t, locale, submitted: true })
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("shared.leaveRequests")}</CardTitle>
-          <CardDescription>
-            {t("allRequests.cardDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : requests.length === 0 ? (
-            <div className="text-center py-12">
-              <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">{t("shared.noLeaveRequests")}</h3>
-              <p className="text-muted-foreground">
-                {t("allRequests.noMatchDescription")}
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("shared.employee")}</TableHead>
-                  <TableHead>{t("shared.leaveType")}</TableHead>
-                  <TableHead>{t("shared.startDate")}</TableHead>
-                  <TableHead>{t("shared.endDate")}</TableHead>
-                  <TableHead>{t("shared.days")}</TableHead>
-                  <TableHead>{t("shared.statusLabel")}</TableHead>
-                  <TableHead>{t("shared.submitted")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((request) => (
-                  <TableRow
-                    key={request.id}
-                    className="cursor-pointer"
-                    onClick={() => setDetailId(request.id)}
-                  >
-                    <TableCell>
-                      <div className="font-medium">{request.employee_name}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        style={{ backgroundColor: request.leave_type_color || undefined }}
-                        className="text-white"
-                      >
-                        {request.leave_type_name}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(request.start_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(request.end_date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{request.total_days}</TableCell>
-                    <TableCell><LeaveStatusBadge status={request.status} /></TableCell>
-                    <TableCell>
-                      {new Date(request.created_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+  const empty =
+    search.trim() && requests.length > 0 ? (
+      <LeaveEmptyState
+        icon={SearchX}
+        title={t("ui.noMatches")}
+        description={t("ui.noMatchesHint")}
+        action={
+          <button type="button" className={leaveButton.outlineSm} onClick={() => setSearch("")}>
+            {t("ui.clearFilters")}
+          </button>
+        }
+      />
+    ) : (
+      <LeaveEmptyState
+        icon={Calendar}
+        title={t("shared.noLeaveRequests")}
+        description={t("allRequests.noMatchDescription")}
+        action={
+          statusFilter !== "all" ? (
+            <button type="button" className={leaveButton.outlineSm} onClick={() => setStatusFilter("all")}>
+              {t("ui.clearFilters")}
+            </button>
+          ) : undefined
+        }
+      />
+    )
+
+  return (
+    <>
+      <LeaveHeaderBridge sub={loading || loadError ? null : t("requests.count", { count: requests.length })} />
+      <LeavePage fill testId="all-requests-page">
+        <LeaveToolbar>
+          <Segmented<string>
+            ariaLabel={t("allRequests.filterByStatus")}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            testId="all-requests-filter"
+            className="max-w-full"
+            options={[
+              { value: "all", label: t("allRequests.filterAllShort") },
+              ...LEAVE_STATUSES.map((status) => ({ value: status, label: t(`shared.status.${status}`) })),
+            ]}
+          />
+          <ToolbarSearch
+            value={search}
+            onChange={setSearch}
+            placeholder={t("requests.searchPlaceholder")}
+            clearLabel={t("ui.clearSearch")}
+            className="ms-auto max-w-none sm:max-w-[260px]"
+            testId="all-requests-search"
+          />
+        </LeaveToolbar>
+        <LeaveTable
+          ariaLabel={t("allRequests.title")}
+          columns={columns}
+          rows={shown}
+          loading={loading}
+          rowKey={(r) => r.id}
+          onRowClick={(r) => setDetailId(r.id)}
+          isRowSelected={(r) => r.id === detailId}
+          error={loadError}
+          onRetry={() => setReloadKey((k) => k + 1)}
+          empty={empty}
+          footer={!loading && !loadError ? <span>{t("requests.count", { count: shown.length })}</span> : undefined}
+          testId="all-requests-table"
+        />
+      </LeavePage>
 
       <LeaveRequestDetailDialog
         requestId={detailId}
@@ -203,6 +180,6 @@ export default function AllRequestsPage() {
         }}
         onChanged={() => setReloadKey((k) => k + 1)}
       />
-    </div>
+    </>
   )
 }
