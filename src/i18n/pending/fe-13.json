@@ -1,0 +1,28 @@
+{
+  "en": {
+    "ticketsScreen": {
+      "timer": {
+        "switchBody": "Only one timer can run at a time. Stop it and start the timer here?",
+        "longRunningHint": "Running for more than 8 hours. Stop it if you're done.",
+        "byPerson": "By person",
+        "noStatusTime": "No time in status recorded yet",
+        "sessions": "{count, plural, one {# session} other {# sessions}}",
+        "notTracked": "Time isn't tracked in this status",
+        "loadFailed": "Couldn't load the logged time"
+      }
+    }
+  },
+  "ka": {
+    "ticketsScreen": {
+      "timer": {
+        "switchBody": "ერთდროულად მხოლოდ ერთი ტაიმერი შეიძლება მუშაობდეს. გავაჩეროთ ის და ჩავრთოთ ტაიმერი აქ?",
+        "longRunningHint": "ჩართულია 8 საათზე მეტი ხნის განმავლობაში. გააჩერეთ, თუ დაასრულეთ.",
+        "byPerson": "პირების მიხედვით",
+        "noStatusTime": "სტატუსებში დრო ჯერ არ დაფიქსირებულა",
+        "sessions": "{count, plural, one {# სესია} other {# სესია}}",
+        "notTracked": "ამ სტატუსში დრო არ აღირიცხება",
+        "loadFailed": "დაფიქსირებული დროის ჩატვირთვა ვერ მოხერხდა"
+      }
+    }
+  }
+}
