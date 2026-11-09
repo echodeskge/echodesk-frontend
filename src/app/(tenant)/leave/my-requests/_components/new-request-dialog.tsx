@@ -187,6 +187,8 @@ export function NewRequestDialog({
   }
 
   const inputClass = "h-[34px] text-[13px] md:text-[13px]"
+  // Native date pickers follow the theme (the calendar icon is invisible on dark otherwise).
+  const dateClass = cn(inputClass, "dark:[color-scheme:dark]")
 
   return (
     <Dialog
@@ -247,7 +249,7 @@ export function NewRequestDialog({
                 <Input
                   id="start_date"
                   type="date"
-                  className={inputClass}
+                  className={dateClass}
                   value={formData.start_date}
                   aria-invalid={!!formErrors.start_date}
                   onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
@@ -258,7 +260,7 @@ export function NewRequestDialog({
                 <Input
                   id="end_date"
                   type="date"
-                  className={inputClass}
+                  className={dateClass}
                   min={formData.start_date || undefined}
                   value={formData.end_date}
                   aria-invalid={!!formErrors.end_date}

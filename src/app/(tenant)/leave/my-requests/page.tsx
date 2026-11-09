@@ -147,7 +147,8 @@ export default function MyRequestsPage() {
     {
       id: "status",
       header: t("shared.statusLabel"),
-      width: "150px",
+      // Wide enough for the longest Georgian status ("manager approved").
+      width: "224px",
       mobile: "end",
       cell: (r) => <LeaveStatusBadge status={r.status} />,
     },
