@@ -88,6 +88,18 @@ describe("parse / serialise", () => {
     const due = applyFilterChange(base, "sort", "due");
     expect(applyFilterChange(due, "view", "list").sort).toBe("due");
   });
+
+  it("board -> list -> board keeps the manual order (a default sort maps to the other view's default)", () => {
+    const board = parseTicketSearchParams(new URLSearchParams("board=1"));
+    const list = applyFilterChange(board, "view", "list");
+    expect(list.sort).toBe("created");
+    const back = applyFilterChange(list, "view", "board");
+    expect(back.sort).toBe("manual");
+    expect(serializeTicketState(back)).toBe("board=1");
+    // A sort the user picked in the list still carries over to the board.
+    const picked = applyFilterChange(applyFilterChange(list, "sort", "priority"), "view", "board");
+    expect(picked.sort).toBe("priority");
+  });
 });
 
 describe("cycleSort", () => {

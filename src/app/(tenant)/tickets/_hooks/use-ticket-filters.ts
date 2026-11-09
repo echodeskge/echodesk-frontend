@@ -146,8 +146,13 @@ export function applyFilterChange(state: TicketUrlState, key: FilterKey, value: 
       return { ...state, boardId: typeof value === "number" && value > 0 ? value : null };
     case "view": {
       const view: TicketView = value === "list" ? "list" : "board";
-      // Manual sort doesn't exist in list view; other sorts carry over.
-      const sort = view === "list" && state.sort === "manual" ? defaultSort("list") : state.sort;
+      // A view's default sort becomes the other view's default (board -> list ->
+      // board keeps the manual order); manual doesn't exist in list view; other
+      // sorts the user picked carry over.
+      const sort =
+        state.sort === defaultSort(state.view) || (view === "list" && state.sort === "manual")
+          ? defaultSort(view)
+          : state.sort;
       return { ...state, view, sort };
     }
     case "sort": {
