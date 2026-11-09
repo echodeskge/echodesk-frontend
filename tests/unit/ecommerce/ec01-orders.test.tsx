@@ -91,7 +91,7 @@ describe("EC-01 orders page", () => {
     expect(rows[0]).toHaveTextContent("Oct 29")
     expect(rows[2]).toHaveTextContent("Unknown")
     // header: count + export
-    expect(screen.getByTestId("ec-header-sub")).toHaveTextContent("45 order(s) found")
+    expect(screen.getByTestId("ec-header-sub")).toHaveTextContent("45 orders found")
     expect(screen.getByTestId("ec-pagination")).toHaveTextContent("1–20 of 45")
     expect(screen.getByTestId("ec-pagination")).toHaveTextContent("Page 1 of 3")
   })

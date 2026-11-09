@@ -2189,7 +2189,7 @@
       "completed": "Completed"
     },
     "ordersTitle": "Orders",
-    "ordersFound": "{count} order(s) found",
+    "ordersFound": "{count, plural, one {# order found} other {# orders found}}",
     "searchPlaceholder": "Search by order number or client...",
     "filterByStatus": "Filter by status",
     "status": {
@@ -2223,7 +2223,7 @@
       "partially_refunded": "Partially Refunded"
     },
     "bulkActions": {
-      "selected": "{count} orders selected",
+      "selected": "{count, plural, one {# order selected} other {# orders selected}}",
       "markShipped": "Mark as Shipped",
       "markDelivered": "Mark as Delivered",
       "exportSelected": "Export Selected"
@@ -3270,7 +3270,7 @@
       "actions": "Actions"
     },
     "bulkActions": {
-      "selected": "{count} products selected",
+      "selected": "{count, plural, one {# product selected} other {# products selected}}",
       "changeStatus": "Change status...",
       "clear": "Clear",
       "setStatus": "Set status:",
@@ -6306,7 +6306,7 @@
     "addMethodDesc": "Configure a new shipping method for your store",
     "editMethodDesc": "Update shipping method details",
     "tableTitle": "All Shipping Methods",
-    "totalMethods": "{count} shipping method(s)",
+    "totalMethods": "{count, plural, one {# shipping method} other {# shipping methods}}",
     "emptyTitle": "No shipping methods yet",
     "emptyDescription": "Add your first shipping method to enable deliveries",
     "addFirst": "Add First Method",
@@ -6370,7 +6370,7 @@
     "addCodeDesc": "Create a new promotional discount code",
     "editCodeDesc": "Update promo code details",
     "codesTitle": "All Promo Codes",
-    "codesFound": "{count} promo code(s) found",
+    "codesFound": "{count, plural, one {# promo code found} other {# promo codes found}}",
     "searchPlaceholder": "Search by code...",
     "filterByType": "Filter by type",
     "filterByStatus": "Filter by status",
@@ -6453,7 +6453,7 @@
     "title": "Reviews Moderation",
     "subtitle": "Review and moderate customer product reviews",
     "reviewsTitle": "All Reviews",
-    "reviewsFound": "{count} review(s) found",
+    "reviewsFound": "{count, plural, one {# review found} other {# reviews found}}",
     "filterByStatus": "Filter by status",
     "emptyTitle": "No reviews found",
     "emptyDescription": "Reviews will appear here when customers leave them",

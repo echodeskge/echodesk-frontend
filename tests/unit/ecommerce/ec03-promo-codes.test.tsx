@@ -68,7 +68,7 @@ describe("PromoCodesPage", () => {
   it("lists codes with type, discount, min order (₾), usage, validity and state", async () => {
     renderEc(<PromoCodesPage />)
     await waitFor(() => expect(rows()).toHaveLength(5))
-    expect(await screen.findByTestId("ec-header-sub")).toHaveTextContent("5 promo code(s) found")
+    expect(await screen.findByTestId("ec-header-sub")).toHaveTextContent("5 promo codes found")
     expect(row("WELCOME10")).toHaveTextContent("Percentage")
     expect(row("WELCOME10")).toHaveTextContent("10%")
     expect(row("WELCOME10")).toHaveTextContent("5 / 500")

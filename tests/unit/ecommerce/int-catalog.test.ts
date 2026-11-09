@@ -18,3 +18,18 @@ describe("order delivery days", () => {
     expect(ka.ecommerceOrders.detail.paymentMethod.unknown).not.toMatch(/[A-Za-z]/)
   })
 })
+
+describe("e-commerce counts in English", () => {
+  it("use plural forms instead of \"(s)\" or \"1 orders\"", () => {
+    const t = createTranslator({ locale: "en", messages: en })
+    expect(t("ecommerceOrders.ordersFound", { count: 1 })).toBe("1 order found")
+    expect(t("ecommerceOrders.ordersFound", { count: 25 })).toBe("25 orders found")
+    expect(t("ecommerceOrders.bulkActions.selected", { count: 1 })).toBe("1 order selected")
+    expect(t("products.bulkActions.selected", { count: 2 })).toBe("2 products selected")
+    expect(t("shippingMethods.totalMethods", { count: 1 })).toBe("1 shipping method")
+    expect(t("promoCodes.codesFound", { count: 6 })).toBe("6 promo codes found")
+    expect(t("reviews.reviewsFound", { count: 1 })).toBe("1 review found")
+    const tKa = createTranslator({ locale: "ka", messages: ka })
+    expect(tKa("ecommerceOrders.ordersFound", { count: 25 })).toBe("ნაპოვნია 25 შეკვეთა")
+  })
+})

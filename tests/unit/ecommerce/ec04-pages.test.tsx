@@ -63,7 +63,7 @@ describe("shipping methods page", () => {
     expect(within(rows[0]).getAllByText("₾150.00").length).toBeGreaterThan(0)
     expect(within(rows[1]).getAllByText("Free").length).toBeGreaterThan(0)
     expect(within(rows[1]).getByText("Inactive")).toBeInTheDocument()
-    expect(screen.getByTestId("outlet-meta")).toHaveTextContent("2 shipping method(s)")
+    expect(screen.getByTestId("outlet-meta")).toHaveTextContent("2 shipping methods")
   })
 
   it("shows Georgian names in the Georgian UI", async () => {
