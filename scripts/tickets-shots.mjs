@@ -86,6 +86,8 @@ const SCREENS = {
     },
   },
   list: { url: `/tickets?board=${boardId}&view=list`, ref: { a: "1b List view" } },
+  // W2: a saved view landing (sidebar "Urgent": list + priority chip active).
+  "list-view": { url: `/tickets?board=${boardId}&view=list&priority=critical%2Chigh`, ref: { a: "1b List view" } },
   detail: { url: `/tickets/${ticketId}`, ref: { file: "B-detail.rendered.html" } },
 };
 

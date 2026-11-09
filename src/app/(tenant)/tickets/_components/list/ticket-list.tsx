@@ -224,16 +224,15 @@ export function TicketList({ board, hasActiveFilters }: TicketListProps) {
         )}
       >
         <span />
-        <span>{t("list.id")}</span>
-        <span>{t("list.title")}</span>
-        <span>{t("list.labels")}</span>
-        <span>{t("list.assignee")}</span>
-        <span className="text-right">
-          {t("list.comments")}
-        </span>
-        <span className="text-right">
-          {t("list.created")}
-        </span>
+        {(["id", "title", "labels", "assignee", "comments", "created"] as const).map((key) => (
+          <span
+            key={key}
+            title={t(`list.${key}`)}
+            className={cn("truncate pr-2", (key === "comments" || key === "created") && "pr-0 text-right")}
+          >
+            {t(`list.${key}`)}
+          </span>
+        ))}
       </div>
 
       {groups.map(({ column, rows: groupRows }, i) => {
