@@ -273,7 +273,8 @@ try {
             const page = await ctx.newPage();
             page.on("pageerror", (e) => index.errors.push(`${name}: ${e.message.slice(0, 200)}`));
             await page
-              .goto(APP + SCREENS[screen].url, { waitUntil: "networkidle", timeout: 120_000 })
+              // Screens with a ready selector wait for it instead of network idle (sockets and polling keep the network busy).
+              .goto(APP + SCREENS[screen].url, { waitUntil: SCREENS[screen].ready ? "load" : "networkidle", timeout: 120_000 })
               .catch(() => index.errors.push(`${name}: networkidle timeout`));
             if (SCREENS[screen].ready)
               await page
