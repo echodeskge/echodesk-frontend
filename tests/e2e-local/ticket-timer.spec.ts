@@ -30,11 +30,15 @@ const currentOf = (who: Who = "admin") => api<Current>("GET", "/api/time-entries
 /** Stop whatever timer `who` has running (409 when none: ignored). */
 const stopAny = (who: Who) => api("POST", "/api/time-entries/current/stop/", {}, who).catch(() => undefined);
 
-const ticketId = (key: string) => {
+const fixtureTicket = (key: string) => {
   const t = fx().tickets[key];
   if (!t) throw new Error(`fixture ticket ${key} missing`);
-  return t.id;
+  return t;
 };
+const ticketId = (key: string) => fixtureTicket(key).id;
+/** The support board's closed column ("Resolved" in the fixtures), by name as the track shows it. */
+const closedColumnName = async () =>
+  (await api<{ name: string }>("GET", `/api/columns/${fx().boards.support.columns.resolved}/`)).name;
 
 async function openDetail(browser: Browser, who: Who, id: number, locale: "en" | "ka" = "en") {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -46,19 +50,24 @@ async function openDetail(browser: Browser, who: Who, id: number, locale: "en" |
 
 async function gotoDetail(page: Page, id: number) {
   await page.goto(`${APP}/tickets/${id}`);
-  const found = await page
-    .getByTestId("timer-button")
-    .waitFor({ state: "visible", timeout: 45_000 })
-    .then(() => true)
-    .catch(() => false);
-  test.fixme(!found, "the new detail screen is off (flags.detailRedesignEnabled): FE-INT turns it on in W3");
-  await expect(page.getByTestId("timer-button")).toBeEnabled();
+  // The new screen shows the timer; the old one (flag off) renders inside
+  // page.tsx's full-height wrapper. Neither within the timeout = a real failure.
+  const newScreen = page.getByTestId("timer-button");
+  const oldScreen = page.locator("div.min-h-screen.bg-background.w-full");
+  await expect(newScreen.or(oldScreen).first()).toBeVisible({ timeout: 90_000 });
+  test.fixme(
+    !(await newScreen.isVisible()),
+    "the new detail screen is off (flags.detailRedesignEnabled): FE-INT turns it on in W3",
+  );
+  await expect(newScreen).toBeEnabled();
 }
 
 const timerButton = (page: Page) => page.getByTestId("timer-button");
 const timerText = (page: Page) => page.getByTestId("timer-text");
 
 test.describe("Personal timer", () => {
+  // A cold dev server compiles the detail route on first visit.
+  test.describe.configure({ timeout: 180_000 });
   // RM8: every spec file starts from freshly reset fixtures.
   test.beforeAll(() => {
     resetFixtures();
@@ -111,7 +120,7 @@ test.describe("Personal timer", () => {
       const dialog = page.getByTestId("timer-switch-dialog");
       await expect(dialog).toBeVisible();
       await expect(dialog).toContainText(`#${first}`);
-      await expect(dialog).toContainText("Onboard the new branch");
+      await expect(dialog).toContainText(fixtureTicket("E2E-004").title);
 
       // Cancel keeps the other timer.
       await dialog.getByRole("button", { name: "Cancel" }).click();
@@ -161,8 +170,9 @@ test.describe("Personal timer", () => {
 
       // Own move through the status track: the server stops the timer (E32)
       // and the button follows even though the broadcast is this tab's echo.
-      await page.locator('[data-slot="status-step"]', { hasText: "Resolved" }).click();
-      await expect(page.locator('[data-slot="status-step"][aria-current="step"]')).toContainText("Resolved");
+      const closed = await closedColumnName();
+      await page.locator('[data-slot="status-step"]').filter({ has: page.getByText(closed, { exact: true }) }).click();
+      await expect(page.locator('[data-slot="status-step"][aria-current="step"]')).toContainText(closed);
       await expect.poll(async () => (await currentOf()).running).toBeNull();
       await expect(timerButton(page)).toHaveAttribute("data-running", "false");
 
@@ -190,7 +200,7 @@ test.describe("Personal timer", () => {
       await expect(dialog).toBeVisible();
       // The title is hidden from the agent now: only the number shows.
       await expect(dialog).toContainText(`#${lost}`);
-      await expect(dialog).not.toContainText("Open board ticket");
+      await expect(dialog).not.toContainText(fixtureTicket("E2E-012").title);
       await dialog.getByTestId("timer-switch-here").click();
       await expect(timerButton(page)).toHaveAttribute("data-running", "true");
       await expect.poll(async () => (await currentOf("agent")).running?.ticket_id).toBe(here);

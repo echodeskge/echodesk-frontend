@@ -224,6 +224,42 @@ describe("TimerButton: start and stop", () => {
   });
 });
 
+describe("TimerButton: optimistic moves", () => {
+  it("refetches again when the server saves the ticket in a closed column (after an optimistic move)", async () => {
+    setup(snapshot());
+    const { client } = renderTimer(<TimerButton ticketId={10} />);
+    await button();
+    const timerGets = () => get.mock.calls.filter(([u]) => u === "/api/tickets/10/timer/").length;
+    await waitFor(() => expect(client.getQueryData(tk.ticket(10))).toBeTruthy());
+    const closed = { id: 13, name: "Done", is_closed_status: true, track_time: false };
+    act(() => {
+      client.setQueryData(tk.ticket(10), { ...TICKET, column: closed, updated_at: "2026-11-09T10:00:00Z" });
+    });
+    await waitFor(() => expect(timerGets()).toBe(2));
+    // The move_to_column response lands: same column, new updated_at.
+    act(() => {
+      client.setQueryData(tk.ticket(10), { ...TICKET, column: closed, updated_at: "2026-11-09T10:00:01Z" });
+    });
+    await waitFor(() => expect(timerGets()).toBe(3));
+  });
+
+  it("does not refetch on saves while the ticket stays in an open column", async () => {
+    setup(snapshot());
+    const { client } = renderTimer(<TimerButton ticketId={10} />);
+    await button();
+    const timerGets = () => get.mock.calls.filter(([u]) => u === "/api/tickets/10/timer/").length;
+    await waitFor(() => expect(client.getQueryData(tk.ticket(10))).toBeTruthy());
+    act(() => {
+      client.setQueryData(tk.ticket(10), { ...TICKET, updated_at: "2026-11-09T10:00:01Z" });
+    });
+    act(() => {
+      client.setQueryData(tk.ticket(10), { ...TICKET, updated_at: "2026-11-09T10:00:02Z" });
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(timerGets()).toBe(1);
+  });
+});
+
 describe("TimerButton: switch dialog (409 timer_running)", () => {
   function conflict(title: string | null) {
     return () => {

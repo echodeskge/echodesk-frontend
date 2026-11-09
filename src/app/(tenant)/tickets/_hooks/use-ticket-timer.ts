@@ -124,19 +124,30 @@ export function useNow(enabled: boolean, intervalMs = 1000): number {
  * column. The server stops running timers on a move into a closed column
  * (E32) and broadcasts `ticket_activity{kind:'timer'}`, but that frame
  * carries the mover's mutation id, so the mover's own tab ignores it.
+ *
+ * A move is applied optimistically (the column changes before the server has
+ * stopped anything), so a later save of a ticket that sits in a closed column
+ * (a new `updated_at`) refetches again.
  */
-export function useRefetchTimerOnColumnChange(ticketId: number, columnId: number | null | undefined) {
+export function useRefetchTimerOnColumnChange(
+  ticketId: number,
+  ticket: { columnId?: number | null; closed?: boolean; updatedAt?: string | null },
+) {
   const qc = useQueryClient();
-  const last = useRef<number | null | undefined>(columnId);
+  const { columnId, closed, updatedAt } = ticket;
+  const last = useRef<{ columnId?: number | null; updatedAt?: string | null }>({ columnId, updatedAt });
   useEffect(() => {
     if (columnId == null) return;
-    if (last.current != null && last.current !== columnId) {
+    const prev = last.current;
+    const moved = prev.columnId != null && prev.columnId !== columnId;
+    const savedWhileClosed = Boolean(closed) && prev.updatedAt != null && prev.updatedAt !== updatedAt;
+    if (moved || savedWhileClosed) {
       qc.invalidateQueries({ queryKey: tk.timer(ticketId) });
       qc.invalidateQueries({ queryKey: tk.timerCurrent() });
       qc.invalidateQueries({ queryKey: tk.timeSummary(ticketId) });
     }
-    last.current = columnId;
-  }, [qc, ticketId, columnId]);
+    last.current = { columnId, updatedAt };
+  }, [qc, ticketId, columnId, closed, updatedAt]);
 }
 
 /** The 409 body of a timer write, if it is one. */

@@ -67,7 +67,11 @@ export function TimerButton({ ticketId }: TimerSectionProps) {
   // Shares the screen's `tk.ticket(id)` cache entry; a column change (e.g. a
   // move into a closed column, which stops timers server side) refetches.
   const ticket = useTicket(ticketId);
-  useRefetchTimerOnColumnChange(ticketId, ticket.data?.column?.id);
+  useRefetchTimerOnColumnChange(ticketId, {
+    columnId: ticket.data?.column?.id,
+    closed: Boolean(ticket.data?.column?.is_closed_status),
+    updatedAt: ticket.data?.updated_at,
+  });
 
   const snapshot = timer.data;
   const running = snapshot?.running ?? null;
