@@ -120,6 +120,15 @@ describe("ActivityFeed", () => {
     expect(within(tabs).getByRole("tab", { name: /All/ })).toHaveAttribute("aria-selected", "true");
   });
 
+  it("caches the timer under tk.timer(id) as FE-13's normalized snapshot (with fetched_at)", async () => {
+    // A raw payload under the shared key made the header and the rail's live
+    // timer values NaN (00:00:00 after a reload while a timer ran).
+    const { client } = renderFeed();
+    await waitFor(() => expect(client.getQueryData(tk.timer(10))).toBeTruthy());
+    const snap = client.getQueryData(tk.timer(10)) as { fetched_at?: unknown };
+    expect(typeof snap.fetched_at).toBe("number");
+  });
+
   it("filters per tab and renders the Time tab from FE-13", async () => {
     renderFeed();
     await screen.findByText("Customer confirms.");

@@ -17,7 +17,6 @@
  *   scrolled into view once it arrives.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,13 +24,11 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import { cn } from "@/lib/utils";
 import { TimeTab } from "../../../_components/timer/time-tab";
 import { initials } from "../../../_components/primitives/initials";
-import { useTicket, useTicketActivity, retryUnlessDenied } from "../../../_hooks/use-ticket";
+import { useTicket, useTicketActivity } from "../../../_hooks/use-ticket";
+import { useTicketTimer } from "../../../_hooks/use-ticket-timer";
 import { useTicketPermissions } from "../../../_hooks/use-ticket-permissions";
 import { useTicketPickers } from "../../../_hooks/use-ticket-pickers";
-import { timerGet } from "../../../_lib/api";
 import { formatRelative } from "../../../_lib/format";
-import { tk } from "../../../_lib/query-keys";
-import type { TimerState } from "../../../_lib/types";
 import type { HistoryLabels } from "../history-dialog";
 import type { ActivityFeedProps } from "../section-contracts";
 import { useBoardColumns } from "../status-track-bar";
@@ -62,14 +59,14 @@ export function useNow(intervalMs = 60_000): Date {
   return now;
 }
 
-/** The ticket's timer state (A14); shared with FE-13 through `tk.timer(id)`. */
+/**
+ * The ticket's timer state (A14), through FE-13's `useTicketTimer`. It must
+ * share that query function: `tk.timer(id)` holds a normalized snapshot with
+ * `fetched_at`, and a raw payload cached under the same key made every live
+ * timer value NaN (the header read 00:00:00 after a reload).
+ */
 export function useTimerEntriesCount(ticketId: number): number {
-  const q = useQuery<TimerState>({
-    queryKey: tk.timer(ticketId),
-    queryFn: () => timerGet(ticketId),
-    retry: retryUnlessDenied,
-    staleTime: 30_000,
-  });
+  const q = useTicketTimer(ticketId);
   const entries = q.data?.entries;
   return Array.isArray(entries) ? entries.length : 0;
 }
