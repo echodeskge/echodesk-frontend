@@ -4,7 +4,7 @@
  * - `navigationMock`: a stateful `next/navigation` stand-in. `router.replace`
  *   rewrites the search string and re-renders subscribers, so components using
  *   `useTicketFilters` see their own URL writes.
- * - `messages`: the en/ka catalogs with the FE-06 pending keys merged in.
+ * - `messages`: the en/ka catalogs.
  */
 import React, { useSyncExternalStore } from "react";
 import { vi } from "vitest";
@@ -13,24 +13,12 @@ import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import en from "@/i18n/messages/en.json";
 import ka from "@/i18n/messages/ka.json";
-import pending from "@/i18n/pending/fe-06.json";
-
 type Json = Record<string, unknown>;
 
-function deepMerge(base: Json, extra: Json): Json {
-  const out: Json = { ...base };
-  for (const [k, v] of Object.entries(extra)) {
-    out[k] =
-      v && typeof v === "object" && !Array.isArray(v) && out[k] && typeof out[k] === "object"
-        ? deepMerge(out[k] as Json, v as Json)
-        : v;
-  }
-  return out;
-}
-
+/** The en/ka catalogs (FE-INT merged the FE-06 pending keys in W1). */
 export const messages = {
-  en: deepMerge(en as Json, pending.en as Json),
-  ka: deepMerge(ka as Json, pending.ka as Json),
+  en: en as Json,
+  ka: ka as Json,
 };
 
 // ---------------------------------------------------------------------------
