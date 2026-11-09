@@ -1,0 +1,54 @@
+{
+  "en": {
+    "tickets": {
+      "create": {
+        "title": "New ticket",
+        "submit": "Create ticket",
+        "creating": "Creating…",
+        "created": "Ticket #{id} created",
+        "error": "Couldn't create the ticket",
+        "formFailed": "The ticket was created, but the form couldn't be saved",
+        "titlePlaceholder": "Ticket title",
+        "descriptionPlaceholder": "Add a description…",
+        "status": "Status",
+        "assignees": "Assignees",
+        "groups": "Groups",
+        "noDueDate": "No due date",
+        "clearDate": "Clear date",
+        "customerSearch": "Search clients…",
+        "noClients": "No clients found",
+        "removeCustomer": "Remove customer",
+        "noColumns": "This board has no columns",
+        "noBoards": "You don't have access to any boards",
+        "form": "Form",
+        "formItems": "List items"
+      }
+    }
+  },
+  "ka": {
+    "tickets": {
+      "create": {
+        "title": "ახალი ბილეთი",
+        "submit": "ბილეთის შექმნა",
+        "creating": "იქმნება…",
+        "created": "ბილეთი #{id} შეიქმნა",
+        "error": "ბილეთის შექმნა ვერ მოხერხდა",
+        "formFailed": "ბილეთი შეიქმნა, მაგრამ ფორმა ვერ შეინახა",
+        "titlePlaceholder": "ბილეთის სათაური",
+        "descriptionPlaceholder": "დაამატეთ აღწერა…",
+        "status": "სტატუსი",
+        "assignees": "შემსრულებლები",
+        "groups": "ჯგუფები",
+        "noDueDate": "ვადა არ არის",
+        "clearDate": "თარიღის მოხსნა",
+        "customerSearch": "კლიენტების ძიება…",
+        "noClients": "კლიენტები ვერ მოიძებნა",
+        "removeCustomer": "კლიენტის მოხსნა",
+        "noColumns": "ამ დაფას სვეტები არ აქვს",
+        "noBoards": "არცერთ დაფაზე წვდომა არ გაქვთ",
+        "form": "ფორმა",
+        "formItems": "სიის ელემენტები"
+      }
+    }
+  }
+}

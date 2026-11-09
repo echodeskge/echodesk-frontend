@@ -78,6 +78,9 @@ export function IncomingCallSidebar() {
   const { openTicketCreate } = useTicketCreate();
 
   const [client, setClient] = useState<Client | null>(null);
+  // `crm` = crm.Client, `social` = social_integrations.Client. Only a social
+  // client can be a ticket's customer or open in the Clients screen.
+  const [clientSource, setClientSource] = useState<"crm" | "social" | null>(null);
   const [recentTickets, setRecentTickets] = useState<TicketList[]>([]);
   const [recentCalls, setRecentCalls] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +114,7 @@ export function IncomingCallSidebar() {
           } as Client)
         : null;
       setClient(matchedClient);
+      setClientSource(matched?.source ?? null);
 
       // Fetch recent tickets if client found
       if (matchedClient) {
@@ -170,8 +174,19 @@ export function IncomingCallSidebar() {
     }
   };
 
+  // Prefill the caller (FE-14): the name as the title and, when the number
+  // belongs to a social client, that client as the customer.
   const handleCreateTicket = () => {
-    openTicketCreate();
+    const title = (clientName || client?.name || phoneNumber || "").trim();
+    openTicketCreate(undefined, undefined, {
+      ...(title ? { title } : {}),
+      ...(client && clientSource === "social" ? { customerId: client.id } : {}),
+    });
+  };
+
+  const openTicket = (ticketId: number) => {
+    closeSidebar();
+    router.push(`/tickets/${ticketId}`);
   };
 
   const isCallActive =
@@ -396,17 +411,20 @@ export function IncomingCallSidebar() {
                           <span>{client.phone}</span>
                         </div>
                       )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full h-7 text-xs mt-1"
-                        onClick={() => {
-                          router.push(`/clients/${client.id}`);
-                        }}
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        {t("callDetail.viewProfile")}
-                      </Button>
+                      {clientSource === "social" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full h-7 text-xs mt-1"
+                          onClick={() => {
+                            closeSidebar();
+                            router.push(`/social/clients?client=${client.id}`);
+                          }}
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          {t("callDetail.viewProfile")}
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="rounded-lg border border-dashed p-4 text-center">
@@ -437,7 +455,8 @@ export function IncomingCallSidebar() {
                             <button
                               key={ticket.id}
                               type="button"
-                              onClick={() => router.push(`/boards`)}
+                              onClick={() => openTicket(ticket.id)}
+                              data-testid={`recent-ticket-${ticket.id}`}
                               className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                               <span className="text-xs font-mono text-muted-foreground">
