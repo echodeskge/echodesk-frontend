@@ -49,7 +49,10 @@ test.describe("Ticket detail", () => {
     // Assignees: add the agent, then make them a reviewer.
     const agent = fx().users.agent;
     await railTrigger(page, "Assignees").click();
-    await pickerOption(page, agent.email).click();
+    // Options show names; the email is a search keyword.
+    await page.locator('[data-slot="property-picker-content"] input').fill(agent.email);
+    await expect(pickerOption(page, /./)).toHaveCount(1);
+    await pickerOption(page, /./).first().click();
     await expect.poll(async () => (await getTicket(id)).assignments.map((a) => a.user.id)).toContain(agent.id);
     await page.getByTestId(`assignee-role-${agent.id}`).selectOption("reviewer");
     await expect
@@ -60,8 +63,9 @@ test.describe("Ticket detail", () => {
 
     // Groups (staff) with Apply.
     const groupId = extra().groups.support_team;
+    const groupName = (await api<{ name: string }>("GET", `/api/tenant-groups/${groupId}/`)).name;
     await railTrigger(page, "Groups").click();
-    await pickerOption(page, /support/i).first().click();
+    await pickerOption(page, groupName).click();
     await page.getByTestId("groups-picker-apply").click();
     await expect.poll(async () => (await getTicket(id)).assigned_groups.map((g) => g.id)).toContain(groupId);
 
@@ -122,6 +126,8 @@ test.describe("Ticket detail", () => {
     const page = await openDetail(context, "admin", id, "en");
     const section = page.getByTestId("customer-section");
     await expect(section).toContainText(customer.name);
+    // The chat rows arrive with the client detail; wait so the click doesn't land on a shifted row.
+    await expect(section.locator('[data-slot="customer-link"][data-kind="chat"]').first()).toBeVisible();
     await section.getByTestId("open-client").click();
     await expect(page).toHaveURL(new RegExp(`/social/clients\\?client=${customer.id}$`));
     await expect(page.getByTestId("client-detail-rail")).toContainText(customer.name, { timeout: 30_000 });

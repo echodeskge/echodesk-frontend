@@ -71,7 +71,7 @@ function FormRow({
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-xs font-medium leading-5">{name}</span>
-        <span className="truncate text-[11px] leading-4 text-muted-foreground">{sub}</span>
+        <span className="truncate text-[11px] leading-5 text-muted-foreground">{sub}</span>
       </span>
       <button type="button" className={ACTION} onClick={onAction} data-slot="form-action">
         {action}

@@ -35,6 +35,13 @@ const ROLE_ICON: Partial<Record<TicketAssignmentRoleEnum, typeof Star>> = {
   observer: Eye,
 };
 
+/** "Levan Maisuradze" → "Levan M." for the 20px pills (design B); the options keep full names. */
+export function shortName(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2 || name.includes("@")) return name;
+  return `${parts[0]} ${Array.from(parts[parts.length - 1])[0]}.`;
+}
+
 /** Value used by the assigned_to_id write to clear the legacy assignee. */
 export const CLEAR_ASSIGNED_TO = 0;
 
@@ -154,7 +161,7 @@ export function AssigneesRow({ ticket, perms }: { ticket: TicketDetail; perms: V
         >
           {initials(o.avatarName ?? o.label)}
         </span>
-        <span className="truncate">{o.label}</span>
+        <span className="truncate">{shortName(o.label)}</span>
         {Icon && (
           <span role="img" aria-label={roleLabel ?? undefined} data-slot="assignee-role-badge" className="inline-flex shrink-0 text-muted-foreground">
             <Icon aria-hidden="true" size={10} />

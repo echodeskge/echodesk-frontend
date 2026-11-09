@@ -14,6 +14,8 @@
  *    and the Forms section, each a 12px-padded block with a top border.
  *
  * Every control is gated by `perms` (= `ticket.viewer_permissions`, WS10).
+ * The bottom padding keeps the last section clear of the app's floating
+ * call / chat buttons (bottom right).
  */
 import { useLocale, useTranslations } from "next-intl";
 import { PropertyRow } from "../../../_components/primitives/property-row";
@@ -47,7 +49,7 @@ export function PropertiesRail({ ticket, perms }: PropertiesRailProps) {
   const reporter = reporterOf(ticket);
 
   return (
-    <div data-slot="properties-rail" data-ticket-id={ticket.id} className="flex flex-col">
+    <div data-slot="properties-rail" data-ticket-id={ticket.id} className="flex flex-col pb-24 text-sm">
       <div data-slot="rail-rows" className="flex flex-col px-3 py-2" aria-label={t("properties")} role="group">
         <StatusRow ticket={ticket} perms={perms} />
         <PriorityRow ticket={ticket} perms={perms} />
@@ -61,7 +63,7 @@ export function PropertiesRail({ ticket, perms }: PropertiesRailProps) {
         <TimeRow ticketId={ticket.id} />
         <PropertyRow label={t("reporter")} fixed>
           {reporter ? (
-            <span className="inline-flex min-w-0 items-center gap-1.5" data-testid="rail-reporter">
+            <span className="flex min-w-0 items-center gap-1.5" data-testid="rail-reporter">
               <span
                 aria-hidden="true"
                 className="flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[7px] font-semibold leading-none text-primary"
@@ -75,7 +77,7 @@ export function PropertiesRail({ ticket, perms }: PropertiesRailProps) {
           )}
         </PropertyRow>
         <PropertyRow label={t("created")} fixed>
-          <span className="tabular-nums" data-testid="rail-created" title={ticket.created_at}>
+          <span className="block tabular-nums" data-testid="rail-created" title={ticket.created_at}>
             {formatShortDate(ticket.created_at, locale, { year: "auto" })}
           </span>
         </PropertyRow>

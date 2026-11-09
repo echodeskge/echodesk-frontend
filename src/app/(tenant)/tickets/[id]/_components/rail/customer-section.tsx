@@ -66,9 +66,9 @@ export function CustomerSection({ customer, perms }: { customer: TicketCustomer 
             {customer.name}
           </span>
           {sub ? (
-            <span className="truncate text-[11px] leading-4 text-muted-foreground">{sub}</span>
+            <span className="truncate text-[11px] leading-5 text-muted-foreground">{sub}</span>
           ) : (
-            <span className="text-[11px] leading-4 text-muted-foreground">{t("noContact")}</span>
+            <span className="text-[11px] leading-5 text-muted-foreground">{t("noContact")}</span>
           )}
         </span>
       </div>

@@ -190,6 +190,8 @@ describe("Assignees", () => {
     const pill = trigger("Assignees")!.querySelector('[data-user-id="3"]')!;
     expect(pill).toHaveAttribute("data-role", "primary");
     expect(pill).toHaveAttribute("title", "Levan Maisuradze: Primary");
+    // Short name in the 20px pill (design B: "Levan M."); full names in the options.
+    expect(pill).toHaveTextContent("Levan M.");
     expect(pill.querySelector('[data-slot="assignee-role-badge"]')).toHaveAccessibleName("Primary");
     fireEvent.click(trigger("Assignees")!);
     await waitFor(() => expect(options().length).toBe(3));
