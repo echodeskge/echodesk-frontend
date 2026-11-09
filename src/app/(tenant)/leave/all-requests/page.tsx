@@ -85,9 +85,12 @@ export default function AllRequestsPage() {
         console.error("Failed to fetch requests:", error)
         setRequests([])
         setLoadError(error)
-        toast.error(t("shared.loadFailed"), {
-          description: getApiErrorMessage(error) || undefined,
-        })
+        // A 403 already shows the translated "no access" state; the API reason is often English.
+        if (!isForbidden(error)) {
+          toast.error(t("shared.loadFailed"), {
+            description: getApiErrorMessage(error) || undefined,
+          })
+        }
       } finally {
         if (!ignore) setLoading(false)
       }

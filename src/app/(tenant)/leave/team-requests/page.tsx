@@ -105,9 +105,12 @@ export default function TeamRequestsPage() {
       setRequests([])
       setTotalCount(0)
       setLoadError(error)
-      toast.error(t("shared.loadFailed"), {
-        description: getApiErrorMessage(error) || undefined,
-      })
+      // A 403 already shows the translated "no access" state; the API reason is often English.
+      if (!isForbidden(error)) {
+        toast.error(t("shared.loadFailed"), {
+          description: getApiErrorMessage(error) || undefined,
+        })
+      }
     } finally {
       setLoading(false)
     }

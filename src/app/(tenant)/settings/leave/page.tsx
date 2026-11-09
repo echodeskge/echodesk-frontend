@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { isForbidden } from "@/app/(tenant)/leave/_lib/lv02-utils"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
@@ -146,9 +147,12 @@ export default function LeaveSettingsPage() {
     } catch (error) {
       console.error("Failed to fetch settings:", error)
       setLoadFailed(true)
-      toast.error(t("shared.loadFailed"), {
-        description: getApiErrorMessage(error) || undefined,
-      })
+      // A 403 already shows the translated "no access" state; the API reason is often English.
+      if (!isForbidden(error)) {
+        toast.error(t("shared.loadFailed"), {
+          description: getApiErrorMessage(error) || undefined,
+        })
+      }
     } finally {
       setLoading(false)
     }

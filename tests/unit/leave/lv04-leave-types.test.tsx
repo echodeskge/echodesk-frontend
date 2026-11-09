@@ -87,6 +87,16 @@ describe("LV-04 leave types page", () => {
     expect(h.api.leaveAdminLeaveTypesList).toHaveBeenCalledTimes(2)
   })
 
+  it("a 403 shows the Georgian no-access state, no retry and no English toast", async () => {
+    const forbidden = Object.assign(new Error("Only administrators can manage leave types."), { response: { status: 403 } })
+    h.api.leaveAdminLeaveTypesList.mockRejectedValueOnce(forbidden)
+    renderLeave(<LeaveTypesPage />, "ka")
+    const err = await screen.findByTestId("leave-error")
+    expect(err).toHaveTextContent("ამ გვერდზე წვდომა არ გაქვთ")
+    expect(within(err).queryByRole("button")).toBeNull()
+    expect(h.toast.error).not.toHaveBeenCalled()
+  })
+
   it("creates from the header button with an empty form", async () => {
     h.api.leaveAdminLeaveTypesCreate.mockResolvedValue({})
     renderLeave(<LeaveTypesPage />)

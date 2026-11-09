@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { isForbidden } from "../_lib/lv02-utils"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { getApiErrorMessage, localizedName } from "@/lib/utils"
@@ -137,9 +138,12 @@ export default function PublicHolidaysPage() {
       console.error("Failed to fetch holidays:", error)
       setHolidays([])
       setLoadError(error)
-      toast.error(t("shared.loadFailed"), {
-        description: getApiErrorMessage(error) || undefined,
-      })
+      // A 403 already shows the translated "no access" state; the API reason is often English.
+      if (!isForbidden(error)) {
+        toast.error(t("shared.loadFailed"), {
+          description: getApiErrorMessage(error) || undefined,
+        })
+      }
     } finally {
       setLoading(false)
     }
