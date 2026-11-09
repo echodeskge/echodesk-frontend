@@ -43,6 +43,12 @@ export interface KanbanColumnProps {
   canDeleteTickets: boolean;
   /** Drop disabled for this column (a non-manual sort forbids reordering inside the source column). */
   dropDisabled?: boolean;
+  /**
+   * A card drag is in progress. Short lists grow so a lifted card fits inside
+   * them: each list is its own scroll container, and @hello-pangea only lets a
+   * keyboard move enter a list where the card is totally visible (W1).
+   */
+  cardDragActive?: boolean;
   presenceFor?: (ticketId: number) => CardPresence | null;
   onAddTicket?: (column: KanbanColumnData) => void;
   onEditColumn?: (column: KanbanColumnData) => void;
@@ -63,6 +69,7 @@ function KanbanColumnImpl({
   canManageColumns,
   canDeleteTickets,
   dropDisabled = false,
+  cardDragActive = false,
   presenceFor,
   onAddTicket,
   onEditColumn,
@@ -166,6 +173,7 @@ function KanbanColumnImpl({
                 data-drag-over={snapshot.isDraggingOver ? "true" : undefined}
                 className={cn(
                   "mx-1.5 mb-1.5 flex min-h-[60px] flex-col gap-1.5 overflow-y-auto rounded-md outline-2 outline-offset-0 outline-transparent transition-[background-color,outline-color] duration-150",
+                  cardDragActive && "min-h-[160px]",
                   snapshot.isDraggingOver && "outline-dashed",
                 )}
                 style={

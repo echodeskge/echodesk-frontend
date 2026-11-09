@@ -9,7 +9,11 @@ import type { ReactNode } from "react";
 
 export interface DndState {
   /** The latest DragDropContext props (onDragStart / onDragEnd). */
-  ctx: { onDragStart?: (start: unknown) => void; onDragEnd?: (result: unknown) => void } | null;
+  ctx: {
+    onBeforeCapture?: (before: unknown) => void;
+    onDragStart?: (start: unknown) => void;
+    onDragEnd?: (result: unknown) => void;
+  } | null;
   /** droppableId reported as `isDraggingOver`. */
   over: string | null;
 }

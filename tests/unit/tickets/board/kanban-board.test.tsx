@@ -308,6 +308,23 @@ describe("drag and drop", () => {
     );
   });
 
+  it("a card drag grows the lists before measuring so a lifted card fits an empty column (keyboard DnD)", async () => {
+    renderBoard();
+    await screen.findByTestId("kanban-board");
+    const lists = () => screen.getAllByTestId("kanban-column-list");
+    expect(lists().every((l) => !l.className.includes("min-h-[160px]"))).toBe(true);
+
+    // Column drags leave the lists alone.
+    act(() => dnd.ctx!.onBeforeCapture!({ draggableId: "column-10", mode: "SNAP" }));
+    expect(lists().every((l) => !l.className.includes("min-h-[160px]"))).toBe(true);
+
+    act(() => dnd.ctx!.onBeforeCapture!({ draggableId: "ticket-1", mode: "SNAP" }));
+    expect(lists().every((l) => l.className.includes("min-h-[160px]"))).toBe(true);
+
+    dragEnd("ticket-1", ["col-10", 0], null);
+    expect(lists().every((l) => !l.className.includes("min-h-[160px]"))).toBe(true);
+  });
+
   it("does nothing without a destination or for the same spot", async () => {
     renderBoard();
     await screen.findByTestId("kanban-board");

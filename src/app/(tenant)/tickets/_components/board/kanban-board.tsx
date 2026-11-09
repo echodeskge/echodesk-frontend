@@ -29,7 +29,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
-import { DragDropContext, Droppable, type DragStart, type DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, type BeforeCapture, type DragStart, type DropResult } from "@hello-pangea/dnd";
 import { AlertTriangle, Columns3, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { columnsDestroy, columnsReorderCreate } from "@/api/generated/api";
@@ -195,6 +195,7 @@ export function KanbanBoard({ boardId, className }: KanbanBoardProps) {
   /** Optimistic board shown from a drop until the cache catches up (no snap-back frame). */
   const [override, setOverride] = useState<KanbanResponse | null>(null);
   const [draggingFrom, setDraggingFrom] = useState<number | null>(null);
+  const [cardDragActive, setCardDragActive] = useState(false);
   const [sheet, setSheet] = useState<{ column: KanbanColumnData | null } | null>(null);
   const [deletingColumn, setDeletingColumn] = useState<KanbanColumnData | null>(null);
   const [columnDeleteBusy, setColumnDeleteBusy] = useState(false);
@@ -245,6 +246,11 @@ export function KanbanBoard({ boardId, className }: KanbanBoardProps) {
     [qc, boardId],
   );
 
+  // Runs inside flushSync before @hello-pangea measures the lists.
+  const onBeforeCapture = useCallback((before: BeforeCapture) => {
+    if (before.draggableId.startsWith("ticket-")) setCardDragActive(true);
+  }, []);
+
   const onDragStart = useCallback(
     (start: DragStart) => {
       void qc.cancelQueries({ queryKey: ["kanbanBoard", boardId] });
@@ -261,6 +267,7 @@ export function KanbanBoard({ boardId, className }: KanbanBoardProps) {
   const onDragEnd = useCallback(
     (result: DropResult) => {
       setDraggingFrom(null);
+      setCardDragActive(false);
       const cache = data;
       if (!cache || !result.destination) return;
 
@@ -390,7 +397,7 @@ export function KanbanBoard({ boardId, className }: KanbanBoardProps) {
 
   return (
     <>
-      <DragDropContext onDragStart={onDragStart} onDragEnd={onDragEnd}>
+      <DragDropContext onBeforeCapture={onBeforeCapture} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div
           data-testid="kanban-board"
           data-board-id={boardId}
@@ -423,6 +430,7 @@ export function KanbanBoard({ boardId, className }: KanbanBoardProps) {
                     canManageColumns={perms.canManageColumns}
                     canDeleteTickets={perms.isStaff}
                     dropDisabled={!isManualSort && draggingFrom === column.id}
+                    cardDragActive={cardDragActive}
                     presenceFor={presenceFor}
                     onAddTicket={onAddTicket}
                     onEditColumn={onEditColumn}
