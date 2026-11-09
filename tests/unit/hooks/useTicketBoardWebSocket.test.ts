@@ -279,7 +279,61 @@ describe("useTicketBoardWebSocket", () => {
         });
       });
 
-      expect(onTicketDeleted).toHaveBeenCalledWith(55);
+      expect(onTicketDeleted).toHaveBeenCalledWith(
+        55,
+        expect.objectContaining({ type: "ticket_deleted", ticket_id: 55 })
+      );
+    });
+
+    it("passes ticket_deleted reason and to_board_id (transfer)", () => {
+      const onTicketDeleted = vi.fn();
+      renderHook(() => useTicketBoardWebSocket({ boardId: 1, onTicketDeleted }));
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      act(() => {
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "ticket_deleted",
+          ticket_id: 9,
+          reason: "transferred",
+          to_board_id: 4,
+          client_mutation_id: null,
+        });
+      });
+      const [, event] = onTicketDeleted.mock.calls[0];
+      expect(event.reason).toBe("transferred");
+      expect(event.to_board_id).toBe(4);
+    });
+
+    it("parses ticket_activity frames", () => {
+      const onTicketActivity = vi.fn();
+      renderHook(() => useTicketBoardWebSocket({ boardId: 1, onTicketActivity }));
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      const frame = { type: "ticket_activity", ticket_id: 3, kind: "checklist", actor_id: 7, client_mutation_id: "m1" };
+      act(() => MockWebSocket.lastInstance!.simulateMessage(frame));
+      expect(onTicketActivity).toHaveBeenCalledWith(frame);
+    });
+
+    it("parses ticket_commented frames", () => {
+      const onTicketCommented = vi.fn();
+      renderHook(() => useTicketBoardWebSocket({ boardId: 1, onTicketCommented }));
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      act(() =>
+        MockWebSocket.lastInstance!.simulateMessage({
+          type: "ticket_commented",
+          ticket_id: 3,
+          comment: { id: 1, comment: "hi", is_internal: true },
+        })
+      );
+      expect(onTicketCommented).toHaveBeenCalledWith(expect.objectContaining({ ticket_id: 3 }));
+    });
+
+    it("hands every frame, unknown types included, to onMessage", () => {
+      const onMessage = vi.fn();
+      renderHook(() => useTicketBoardWebSocket({ boardId: 1, onMessage }));
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      act(() => MockWebSocket.lastInstance!.simulateMessage({ type: "something_new", x: 1 }));
+      act(() => MockWebSocket.lastInstance!.simulateMessage({ type: "pong" }));
+      expect(onMessage).toHaveBeenCalledWith({ type: "something_new", x: 1 });
+      expect(onMessage).toHaveBeenCalledTimes(2);
     });
 
     it("handles ticket_being_moved event", () => {
@@ -724,6 +778,132 @@ describe("useTicketBoardWebSocket", () => {
       });
 
       expect(result.current.reconnectAttempts).toBe(0);
+    });
+  });
+
+  describe("close codes 4001 / 4403 (FE-02)", () => {
+    it("does NOT reconnect on 4403 and fires onAccessDenied with the board id", () => {
+      const onAccessDenied = vi.fn();
+      renderHook(() =>
+        useTicketBoardWebSocket({ boardId: 23, reconnectInterval: 100, onAccessDenied })
+      );
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      act(() =>
+        MockWebSocket.lastInstance!.simulateMessage({ type: "error", code: "FORBIDDEN", message: "x" })
+      );
+      const count = MockWebSocket.instances.length;
+      act(() => MockWebSocket.lastInstance!.simulateClose(4403));
+      act(() => {
+        vi.advanceTimersByTime(120000);
+      });
+      expect(MockWebSocket.instances.length).toBe(count);
+      expect(onAccessDenied).toHaveBeenCalledTimes(1);
+      expect(onAccessDenied).toHaveBeenCalledWith(23);
+    });
+
+    it("does NOT reconnect on 4001 and does not call onAccessDenied", () => {
+      const onAccessDenied = vi.fn();
+      renderHook(() =>
+        useTicketBoardWebSocket({ boardId: 1, reconnectInterval: 100, onAccessDenied })
+      );
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      const count = MockWebSocket.instances.length;
+      act(() => MockWebSocket.lastInstance!.simulateClose(4001));
+      act(() => {
+        vi.advanceTimersByTime(120000);
+      });
+      expect(MockWebSocket.instances.length).toBe(count);
+      expect(onAccessDenied).not.toHaveBeenCalled();
+    });
+
+    it("does not call onAccessDenied on other abnormal closes", () => {
+      const onAccessDenied = vi.fn();
+      renderHook(() => useTicketBoardWebSocket({ boardId: 1, onAccessDenied }));
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      act(() => MockWebSocket.lastInstance!.simulateClose(1006));
+      expect(onAccessDenied).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("board switch", () => {
+    it("closes the old socket and opens one for the new board", () => {
+      const { rerender } = renderHook(
+        ({ boardId }) => useTicketBoardWebSocket({ boardId }),
+        { initialProps: { boardId: 1 as number } }
+      );
+      const first = MockWebSocket.lastInstance!;
+      act(() => first.simulateOpen());
+
+      rerender({ boardId: 2 });
+
+      expect(first.readyState).toBe(MockWebSocket.CLOSED);
+      expect(MockWebSocket.instances.length).toBe(2);
+      expect(MockWebSocket.lastInstance!.url).toContain("/ws/boards/test_tenant/2/");
+    });
+
+    it("does not leak a pending reconnect timer into the new board", () => {
+      const { rerender } = renderHook(
+        ({ boardId }) => useTicketBoardWebSocket({ boardId, reconnectInterval: 1000 }),
+        { initialProps: { boardId: 1 as number } }
+      );
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      act(() => MockWebSocket.lastInstance!.simulateClose(1006)); // reconnect scheduled for board 1
+
+      rerender({ boardId: 2 });
+      const afterSwitch = MockWebSocket.instances.length;
+      act(() => {
+        vi.advanceTimersByTime(60000);
+      });
+
+      expect(MockWebSocket.instances.length).toBe(afterSwitch);
+      expect(MockWebSocket.instances.every((ws) => !ws.url.includes("/1/") || ws.readyState === MockWebSocket.CLOSED)).toBe(true);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("ignores a late abnormal close from the previous socket", () => {
+      const onTicketMoved = vi.fn();
+      const { rerender, result } = renderHook(
+        ({ boardId }) => useTicketBoardWebSocket({ boardId, reconnectInterval: 100, onTicketMoved }),
+        { initialProps: { boardId: 1 as number } }
+      );
+      const first = MockWebSocket.lastInstance!;
+      // Real browsers: closing a CONNECTING socket reports 1006 later.
+      first.close = function () {
+        this.readyState = MockWebSocket.CLOSING;
+      } as any;
+
+      rerender({ boardId: 2 });
+      const second = MockWebSocket.lastInstance!;
+      act(() => second.simulateOpen());
+
+      act(() => first.simulateClose(1006));
+      act(() => first.simulateMessage({ type: "ticket_moved", ticket_id: 1 }));
+      act(() => {
+        vi.advanceTimersByTime(60000);
+      });
+
+      expect(result.current.isConnected).toBe(true);
+      expect(onTicketMoved).not.toHaveBeenCalled();
+      expect(MockWebSocket.instances.length).toBe(2);
+      expect(second.readyState).toBe(MockWebSocket.OPEN);
+    });
+
+    it("unmount clears ping and reconnect timers", () => {
+      const { unmount } = renderHook(() => useTicketBoardWebSocket({ boardId: 1 }));
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+
+  describe("presence dedupe", () => {
+    it("keeps one entry when the same user joins twice", () => {
+      const { result } = renderHook(() => useTicketBoardWebSocket({ boardId: 1 }));
+      act(() => MockWebSocket.lastInstance!.simulateOpen());
+      const join = { type: "user_joined", user_id: 5, user_name: "Nino", user_email: "n@x.ge" };
+      act(() => MockWebSocket.lastInstance!.simulateMessage(join));
+      act(() => MockWebSocket.lastInstance!.simulateMessage(join));
+      expect(result.current.activeUsers).toHaveLength(1);
     });
   });
 
