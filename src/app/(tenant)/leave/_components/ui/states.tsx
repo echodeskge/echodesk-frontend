@@ -2,21 +2,11 @@
 
 import type { ReactNode } from "react"
 import { useTranslations } from "next-intl"
-import { AlertCircle, Loader2, Lock, RotateCw, type LucideIcon } from "lucide-react"
-import { EmptyState } from "@/app/(tenant)/tickets/_components/primitives/empty-state"
-import { getApiErrorMessage } from "@/lib/utils"
-import { cn } from "@/lib/utils"
-import { leaveButton } from "./buttons"
+import type { LucideIcon } from "lucide-react"
+import { EmptyBlock, ErrorBlock, LoadingBlock } from "@/components/redesign/states"
 
 /** Centered empty state (the tickets primitive: 40px muted icon circle, 14px title, 13px hint, action). */
-export function LeaveEmptyState({
-  icon,
-  title,
-  description,
-  action,
-  className,
-  testId,
-}: {
+export function LeaveEmptyState(props: {
   icon: LucideIcon
   title: string
   description?: string
@@ -24,26 +14,16 @@ export function LeaveEmptyState({
   className?: string
   testId?: string
 }) {
-  return (
-    <div data-testid={testId} className="contents">
-      <EmptyState icon={icon} title={title} description={description} action={action} className={cn("py-12", className)} />
-    </div>
-  )
+  return <EmptyBlock {...props} />
 }
 
 /**
- * Load error with a retry button. The visible hint is always translated
- * (`description` or the generic "check your connection"): API and network
- * messages are often English, which must not show in the Georgian UI. The
- * raw message goes to the hint's tooltip for support.
+ * Load error with a retry button, in leave's texts (`leave.ui.*`). See the
+ * shared `ErrorBlock`: translated hint, raw message as tooltip, 403 = no access.
  */
 export function LeaveErrorState({
-  error,
-  onRetry,
-  title,
-  description,
-  className,
   testId = "leave-error",
+  ...props
 }: {
   error?: unknown
   onRetry?: () => void
@@ -53,36 +33,23 @@ export function LeaveErrorState({
   testId?: string
 }) {
   const t = useTranslations("leave.ui")
-  const detail = error ? getApiErrorMessage(error) : ""
-  // A 403 is not a connection problem: say so, and don't offer a retry that can't help.
-  const forbidden = (error as { response?: { status?: number } } | null | undefined)?.response?.status === 403
   return (
-    <div data-testid={testId} data-forbidden={forbidden || undefined} className="contents" title={detail || undefined}>
-      <EmptyState
-        icon={forbidden ? Lock : AlertCircle}
-        title={title ?? t(forbidden ? "noAccessTitle" : "errorTitle")}
-        description={description ?? t(forbidden ? "noAccessHint" : "errorHint")}
-        className={cn("py-12", className)}
-        action={
-          onRetry && !forbidden ? (
-            <button type="button" onClick={onRetry} className={leaveButton.outlineSm}>
-              <RotateCw className="h-3.5 w-3.5" aria-hidden />
-              {t("retry")}
-            </button>
-          ) : undefined
-        }
-      />
-    </div>
+    <ErrorBlock
+      {...props}
+      testId={testId}
+      labels={{
+        errorTitle: t("errorTitle"),
+        errorHint: t("errorHint"),
+        noAccessTitle: t("noAccessTitle"),
+        noAccessHint: t("noAccessHint"),
+        retry: t("retry"),
+      }}
+    />
   )
 }
 
 /** Centered 20px spinner with an accessible "Loading" label. */
 export function LeaveLoading({ className, label }: { className?: string; label?: string }) {
   const t = useTranslations("leave.hr.common")
-  return (
-    <div role="status" className={cn("flex items-center justify-center py-16", className)} data-testid="leave-loading">
-      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
-      <span className="sr-only">{label ?? t("loading")}</span>
-    </div>
-  )
+  return <LoadingBlock className={className} label={label ?? t("loading")} testId="leave-loading" />
 }
