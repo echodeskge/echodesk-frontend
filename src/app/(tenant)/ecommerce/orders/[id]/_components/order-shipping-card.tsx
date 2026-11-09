@@ -53,7 +53,7 @@ export function OrderShippingCard({ order, t }: OrderShippingCardProps) {
                     <span>{shippingName}</span>
                     {shipping?.estimated_days ? (
                       <span className="text-xs text-muted-foreground">
-                        {t("detail.estimatedDays", { days: String(shipping.estimated_days) })}
+                        {t("detail.estimatedDays", { days: Number(shipping.estimated_days) })}
                       </span>
                     ) : null}
                   </span>

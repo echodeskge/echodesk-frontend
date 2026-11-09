@@ -2104,7 +2104,7 @@
       "markAsPaid": "მონიშნე გადახდილად",
       "deliveryAddress": "მიტანის მისამართი",
       "shippingMethod": "მიწოდების მეთოდი",
-      "estimatedDays": "{days} დღე",
+      "estimatedDays": "{days, plural, other {# დღე}}",
       "tracking": "თრექინგი",
       "courierProvider": "კურიერი",
       "pickup": "მაღაზიიდან გატანა",
@@ -2129,7 +2129,7 @@
         "card": "ბარათი",
         "cash_on_delivery": "ადგილზე გადახდა",
         "saved_card": "შენახული ბარათი",
-        "unknown": "N/A"
+        "unknown": "უცნობი"
       },
       "notes": "შენიშვნები",
       "customerNotes": "მომხმარებლის შენიშვნები",

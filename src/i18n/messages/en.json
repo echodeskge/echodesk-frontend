@@ -2261,7 +2261,7 @@
       "markAsPaid": "Mark as Paid",
       "deliveryAddress": "Delivery Address",
       "shippingMethod": "Shipping Method",
-      "estimatedDays": "{days} days",
+      "estimatedDays": "{days, plural, one {# day} other {# days}}",
       "tracking": "Tracking",
       "courierProvider": "Courier",
       "pickup": "Pickup at store",
