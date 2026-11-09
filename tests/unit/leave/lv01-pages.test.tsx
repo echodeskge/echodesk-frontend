@@ -264,6 +264,17 @@ const BALANCES = [
 ]
 
 describe("My balance", () => {
+  it("pluralises the remaining-days pill (1 day, 1.5 days)", async () => {
+    const one = { ...BALANCES[0], id: 7, available_days: "1.0", used_days: "24.0", pending_days: "1.0" }
+    const half = { ...BALANCES[0], id: 8, leave_type: 3, available_days: "1.5", used_days: "24.0", pending_days: "0.5" }
+    axiosGet.mockResolvedValue({ data: { results: [one, half] } })
+    renderLeave(<MyBalancePage />)
+    await waitFor(() => expect(screen.getAllByTestId("balance-card")).toHaveLength(2))
+    const [a, b] = screen.getAllByTestId("balance-remaining")
+    expect(a).toHaveTextContent(/^1 day left$/)
+    expect(b).toHaveTextContent(/^1\.5 days left$/)
+  })
+
   it("shows totals, one card per type with remaining pill, progress and figures", async () => {
     axiosGet.mockResolvedValue({ data: { results: BALANCES } })
     renderLeave(<MyBalancePage />)
@@ -276,6 +287,7 @@ describe("My balance", () => {
     expect(within(vac).getByTestId("balance-remaining")).toHaveTextContent("21 days left")
     expect(within(vac).getByTestId("balance-remaining")).toHaveAttribute("data-tone", "success")
     expect(within(unpaid).getByTestId("balance-remaining")).toHaveAttribute("data-tone", "neutral")
+    expect(within(unpaid).getByTestId("balance-remaining")).toHaveTextContent("0 days left")
     expect(within(vac).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "0")
     expect(within(vac).getByText("VAC")).toBeInTheDocument()
   })

@@ -158,7 +158,7 @@ function BalanceCard({ balance }: { balance: LeaveBalance }) {
       hint={<span className="font-mono text-[11px] uppercase">{balance.leave_type_code}</span>}
       actions={
         <TonePill tone={remaining > 0 ? "success" : "neutral"} testId="balance-remaining">
-          {t("myBalance.daysLeft", { count: formatDays(remaining) })}
+          {t("myBalance.daysLeft", { count: Number(formatDays(remaining)) })}
         </TonePill>
       }
       bodyClassName="grid gap-4 px-4 py-4"

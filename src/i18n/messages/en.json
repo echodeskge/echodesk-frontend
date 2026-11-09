@@ -5473,7 +5473,7 @@
       "noBalanceTitle": "No leave balance data",
       "noBalanceLine1": "Your leave balance has not been allocated yet.",
       "noBalanceLine2": "Please contact your HR department.",
-      "daysLeft": "{count} days left",
+      "daysLeft": "{count, plural, one {# day left} other {# days left}}",
       "usage": "Usage",
       "usageValue": "{used} / {allocated} days",
       "percentUsed": "{percentage}% of allocated leave used",
