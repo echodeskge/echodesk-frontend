@@ -8,21 +8,21 @@ import axios from "@/api/axios"
 import { leaveAdminSettingsList } from "@/api/generated/api"
 import type { HrSettingsFields, PayrollMode } from "../../leave/_lib/hr-api"
 import { MultiUserPicker, useLiteUsers } from "../../leave/_components/UserPicker"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { getApiErrorMessage } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Loader2, Save } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
+import { cn } from "@/lib/utils"
+import { AlertTriangle, CalendarDays, Loader2, RotateCw, Save } from "lucide-react"
+import {
+  FieldRow,
+  LeaveBanner,
+  LeaveLoading,
+  LeavePageHeader,
+  SectionCard,
+  Segmented,
+  leaveButton,
+} from "../../leave/_components/ui"
+import { settingsFingerprint } from "../../leave/_lib/lv04-utils"
 
 interface LeaveSettings extends Partial<HrSettingsFields> {
   id: number
@@ -64,6 +64,19 @@ const HR_SWITCHES = [
 // The API treats an empty `weekend_days` list as Saturday + Sunday.
 const DEFAULT_WEEKEND_DAYS = [5, 6]
 
+const DEFAULT_FORM = {
+  require_manager_approval: true,
+  require_hr_approval: false,
+  allow_negative_balance: false,
+  max_negative_days: 0,
+  working_days_per_week: 5,
+  weekend_days: DEFAULT_WEEKEND_DAYS,
+}
+
+/** 34px number input of the design settings rows (tabular). */
+const numberInput =
+  "h-[34px] w-20 rounded-md border border-input bg-background px-2.5 text-[13px] tabular-nums outline-none focus-visible:ring-[3px] focus-visible:ring-foreground/10 disabled:cursor-not-allowed"
+
 function unwrapList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[]
   const results = (data as { results?: unknown } | null | undefined)?.results
@@ -81,14 +94,9 @@ export default function LeaveSettingsPage() {
   // When loading fails we do not know whether a settings row exists, so
   // saving is blocked (creating a second row for the tenant is an error).
   const [loadFailed, setLoadFailed] = useState(false)
-  const [formData, setFormData] = useState({
-    require_manager_approval: true,
-    require_hr_approval: false,
-    allow_negative_balance: false,
-    max_negative_days: 0,
-    working_days_per_week: 5,
-    weekend_days: [5, 6],
-  })
+  const [formData, setFormData] = useState(DEFAULT_FORM)
+  // Fingerprint of the last loaded/saved values, for the "unsaved changes" hint.
+  const [baseline, setBaseline] = useState(() => settingsFingerprint(DEFAULT_FORM, DEFAULT_HR))
 
   const weekDays = [
     { value: 0, label: t("settings.monday") },
@@ -108,21 +116,24 @@ export default function LeaveSettingsPage() {
     const weekendDays = Array.isArray(data.weekend_days)
       ? data.weekend_days.filter((day): day is number => typeof day === "number")
       : []
-    setSettings(data)
-    setHr({
+    const nextHr: HrSettingsFields = {
       ...DEFAULT_HR,
       ...Object.fromEntries(
         Object.entries(data).filter(([key, value]) => key in DEFAULT_HR && value !== undefined && value !== null)
       ),
-    })
-    setFormData({
+    }
+    const nextForm = {
       require_manager_approval: data.require_manager_approval ?? true,
       require_hr_approval: data.require_hr_approval ?? false,
       allow_negative_balance: data.allow_negative_balance ?? false,
       max_negative_days: data.max_negative_days ?? 0,
       working_days_per_week: data.working_days_per_week ?? 5,
       weekend_days: weekendDays.length > 0 ? weekendDays : DEFAULT_WEEKEND_DAYS,
-    })
+    }
+    setSettings(data)
+    setHr(nextHr)
+    setFormData(nextForm)
+    setBaseline(settingsFingerprint(nextForm, nextHr))
   }
 
   const fetchSettings = async () => {
@@ -194,242 +205,244 @@ export default function LeaveSettingsPage() {
     })
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
+  const retryLoad = () => {
+    setLoading(true)
+    fetchSettings()
   }
 
+  const dirty = settingsFingerprint(formData, hr) !== baseline
+
+  if (loading) {
+    return <LeaveLoading className="py-24" />
+  }
+
+  const showPayroll = hr.payroll_enabled || hr.substitution_pay_enabled
+
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t("settings.title")}</h1>
-        <p className="text-muted-foreground mt-1">{t("settings.subtitle")}</p>
-      </div>
+    <form onSubmit={handleSave} className="p-4 sm:p-6" data-testid="leave-settings-page">
+      <div className="flex w-full min-w-0 max-w-[720px] flex-col gap-5">
+        <LeavePageHeader icon={CalendarDays} title={t("settings.title")} description={t("settings.subtitle")} />
 
-      <form onSubmit={handleSave} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings.approvalWorkflow")}</CardTitle>
-            <CardDescription>{t("settings.approvalWorkflowDesc")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="require_manager_approval">{t("settings.requireManagerApproval")}</Label>
-                <p className="text-sm text-muted-foreground">{t("settings.requireManagerApprovalDesc")}</p>
-              </div>
-              <Switch
-                id="require_manager_approval"
-                checked={formData.require_manager_approval}
-                onCheckedChange={(checked) => setFormData({ ...formData, require_manager_approval: checked })}
-              />
+        {loadFailed && (
+          <LeaveBanner
+            tone="warning"
+            icon={<AlertTriangle className="h-4 w-4" aria-hidden />}
+            action={
+              <button type="button" onClick={retryLoad} className={leaveButton.outlineSm}>
+                <RotateCw className="h-3.5 w-3.5" aria-hidden />
+                {t("ui.retry")}
+              </button>
+            }
+          >
+            {t("lv04.loadFailedBanner")}
+          </LeaveBanner>
+        )}
+
+        <SectionCard title={t("settings.approvalWorkflow")} hint={t("settings.approvalWorkflowDesc")} testId="leave-settings-approval">
+          <FieldRow
+            label={t("settings.requireManagerApproval")}
+            help={t("settings.requireManagerApprovalDesc")}
+            htmlFor="require_manager_approval"
+          >
+            <Switch
+              id="require_manager_approval"
+              checked={formData.require_manager_approval}
+              onCheckedChange={(checked) => setFormData({ ...formData, require_manager_approval: checked })}
+            />
+          </FieldRow>
+          <FieldRow
+            label={t("settings.requireHrApproval")}
+            help={t("settings.requireHrApprovalDesc")}
+            htmlFor="require_hr_approval"
+          >
+            <Switch
+              id="require_hr_approval"
+              checked={formData.require_hr_approval}
+              onCheckedChange={(checked) => setFormData({ ...formData, require_hr_approval: checked })}
+            />
+          </FieldRow>
+        </SectionCard>
+
+        <SectionCard title={t("settings.leaveBalance")} hint={t("settings.leaveBalanceDesc")} testId="leave-settings-balance">
+          <FieldRow
+            label={t("settings.allowNegativeBalance")}
+            help={t("settings.allowNegativeBalanceDesc")}
+            htmlFor="allow_negative_balance"
+          >
+            <Switch
+              id="allow_negative_balance"
+              checked={formData.allow_negative_balance}
+              onCheckedChange={(checked) => setFormData({ ...formData, allow_negative_balance: checked })}
+            />
+          </FieldRow>
+          <FieldRow
+            label={t("settings.maxNegativeDays")}
+            help={t("settings.maxNegativeDaysDesc")}
+            htmlFor="max_negative_days"
+            disabled={!formData.allow_negative_balance}
+          >
+            <input
+              id="max_negative_days"
+              type="number"
+              min="0"
+              className={numberInput}
+              disabled={!formData.allow_negative_balance}
+              value={Number.isNaN(formData.max_negative_days) ? "" : formData.max_negative_days}
+              onChange={(e) => setFormData({ ...formData, max_negative_days: parseInt(e.target.value) })}
+            />
+          </FieldRow>
+        </SectionCard>
+
+        <SectionCard title={t("settings.workingDays")} hint={t("settings.workingDaysDesc")} testId="leave-settings-working">
+          <FieldRow label={t("settings.workingDaysPerWeek")} htmlFor="working_days_per_week">
+            <input
+              id="working_days_per_week"
+              type="number"
+              min="1"
+              max="7"
+              className={numberInput}
+              value={Number.isNaN(formData.working_days_per_week) ? "" : formData.working_days_per_week}
+              onChange={(e) => setFormData({ ...formData, working_days_per_week: parseInt(e.target.value) })}
+            />
+          </FieldRow>
+          <FieldRow label={t("settings.weekendDays")} help={t("settings.weekendDaysDesc")}>
+            <div
+              role="group"
+              aria-label={t("settings.weekendDays")}
+              className="grid w-full grid-cols-2 gap-x-4 gap-y-2 sm:w-auto sm:grid-cols-[repeat(2,minmax(120px,1fr))]"
+            >
+              {weekDays.map((day) => (
+                <label
+                  key={day.value}
+                  htmlFor={`weekend-${day.value}`}
+                  className="flex cursor-pointer items-center gap-2 text-[13px]"
+                >
+                  <Checkbox
+                    id={`weekend-${day.value}`}
+                    checked={formData.weekend_days.includes(day.value)}
+                    onCheckedChange={() => toggleWeekendDay(day.value)}
+                  />
+                  {day.label}
+                </label>
+              ))}
             </div>
+          </FieldRow>
+        </SectionCard>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="require_hr_approval">{t("settings.requireHrApproval")}</Label>
-                <p className="text-sm text-muted-foreground">{t("settings.requireHrApprovalDesc")}</p>
-              </div>
-              <Switch
-                id="require_hr_approval"
-                checked={formData.require_hr_approval}
-                onCheckedChange={(checked) => setFormData({ ...formData, require_hr_approval: checked })}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings.leaveBalance")}</CardTitle>
-            <CardDescription>{t("settings.leaveBalanceDesc")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="allow_negative_balance">{t("settings.allowNegativeBalance")}</Label>
-                <p className="text-sm text-muted-foreground">{t("settings.allowNegativeBalanceDesc")}</p>
-              </div>
-              <Switch
-                id="allow_negative_balance"
-                checked={formData.allow_negative_balance}
-                onCheckedChange={(checked) => setFormData({ ...formData, allow_negative_balance: checked })}
-              />
-            </div>
-
-            {formData.allow_negative_balance && (
-              <div className="grid gap-2">
-                <Label htmlFor="max_negative_days">{t("settings.maxNegativeDays")}</Label>
-                <Input
-                  id="max_negative_days"
-                  type="number"
-                  min="0"
-                  value={Number.isNaN(formData.max_negative_days) ? "" : formData.max_negative_days}
-                  onChange={(e) => setFormData({ ...formData, max_negative_days: parseInt(e.target.value) })}
+        <SectionCard title={t("hr.settings.title")} hint={t("hr.settings.description")} testId="leave-settings-hr">
+          {HR_SWITCHES.map((key) => {
+            const disabled =
+              (key === "substitution_pay_enabled" && !hr.substitutes_enabled) ||
+              (key === "payroll_self_view_enabled" && !hr.payroll_enabled)
+            const dependent = key === "substitution_pay_enabled" || key === "payroll_self_view_enabled"
+            return (
+              <FieldRow
+                key={key}
+                label={t(`hr.settings.${key}`)}
+                help={t(`hr.settings.${key}_desc`)}
+                htmlFor={key}
+                disabled={disabled}
+                className={cn(dependent && "sm:ps-8")}
+              >
+                <Switch
+                  id={key}
+                  checked={hr[key]}
+                  disabled={disabled}
+                  onCheckedChange={(checked) => setHr((prev) => ({ ...prev, [key]: checked }))}
                 />
-                <p className="text-sm text-muted-foreground">{t("settings.maxNegativeDaysDesc")}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </FieldRow>
+            )
+          })}
+        </SectionCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("settings.workingDays")}</CardTitle>
-            <CardDescription>{t("settings.workingDaysDesc")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="working_days_per_week">{t("settings.workingDaysPerWeek")}</Label>
-              <Input
-                id="working_days_per_week"
-                type="number"
-                min="1"
-                max="7"
-                value={Number.isNaN(formData.working_days_per_week) ? "" : formData.working_days_per_week}
-                onChange={(e) => setFormData({ ...formData, working_days_per_week: parseInt(e.target.value) })}
+        {showPayroll && (
+          <SectionCard title={t("lv04.payrollSection")} hint={t("lv04.payrollHint")} testId="leave-settings-payroll">
+            <FieldRow label={t("hr.settings.payroll_mode")} help={t("hr.settings.payroll_mode_desc")}>
+              <Segmented
+                size="md"
+                ariaLabel={t("hr.settings.payroll_mode")}
+                value={hr.payroll_mode}
+                onChange={(value) => setHr((prev) => ({ ...prev, payroll_mode: value as PayrollMode }))}
+                options={[
+                  { value: "gross", label: t("hr.settings.mode_gross") },
+                  { value: "net", label: t("hr.settings.mode_net") },
+                ]}
+                testId="leave-settings-payroll-mode"
               />
-            </div>
-
-            <div className="space-y-3">
-              <Label>{t("settings.weekendDays")}</Label>
-              <p className="text-sm text-muted-foreground">{t("settings.weekendDaysDesc")}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {weekDays.map((day) => (
-                  <div key={day.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`weekend-${day.value}`}
-                      checked={formData.weekend_days.includes(day.value)}
-                      onCheckedChange={() => toggleWeekendDay(day.value)}
-                    />
-                    <Label htmlFor={`weekend-${day.value}`} className="font-normal cursor-pointer">
-                      {day.label}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("hr.settings.title")}</CardTitle>
-            <CardDescription>{t("hr.settings.description")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {HR_SWITCHES.map((key) => {
-              const disabled =
-                (key === "substitution_pay_enabled" && !hr.substitutes_enabled) ||
-                (key === "payroll_self_view_enabled" && !hr.payroll_enabled)
-              return (
-                <div key={key} className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <Label htmlFor={key}>{t(`hr.settings.${key}`)}</Label>
-                    <p className="text-sm text-muted-foreground">{t(`hr.settings.${key}_desc`)}</p>
-                  </div>
-                  <Switch
-                    id={key}
-                    checked={hr[key]}
-                    disabled={disabled}
-                    onCheckedChange={(checked) => setHr((prev) => ({ ...prev, [key]: checked }))}
+            </FieldRow>
+            {hr.payroll_mode === "net" && (
+              <>
+                <FieldRow label={t("hr.settings.income_tax_rate")} htmlFor="income_tax_rate">
+                  <input
+                    id="income_tax_rate"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className={numberInput}
+                    value={hr.income_tax_rate}
+                    onChange={(e) => setHr((prev) => ({ ...prev, income_tax_rate: e.target.value }))}
                   />
-                </div>
-              )
-            })}
-
-            {(hr.payroll_enabled || hr.substitution_pay_enabled) && (
-              <div className="space-y-4 border-t pt-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label>{t("hr.settings.payroll_mode")}</Label>
-                    <Select
-                      value={hr.payroll_mode}
-                      onValueChange={(value) => setHr((prev) => ({ ...prev, payroll_mode: value as PayrollMode }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gross">{t("hr.settings.mode_gross")}</SelectItem>
-                        <SelectItem value="net">{t("hr.settings.mode_net")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">{t("hr.settings.payroll_mode_desc")}</p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="payroll_currency">{t("hr.settings.payroll_currency")}</Label>
-                    <Input
-                      id="payroll_currency"
-                      maxLength={3}
-                      value={hr.payroll_currency}
-                      onChange={(e) =>
-                        setHr((prev) => ({ ...prev, payroll_currency: e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase() }))
-                      }
-                    />
-                  </div>
-                </div>
-                {hr.payroll_mode === "net" && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="grid gap-2">
-                      <Label htmlFor="income_tax_rate">{t("hr.settings.income_tax_rate")}</Label>
-                      <Input
-                        id="income_tax_rate"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={hr.income_tax_rate}
-                        onChange={(e) => setHr((prev) => ({ ...prev, income_tax_rate: e.target.value }))}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="pension_rate">{t("hr.settings.pension_rate")}</Label>
-                      <Input
-                        id="pension_rate"
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        value={hr.pension_rate}
-                        onChange={(e) => setHr((prev) => ({ ...prev, pension_rate: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                )}
-                <div className="grid gap-2">
-                  <Label>{t("hr.settings.payroll_managers")}</Label>
-                  <MultiUserPicker
-                    users={users}
-                    value={hr.payroll_managers}
-                    onChange={(ids) => setHr((prev) => ({ ...prev, payroll_managers: ids }))}
+                </FieldRow>
+                <FieldRow label={t("hr.settings.pension_rate")} htmlFor="pension_rate">
+                  <input
+                    id="pension_rate"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className={numberInput}
+                    value={hr.pension_rate}
+                    onChange={(e) => setHr((prev) => ({ ...prev, pension_rate: e.target.value }))}
                   />
-                  <p className="text-sm text-muted-foreground">{t("hr.settings.payroll_managers_desc")}</p>
-                </div>
-              </div>
+                </FieldRow>
+              </>
             )}
-          </CardContent>
-        </Card>
+            <FieldRow label={t("hr.settings.payroll_currency")} htmlFor="payroll_currency">
+              <input
+                id="payroll_currency"
+                maxLength={3}
+                className={cn(numberInput, "w-[120px] font-mono uppercase")}
+                value={hr.payroll_currency}
+                onChange={(e) =>
+                  setHr((prev) => ({ ...prev, payroll_currency: e.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase() }))
+                }
+              />
+            </FieldRow>
+            <FieldRow label={t("hr.settings.payroll_managers")} help={t("hr.settings.payroll_managers_desc")}>
+              <div className="w-full sm:w-[260px]">
+                <MultiUserPicker
+                  users={users}
+                  value={hr.payroll_managers}
+                  onChange={(ids) => setHr((prev) => ({ ...prev, payroll_managers: ids }))}
+                />
+              </div>
+            </FieldRow>
+          </SectionCard>
+        )}
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={saving || loadFailed}>
+        <div
+          className="sticky bottom-4 z-10 max-md:me-12 flex min-h-12 flex-wrap items-center gap-x-3 gap-y-2 rounded-[10px] border bg-background/95 px-4 py-2 shadow-[0_4px_16px_rgb(0_0_0/0.08)] backdrop-blur"
+          data-testid="leave-settings-savebar"
+        >
+          <span className={cn("min-w-0 flex-1 text-xs", dirty ? "text-foreground" : "text-muted-foreground")} aria-live="polite">
+            {loadFailed ? "" : dirty ? t("lv04.unsaved") : t("lv04.allSaved")}
+          </span>
+          <button type="submit" className={leaveButton.primary} disabled={saving || loadFailed} data-testid="leave-settings-save">
             {saving ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
                 {t("settings.saving")}
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-3.5 w-3.5" aria-hidden />
                 {t("settings.saveSettings")}
               </>
             )}
-          </Button>
+          </button>
         </div>
-      </form>
-    </div>
+      </div>
+    </form>
   )
 }
