@@ -116,7 +116,7 @@ export function AttachmentsCard({
       </CollapsibleCard>
 
       <AlertDialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent className="sm:max-w-sm">
+        <AlertDialogContent className="sm:max-w-sm" aria-describedby={undefined}>
           <AlertDialogHeader>
             <AlertDialogTitle className="break-words">{t("removeConfirm", { name: confirm?.filename ?? "" })}</AlertDialogTitle>
           </AlertDialogHeader>
