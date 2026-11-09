@@ -19,6 +19,7 @@ import { OrderHeaderCard } from "./order-header-card"
 import { OrderItemsCard } from "./order-items-card"
 import { OrderNotesCard } from "./order-notes-card"
 import { OrderCustomerCard } from "./order-customer-card"
+import { OrderShippingCard } from "./order-shipping-card"
 import { OrderPaymentCard } from "./order-payment-card"
 import { OrderTimelineCard } from "./order-timeline-card"
 
@@ -92,6 +93,7 @@ export function OrderDetails({
         </div>
         <div className="space-y-4">
           <OrderCustomerCard order={order} t={t} />
+          <OrderShippingCard order={order} t={t} />
           <OrderPaymentCard
             order={order}
             refunding={refunding}
