@@ -3,11 +3,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { Loader2, Plus, Trash2 } from "lucide-react"
-import { getApiErrorMessage } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Loader2, Plus, Trash2, Wallet } from "lucide-react"
+import { cn, getApiErrorMessage } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -17,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { UserPicker, useLiteUsers } from "../../_components/UserPicker"
 import {
   createCompensation,
@@ -27,6 +23,16 @@ import {
 } from "../../_lib/hr-api"
 import { formatMoney } from "../../_lib/hr-utils"
 import { isValidAmount, normalizeCurrency } from "../../_lib/payroll-utils"
+import {
+  LeaveEmptyState,
+  LeaveTable,
+  PersonCell,
+  SectionCard,
+  formatLeaveDate,
+  leaveButton,
+  type LeaveColumn,
+} from "../../_components/ui"
+import { MoneyCell } from "./money"
 
 const emptyForm = { monthly_salary: "", currency: "GEL", effective_from: "", note: "" }
 
@@ -37,6 +43,7 @@ export function SalariesTab() {
   const [userId, setUserId] = useState<number | null>(null)
   const [records, setRecords] = useState<Compensation[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [formUser, setFormUser] = useState<number | null>(null)
@@ -45,10 +52,12 @@ export function SalariesTab() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       setRecords(await fetchCompensations(userId ?? undefined))
     } catch (error) {
       setRecords([])
+      setLoadError(error)
       toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
     } finally {
       setLoading(false)
@@ -108,99 +117,129 @@ export function SalariesTab() {
     }
   }
 
+  const columns: LeaveColumn<Compensation>[] = [
+    {
+      id: "employee",
+      header: t("hr.payroll.columns.employee"),
+      width: "minmax(160px,1.2fr)",
+      mobile: "title",
+      cell: (rec) => <PersonCell name={rec.user_name} />,
+    },
+    {
+      id: "salary",
+      header: t("hr.payroll.columns.monthly_salary"),
+      width: "140px",
+      align: "end",
+      mobile: "end",
+      cell: (rec) => <MoneyCell amount={formatMoney(rec.monthly_salary, locale)} currency={rec.currency} />,
+    },
+    {
+      id: "from",
+      header: t("hr.payroll.salaries.effectiveFrom"),
+      width: "120px",
+      mobile: "meta",
+      className: "@3xl:ps-3",
+      cell: (rec) => <span className="tabular-nums">{formatLeaveDate(rec.effective_from, locale, { year: "always" })}</span>,
+    },
+    {
+      id: "note",
+      header: t("hr.payroll.salaries.note"),
+      width: "minmax(0,1.4fr)",
+      mobile: "meta",
+      muted: true,
+      cell: (rec) =>
+        rec.note ? (
+          <span className="truncate" title={rec.note}>
+            {rec.note}
+          </span>
+        ) : null,
+      className: "empty:hidden @3xl:empty:flex",
+    },
+    {
+      id: "actions",
+      header: "",
+      width: "36px",
+      align: "end",
+      mobile: "actions",
+      cell: (rec) => (
+        <button
+          type="button"
+          className={cn(leaveButton.ghostIconSm, "hover:bg-destructive/10 hover:text-destructive")}
+          aria-label={t("hr.common.delete")}
+          title={t("hr.common.delete")}
+          disabled={deletingId === rec.id}
+          onClick={() => handleDelete(rec)}
+        >
+          {deletingId === rec.id ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+          )}
+        </button>
+      ),
+    },
+  ]
+
   return (
-    <Card>
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between space-y-0">
-        <div>
-          <CardTitle>{t("hr.payroll.salaries.title")}</CardTitle>
-          <CardDescription>{t("hr.payroll.salaries.description")}</CardDescription>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="w-full sm:w-64">
-            <UserPicker
-              users={users}
-              value={userId}
-              onChange={setUserId}
-              allowClear
-              placeholder={t("hr.payroll.salaries.allEmployees")}
-            />
-          </div>
-          <Button onClick={openAdd}>
-            <Plus className="h-4 w-4 mr-2" />
-            {t("hr.payroll.salaries.add")}
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : records.length === 0 ? (
-          <p className="text-center text-muted-foreground py-12">{t("hr.payroll.salaries.empty")}</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("hr.payroll.columns.employee")}</TableHead>
-                  <TableHead className="text-right">{t("hr.payroll.columns.monthly_salary")}</TableHead>
-                  <TableHead>{t("hr.payroll.columns.currency")}</TableHead>
-                  <TableHead>{t("hr.payroll.salaries.effectiveFrom")}</TableHead>
-                  <TableHead>{t("hr.payroll.salaries.note")}</TableHead>
-                  <TableHead className="w-[60px]" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {records.map((rec) => (
-                  <TableRow key={rec.id}>
-                    <TableCell className="font-medium">{rec.user_name}</TableCell>
-                    <TableCell className="text-right">{formatMoney(rec.monthly_salary, locale)}</TableCell>
-                    <TableCell>{rec.currency}</TableCell>
-                    <TableCell>{new Date(rec.effective_from).toLocaleDateString()}</TableCell>
-                    <TableCell className="max-w-[280px] truncate" title={rec.note}>
-                      {rec.note}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={t("hr.common.delete")}
-                        disabled={deletingId === rec.id}
-                        onClick={() => handleDelete(rec)}
-                      >
-                        {deletingId === rec.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        )}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
+    <>
+      <SectionCard
+        testId="payroll-salaries"
+        title={t("hr.payroll.salaries.title")}
+        hint={t("hr.payroll.salaries.description")}
+        actions={
+          <>
+            <div className="w-[150px] sm:w-[200px]">
+              <UserPicker
+                users={users}
+                value={userId}
+                onChange={setUserId}
+                allowClear
+                placeholder={t("hr.payroll.salaries.allEmployees")}
+                className="h-7 px-2 text-xs"
+              />
+            </div>
+            <button type="button" className={leaveButton.primarySm} onClick={openAdd} data-testid="salary-add">
+              <Plus className="h-3.5 w-3.5" aria-hidden />
+              {t("hr.payroll.salaries.add")}
+            </button>
+          </>
+        }
+      >
+        <LeaveTable
+          variant="flush"
+          ariaLabel={t("hr.payroll.salaries.title")}
+          testId="salaries-table"
+          rowTestId="salary-row"
+          columns={columns}
+          rows={loading ? undefined : records}
+          rowKey={(rec) => rec.id}
+          error={loadError}
+          onRetry={load}
+          skeletonRows={4}
+          empty={<LeaveEmptyState icon={Wallet} title={t("hr.payroll.salaries.empty")} />}
+        />
+      </SectionCard>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[480px]">
-          <form onSubmit={handleSave}>
+          <form onSubmit={handleSave} className="grid gap-4">
             <DialogHeader>
-              <DialogTitle>{t("hr.payroll.salaries.addTitle")}</DialogTitle>
-              <DialogDescription>{t("hr.payroll.salaries.addDescription")}</DialogDescription>
+              <DialogTitle className="text-base">{t("hr.payroll.salaries.addTitle")}</DialogTitle>
+              <DialogDescription className="text-[13px]">{t("hr.payroll.salaries.addDescription")}</DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>{t("hr.payroll.columns.employee")}</Label>
-                <UserPicker users={users} value={formUser} onChange={setFormUser} />
+            <div className="grid gap-4">
+              <div className="grid gap-1.5">
+                <span className="text-[13px] font-medium">{t("hr.payroll.columns.employee")}</span>
+                <UserPicker users={users} value={formUser} onChange={setFormUser} className="h-[34px] px-3 text-[13px]" />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <div className="grid gap-2 col-span-2">
-                  <Label htmlFor="comp-salary">{t("hr.payroll.columns.monthly_salary")}</Label>
+                <div className="col-span-2 grid gap-1.5">
+                  <label htmlFor="comp-salary" className="text-[13px] font-medium">
+                    {t("hr.payroll.columns.monthly_salary")}
+                  </label>
                   <Input
                     id="comp-salary"
+                    className="h-[34px] text-[13px] tabular-nums"
                     inputMode="decimal"
                     value={form.monthly_salary}
                     onChange={(e) => setForm({ ...form, monthly_salary: e.target.value })}
@@ -208,10 +247,13 @@ export function SalariesTab() {
                     required
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="comp-currency">{t("hr.payroll.columns.currency")}</Label>
+                <div className="grid gap-1.5">
+                  <label htmlFor="comp-currency" className="text-[13px] font-medium">
+                    {t("hr.payroll.columns.currency")}
+                  </label>
                   <Input
                     id="comp-currency"
+                    className="h-[34px] font-mono text-[13px] uppercase"
                     maxLength={3}
                     value={form.currency}
                     onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
@@ -219,37 +261,43 @@ export function SalariesTab() {
                   />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="comp-from">{t("hr.payroll.salaries.effectiveFrom")}</Label>
+              <div className="grid gap-1.5">
+                <label htmlFor="comp-from" className="text-[13px] font-medium">
+                  {t("hr.payroll.salaries.effectiveFrom")}
+                </label>
                 <Input
                   id="comp-from"
                   type="date"
+                  className="h-[34px] text-[13px]"
                   value={form.effective_from}
                   onChange={(e) => setForm({ ...form, effective_from: e.target.value })}
                   required
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="comp-note">{t("hr.payroll.salaries.note")}</Label>
+              <div className="grid gap-1.5">
+                <label htmlFor="comp-note" className="text-[13px] font-medium">
+                  {t("hr.payroll.salaries.note")}
+                </label>
                 <Input
                   id="comp-note"
+                  className="h-[34px] text-[13px]"
                   value={form.note}
                   onChange={(e) => setForm({ ...form, note: e.target.value })}
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+            <DialogFooter className="gap-2">
+              <button type="button" className={leaveButton.outline} onClick={() => setDialogOpen(false)}>
                 {t("hr.common.cancel")}
-              </Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              </button>
+              <button type="submit" className={leaveButton.primary} disabled={saving}>
+                {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                 {t("hr.common.save")}
-              </Button>
+              </button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
-    </Card>
+    </>
   )
 }

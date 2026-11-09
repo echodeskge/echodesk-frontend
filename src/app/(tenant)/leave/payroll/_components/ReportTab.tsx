@@ -3,13 +3,9 @@
 import { useCallback, useEffect, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { Download, Loader2, Lock, LockOpen } from "lucide-react"
-import { getApiErrorMessage } from "@/lib/utils"
+import { Download, FileSpreadsheet, Loader2, Lock, LockOpen } from "lucide-react"
+import { cn, getApiErrorMessage } from "@/lib/utils"
 import { downloadBlob } from "@/lib/downloadBlob"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
   DialogContent,
@@ -18,9 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { MonthPicker } from "../../_components/MonthPicker"
+import { formatDateTime } from "@/app/(tenant)/tickets/_lib/format"
 import {
   fetchPayrollCsv,
   fetchPayrollReport,
@@ -28,29 +23,49 @@ import {
   lockPayrollMonth,
   unlockPayrollRun,
   type PayrollReport,
+  type PayrollRow,
   type PayrollRun,
+  type PayrollTotals,
 } from "../../_lib/hr-api"
-import { currentPeriod, formatMoney, formatPeriod } from "../../_lib/hr-utils"
+import { formatMoney, formatPeriod } from "../../_lib/hr-utils"
 import {
   findRunForPeriod,
   formatOtherCurrencies,
   payrollMoneyColumns,
   totalsRows,
+  type PayrollMoneyKey,
 } from "../../_lib/payroll-utils"
+import {
+  LeaveEmptyState,
+  LeaveTable,
+  PersonCell,
+  SectionCard,
+  TonePill,
+  leaveButton,
+  type LeaveColumn,
+} from "../../_components/ui"
+import { MoneyCell } from "./money"
 
-export function ReportTab({ isStaff }: { isStaff: boolean }) {
+type ReportLine =
+  | { kind: "row"; key: string; row: PayrollRow }
+  | { kind: "total"; key: string; total: PayrollTotals & { currency: string } }
+
+const DAY_COLUMNS = ["scheduled_days", "worked_to_date", "paid_leave_days", "unpaid_days"] as const
+
+export function ReportTab({ isStaff, period }: { isStaff: boolean; period: string }) {
   const t = useTranslations("leave")
   const locale = useLocale()
-  const [period, setPeriod] = useState(currentPeriod())
   const [report, setReport] = useState<PayrollReport | null>(null)
   const [run, setRun] = useState<PayrollRun | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [busy, setBusy] = useState<"lock" | "unlock" | "export" | null>(null)
   const [unlockOpen, setUnlockOpen] = useState(false)
   const [unlockReason, setUnlockReason] = useState("")
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const [rep, runs] = await Promise.all([
         fetchPayrollReport(period),
@@ -61,6 +76,7 @@ export function ReportTab({ isStaff }: { isStaff: boolean }) {
     } catch (error) {
       setReport(null)
       setRun(null)
+      setLoadError(error)
       toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
     } finally {
       setLoading(false)
@@ -71,8 +87,10 @@ export function ReportTab({ isStaff }: { isStaff: boolean }) {
     load()
   }, [load])
 
+  const periodLabel = formatPeriod(period, locale)
+
   const handleLock = async () => {
-    if (!confirm(t("hr.payroll.report.confirmLock", { period: formatPeriod(period, locale) }))) return
+    if (!confirm(t("hr.payroll.report.confirmLock", { period: periodLabel }))) return
     setBusy("lock")
     try {
       await lockPayrollMonth(period)
@@ -114,162 +132,233 @@ export function ReportTab({ isStaff }: { isStaff: boolean }) {
   }
 
   const money = (v: string | null | undefined) => formatMoney(v, locale)
-  const columns = payrollMoneyColumns(report?.mode ?? "gross")
+  const moneyKeys = payrollMoneyColumns(report?.mode ?? "gross")
+  const isNet = report?.mode === "net"
   const locked = Boolean(report?.locked)
-  const totals = totalsRows(report?.totals)
+  const headline: PayrollMoneyKey = isNet ? "net" : "gross"
+
+  const lines: ReportLine[] | undefined = loading
+    ? undefined
+    : report
+      ? [
+          ...report.rows.map((row) => ({ kind: "row" as const, key: `u${row.user}`, row })),
+          ...(report.rows.length > 0
+            ? totalsRows(report.totals).map((total) => ({ kind: "total" as const, key: `t-${total.currency}`, total }))
+            : []),
+        ]
+      : []
+
+  const headerCell = (label: string) => <span title={label} className="truncate">{label}</span>
+  /** Mobile-only label before a figure (the desktop grid has column headers). */
+  const mobileLabel = (label: string) => <span className="me-1 text-muted-foreground @3xl:hidden">{label}</span>
+
+  const columns: LeaveColumn<ReportLine>[] = [
+    {
+      id: "employee",
+      header: t("hr.payroll.columns.employee"),
+      width: "minmax(150px,1.4fr)",
+      mobile: "title",
+      cell: (l) =>
+        l.kind === "row" ? (
+          <PersonCell name={l.row.name} sub={l.row.job_title || l.row.email} />
+        ) : (
+          <span className="truncate font-semibold">{t("hr.payroll.report.totalIn", { currency: l.total.currency })}</span>
+        ),
+    },
+    {
+      id: "monthly_salary",
+      header: headerCell(t("hr.payroll.columns.monthly_salary")),
+      width: "112px",
+      align: "end",
+      mobile: "meta",
+      cell: (l) =>
+        l.kind === "row" ? (
+          <>
+            {mobileLabel(t("hr.payroll.columns.monthly_salary"))}
+            <MoneyCell amount={money(l.row.monthly_salary)} currency={l.row.currency} />
+          </>
+        ) : null,
+      className: "empty:hidden @3xl:empty:flex",
+    },
+    ...DAY_COLUMNS.map(
+      (key): LeaveColumn<ReportLine> => ({
+        id: key,
+        header: headerCell(t(`hr.payroll.columns.${key}`)),
+        width: "84px",
+        align: "end",
+        mobile: key === "scheduled_days" || key === "worked_to_date" ? "meta" : "hidden",
+        cell: (l) =>
+          l.kind === "row" ? (
+            <>
+              {mobileLabel(t(`hr.payroll.columns.${key}`))}
+              <span className="font-mono text-xs tabular-nums">{String(l.row[key])}</span>
+            </>
+          ) : null,
+        className: "empty:hidden @3xl:empty:flex",
+      })
+    ),
+    ...moneyKeys.map(
+      (key): LeaveColumn<ReportLine> => ({
+        id: key,
+        header: headerCell(t(`hr.payroll.columns.${key}`)),
+        width: "120px",
+        align: "end",
+        mobile: key === headline ? "end" : key === "substitution_pay" ? "meta" : "hidden",
+        cell: (l) => {
+          if (l.kind === "total") {
+            return (
+              <span className="flex items-baseline">
+                {key !== headline && mobileLabel(t(`hr.payroll.columns.${key}`))}
+                <MoneyCell amount={money(l.total[key])} currency={l.total.currency} strong />
+              </span>
+            )
+          }
+          const other = key === "substitution_pay" ? formatOtherCurrencies(l.row.other_currency_substitution_pay, money) : ""
+          return (
+            <span className="flex flex-col items-end" title={other ? `+ ${other}` : undefined}>
+              <span className="flex items-baseline">
+                {key !== headline && mobileLabel(t(`hr.payroll.columns.${key}`))}
+                <MoneyCell amount={money(l.row[key])} currency={l.row.currency} strong={key === "gross" || key === "net"} />
+              </span>
+              {other && <span className="max-w-full truncate text-[11px] text-muted-foreground">+ {other}</span>}
+            </span>
+          )
+        },
+      })
+    ),
+  ]
+
+  const summary = report
+    ? isNet
+      ? t("hr.payroll.report.netSummary", {
+          days: report.working_days,
+          tax: report.income_tax_rate,
+          pension: report.pension_rate,
+        })
+      : t("hr.payroll.report.grossSummary", { days: report.working_days })
+    : null
+  const lockedAt =
+    locked && report?.locked_at ? t("hr.payroll.report.lockedAt", { date: formatDateTime(report.locked_at, locale) }) : null
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <MonthPicker value={period} onChange={setPeriod} />
-        <div className="flex flex-wrap items-center gap-2">
-          {locked ? (
-            <Badge variant="secondary" className="gap-1">
-              <Lock className="h-3 w-3" />
-              {t("hr.payroll.report.lockedBadge")}
-            </Badge>
-          ) : (
-            <Badge variant="outline">{t("hr.payroll.report.draftBadge")}</Badge>
-          )}
-          {!locked && (
-            <Button variant="outline" onClick={handleLock} disabled={busy !== null || loading || !report}>
-              {busy === "lock" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
-              {t("hr.payroll.report.lockMonth")}
-            </Button>
-          )}
-          {locked && isStaff && run && (
-            <Button variant="outline" onClick={() => setUnlockOpen(true)} disabled={busy !== null}>
-              <LockOpen className="h-4 w-4 mr-2" />
-              {t("hr.payroll.report.unlock")}
-            </Button>
-          )}
-          <Button onClick={handleExport} disabled={busy !== null || loading || !report}>
-            {busy === "export" ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4 mr-2" />
+    <>
+      <SectionCard
+        testId="payroll-report"
+        title={t("hr.payroll.report.title", { period: periodLabel })}
+        hint={summary ? [summary, lockedAt].filter(Boolean).join(" · ") : undefined}
+        actions={
+          <>
+            {!loading && report && (
+              locked ? (
+                <TonePill tone="success" testId="payroll-locked-pill">
+                  <span className="inline-flex items-center gap-1">
+                    <Lock className="h-3 w-3" aria-hidden />
+                    {t("hr.payroll.report.lockedBadge")}
+                  </span>
+                </TonePill>
+              ) : (
+                <TonePill tone="neutral" testId="payroll-draft-pill">
+                  {t("hr.payroll.report.draftBadge")}
+                </TonePill>
+              )
             )}
-            {t("hr.payroll.report.downloadCsv")}
-          </Button>
+            {!locked && (
+              <button
+                type="button"
+                className={leaveButton.outlineSm}
+                onClick={handleLock}
+                disabled={busy !== null || loading || !report}
+                data-testid="payroll-lock"
+              >
+                {busy === "lock" ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Lock className="h-3.5 w-3.5" aria-hidden />}
+                {t("hr.payroll.report.lockMonth")}
+              </button>
+            )}
+            {locked && isStaff && run && (
+              <button
+                type="button"
+                className={leaveButton.outlineSm}
+                onClick={() => setUnlockOpen(true)}
+                disabled={busy !== null}
+                data-testid="payroll-unlock"
+              >
+                <LockOpen className="h-3.5 w-3.5" aria-hidden />
+                {t("hr.payroll.report.unlock")}
+              </button>
+            )}
+            <button
+              type="button"
+              className={leaveButton.primarySm}
+              onClick={handleExport}
+              disabled={busy !== null || loading || !report}
+              data-testid="payroll-export"
+            >
+              {busy === "export" ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Download className="h-3.5 w-3.5" aria-hidden />}
+              {t("hr.payroll.report.downloadCsv")}
+            </button>
+          </>
+        }
+      >
+        <div className="overflow-x-auto">
+          <LeaveTable
+            variant="flush"
+            className={cn(isNet ? "md:min-w-[1470px]" : "md:min-w-[1100px]")}
+            ariaLabel={t("hr.payroll.report.title", { period: periodLabel })}
+            testId="payroll-report-table"
+            rowTestId="payroll-report-row"
+            columns={columns}
+            rows={lines}
+            rowKey={(l) => l.key}
+            rowClassName={(l) => (l.kind === "total" ? "bg-muted/40 font-semibold" : undefined)}
+            error={loadError}
+            onRetry={load}
+            skeletonRows={4}
+            empty={<LeaveEmptyState icon={FileSpreadsheet} title={t("hr.payroll.report.empty")} />}
+            footer={
+              report && report.rows.length > 0 ? (
+                <span>{t("hr.common.employeesCount", { count: report.rows.length })}</span>
+              ) : undefined
+            }
+          />
         </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("hr.payroll.report.title", { period: formatPeriod(period, locale) })}</CardTitle>
-          {report && (
-            <CardDescription>
-              {report.mode === "net"
-                ? t("hr.payroll.report.netSummary", {
-                    days: report.working_days,
-                    tax: report.income_tax_rate,
-                    pension: report.pension_rate,
-                  })
-                : t("hr.payroll.report.grossSummary", { days: report.working_days })}
-              {locked && report.locked_at && (
-                <> · {t("hr.payroll.report.lockedAt", { date: new Date(report.locked_at).toLocaleString() })}</>
-              )}
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : !report || report.rows.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">{t("hr.payroll.report.empty")}</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("hr.payroll.columns.employee")}</TableHead>
-                    <TableHead className="text-right">{t("hr.payroll.columns.monthly_salary")}</TableHead>
-                    <TableHead className="text-right">{t("hr.payroll.columns.scheduled_days")}</TableHead>
-                    <TableHead className="text-right">{t("hr.payroll.columns.worked_to_date")}</TableHead>
-                    <TableHead className="text-right">{t("hr.payroll.columns.paid_leave_days")}</TableHead>
-                    <TableHead className="text-right">{t("hr.payroll.columns.unpaid_days")}</TableHead>
-                    {columns.map((c) => (
-                      <TableHead key={c} className="text-right">
-                        {t(`hr.payroll.columns.${c}`)}
-                      </TableHead>
-                    ))}
-                    <TableHead>{t("hr.payroll.columns.currency")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {report.rows.map((row) => {
-                    const other = formatOtherCurrencies(row.other_currency_substitution_pay, money)
-                    return (
-                      <TableRow key={row.user}>
-                        <TableCell>
-                          <div className="font-medium">{row.name}</div>
-                          <div className="text-xs text-muted-foreground">{row.job_title || row.email}</div>
-                        </TableCell>
-                        <TableCell className="text-right">{money(row.monthly_salary)}</TableCell>
-                        <TableCell className="text-right">{row.scheduled_days}</TableCell>
-                        <TableCell className="text-right">{row.worked_to_date}</TableCell>
-                        <TableCell className="text-right">{row.paid_leave_days}</TableCell>
-                        <TableCell className="text-right">{row.unpaid_days}</TableCell>
-                        {columns.map((c) => (
-                          <TableCell key={c} className={`text-right ${c === "gross" || c === "net" ? "font-semibold" : ""}`}>
-                            {money(row[c])}
-                            {c === "substitution_pay" && other && (
-                              <div className="text-xs text-muted-foreground">+ {other}</div>
-                            )}
-                          </TableCell>
-                        ))}
-                        <TableCell>{row.currency}</TableCell>
-                      </TableRow>
-                    )
-                  })}
-                  {totals.map((tot) => (
-                    <TableRow key={`total-${tot.currency}`} className="bg-muted/50 font-semibold">
-                      <TableCell colSpan={6}>{t("hr.payroll.report.totalIn", { currency: tot.currency })}</TableCell>
-                      {columns.map((c) => (
-                        <TableCell key={c} className="text-right">
-                          {money(tot[c])}
-                        </TableCell>
-                      ))}
-                      <TableCell>{tot.currency}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      </SectionCard>
 
       <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
         <DialogContent className="sm:max-w-[460px]">
           <DialogHeader>
-            <DialogTitle>{t("hr.payroll.report.unlockTitle")}</DialogTitle>
-            <DialogDescription>
-              {t("hr.payroll.report.unlockDescription", { period: formatPeriod(period, locale) })}
+            <DialogTitle className="text-base">{t("hr.payroll.report.unlockTitle")}</DialogTitle>
+            <DialogDescription className="text-[13px]">
+              {t("hr.payroll.report.unlockDescription", { period: periodLabel })}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2 py-2">
-            <Label htmlFor="unlock-reason">{t("hr.payroll.report.unlockReason")}</Label>
+          <div className="grid gap-1.5">
+            <label htmlFor="unlock-reason" className="text-[13px] font-medium">
+              {t("hr.payroll.report.unlockReason")}
+            </label>
             <Textarea
               id="unlock-reason"
+              className="text-[13px]"
               value={unlockReason}
               onChange={(e) => setUnlockReason(e.target.value)}
               rows={3}
             />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUnlockOpen(false)}>
+          <DialogFooter className="gap-2">
+            <button type="button" className={leaveButton.outline} onClick={() => setUnlockOpen(false)}>
               {t("hr.common.cancel")}
-            </Button>
-            <Button onClick={handleUnlock} disabled={!unlockReason.trim() || busy === "unlock"}>
-              {busy === "unlock" && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            </button>
+            <button
+              type="button"
+              className={leaveButton.primary}
+              onClick={handleUnlock}
+              disabled={!unlockReason.trim() || busy === "unlock"}
+            >
+              {busy === "unlock" && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
               {t("hr.payroll.report.unlock")}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
