@@ -1,0 +1,470 @@
+{
+  "en": {
+    "shippingMethods": {
+      "free": "Free",
+      "freeOverShort": "free over",
+      "editAria": "Edit {name}",
+      "deleteAria": "Delete {name}",
+      "table": {
+        "freeOver": "Free over",
+        "position": "Position"
+      },
+      "form": {
+        "sectionName": "Name and description",
+        "sectionPricing": "Pricing",
+        "sectionDelivery": "Delivery",
+        "priceHelp": "Enter 0 for free shipping",
+        "positionHelp": "Lower numbers are listed first",
+        "isActiveHelp": "Customers can choose this method at checkout"
+      }
+    },
+    "homepageBuilder": {
+      "emptyTitle": "No sections yet",
+      "sectionCount": "{count, plural, one {# section} other {# sections}}",
+      "linkedToList": "Linked to {name}",
+      "itemListFallback": "Item list #{id}",
+      "noItemListLinked": "No item list linked",
+      "sectionFormDescription": "Configure the section properties and link it to an item list for dynamic content.",
+      "linkToItemList": "Link to an item list (optional)",
+      "selectItemList": "Select an item list",
+      "noItemList": "No item list",
+      "applying": "Applying…",
+      "a11y": {
+        "moveUp": "Move {name} up",
+        "moveDown": "Move {name} down",
+        "toggleVisible": "Show {name} on the homepage",
+        "edit": "Edit {name}",
+        "delete": "Delete {name}"
+      },
+      "form": {
+        "titleSection": "Title",
+        "layoutSection": "Layout",
+        "contentSection": "Content",
+        "contentHint": "Items shown in this section",
+        "appearanceSection": "Appearance",
+        "titleRequired": "Enter the English title"
+      },
+      "sectionTypes": {
+        "hero_banner": "Hero banner / slider",
+        "featured_products": "Featured products",
+        "category_grid": "Category grid",
+        "product_by_attribute": "Products by attribute",
+        "statistics": "Statistics / achievements",
+        "branches": "Store branches / locations",
+        "custom_content": "Custom item list content"
+      },
+      "displayModes": {
+        "slider": "Slider / carousel",
+        "grid": "Grid",
+        "single": "Single item",
+        "list": "Vertical list"
+      },
+      "wireframe": {
+        "hero_banner": "Hero",
+        "featured_products": "Products",
+        "category_grid": "Categories",
+        "statistics": "Stats",
+        "branches": "Branches",
+        "custom_content": "Content",
+        "product_by_attribute": "New items"
+      },
+      "variants": {
+        "classic": {
+          "name": "Classic",
+          "description": "Hero banner + featured products + category grid"
+        },
+        "modern": {
+          "name": "Modern",
+          "description": "Full-width hero + statistics + products + large categories"
+        },
+        "minimal": {
+          "name": "Minimal",
+          "description": "Clean grid layout with featured products and categories"
+        },
+        "boutique": {
+          "name": "Boutique",
+          "description": "Elegant slideshow with category focus and featured slider"
+        },
+        "marketplace": {
+          "name": "Marketplace",
+          "description": "Full-featured with hero, categories, products, stats and branches"
+        }
+      }
+    },
+    "ecommerceSettings": {
+      "toast": {
+        "unknownError": "Unknown error",
+        "loadError": "Failed to load ecommerce settings",
+        "deploySuccess": "Frontend deployed successfully! URL: {url}",
+        "deployFailed": "Deployment failed: {message}",
+        "deployError": "Failed to deploy frontend: {message}",
+        "deleteSuccess": "Deployment deleted successfully",
+        "deleteFailed": "Failed to delete deployment: {message}",
+        "domainRequired": "Please enter a domain name",
+        "domainAdded": "Domain {domain} added successfully! Please configure DNS records as shown below.",
+        "domainAddFailed": "Failed to add domain: {message}",
+        "domainRemoved": "Domain {domain} removed successfully",
+        "domainRemoveFailed": "Failed to remove domain: {message}",
+        "domainVerified": "Domain {domain} is now verified!",
+        "domainNotVerified": "Domain {domain} is not yet verified. Please ensure DNS records are configured correctly and try again in a few minutes.",
+        "domainVerifyFailed": "Failed to verify domain: {message}",
+        "saved": "Settings saved successfully!",
+        "saveFailed": "Failed to save settings. Please try again.",
+        "qsConnected": "Connected as {name}",
+        "qsAccount": "Quickshipper account",
+        "qsBalance": "balance: {balance}",
+        "qsNoCouriers": "no couriers configured yet",
+        "qsRejected": "Quickshipper rejected the request",
+        "qsTestFailed": "Test failed",
+        "copied": "Copied"
+      },
+      "page": {
+        "showSecret": "Show value",
+        "hideSecret": "Hide value",
+        "retry": "Try again",
+        "loadFailedBanner": "Couldn't load the saved settings. The form shows defaults; reload before saving.",
+        "copy": "Copy",
+        "openInNewTab": "Open in a new tab",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "unsaved": "You have unsaved changes",
+        "allSaved": "All changes saved"
+      },
+      "delivery": {
+        "title": "Delivery — Quickshipper",
+        "description": "Connect your Quickshipper account to dispatch couriers automatically when an order is placed. The storefront will replace static shipping methods with a live quote based on each order’s delivery address.",
+        "allowPickup": "Offer pickup at store",
+        "allowPickupHelp": "When on, customers can choose to collect the order at the store instead of using a courier. Pickup orders are free and can be paid in cash on collection. Uses the pickup address below.",
+        "enable": "Enable Quickshipper",
+        "enableHelp": "When on, the storefront fetches a real-time courier price + ETA at checkout instead of showing your manual shipping methods.",
+        "apiKey": "API key",
+        "keyOnFile": "On file",
+        "apiKeyKeep": "Leave blank to keep the existing key",
+        "apiKeyPaste": "Paste your Quickshipper API key",
+        "productionMode": "Production mode",
+        "productionModeHelp": "Off = Quickshipper sandbox, on = production billing.",
+        "pickupAddress": "Pickup address",
+        "pickupAddressHelp": "The courier will pick up every shipment from this location. Drop a pin on the map for accurate routing.",
+        "contactName": "Contact name",
+        "contactNamePlaceholder": "e.g. Shop manager",
+        "phone": "Phone",
+        "street": "Street",
+        "streetPlaceholder": "e.g. 12 Rustaveli Ave",
+        "city": "City",
+        "cityPlaceholder": "Tbilisi",
+        "extraInstructions": "Extra instructions",
+        "extraInstructionsPlaceholder": "Door code, floor, what to ring at",
+        "mapDropPin": "Click on the map to drop a pin",
+        "mapMovePin": "Click or drag to update the pin",
+        "mapLoading": "Loading map…",
+        "testing": "Testing…",
+        "testConnection": "Test connection",
+        "webhookSecret": "Webhook signing secret:"
+      },
+      "template": {
+        "title": "Storefront template",
+        "description": "Pick the visual design your storefront renders. The Voltage template ships with its own colour palette, density, radius and font controls.",
+        "classic": "Classic",
+        "classicBlurb": "Clean, neutral, shadcn-style. The current default.",
+        "voltage": "Voltage",
+        "voltageBlurb": "Bold electronics. Big display type, oversized cards, sticker badges.",
+        "colourPreset": "Colour preset",
+        "colourPresetHelp": "Drives the accent + secondary-accent pair across the entire storefront.",
+        "themes": {
+          "refurb": "Refurb",
+          "cobalt": "Cobalt",
+          "ember": "Ember",
+          "forest": "Forest",
+          "violet": "Violet",
+          "mono": "Mono",
+          "rose": "Rose"
+        },
+        "mode": "Mode",
+        "modeLight": "Light",
+        "modeDark": "Dark",
+        "density": "Density",
+        "densityCompact": "Compact",
+        "densityCozy": "Cozy",
+        "densityComfortable": "Comfy",
+        "radius": "Radius",
+        "radiusSharp": "Sharp",
+        "radiusSoft": "Soft",
+        "radiusRound": "Round",
+        "fontPair": "Font pair"
+      },
+      "marketing": {
+        "title": "Marketing — Google Ads",
+        "description": "Paste your Google Ads Tag ID to start tracking conversions. The storefront loads gtag.js on every page when set, and fires a purchase conversion event on order confirmation when both the Tag ID and conversion label are filled in.",
+        "adsTagId": "Google Ads Tag ID",
+        "adsTagIdHelp": "Find this in Google Ads → Admin → Tracking → Google Tag. Starts with <code>AW-</code>.",
+        "purchaseLabel": "Purchase conversion label",
+        "purchaseLabelHelp": "The label suffix from your <strong>Purchase</strong> conversion action. Example: if Google gave you <code>AW-18133924374/abcDEFghi123456789</code>, paste only <code>abcDEFghi123456789</code>.",
+        "ga4": "Google Analytics 4 Measurement ID",
+        "ga4Help": "GA4 measurement ID — drives the visitor / page-view dashboard at <link>analytics.google.com</link>. Find it in Analytics → Admin → Data Streams. Starts with <code>G-</code>. Independent of Google Ads — both can be set together.",
+        "clarity": "Microsoft Clarity",
+        "clarityHelp": "Paste the entire <code>{snippet}</code> tag from <link>clarity.microsoft.com</link> → Settings → Setup, or just the project ID (lowercase 10-char string like <code>p1q2r3s4t5</code>). Heatmaps + session recordings appear in the Clarity dashboard within minutes.",
+        "clarityPlaceholder": "Paste the Clarity tag (or just the project ID)",
+        "mapsKey": "Google Maps API key",
+        "mapsKeyHelp": "When set, the storefront’s checkout address pickers switch from the default OpenStreetMap to <strong>Google Maps + Places Autocomplete</strong> — visitors can search an address and the pin auto-drops on the map. Without a key, the existing OSM picker keeps working.",
+        "mapsHowTo": "How to get a Google Maps API key",
+        "mapsStep1": "Open <link>console.cloud.google.com</link> and create a new project (or pick an existing one).",
+        "mapsStep2": "In the search bar, find <strong>Google Maps Platform → APIs & Services → Library</strong>. Enable these three APIs: <strong>Maps JavaScript API</strong>, <strong>Places API</strong>, <strong>Geocoding API</strong>.",
+        "mapsStep3": "Set up <strong>Billing</strong> on the project. Google gives $200 of free Maps usage per month — enough for thousands of monthly visitors. A card is required even within the free tier.",
+        "mapsStep4": "Go to <strong>APIs & Services → Credentials → + Create Credentials → API key</strong>. Copy the key (starts with <code>AIzaSy…</code>).",
+        "mapsStep5": "Click the new key to edit. Under <strong>Application restrictions</strong> select <strong>HTTP referrers</strong> and add your storefront domains: <code>https://refurb.ge/*</code>, <code>https://*.ecommerce.echodesk.ge/*</code>. Under <strong>API restrictions</strong> limit it to the three APIs above.",
+        "mapsStep6": "Paste the key in the field above and save."
+      },
+      "deployment": {
+        "state": {
+          "pending": "Not deployed",
+          "deploying": "Deploying",
+          "deployed": "Deployed",
+          "failed": "Failed"
+        },
+        "deleteDeployment": "Delete deployment",
+        "deleteTitle": "Delete deployment",
+        "deleteDescription": "Are you sure you want to delete the frontend deployment? This will remove the Vercel project."
+      },
+      "customDomain": {
+        "remove": "Remove",
+        "removeTitle": "Remove domain",
+        "removeAria": "Remove {domain}",
+        "removeDescription": "Are you sure you want to remove {domain}?"
+      }
+    }
+  },
+  "ka": {
+    "shippingMethods": {
+      "free": "უფასო",
+      "freeOverShort": "უფასოა",
+      "editAria": "რედაქტირება: {name}",
+      "deleteAria": "წაშლა: {name}",
+      "table": {
+        "freeOver": "უფასოა თანხიდან",
+        "position": "პოზიცია"
+      },
+      "form": {
+        "sectionName": "სახელი და აღწერა",
+        "sectionPricing": "ფასი",
+        "sectionDelivery": "მიწოდება",
+        "priceHelp": "უფასო მიწოდებისთვის მიუთითეთ 0",
+        "positionHelp": "ნაკლები რიცხვი სიაში უფრო მაღლა ჩანს",
+        "isActiveHelp": "მომხმარებელს შეკვეთის გაფორმებისას შეუძლია ამ მეთოდის არჩევა"
+      }
+    },
+    "homepageBuilder": {
+      "emptyTitle": "სექციები ჯერ არ არის",
+      "sectionCount": "{count} სექცია",
+      "linkedToList": "დაკავშირებულია: {name}",
+      "itemListFallback": "ელემენტების სია #{id}",
+      "noItemListLinked": "ელემენტების სია არ არის დაკავშირებული",
+      "sectionFormDescription": "დააკონფიგურირეთ სექციის პარამეტრები და დააკავშირეთ ელემენტების სიასთან დინამიური კონტენტისთვის.",
+      "linkToItemList": "ელემენტების სიასთან დაკავშირება (არჩევითი)",
+      "selectItemList": "აირჩიეთ ელემენტების სია",
+      "noItemList": "სიის გარეშე",
+      "applying": "მიმდინარეობს…",
+      "a11y": {
+        "moveUp": "{name} — ზემოთ გადატანა",
+        "moveDown": "{name} — ქვემოთ გადატანა",
+        "toggleVisible": "{name} — მთავარ გვერდზე ჩვენება",
+        "edit": "რედაქტირება: {name}",
+        "delete": "წაშლა: {name}"
+      },
+      "form": {
+        "titleSection": "სათაური",
+        "layoutSection": "განლაგება",
+        "contentSection": "კონტენტი",
+        "contentHint": "ამ სექციაში ნაჩვენები ელემენტები",
+        "appearanceSection": "გარეგნობა",
+        "titleRequired": "შეიყვანეთ ინგლისური სათაური"
+      },
+      "sectionTypes": {
+        "hero_banner": "მთავარი ბანერი / სლაიდერი",
+        "featured_products": "რჩეული პროდუქტები",
+        "category_grid": "კატეგორიების ბადე",
+        "product_by_attribute": "პროდუქტები ატრიბუტით",
+        "statistics": "სტატისტიკა / მიღწევები",
+        "branches": "მაღაზიის ფილიალები / მისამართები",
+        "custom_content": "ელემენტების სიის კონტენტი"
+      },
+      "displayModes": {
+        "slider": "სლაიდერი / კარუსელი",
+        "grid": "ბადე",
+        "single": "ერთი ელემენტი",
+        "list": "ვერტიკალური სია"
+      },
+      "wireframe": {
+        "hero_banner": "ბანერი",
+        "featured_products": "პროდუქტები",
+        "category_grid": "კატეგორიები",
+        "statistics": "სტატისტიკა",
+        "branches": "ფილიალები",
+        "custom_content": "კონტენტი",
+        "product_by_attribute": "სიახლეები"
+      },
+      "variants": {
+        "classic": {
+          "name": "კლასიკური",
+          "description": "მთავარი ბანერი + რჩეული პროდუქტები + კატეგორიების ბადე"
+        },
+        "modern": {
+          "name": "თანამედროვე",
+          "description": "სრული სიგანის ბანერი + სტატისტიკა + პროდუქტები + დიდი კატეგორიები"
+        },
+        "minimal": {
+          "name": "მინიმალისტური",
+          "description": "სუფთა ბადე რჩეული პროდუქტებითა და კატეგორიებით"
+        },
+        "boutique": {
+          "name": "ბუტიკი",
+          "description": "ელეგანტური სლაიდშოუ, კატეგორიებზე აქცენტი და რჩეულების სლაიდერი"
+        },
+        "marketplace": {
+          "name": "მარკეტპლეისი",
+          "description": "სრული ნაკრები: ბანერი, კატეგორიები, პროდუქტები, სტატისტიკა და ფილიალები"
+        }
+      }
+    },
+    "ecommerceSettings": {
+      "toast": {
+        "unknownError": "უცნობი შეცდომა",
+        "loadError": "ელ-კომერციის პარამეტრები ვერ ჩაიტვირთა",
+        "deploySuccess": "ვიტრინა წარმატებით განთავსდა! მისამართი: {url}",
+        "deployFailed": "განთავსება ვერ მოხერხდა: {message}",
+        "deployError": "ვიტრინის განთავსება ვერ მოხერხდა: {message}",
+        "deleteSuccess": "განთავსება წაიშალა",
+        "deleteFailed": "განთავსების წაშლა ვერ მოხერხდა: {message}",
+        "domainRequired": "შეიყვანეთ დომენის სახელი",
+        "domainAdded": "დომენი {domain} დაემატა! დააკონფიგურირეთ ქვემოთ მოცემული DNS ჩანაწერები.",
+        "domainAddFailed": "დომენის დამატება ვერ მოხერხდა: {message}",
+        "domainRemoved": "დომენი {domain} წაიშალა",
+        "domainRemoveFailed": "დომენის წაშლა ვერ მოხერხდა: {message}",
+        "domainVerified": "დომენი {domain} დადასტურებულია!",
+        "domainNotVerified": "დომენი {domain} ჯერ არ არის დადასტურებული. შეამოწმეთ DNS ჩანაწერები და რამდენიმე წუთში სცადეთ ხელახლა.",
+        "domainVerifyFailed": "დომენის დადასტურება ვერ მოხერხდა: {message}",
+        "saved": "პარამეტრები შენახულია!",
+        "saveFailed": "პარამეტრები ვერ შეინახა. სცადეთ ხელახლა.",
+        "qsConnected": "დაკავშირებულია ანგარიშით: {name}",
+        "qsAccount": "Quickshipper-ის ანგარიში",
+        "qsBalance": "ბალანსი: {balance}",
+        "qsNoCouriers": "კურიერები ჯერ არ არის დაყენებული",
+        "qsRejected": "Quickshipper-მა მოთხოვნა უარყო",
+        "qsTestFailed": "შემოწმება ვერ მოხერხდა",
+        "copied": "დაკოპირდა"
+      },
+      "page": {
+        "showSecret": "მნიშვნელობის ჩვენება",
+        "hideSecret": "მნიშვნელობის დამალვა",
+        "retry": "ხელახლა ცდა",
+        "loadFailedBanner": "შენახული პარამეტრები ვერ ჩაიტვირთა. ფორმაში ნაგულისხმევი მნიშვნელობებია; შენახვამდე გადატვირთეთ გვერდი.",
+        "copy": "კოპირება",
+        "openInNewTab": "ახალ ჩანართში გახსნა",
+        "cancel": "გაუქმება",
+        "delete": "წაშლა",
+        "unsaved": "შეუნახავი ცვლილებები გაქვთ",
+        "allSaved": "ყველა ცვლილება შენახულია"
+      },
+      "delivery": {
+        "title": "მიწოდება — Quickshipper",
+        "description": "დააკავშირეთ Quickshipper-ის ანგარიში, რომ შეკვეთის გაფორმებისას კურიერი ავტომატურად გამოიძახოს. ვიტრინა მიწოდების ფიქსირებულ მეთოდებს ჩაანაცვლებს ფასით, რომელიც თითოეული შეკვეთის მისამართის მიხედვით ითვლება.",
+        "allowPickup": "მაღაზიიდან გატანა",
+        "allowPickupHelp": "ჩართვისას მომხმარებელს შეუძლია შეკვეთა მაღაზიიდან თვითონ წაიღოს კურიერის ნაცვლად. გატანა უფასოა და გადახდა ადგილზე ნაღდით შეიძლება. გამოიყენება ქვემოთ მითითებული მისამართი.",
+        "enable": "Quickshipper-ის ჩართვა",
+        "enableHelp": "ჩართვისას ვიტრინა შეკვეთის გაფორმებისას კურიერის მიმდინარე ფასსა და მიწოდების დროს აჩვენებს თქვენი ხელით დამატებული მეთოდების ნაცვლად.",
+        "apiKey": "API გასაღები",
+        "keyOnFile": "შენახულია",
+        "apiKeyKeep": "დატოვეთ ცარიელი არსებული გასაღების შესანარჩუნებლად",
+        "apiKeyPaste": "ჩასვით Quickshipper-ის API გასაღები",
+        "productionMode": "საწარმოო რეჟიმი",
+        "productionModeHelp": "გამორთული — სატესტო გარემო, ჩართული — რეალური ანგარიშსწორება.",
+        "pickupAddress": "აღების მისამართი",
+        "pickupAddressHelp": "კურიერი ყველა ამანათს ამ მისამართიდან აიღებს. ზუსტი მარშრუტისთვის მონიშნეთ წერტილი რუკაზე.",
+        "contactName": "საკონტაქტო პირი",
+        "contactNamePlaceholder": "მაგ. მაღაზიის მენეჯერი",
+        "phone": "ტელეფონი",
+        "street": "ქუჩა",
+        "streetPlaceholder": "მაგ. რუსთაველის გამზ. 12",
+        "city": "ქალაქი",
+        "cityPlaceholder": "თბილისი",
+        "extraInstructions": "დამატებითი მითითებები",
+        "extraInstructionsPlaceholder": "კარის კოდი, სართული, რომელ ზარს დარეკოს",
+        "mapDropPin": "დააწკაპუნეთ რუკაზე წერტილის მოსანიშნად",
+        "mapMovePin": "წერტილის შესაცვლელად დააწკაპუნეთ ან გადაათრიეთ",
+        "mapLoading": "რუკა იტვირთება…",
+        "testing": "მოწმდება…",
+        "testConnection": "კავშირის შემოწმება",
+        "webhookSecret": "ვებჰუკის ხელმოწერის საიდუმლო:"
+      },
+      "template": {
+        "title": "ვიტრინის შაბლონი",
+        "description": "აირჩიეთ ვიტრინის ვიზუალური დიზაინი. ვოლტაჟის შაბლონს აქვს საკუთარი ფერების პალიტრა, სიმჭიდროვის, კუთხეების და შრიფტის პარამეტრები.",
+        "classic": "კლასიკური",
+        "classicBlurb": "სუფთა, ნეიტრალური სტილი. ამჟამინდელი ნაგულისხმევი.",
+        "voltage": "ვოლტაჟი",
+        "voltageBlurb": "თამამი ელექტრონიკის სტილი: დიდი სათაურები, დიდი ბარათები, სტიკერის ნიშნები.",
+        "colourPreset": "ფერების ნაკრები",
+        "colourPresetHelp": "განსაზღვრავს ძირითად და დამატებით აქცენტის ფერს მთელ ვიტრინაზე.",
+        "themes": {
+          "refurb": "რეფურბი",
+          "cobalt": "კობალტი",
+          "ember": "ნაკვერჩხალი",
+          "forest": "ტყე",
+          "violet": "იისფერი",
+          "mono": "მონოქრომი",
+          "rose": "ვარდისფერი"
+        },
+        "mode": "რეჟიმი",
+        "modeLight": "ნათელი",
+        "modeDark": "მუქი",
+        "density": "სიმჭიდროვე",
+        "densityCompact": "კომპაქტური",
+        "densityCozy": "საშუალო",
+        "densityComfortable": "ფართო",
+        "radius": "კუთხეები",
+        "radiusSharp": "მკვეთრი",
+        "radiusSoft": "რბილი",
+        "radiusRound": "მომრგვალო",
+        "fontPair": "შრიფტების წყვილი"
+      },
+      "marketing": {
+        "title": "მარკეტინგი — Google Ads",
+        "description": "ჩასვით Google Ads-ის თეგის ID კონვერსიების აღრიცხვის დასაწყებად. მითითების შემთხვევაში ვიტრინა ყველა გვერდზე ტვირთავს gtag.js-ს, ხოლო შეკვეთის დადასტურებისას აგზავნის შესყიდვის კონვერსიის მოვლენას, თუ თეგის ID და კონვერსიის იარლიყი ორივე შევსებულია.",
+        "adsTagId": "Google Ads-ის თეგის ID",
+        "adsTagIdHelp": "იპოვით აქ: Google Ads → Admin → Tracking → Google Tag. იწყება <code>AW-</code>-ით.",
+        "purchaseLabel": "შესყიდვის კონვერსიის იარლიყი",
+        "purchaseLabelHelp": "იარლიყის ბოლო ნაწილი თქვენი <strong>Purchase</strong> კონვერსიის მოქმედებიდან. მაგალითად, თუ Google-მა მოგცათ <code>AW-18133924374/abcDEFghi123456789</code>, ჩასვით მხოლოდ <code>abcDEFghi123456789</code>.",
+        "ga4": "Google Analytics 4-ის გაზომვის ID",
+        "ga4Help": "GA4-ის გაზომვის ID — მისით მუშაობს ვიზიტორებისა და გვერდის ნახვების დაფა <link>analytics.google.com</link>-ზე. იპოვით აქ: Analytics → Admin → Data Streams. იწყება <code>G-</code>-ით. Google Ads-ისგან დამოუკიდებელია — ორივე შეიძლება ერთად იყოს მითითებული.",
+        "clarity": "Microsoft Clarity",
+        "clarityHelp": "ჩასვით მთლიანი <code>{snippet}</code> თეგი <link>clarity.microsoft.com</link>-იდან (Settings → Setup) ან მხოლოდ პროექტის ID (10-სიმბოლოიანი სტრიქონი პატარა ასოებით, მაგ. <code>p1q2r3s4t5</code>). სითბური რუკები და სესიების ჩანაწერები Clarity-ის დაფაზე რამდენიმე წუთში გამოჩნდება.",
+        "clarityPlaceholder": "ჩასვით Clarity-ის თეგი (ან მხოლოდ პროექტის ID)",
+        "mapsKey": "Google Maps-ის API გასაღები",
+        "mapsKeyHelp": "მითითების შემთხვევაში ვიტრინის მისამართის ამომრჩევი OpenStreetMap-ის ნაცვლად გამოიყენებს <strong>Google Maps-ს და Places-ის ავტოშევსებას</strong> — ვიზიტორს შეუძლია მისამართის ძებნა და წერტილი რუკაზე თავად დაჯდება. გასაღების გარეშე ჩვეულებრივი OSM ამომრჩევი იმუშავებს.",
+        "mapsHowTo": "როგორ მივიღო Google Maps-ის API გასაღები",
+        "mapsStep1": "გახსენით <link>console.cloud.google.com</link> და შექმენით ახალი პროექტი (ან აირჩიეთ არსებული).",
+        "mapsStep2": "საძიებო ველში მოძებნეთ <strong>Google Maps Platform → APIs & Services → Library</strong>. ჩართეთ სამი API: <strong>Maps JavaScript API</strong>, <strong>Places API</strong>, <strong>Geocoding API</strong>.",
+        "mapsStep3": "პროექტზე დააყენეთ <strong>Billing</strong>. Google ყოველთვიურად 200 დოლარის უფასო გამოყენებას იძლევა — ეს ათასობით ვიზიტორს ჰყოფნის. ბარათი უფასო ლიმიტის ფარგლებშიც სავალდებულოა.",
+        "mapsStep4": "გადადით <strong>APIs & Services → Credentials → + Create Credentials → API key</strong>. დააკოპირეთ გასაღები (იწყება <code>AIzaSy…</code>-ით).",
+        "mapsStep5": "დააწკაპუნეთ ახალ გასაღებზე. <strong>Application restrictions</strong>-ში აირჩიეთ <strong>HTTP referrers</strong> და დაამატეთ ვიტრინის დომენები: <code>https://refurb.ge/*</code>, <code>https://*.ecommerce.echodesk.ge/*</code>. <strong>API restrictions</strong>-ში დატოვეთ მხოლოდ ზემოთ ჩამოთვლილი სამი API.",
+        "mapsStep6": "ჩასვით გასაღები ზემოთ ველში და შეინახეთ."
+      },
+      "deployment": {
+        "state": {
+          "pending": "არ არის განთავსებული",
+          "deploying": "მიმდინარეობს განთავსება",
+          "deployed": "განთავსებულია",
+          "failed": "ვერ განთავსდა"
+        },
+        "deleteDeployment": "განთავსების წაშლა",
+        "deleteTitle": "განთავსების წაშლა",
+        "deleteDescription": "ნამდვილად გსურთ ვიტრინის განთავსების წაშლა? Vercel-ის პროექტი წაიშლება."
+      },
+      "customDomain": {
+        "remove": "წაშლა",
+        "removeTitle": "დომენის წაშლა",
+        "removeAria": "წაშლა: {domain}",
+        "removeDescription": "ნამდვილად გსურთ {domain}-ის წაშლა?"
+      }
+    }
+  }
+}
