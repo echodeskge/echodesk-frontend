@@ -15,7 +15,7 @@ import { useLeaveFeatures } from "../_lib/useLeaveFeatures"
 import { FeatureGate } from "../_components/FeatureGate"
 import { SubstituteRowsEditor } from "../_components/SubstituteRowsEditor"
 import { useLiteUsers } from "../_components/UserPicker"
-import { LeaveLoading, LeavePage, LeavePageHeader, SectionCard, leaveButton } from "../_components/ui"
+import { LeaveErrorState, LeaveLoading, LeavePage, LeavePageHeader, SectionCard, leaveButton } from "../_components/ui"
 
 const toRows = (items: SubstituteAssignment[]): SubstituteDraftRow[] =>
   [...items]
@@ -38,19 +38,26 @@ function MySubstitutesEditor({ selfId }: { selfId?: number }) {
   const [saved, setSaved] = useState<string>("[]")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  // A failed load must not show an empty editor: saving it would replace
+  // (PUT .../replace/) the user's real list with whatever they typed.
+  const [loadError, setLoadError] = useState<unknown>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
+    setLoading(true)
     fetchMySubstitutes()
       .then((items) => {
         const initial = toRows(items)
         setRows(initial)
         setSaved(JSON.stringify(initial))
+        setLoadError(null)
       })
-      .catch((error) =>
+      .catch((error) => {
+        setLoadError(error)
         toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
-      )
+      })
       .finally(() => setLoading(false))
-  }, [t])
+  }, [t, attempt])
 
   const dirty = JSON.stringify(rows) !== saved
 
@@ -79,6 +86,10 @@ function MySubstitutesEditor({ selfId }: { selfId?: number }) {
       <LeavePageHeader icon={UserCheck} title={t("hr.substitutes.title")} description={t("hr.substitutes.description")} />
       {loading ? (
         <LeaveLoading />
+      ) : loadError ? (
+        <div className="rounded-[10px] border bg-card">
+          <LeaveErrorState error={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+        </div>
       ) : (
         <SectionCard
           title={t("hr.substitutes.listTitle")}
