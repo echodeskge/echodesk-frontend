@@ -189,6 +189,8 @@ describe("Payroll page (LV-03)", () => {
     expect(rows).toHaveLength(2)
     expect(rows[1].className).toContain("bg-muted/40")
     expect(within(rows[1]).getByText("Total (GEL)")).toBeTruthy()
+    // Phones keep every figure (paid leave, unpaid, base pay...): no cell is hidden.
+    expect(within(rows[0]).getAllByRole("cell").filter((c) => c.classList.contains("hidden"))).toHaveLength(0)
     expect(screen.getByTestId("leave-header-crumb").textContent).toBe("Report")
     expect(screen.getByTestId("payroll-draft-pill").textContent).toBe("Not locked")
     fireEvent.click(within(screen.getByTestId("payroll-tabs")).getByRole("radio", { name: "Salaries" }))

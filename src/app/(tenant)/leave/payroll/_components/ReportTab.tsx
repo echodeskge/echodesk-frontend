@@ -186,7 +186,8 @@ export function ReportTab({ isStaff, period }: { isStaff: boolean; period: strin
         header: headerCell(t(`hr.payroll.columns.${key}`)),
         width: "84px",
         align: "end",
-        mobile: key === "scheduled_days" || key === "worked_to_date" ? "meta" : "hidden",
+        // Every figure stays visible on phones (the old table scrolled sideways to show them all).
+        mobile: "meta",
         cell: (l) =>
           l.kind === "row" ? (
             <>
@@ -203,7 +204,7 @@ export function ReportTab({ isStaff, period }: { isStaff: boolean; period: strin
         header: headerCell(t(`hr.payroll.columns.${key}`)),
         width: "120px",
         align: "end",
-        mobile: key === headline ? "end" : key === "substitution_pay" ? "meta" : "hidden",
+        mobile: key === headline ? "end" : "meta",
         cell: (l) => {
           if (l.kind === "total") {
             return (
