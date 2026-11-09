@@ -15,13 +15,6 @@ import { nextSort, sortClients, type ClientSort, type ClientSortKey } from "../_
 import { getClientColumns } from "./clients-table-columns"
 import { ClientsTableToolbar } from "./clients-table-toolbar"
 
-/**
- * Keeps the row ends (status, actions) and the pager clear of the floating
- * team-chat / phone launchers (bottom right, `--fab-safe-right`): rows and the
- * header pad their end from 768px; on phones the list gets bottom room so the
- * last row can scroll above the launchers.
- */
-const FAB_CLEAR = "md:[&_[role=row]]:pe-[var(--fab-safe-right)] max-md:[&_[role=rowgroup]]:pb-24"
 
 interface ClientsTableProps {
   data: EcommerceClientList[]
@@ -98,7 +91,6 @@ export function ClientsTable({
         onRetry={onRetry}
         onRowClick={(c) => router.push(`/ecommerce/clients/${c.id}`)}
         testId="clients-table"
-          className={FAB_CLEAR}
         empty={
           filtered ? (
             <EcEmptyState
@@ -123,7 +115,6 @@ export function ClientsTable({
               totalCount={totalCount}
               onPageChange={onPageChange}
               onPageSizeChange={onPageSizeChange}
-              className="pe-11"
             />
           ) : undefined
         }

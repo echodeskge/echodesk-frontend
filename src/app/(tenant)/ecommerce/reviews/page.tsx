@@ -35,13 +35,6 @@ import {
 } from "../_components/ui";
 import { getReviewColumns, type ReviewFilter } from "./_components/review-columns";
 
-/**
- * Keeps the row ends (status, actions) and the pager clear of the floating
- * team-chat / phone launchers (bottom right, `--fab-safe-right`): rows and the
- * header pad their end from 768px; on phones the list gets bottom room so the
- * last row can scroll above the launchers.
- */
-const FAB_CLEAR = "md:[&_[role=row]]:pe-[var(--fab-safe-right)] max-md:[&_[role=rowgroup]]:pb-24"
 
 export default function ReviewsPage() {
   const t = useTranslations("reviews");
@@ -185,7 +178,6 @@ export default function ReviewsPage() {
           error={loaded ? undefined : error}
           onRetry={fetchReviews}
           testId="reviews-table"
-          className={FAB_CLEAR}
           empty={
             <EcEmptyState
               icon={MessageSquare}

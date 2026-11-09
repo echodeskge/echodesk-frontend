@@ -49,13 +49,6 @@ import { getPromoColumns } from "./_components/promo-columns";
 type StatusFilter = "all" | "active" | "inactive" | "expired";
 type TypeFilter = "all" | "percentage" | "fixed";
 
-/**
- * Keeps the row ends (status, actions) and the pager clear of the floating
- * team-chat / phone launchers (bottom right, `--fab-safe-right`): rows and the
- * header pad their end from 768px; on phones the list gets bottom room so the
- * last row can scroll above the launchers.
- */
-const FAB_CLEAR = "md:[&_[role=row]]:pe-[var(--fab-safe-right)] max-md:[&_[role=rowgroup]]:pb-24"
 
 const EMPTY_FORM: PromoCodeRequest = {
   code: "",
@@ -275,7 +268,6 @@ export default function PromoCodesPage() {
           onRetry={fetchCodes}
           onRowClick={handleEdit}
           testId="promo-table"
-          className={FAB_CLEAR}
           empty={
             filtered ? (
               <EcEmptyState

@@ -135,9 +135,6 @@ export function ProductsTable({
             selectedCount={selected.size}
             onPageChange={onPageChange}
             onPageSizeChange={onPageSizeChange}
-            // The pinned footer sits under the app's floating call / team-chat
-            // buttons (bottom right): keep the page buttons clear of them.
-            className="pe-14"
           />
         ) : undefined
       }

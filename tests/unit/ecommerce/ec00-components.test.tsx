@@ -9,6 +9,7 @@ import {
   EcErrorState,
   EcPagination,
   EcTable,
+  EC_FAB_CLEAR,
   EcommerceHeaderBridge,
   FormField,
   FormSection,
@@ -57,6 +58,15 @@ describe("EcTable", () => {
     expect(first).toHaveTextContent("₾356.40")
     expect(first).toHaveTextContent("Delivered")
     expect(second).toHaveTextContent("₾1,200.00")
+  })
+
+  it("keeps full-height tables clear of the floating launchers, but not card tables", () => {
+    renderEc(<EcTable ariaLabel="Orders" columns={columns} rows={rows} rowKey={(r) => r.id} testId="t" className="extra" />)
+    expect(screen.getByTestId("t").className).toContain(EC_FAB_CLEAR)
+    expect(screen.getByTestId("t").className).toContain("extra")
+    expect(EC_FAB_CLEAR).toContain("[&_[data-testid=ec-pagination]]:pe-[var(--fab-safe-right)]")
+    renderEc(<EcTable ariaLabel="Cards" variant="card" columns={columns} rows={rows} rowKey={(r) => r.id} testId="c" />)
+    expect(screen.getByTestId("c").className).not.toContain("fab-safe")
   })
 
   it("shows the skeleton while loading, the empty node, and a translated error with retry", () => {

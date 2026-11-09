@@ -9,7 +9,7 @@ export { EcommerceHeaderBridge } from "./header-bridge"
 export type { EcHeaderAction, EcommerceHeaderBridgeProps } from "./header-bridge"
 export { EcShell, EcPage, EcPageHeader, EcBanner } from "./page"
 export type { EcPageProps, EcPageWidth } from "./page"
-export { EcTable } from "./data-table"
+export { EcTable, EC_FAB_CLEAR } from "./data-table"
 export type { EcColumn, EcTableProps } from "./data-table"
 export { EcEmptyState, EcErrorState, EcLoading, useEcErrorLabels } from "./states"
 export {
