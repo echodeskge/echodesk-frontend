@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
 import {
-  CheckCircle2,
+  ArrowDown,
+  ArrowUp,
+  Check,
   Copy,
   Loader2,
   Pencil,
@@ -14,19 +16,7 @@ import {
   Trash2,
   Undo2,
 } from "lucide-react"
-import { getApiErrorMessage } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { cn, getApiErrorMessage } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -36,16 +26,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+import { formatDateTime } from "@/app/(tenant)/tickets/_lib/format"
 import {
   approveKpi,
   copyPreviousKpis,
@@ -60,44 +42,34 @@ import {
   type KpiGoal,
   type KpiScope,
 } from "../_lib/hr-api"
-import {
-  currentPeriod,
-  formatPercent,
-  formatPeriod,
-  kpiProgressWidth,
-  kpiStatusVariant,
-  kpiTone,
-  type KpiTone,
-} from "../_lib/hr-utils"
+import { currentPeriod, formatPercent, formatPeriod } from "../_lib/hr-utils"
 import { deepLinkId, formatKpiValue, isValidKpiNumber, summarizeKpis } from "../_lib/kpi-utils"
 import { useLeaveFeatures } from "../_lib/useLeaveFeatures"
 import { FeatureGate } from "../_components/FeatureGate"
 import { MonthPicker } from "../_components/MonthPicker"
 import { UserPicker, useLiteUsers } from "../_components/UserPicker"
-
-const TONE_CLASS: Record<KpiTone, string> = {
-  good: "bg-green-500",
-  warn: "bg-amber-500",
-  bad: "bg-red-500",
-  none: "bg-muted-foreground/30",
-}
+import {
+  LeaveEmptyState,
+  LeaveHeaderBridge,
+  LeavePage,
+  LeaveTable,
+  LeaveToolbar,
+  PersonCell,
+  Segmented,
+  StatGrid,
+  TonePill,
+  kpiStatusTone,
+  leaveButton,
+  type LeaveColumn,
+} from "../_components/ui"
+import { kpiActionsWidth, kpiMetShare } from "../_lib/lv03-utils"
+import { KpiProgress } from "./_components/kpi-progress"
 
 const HISTORY_ACTIONS = ["created", "target_changed", "submitted", "approved", "returned", "deleted"]
 
-function KpiProgress({ percent }: { percent: string | null }) {
-  const width = kpiProgressWidth(percent)
-  return (
-    <div className="flex items-center gap-2 min-w-[120px]">
-      <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-muted">
-        <div
-          className={cn("h-full rounded-full transition-all", TONE_CLASS[kpiTone(percent)])}
-          style={{ width: `${width}%` }}
-        />
-      </div>
-      <span className="text-xs tabular-nums w-12 text-right">{formatPercent(percent)}</span>
-    </div>
-  )
-}
+/** Dialog form styles (LV-03): 13px labels, 34px inputs. */
+const LABEL = "text-[13px] font-medium"
+const INPUT = "h-[34px] text-[13px]"
 
 interface TargetForm {
   employee: number | null
@@ -109,6 +81,27 @@ interface TargetForm {
 
 const EMPTY_TARGET: TargetForm = { employee: null, title: "", target: "", unit: "", direction: "higher" }
 
+function Field({ label, htmlFor, children }: { label: React.ReactNode; htmlFor?: string; children: React.ReactNode }) {
+  return (
+    <div className="grid gap-1.5">
+      <label htmlFor={htmlFor} className={LABEL}>
+        {label}
+      </label>
+      {children}
+    </div>
+  )
+}
+
+/** Quoted note block (employee note / manager feedback). */
+function NoteBlock({ label, children, bordered }: { label: string; children: React.ReactNode; bordered?: boolean }) {
+  return (
+    <div className={cn("rounded-md px-3 py-2.5 text-[13px]", bordered ? "border" : "bg-muted")}>
+      <div className="mb-1 text-[11px] text-muted-foreground">{label}</div>
+      <p className="whitespace-pre-wrap break-words">{children}</p>
+    </div>
+  )
+}
+
 export default function KpiPage() {
   const t = useTranslations("leave")
   const locale = useLocale()
@@ -118,6 +111,7 @@ export default function KpiPage() {
   const [period, setPeriod] = useState(currentPeriod())
   const [goals, setGoals] = useState<KpiGoal[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
 
   // Dialog state
@@ -143,10 +137,12 @@ export default function KpiPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       setGoals(await fetchKpis({ scope, period }))
     } catch (error) {
       setGoals([])
+      setLoadError(error)
       toast.error(t("shared.loadFailed"), { description: getApiErrorMessage(error) || undefined })
     } finally {
       setLoading(false)
@@ -315,229 +311,307 @@ export default function KpiPage() {
 
   const summary = summarizeKpis(goals)
   const showEmployee = scope !== "mine"
+  const periodLabel = formatPeriod(period, locale)
+  const directionLabel = (d: KpiDirection) => (d === "higher" ? t("hr.kpi.directionHigher") : t("hr.kpi.directionLower"))
 
-  const rowActions = (goal: KpiGoal) => (
-    <div className="flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()}>
+  const rowActions = (goal: KpiGoal, placement: "row" | "dialog" = "row") => (
+    <div className={cn("flex flex-wrap items-center gap-1.5", placement === "row" && "justify-end")}>
       {goal.can_submit && (
-        <Button size="sm" variant="outline" disabled={busy} onClick={() => openSubmit(goal)}>
-          <Send className="h-4 w-4 mr-1" />
+        <button type="button" className={leaveButton.outlineSm} disabled={busy} onClick={() => openSubmit(goal)}>
+          <Send className="h-3.5 w-3.5" aria-hidden />
           {goal.actual !== null ? t("hr.kpi.resubmit") : t("hr.kpi.submitResult")}
-        </Button>
+        </button>
       )}
       {goal.can_review && (
         <>
-          <Button size="sm" disabled={busy} onClick={() => openReview(goal, "approve")}>
-            <CheckCircle2 className="h-4 w-4 mr-1" />
+          <button type="button" className={leaveButton.primarySm} disabled={busy} onClick={() => openReview(goal, "approve")}>
+            <Check className="h-3.5 w-3.5" aria-hidden />
             {t("hr.kpi.approve")}
-          </Button>
-          <Button size="sm" variant="outline" disabled={busy} onClick={() => openReview(goal, "return")}>
-            <Undo2 className="h-4 w-4 mr-1" />
+          </button>
+          <button type="button" className={leaveButton.dangerSm} disabled={busy} onClick={() => openReview(goal, "return")}>
+            <Undo2 className="h-3.5 w-3.5" aria-hidden />
             {t("hr.kpi.return")}
-          </Button>
+          </button>
         </>
       )}
       {goal.can_edit_target && (
-        <Button size="icon" variant="ghost" disabled={busy} aria-label={t("hr.common.edit")} onClick={() => openEdit(goal)}>
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <button
+          type="button"
+          className={leaveButton.ghostIconSm}
+          disabled={busy}
+          aria-label={t("hr.common.edit")}
+          title={t("hr.common.edit")}
+          onClick={() => openEdit(goal)}
+        >
+          <Pencil className="h-3.5 w-3.5" aria-hidden />
+        </button>
       )}
       {canDelete(goal) && (
-        <Button size="icon" variant="ghost" disabled={busy} aria-label={t("hr.common.delete")} onClick={() => handleDelete(goal)}>
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
+        <button
+          type="button"
+          className={cn(leaveButton.ghostIconSm, "hover:bg-destructive/10 hover:text-destructive")}
+          disabled={busy}
+          aria-label={t("hr.common.delete")}
+          title={t("hr.common.delete")}
+          onClick={() => handleDelete(goal)}
+        >
+          <Trash2 className="h-3.5 w-3.5" aria-hidden />
+        </button>
       )}
     </div>
   )
 
+  const columns: LeaveColumn<KpiGoal>[] = [
+    ...(showEmployee
+      ? [
+          {
+            id: "employee",
+            header: t("shared.employee"),
+            width: "minmax(140px,1fr)",
+            mobile: "title" as const,
+            cell: (g: KpiGoal) => <PersonCell name={g.employee_name} />,
+          },
+        ]
+      : []),
+    {
+      id: "goal",
+      header: t("hr.kpi.goal"),
+      width: "minmax(160px,1.6fr)",
+      mobile: showEmployee ? "meta" : "title",
+      cell: (g) => {
+        const Arrow = g.direction === "higher" ? ArrowUp : ArrowDown
+        return (
+          <span className="flex min-w-0 items-center gap-1.5" title={`${g.title} · ${directionLabel(g.direction)}`}>
+            <span className={cn("truncate", !showEmployee && "font-medium text-foreground")}>{g.title}</span>
+            <Arrow className="h-3 w-3 shrink-0 text-muted-foreground" aria-label={directionLabel(g.direction)} />
+          </span>
+        )
+      },
+    },
+    {
+      id: "result",
+      header: `${t("hr.kpi.actual")} / ${t("hr.kpi.target")}`,
+      width: "minmax(120px,0.8fr)",
+      align: "end",
+      mobile: "meta",
+      cell: (g) => (
+        <span className="truncate tabular-nums">
+          <span className={g.actual === null ? "text-muted-foreground" : undefined}>{formatKpiValue(g.actual, "")}</span>
+          <span className="text-muted-foreground"> / {formatKpiValue(g.target, g.unit)}</span>
+        </span>
+      ),
+    },
+    {
+      id: "progress",
+      header: t("hr.kpi.progress"),
+      width: "150px",
+      mobile: "meta",
+      cell: (g) => <KpiProgress percent={g.percent} className="w-[120px] @3xl:w-full" />,
+    },
+    {
+      id: "status",
+      header: t("shared.statusLabel"),
+      width: "136px",
+      mobile: "end",
+      cell: (g) => (
+        <TonePill tone={kpiStatusTone(g.status)} dot>
+          {t(`hr.kpi.status.${g.status}`)}
+        </TonePill>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      width: kpiActionsWidth(goals, canDelete, locale),
+      align: "end",
+      mobile: "actions",
+      cell: (g) => rowActions(g),
+    },
+  ]
+
+  const scopeOptions = [
+    { value: "mine" as KpiScope, label: t("hr.kpi.tabs.mine") },
+    ...(isLeaveManager ? [{ value: "team" as KpiScope, label: t("hr.kpi.tabs.team") }] : []),
+    ...(isStaff ? [{ value: "all" as KpiScope, label: t("hr.kpi.tabs.all") }] : []),
+  ]
+
   return (
     <FeatureGate loaded={loaded} allowed={enabled}>
-      <div className="p-6 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{t("hr.kpi.title")}</h1>
-            <p className="text-muted-foreground mt-1">{t("hr.kpi.description")}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <MonthPicker value={period} onChange={setPeriod} />
-            {isLeaveManager && (
-              <>
-                <Button variant="outline" disabled={busy} onClick={handleCopy}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  {t("hr.kpi.copyLastMonth")}
-                </Button>
-                <Button onClick={openCreate}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("hr.kpi.newTarget")}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+      <LeaveHeaderBridge
+        sub={periodLabel}
+        primary={isLeaveManager ? { label: t("hr.kpi.newTarget"), icon: Plus, onClick: openCreate, testId: "kpi-new-target" } : null}
+      />
+      <LeavePage testId="kpi-page">
+        <LeaveToolbar inset>
+          <MonthPicker value={period} onChange={setPeriod} />
+          {scopeOptions.length > 1 && (
+            <Segmented
+              ariaLabel={t("hr.kpi.scopeLabel")}
+              value={scope}
+              onChange={setScope}
+              options={scopeOptions}
+              testId="kpi-scope"
+            />
+          )}
+          {isLeaveManager && (
+            <button
+              type="button"
+              className={cn(leaveButton.outlineSm, "ms-auto")}
+              disabled={busy}
+              onClick={handleCopy}
+              data-testid="kpi-copy-last-month"
+            >
+              <Copy className="h-3.5 w-3.5" aria-hidden />
+              {t("hr.kpi.copyLastMonth")}
+            </button>
+          )}
+        </LeaveToolbar>
 
-        <Tabs value={scope} onValueChange={(v) => setScope(v as KpiScope)}>
-          <TabsList>
-            <TabsTrigger value="mine">{t("hr.kpi.tabs.mine")}</TabsTrigger>
-            {isLeaveManager && <TabsTrigger value="team">{t("hr.kpi.tabs.team")}</TabsTrigger>}
-            {isStaff && <TabsTrigger value="all">{t("hr.kpi.tabs.all")}</TabsTrigger>}
-          </TabsList>
-        </Tabs>
+        <StatGrid
+          loading={loading}
+          testId="kpi-stats"
+          items={[
+            { key: "total", label: t("hr.kpi.stats.goals"), value: summary.total },
+            { key: "pending", label: t("hr.kpi.status.pending"), value: summary.pending, hintTone: "warning" },
+            { key: "approved", label: t("hr.kpi.status.approved"), value: summary.approved },
+            {
+              key: "met",
+              label: t("hr.kpi.stats.met"),
+              value: summary.met,
+              hint: summary.total > 0 ? t("hr.kpi.stats.metHint", { percent: kpiMetShare(summary) }) : undefined,
+              hintTone: "success",
+            },
+          ]}
+        />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{formatPeriod(period, locale)}</CardTitle>
-            <CardDescription>
-              {t("hr.kpi.summary", {
-                total: summary.total,
-                approved: summary.approved,
-                pending: summary.pending,
-                met: summary.met,
-              })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center h-40">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : goals.length === 0 ? (
-              <div className="text-center py-12">
-                <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">{t("hr.kpi.emptyTitle")}</h3>
-                <p className="text-muted-foreground">
-                  {scope === "mine" ? t("hr.kpi.emptyMine") : t("hr.kpi.emptyTeam")}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {showEmployee && <TableHead>{t("shared.employee")}</TableHead>}
-                      <TableHead>{t("hr.kpi.goal")}</TableHead>
-                      <TableHead>{t("hr.kpi.target")}</TableHead>
-                      <TableHead>{t("hr.kpi.actual")}</TableHead>
-                      <TableHead>{t("hr.kpi.progress")}</TableHead>
-                      <TableHead>{t("shared.statusLabel")}</TableHead>
-                      <TableHead>{t("shared.actions")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {goals.map((goal) => (
-                      <TableRow
-                        key={goal.id}
-                        className="cursor-pointer"
-                        onClick={() => openDetail(goal.id)}
-                      >
-                        {showEmployee && <TableCell className="font-medium">{goal.employee_name}</TableCell>}
-                        <TableCell>
-                          <div className="font-medium">{goal.title}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {goal.direction === "higher" ? t("hr.kpi.directionHigher") : t("hr.kpi.directionLower")}
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">{formatKpiValue(goal.target, goal.unit)}</TableCell>
-                        <TableCell className="whitespace-nowrap">{formatKpiValue(goal.actual, goal.unit)}</TableCell>
-                        <TableCell>
-                          <KpiProgress percent={goal.percent} />
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={kpiStatusVariant(goal.status)}>{t(`hr.kpi.status.${goal.status}`)}</Badge>
-                        </TableCell>
-                        <TableCell>{rowActions(goal)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+        <LeaveTable
+          variant="card"
+          ariaLabel={t("hr.kpi.title")}
+          testId="kpi-table"
+          rowTestId="kpi-row"
+          columns={columns}
+          rows={loading ? undefined : goals}
+          rowKey={(g) => g.id}
+          onRowClick={(g) => openDetail(g.id)}
+          error={loadError}
+          onRetry={load}
+          skeletonRows={4}
+          empty={
+            <LeaveEmptyState
+              icon={Target}
+              title={t("hr.kpi.emptyTitle")}
+              description={scope === "mine" ? t("hr.kpi.emptyMine") : t("hr.kpi.emptyTeam")}
+              action={
+                isLeaveManager && scope !== "mine" ? (
+                  <button type="button" className={leaveButton.primary} onClick={openCreate}>
+                    <Plus className="h-3.5 w-3.5" aria-hidden />
+                    {t("hr.kpi.newTarget")}
+                  </button>
+                ) : undefined
+              }
+            />
+          }
+          footer={
+            !loading && !loadError && goals.length > 0 ? (
+              <span className="truncate">
+                {t("hr.kpi.summary", {
+                  total: summary.total,
+                  approved: summary.approved,
+                  pending: summary.pending,
+                  met: summary.met,
+                })}
+              </span>
+            ) : undefined
+          }
+        />
+      </LeavePage>
 
       {/* Create / edit target */}
       <Dialog open={targetOpen} onOpenChange={setTargetOpen}>
         <DialogContent className="sm:max-w-[500px]">
-          <form onSubmit={saveTarget}>
+          <form onSubmit={saveTarget} className="grid gap-4">
             <DialogHeader>
-              <DialogTitle>{editing ? t("hr.kpi.editTarget") : t("hr.kpi.newTarget")}</DialogTitle>
-              <DialogDescription>
-                {editing ? t("hr.kpi.editTargetHint") : t("hr.kpi.newTargetHint", { month: formatPeriod(period, locale) })}
+              <DialogTitle className="text-base">{editing ? t("hr.kpi.editTarget") : t("hr.kpi.newTarget")}</DialogTitle>
+              <DialogDescription className="text-[13px]">
+                {editing ? t("hr.kpi.editTargetHint") : t("hr.kpi.newTargetHint", { month: periodLabel })}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>{t("shared.employee")}</Label>
+            <div className="grid gap-4">
+              <Field label={t("shared.employee")}>
                 {editing ? (
-                  <Input value={editing.employee_name} disabled />
+                  <Input className={INPUT} value={editing.employee_name} disabled />
                 ) : (
                   <UserPicker
                     users={employeeOptions}
                     value={targetForm.employee}
                     onChange={(id) => setTargetForm({ ...targetForm, employee: id })}
+                    className="h-[34px] px-3 text-[13px]"
                   />
                 )}
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="kpi-title">{t("hr.kpi.goal")}</Label>
+              </Field>
+              <Field label={t("hr.kpi.goal")} htmlFor="kpi-title">
                 <Input
                   id="kpi-title"
+                  className={INPUT}
                   value={targetForm.title}
                   maxLength={200}
                   placeholder={t("hr.kpi.goalPlaceholder")}
                   onChange={(e) => setTargetForm({ ...targetForm, title: e.target.value })}
                   required
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="kpi-target">{t("hr.kpi.target")}</Label>
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("hr.kpi.target")} htmlFor="kpi-target">
                   <Input
                     id="kpi-target"
+                    className={cn(INPUT, "tabular-nums")}
                     inputMode="decimal"
                     value={targetForm.target}
                     onChange={(e) => setTargetForm({ ...targetForm, target: e.target.value })}
                     required
                   />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="kpi-unit">{t("hr.kpi.unit")}</Label>
+                </Field>
+                <Field label={t("hr.kpi.unit")} htmlFor="kpi-unit">
                   <Input
                     id="kpi-unit"
+                    className={INPUT}
                     value={targetForm.unit}
                     maxLength={30}
                     placeholder={t("hr.kpi.unitPlaceholder")}
                     onChange={(e) => setTargetForm({ ...targetForm, unit: e.target.value })}
                     required
                   />
-                </div>
+                </Field>
               </div>
-              <div className="grid gap-2">
-                <Label>{t("hr.kpi.direction")}</Label>
-                <Select
+              <div className="grid gap-1.5">
+                <span className={LABEL}>{t("hr.kpi.direction")}</span>
+                <Segmented
+                  size="md"
+                  stretch
+                  ariaLabel={t("hr.kpi.direction")}
                   value={targetForm.direction}
-                  onValueChange={(v) => setTargetForm({ ...targetForm, direction: v as KpiDirection })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="higher">{t("hr.kpi.directionHigher")}</SelectItem>
-                    <SelectItem value="lower">{t("hr.kpi.directionLower")}</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(v) => setTargetForm({ ...targetForm, direction: v })}
+                  options={[
+                    { value: "higher", label: t("hr.kpi.directionHigher"), icon: ArrowUp },
+                    { value: "lower", label: t("hr.kpi.directionLower"), icon: ArrowDown },
+                  ]}
+                  testId="kpi-direction"
+                />
               </div>
               {editing && editing.actual !== null && (
-                <p className="text-sm text-amber-600">{t("hr.kpi.editResetsResult")}</p>
+                <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  {t("hr.kpi.editResetsResult")}
+                </p>
               )}
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setTargetOpen(false)}>
+            <DialogFooter className="gap-2">
+              <button type="button" className={leaveButton.outline} onClick={() => setTargetOpen(false)}>
                 {t("hr.common.cancel")}
-              </Button>
-              <Button type="submit" disabled={busy}>
-                {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              </button>
+              <button type="submit" className={leaveButton.primary} disabled={busy}>
+                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                 {t("hr.common.save")}
-              </Button>
+              </button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -546,45 +620,51 @@ export default function KpiPage() {
       {/* Submit result */}
       <Dialog open={!!submitGoal} onOpenChange={(o) => !o && setSubmitGoal(null)}>
         <DialogContent className="sm:max-w-[460px]">
-          <form onSubmit={saveSubmit}>
+          <form onSubmit={saveSubmit} className="grid gap-4">
             <DialogHeader>
-              <DialogTitle>{t("hr.kpi.submitResult")}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-base">{t("hr.kpi.submitResult")}</DialogTitle>
+              <DialogDescription className="text-[13px]">
                 {submitGoal &&
                   `${submitGoal.title} — ${t("hr.kpi.target")}: ${formatKpiValue(submitGoal.target, submitGoal.unit)}`}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="kpi-actual">
-                  {t("hr.kpi.actual")} {submitGoal?.unit ? `(${submitGoal.unit})` : ""}
-                </Label>
+            <div className="grid gap-4">
+              <Field
+                htmlFor="kpi-actual"
+                label={
+                  <>
+                    {t("hr.kpi.actual")}
+                    {submitGoal?.unit ? <span className="font-normal text-muted-foreground"> ({submitGoal.unit})</span> : null}
+                  </>
+                }
+              >
                 <Input
                   id="kpi-actual"
+                  className={cn(INPUT, "tabular-nums")}
                   inputMode="decimal"
                   value={submitForm.actual}
                   onChange={(e) => setSubmitForm({ ...submitForm, actual: e.target.value })}
                   required
                 />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="kpi-note">{t("hr.kpi.note")}</Label>
+              </Field>
+              <Field label={t("hr.kpi.note")} htmlFor="kpi-note">
                 <Textarea
                   id="kpi-note"
                   rows={3}
+                  className="text-[13px]"
                   value={submitForm.note}
                   onChange={(e) => setSubmitForm({ ...submitForm, note: e.target.value })}
                 />
-              </div>
+              </Field>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setSubmitGoal(null)}>
+            <DialogFooter className="gap-2">
+              <button type="button" className={leaveButton.outline} onClick={() => setSubmitGoal(null)}>
                 {t("hr.common.cancel")}
-              </Button>
-              <Button type="submit" disabled={busy}>
-                {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              </button>
+              <button type="submit" className={leaveButton.primary} disabled={busy}>
+                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                 {t("hr.kpi.submit")}
-              </Button>
+              </button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -593,51 +673,62 @@ export default function KpiPage() {
       {/* Approve / return */}
       <Dialog open={!!reviewGoal} onOpenChange={(o) => !o && setReviewGoal(null)}>
         <DialogContent className="sm:max-w-[460px]">
-          <form onSubmit={saveReview}>
+          <form onSubmit={saveReview} className="grid gap-4">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-base">
                 {reviewDecision === "approve" ? t("hr.kpi.approveTitle") : t("hr.kpi.returnTitle")}
               </DialogTitle>
-              <DialogDescription>
-                {reviewGoal &&
-                  `${reviewGoal.employee_name} · ${reviewGoal.title}: ${formatKpiValue(reviewGoal.actual, reviewGoal.unit)} / ${formatKpiValue(reviewGoal.target, reviewGoal.unit)} (${formatPercent(reviewGoal.percent)})`}
+              <DialogDescription className="text-[13px]">
+                {reviewGoal && `${reviewGoal.employee_name} · ${reviewGoal.title}`}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              {reviewGoal?.employee_note && (
-                <div className="rounded-md bg-muted p-3 text-sm">
-                  <div className="text-xs text-muted-foreground mb-1">{t("hr.kpi.employeeNote")}</div>
-                  {reviewGoal.employee_note}
+            {reviewGoal && (
+              <div className="grid gap-2 rounded-lg border px-3 py-2.5">
+                <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                  <span className="tabular-nums">
+                    {formatKpiValue(reviewGoal.actual, reviewGoal.unit)}
+                    <span className="text-muted-foreground"> / {formatKpiValue(reviewGoal.target, reviewGoal.unit)}</span>
+                  </span>
                 </div>
-              )}
-              <div className="grid gap-2">
-                <Label htmlFor="kpi-feedback">
+                <KpiProgress percent={reviewGoal.percent} />
+              </div>
+            )}
+            {reviewGoal?.employee_note && <NoteBlock label={t("hr.kpi.employeeNote")}>{reviewGoal.employee_note}</NoteBlock>}
+            <Field
+              htmlFor="kpi-feedback"
+              label={
+                <>
                   {t("hr.kpi.feedback")}
                   {reviewDecision === "approve" && (
-                    <span className="text-muted-foreground font-normal"> ({t("hr.kpi.optional")})</span>
+                    <span className="font-normal text-muted-foreground"> ({t("hr.kpi.optional")})</span>
                   )}
-                </Label>
-                <Textarea
-                  id="kpi-feedback"
-                  rows={3}
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  required={reviewDecision === "return"}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setReviewGoal(null)}>
+                </>
+              }
+            >
+              <Textarea
+                id="kpi-feedback"
+                rows={3}
+                className="text-[13px]"
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                required={reviewDecision === "return"}
+              />
+            </Field>
+            <DialogFooter className="gap-2">
+              <button type="button" className={leaveButton.outline} onClick={() => setReviewGoal(null)}>
                 {t("hr.common.cancel")}
-              </Button>
-              <Button
+              </button>
+              <button
                 type="submit"
-                variant={reviewDecision === "return" ? "destructive" : "default"}
+                className={cn(
+                  leaveButton.primary,
+                  reviewDecision === "return" && "bg-destructive text-white hover:bg-destructive/90"
+                )}
                 disabled={busy}
               >
-                {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                 {reviewDecision === "approve" ? t("hr.kpi.approve") : t("hr.kpi.return")}
-              </Button>
+              </button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -645,73 +736,72 @@ export default function KpiPage() {
 
       {/* Detail */}
       <Dialog open={!!detail || detailLoading} onOpenChange={(o) => !o && setDetail(null)}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[560px]" data-testid="kpi-detail">
           {detailLoading && !detail ? (
-            <div className="flex items-center justify-center h-40">
+            <div className="flex h-40 items-center justify-center">
               <DialogTitle className="sr-only">{t("hr.common.loading")}</DialogTitle>
-              <Loader2 className="h-6 w-6 animate-spin" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
             </div>
           ) : detail ? (
             <>
-              <DialogHeader>
-                <DialogTitle>{detail.title}</DialogTitle>
-                <DialogDescription>
-                  {detail.employee_name} · {formatPeriod(detail.period, locale)}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <div className="text-muted-foreground">{t("hr.kpi.target")}</div>
-                    <div className="font-medium">{formatKpiValue(detail.target, detail.unit)}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">{t("hr.kpi.actual")}</div>
-                    <div className="font-medium">{formatKpiValue(detail.actual, detail.unit)}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">{t("hr.kpi.direction")}</div>
-                    <div>{detail.direction === "higher" ? t("hr.kpi.directionHigher") : t("hr.kpi.directionLower")}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">{t("shared.statusLabel")}</div>
-                    <Badge variant={kpiStatusVariant(detail.status)}>{t(`hr.kpi.status.${detail.status}`)}</Badge>
-                  </div>
+              <DialogHeader className="gap-1.5">
+                <div className="flex flex-wrap items-center gap-2 pe-6">
+                  <TonePill tone={kpiStatusTone(detail.status)} dot>
+                    {t(`hr.kpi.status.${detail.status}`)}
+                  </TonePill>
+                  <span className="text-xs text-muted-foreground">{formatPeriod(detail.period, locale)}</span>
                 </div>
-                <KpiProgress percent={detail.percent} />
-                {detail.employee_note && (
-                  <div className="rounded-md bg-muted p-3 text-sm">
-                    <div className="text-xs text-muted-foreground mb-1">{t("hr.kpi.employeeNote")}</div>
-                    {detail.employee_note}
-                  </div>
-                )}
-                {detail.manager_feedback && (
-                  <div className="rounded-md border p-3 text-sm">
-                    <div className="text-xs text-muted-foreground mb-1">
-                      {t("hr.kpi.feedback")}
-                      {detail.reviewed_by_name ? ` · ${detail.reviewed_by_name}` : ""}
+                <DialogTitle className="text-base">{detail.title}</DialogTitle>
+                <DialogDescription className="text-[13px]">{detail.employee_name}</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border bg-border text-[13px]">
+                  {[
+                    [t("hr.kpi.target"), formatKpiValue(detail.target, detail.unit)],
+                    [t("hr.kpi.actual"), formatKpiValue(detail.actual, detail.unit)],
+                    [t("hr.kpi.direction"), directionLabel(detail.direction)],
+                    [t("hr.kpi.progress"), formatPercent(detail.percent)],
+                  ].map(([label, value]) => (
+                    <div key={label} className="flex min-w-0 flex-col gap-0.5 bg-card px-3 py-2.5">
+                      <dt className="text-xs text-muted-foreground">{label}</dt>
+                      <dd className="truncate font-medium tabular-nums">{value}</dd>
                     </div>
+                  ))}
+                </dl>
+                <KpiProgress percent={detail.percent} />
+                {detail.employee_note && <NoteBlock label={t("hr.kpi.employeeNote")}>{detail.employee_note}</NoteBlock>}
+                {detail.manager_feedback && (
+                  <NoteBlock
+                    bordered
+                    label={`${t("hr.kpi.feedback")}${detail.reviewed_by_name ? ` · ${detail.reviewed_by_name}` : ""}`}
+                  >
                     {detail.manager_feedback}
-                  </div>
+                  </NoteBlock>
                 )}
                 {detail.history && detail.history.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-semibold mb-2">{t("hr.kpi.historyTitle")}</h4>
-                    <ol className="space-y-2 border-l pl-4">
+                  <section className="grid gap-2">
+                    <h4 className="text-[13px] font-semibold">{t("hr.kpi.historyTitle")}</h4>
+                    <ol className="grid gap-2.5 border-s ps-4">
                       {detail.history.map((ev) => (
-                        <li key={ev.id} className="text-sm">
+                        <li key={ev.id} className="relative text-[13px]">
+                          <span
+                            aria-hidden
+                            className="absolute -start-[21px] top-1.5 h-2 w-2 rounded-full border-2 border-background bg-muted-foreground/60"
+                          />
                           <div className="font-medium">
                             {HISTORY_ACTIONS.includes(ev.action) ? t(`hr.kpi.history.${ev.action}`) : ev.action}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {[ev.actor_name, new Date(ev.created_at).toLocaleString()].filter(Boolean).join(" · ")}
+                            {[ev.actor_name, formatDateTime(ev.created_at, locale)].filter(Boolean).join(" · ")}
                           </div>
                         </li>
                       ))}
                     </ol>
-                  </div>
+                  </section>
                 )}
-                {rowActions(detail)}
+                {(detail.can_submit || detail.can_review || detail.can_edit_target || canDelete(detail)) && (
+                  <div className="border-t pt-3">{rowActions(detail, "dialog")}</div>
+                )}
               </div>
             </>
           ) : null}
