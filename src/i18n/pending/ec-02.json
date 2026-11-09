@@ -49,7 +49,8 @@
       "variants": {
         "edit": "Edit variant",
         "nameLanguage": "Language of the name"
-      }
+      },
+      "outOfStock": "Out of Stock"
     },
     "languages": {
       "deleteFailed": "Could not delete the language",
