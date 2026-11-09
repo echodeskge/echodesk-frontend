@@ -5,7 +5,7 @@
  *   - TestUserUpdate: edit form, field restrictions
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
@@ -279,6 +279,11 @@ describe("UserForm", () => {
       // Let the usersRetrieve hydration settle first — its effect repopulates
       // the form and would clobber anything typed before it resolves.
       await waitFor(() => expect(usersRetrieve).toHaveBeenCalled());
+      // Wait for the request to resolve too, not just start; on a slow CI
+      // runner it otherwise resolves mid-typing and resets the email.
+      await act(async () => {
+        await vi.mocked(usersRetrieve).mock.results[0]?.value;
+      });
 
       const emailInput = screen.getByDisplayValue("edit@test.com");
       expect(emailInput).toBeEnabled();
