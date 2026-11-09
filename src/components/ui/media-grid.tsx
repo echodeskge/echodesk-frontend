@@ -15,6 +15,8 @@ import "yet-another-react-lightbox/plugins/captions.css"
 import "yet-another-react-lightbox/plugins/counter.css"
 import "yet-another-react-lightbox/plugins/thumbnails.css"
 
+import { ImageOff } from "lucide-react"
+
 import { cn } from "@/lib/utils"
 import axios from "@/api/axios"
 
@@ -22,6 +24,8 @@ export interface MediaType {
   src: string
   alt: string
   type?: "IMAGE" | "VIDEO"
+  /** The media can't be loaded any more — render a placeholder instead. */
+  unavailable?: boolean
 }
 
 export interface MediaGridProps extends ComponentProps<"ul"> {
@@ -29,6 +33,26 @@ export interface MediaGridProps extends ComponentProps<"ul"> {
   limit?: number
   onMoreButtonClick?: (event: MouseEvent<HTMLButtonElement>) => void
   onMediaClick?: (event: MouseEvent<HTMLButtonElement>) => void
+  /** Called when an image/video fails to load (e.g. an expired CDN link). */
+  onMediaError?: (item: MediaType) => void
+  /** Placeholder text for items marked `unavailable`. */
+  unavailableLabel?: string
+}
+
+function UnavailableMedia({ label, className }: { label: string; className?: string }) {
+  return (
+    <div
+      role="img"
+      aria-label={label}
+      className={cn(
+        "flex flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/60 px-3 py-4 text-center text-xs text-muted-foreground",
+        className
+      )}
+    >
+      <ImageOff className="h-5 w-5 opacity-70" aria-hidden="true" />
+      <span>{label}</span>
+    </div>
+  )
 }
 
 // Check if URL requires authenticated fetch (e.g. WhatsApp media proxy)
@@ -171,6 +195,8 @@ export function MediaGrid({
   limit = 4,
   onMoreButtonClick,
   onMediaClick,
+  onMediaError,
+  unavailableLabel = "Image no longer available",
   className,
   ...props
 }: MediaGridProps) {
@@ -228,6 +254,7 @@ export function MediaGrid({
   // Build slides for the lightbox. Authenticated images get a sentinel src
   // (preserved as-is) and are rendered through render.slide below so the
   // library doesn't try to load them as a plain <img>.
+  const unavailableSrcs = new Set(validData.filter((item) => item.unavailable).map((item) => item.src))
   const slides = validData.map((item) => {
     if (item.type === "VIDEO") {
       return {
@@ -264,15 +291,32 @@ export function MediaGrid({
     openLightboxAt(limit - 1, e)
   }
 
+  // For single media item, use larger display
+  const isSingleMedia = validData.length === 1
+
+  // A lone image keeps its aspect ratio but is height-capped, so tall
+  // screenshots (e.g. 942×2048) don't flood the thread — click opens the
+  // full-size lightbox. Grid tiles stay square-cropped.
+  const imageClass = isSingleMedia
+    ? "block h-auto w-auto max-w-full max-h-80 object-contain rounded-lg"
+    : "w-full h-full object-cover rounded-lg"
+
   const renderImage = (item: MediaType) => {
     if (needsAuthFetch(item.src)) {
-      return <AuthenticatedImage src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
+      return <AuthenticatedImage src={item.src} alt={item.alt} className={imageClass} />
     }
     // Always a plain <img>: chat/social attachments come from arbitrary CDNs
     // (Meta, giphy, tenor, …) that next/image can't be host-configured for, and
     // there's nothing to optimize on third-party ephemeral media anyway.
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={item.src} alt={item.alt} className="w-full h-full object-cover rounded-lg" />
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={item.src}
+        alt={item.alt}
+        className={imageClass}
+        onError={onMediaError ? () => onMediaError(item) : undefined}
+      />
+    )
   }
 
   const renderVideoInline = (item: MediaType) => {
@@ -284,17 +328,18 @@ export function MediaGrid({
     return (
       <video
         src={item.src}
-        className="rounded-lg object-cover w-full h-full"
+        className={cn(
+          "rounded-lg w-full",
+          isSingleMedia ? "max-h-80 object-contain bg-black/5" : "object-cover h-full"
+        )}
         controls
         playsInline
         preload="metadata"
         onClick={(e) => e.stopPropagation()}
+        onError={onMediaError ? () => onMediaError(item) : undefined}
       />
     )
   }
-
-  // For single media item, use larger display
-  const isSingleMedia = validData.length === 1
 
   return (
     <>
@@ -308,7 +353,12 @@ export function MediaGrid({
       >
         {(isSingleMedia ? validData : displayedMedia).map((item, idx) => (
           <li key={`${item.alt}-${item.src}`} className={isSingleMedia ? "max-w-[280px]" : ""}>
-            {item.type === "VIDEO" ? (
+            {item.unavailable ? (
+              <UnavailableMedia
+                label={unavailableLabel}
+                className={isSingleMedia ? "w-[220px] max-w-full" : "w-full aspect-square"}
+              />
+            ) : item.type === "VIDEO" ? (
               // Videos are playable inline — clicking the tile opens the
               // lightbox so users can also see them full-screen / next to
               // the rest of the gallery.
@@ -329,7 +379,7 @@ export function MediaGrid({
                 onClick={(e) => openLightboxAt(idx, e)}
                 className={cn(
                   "cursor-pointer block rounded-lg overflow-hidden hover:opacity-90 transition-opacity",
-                  isSingleMedia ? "w-full" : "w-full aspect-square"
+                  isSingleMedia ? "max-w-full" : "w-full aspect-square"
                 )}
                 aria-label="View image"
               >
@@ -349,7 +399,13 @@ export function MediaGrid({
               className="cursor-pointer relative block w-full aspect-square rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
               aria-label={remainingCount > 0 ? `Show ${remainingCount + 1} more` : "View image"}
             >
-              {lastMedia.type === "VIDEO" ? renderVideoInline(lastMedia) : renderImage(lastMedia)}
+              {lastMedia.unavailable ? (
+                <UnavailableMedia label={unavailableLabel} className="w-full h-full" />
+              ) : lastMedia.type === "VIDEO" ? (
+                renderVideoInline(lastMedia)
+              ) : (
+                renderImage(lastMedia)
+              )}
               {remainingCount > 0 && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/45 text-3xl text-white font-semibold rounded-lg pointer-events-none">
                   <span>+{remainingCount}</span>
@@ -388,6 +444,13 @@ export function MediaGrid({
               )
             }
             const src = (slide as SlideImage).src
+            if (unavailableSrcs.has(src)) {
+              return (
+                <div className="flex items-center justify-center h-full w-full">
+                  <UnavailableMedia label={unavailableLabel} className="w-[260px]" />
+                </div>
+              )
+            }
             if (!needsAuthFetch(src)) return undefined
             return (
               <div className="flex items-center justify-center h-full w-full">
