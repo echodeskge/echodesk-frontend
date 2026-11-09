@@ -356,7 +356,7 @@ export default function LeaveTypesPage() {
     {
       id: "days",
       header: t("leaveTypes.tableAnnualDays"),
-      width: "88px",
+      width: "112px",
       align: "end",
       mobile: "meta",
       cell: (type) => (
