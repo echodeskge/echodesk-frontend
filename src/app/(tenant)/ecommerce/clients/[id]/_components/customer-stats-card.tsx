@@ -1,63 +1,26 @@
 "use client"
 
-import { ShoppingCart, TrendingUp } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-function LariIcon({ className }: { className?: string }) {
-  return (
-    <span className={className} aria-label="GEL">₾</span>
-  )
-}
+import { StatGrid, formatCount, formatMoney } from "@/app/(tenant)/ecommerce/_components/ui"
 
 interface CustomerStatsCardProps {
   totalOrders: number
   totalSpent: number
+  loading?: boolean
   t: (key: string) => string
 }
 
-export function CustomerStatsCard({
-  totalOrders,
-  totalSpent,
-  t,
-}: CustomerStatsCardProps) {
-  const avgOrderValue =
-    totalOrders > 0 ? totalSpent / totalOrders : 0
-
-  const formatCurrency = (amount: number) => `₾${amount.toFixed(2)}`
-
-  const stats = [
-    {
-      label: t("stats.totalOrders"),
-      value: String(totalOrders),
-      icon: ShoppingCart,
-    },
-    {
-      label: t("stats.totalSpent"),
-      value: formatCurrency(totalSpent),
-      icon: LariIcon,
-    },
-    {
-      label: t("stats.avgOrderValue"),
-      value: formatCurrency(avgOrderValue),
-      icon: TrendingUp,
-    },
-  ]
-
+/** Orders, total spent and average order (same numbers as before: the loaded orders). */
+export function CustomerStatsCard({ totalOrders, totalSpent, loading, t }: CustomerStatsCardProps) {
+  const avgOrderValue = totalOrders > 0 ? totalSpent / totalOrders : 0
   return (
-    <div className="grid gap-4 md:grid-cols-3">
-      {stats.map((stat) => (
-        <Card key={stat.label}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {stat.label}
-            </CardTitle>
-            <stat.icon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stat.value}</div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <StatGrid
+      loading={loading}
+      testId="client-stats"
+      items={[
+        { key: "orders", label: t("stats.totalOrders"), value: formatCount(totalOrders) },
+        { key: "spent", label: t("stats.totalSpent"), value: formatMoney(totalSpent) },
+        { key: "avg", label: t("stats.avgOrderValue"), value: formatMoney(avgOrderValue) },
+      ]}
+    />
   )
 }

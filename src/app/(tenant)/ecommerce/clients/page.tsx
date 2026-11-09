@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useTranslations } from "next-intl"
-import { ecommerceAdminClientsList } from "@/api/generated"
 import { EcommerceClientList } from "@/api/generated/interfaces"
 import { toast } from "sonner"
+import { EcPage, EcommerceHeaderBridge } from "../_components/ui"
 import { ClientsTable } from "./_components/clients-table"
+import { fetchEcommerceClients } from "./_lib/fetch-clients"
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -14,6 +15,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<EcommerceClientList[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<unknown>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [page, setPage] = useState(1)
@@ -22,28 +24,28 @@ export default function ClientsPage() {
   const fetchClients = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const isActive =
         statusFilter === "active"
           ? true
           : statusFilter === "inactive"
             ? false
             : undefined
-      const response = await ecommerceAdminClientsList(
+      const response = await fetchEcommerceClients({
         isActive,
-        undefined,
-        undefined,
         page,
         pageSize,
-        searchQuery || undefined
-      )
+        search: searchQuery || undefined,
+      })
       setClients(response.results || [])
       setTotalCount(response.count || 0)
-    } catch {
-      toast.error("Failed to load clients")
+    } catch (err) {
+      setError(err)
+      toast.error(t("loadError"))
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, statusFilter, page, pageSize])
+  }, [searchQuery, statusFilter, page, pageSize, t])
 
   useEffect(() => {
     fetchClients()
@@ -69,21 +71,26 @@ export default function ClientsPage() {
   }, [])
 
   return (
-    <section className="container p-4">
-      <ClientsTable
-        data={clients}
-        totalCount={totalCount}
-        page={page}
-        pageSize={pageSize}
-        loading={loading}
-        searchQuery={searchQuery}
-        statusFilter={statusFilter}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        onSearchChange={handleSearchChange}
-        onStatusFilterChange={handleStatusFilterChange}
-        t={t}
-      />
-    </section>
+    <>
+      <EcommerceHeaderBridge sub={error || (loading && totalCount === 0) ? null : t("count", { count: totalCount })} />
+      <EcPage fill testId="clients-page">
+        <ClientsTable
+          data={clients}
+          totalCount={totalCount}
+          page={page}
+          pageSize={pageSize}
+          loading={loading}
+          error={error}
+          onRetry={fetchClients}
+          searchQuery={searchQuery}
+          statusFilter={statusFilter}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          onSearchChange={handleSearchChange}
+          onStatusFilterChange={handleStatusFilterChange}
+          t={t}
+        />
+      </EcPage>
+    </>
   )
 }
