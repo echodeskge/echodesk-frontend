@@ -809,7 +809,8 @@
         "submit": "Create board",
         "submitting": "Creating…",
         "success": "Board created",
-        "error": "Couldn't create the board"
+        "error": "Couldn't create the board",
+        "isDefaultHint": "People see the default board first when they open Tickets."
       },
       "settings": {
         "title": "Board settings",
@@ -824,7 +825,12 @@
         "deleteError": "Couldn't delete the board",
         "saved": "Board saved",
         "saveError": "Couldn't save the board",
-        "defaultSet": "“{name}” is now the default board"
+        "defaultSet": "“{name}” is now the default board",
+        "loadError": "Couldn't load the board",
+        "defaultHint": "People see the default board first when they open Tickets.",
+        "defaultError": "Couldn't set the default board",
+        "deleteHint": "Deletes the board with its columns and tickets.",
+        "access": "Access and columns"
       },
       "users": {
         "title": "Manage users",
@@ -838,7 +844,12 @@
         "search": "Search users",
         "save": "Save",
         "saved": "Access updated",
-        "saveError": "Couldn't update access"
+        "saveError": "Couldn't update access",
+        "groupsSearch": "Search groups",
+        "noResults": "Nothing matches",
+        "noGroups": "No groups yet",
+        "selected": "{count, plural, =0 {None selected} other {# selected}}",
+        "loadError": "Couldn't load users and groups"
       },
       "telegram": {
         "tab": "Telegram",
@@ -861,14 +872,26 @@
           "step1": "Create a bot with @BotFather and copy its token.",
           "step2": "Add the bot to your group or channel.",
           "step3": "Paste the token and the chat ID here, then send a test message."
-        }
+        },
+        "botTokenPlaceholder": "Paste the token from @BotFather",
+        "botTokenKeep": "Leave empty to keep the saved token",
+        "botTokenRequired": "Enter the bot token",
+        "chatIdRequired": "Enter the chat ID",
+        "saveError": "Couldn't save the Telegram settings",
+        "disconnectError": "Couldn't disconnect Telegram",
+        "loadError": "Couldn't load the Telegram settings"
       },
       "columns": {
         "title": "Edit columns",
         "add": "Add column",
         "deleteConfirm": "Delete the “{name}” column?",
         "hasTickets": "Move the tickets out of this column before deleting it.",
-        "reorderError": "Couldn't save the column order"
+        "reorderError": "Couldn't save the column order",
+        "empty": "This board has no columns yet.",
+        "ticketsCount": "{count, plural, one {# ticket} other {# tickets}}",
+        "edit": "Edit {name}",
+        "delete": "Delete {name}",
+        "deleteBody": "This can't be undone."
       },
       "menu": {
         "newBoard": "New board",
@@ -877,6 +900,10 @@
         "boardSettings": "Board settings…",
         "current": "Current board",
         "switchBoard": "Switch board"
+      },
+      "color": {
+        "hex": "Hex colour",
+        "invalid": "Use a hex colour like #3b82f6"
       }
     },
     "create": {
