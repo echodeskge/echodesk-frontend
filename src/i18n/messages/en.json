@@ -399,7 +399,9 @@
         "work": "Work",
         "business": "Business",
         "channels": "Channels"
-      }
+      },
+      "showBoards": "Show boards",
+      "hideBoards": "Hide boards"
     },
     "mySubstitutes": "My Substitutes",
     "covering": "Covering for Others",
@@ -7117,7 +7119,10 @@
       "search": "Search tickets",
       "openSearch": "Search",
       "clear": "Clear filters",
-      "sortLabel": "Sort: {sort}"
+      "sortLabel": "Sort: {sort}",
+      "label": "Ticket filters",
+      "view": "View",
+      "clearSearch": "Clear search"
     },
     "sort": {
       "manual": "Manual",
@@ -7459,6 +7464,9 @@
         "11": "Nov",
         "12": "Dec"
       }
+    },
+    "header": {
+      "newTicket": "New ticket"
     }
   }
 }
