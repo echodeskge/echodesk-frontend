@@ -1,29 +1,69 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
-import { Separator } from "@/components/ui/separator"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Collapsible, CollapsibleContent } from "@/components/ui/collapsible"
-import { CreditCard, Store, Eye, EyeOff, CheckCircle2, AlertCircle, Globe, Rocket, RefreshCw, ExternalLink, Loader2, Trash2, Plus, X, RefreshCcw, Copy, Check, Truck, Palette } from "lucide-react"
+import {
+  CheckCircle2,
+  Globe,
+  Rocket,
+  RefreshCw,
+  ExternalLink,
+  Loader2,
+  Trash2,
+  Plus,
+  X,
+  RefreshCcw,
+  Copy,
+  Check,
+  Save,
+  ShoppingBag,
+  AlertTriangle,
+  RotateCw,
+} from "lucide-react"
 import { ecommerceAdminSettingsList, ecommerceAdminSettingsDeployFrontendCreate, ecommerceAdminSettingsPartialUpdate, ecommerceAdminSettingsCreate, ecommerceAdminSettingsDeleteDeploymentDestroy, ecommerceQuickshipperTestConnection } from "@/api/generated/api"
 import { MiniMapPicker } from "@/components/MiniMapPicker"
-import type { EcommerceSettings as EcommerceSettingsType, EcommerceSettingsRequest, DeploymentResponse } from "@/api/generated/interfaces"
+import type { EcommerceSettings as EcommerceSettingsType, EcommerceSettingsRequest } from "@/api/generated/interfaces"
 import { toast } from "sonner"
-import { getApiErrorMessage } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+import { cn, getApiErrorMessage } from "@/lib/utils"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import axios from "@/api/axios"
+import { Switch } from "@/components/ui/switch"
+import {
+  EcBanner,
+  EcLoading,
+  EcPage,
+  EcPageHeader,
+  FieldRow,
+  SectionCard,
+  Segmented,
+  TonePill,
+  rdButton,
+} from "@/app/(tenant)/ecommerce/_components/ui"
+import {
+  InlineSwitch,
+  Notice,
+  PasswordInput,
+  ProviderBlock,
+  StackField,
+  fieldWidth,
+  settingsInput,
+} from "./_components/settings-ui"
+import {
+  deploymentTone,
+  legacyPaymentFlags,
+  parseClarityInput,
+  quickshipperConnectedParts,
+  requestErrorText,
+  settingsFingerprint,
+  toggleProviderList,
+  type PaymentProvider,
+} from "./_lib/settings"
 
 interface DomainInfo {
   name: string
   verified: boolean
-  verification: any[]
+  verification: unknown[]
 }
 
 interface DnsInstruction {
@@ -32,8 +72,6 @@ interface DnsInstruction {
   value: string
   description: string
 }
-
-type PaymentProvider = "bog" | "tbc" | "flitt" | "paddle" | "cash"
 
 interface EcommerceSettings {
   id?: number
@@ -95,17 +133,18 @@ type VoltageFontPair = "bricolage-inter" | "space-dm" | "serif-inter" | "mono-in
 // Voltage colour-pair previews. Hex values are picked to read well as a
 // 24×24 swatch — they're the prototype's `--accent` mapped to sRGB. The
 // `accent2` is the secondary swatch shown in the corner of each chip so
-// the tenant sees both colours of the pair at once.
-const VOLTAGE_THEME_SWATCHES: Record<VoltageTheme, { label: string; accent: string; accent2: string }> = {
-  refurb: { label: "Refurb", accent: "#f0d860", accent2: "#3955d6" },
-  cobalt: { label: "Cobalt", accent: "#3955d6", accent2: "#f0d860" },
-  ember: { label: "Ember", accent: "#dd6b3a", accent2: "#1a1a2e" },
-  forest: { label: "Forest", accent: "#3a8c5a", accent2: "#e8d35a" },
-  violet: { label: "Violet", accent: "#8e4dd6", accent2: "#e6cc60" },
-  mono: { label: "Mono", accent: "#1a1a2e", accent2: "#f5f5f0" },
-  rose: { label: "Rose", accent: "#e35884", accent2: "#1a1a2e" },
+// the tenant sees both colours of the pair at once. Names: `template.themes.*`.
+const VOLTAGE_THEME_SWATCHES: Record<VoltageTheme, { accent: string; accent2: string }> = {
+  refurb: { accent: "#f0d860", accent2: "#3955d6" },
+  cobalt: { accent: "#3955d6", accent2: "#f0d860" },
+  ember: { accent: "#dd6b3a", accent2: "#1a1a2e" },
+  forest: { accent: "#3a8c5a", accent2: "#e8d35a" },
+  violet: { accent: "#8e4dd6", accent2: "#e6cc60" },
+  mono: { accent: "#1a1a2e", accent2: "#f5f5f0" },
+  rose: { accent: "#e35884", accent2: "#1a1a2e" },
 }
 
+// Font names are proper names (shown as is in every language).
 const VOLTAGE_FONT_PAIR_LABELS: Record<VoltageFontPair, { label: string; sample: string; family: string }> = {
   "bricolage-inter": { label: "Bricolage + Inter", sample: "Aa", family: "'Bricolage Grotesque', system-ui, sans-serif" },
   "space-dm": { label: "Space Grotesk + DM Sans", sample: "Aa", family: "'Space Grotesk', system-ui, sans-serif" },
@@ -119,85 +158,69 @@ interface DeploymentInfo {
   vercel_project_id: string | null
 }
 
-function PasswordInput({
-  id,
-  value,
-  onChange,
-  placeholder,
-}: {
-  id: string
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-}) {
-  const [show, setShow] = useState(false)
-
-  return (
-    <div className="relative">
-      <Input
-        id={id}
-        type={show ? "text" : "password"}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder || "••••••••••••••••"}
-      />
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="absolute right-0 top-0 h-full px-3"
-        onClick={() => setShow(!show)}
-      >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </Button>
-    </div>
-  )
+const DEFAULT_SETTINGS: EcommerceSettings = {
+  bog_client_id: "",
+  bog_use_production: false,
+  bog_return_url_success: "",
+  bog_return_url_fail: "",
+  enable_cash_on_delivery: true,
+  enable_card_payment: true,
+  active_payment_providers: ["bog", "cash"],
+  tbc_client_id: "",
+  tbc_client_secret: "",
+  tbc_api_key: "",
+  tbc_use_production: false,
+  flitt_merchant_id: "",
+  flitt_password: "",
+  paddle_api_key: "",
+  paddle_client_token: "",
+  paddle_webhook_secret: "",
+  paddle_use_production: false,
+  store_name: "",
+  store_email: "",
+  store_phone: "",
+  allow_pickup: false,
+  quickshipper_enabled: false,
+  quickshipper_use_production: false,
+  quickshipper_pickup_contact_name: "",
+  quickshipper_pickup_phone: "",
+  quickshipper_pickup_address: "",
+  quickshipper_pickup_city: "",
+  quickshipper_pickup_latitude: null,
+  quickshipper_pickup_longitude: null,
+  quickshipper_pickup_extra_instructions: "",
+  storefront_template: "classic",
+  voltage_theme_preset: "refurb",
+  voltage_color_mode: "light",
+  voltage_density: "cozy",
+  voltage_radius: "soft",
+  voltage_font_pair: "bricolage-inter",
+  google_ads_conversion_id: "",
+  google_ads_purchase_label: "",
+  google_analytics_id: "",
+  clarity_project_id: "",
+  google_maps_api_key: "",
 }
 
-// Small segmented-toggle helper. Used by the Voltage tweaks block to
-// pick between mode / density / radius. Kept inline because it's only
-// useful here and adding a shadcn primitive for it would be overkill.
-function SegmentedToggle({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string
-  options: { value: string; label: string }[]
-  value: string
-  onChange: (v: string) => void
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <div className="inline-flex w-full rounded-md border bg-muted p-0.5">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(opt.value)}
-            className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
-              value === opt.value
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
+const code = (chunks: ReactNode) => <code className="font-mono text-[11px]">{chunks}</code>
+const strong = (chunks: ReactNode) => <strong className="font-medium text-foreground">{chunks}</strong>
+function extLink(href: string) {
+  return function ExternalLinkChunk(chunks: ReactNode) {
+    return (
+      <a href={href} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-foreground">
+        {chunks}
+      </a>
+    )
+  }
 }
 
 export default function EcommerceSettingsPage() {
   const t = useTranslations("ecommerceSettings")
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deploying, setDeploying] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [showSecret, setShowSecret] = useState(false)
   const [domains, setDomains] = useState<DomainInfo[]>([])
   const [newDomain, setNewDomain] = useState("")
   const [addingDomain, setAddingDomain] = useState(false)
@@ -205,63 +228,25 @@ export default function EcommerceSettingsPage() {
   const [removingDomain, setRemovingDomain] = useState<string | null>(null)
   const [dnsInstructions, setDnsInstructions] = useState<DnsInstruction[]>([])
   const [copiedValue, setCopiedValue] = useState<string | null>(null)
-  const [settings, setSettings] = useState<EcommerceSettings>({
-    bog_client_id: "",
-    bog_use_production: false,
-    bog_return_url_success: "",
-    bog_return_url_fail: "",
-    enable_cash_on_delivery: true,
-    enable_card_payment: true,
-    active_payment_providers: ["bog", "cash"],
-    tbc_client_id: "",
-    tbc_client_secret: "",
-    tbc_api_key: "",
-    tbc_use_production: false,
-    flitt_merchant_id: "",
-    flitt_password: "",
-    paddle_api_key: "",
-    paddle_client_token: "",
-    paddle_webhook_secret: "",
-    paddle_use_production: false,
-    store_name: "",
-    store_email: "",
-    store_phone: "",
-    allow_pickup: false,
-    quickshipper_enabled: false,
-    quickshipper_use_production: false,
-    quickshipper_pickup_contact_name: "",
-    quickshipper_pickup_phone: "",
-    quickshipper_pickup_address: "",
-    quickshipper_pickup_city: "",
-    quickshipper_pickup_latitude: null,
-    quickshipper_pickup_longitude: null,
-    quickshipper_pickup_extra_instructions: "",
-    storefront_template: "classic",
-    voltage_theme_preset: "refurb",
-    voltage_color_mode: "light",
-    voltage_density: "cozy",
-    voltage_radius: "soft",
-    voltage_font_pair: "bricolage-inter",
-    google_ads_conversion_id: "",
-    google_ads_purchase_label: "",
-    google_analytics_id: "",
-    clarity_project_id: "",
-    google_maps_api_key: "",
-  })
+  const [settings, setSettings] = useState<EcommerceSettings>(DEFAULT_SETTINGS)
   const [bogSecret, setBogSecret] = useState("")
   const [quickshipperApiKey, setQuickshipperApiKey] = useState("")
   const [hasQuickshipperKey, setHasQuickshipperKey] = useState(false)
   const [quickshipperWebhookSecret, setQuickshipperWebhookSecret] = useState("")
   const [testingQuickshipper, setTestingQuickshipper] = useState(false)
   const [hasExistingCredentials, setHasExistingCredentials] = useState(false)
+  const [baseline, setBaseline] = useState(() => settingsFingerprint(DEFAULT_SETTINGS))
   const [deploymentInfo, setDeploymentInfo] = useState<DeploymentInfo>({
     frontend_url: null,
     deployment_status: "pending",
     vercel_project_id: null,
   })
 
+  const unknownError = t("toast.unknownError")
+
   useEffect(() => {
     fetchSettings()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchSettings = async () => {
@@ -281,7 +266,7 @@ export default function EcommerceSettingsPage() {
           if (settingsData.enable_cash_on_delivery) activeProviders.push("cash")
         }
 
-        setSettings({
+        const next: EcommerceSettings = {
           id: settingsData.id,
           bog_client_id: settingsData.bog_client_id || "",
           bog_use_production: settingsData.bog_use_production || false,
@@ -347,7 +332,9 @@ export default function EcommerceSettingsPage() {
             (settingsData as { clarity_project_id?: string }).clarity_project_id || "",
           google_maps_api_key:
             (settingsData as { google_maps_api_key?: string }).google_maps_api_key || "",
-        })
+        }
+        setSettings(next)
+        setBaseline(settingsFingerprint(next))
         setHasExistingCredentials(!!settingsData.bog_client_id)
         setHasQuickshipperKey(!!settingsData.has_quickshipper_credentials)
         setQuickshipperWebhookSecret(settingsData.quickshipper_webhook_secret || "")
@@ -361,10 +348,12 @@ export default function EcommerceSettingsPage() {
           })
         }
       }
+      setLoadFailed(false)
       setLoading(false)
     } catch (error) {
       console.error("Failed to fetch settings:", error)
-      toast.error("Failed to load ecommerce settings")
+      toast.error(t("toast.loadError"))
+      setLoadFailed(true)
       setLoading(false)
     }
   }
@@ -374,15 +363,9 @@ export default function EcommerceSettingsPage() {
 
   const toggleProvider = (provider: PaymentProvider) => {
     setSettings((prev) => {
-      const active = prev.active_payment_providers.includes(provider)
-        ? prev.active_payment_providers.filter((p) => p !== provider)
-        : [...prev.active_payment_providers, provider]
-
+      const active = toggleProviderList(prev.active_payment_providers, provider)
       // Sync legacy fields
-      const enable_card_payment = active.some((p) => p === "bog" || p === "tbc" || p === "flitt" || p === "paddle")
-      const enable_cash_on_delivery = active.includes("cash")
-
-      return { ...prev, active_payment_providers: active, enable_card_payment, enable_cash_on_delivery }
+      return { ...prev, active_payment_providers: active, ...legacyPaymentFlags(active) }
     })
   }
 
@@ -404,22 +387,21 @@ export default function EcommerceSettingsPage() {
           deployment_status: "deployed",
           vercel_project_id: result.project_id,
         })
-        toast.success(`Frontend deployed successfully! URL: ${result.url}`)
+        toast.success(t("toast.deploySuccess", { url: result.url }))
       } else {
         setDeploymentInfo(prev => ({
           ...prev,
           deployment_status: "failed",
         }))
-        toast.error(`Deployment failed: ${result.message || "Unknown error"}`)
+        toast.error(t("toast.deployFailed", { message: result.message || unknownError }))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to deploy frontend:", error)
       setDeploymentInfo(prev => ({
         ...prev,
         deployment_status: "failed",
       }))
-      const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      toast.error(`Failed to deploy frontend: ${errorMessage}`)
+      toast.error(t("toast.deployError", { message: requestErrorText(error, unknownError) }))
     } finally {
       setDeploying(false)
     }
@@ -443,14 +425,13 @@ export default function EcommerceSettingsPage() {
         })
         setDomains([])
         setDnsInstructions([])
-        toast.success("Deployment deleted successfully")
+        toast.success(t("toast.deleteSuccess"))
       } else {
-        toast.error(`Failed to delete deployment: ${result.error || "Unknown error"}`)
+        toast.error(t("toast.deleteFailed", { message: result.error || unknownError }))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to delete deployment:", error)
-      const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      toast.error(`Failed to delete deployment: ${errorMessage}`)
+      toast.error(t("toast.deleteFailed", { message: requestErrorText(error, unknownError) }))
     } finally {
       setDeleting(false)
     }
@@ -469,7 +450,7 @@ export default function EcommerceSettingsPage() {
 
   const handleAddDomain = async () => {
     if (!newDomain.trim()) {
-      toast.error("Please enter a domain name")
+      toast.error(t("toast.domainRequired"))
       return
     }
 
@@ -492,14 +473,13 @@ export default function EcommerceSettingsPage() {
         }
 
         setNewDomain("")
-        toast.success(`Domain ${response.data.domain} added successfully! Please configure DNS records as shown below.`)
+        toast.success(t("toast.domainAdded", { domain: response.data.domain }))
       } else {
-        toast.error(`Failed to add domain: ${response.data.error || "Unknown error"}`)
+        toast.error(t("toast.domainAddFailed", { message: response.data.error || unknownError }))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to add domain:", error)
-      const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      toast.error(`Failed to add domain: ${errorMessage}`)
+      toast.error(t("toast.domainAddFailed", { message: requestErrorText(error, unknownError) }))
     } finally {
       setAddingDomain(false)
     }
@@ -517,14 +497,13 @@ export default function EcommerceSettingsPage() {
 
       if (response.data.success) {
         setDomains(prev => prev.filter(d => d.name !== domain))
-        toast.success(`Domain ${domain} removed successfully`)
+        toast.success(t("toast.domainRemoved", { domain }))
       } else {
-        toast.error(`Failed to remove domain: ${response.data.error || "Unknown error"}`)
+        toast.error(t("toast.domainRemoveFailed", { message: response.data.error || unknownError }))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to remove domain:", error)
-      const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      toast.error(`Failed to remove domain: ${errorMessage}`)
+      toast.error(t("toast.domainRemoveFailed", { message: requestErrorText(error, unknownError) }))
     } finally {
       setRemovingDomain(null)
     }
@@ -541,14 +520,13 @@ export default function EcommerceSettingsPage() {
         setDomains(prev => prev.map(d =>
           d.name === domain ? { ...d, verified: true } : d
         ))
-        toast.success(`Domain ${domain} is now verified!`)
+        toast.success(t("toast.domainVerified", { domain }))
       } else {
-        toast.error(`Domain ${domain} is not yet verified. Please ensure DNS records are configured correctly and try again in a few minutes.`)
+        toast.error(t("toast.domainNotVerified", { domain }))
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Failed to verify domain:", error)
-      const errorMessage = error.response?.data?.error || error.message || "Unknown error"
-      toast.error(`Failed to verify domain: ${errorMessage}`)
+      toast.error(t("toast.domainVerifyFailed", { message: requestErrorText(error, unknownError) }))
     } finally {
       setVerifyingDomain(null)
     }
@@ -567,6 +545,35 @@ export default function EcommerceSettingsPage() {
     }
   }, [deploymentInfo.vercel_project_id])
 
+  const handleTestQuickshipper = async () => {
+    setTestingQuickshipper(true)
+    try {
+      const res = await ecommerceQuickshipperTestConnection() as {
+        success: boolean
+        shop_name?: string
+        balance?: string
+        has_providers?: boolean
+        error?: string
+      }
+      if (res.success) {
+        toast.success(
+          quickshipperConnectedParts(res, {
+            connected: (name) => t("toast.qsConnected", { name }),
+            account: t("toast.qsAccount"),
+            balance: (balance) => t("toast.qsBalance", { balance }),
+            noCouriers: t("toast.qsNoCouriers"),
+          })
+        )
+      } else {
+        toast.error(res.error || t("toast.qsRejected"))
+      }
+    } catch (err) {
+      toast.error(requestErrorText(err, t("toast.qsTestFailed")))
+    } finally {
+      setTestingQuickshipper(false)
+    }
+  }
+
   const handleSave = async () => {
     try {
       setSaving(true)
@@ -577,10 +584,7 @@ export default function EcommerceSettingsPage() {
         bog_use_production: settings.bog_use_production,
         bog_return_url_success: settings.bog_return_url_success,
         bog_return_url_fail: settings.bog_return_url_fail,
-        enable_cash_on_delivery: settings.active_payment_providers.includes("cash"),
-        enable_card_payment: settings.active_payment_providers.some(
-          (p) => p === "bog" || p === "tbc" || p === "flitt" || p === "paddle"
-        ),
+        ...legacyPaymentFlags(settings.active_payment_providers),
         active_payment_providers: settings.active_payment_providers,
         tbc_client_id: settings.tbc_client_id,
         tbc_api_key: settings.tbc_api_key,
@@ -652,7 +656,7 @@ export default function EcommerceSettingsPage() {
         await ecommerceAdminSettingsCreate(payload)
       }
 
-      toast.success("Settings saved successfully!")
+      toast.success(t("toast.saved"))
 
       // If secret was provided, mark as having credentials
       if (bogSecret) {
@@ -672,777 +676,534 @@ export default function EcommerceSettingsPage() {
     } catch (error) {
       console.error("Failed to save settings:", error)
       // Store settings writes need staff, role admin or manage_settings.
-      toast.error(getApiErrorMessage(error, "Failed to save settings. Please try again."))
+      toast.error(getApiErrorMessage(error, t("toast.saveFailed")))
     } finally {
       setSaving(false)
     }
   }
 
   const hasAnyProvider = settings.active_payment_providers.length > 0
+  const dirty = settingsFingerprint(settings) !== baseline || !!bogSecret || !!quickshipperApiKey
+  const secretLabels = { showLabel: t("page.showSecret"), hideLabel: t("page.hideSecret") }
+  const set = <K extends keyof EcommerceSettings>(key: K, value: EcommerceSettings[K]) =>
+    setSettings((prev) => ({ ...prev, [key]: value }))
+
+  const header = <EcPageHeader icon={ShoppingBag} title={t("title")} description={t("subtitle")} />
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
-      </div>
+      <EcPage width="narrow" gap={20} testId="ecommerce-settings-page">
+        {header}
+        <EcLoading className="py-24" />
+      </EcPage>
     )
   }
 
+  const status = deploymentInfo.deployment_status
+
   return (
-    <div className="p-4 sm:p-6 space-y-6 max-w-4xl">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground mt-1">
-          {t("subtitle")}
-        </p>
-      </div>
+    <EcPage width="narrow" gap={20} testId="ecommerce-settings-page">
+      {header}
+
+      {loadFailed && (
+        <EcBanner
+          tone="warning"
+          icon={<AlertTriangle className="h-4 w-4" aria-hidden />}
+          action={
+            <button type="button" onClick={fetchSettings} className={rdButton.outlineSm}>
+              <RotateCw className="h-3.5 w-3.5" aria-hidden />
+              {t("page.retry")}
+            </button>
+          }
+        >
+          {t("page.loadFailedBanner")}
+        </EcBanner>
+      )}
 
       {/* Store Information */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Store className="h-5 w-5" />
-            <CardTitle>{t("storeInfo.title")}</CardTitle>
-          </div>
-          <CardDescription>
-            {t("storeInfo.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="store_name">{t("storeInfo.storeName")}</Label>
-              <Input
-                id="store_name"
-                value={settings.store_name}
-                onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                placeholder={t("storeInfo.storeNamePlaceholder")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="store_email">{t("storeInfo.storeEmail")}</Label>
-              <Input
-                id="store_email"
-                type="email"
-                value={settings.store_email}
-                onChange={(e) => setSettings({ ...settings, store_email: e.target.value })}
-                placeholder={t("storeInfo.storeEmailPlaceholder")}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="store_phone">{t("storeInfo.storePhone")}</Label>
-            <Input
-              id="store_phone"
-              value={settings.store_phone}
-              onChange={(e) => setSettings({ ...settings, store_phone: e.target.value })}
-              placeholder={t("storeInfo.storePhonePlaceholder")}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <SectionCard title={t("storeInfo.title")} hint={t("storeInfo.description")} testId="ec-settings-store">
+        <FieldRow label={t("storeInfo.storeName")} htmlFor="store_name" align="center">
+          <Input
+            id="store_name"
+            className={cn(settingsInput, fieldWidth)}
+            value={settings.store_name}
+            onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
+            placeholder={t("storeInfo.storeNamePlaceholder")}
+          />
+        </FieldRow>
+        <FieldRow label={t("storeInfo.storeEmail")} htmlFor="store_email" align="center">
+          <Input
+            id="store_email"
+            type="email"
+            className={cn(settingsInput, fieldWidth)}
+            value={settings.store_email}
+            onChange={(e) => setSettings({ ...settings, store_email: e.target.value })}
+            placeholder={t("storeInfo.storeEmailPlaceholder")}
+          />
+        </FieldRow>
+        <FieldRow label={t("storeInfo.storePhone")} htmlFor="store_phone" align="center">
+          <Input
+            id="store_phone"
+            className={cn(settingsInput, fieldWidth, "tabular-nums")}
+            value={settings.store_phone}
+            onChange={(e) => setSettings({ ...settings, store_phone: e.target.value })}
+            placeholder={t("storeInfo.storePhonePlaceholder")}
+          />
+        </FieldRow>
+      </SectionCard>
 
       {/* Payment Methods */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            <CardTitle>{t("paymentMethods.title")}</CardTitle>
+      <SectionCard
+        title={t("paymentMethods.title")}
+        hint={t("paymentMethods.description")}
+        testId="ec-settings-payments"
+      >
+        {!hasAnyProvider && (
+          <div className="border-b px-4 py-3">
+            <Notice tone="warning">{t("paymentMethods.noProviderWarning")}</Notice>
           </div>
-          <CardDescription>
-            {t("paymentMethods.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Warning if no providers */}
-          {!hasAnyProvider && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <p className="text-sm text-yellow-800">
-                {t("paymentMethods.noProviderWarning")}
-              </p>
-            </div>
-          )}
+        )}
 
-          {/* BOG Provider */}
-          <div className="border rounded-lg">
-            <div
-              className="flex items-center gap-3 p-4 cursor-pointer"
-              onClick={() => toggleProvider("bog")}
+        {/* BOG Provider */}
+        <ProviderBlock
+          id="bog"
+          label={t("paymentMethods.providerBog")}
+          active={isProviderActive("bog")}
+          onToggle={() => toggleProvider("bog")}
+        >
+          <Notice tone={hasExistingCredentials ? "success" : "warning"}>
+            {hasExistingCredentials ? t("bog.credentialsConfigured") : t("bog.noCredentials")}
+          </Notice>
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <StackField
+              label={t("bog.clientId")}
+              suffix={t("bog.clientIdRequired")}
+              htmlFor="bog_client_id"
+              help={t("bog.clientIdHelp")}
             >
-              <Checkbox
-                checked={isProviderActive("bog")}
-                onCheckedChange={() => toggleProvider("bog")}
-                onClick={(e) => e.stopPropagation()}
+              <Input
+                id="bog_client_id"
+                className={cn(settingsInput, "font-mono")}
+                value={settings.bog_client_id}
+                onChange={(e) => setSettings({ ...settings, bog_client_id: e.target.value })}
               />
-              <div className="flex-1">
-                <span className="font-medium">{t("paymentMethods.providerBog")}</span>
-              </div>
-            </div>
-            <Collapsible open={isProviderActive("bog")}>
-              <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-4 border-t pt-4">
-                  {/* Credentials Status */}
-                  {hasExistingCredentials && (
-                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      <p className="text-sm text-green-800">
-                        {t("bog.credentialsConfigured")}
-                      </p>
-                    </div>
-                  )}
-
-                  {!hasExistingCredentials && (
-                    <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <AlertCircle className="h-5 w-5 text-yellow-600" />
-                      <p className="text-sm text-yellow-800">
-                        {t("bog.noCredentials")}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Client ID */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bog_client_id">
-                      {t("bog.clientId")}
-                      <span className="text-muted-foreground text-sm ml-2">{t("bog.clientIdRequired")}</span>
-                    </Label>
-                    <Input
-                      id="bog_client_id"
-                      value={settings.bog_client_id}
-                      onChange={(e) => setSettings({ ...settings, bog_client_id: e.target.value })}
-                      placeholder="your-bog-client-id"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t("bog.clientIdHelp")}
-                    </p>
-                  </div>
-
-                  {/* Client Secret */}
-                  <div className="space-y-2">
-                    <Label htmlFor="bog_client_secret">
-                      {t("bog.clientSecret")}
-                      <span className="text-muted-foreground text-sm ml-2">{t("bog.clientSecretEncrypted")}</span>
-                    </Label>
-                    <PasswordInput
-                      id="bog_client_secret"
-                      value={bogSecret}
-                      onChange={setBogSecret}
-                      placeholder={hasExistingCredentials ? "••••••••••••••••" : "your-bog-client-secret"}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {hasExistingCredentials
-                        ? t("bog.clientSecretKeep")
-                        : t("bog.clientSecretNew")}
-                    </p>
-                  </div>
-
-                  {/* Production Mode */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="bog_use_production">{t("environment.productionMode")}</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {t("environment.productionModeDesc")}
-                      </p>
-                    </div>
-                    <Switch
-                      id="bog_use_production"
-                      checked={settings.bog_use_production}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, bog_use_production: checked })
-                      }
-                    />
-                  </div>
-
-                  {/* Return URLs */}
-                  <Separator />
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="bog_return_url_success">
-                        {t("returnUrls.successUrl")}
-                        <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.successUrlAfter")}</span>
-                      </Label>
-                      <Input
-                        id="bog_return_url_success"
-                        type="url"
-                        value={settings.bog_return_url_success}
-                        onChange={(e) => setSettings({ ...settings, bog_return_url_success: e.target.value })}
-                        placeholder={t("returnUrls.successUrlPlaceholder")}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {t("returnUrls.successUrlHelp")}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="bog_return_url_fail">
-                        {t("returnUrls.failUrl")}
-                        <span className="text-muted-foreground text-sm ml-2">{t("returnUrls.failUrlAfter")}</span>
-                      </Label>
-                      <Input
-                        id="bog_return_url_fail"
-                        type="url"
-                        value={settings.bog_return_url_fail}
-                        onChange={(e) => setSettings({ ...settings, bog_return_url_fail: e.target.value })}
-                        placeholder={t("returnUrls.failUrlPlaceholder")}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {t("returnUrls.failUrlHelp")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-          {/* TBC Provider */}
-          <div className="border rounded-lg">
-            <div
-              className="flex items-center gap-3 p-4 cursor-pointer"
-              onClick={() => toggleProvider("tbc")}
+            </StackField>
+            <StackField
+              label={t("bog.clientSecret")}
+              suffix={t("bog.clientSecretEncrypted")}
+              htmlFor="bog_client_secret"
+              help={hasExistingCredentials ? t("bog.clientSecretKeep") : t("bog.clientSecretNew")}
             >
-              <Checkbox
-                checked={isProviderActive("tbc")}
-                onCheckedChange={() => toggleProvider("tbc")}
-                onClick={(e) => e.stopPropagation()}
+              <PasswordInput
+                id="bog_client_secret"
+                value={bogSecret}
+                onChange={setBogSecret}
+                placeholder={hasExistingCredentials ? "••••••••••••••••" : " "}
+                {...secretLabels}
               />
-              <div className="flex-1">
-                <span className="font-medium">{t("paymentMethods.providerTbc")}</span>
-              </div>
-            </div>
-            <Collapsible open={isProviderActive("tbc")}>
-              <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-4 border-t pt-4">
-                  {/* TBC Client ID */}
-                  <div className="space-y-2">
-                    <Label htmlFor="tbc_client_id">{t("paymentMethods.tbcClientId")}</Label>
-                    <Input
-                      id="tbc_client_id"
-                      value={settings.tbc_client_id}
-                      onChange={(e) => setSettings({ ...settings, tbc_client_id: e.target.value })}
-                      placeholder="your-tbc-client-id"
-                    />
-                  </div>
-
-                  {/* TBC Client Secret */}
-                  <div className="space-y-2">
-                    <Label htmlFor="tbc_client_secret">{t("paymentMethods.tbcClientSecret")}</Label>
-                    <PasswordInput
-                      id="tbc_client_secret"
-                      value={settings.tbc_client_secret}
-                      onChange={(value) => setSettings({ ...settings, tbc_client_secret: value })}
-                      placeholder="your-tbc-client-secret"
-                    />
-                  </div>
-
-                  {/* TBC API Key */}
-                  <div className="space-y-2">
-                    <Label htmlFor="tbc_api_key">{t("paymentMethods.tbcApiKey")}</Label>
-                    <Input
-                      id="tbc_api_key"
-                      value={settings.tbc_api_key}
-                      onChange={(e) => setSettings({ ...settings, tbc_api_key: e.target.value })}
-                      placeholder="your-tbc-api-key"
-                    />
-                  </div>
-
-                  {/* TBC Production Mode */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="tbc_use_production">{t("paymentMethods.tbcProductionMode")}</Label>
-                    </div>
-                    <Switch
-                      id="tbc_use_production"
-                      checked={settings.tbc_use_production}
-                      onCheckedChange={(checked) =>
-                        setSettings({ ...settings, tbc_use_production: checked })
-                      }
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            </StackField>
           </div>
-
-          {/* Flitt Provider */}
-          <div className="border rounded-lg">
-            <div
-              className="flex items-center gap-3 p-4 cursor-pointer"
-              onClick={() => toggleProvider("flitt")}
+          <InlineSwitch
+            id="bog_use_production"
+            label={t("environment.productionMode")}
+            help={t("environment.productionModeDesc")}
+            checked={settings.bog_use_production}
+            onChange={(checked) => setSettings({ ...settings, bog_use_production: checked })}
+          />
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <StackField
+              label={t("returnUrls.successUrl")}
+              suffix={t("returnUrls.successUrlAfter")}
+              htmlFor="bog_return_url_success"
+              help={t("returnUrls.successUrlHelp")}
             >
-              <Checkbox
-                checked={isProviderActive("flitt")}
-                onCheckedChange={() => toggleProvider("flitt")}
-                onClick={(e) => e.stopPropagation()}
+              <Input
+                id="bog_return_url_success"
+                type="url"
+                className={settingsInput}
+                value={settings.bog_return_url_success}
+                onChange={(e) => setSettings({ ...settings, bog_return_url_success: e.target.value })}
+                placeholder={t("returnUrls.successUrlPlaceholder")}
               />
-              <div className="flex-1">
-                <span className="font-medium">{t("paymentMethods.providerFlitt")}</span>
-              </div>
-            </div>
-            <Collapsible open={isProviderActive("flitt")}>
-              <CollapsibleContent>
-                <div className="px-4 pb-4 space-y-4 border-t pt-4">
-                  {/* Flitt Merchant ID */}
-                  <div className="space-y-2">
-                    <Label htmlFor="flitt_merchant_id">{t("paymentMethods.flittMerchantId")}</Label>
-                    <Input
-                      id="flitt_merchant_id"
-                      value={settings.flitt_merchant_id}
-                      onChange={(e) => setSettings({ ...settings, flitt_merchant_id: e.target.value })}
-                      placeholder="your-flitt-merchant-id"
-                    />
-                  </div>
-
-                  {/* Flitt Password */}
-                  <div className="space-y-2">
-                    <Label htmlFor="flitt_password">{t("paymentMethods.flittPassword")}</Label>
-                    <PasswordInput
-                      id="flitt_password"
-                      value={settings.flitt_password}
-                      onChange={(value) => setSettings({ ...settings, flitt_password: value })}
-                      placeholder="your-flitt-password"
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-          {/* Paddle Provider */}
-          <div className="border rounded-lg">
-            <div
-              className="flex items-center gap-3 p-4 cursor-pointer"
-              onClick={() => toggleProvider("paddle")}
+            </StackField>
+            <StackField
+              label={t("returnUrls.failUrl")}
+              suffix={t("returnUrls.failUrlAfter")}
+              htmlFor="bog_return_url_fail"
+              help={t("returnUrls.failUrlHelp")}
             >
-              <Checkbox
-                checked={isProviderActive("paddle")}
-                onCheckedChange={() => toggleProvider("paddle")}
-                onClick={(e) => e.stopPropagation()}
+              <Input
+                id="bog_return_url_fail"
+                type="url"
+                className={settingsInput}
+                value={settings.bog_return_url_fail}
+                onChange={(e) => setSettings({ ...settings, bog_return_url_fail: e.target.value })}
+                placeholder={t("returnUrls.failUrlPlaceholder")}
               />
-              <div className="flex-1">
-                <span className="font-medium">{t("paymentMethods.providerPaddle")}</span>
-              </div>
-            </div>
-            <Collapsible open={isProviderActive("paddle")}>
-              <CollapsibleContent>
-                <div className="px-4 pb-4 border-t pt-4 space-y-3">
-                  <div>
-                    <Label>{t("paymentMethods.paddleApiKey")}</Label>
-                    <PasswordInput
-                      id="paddle_api_key"
-                      value={settings.paddle_api_key || ""}
-                      onChange={(v) => setSettings((prev) => ({ ...prev, paddle_api_key: v }))}
-                      placeholder="pdl_..."
-                    />
-                  </div>
-                  <div>
-                    <Label>{t("paymentMethods.paddleClientToken")}</Label>
-                    <Input
-                      value={settings.paddle_client_token || ""}
-                      onChange={(e) => setSettings((prev) => ({ ...prev, paddle_client_token: e.target.value }))}
-                      placeholder="test_..."
-                    />
-                  </div>
-                  <div>
-                    <Label>{t("paymentMethods.paddleWebhookSecret")}</Label>
-                    <PasswordInput
-                      id="paddle_webhook_secret"
-                      value={settings.paddle_webhook_secret || ""}
-                      onChange={(v) => setSettings((prev) => ({ ...prev, paddle_webhook_secret: v }))}
-                      placeholder="pdl_ntfset_..."
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label>{t("paymentMethods.paddleProductionMode")}</Label>
-                    <Switch
-                      checked={settings.paddle_use_production || false}
-                      onCheckedChange={(v) => setSettings((prev) => ({ ...prev, paddle_use_production: v }))}
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            </StackField>
           </div>
+        </ProviderBlock>
 
-          {/* Cash on Delivery */}
-          <div className="border rounded-lg">
-            <div
-              className="flex items-center gap-3 p-4 cursor-pointer"
-              onClick={() => toggleProvider("cash")}
-            >
-              <Checkbox
-                checked={isProviderActive("cash")}
-                onCheckedChange={() => toggleProvider("cash")}
-                onClick={(e) => e.stopPropagation()}
+        {/* TBC Provider */}
+        <ProviderBlock
+          id="tbc"
+          label={t("paymentMethods.providerTbc")}
+          active={isProviderActive("tbc")}
+          onToggle={() => toggleProvider("tbc")}
+        >
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <StackField label={t("paymentMethods.tbcClientId")} htmlFor="tbc_client_id">
+              <Input
+                id="tbc_client_id"
+                className={cn(settingsInput, "font-mono")}
+                value={settings.tbc_client_id}
+                onChange={(e) => setSettings({ ...settings, tbc_client_id: e.target.value })}
               />
-              <div className="flex-1">
-                <span className="font-medium">{t("paymentMethods.cashOnDelivery")}</span>
-                <p className="text-sm text-muted-foreground">
-                  {t("paymentMethods.cashOnDeliveryDesc")}
-                </p>
-              </div>
-            </div>
+            </StackField>
+            <StackField label={t("paymentMethods.tbcClientSecret")} htmlFor="tbc_client_secret">
+              <PasswordInput
+                id="tbc_client_secret"
+                value={settings.tbc_client_secret}
+                onChange={(value) => setSettings({ ...settings, tbc_client_secret: value })}
+                placeholder=" "
+                {...secretLabels}
+              />
+            </StackField>
+            <StackField label={t("paymentMethods.tbcApiKey")} htmlFor="tbc_api_key" className="sm:col-span-2">
+              <Input
+                id="tbc_api_key"
+                className={cn(settingsInput, "font-mono")}
+                value={settings.tbc_api_key}
+                onChange={(e) => setSettings({ ...settings, tbc_api_key: e.target.value })}
+              />
+            </StackField>
           </div>
-        </CardContent>
-      </Card>
+          <InlineSwitch
+            id="tbc_use_production"
+            label={t("paymentMethods.tbcProductionMode")}
+            checked={settings.tbc_use_production}
+            onChange={(checked) => setSettings({ ...settings, tbc_use_production: checked })}
+          />
+        </ProviderBlock>
+
+        {/* Flitt Provider */}
+        <ProviderBlock
+          id="flitt"
+          label={t("paymentMethods.providerFlitt")}
+          active={isProviderActive("flitt")}
+          onToggle={() => toggleProvider("flitt")}
+        >
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <StackField label={t("paymentMethods.flittMerchantId")} htmlFor="flitt_merchant_id">
+              <Input
+                id="flitt_merchant_id"
+                className={cn(settingsInput, "font-mono")}
+                value={settings.flitt_merchant_id}
+                onChange={(e) => setSettings({ ...settings, flitt_merchant_id: e.target.value })}
+              />
+            </StackField>
+            <StackField label={t("paymentMethods.flittPassword")} htmlFor="flitt_password">
+              <PasswordInput
+                id="flitt_password"
+                value={settings.flitt_password}
+                onChange={(value) => setSettings({ ...settings, flitt_password: value })}
+                placeholder=" "
+                {...secretLabels}
+              />
+            </StackField>
+          </div>
+        </ProviderBlock>
+
+        {/* Paddle Provider */}
+        <ProviderBlock
+          id="paddle"
+          label={t("paymentMethods.providerPaddle")}
+          active={isProviderActive("paddle")}
+          onToggle={() => toggleProvider("paddle")}
+        >
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <StackField label={t("paymentMethods.paddleApiKey")} htmlFor="paddle_api_key">
+              <PasswordInput
+                id="paddle_api_key"
+                value={settings.paddle_api_key || ""}
+                onChange={(v) => setSettings((prev) => ({ ...prev, paddle_api_key: v }))}
+                placeholder="pdl_..."
+                {...secretLabels}
+              />
+            </StackField>
+            <StackField label={t("paymentMethods.paddleClientToken")} htmlFor="paddle_client_token">
+              <Input
+                id="paddle_client_token"
+                className={cn(settingsInput, "font-mono")}
+                value={settings.paddle_client_token || ""}
+                onChange={(e) => setSettings((prev) => ({ ...prev, paddle_client_token: e.target.value }))}
+                placeholder="test_..."
+              />
+            </StackField>
+            <StackField label={t("paymentMethods.paddleWebhookSecret")} htmlFor="paddle_webhook_secret" className="sm:col-span-2">
+              <PasswordInput
+                id="paddle_webhook_secret"
+                value={settings.paddle_webhook_secret || ""}
+                onChange={(v) => setSettings((prev) => ({ ...prev, paddle_webhook_secret: v }))}
+                placeholder="pdl_ntfset_..."
+                {...secretLabels}
+              />
+            </StackField>
+          </div>
+          <InlineSwitch
+            id="paddle_use_production"
+            label={t("paymentMethods.paddleProductionMode")}
+            checked={settings.paddle_use_production || false}
+            onChange={(v) => setSettings((prev) => ({ ...prev, paddle_use_production: v }))}
+          />
+        </ProviderBlock>
+
+        {/* Cash on Delivery */}
+        <ProviderBlock
+          id="cash"
+          label={t("paymentMethods.cashOnDelivery")}
+          help={t("paymentMethods.cashOnDeliveryDesc")}
+          active={isProviderActive("cash")}
+          onToggle={() => toggleProvider("cash")}
+        />
+      </SectionCard>
 
       {/* Delivery — Quickshipper */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Truck className="h-5 w-5" />
-            <CardTitle>Delivery — Quickshipper</CardTitle>
-          </div>
-          <CardDescription>
-            Connect your Quickshipper account to dispatch couriers automatically
-            when an order is placed. The storefront will replace static shipping
-            methods with a live quote based on each order&apos;s delivery address.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Pickup option — sits at the top of the Delivery card
-              because it shares the pickup address with Quickshipper. */}
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="allow_pickup" className="text-base">
-                Offer pickup at store
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                When on, customers can choose to collect the order at the store
-                instead of using a courier. Pickup orders are free and can be
-                paid in cash on collection. Uses the pickup address below.
-              </p>
-            </div>
-            <Switch
-              id="allow_pickup"
-              checked={settings.allow_pickup}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, allow_pickup: checked })
-              }
-            />
-          </div>
+      <SectionCard title={t("delivery.title")} hint={t("delivery.description")} testId="ec-settings-delivery">
+        {/* Pickup option — sits at the top of the Delivery card
+            because it shares the pickup address with Quickshipper. */}
+        <FieldRow label={t("delivery.allowPickup")} help={t("delivery.allowPickupHelp")} htmlFor="allow_pickup" align="center">
+          <Switch
+            id="allow_pickup"
+            checked={settings.allow_pickup}
+            onCheckedChange={(checked) => setSettings({ ...settings, allow_pickup: checked })}
+          />
+        </FieldRow>
+        <FieldRow label={t("delivery.enable")} help={t("delivery.enableHelp")} htmlFor="quickshipper_enabled" align="center">
+          <Switch
+            id="quickshipper_enabled"
+            checked={settings.quickshipper_enabled}
+            onCheckedChange={(checked) =>
+              setSettings((prev) => ({ ...prev, quickshipper_enabled: checked }))
+            }
+          />
+        </FieldRow>
 
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="space-y-0.5">
-              <Label htmlFor="quickshipper_enabled" className="text-base">
-                Enable Quickshipper
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                When on, the storefront fetches a real-time courier price + ETA
-                at checkout instead of showing your manual shipping methods.
-              </p>
-            </div>
-            <Switch
-              id="quickshipper_enabled"
-              checked={settings.quickshipper_enabled}
-              onCheckedChange={(checked) =>
-                setSettings((prev) => ({ ...prev, quickshipper_enabled: checked }))
-              }
-            />
-          </div>
-
-          {settings.quickshipper_enabled && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="quickshipper_api_key">
-                    API key
-                    {hasQuickshipperKey && (
-                      <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-600">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        on file
-                      </span>
-                    )}
-                  </Label>
-                  <PasswordInput
-                    id="quickshipper_api_key"
-                    value={quickshipperApiKey}
-                    onChange={setQuickshipperApiKey}
-                    placeholder={
-                      hasQuickshipperKey
-                        ? "Leave blank to keep the existing key"
-                        : "Paste your Quickshipper API key"
-                    }
-                  />
-                </div>
-                <div className="flex items-end">
-                  <div className="flex items-center justify-between rounded-lg border p-3 w-full">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="quickshipper_use_production" className="text-base">
-                        Production mode
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        Off = Quickshipper sandbox, on = production billing.
-                      </p>
-                    </div>
-                    <Switch
-                      id="quickshipper_use_production"
-                      checked={settings.quickshipper_use_production}
-                      onCheckedChange={(checked) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          quickshipper_use_production: checked,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-base">Pickup address</Label>
-                  <p className="text-sm text-muted-foreground">
-                    The courier will pick up every shipment from this location.
-                    Drop a pin on the map for accurate routing.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="quickshipper_pickup_contact_name">
-                      Contact name
-                    </Label>
-                    <Input
-                      id="quickshipper_pickup_contact_name"
-                      value={settings.quickshipper_pickup_contact_name}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          quickshipper_pickup_contact_name: e.target.value,
-                        }))
-                      }
-                      placeholder="e.g. Shop manager"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="quickshipper_pickup_phone">Phone</Label>
-                    <Input
-                      id="quickshipper_pickup_phone"
-                      value={settings.quickshipper_pickup_phone}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          quickshipper_pickup_phone: e.target.value,
-                        }))
-                      }
-                      placeholder="+995..."
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="quickshipper_pickup_address">Street</Label>
-                    <Input
-                      id="quickshipper_pickup_address"
-                      value={settings.quickshipper_pickup_address}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          quickshipper_pickup_address: e.target.value,
-                        }))
-                      }
-                      placeholder="e.g. 12 Rustaveli Ave"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="quickshipper_pickup_city">City</Label>
-                    <Input
-                      id="quickshipper_pickup_city"
-                      value={settings.quickshipper_pickup_city}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          quickshipper_pickup_city: e.target.value,
-                        }))
-                      }
-                      placeholder="Tbilisi"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="quickshipper_pickup_extra_instructions">
-                    Extra instructions
-                  </Label>
-                  <Input
-                    id="quickshipper_pickup_extra_instructions"
-                    value={settings.quickshipper_pickup_extra_instructions}
-                    onChange={(e) =>
-                      setSettings((prev) => ({
-                        ...prev,
-                        quickshipper_pickup_extra_instructions: e.target.value,
-                      }))
-                    }
-                    placeholder="Door code, floor, what to ring at"
-                  />
-                </div>
-
-                <MiniMapPicker
-                  latitude={settings.quickshipper_pickup_latitude}
-                  longitude={settings.quickshipper_pickup_longitude}
-                  onChange={(lat, lng) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      quickshipper_pickup_latitude: lat,
-                      quickshipper_pickup_longitude: lng,
-                    }))
-                  }
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex flex-wrap gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={testingQuickshipper || (!hasQuickshipperKey && !quickshipperApiKey)}
-                  onClick={async () => {
-                    setTestingQuickshipper(true)
-                    try {
-                      const res = await ecommerceQuickshipperTestConnection() as {
-                        success: boolean
-                        shop_name?: string
-                        balance?: string
-                        has_providers?: boolean
-                        error?: string
-                      }
-                      if (res.success) {
-                        toast.success(
-                          `Connected as ${res.shop_name || "Quickshipper account"}` +
-                            (res.balance ? ` · balance: ${res.balance}` : "") +
-                            (res.has_providers ? "" : " · ⚠ no couriers configured yet")
-                        )
-                      } else {
-                        toast.error(res.error || "Quickshipper rejected the request")
-                      }
-                    } catch (err) {
-                      const msg =
-                        (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
-                        (err as Error).message ||
-                        "Test failed"
-                      toast.error(msg)
-                    } finally {
-                      setTestingQuickshipper(false)
-                    }
-                  }}
-                >
-                  {testingQuickshipper ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Testing…
-                    </>
-                  ) : (
-                    "Test connection"
+        {settings.quickshipper_enabled && (
+          <>
+            <FieldRow
+              label={
+                <span className="inline-flex flex-wrap items-center gap-2">
+                  {t("delivery.apiKey")}
+                  {hasQuickshipperKey && (
+                    <TonePill tone="success" dot>
+                      {t("delivery.keyOnFile")}
+                    </TonePill>
                   )}
-                </Button>
+                </span>
+              }
+              htmlFor="quickshipper_api_key"
+              align="center"
+            >
+              <PasswordInput
+                id="quickshipper_api_key"
+                className={fieldWidth}
+                value={quickshipperApiKey}
+                onChange={setQuickshipperApiKey}
+                placeholder={hasQuickshipperKey ? t("delivery.apiKeyKeep") : t("delivery.apiKeyPaste")}
+                {...secretLabels}
+              />
+            </FieldRow>
+            <FieldRow
+              label={t("delivery.productionMode")}
+              help={t("delivery.productionModeHelp")}
+              htmlFor="quickshipper_use_production"
+              align="center"
+            >
+              <Switch
+                id="quickshipper_use_production"
+                checked={settings.quickshipper_use_production}
+                onCheckedChange={(checked) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    quickshipper_use_production: checked,
+                  }))
+                }
+              />
+            </FieldRow>
 
-                {quickshipperWebhookSecret && (
-                  <div className="flex flex-1 min-w-[260px] items-center gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs">
-                    <span className="font-medium text-muted-foreground">
-                      Webhook signing secret:
-                    </span>
-                    <code className="font-mono text-[11px] truncate flex-1">
-                      {quickshipperWebhookSecret}
-                    </code>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2"
-                      onClick={() => {
-                        navigator.clipboard.writeText(quickshipperWebhookSecret)
-                        toast.success("Copied")
-                      }}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                )}
+            <div className="flex min-w-0 flex-col gap-3 border-b px-4 py-3.5" data-testid="ec-settings-pickup">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[13px] font-medium">{t("delivery.pickupAddress")}</span>
+                <span className="text-xs leading-[17px] text-muted-foreground">{t("delivery.pickupAddressHelp")}</span>
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+              <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+                <StackField label={t("delivery.contactName")} htmlFor="quickshipper_pickup_contact_name">
+                  <Input
+                    id="quickshipper_pickup_contact_name"
+                    className={settingsInput}
+                    value={settings.quickshipper_pickup_contact_name}
+                    onChange={(e) => set("quickshipper_pickup_contact_name", e.target.value)}
+                    placeholder={t("delivery.contactNamePlaceholder")}
+                  />
+                </StackField>
+                <StackField label={t("delivery.phone")} htmlFor="quickshipper_pickup_phone">
+                  <Input
+                    id="quickshipper_pickup_phone"
+                    className={cn(settingsInput, "tabular-nums")}
+                    value={settings.quickshipper_pickup_phone}
+                    onChange={(e) => set("quickshipper_pickup_phone", e.target.value)}
+                    placeholder="+995..."
+                  />
+                </StackField>
+              </div>
+              <div className="grid min-w-0 gap-3 sm:grid-cols-3">
+                <StackField label={t("delivery.street")} htmlFor="quickshipper_pickup_address" className="sm:col-span-2">
+                  <Input
+                    id="quickshipper_pickup_address"
+                    className={settingsInput}
+                    value={settings.quickshipper_pickup_address}
+                    onChange={(e) => set("quickshipper_pickup_address", e.target.value)}
+                    placeholder={t("delivery.streetPlaceholder")}
+                  />
+                </StackField>
+                <StackField label={t("delivery.city")} htmlFor="quickshipper_pickup_city">
+                  <Input
+                    id="quickshipper_pickup_city"
+                    className={settingsInput}
+                    value={settings.quickshipper_pickup_city}
+                    onChange={(e) => set("quickshipper_pickup_city", e.target.value)}
+                    placeholder={t("delivery.cityPlaceholder")}
+                  />
+                </StackField>
+              </div>
+              <StackField label={t("delivery.extraInstructions")} htmlFor="quickshipper_pickup_extra_instructions">
+                <Input
+                  id="quickshipper_pickup_extra_instructions"
+                  className={settingsInput}
+                  value={settings.quickshipper_pickup_extra_instructions}
+                  onChange={(e) => set("quickshipper_pickup_extra_instructions", e.target.value)}
+                  placeholder={t("delivery.extraInstructionsPlaceholder")}
+                />
+              </StackField>
+              <MiniMapPicker
+                latitude={settings.quickshipper_pickup_latitude}
+                longitude={settings.quickshipper_pickup_longitude}
+                onChange={(lat, lng) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    quickshipper_pickup_latitude: lat,
+                    quickshipper_pickup_longitude: lng,
+                  }))
+                }
+                labels={{
+                  dropPin: t("delivery.mapDropPin"),
+                  movePin: t("delivery.mapMovePin"),
+                  loading: t("delivery.mapLoading"),
+                }}
+              />
+            </div>
+
+            <div className="flex min-w-0 flex-wrap items-center gap-3 px-4 py-3.5">
+              <button
+                type="button"
+                className={rdButton.outline}
+                disabled={testingQuickshipper || (!hasQuickshipperKey && !quickshipperApiKey)}
+                onClick={handleTestQuickshipper}
+              >
+                {testingQuickshipper ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    {t("delivery.testing")}
+                  </>
+                ) : (
+                  t("delivery.testConnection")
+                )}
+              </button>
+
+              {quickshipperWebhookSecret && (
+                <div className="flex min-w-0 flex-1 basis-[260px] items-center gap-2 rounded-md border bg-muted/30 px-3 py-1.5 text-xs">
+                  <span className="shrink-0 font-medium text-muted-foreground">{t("delivery.webhookSecret")}</span>
+                  <code className="min-w-0 flex-1 truncate font-mono text-[11px]">{quickshipperWebhookSecret}</code>
+                  <button
+                    type="button"
+                    className={rdButton.ghostIconSm}
+                    aria-label={t("page.copy")}
+                    title={t("page.copy")}
+                    onClick={() => {
+                      navigator.clipboard.writeText(quickshipperWebhookSecret)
+                      toast.success(t("toast.copied"))
+                    }}
+                  >
+                    <Copy className="h-3.5 w-3.5" aria-hidden />
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </SectionCard>
 
       {/* Storefront Template */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            <CardTitle>Storefront Template</CardTitle>
-          </div>
-          <CardDescription>
-            Pick the visual design your storefront renders. The Voltage template ships
-            with its own colour palette, density, radius and font controls.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Template radio cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <SectionCard title={t("template.title")} hint={t("template.description")} testId="ec-settings-template">
+        <div className="flex min-w-0 flex-col gap-4 px-4 py-3.5">
+          <div role="radiogroup" aria-label={t("template.title")} className="grid min-w-0 gap-3 sm:grid-cols-2">
             {(
               [
                 {
                   value: "classic" as const,
-                  label: "Classic",
-                  blurb: "Clean, neutral, shadcn-style. The current default.",
+                  label: t("template.classic"),
+                  blurb: t("template.classicBlurb"),
                   preview: (
-                    <div className="grid grid-cols-3 gap-1 h-full">
-                      <div className="bg-muted rounded col-span-2"></div>
-                      <div className="bg-muted-foreground/20 rounded"></div>
-                      <div className="bg-muted-foreground/15 rounded col-span-3"></div>
+                    <div className="grid h-full grid-cols-3 gap-1">
+                      <div className="col-span-2 rounded bg-muted"></div>
+                      <div className="rounded bg-muted-foreground/20"></div>
+                      <div className="col-span-3 rounded bg-muted-foreground/15"></div>
                     </div>
                   ),
                 },
                 {
                   value: "voltage" as const,
-                  label: "Voltage",
-                  blurb: "Bold electronics. Big display type, oversized cards, sticker badges.",
+                  label: t("template.voltage"),
+                  blurb: t("template.voltageBlurb"),
                   preview: (
-                    <div className="grid grid-cols-3 gap-1 h-full">
+                    <div className="grid h-full grid-cols-3 gap-1">
                       <div
-                        className="rounded col-span-2"
+                        className="col-span-2 rounded"
                         style={{ background: VOLTAGE_THEME_SWATCHES[settings.voltage_theme_preset].accent }}
                       ></div>
                       <div
                         className="rounded"
                         style={{ background: VOLTAGE_THEME_SWATCHES[settings.voltage_theme_preset].accent2 }}
                       ></div>
-                      <div className="bg-foreground/90 rounded col-span-3"></div>
+                      <div className="col-span-3 rounded bg-foreground/90"></div>
                     </div>
                   ),
                 },
-              ] as const
+              ]
             ).map((opt) => {
               const checked = settings.storefront_template === opt.value
               return (
                 <button
                   key={opt.value}
                   type="button"
+                  role="radio"
+                  aria-checked={checked}
                   onClick={() =>
                     setSettings((prev) => ({ ...prev, storefront_template: opt.value }))
                   }
-                  className={`flex flex-col rounded-lg border-2 p-3 text-left transition-colors ${
-                    checked ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/30"
-                  }`}
+                  className={cn(
+                    "flex min-w-0 flex-col rounded-lg border p-3 text-start transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    checked ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:border-muted-foreground/40"
+                  )}
+                  data-testid={`template-${opt.value}`}
                 >
-                  <div className="h-16 w-full mb-3">{opt.preview}</div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{opt.label}</span>
-                    {checked && (
-                      <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />
-                    )}
+                  <div className="mb-3 h-14 w-full" aria-hidden>{opt.preview}</div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[13px] font-semibold">{opt.label}</span>
+                    {checked && <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden />}
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">{opt.blurb}</span>
+                  <span className="mt-0.5 text-xs text-muted-foreground">{opt.blurb}</span>
                 </button>
               )
             })}
@@ -1450,88 +1211,91 @@ export default function EcommerceSettingsPage() {
 
           {/* Voltage tweaks — only visible when Voltage is selected */}
           {settings.storefront_template === "voltage" && (
-            <div className="space-y-5 pt-2">
-              <Separator />
-
-              {/* Colour preset */}
-              <div className="space-y-2">
-                <Label>Colour preset</Label>
-                <p className="text-xs text-muted-foreground">
-                  Drives the accent + secondary-accent pair across the entire storefront.
-                </p>
-                <div className="grid grid-cols-7 gap-2">
+            <div className="flex min-w-0 flex-col gap-4 border-t pt-4" data-testid="voltage-tweaks">
+              <StackField label={t("template.colourPreset")} help={t("template.colourPresetHelp")}>
+                <div role="radiogroup" aria-label={t("template.colourPreset")} className="grid grid-cols-7 gap-2 sm:max-w-[360px]">
                   {(Object.keys(VOLTAGE_THEME_SWATCHES) as VoltageTheme[]).map((key) => {
                     const sw = VOLTAGE_THEME_SWATCHES[key]
                     const checked = settings.voltage_theme_preset === key
+                    const name = t(`template.themes.${key}`)
                     return (
                       <button
                         key={key}
                         type="button"
-                        title={sw.label}
+                        role="radio"
+                        aria-checked={checked}
+                        aria-label={name}
+                        title={name}
                         onClick={() =>
                           setSettings((prev) => ({ ...prev, voltage_theme_preset: key }))
                         }
-                        className={`relative aspect-square rounded-lg border-2 transition-all ${
-                          checked ? "border-foreground scale-105" : "border-transparent hover:scale-105"
-                        }`}
+                        className={cn(
+                          "relative aspect-square rounded-lg border-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                          checked ? "scale-105 border-foreground" : "border-transparent hover:scale-105"
+                        )}
                         style={{ background: sw.accent }}
                       >
                         <span
-                          className="absolute bottom-1 right-1 h-3 w-3 rounded-full border border-white/40"
+                          className="absolute bottom-1 end-1 h-3 w-3 rounded-full border border-white/40"
                           style={{ background: sw.accent2 }}
                         ></span>
                         {checked && (
-                          <Check className="absolute top-1 left-1 h-3 w-3 text-white drop-shadow" />
+                          <Check className="absolute start-1 top-1 h-3 w-3 text-white drop-shadow" aria-hidden />
                         )}
                       </button>
                     )
                   })}
                 </div>
-              </div>
+              </StackField>
 
               {/* Mode + Density + Radius — three side-by-side segmented toggles */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <SegmentedToggle
-                  label="Mode"
-                  options={[
-                    { value: "light", label: "Light" },
-                    { value: "dark", label: "Dark" },
-                  ]}
-                  value={settings.voltage_color_mode}
-                  onChange={(v) =>
-                    setSettings((prev) => ({ ...prev, voltage_color_mode: v as VoltageMode }))
-                  }
-                />
-                <SegmentedToggle
-                  label="Density"
-                  options={[
-                    { value: "compact", label: "Compact" },
-                    { value: "cozy", label: "Cozy" },
-                    { value: "comfortable", label: "Comfy" },
-                  ]}
-                  value={settings.voltage_density}
-                  onChange={(v) =>
-                    setSettings((prev) => ({ ...prev, voltage_density: v as VoltageDensity }))
-                  }
-                />
-                <SegmentedToggle
-                  label="Radius"
-                  options={[
-                    { value: "sharp", label: "Sharp" },
-                    { value: "soft", label: "Soft" },
-                    { value: "rounded", label: "Round" },
-                  ]}
-                  value={settings.voltage_radius}
-                  onChange={(v) =>
-                    setSettings((prev) => ({ ...prev, voltage_radius: v as VoltageRadius }))
-                  }
-                />
+              <div className="grid min-w-0 gap-4 sm:grid-cols-3">
+                <StackField label={t("template.mode")}>
+                  <Segmented
+                    size="md"
+                    stretch
+                    ariaLabel={t("template.mode")}
+                    value={settings.voltage_color_mode}
+                    onChange={(v) => setSettings((prev) => ({ ...prev, voltage_color_mode: v }))}
+                    options={[
+                      { value: "light", label: t("template.modeLight") },
+                      { value: "dark", label: t("template.modeDark") },
+                    ]}
+                  />
+                </StackField>
+                <StackField label={t("template.density")}>
+                  <Segmented
+                    size="md"
+                    stretch
+                    ariaLabel={t("template.density")}
+                    value={settings.voltage_density}
+                    onChange={(v) => setSettings((prev) => ({ ...prev, voltage_density: v }))}
+                    options={[
+                      { value: "compact", label: t("template.densityCompact") },
+                      { value: "cozy", label: t("template.densityCozy") },
+                      { value: "comfortable", label: t("template.densityComfortable") },
+                    ]}
+                  />
+                </StackField>
+                <StackField label={t("template.radius")}>
+                  <Segmented
+                    size="md"
+                    stretch
+                    ariaLabel={t("template.radius")}
+                    value={settings.voltage_radius}
+                    onChange={(v) => setSettings((prev) => ({ ...prev, voltage_radius: v }))}
+                    options={[
+                      { value: "sharp", label: t("template.radiusSharp") },
+                      { value: "soft", label: t("template.radiusSoft") },
+                      { value: "rounded", label: t("template.radiusRound") },
+                    ]}
+                  />
+                </StackField>
               </div>
 
               {/* Font pair */}
-              <div className="space-y-2">
-                <Label>Font pair</Label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <StackField label={t("template.fontPair")}>
+                <div role="radiogroup" aria-label={t("template.fontPair")} className="grid grid-cols-2 gap-2 md:grid-cols-4">
                   {(Object.keys(VOLTAGE_FONT_PAIR_LABELS) as VoltageFontPair[]).map((key) => {
                     const fp = VOLTAGE_FONT_PAIR_LABELS[key]
                     const checked = settings.voltage_font_pair === key
@@ -1539,519 +1303,441 @@ export default function EcommerceSettingsPage() {
                       <button
                         key={key}
                         type="button"
+                        role="radio"
+                        aria-checked={checked}
                         onClick={() =>
                           setSettings((prev) => ({ ...prev, voltage_font_pair: key }))
                         }
-                        className={`flex flex-col items-center justify-center rounded-lg border-2 p-3 transition-colors ${
-                          checked
-                            ? "border-primary bg-primary/5"
-                            : "border-muted hover:border-muted-foreground/30"
-                        }`}
+                        className={cn(
+                          "flex min-w-0 flex-col items-center justify-center rounded-lg border p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          checked ? "border-primary bg-primary/5 ring-1 ring-primary" : "hover:border-muted-foreground/40"
+                        )}
                       >
-                        <span
-                          className="text-3xl font-bold leading-none mb-1"
-                          style={{ fontFamily: fp.family }}
-                        >
+                        <span className="mb-1 text-3xl font-bold leading-none" style={{ fontFamily: fp.family }}>
                           {fp.sample}
                         </span>
-                        <span className="text-[10px] text-muted-foreground text-center">
-                          {fp.label}
-                        </span>
+                        <span className="text-center text-[11px] text-muted-foreground">{fp.label}</span>
                       </button>
                     )
                   })}
                 </div>
-              </div>
+              </StackField>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </SectionCard>
 
       {/* Marketing — Google Ads / GA4 tracking */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Marketing — Google Ads</CardTitle>
-          <CardDescription>
-            Paste your Google Ads Tag ID to start tracking conversions. The storefront loads gtag.js on every page when set, and fires a `purchase` conversion event on order confirmation when both the Tag ID and conversion label are filled in.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="google_ads_conversion_id">Google Ads Tag ID</Label>
-            <Input
-              id="google_ads_conversion_id"
-              placeholder="AW-18133924374"
-              value={settings.google_ads_conversion_id}
-              onChange={(e) =>
-                setSettings({ ...settings, google_ads_conversion_id: e.target.value.trim() })
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              Find this in Google Ads → Admin → Tracking → Google Tag. Starts with <code className="font-mono">AW-</code>.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="google_ads_purchase_label">Purchase conversion label</Label>
-            <Input
-              id="google_ads_purchase_label"
-              placeholder="abcDEFghi123456789"
-              value={settings.google_ads_purchase_label}
-              onChange={(e) =>
-                setSettings({ ...settings, google_ads_purchase_label: e.target.value.trim() })
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              The label suffix from your <strong>Purchase</strong> conversion action. Example: if Google gave you{" "}
-              <code className="font-mono">AW-18133924374/abcDEFghi123456789</code>, paste only{" "}
-              <code className="font-mono">abcDEFghi123456789</code>.
-            </p>
-          </div>
-          <div className="space-y-2 pt-4 border-t">
-            <Label htmlFor="google_analytics_id">Google Analytics 4 Measurement ID</Label>
-            <Input
-              id="google_analytics_id"
-              placeholder="G-XXXXXXXXXX"
-              value={settings.google_analytics_id}
-              onChange={(e) =>
-                setSettings({ ...settings, google_analytics_id: e.target.value.trim() })
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              GA4 measurement ID — drives the visitor / page-view dashboard at <a href="https://analytics.google.com" target="_blank" rel="noreferrer" className="underline">analytics.google.com</a>. Find it in Analytics → Admin → Data Streams. Starts with <code className="font-mono">G-</code>. Independent of Google Ads — both can be set together.
-            </p>
-          </div>
-          <div className="space-y-2 pt-4 border-t">
-            <Label htmlFor="clarity_project_id">Microsoft Clarity</Label>
-            <Input
-              id="clarity_project_id"
-              placeholder="Paste the Clarity tag (or just the project ID)"
-              value={settings.clarity_project_id}
-              onChange={(e) => {
-                // Accept either just the project ID or the full Clarity
-                // snippet they pasted from clarity.microsoft.com. The
-                // tag has the ID as the last string argument:
-                //   })(window, document, "clarity", "script", "PROJECT_ID");
-                const raw = e.target.value;
-                const fromSnippet =
-                  raw.match(/clarity\.ms\/tag\/([a-z0-9]+)/i)?.[1] ||
-                  raw.match(/["']([a-z0-9]{8,12})["']\s*\)\s*;?\s*<\/script>?$/i)?.[1] ||
-                  raw.match(/["']([a-z0-9]{8,12})["']\s*\)\s*;?$/im)?.[1];
-                setSettings({
-                  ...settings,
-                  clarity_project_id: fromSnippet || raw.trim(),
-                });
-              }}
-            />
-            <p className="text-xs text-muted-foreground">
-              Paste the entire <code className="font-mono">{`<script>…</script>`}</code> tag from <a href="https://clarity.microsoft.com" target="_blank" rel="noreferrer" className="underline">clarity.microsoft.com</a> → Settings → Setup, or just the project ID (lowercase 10-char string like <code className="font-mono">p1q2r3s4t5</code>). Heatmaps + session recordings appear in the Clarity dashboard within minutes.
-            </p>
-          </div>
-          <div className="space-y-2 pt-4 border-t">
-            <Label htmlFor="google_maps_api_key">Google Maps API key</Label>
-            <Input
-              id="google_maps_api_key"
-              placeholder="AIzaSy…"
-              value={settings.google_maps_api_key}
-              onChange={(e) =>
-                setSettings({ ...settings, google_maps_api_key: e.target.value.trim() })
-              }
-            />
-            <p className="text-xs text-muted-foreground">
-              When set, the storefront&apos;s checkout address pickers switch from the default OpenStreetMap to <strong>Google Maps + Places Autocomplete</strong> — visitors can search an address and the pin auto-drops on the map. Without a key, the existing OSM picker keeps working.
-            </p>
-            <details className="text-xs text-muted-foreground">
-              <summary className="cursor-pointer underline">How to get a Google Maps API key</summary>
-              <ol className="list-decimal pl-5 space-y-1 mt-2">
-                <li>Open <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="underline">console.cloud.google.com</a> and create a new project (or pick an existing one).</li>
-                <li>In the search bar, find <strong>Google Maps Platform → APIs & Services → Library</strong>. Enable these three APIs: <strong>Maps JavaScript API</strong>, <strong>Places API</strong>, <strong>Geocoding API</strong>.</li>
-                <li>Set up <strong>Billing</strong> on the project. Google gives $200 of free Maps usage per month — enough for thousands of monthly visitors. A card is required even within the free tier.</li>
-                <li>Go to <strong>APIs & Services → Credentials → + Create Credentials → API key</strong>. Copy the key (starts with <code className="font-mono">AIzaSy…</code>).</li>
-                <li>Click the new key to edit. Under <strong>Application restrictions</strong> select <strong>HTTP referrers</strong> and add your storefront domains: <code className="font-mono">https://refurb.ge/*</code>, <code className="font-mono">https://*.ecommerce.echodesk.ge/*</code>. Under <strong>API restrictions</strong> limit it to the three APIs above.</li>
-                <li>Paste the key in the field above and save.</li>
-              </ol>
-            </details>
-          </div>
-        </CardContent>
-      </Card>
+      <SectionCard title={t("marketing.title")} hint={t("marketing.description")} testId="ec-settings-marketing">
+        <FieldRow
+          label={t("marketing.adsTagId")}
+          help={t.rich("marketing.adsTagIdHelp", { code })}
+          htmlFor="google_ads_conversion_id"
+        >
+          <Input
+            id="google_ads_conversion_id"
+            className={cn(settingsInput, fieldWidth, "font-mono")}
+            placeholder="AW-18133924374"
+            value={settings.google_ads_conversion_id}
+            onChange={(e) =>
+              setSettings({ ...settings, google_ads_conversion_id: e.target.value.trim() })
+            }
+          />
+        </FieldRow>
+        <FieldRow
+          label={t("marketing.purchaseLabel")}
+          help={t.rich("marketing.purchaseLabelHelp", { code, strong })}
+          htmlFor="google_ads_purchase_label"
+        >
+          <Input
+            id="google_ads_purchase_label"
+            className={cn(settingsInput, fieldWidth, "font-mono")}
+            placeholder="abcDEFghi123456789"
+            value={settings.google_ads_purchase_label}
+            onChange={(e) =>
+              setSettings({ ...settings, google_ads_purchase_label: e.target.value.trim() })
+            }
+          />
+        </FieldRow>
+        <FieldRow
+          label={t("marketing.ga4")}
+          help={t.rich("marketing.ga4Help", { code, link: extLink("https://analytics.google.com") })}
+          htmlFor="google_analytics_id"
+        >
+          <Input
+            id="google_analytics_id"
+            className={cn(settingsInput, fieldWidth, "font-mono")}
+            placeholder="G-XXXXXXXXXX"
+            value={settings.google_analytics_id}
+            onChange={(e) =>
+              setSettings({ ...settings, google_analytics_id: e.target.value.trim() })
+            }
+          />
+        </FieldRow>
+        <FieldRow
+          label={t("marketing.clarity")}
+          help={t.rich("marketing.clarityHelp", { code, snippet: "<script>…</script>", link: extLink("https://clarity.microsoft.com") })}
+          htmlFor="clarity_project_id"
+        >
+          <Input
+            id="clarity_project_id"
+            className={cn(settingsInput, fieldWidth, "font-mono placeholder:font-sans")}
+            placeholder={t("marketing.clarityPlaceholder")}
+            value={settings.clarity_project_id}
+            onChange={(e) => {
+              // Accept either just the project ID or the full Clarity
+              // snippet they pasted from clarity.microsoft.com.
+              setSettings({
+                ...settings,
+                clarity_project_id: parseClarityInput(e.target.value),
+              })
+            }}
+          />
+        </FieldRow>
+        <FieldRow
+          label={t("marketing.mapsKey")}
+          help={
+            <span className="flex flex-col gap-1.5">
+              <span>{t.rich("marketing.mapsKeyHelp", { strong })}</span>
+              <details>
+                <summary className="cursor-pointer underline underline-offset-2">{t("marketing.mapsHowTo")}</summary>
+                <ol className="mt-2 list-decimal space-y-1 ps-5">
+                  <li>{t.rich("marketing.mapsStep1", { link: extLink("https://console.cloud.google.com"), strong })}</li>
+                  <li>{t.rich("marketing.mapsStep2", { strong })}</li>
+                  <li>{t.rich("marketing.mapsStep3", { strong })}</li>
+                  <li>{t.rich("marketing.mapsStep4", { strong, code })}</li>
+                  <li>{t.rich("marketing.mapsStep5", { strong, code })}</li>
+                  <li>{t("marketing.mapsStep6")}</li>
+                </ol>
+              </details>
+            </span>
+          }
+          htmlFor="google_maps_api_key"
+        >
+          <Input
+            id="google_maps_api_key"
+            className={cn(settingsInput, fieldWidth, "font-mono")}
+            placeholder="AIzaSy…"
+            value={settings.google_maps_api_key}
+            onChange={(e) =>
+              setSettings({ ...settings, google_maps_api_key: e.target.value.trim() })
+            }
+          />
+        </FieldRow>
+      </SectionCard>
 
       {/* Frontend Deployment */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            <CardTitle>{t("deployment.title")}</CardTitle>
-          </div>
-          <CardDescription>
-            {t("deployment.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Deployment Status */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="space-y-0.5">
-              <Label>{t("deployment.status")}</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge
-                  variant={
-                    deploymentInfo.deployment_status === "deployed"
-                      ? "default"
-                      : deploymentInfo.deployment_status === "deploying"
-                      ? "secondary"
-                      : deploymentInfo.deployment_status === "failed"
-                      ? "destructive"
-                      : "outline"
-                  }
-                  className={
-                    deploymentInfo.deployment_status === "deployed"
-                      ? "bg-green-500 hover:bg-green-600"
-                      : deploymentInfo.deployment_status === "deploying"
-                      ? "bg-blue-500 hover:bg-blue-600"
-                      : ""
-                  }
-                >
-                  {deploymentInfo.deployment_status === "deploying" && (
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  )}
-                  {t(`deployment.${deploymentInfo.deployment_status}`)}
-                </Badge>
-              </div>
-            </div>
-          </div>
+      <SectionCard title={t("deployment.title")} hint={t("deployment.description")} testId="ec-settings-deployment">
+        <FieldRow label={t("deployment.status")} align="center">
+          <TonePill tone={deploymentTone(status)} dot={status !== "deploying"} testId="ec-deploy-status">
+            {status === "deploying" && <Loader2 className="me-1 inline h-3 w-3 animate-spin" aria-hidden />}
+            {t(`deployment.state.${status}`)}
+          </TonePill>
+        </FieldRow>
 
-          {/* Frontend URL */}
-          {deploymentInfo.frontend_url && (
-            <div className="space-y-2">
-              <Label>{t("deployment.frontendUrl")}</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={deploymentInfo.frontend_url}
-                  readOnly
-                  className="bg-muted"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => window.open(deploymentInfo.frontend_url!, "_blank")}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t("deployment.frontendUrlLive")}
-              </p>
-            </div>
-          )}
-
-          {/* Vercel Project ID */}
-          {deploymentInfo.vercel_project_id && (
-            <div className="space-y-2">
-              <Label>{t("deployment.vercelProjectId")}</Label>
-              <Input
-                value={deploymentInfo.vercel_project_id}
-                readOnly
-                className="bg-muted font-mono text-sm"
-              />
-            </div>
-          )}
-
-          {/* Deploy/Redeploy Button */}
-          <div className="pt-2 space-y-2">
-            {!deploymentInfo.frontend_url ? (
-              <Button
-                onClick={handleDeploy}
-                disabled={deploying}
-                className="w-full bg-green-600 hover:bg-green-700"
-                size="lg"
+        {/* Frontend URL */}
+        {deploymentInfo.frontend_url && (
+          <FieldRow label={t("deployment.frontendUrl")} help={t("deployment.frontendUrlLive")} align="center">
+            <div className={cn("flex items-center gap-1.5", fieldWidth)}>
+              <Input value={deploymentInfo.frontend_url} readOnly className={cn(settingsInput, "bg-muted font-mono")} aria-label={t("deployment.frontendUrl")} />
+              <button
+                type="button"
+                className={cn(rdButton.outline, "w-8 px-0")}
+                onClick={() => window.open(deploymentInfo.frontend_url!, "_blank")}
+                aria-label={t("page.openInNewTab")}
+                title={t("page.openInNewTab")}
               >
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
+          </FieldRow>
+        )}
+
+        {/* Vercel Project ID */}
+        {deploymentInfo.vercel_project_id && (
+          <FieldRow label={t("deployment.vercelProjectId")} align="center">
+            <Input
+              value={deploymentInfo.vercel_project_id}
+              readOnly
+              aria-label={t("deployment.vercelProjectId")}
+              className={cn(settingsInput, fieldWidth, "bg-muted font-mono text-xs")}
+            />
+          </FieldRow>
+        )}
+
+        <div className="flex min-w-0 flex-col gap-3 px-4 py-3.5">
+          {/* Deploy/Redeploy Button */}
+          {!deploymentInfo.frontend_url ? (
+            <div>
+              <button type="button" onClick={handleDeploy} disabled={deploying} className={rdButton.primary} data-testid="ec-deploy">
                 {deploying ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
                     {t("deployment.deployingFrontend")}
                   </>
                 ) : (
                   <>
-                    <Rocket className="h-4 w-4 mr-2" />
+                    <Rocket className="h-3.5 w-3.5" aria-hidden />
                     {t("deployment.deployFrontend")}
                   </>
                 )}
-              </Button>
-            ) : (
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleDeploy}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleDeploy}
+                disabled={deploying || deleting}
+                className={rdButton.outline}
+                data-testid="ec-redeploy"
+              >
+                {deploying ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                    {t("deployment.redeploying")}
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+                    {t("deployment.redeployFrontend")}
+                  </>
+                )}
+              </button>
+              <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
                   disabled={deploying || deleting}
-                  variant="outline"
-                  className="flex-1"
-                  size="lg"
+                  className={cn(rdButton.dangerSm, "h-8 px-2.5 text-[13px]")}
+                  data-testid="ec-deploy-delete"
                 >
-                  {deploying ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {t("deployment.redeploying")}
-                    </>
+                  {deleting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
                   ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      {t("deployment.redeployFrontend")}
-                    </>
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
                   )}
-                </Button>
-                <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-                  <Button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    disabled={deploying || deleting}
-                    variant="destructive"
-                    size="lg"
-                  >
-                    {deleting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Deployment</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete the frontend deployment? This will remove the Vercel project.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            )}
-          </div>
+                  {t("deployment.deleteDeployment")}
+                </button>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("deployment.deleteTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("deployment.deleteDescription")}</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("page.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>{t("page.delete")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
 
           {/* Info Message */}
-          {!deploymentInfo.frontend_url && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-              <p className="text-sm text-blue-800">
-                {t("deployment.deployInfo")}
-              </p>
-            </div>
-          )}
-
-          {deploymentInfo.deployment_status === "failed" && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <p className="text-sm text-red-800">
-                {t("deployment.deployFailed")}
-              </p>
-            </div>
-          )}
-
-          {deploymentInfo.deployment_status === "deployed" && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <p className="text-sm text-green-800">
-                {t("deployment.deploySuccess")}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          {!deploymentInfo.frontend_url && <Notice tone="info">{t("deployment.deployInfo")}</Notice>}
+          {status === "failed" && <Notice tone="danger">{t("deployment.deployFailed")}</Notice>}
+          {status === "deployed" && <Notice tone="success">{t("deployment.deploySuccess")}</Notice>}
+        </div>
+      </SectionCard>
 
       {/* Custom Domain Management - Only shown when deployed */}
       {deploymentInfo.vercel_project_id && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              <CardTitle>{t("customDomain.title")}</CardTitle>
+        <SectionCard title={t("customDomain.title")} hint={t("customDomain.description")} testId="ec-settings-domains">
+          {/* Add New Domain */}
+          <FieldRow label={t("customDomain.addDomain")} help={t("customDomain.domainHelp")} htmlFor="ec-new-domain">
+            <div className={cn("flex items-center gap-1.5", fieldWidth)}>
+              <Input
+                id="ec-new-domain"
+                className={cn(settingsInput, "font-mono")}
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
+                placeholder={t("customDomain.domainPlaceholder")}
+                disabled={addingDomain}
+              />
+              <button
+                type="button"
+                className={cn(rdButton.primary, "w-8 px-0")}
+                onClick={handleAddDomain}
+                disabled={addingDomain || !newDomain.trim()}
+                aria-label={t("customDomain.addDomain")}
+                title={t("customDomain.addDomain")}
+              >
+                {addingDomain ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Plus className="h-3.5 w-3.5" aria-hidden />}
+              </button>
             </div>
-            <CardDescription>
-              {t("customDomain.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Add New Domain */}
-            <div className="space-y-2">
-              <Label>{t("customDomain.addDomain")}</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newDomain}
-                  onChange={(e) => setNewDomain(e.target.value)}
-                  placeholder={t("customDomain.domainPlaceholder")}
-                  disabled={addingDomain}
-                />
-                <Button
-                  onClick={handleAddDomain}
-                  disabled={addingDomain || !newDomain.trim()}
-                >
-                  {addingDomain ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t("customDomain.domainHelp")}
-              </p>
-            </div>
+          </FieldRow>
 
-            {/* DNS Instructions */}
-            {dnsInstructions.length > 0 && (
-              <div className="space-y-3">
-                <Label>{t("customDomain.dnsRequired")}</Label>
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg space-y-3">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
-                    <p className="text-sm font-medium text-yellow-800">
-                      {t("customDomain.dnsInstruction")}
-                    </p>
-                  </div>
-                  {dnsInstructions.map((instruction, index) => (
-                    <div key={index} className="bg-white p-3 rounded border space-y-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">{t("customDomain.dnsType")}</span>
-                          <p className="font-mono font-medium">{instruction.type}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">{t("customDomain.dnsName")}</span>
-                          <p className="font-mono font-medium">{instruction.name}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">{t("customDomain.dnsValue")}</span>
-                          <div className="flex items-center gap-1">
-                            <p className="font-mono font-medium text-xs break-all">{instruction.value}</p>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => copyToClipboard(instruction.value)}
-                            >
-                              {copiedValue === instruction.value ? (
-                                <Check className="h-3 w-3 text-green-600" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{instruction.description}</p>
+          {/* DNS Instructions */}
+          {dnsInstructions.length > 0 && (
+            <div className="flex min-w-0 flex-col gap-2 border-b px-4 py-3.5">
+              <span className="text-[13px] font-medium">{t("customDomain.dnsRequired")}</span>
+              <Notice tone="warning">{t("customDomain.dnsInstruction")}</Notice>
+              {dnsInstructions.map((instruction, index) => (
+                <div key={index} className="flex min-w-0 flex-col gap-2 rounded-lg border bg-card p-3">
+                  <div className="grid min-w-0 gap-2 text-xs sm:grid-cols-[80px_minmax(0,1fr)_minmax(0,2fr)]">
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground">{t("customDomain.dnsType")}</span>
+                      <p className="font-mono font-medium">{instruction.type}</p>
                     </div>
-                  ))}
-                  <p className="text-xs text-yellow-700">
-                    {t("customDomain.dnsPropagation")}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Existing Domains List */}
-            {domains.length > 0 && (
-              <div className="space-y-3">
-                <Label>{t("customDomain.yourDomains")}</Label>
-                <div className="space-y-2">
-                  {domains.map((domain) => (
-                    <div
-                      key={domain.name}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border rounded-lg"
-                    >
-                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-mono break-all">{domain.name}</span>
-                        <Badge
-                          variant={domain.verified ? "default" : "secondary"}
-                          className={domain.verified ? "bg-green-500" : "bg-yellow-500"}
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground">{t("customDomain.dnsName")}</span>
+                      <p className="break-all font-mono font-medium">{instruction.name}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-muted-foreground">{t("customDomain.dnsValue")}</span>
+                      <div className="flex items-center gap-1">
+                        <p className="min-w-0 break-all font-mono font-medium">{instruction.value}</p>
+                        <button
+                          type="button"
+                          className={cn(rdButton.ghostIconSm, "h-6 w-6")}
+                          onClick={() => copyToClipboard(instruction.value)}
+                          aria-label={t("page.copy")}
+                          title={t("page.copy")}
                         >
-                          {domain.verified ? t("customDomain.verified") : t("customDomain.pendingVerification")}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {!domain.verified && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleVerifyDomain(domain.name)}
-                            disabled={verifyingDomain === domain.name}
-                          >
-                            {verifyingDomain === domain.name ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <RefreshCcw className="h-4 w-4" />
-                            )}
-                            <span className="ml-1">{t("customDomain.verify")}</span>
-                          </Button>
-                        )}
-                        {domain.verified && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(`https://${domain.name}`, "_blank")}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <AlertDialog open={domainToRemove === domain.name} onOpenChange={(open) => !open && setDomainToRemove(null)}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setDomainToRemove(domain.name)}
-                            disabled={removingDomain === domain.name}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            {removingDomain === domain.name ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <X className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Domain</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to remove {domain.name}?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleRemoveDomain(domain.name)}>Remove</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          {copiedValue === instruction.value ? (
+                            <Check className="h-3 w-3 text-green-600" aria-hidden />
+                          ) : (
+                            <Copy className="h-3 w-3" aria-hidden />
+                          )}
+                        </button>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{instruction.description}</p>
                 </div>
-              </div>
-            )}
-
-            {/* Instructions */}
-            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium">{t("customDomain.howToSetup")}</p>
-                <ol className="list-decimal list-inside mt-1 space-y-1">
-                  <li>{t("customDomain.step1")}</li>
-                  <li>{t("customDomain.step2")}</li>
-                  <li>{t("customDomain.step3")}</li>
-                  <li>{t("customDomain.step4")}</li>
-                </ol>
-              </div>
+              ))}
+              <p className="text-xs text-muted-foreground">{t("customDomain.dnsPropagation")}</p>
             </div>
-          </CardContent>
-        </Card>
+          )}
+
+          {/* Existing Domains List */}
+          {domains.length > 0 && (
+            <div className="border-b">
+              <div className="px-4 pb-1 pt-3 text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground">
+                {t("customDomain.yourDomains")}
+              </div>
+              <ul>
+                {domains.map((domain) => (
+                  <li
+                    key={domain.name}
+                    className="flex min-h-11 min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 border-t px-4 py-2 first:border-t-0"
+                    data-testid="ec-domain-row"
+                  >
+                    <Globe className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="min-w-0 flex-1 break-all font-mono text-xs">{domain.name}</span>
+                    <TonePill tone={domain.verified ? "success" : "warning"} dot>
+                      {domain.verified ? t("customDomain.verified") : t("customDomain.pendingVerification")}
+                    </TonePill>
+                    <span className="flex items-center gap-1">
+                      {!domain.verified && (
+                        <button
+                          type="button"
+                          className={rdButton.outlineSm}
+                          onClick={() => handleVerifyDomain(domain.name)}
+                          disabled={verifyingDomain === domain.name}
+                        >
+                          {verifyingDomain === domain.name ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                          ) : (
+                            <RefreshCcw className="h-3.5 w-3.5" aria-hidden />
+                          )}
+                          {t("customDomain.verify")}
+                        </button>
+                      )}
+                      {domain.verified && (
+                        <button
+                          type="button"
+                          className={rdButton.ghostIconSm}
+                          onClick={() => window.open(`https://${domain.name}`, "_blank")}
+                          aria-label={t("page.openInNewTab")}
+                          title={t("page.openInNewTab")}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+                        </button>
+                      )}
+                      <AlertDialog open={domainToRemove === domain.name} onOpenChange={(open) => !open && setDomainToRemove(null)}>
+                        <button
+                          type="button"
+                          className={cn(rdButton.ghostIconSm, "hover:text-destructive")}
+                          onClick={() => setDomainToRemove(domain.name)}
+                          disabled={removingDomain === domain.name}
+                          aria-label={t("customDomain.removeAria", { domain: domain.name })}
+                          title={t("customDomain.removeTitle")}
+                        >
+                          {removingDomain === domain.name ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                          ) : (
+                            <X className="h-3.5 w-3.5" aria-hidden />
+                          )}
+                        </button>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("customDomain.removeTitle")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("customDomain.removeDescription", { domain: domain.name })}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("page.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleRemoveDomain(domain.name)}>
+                              {t("customDomain.remove")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Instructions */}
+          <div className="px-4 py-3.5">
+            <Notice tone="info">
+              <p className="font-medium">{t("customDomain.howToSetup")}</p>
+              <ol className="mt-1 list-inside list-decimal space-y-0.5">
+                <li>{t("customDomain.step1")}</li>
+                <li>{t("customDomain.step2")}</li>
+                <li>{t("customDomain.step3")}</li>
+                <li>{t("customDomain.step4")}</li>
+              </ol>
+            </Notice>
+          </div>
+        </SectionCard>
       )}
 
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button
+      {/* Save bar */}
+      <div
+        className="sticky bottom-4 z-10 flex min-h-12 flex-wrap items-center gap-x-3 gap-y-2 rounded-[10px] border bg-background/95 px-4 py-2 shadow-[0_4px_16px_rgb(0_0_0/0.08)] backdrop-blur max-md:me-12"
+        data-testid="ec-settings-savebar"
+      >
+        <span
+          className={cn("min-w-0 flex-1 text-xs", !hasAnyProvider ? "text-destructive" : dirty ? "text-foreground" : "text-muted-foreground")}
+          aria-live="polite"
+        >
+          {!hasAnyProvider ? t("paymentMethods.noProviderWarning") : dirty ? t("page.unsaved") : t("page.allSaved")}
+        </span>
+        <button
+          type="button"
           onClick={handleSave}
           disabled={saving || !hasAnyProvider}
-          size="lg"
+          className={rdButton.primary}
+          data-testid="ec-settings-save"
         >
-          {saving ? t("saving") : t("save")}
-        </Button>
+          {saving ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+              {t("saving")}
+            </>
+          ) : (
+            <>
+              <Save className="h-3.5 w-3.5" aria-hidden />
+              {t("save")}
+            </>
+          )}
+        </button>
       </div>
-    </div>
+    </EcPage>
   )
 }
