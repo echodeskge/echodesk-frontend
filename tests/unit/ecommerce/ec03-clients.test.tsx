@@ -120,6 +120,7 @@ describe("ClientsPage", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Active" }))
     await waitFor(() => expect(screen.getByTestId("ec-error")).toBeInTheDocument())
     expect(toast.error).toHaveBeenCalledWith("Couldn't load clients")
+    expect(screen.queryByTestId("ec-header-sub")).toBeNull()
     fetchClients.mockResolvedValue({ count: 3, results: CLIENTS })
     fireEvent.click(screen.getByRole("button", { name: "Try again" }))
     await waitFor(() => expect(screen.getAllByTestId("ec-table-row")).toHaveLength(3))

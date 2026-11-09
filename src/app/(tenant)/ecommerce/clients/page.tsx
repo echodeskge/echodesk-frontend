@@ -72,7 +72,7 @@ export default function ClientsPage() {
 
   return (
     <>
-      <EcommerceHeaderBridge sub={loading && totalCount === 0 ? null : t("count", { count: totalCount })} />
+      <EcommerceHeaderBridge sub={error || (loading && totalCount === 0) ? null : t("count", { count: totalCount })} />
       <EcPage fill testId="clients-page">
         <ClientsTable
           data={clients}
