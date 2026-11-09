@@ -3,7 +3,9 @@
     "leave": {
       "requests": {
         "searchPlaceholder": "Search employee or leave type",
-        "count": "{count, plural, one {# request} other {# requests}}"
+        "count": "{count, plural, one {# request} other {# requests}}",
+        "noAccessTitle": "You don't have access to these requests",
+        "noAccessHint": "Ask an administrator if you need this list."
       },
       "teamRequests": {
         "pendingSub": "{count} pending",
@@ -33,7 +35,9 @@
     "leave": {
       "requests": {
         "searchPlaceholder": "თანამშრომლის ან ტიპის ძიება",
-        "count": "{count} მოთხოვნა"
+        "count": "{count} მოთხოვნა",
+        "noAccessTitle": "ამ მოთხოვნებზე წვდომა არ გაქვთ",
+        "noAccessHint": "თუ ეს სია გჭირდებათ, მიმართეთ ადმინისტრატორს."
       },
       "teamRequests": {
         "pendingSub": "{count} მოლოდინში",

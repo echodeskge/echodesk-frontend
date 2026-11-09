@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { Calendar, SearchX } from "lucide-react"
+import { Calendar, Lock, SearchX } from "lucide-react"
 import axios from "@/api/axios"
 import { getApiErrorMessage } from "@/lib/utils"
 import { LEAVE_STATUSES } from "../_lib/hr-utils"
-import { matchesRequestSearch } from "../_lib/lv02-utils"
+import { isForbidden, matchesRequestSearch } from "../_lib/lv02-utils"
 import { useDeepLinkId } from "../_lib/useDeepLinkId"
 import { LeaveRequestDetailDialog } from "../_components/LeaveRequestDetailDialog"
 import {
@@ -103,32 +103,35 @@ export default function AllRequestsPage() {
   const shown = useMemo(() => requests.filter((r) => matchesRequestSearch(r, search)), [requests, search])
   const columns = requestColumns<LeaveRequest>({ t, locale, submitted: true })
 
-  const empty =
-    search.trim() && requests.length > 0 ? (
-      <LeaveEmptyState
-        icon={SearchX}
-        title={t("ui.noMatches")}
-        description={t("ui.noMatchesHint")}
-        action={
-          <button type="button" className={leaveButton.outlineSm} onClick={() => setSearch("")}>
+  // Non-admins get 403: say so instead of "check your connection".
+  const forbidden = isForbidden(loadError)
+  const empty = forbidden ? (
+    <LeaveEmptyState icon={Lock} title={t("requests.noAccessTitle")} description={t("requests.noAccessHint")} />
+  ) : search.trim() && requests.length > 0 ? (
+    <LeaveEmptyState
+      icon={SearchX}
+      title={t("ui.noMatches")}
+      description={t("ui.noMatchesHint")}
+      action={
+        <button type="button" className={leaveButton.outlineSm} onClick={() => setSearch("")}>
+          {t("ui.clearFilters")}
+        </button>
+      }
+    />
+  ) : (
+    <LeaveEmptyState
+      icon={Calendar}
+      title={t("shared.noLeaveRequests")}
+      description={t("allRequests.noMatchDescription")}
+      action={
+        statusFilter !== "all" ? (
+          <button type="button" className={leaveButton.outlineSm} onClick={() => setStatusFilter("all")}>
             {t("ui.clearFilters")}
           </button>
-        }
-      />
-    ) : (
-      <LeaveEmptyState
-        icon={Calendar}
-        title={t("shared.noLeaveRequests")}
-        description={t("allRequests.noMatchDescription")}
-        action={
-          statusFilter !== "all" ? (
-            <button type="button" className={leaveButton.outlineSm} onClick={() => setStatusFilter("all")}>
-              {t("ui.clearFilters")}
-            </button>
-          ) : undefined
-        }
-      />
-    )
+        ) : undefined
+      }
+    />
+  )
 
   return (
     <>
@@ -163,7 +166,7 @@ export default function AllRequestsPage() {
           rowKey={(r) => r.id}
           onRowClick={(r) => setDetailId(r.id)}
           isRowSelected={(r) => r.id === detailId}
-          error={loadError}
+          error={forbidden ? null : loadError}
           onRetry={() => setReloadKey((k) => k + 1)}
           empty={empty}
           footer={!loading && !loadError ? <span>{t("requests.count", { count: shown.length })}</span> : undefined}

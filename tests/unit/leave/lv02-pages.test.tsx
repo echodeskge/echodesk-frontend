@@ -146,14 +146,24 @@ describe("team requests", () => {
   })
 
   it("shows the translated error state with retry on a failed load (Georgian)", async () => {
-    get.mockRejectedValueOnce(Object.assign(new Error("Request failed with status code 403"), { response: { status: 403, data: { detail: "You do not have permission" } } }))
+    get.mockRejectedValueOnce(Object.assign(new Error("Request failed with status code 500"), { response: { status: 500, data: { detail: "Server exploded" } } }))
     renderLeave(<TeamRequestsPage />, "ka")
     expect(await screen.findByTestId("leave-error")).toHaveTextContent("მონაცემები ვერ ჩაიტვირთა")
-    expect(screen.getByTestId("leave-error")).not.toHaveTextContent("permission")
+    expect(screen.getByTestId("leave-error")).not.toHaveTextContent("exploded")
     get.mockResolvedValue({ data: { count: 1, results: [req(1, "pending")] } })
     fireEvent.click(screen.getByRole("button", { name: "ხელახლა ცდა" }))
     expect(await screen.findByText("Employee 1")).toBeInTheDocument()
   })
+})
+
+it.each([
+  ["team requests", TeamRequestsPage],
+  ["all requests", AllRequestsPage],
+])("%s: a 403 shows the no-access state, not a connection error", async (_name, Page) => {
+  get.mockRejectedValue(Object.assign(new Error("Request failed with status code 403"), { response: { status: 403, data: {} } }))
+  renderLeave(<Page />, "ka")
+  expect(await screen.findByText("ამ მოთხოვნებზე წვდომა არ გაქვთ")).toBeInTheDocument()
+  expect(screen.queryByTestId("leave-error")).toBeNull()
 })
 
 describe("all requests", () => {

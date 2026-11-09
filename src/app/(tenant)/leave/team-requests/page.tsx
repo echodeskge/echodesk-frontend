@@ -12,9 +12,9 @@ import {
 import { getApiErrorMessage } from "@/lib/utils"
 import { useMyAccess } from "@/hooks/useMyAccess"
 import { Button } from "@/components/ui/button"
-import { Check, CheckCircle2, Inbox, SearchX, Users, X, XCircle } from "lucide-react"
+import { Check, CheckCircle2, Inbox, Lock, SearchX, Users, X, XCircle } from "lucide-react"
 import { useDeepLinkId } from "../_lib/useDeepLinkId"
-import { canDecideRequest, filterTeamRequests, teamRequestStats, type TeamFilter } from "../_lib/lv02-utils"
+import { canDecideRequest, filterTeamRequests, isForbidden, teamRequestStats, type TeamFilter } from "../_lib/lv02-utils"
 import { LeaveRequestDetailDialog } from "../_components/LeaveRequestDetailDialog"
 import {
   LeaveEmptyState,
@@ -208,36 +208,40 @@ export default function TeamRequestsPage() {
       ) : null,
   })
 
-  const empty =
-    requests.length === 0 ? (
-      <LeaveEmptyState
-        icon={Users}
-        title={t("teamRequests.noRequestsTitle")}
-        description={t("teamRequests.noRequestsDescription")}
-      />
-    ) : search.trim() ? (
-      <LeaveEmptyState
-        icon={SearchX}
-        title={t("ui.noMatches")}
-        description={t("ui.noMatchesHint")}
-        action={
-          <button type="button" className={leaveButton.outlineSm} onClick={() => setSearch("")}>
-            {t("ui.clearFilters")}
-          </button>
-        }
-      />
-    ) : (
-      <LeaveEmptyState
-        icon={Inbox}
-        title={t("teamRequests.emptyPendingTitle")}
-        description={t("teamRequests.emptyPendingHint")}
-        action={
-          <button type="button" className={leaveButton.outlineSm} onClick={() => setFilter("all")}>
-            {t("teamRequests.showAll")}
-          </button>
-        }
-      />
-    )
+  // Non-managers get 403: say so instead of "check your connection".
+  const forbidden = isForbidden(loadError)
+  const failed = !!loadError
+  const empty = forbidden ? (
+    <LeaveEmptyState icon={Lock} title={t("requests.noAccessTitle")} description={t("requests.noAccessHint")} />
+  ) : requests.length === 0 ? (
+    <LeaveEmptyState
+      icon={Users}
+      title={t("teamRequests.noRequestsTitle")}
+      description={t("teamRequests.noRequestsDescription")}
+    />
+  ) : search.trim() ? (
+    <LeaveEmptyState
+      icon={SearchX}
+      title={t("ui.noMatches")}
+      description={t("ui.noMatchesHint")}
+      action={
+        <button type="button" className={leaveButton.outlineSm} onClick={() => setSearch("")}>
+          {t("ui.clearFilters")}
+        </button>
+      }
+    />
+  ) : (
+    <LeaveEmptyState
+      icon={Inbox}
+      title={t("teamRequests.emptyPendingTitle")}
+      description={t("teamRequests.emptyPendingHint")}
+      action={
+        <button type="button" className={leaveButton.outlineSm} onClick={() => setFilter("all")}>
+          {t("teamRequests.showAll")}
+        </button>
+      }
+    />
+  )
 
   return (
     <>
@@ -259,8 +263,8 @@ export default function TeamRequestsPage() {
             onChange={setFilter}
             testId="team-requests-filter"
             options={[
-              { value: "pending", label: t("shared.status.pending"), count: loading ? null : stats.pending },
-              { value: "all", label: t("allRequests.filterAllShort"), count: loading ? null : requests.length },
+              { value: "pending", label: t("shared.status.pending"), count: loading || failed ? null : stats.pending },
+              { value: "all", label: t("allRequests.filterAllShort"), count: loading || failed ? null : requests.length },
             ]}
           />
           <ToolbarSearch
@@ -279,10 +283,10 @@ export default function TeamRequestsPage() {
           rowKey={(r) => r.id}
           onRowClick={(r) => setDetailId(r.id)}
           isRowSelected={(r) => r.id === detailId}
-          error={loadError}
+          error={forbidden ? null : loadError}
           onRetry={retry}
           empty={empty}
-          footer={!loading && !loadError ? <span>{t("requests.count", { count: shown.length })}</span> : undefined}
+          footer={!loading && !failed ? <span>{t("requests.count", { count: shown.length })}</span> : undefined}
           testId="team-requests-table"
         />
       </LeavePage>

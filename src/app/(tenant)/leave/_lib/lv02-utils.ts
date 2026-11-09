@@ -78,3 +78,8 @@ export function detailTypeName(detail: LeaveRequestDetail | null | undefined): s
   const lt = detail?.leave_type_details
   return lt?.name_display || (typeof lt?.name === "string" ? lt.name : "") || lt?.code || ""
 }
+
+/** True for an HTTP 403 (the list is not for this user's role), as opposed to a failed load. */
+export function isForbidden(error: unknown): boolean {
+  return (error as { response?: { status?: number } } | null | undefined)?.response?.status === 403
+}

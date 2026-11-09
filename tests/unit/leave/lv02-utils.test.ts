@@ -4,6 +4,7 @@ import {
   canDecideRequest,
   detailTypeName,
   filterTeamRequests,
+  isForbidden,
   matchesRequestSearch,
   teamRequestStats,
 } from "@/app/(tenant)/leave/_lib/lv02-utils"
@@ -95,5 +96,14 @@ describe("approvalSteps / detailTypeName", () => {
     expect(detailTypeName({ ...base, leave_type_details: { id: 1, name: "Vacation", code: "VAC" } })).toBe("Vacation")
     expect(detailTypeName({ ...base, leave_type_details: { id: 1, name: { en: "x" }, code: "VAC" } })).toBe("VAC")
     expect(detailTypeName(null)).toBe("")
+  })
+})
+
+describe("isForbidden", () => {
+  it("is true only for HTTP 403", () => {
+    expect(isForbidden({ response: { status: 403 } })).toBe(true)
+    expect(isForbidden({ response: { status: 500 } })).toBe(false)
+    expect(isForbidden(new Error("Network Error"))).toBe(false)
+    expect(isForbidden(null)).toBe(false)
   })
 })
