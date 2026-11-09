@@ -4,12 +4,24 @@
       "addProductSheet": {
         "nameRequired": "Fill in the product name in at least one language"
       }
+    },
+    "languages": {
+      "deleteFailed": "Could not delete the language",
+      "addLanguageSheet": {
+        "saveFailed": "Could not save the language"
+      }
     }
   },
   "ka": {
     "products": {
       "addProductSheet": {
         "nameRequired": "შეავსეთ პროდუქტის სახელი ერთ ენაზე მაინც"
+      }
+    },
+    "languages": {
+      "deleteFailed": "ენის წაშლა ვერ მოხერხდა",
+      "addLanguageSheet": {
+        "saveFailed": "ენის შენახვა ვერ მოხერხდა"
       }
     }
   }

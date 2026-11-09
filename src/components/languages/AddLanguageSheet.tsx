@@ -27,6 +27,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreateLanguage, useUpdateLanguage } from "@/hooks/useLanguages";
 import type { Language } from "@/api/generated";
 import type { Locale } from "@/lib/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 
 interface AddLanguageSheetProps {
   open: boolean;
@@ -123,7 +125,9 @@ export function AddLanguageSheet({
       form.reset();
       onOpenChange(false);
     } catch (error) {
+      // e.g. a code that already exists: show the API's reason (it was only logged).
       console.error("Failed to save language:", error);
+      toast.error(getApiErrorMessage(error, t("saveFailed")));
     }
   };
 

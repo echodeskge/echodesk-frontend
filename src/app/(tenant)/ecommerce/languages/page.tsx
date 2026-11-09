@@ -24,6 +24,8 @@ import { useLanguages, useDeleteLanguage } from "@/hooks/useLanguages";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { AddLanguageSheet } from "@/components/languages/AddLanguageSheet";
 import type { Locale } from "@/lib/i18n";
+import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/utils";
 import type { Language } from "@/api/generated";
 import {
   AlertDialog,
@@ -73,7 +75,8 @@ export default function LanguagesPage() {
       await deleteLanguage.mutateAsync(deletingLanguage.id);
       setDeletingLanguage(null);
     } catch (error) {
-      // Error handled by mutation's onError callback
+      // The mutation has no onError: say why instead of failing silently.
+      toast.error(getApiErrorMessage(error, t("deleteFailed")));
     }
   };
 
