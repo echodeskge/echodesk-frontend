@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useTranslations } from "next-intl"
+import { ChevronLeft } from "lucide-react"
+import { useLocale, useTranslations } from "next-intl"
 import {
   ecommerceAdminClientsRetrieve,
   ecommerceAdminOrdersList,
@@ -11,28 +13,44 @@ import type {
   EcommerceClient,
   OrderList,
 } from "@/api/generated/interfaces"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import {
+  DetailLayout,
+  EcErrorState,
+  EcPage,
+  EcommerceHeaderBridge,
+  StatGrid,
+  rdButton,
+} from "../../_components/ui"
 import { CustomerDetails } from "./_components/customer-details"
 import { CustomerNotFound } from "./_components/customer-not-found"
 
+function isNotFound(error: unknown): boolean {
+  return (error as { response?: { status?: number } } | null)?.response?.status === 404
+}
+
 export default function ClientDetailPage() {
   const params = useParams()
+  const locale = useLocale()
   const t = useTranslations("clientDetail")
-  const tOrders = useTranslations("ecommerceOrders")
 
   const [client, setClient] = useState<EcommerceClient | null>(null)
   const [orders, setOrders] = useState<OrderList[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<unknown>(null)
   const [ordersLoading, setOrdersLoading] = useState(true)
+  const [ordersError, setOrdersError] = useState<unknown>(null)
 
   const fetchClient = useCallback(async (id: number) => {
     try {
       setLoading(true)
+      setError(null)
       const response = await ecommerceAdminClientsRetrieve(id)
       setClient(response)
-    } catch {
+    } catch (err) {
+      setError(err)
       toast.error(t("errors.loadFailed"))
     } finally {
       setLoading(false)
@@ -42,6 +60,7 @@ export default function ClientDetailPage() {
   const fetchOrders = useCallback(async (clientId: number) => {
     try {
       setOrdersLoading(true)
+      setOrdersError(null)
       const response = await ecommerceAdminOrdersList(
         clientId,
         undefined, // createdAfter
@@ -52,20 +71,22 @@ export default function ClientDetailPage() {
         100
       )
       setOrders(response.results || [])
-    } catch {
-      // Silently fail - orders section will show empty
+    } catch (err) {
+      // No toast (as before); the orders card shows the error with a retry.
+      setOrdersError(err)
     } finally {
       setOrdersLoading(false)
     }
   }, [])
 
+  const id = params.id ? Number(params.id) : null
+
   useEffect(() => {
-    if (params.id) {
-      const id = Number(params.id)
+    if (id !== null) {
       fetchClient(id)
       fetchOrders(id)
     }
-  }, [params.id, fetchClient, fetchOrders])
+  }, [id, fetchClient, fetchOrders])
 
   const totalSpent = orders.reduce(
     (sum, order) => sum + parseFloat(order.total_amount || "0"),
@@ -74,73 +95,51 @@ export default function ClientDetailPage() {
 
   if (loading) {
     return (
-      <section className="container space-y-4 p-4">
-        <Skeleton className="h-8 w-32" />
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-4">
-            <Card>
-              <CardContent className="flex flex-col items-center pt-6 pb-6">
-                <Skeleton className="h-20 w-20 rounded-full" />
-                <Skeleton className="mt-4 h-6 w-32" />
-                <Skeleton className="mt-2 h-4 w-48" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-5 w-24" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-24 w-full" />
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-4 md:col-span-2">
-            <div className="grid gap-4 md:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
-                  <CardHeader className="pb-2">
-                    <Skeleton className="h-4 w-24" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-16" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="mb-3 h-12 w-full" />
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <DetailLayout
+        testId="client-detail-loading"
+        header={<Skeleton className="h-[58px] w-full rounded-lg" />}
+        main={
+          <>
+            <StatGrid loading items={["a", "b", "c"].map((key) => ({ key, label: "", value: null }))} />
+            <Skeleton className="h-48 w-full rounded-lg" />
+          </>
+        }
+        rail={<Skeleton className="h-56 w-full rounded-lg" />}
+      />
     )
   }
 
   if (!client) {
     return (
-      <section className="container p-4">
-        <CustomerNotFound t={t} />
-      </section>
+      <EcPage width="wide">
+        {error && !isNotFound(error) ? (
+          <>
+            <EcErrorState error={error} onRetry={id !== null ? () => fetchClient(id) : undefined} />
+            <Link href="/ecommerce/clients" className={cn(rdButton.outlineSm, "self-center")}>
+              <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+              {t("backToClients")}
+            </Link>
+          </>
+        ) : (
+          <CustomerNotFound t={t} />
+        )}
+      </EcPage>
     )
   }
 
   return (
-    <section className="container p-4">
+    <>
+      <EcommerceHeaderBridge breadcrumb={client.full_name || client.email} />
       <CustomerDetails
         client={client}
         orders={orders}
         ordersLoading={ordersLoading}
+        ordersError={ordersError}
+        onRetryOrders={id !== null ? () => fetchOrders(id) : undefined}
         totalSpent={totalSpent}
+        locale={locale}
         t={t}
-        tOrders={tOrders}
       />
-    </section>
+    </>
   )
 }

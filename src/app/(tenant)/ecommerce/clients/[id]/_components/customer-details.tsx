@@ -1,9 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import { ChevronLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { EcommerceClient, OrderList } from "@/api/generated/interfaces"
+import type { EcommerceClient, OrderList } from "@/api/generated/interfaces"
+import { DetailLayout } from "@/app/(tenant)/ecommerce/_components/ui"
 import { CustomerHeaderCard } from "./customer-header-card"
 import { CustomerInfoCard } from "./customer-info-card"
 import { CustomerStatsCard } from "./customer-stats-card"
@@ -13,47 +11,51 @@ interface CustomerDetailsProps {
   client: EcommerceClient
   orders: OrderList[]
   ordersLoading: boolean
+  ordersError?: unknown
+  onRetryOrders?: () => void
   totalSpent: number
-  t: (key: string) => string
-  tOrders: (key: string) => string
+  locale: string
+  t: (key: string, values?: Record<string, string>) => string
 }
 
+/**
+ * Client detail (SPEC §2 EC-03): summary card on top; stats + order history
+ * in the main column; contact details and addresses in the 320px rail
+ * (stacked under the orders below 1024px).
+ */
 export function CustomerDetails({
   client,
   orders,
   ordersLoading,
+  ordersError,
+  onRetryOrders,
   totalSpent,
+  locale,
   t,
-  tOrders,
 }: CustomerDetailsProps) {
   return (
-    <div className="space-y-4">
-      <Button variant="ghost" size="sm" asChild>
-        <Link href="/ecommerce/clients">
-          <ChevronLeft className="me-1 h-4 w-4" />
-          {t("backToClients")}
-        </Link>
-      </Button>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="space-y-4">
-          <CustomerHeaderCard client={client} t={t} />
-          <CustomerInfoCard client={client} t={t} />
-        </div>
-        <div className="space-y-4 md:col-span-2">
+    <DetailLayout
+      testId="client-detail"
+      header={<CustomerHeaderCard client={client} locale={locale} t={t} />}
+      main={
+        <>
           <CustomerStatsCard
             totalOrders={orders.length}
             totalSpent={totalSpent}
+            loading={ordersLoading}
             t={t}
           />
           <CustomerOrdersCard
             orders={orders}
             loading={ordersLoading}
+            error={ordersError}
+            onRetry={onRetryOrders}
+            locale={locale}
             t={t}
-            tOrders={tOrders}
           />
-        </div>
-      </div>
-    </div>
+        </>
+      }
+      rail={<CustomerInfoCard client={client} locale={locale} t={t} />}
+    />
   )
 }
