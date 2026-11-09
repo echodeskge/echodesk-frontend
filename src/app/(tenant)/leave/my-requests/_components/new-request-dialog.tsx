@@ -360,7 +360,7 @@ function Field({
 }) {
   const Label = htmlFor ? "label" : "span"
   return (
-    <div className="grid min-w-0 gap-1.5" data-testid={testId}>
+    <div className="grid min-w-0 content-start gap-1.5" data-testid={testId}>
       <Label {...(htmlFor ? { htmlFor } : {})} className="text-[13px] font-medium leading-4">
         {label}
       </Label>
