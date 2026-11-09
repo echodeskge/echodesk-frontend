@@ -13,17 +13,7 @@ import {
 } from "@/api/generated/api"
 import type { CalculationMethodEnum } from "@/api/generated/interfaces"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Edit, Trash2, Loader2, ListTree } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, ListTree } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -31,11 +21,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -43,6 +30,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
+import {
+  LeaveEmptyState,
+  LeaveHeaderBridge,
+  LeavePage,
+  LeavePageHeader,
+  LeaveTable,
+  LeaveTypeChip,
+  TonePill,
+  formatDays,
+  leaveButton,
+  parseDays,
+  type LeaveColumn,
+} from "../_components/ui"
+import { DialogField, DialogGroup, SwitchList, SwitchRow, dialogControl } from "../_components/lv04/dialog-fields"
 
 type LocalizedText = { en?: string; ka?: string } | string | null | undefined
 
@@ -88,7 +91,10 @@ export default function LeaveTypesPage() {
   const t = useTranslations("leave")
   const locale = useLocale()
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([])
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(true)
+  // A failed list load shows the error state (with retry) instead of an empty table.
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingType, setEditingType] = useState<LeaveType | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -135,6 +141,7 @@ export default function LeaveTypesPage() {
         )
       )
       setLeaveTypes(list.map((item, index) => (details[index] as LeaveType | null) ?? item))
+      setLoadError(null)
 
       if (detailFailure) {
         console.error("Failed to fetch leave type details:", detailFailure)
@@ -145,6 +152,7 @@ export default function LeaveTypesPage() {
     } catch (error) {
       console.error("Failed to fetch leave types:", error)
       setLeaveTypes([])
+      setLoadError(error)
       toast.error(t("shared.loadFailed"), {
         description: getApiErrorMessage(error) || undefined,
       })
@@ -300,177 +308,345 @@ export default function LeaveTypesPage() {
     })
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
+  const retry = () => {
+    setLoading(true)
+    setLoadError(null)
+    fetchLeaveTypes()
   }
 
+  const closeDialog = () => {
+    setIsDialogOpen(false)
+    setEditingType(null)
+    resetForm()
+  }
+
+  const openCreate = () => {
+    setEditingType(null)
+    resetForm()
+    setIsDialogOpen(true)
+  }
+
+  const daysLabel = (value: string | number | null | undefined) => {
+    const n = parseDays(value)
+    return n === null ? "—" : t("ui.days", { count: Number(formatDays(n)) })
+  }
+
+  const columns: LeaveColumn<LeaveType>[] = [
+    {
+      id: "name",
+      header: t("leaveTypes.tableName"),
+      width: "minmax(0,1.6fr)",
+      mobile: "title",
+      cell: (type) => (
+        <span className="flex min-w-0 items-center gap-2">
+          <LeaveTypeChip name={typeName(type)} color={type.color || DEFAULT_COLOR} className="font-medium" />
+          <span className="shrink-0 font-mono text-[11px] text-muted-foreground" data-testid="leave-type-code">
+            {type.code}
+          </span>
+        </span>
+      ),
+    },
+    {
+      id: "method",
+      header: t("leaveTypes.tableMethod"),
+      width: "minmax(0,1fr)",
+      mobile: "meta",
+      cell: (type) => <span className="truncate">{methodLabel(type.calculation_method)}</span>,
+    },
+    {
+      id: "days",
+      header: t("leaveTypes.tableAnnualDays"),
+      width: "88px",
+      align: "end",
+      mobile: "meta",
+      cell: (type) => (
+        <>
+          <span className="hidden font-mono text-xs tabular-nums @3xl:inline">{formatDays(type.default_days_per_year)}</span>
+          <span className="tabular-nums @3xl:hidden">{daysLabel(type.default_days_per_year)}</span>
+        </>
+      ),
+    },
+    {
+      id: "carry",
+      header: t("leaveTypes.tableCarryForward"),
+      width: "112px",
+      mobile: "hidden",
+      muted: true,
+      cell: (type) =>
+        (type.max_carry_forward_days ?? 0) > 0 ? (
+          <span className="tabular-nums">{daysLabel(type.max_carry_forward_days)}</span>
+        ) : (
+          t("leaveTypes.none")
+        ),
+    },
+    {
+      id: "paid",
+      header: t("leaveTypes.tablePaid"),
+      width: "128px",
+      mobile: "meta",
+      cell: (type) =>
+        type.is_paid ? (
+          <TonePill tone="success">{t("leaveTypes.paid")}</TonePill>
+        ) : (
+          <TonePill tone="neutral">{t("leaveTypes.unpaid")}</TonePill>
+        ),
+    },
+    {
+      id: "approval",
+      header: t("leaveTypes.tableApproval"),
+      width: "124px",
+      mobile: "hidden",
+      cell: (type) =>
+        type.requires_approval ? (
+          <TonePill tone="info">{t("leaveTypes.required")}</TonePill>
+        ) : (
+          <TonePill tone="neutral">{t("leaveTypes.notRequired")}</TonePill>
+        ),
+    },
+    {
+      id: "status",
+      header: t("leaveTypes.tableStatus"),
+      width: "104px",
+      mobile: "end",
+      cell: (type) =>
+        type.is_active ? (
+          <TonePill tone="success" dot>
+            {t("leaveTypes.activeStatus")}
+          </TonePill>
+        ) : (
+          <TonePill tone="neutral" dot>
+            {t("leaveTypes.inactiveStatus")}
+          </TonePill>
+        ),
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("leaveTypes.tableActions")}</span>,
+      width: "60px",
+      align: "end",
+      mobile: "end",
+      cell: (type) => {
+        const name = typeName(type)
+        return (
+          <span className="flex items-center gap-0.5">
+            <button
+              type="button"
+              className={leaveButton.ghostIconSm}
+              disabled={busyId === type.id}
+              onClick={() => handleEdit(type)}
+              aria-label={t("lv04.editType", { name })}
+              title={t("hr.common.edit")}
+              data-testid="leave-type-edit"
+            >
+              {busyId === type.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pencil className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              type="button"
+              className={cn(leaveButton.ghostIconSm, "hover:bg-destructive/10 hover:text-destructive")}
+              disabled={busyId === type.id}
+              onClick={() => handleDelete(type.id)}
+              aria-label={t("lv04.deleteType", { name })}
+              title={t("hr.common.delete")}
+              data-testid="leave-type-delete"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </span>
+        )
+      },
+    },
+  ]
+
+  const loaded = !loading && !loadError
+  const newLabel = t("leaveTypes.newLeaveType")
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">{t("leaveTypes.title")}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t("leaveTypes.description")}
-          </p>
-        </div>
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={(open) => {
-            setIsDialogOpen(open)
-            if (!open) {
-              setEditingType(null)
-              resetForm()
-            }
+    <>
+      <LeaveHeaderBridge
+        sub={loaded ? t("lv04.typesCount", { count: leaveTypes.length }) : null}
+        // The page header carries the button on wider screens.
+        primary={isMobile ? { label: newLabel, icon: Plus, onClick: openCreate, testId: "leave-types-new-header" } : null}
+      />
+      <LeavePage width="wide" testId="leave-types-page">
+        <LeavePageHeader
+          icon={ListTree}
+          title={t("leaveTypes.title")}
+          description={t("leaveTypes.description")}
+          action={
+            <button
+              type="button"
+              onClick={openCreate}
+              className={cn(leaveButton.primary, "hidden md:inline-flex")}
+              data-testid="leave-types-new"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden />
+              {newLabel}
+            </button>
+          }
+        />
+
+        <LeaveTable
+          variant="card"
+          ariaLabel={t("leaveTypes.cardTitle")}
+          columns={columns}
+          rows={loading ? undefined : leaveTypes}
+          rowKey={(type) => type.id}
+          onRowClick={(type) => {
+            if (busyId !== type.id) handleEdit(type)
           }}
-        >
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              {t("leaveTypes.newLeaveType")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit}>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingType ? t("leaveTypes.editLeaveType") : t("leaveTypes.createLeaveType")}
-                </DialogTitle>
-                <DialogDescription>
-                  {t("leaveTypes.dialogDescription")}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name_en">{t("leaveTypes.nameEnglish")}</Label>
+          error={loadError}
+          onRetry={retry}
+          skeletonRows={5}
+          testId="leave-types-table"
+          empty={
+            <LeaveEmptyState
+              icon={ListTree}
+              title={t("leaveTypes.noLeaveTypes")}
+              description={t("leaveTypes.createFirstLeaveType")}
+              action={
+                <button type="button" onClick={openCreate} className={leaveButton.primary}>
+                  <Plus className="h-3.5 w-3.5" aria-hidden />
+                  {t("leaveTypes.createLeaveType")}
+                </button>
+              }
+            />
+          }
+          footer={
+            loaded && leaveTypes.length > 0 ? (
+              <span className="truncate">
+                {t("lv04.typesCount", { count: leaveTypes.length })} · {t("lv04.clickToEdit")}
+              </span>
+            ) : undefined
+          }
+        />
+      </LeavePage>
+
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open)
+          if (!open) {
+            setEditingType(null)
+            resetForm()
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] gap-0 overflow-y-auto p-0 sm:max-w-[600px]" data-testid="leave-type-dialog">
+          <form onSubmit={handleSubmit}>
+            <DialogHeader className="border-b px-5 py-4 text-start">
+              <DialogTitle className="text-base">
+                {editingType ? t("leaveTypes.editLeaveType") : t("leaveTypes.createLeaveType")}
+              </DialogTitle>
+              <DialogDescription className="text-[13px]">{t("leaveTypes.dialogDescription")}</DialogDescription>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-5 px-5 py-4">
+              <DialogGroup>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DialogField label={t("leaveTypes.nameEnglish")} htmlFor="name_en">
                     <Input
                       id="name_en"
+                      className={dialogControl}
                       value={formData.name_en}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name_en: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
                       required
                     />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="name_ka">{t("leaveTypes.nameGeorgian")}</Label>
+                  </DialogField>
+                  <DialogField label={t("leaveTypes.nameGeorgian")} htmlFor="name_ka">
                     <Input
                       id="name_ka"
+                      className={dialogControl}
                       value={formData.name_ka}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name_ka: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, name_ka: e.target.value })}
                       required
                     />
-                  </div>
+                  </DialogField>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="code">{t("leaveTypes.code")}</Label>
+                <div className="grid grid-cols-[minmax(0,1fr)_96px] gap-3">
+                  <DialogField label={t("leaveTypes.code")} htmlFor="code">
                     <Input
                       id="code"
+                      className={cn(dialogControl, "font-mono")}
                       value={formData.code}
-                      onChange={(e) =>
-                        setFormData({ ...formData, code: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                       placeholder={t("leaveTypes.codePlaceholder")}
                       maxLength={20}
                       required
                     />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="color">{t("leaveTypes.color")}</Label>
+                  </DialogField>
+                  <DialogField label={t("leaveTypes.color")} htmlFor="color">
                     <Input
                       id="color"
                       type="color"
+                      className={cn(dialogControl, "cursor-pointer p-1")}
                       value={formData.color}
-                      onChange={(e) =>
-                        setFormData({ ...formData, color: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                     />
-                  </div>
+                  </DialogField>
                 </div>
+              </DialogGroup>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="calculation_method">{t("leaveTypes.calculationMethod")}</Label>
-                  <Select
-                    value={formData.calculation_method}
-                    onValueChange={(value) =>
-                      setFormData({
-                        ...formData,
-                        calculation_method: value as CalculationMethodEnum,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="annual">{t("leaveTypes.annualAllocation")}</SelectItem>
-                      <SelectItem value="accrual">{t("leaveTypes.accrualBased")}</SelectItem>
-                      <SelectItem value="manual">{t("leaveTypes.manualAssignment")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.calculation_method === "annual" && (
-                  <div className="grid gap-2">
-                    <Label htmlFor="default_days_per_year">
-                      {t("leaveTypes.defaultDaysPerYear")}
-                    </Label>
-                    <Input
-                      id="default_days_per_year"
-                      type="number"
-                      step="0.5"
-                      min="0.5"
-                      required
-                      value={formData.default_days_per_year}
-                      onChange={(e) =>
+              <DialogGroup title={t("lv04.allocation")}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DialogField label={t("leaveTypes.calculationMethod")} htmlFor="calculation_method">
+                    <Select
+                      value={formData.calculation_method}
+                      onValueChange={(value) =>
                         setFormData({
                           ...formData,
-                          default_days_per_year: e.target.value,
+                          calculation_method: value as CalculationMethodEnum,
                         })
                       }
-                    />
-                  </div>
-                )}
+                    >
+                      <SelectTrigger id="calculation_method" className={cn(dialogControl, "w-full")}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="annual">{t("leaveTypes.annualAllocation")}</SelectItem>
+                        <SelectItem value="accrual">{t("leaveTypes.accrualBased")}</SelectItem>
+                        <SelectItem value="manual">{t("leaveTypes.manualAssignment")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </DialogField>
 
-                {formData.calculation_method === "accrual" && (
-                  <div className="grid gap-2">
-                    <Label htmlFor="accrual_rate_per_month">
-                      {t("leaveTypes.accrualRatePerMonth")}
-                    </Label>
-                    <Input
-                      id="accrual_rate_per_month"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      required
-                      value={formData.accrual_rate_per_month}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          accrual_rate_per_month: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                )}
+                  {formData.calculation_method === "annual" && (
+                    <DialogField label={t("leaveTypes.defaultDaysPerYear")} htmlFor="default_days_per_year">
+                      <Input
+                        id="default_days_per_year"
+                        type="number"
+                        step="0.5"
+                        min="0.5"
+                        required
+                        className={cn(dialogControl, "tabular-nums")}
+                        value={formData.default_days_per_year}
+                        onChange={(e) => setFormData({ ...formData, default_days_per_year: e.target.value })}
+                      />
+                    </DialogField>
+                  )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="max_carry_forward_days">
-                      {t("leaveTypes.maxCarryForwardDays")}
-                    </Label>
+                  {formData.calculation_method === "accrual" && (
+                    <DialogField label={t("leaveTypes.accrualRatePerMonth")} htmlFor="accrual_rate_per_month">
+                      <Input
+                        id="accrual_rate_per_month"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        className={cn(dialogControl, "tabular-nums")}
+                        value={formData.accrual_rate_per_month}
+                        onChange={(e) => setFormData({ ...formData, accrual_rate_per_month: e.target.value })}
+                      />
+                    </DialogField>
+                  )}
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DialogField label={t("leaveTypes.maxCarryForwardDays")} htmlFor="max_carry_forward_days">
                     <Input
                       id="max_carry_forward_days"
                       type="number"
                       min="0"
+                      className={cn(dialogControl, "tabular-nums")}
                       value={formData.max_carry_forward_days}
                       onChange={(e) =>
                         setFormData({
@@ -479,15 +655,13 @@ export default function LeaveTypesPage() {
                         })
                       }
                     />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="carry_forward_expiry_months">
-                      {t("leaveTypes.carryForwardExpiryMonths")}
-                    </Label>
+                  </DialogField>
+                  <DialogField label={t("leaveTypes.carryForwardExpiryMonths")} htmlFor="carry_forward_expiry_months">
                     <Input
                       id="carry_forward_expiry_months"
                       type="number"
                       min="0"
+                      className={cn(dialogControl, "tabular-nums")}
                       value={formData.carry_forward_expiry_months}
                       onChange={(e) =>
                         setFormData({
@@ -496,211 +670,83 @@ export default function LeaveTypesPage() {
                         })
                       }
                     />
-                  </div>
+                  </DialogField>
                 </div>
+              </DialogGroup>
 
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="is_paid"
-                      checked={formData.is_paid}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, is_paid: checked })
-                      }
-                    />
-                    <Label htmlFor="is_paid">{t("leaveTypes.paidLeave")}</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="requires_approval"
-                      checked={formData.requires_approval}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, requires_approval: checked })
-                      }
-                    />
-                    <Label htmlFor="requires_approval">{t("leaveTypes.requiresApproval")}</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="is_active"
-                      checked={formData.is_active}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, is_active: checked })
-                      }
-                    />
-                    <Label htmlFor="is_active">{t("leaveTypes.active")}</Label>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="requires_substitutes"
-                    checked={formData.requires_substitutes}
-                    onCheckedChange={(checked) =>
-                      setFormData({ ...formData, requires_substitutes: checked })
-                    }
+              <DialogGroup title={t("lv04.rules")}>
+                <SwitchList>
+                  <SwitchRow
+                    id="is_paid"
+                    label={t("leaveTypes.paidLeave")}
+                    checked={formData.is_paid}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_paid: checked })}
                   />
-                  <div>
-                    <Label htmlFor="requires_substitutes">{t("hr.leaveTypes.requiresSubstitutes")}</Label>
-                    <p className="text-xs text-muted-foreground">{t("hr.leaveTypes.requiresSubstitutesDesc")}</p>
-                  </div>
-                </div>
+                  <SwitchRow
+                    id="requires_approval"
+                    label={t("leaveTypes.requiresApproval")}
+                    checked={formData.requires_approval}
+                    onCheckedChange={(checked) => setFormData({ ...formData, requires_approval: checked })}
+                  />
+                  <SwitchRow
+                    id="requires_substitutes"
+                    label={t("hr.leaveTypes.requiresSubstitutes")}
+                    help={t("hr.leaveTypes.requiresSubstitutesDesc")}
+                    checked={formData.requires_substitutes}
+                    onCheckedChange={(checked) => setFormData({ ...formData, requires_substitutes: checked })}
+                  />
+                  <SwitchRow
+                    id="is_active"
+                    label={t("leaveTypes.active")}
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  />
+                </SwitchList>
+              </DialogGroup>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="max_requests_per_month">{t("hr.leaveTypes.maxRequestsPerMonth")}</Label>
+              <DialogGroup title={t("lv04.limits")}>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <DialogField label={t("hr.leaveTypes.maxRequestsPerMonth")} htmlFor="max_requests_per_month">
                     <Input
                       id="max_requests_per_month"
                       type="number"
                       min="1"
                       step="1"
+                      className={cn(dialogControl, "tabular-nums")}
                       placeholder={t("hr.leaveTypes.noLimit")}
                       value={formData.max_requests_per_month}
-                      onChange={(e) =>
-                        setFormData({ ...formData, max_requests_per_month: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, max_requests_per_month: e.target.value })}
                     />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="max_days_per_request">{t("hr.leaveTypes.maxDaysPerRequest")}</Label>
+                  </DialogField>
+                  <DialogField label={t("hr.leaveTypes.maxDaysPerRequest")} htmlFor="max_days_per_request">
                     <Input
                       id="max_days_per_request"
                       type="number"
                       min="0.5"
                       step="0.5"
+                      className={cn(dialogControl, "tabular-nums")}
                       placeholder={t("hr.leaveTypes.noLimit")}
                       value={formData.max_days_per_request}
-                      onChange={(e) =>
-                        setFormData({ ...formData, max_days_per_request: e.target.value })
-                      }
+                      onChange={(e) => setFormData({ ...formData, max_days_per_request: e.target.value })}
                     />
-                  </div>
+                  </DialogField>
                 </div>
-                <p className="text-xs text-muted-foreground -mt-2">{t("hr.leaveTypes.limitsHint")}</p>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsDialogOpen(false)
-                    setEditingType(null)
-                    resetForm()
-                  }}
-                >
-                  {t("leaveTypes.cancel")}
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  {editingType ? t("leaveTypes.update") : t("leaveTypes.create")} {t("leaveTypes.leaveType")}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("leaveTypes.cardTitle")}</CardTitle>
-          <CardDescription>
-            {t("leaveTypes.cardDescription")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {leaveTypes.length === 0 ? (
-            <div className="text-center py-12">
-              <ListTree className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">{t("leaveTypes.noLeaveTypes")}</h3>
-              <p className="text-muted-foreground mb-4">
-                {t("leaveTypes.createFirstLeaveType")}
-              </p>
-              <Button onClick={() => setIsDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                {t("leaveTypes.createLeaveType")}
-              </Button>
+                <p className="text-xs text-muted-foreground">{t("hr.leaveTypes.limitsHint")}</p>
+              </DialogGroup>
             </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("leaveTypes.tableName")}</TableHead>
-                  <TableHead>{t("leaveTypes.tableCode")}</TableHead>
-                  <TableHead>{t("leaveTypes.tableMethod")}</TableHead>
-                  <TableHead>{t("leaveTypes.tableAnnualDays")}</TableHead>
-                  <TableHead>{t("leaveTypes.tableCarryForward")}</TableHead>
-                  <TableHead>{t("leaveTypes.tablePaid")}</TableHead>
-                  <TableHead>{t("leaveTypes.tableApproval")}</TableHead>
-                  <TableHead>{t("leaveTypes.tableStatus")}</TableHead>
-                  <TableHead>{t("leaveTypes.tableActions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaveTypes.map((type) => (
-                  <TableRow key={type.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: type.color || DEFAULT_COLOR }}
-                        />
-                        {typeName(type)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{type.code}</Badge>
-                    </TableCell>
-                    <TableCell>{methodLabel(type.calculation_method)}</TableCell>
-                    <TableCell>{type.default_days_per_year ?? "-"}</TableCell>
-                    <TableCell>
-                      {(type.max_carry_forward_days ?? 0) > 0
-                        ? `${type.max_carry_forward_days} ${t("leaveTypes.days")}`
-                        : t("leaveTypes.none")}
-                    </TableCell>
-                    <TableCell>
-                      {type.is_paid ? (
-                        <Badge variant="default">{t("leaveTypes.paid")}</Badge>
-                      ) : (
-                        <Badge variant="outline">{t("leaveTypes.unpaid")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {type.requires_approval ? t("leaveTypes.required") : t("leaveTypes.notRequired")}
-                    </TableCell>
-                    <TableCell>
-                      {type.is_active ? (
-                        <Badge variant="default">{t("leaveTypes.activeStatus")}</Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("leaveTypes.inactiveStatus")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={busyId === type.id}
-                          onClick={() => handleEdit(type)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={busyId === type.id}
-                          onClick={() => handleDelete(type.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+            <DialogFooter className="sticky bottom-0 gap-2 border-t bg-background px-5 py-3">
+              <Button type="button" variant="outline" size="sm" className="h-8" onClick={closeDialog}>
+                {t("leaveTypes.cancel")}
+              </Button>
+              <Button type="submit" size="sm" className="h-8" disabled={submitting} data-testid="leave-type-submit">
+                {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {editingType ? t("leaveTypes.update") : t("leaveTypes.create")} {t("leaveTypes.leaveType")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
