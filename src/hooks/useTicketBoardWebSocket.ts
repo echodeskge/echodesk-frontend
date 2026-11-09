@@ -1,6 +1,16 @@
 /**
  * Hook for real-time collaboration on ticket boards via WebSocket.
  * Handles ticket movements, updates, user presence, and live editing indicators.
+ *
+ * Close codes (plan E7, FE-02):
+ * - 1000: normal close, no reconnect;
+ * - 4001: not authenticated, no reconnect (retrying cannot help);
+ * - 4403: no access to this board, no reconnect, and `onAccessDenied` fires;
+ * - anything else: reconnect with exponential backoff and jitter.
+ *
+ * Events from a socket that is no longer the current one (a board switch while
+ * the old socket was still closing) are ignored, so a late close can never
+ * schedule a reconnect to the previous board.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -11,6 +21,10 @@ interface ActiveUser {
   user_name: string
   user_email: string
 }
+
+/** Close codes after which the hook never reconnects. */
+export const BOARD_WS_NO_RECONNECT_CODES: readonly number[] = [1000, 4001, 4403]
+export const BOARD_WS_ACCESS_DENIED_CODE = 4403
 
 interface TicketMovedEvent {
   ticket_id: number
@@ -47,12 +61,37 @@ interface UserJoinedEvent {
   user_email: string
 }
 
+interface TicketDeletedEvent {
+  type: 'ticket_deleted'
+  ticket_id: number
+  deleted_by_id?: number | null
+  deleted_by_name?: string | null
+  reason?: 'deleted' | 'transferred'
+  to_board_id?: number | null
+  client_mutation_id?: string | null
+}
+
+interface TicketActivityEvent {
+  type: 'ticket_activity'
+  ticket_id: number
+  kind: string
+  actor_id?: number | null
+  client_mutation_id?: string | null
+}
+
 interface UseTicketBoardWebSocketOptions {
   boardId: string | number
   onTicketMoved?: (event: TicketMovedEvent) => void
   onTicketUpdated?: (event: TicketUpdatedEvent) => void
   onTicketCreated?: (ticket: any) => void
-  onTicketDeleted?: (ticketId: number) => void
+  /** The second argument carries `reason` ('deleted' | 'transferred') and `to_board_id`. */
+  onTicketDeleted?: (ticketId: number, event: TicketDeletedEvent) => void
+  onTicketCommented?: (event: Record<string, unknown> & { ticket_id: number }) => void
+  onTicketActivity?: (event: TicketActivityEvent) => void
+  /** Every parsed frame, before the typed callbacks (unknown types included). */
+  onMessage?: (data: Record<string, unknown>) => void
+  /** Close code 4403: the user cannot access this board. No reconnect follows. */
+  onAccessDenied?: (boardId: string | number) => void
   onTicketBeingMoved?: (event: TicketBeingMovedEvent) => void
   onTicketBeingEdited?: (event: TicketBeingEditedEvent) => void
   onTicketEditingStopped?: (ticketId: number, userId: number) => void
@@ -70,6 +109,10 @@ export function useTicketBoardWebSocket({
   onTicketUpdated,
   onTicketCreated,
   onTicketDeleted,
+  onTicketCommented,
+  onTicketActivity,
+  onMessage,
+  onAccessDenied,
   onTicketBeingMoved,
   onTicketBeingEdited,
   onTicketEditingStopped,
@@ -90,6 +133,7 @@ export function useTicketBoardWebSocket({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const currentBoardIdRef = useRef<string | number | null>(null)
+  const reconnectAttemptsRef = useRef(0)
 
   useEffect(() => {
     if (tenant?.schema_name && !tenantSchema) {
@@ -101,6 +145,10 @@ export function useTicketBoardWebSocket({
   const onTicketUpdatedRef = useRef(onTicketUpdated)
   const onTicketCreatedRef = useRef(onTicketCreated)
   const onTicketDeletedRef = useRef(onTicketDeleted)
+  const onTicketCommentedRef = useRef(onTicketCommented)
+  const onTicketActivityRef = useRef(onTicketActivity)
+  const onMessageRef = useRef(onMessage)
+  const onAccessDeniedRef = useRef(onAccessDenied)
   const onTicketBeingMovedRef = useRef(onTicketBeingMoved)
   const onTicketBeingEditedRef = useRef(onTicketBeingEdited)
   const onTicketEditingStoppedRef = useRef(onTicketEditingStopped)
@@ -113,6 +161,10 @@ export function useTicketBoardWebSocket({
     onTicketUpdatedRef.current = onTicketUpdated
     onTicketCreatedRef.current = onTicketCreated
     onTicketDeletedRef.current = onTicketDeleted
+    onTicketCommentedRef.current = onTicketCommented
+    onTicketActivityRef.current = onTicketActivity
+    onMessageRef.current = onMessage
+    onAccessDeniedRef.current = onAccessDenied
     onTicketBeingMovedRef.current = onTicketBeingMoved
     onTicketBeingEditedRef.current = onTicketBeingEdited
     onTicketEditingStoppedRef.current = onTicketEditingStopped
@@ -133,11 +185,18 @@ export function useTicketBoardWebSocket({
       return
     }
 
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+
     if (wsRef.current) {
-      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
-        wsRef.current.close(1000, 'Switching boards')
-      }
+      const previous = wsRef.current
+      // Detach first: events from the old socket are ignored from here on.
       wsRef.current = null
+      if (previous.readyState === WebSocket.OPEN || previous.readyState === WebSocket.CONNECTING) {
+        previous.close(1000, 'Switching boards')
+      }
     }
 
     currentBoardIdRef.current = boardId
@@ -157,8 +216,12 @@ export function useTicketBoardWebSocket({
       const ws = new WebSocket(wsUrl)
       wsRef.current = ws
 
+      const isCurrent = () => wsRef.current === ws
+
       ws.onopen = () => {
+        if (!isCurrent()) return
         setIsConnected(true)
+        reconnectAttemptsRef.current = 0
         setReconnectAttempts(0)
         onConnectionChangeRef.current?.(true)
 
@@ -173,8 +236,11 @@ export function useTicketBoardWebSocket({
       }
 
       ws.onmessage = (event) => {
+        if (!isCurrent()) return
         try {
           const data = JSON.parse(event.data)
+          if (!data || typeof data !== 'object') return
+          onMessageRef.current?.(data)
 
           switch (data.type) {
             case 'connection':
@@ -194,7 +260,15 @@ export function useTicketBoardWebSocket({
               break
 
             case 'ticket_deleted':
-              onTicketDeletedRef.current?.(data.ticket_id)
+              onTicketDeletedRef.current?.(data.ticket_id, data)
+              break
+
+            case 'ticket_commented':
+              onTicketCommentedRef.current?.(data)
+              break
+
+            case 'ticket_activity':
+              onTicketActivityRef.current?.(data)
               break
 
             case 'ticket_being_moved':
@@ -210,7 +284,8 @@ export function useTicketBoardWebSocket({
               break
 
             case 'user_joined':
-              setActiveUsers(prev => [...prev, {
+              // The same user in a second tab joins again: keep one entry.
+              setActiveUsers(prev => [...prev.filter(u => u.user_id !== data.user_id), {
                 user_id: data.user_id,
                 user_name: data.user_name,
                 user_email: data.user_email
@@ -247,6 +322,8 @@ export function useTicketBoardWebSocket({
       }
 
       ws.onclose = (event) => {
+        if (!isCurrent()) return
+        wsRef.current = null
         setIsConnected(false)
         onConnectionChangeRef.current?.(false)
 
@@ -255,19 +332,27 @@ export function useTicketBoardWebSocket({
           pingIntervalRef.current = null
         }
 
-        if (autoReconnect && event.code !== 1000) {
-          setReconnectAttempts(prev => {
-            const currentAttempt = prev + 1
-            const baseDelay = Math.min(reconnectInterval * Math.pow(2, currentAttempt - 1), maxReconnectInterval)
-            // Add jitter: 50%-150% of calculated delay to avoid thundering herd
-            const delay = baseDelay * (0.5 + Math.random())
+        if (event.code === BOARD_WS_ACCESS_DENIED_CODE) {
+          onAccessDeniedRef.current?.(boardId)
+        }
 
-            reconnectTimeoutRef.current = setTimeout(() => {
-              connect()
-            }, delay)
+        if (autoReconnect && !BOARD_WS_NO_RECONNECT_CODES.includes(event.code)) {
+          // The attempt counter lives in a ref: scheduling inside a state
+          // updater would run twice under StrictMode and leak a timer.
+          const currentAttempt = reconnectAttemptsRef.current + 1
+          reconnectAttemptsRef.current = currentAttempt
+          setReconnectAttempts(currentAttempt)
+          const baseDelay = Math.min(reconnectInterval * Math.pow(2, currentAttempt - 1), maxReconnectInterval)
+          // Add jitter: 50%-150% of calculated delay to avoid thundering herd
+          const delay = baseDelay * (0.5 + Math.random())
 
-            return currentAttempt
-          })
+          if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectTimeoutRef.current = null
+            // Board switched or unmounted meanwhile: nothing to resume.
+            if (currentBoardIdRef.current !== boardId) return
+            connect()
+          }, delay)
         }
       }
     } catch (error) {
@@ -286,12 +371,17 @@ export function useTicketBoardWebSocket({
       pingIntervalRef.current = null
     }
 
+    const wasOpen = wsRef.current !== null
     if (wsRef.current) {
-      wsRef.current.close(1000, 'Component unmounted')
+      const previous = wsRef.current
       wsRef.current = null
+      previous.close(1000, 'Component unmounted')
     }
 
     currentBoardIdRef.current = null
+    reconnectAttemptsRef.current = 0
+    setReconnectAttempts(0)
+    if (wasOpen) onConnectionChangeRef.current?.(false)
 
     setIsConnected(false)
     setActiveUsers([])
@@ -309,8 +399,9 @@ export function useTicketBoardWebSocket({
     send({ type: 'ticket_moving', ticket_id: ticketId, from_column: fromColumn })
   }, [send])
 
-  const notifyTicketEditing = useCallback((ticketId: number) => {
-    send({ type: 'ticket_editing', ticket_id: ticketId })
+  const notifyTicketEditing = useCallback((ticketId: number, field?: string) => {
+    // `field` is informational; today's consumer ignores it.
+    send(field ? { type: 'ticket_editing', ticket_id: ticketId, field } : { type: 'ticket_editing', ticket_id: ticketId })
   }, [send])
 
   const notifyTicketEditingStopped = useCallback((ticketId: number) => {
@@ -346,6 +437,7 @@ export function useTicketBoardWebSocket({
     notifyTicketEditing,
     notifyTicketEditingStopped,
     requestActiveUsers,
+    send,
     disconnect,
     reconnect: connect,
   }
