@@ -2,7 +2,7 @@
  * Tests for TicketCreateContext.
  * Verifies provider rendering, hook boundary, open/close toggle, and board/column state.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import React from "react";
 
@@ -218,6 +218,71 @@ describe("TicketCreateContext", () => {
 
       expect(result.current.selectedBoard).toEqual(MOCK_BOARD);
       expect(result.current.selectedColumn).toBeNull();
+    });
+  });
+  describe("opts (third argument, WS14)", () => {
+    it("defaults to empty options", () => {
+      const { result } = renderHook(() => useTicketCreate(), { wrapper: createWrapper() });
+      expect(result.current.options).toEqual({});
+    });
+
+    it("stores customerId and title from opts", () => {
+      const { result } = renderHook(() => useTicketCreate(), { wrapper: createWrapper() });
+      act(() => {
+        result.current.openTicketCreate(undefined, undefined, { customerId: 9, title: "Call from Nino" });
+      });
+      expect(result.current.isOpen).toBe(true);
+      expect(result.current.selectedBoard).toBeNull();
+      expect(result.current.options).toEqual({ customerId: 9, title: "Call from Nino" });
+    });
+
+    it("clears opts after close with delay", () => {
+      const { result } = renderHook(() => useTicketCreate(), { wrapper: createWrapper() });
+      act(() => {
+        result.current.openTicketCreate(MOCK_BOARD, undefined, { customerId: 9 });
+      });
+      act(() => {
+        result.current.closeTicketCreate();
+      });
+      expect(result.current.options).toEqual({ customerId: 9 });
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(result.current.options).toEqual({});
+    });
+
+    it("a new open replaces the previous board, column and opts", () => {
+      const { result } = renderHook(() => useTicketCreate(), { wrapper: createWrapper() });
+      act(() => {
+        result.current.openTicketCreate(MOCK_BOARD, MOCK_COLUMN, { title: "old" });
+      });
+      act(() => {
+        result.current.openTicketCreate(MOCK_BOARD);
+      });
+      expect(result.current.selectedBoard).toEqual(MOCK_BOARD);
+      expect(result.current.selectedColumn).toBeNull();
+      expect(result.current.options).toEqual({});
+    });
+
+    it("reopening right after a close keeps the new selection (the pending clear is cancelled)", () => {
+      const { result } = renderHook(() => useTicketCreate(), { wrapper: createWrapper() });
+      act(() => {
+        result.current.openTicketCreate(MOCK_BOARD, MOCK_COLUMN);
+      });
+      act(() => {
+        result.current.closeTicketCreate();
+      });
+      act(() => {
+        vi.advanceTimersByTime(50);
+        result.current.openTicketCreate(MOCK_BOARD, MOCK_COLUMN, { customerId: 4 });
+      });
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(result.current.isOpen).toBe(true);
+      expect(result.current.selectedBoard).toEqual(MOCK_BOARD);
+      expect(result.current.selectedColumn).toEqual(MOCK_COLUMN);
+      expect(result.current.options).toEqual({ customerId: 4 });
     });
   });
 });
