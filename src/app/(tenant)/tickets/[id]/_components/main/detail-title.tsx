@@ -43,10 +43,13 @@ export function DetailTitle({ ticketId, title, canEdit }: DetailTitleProps) {
   const [error, setError] = useState(false);
   const skipBlurSave = useRef(false);
 
-  // Follow the server value (realtime, refetch) while not editing.
+  // Follow the server value (realtime, refetch) when it changes, unless the
+  // user is typing. A saved draft stays until the response replaces it.
+  const focusedRef = useRef(false);
+  focusedRef.current = focused;
   useEffect(() => {
-    if (!focused) setDraft(title);
-  }, [title, focused]);
+    if (!focusedRef.current) setDraft(title);
+  }, [title]);
 
   useIsoLayoutEffect(() => {
     autoGrow(ref.current);
@@ -70,7 +73,9 @@ export function DetailTitle({ ticketId, title, canEdit }: DetailTitleProps) {
     }
     setError(false);
     if (value !== draft) setDraft(value);
-    if (value !== title) patchTicket.mutate({ id: ticketId, body: { title: value } });
+    if (value !== title) {
+      patchTicket.mutate({ id: ticketId, body: { title: value } }, { onError: () => setDraft(title) });
+    }
     return true;
   };
 
