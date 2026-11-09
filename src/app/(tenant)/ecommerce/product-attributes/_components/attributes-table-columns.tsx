@@ -160,7 +160,12 @@ export function getAttributeColumns({
               <MoreHorizontal className="h-4 w-4" aria-hidden />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent
+            align="end"
+            // Portaled, but React still bubbles its clicks to the row, which
+            // would open the edit sheet on top of the chosen action.
+            onClick={(e) => e.stopPropagation()}
+          >
             <DropdownMenuItem className="text-[13px]" onClick={() => onEdit(a)}>
               <Pencil className="me-2 h-3.5 w-3.5" aria-hidden />
               {tc("edit")}
