@@ -29,7 +29,7 @@ export default function TicketsNew({ selectedBoardId, onBoardChange }: TicketsNe
   const { user } = useAuth();
   // FE-03 removed the header search (BoardContext.ticketSearchQuery); FE-06
   // replaces this legacy screen with the toolbar search (`?q`) in the same wave.
-  const ticketSearchQuery = "";
+  const ticketSearchQuery: string = "";
   const [showCreateBoardSheet, setShowCreateBoardSheet] = useState(false);
   const debouncedSearch = useDebounce(ticketSearchQuery, 300);
 

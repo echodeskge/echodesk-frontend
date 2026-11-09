@@ -50,6 +50,9 @@ import {
   Target,
   CalendarRange,
   Wallet,
+  Plus,
+  CircleDashed,
+  SignalHigh,
 } from "lucide-react"
 
 import {
@@ -60,6 +63,7 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -83,6 +87,19 @@ import { toast } from "sonner"
 import { useUnreadMessagesCount } from "@/hooks/api/useSocial"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { SidebarSearch, SidebarUserMenu, SidebarWorkspaceHeader } from "@/components/sidebar/SidebarChrome"
+import { usePathname, useSearchParams } from "next/navigation"
+import { useBoard } from "@/contexts/BoardContext"
+import { useBoardAdmin } from "@/components/tickets-admin/board-admin-host"
+import { useBoardsLite, useViewCounts } from "@/app/(tenant)/tickets/_hooks/use-boards-lite"
+import {
+  EMPTY_FILTERS,
+  parseTicketSearchParams,
+  serializeTicketState,
+  type ResolvedFilters,
+} from "@/app/(tenant)/tickets/_hooks/use-ticket-filters"
+import { flags } from "@/app/(tenant)/tickets/_lib/flags"
+import { ColorDot } from "@/app/(tenant)/tickets/_components/primitives/color-dot"
+import type { ViewCounts } from "@/app/(tenant)/tickets/_lib/types"
 
 // Icon mapping for menu items (lucide-react icon names) — includes Receipt for invoices
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -215,6 +232,175 @@ function CountBadge({ count, label }: { count: number; label: string }) {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Boards item: nested boards + saved views (plan §3 sidebar, U4, DC6, DC7)
+// ---------------------------------------------------------------------------
+
+/** Saved views: sidebar shortcuts that open the list view with URL filters (U4). */
+export interface SidebarView {
+  key: "mine" | "unassigned" | "urgent" | "dueThisWeek"
+  icon: React.ComponentType<{ className?: string }>
+  count: keyof ViewCounts
+  filters: ResolvedFilters
+}
+
+export const SIDEBAR_VIEWS: readonly SidebarView[] = [
+  { key: "mine", icon: UserRound, count: "mine", filters: { ...EMPTY_FILTERS, assignee: ["me"] } },
+  { key: "unassigned", icon: CircleDashed, count: "unassigned", filters: { ...EMPTY_FILTERS, unassigned: true } },
+  { key: "urgent", icon: SignalHigh, count: "urgent", filters: { ...EMPTY_FILTERS, priority: ["critical", "high"] } },
+  { key: "dueThisWeek", icon: Calendar, count: "due_this_week", filters: { ...EMPTY_FILTERS, due: "week" } },
+]
+
+const sameSet = <T,>(a: readonly T[], b: readonly T[]) =>
+  a.length === b.length && a.every((x) => b.includes(x))
+
+/** True when two filter sets are equal (order-insensitive lists; DC7). */
+export function filtersEqual(a: ResolvedFilters, b: ResolvedFilters): boolean {
+  return (
+    sameSet(a.assignee, b.assignee) &&
+    a.unassigned === b.unassigned &&
+    sameSet(a.priority, b.priority) &&
+    sameSet(a.label, b.label) &&
+    a.due === b.due &&
+    a.q.trim() === b.q.trim()
+  )
+}
+
+/** `/tickets?board=…&view=list&<filters>` for a saved view. */
+export function viewHref(boardId: number | null, filters: ResolvedFilters): string {
+  const qs = serializeTicketState({ boardId, view: "list", sort: "created", filters })
+  return qs ? `/tickets?${qs}` : "/tickets"
+}
+
+const BOARDS_OPEN_KEY = "echodesk_sidebar_boards_open"
+
+function readBoardsOpen(): boolean | null {
+  try {
+    const v = typeof window === "undefined" ? null : window.localStorage.getItem(BOARDS_OPEN_KEY)
+    return v === "1" ? true : v === "0" ? false : null
+  } catch {
+    return null
+  }
+}
+
+function writeBoardsOpen(open: boolean) {
+  try {
+    window.localStorage.setItem(BOARDS_OPEN_KEY, open ? "1" : "0")
+  } catch {
+    // Storage blocked: the toggle still works for this page view.
+  }
+}
+
+const SUB_ROW_CLASS =
+  "flex h-7 w-full items-center gap-2 rounded-md px-2 text-[13px] text-sidebar-foreground/85 outline-hidden hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground"
+
+/**
+ * The nested list under "Boards": one 28px row per accessible board (dot,
+ * name, open count), "+ New board" (gated), then the Views section (behind
+ * `flags.listViewEnabled`). Reads `useSearchParams`, so it renders inside a
+ * Suspense boundary.
+ */
+function BoardsSubList({ onNavigate }: { onNavigate: () => void }) {
+  const tViews = useTranslations("tickets.views")
+  const tMenu = useTranslations("tickets.boardAdmin.menu")
+  const pathname = usePathname() ?? ""
+  const searchParams = useSearchParams()
+  const { selectedBoardId, setSelectedBoardId } = useBoard()
+  const { openCreateBoard, gates } = useBoardAdmin()
+  const { data: boards } = useBoardsLite()
+
+  const onTickets = pathname === "/tickets" || pathname.startsWith("/tickets/")
+  const url = React.useMemo(
+    () => parseTicketSearchParams(new URLSearchParams(searchParams?.toString() ?? ""), null),
+    [searchParams],
+  )
+  // Highlighted board: `?board` on the tickets screens, else the context's board there.
+  const activeBoardId = onTickets ? (url.boardId ?? selectedBoardId) : null
+  // Board the views (and their counts) apply to.
+  const viewsBoardId =
+    activeBoardId ?? selectedBoardId ?? boards?.find((b) => b.is_default)?.id ?? boards?.[0]?.id ?? null
+  const { data: counts } = useViewCounts(viewsBoardId, { enabled: flags.listViewEnabled })
+  const listOnBoardScreen = pathname === "/tickets" && url.view === "list"
+
+  return (
+    <div
+      data-testid="sidebar-boards"
+      className="mb-1 ml-[15px] mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-border pl-[9px] group-data-[collapsible=icon]:hidden"
+    >
+      <ul className="flex flex-col gap-0.5" aria-label={tMenu("switchBoard")}>
+        {(boards ?? []).map((b) => {
+          const active = activeBoardId === b.id
+          return (
+            <li key={b.id}>
+              <NextLink
+                href={`/tickets?board=${b.id}${listOnBoardScreen ? "&view=list" : ""}`}
+                data-active={active}
+                aria-current={active ? "page" : undefined}
+                data-testid={`sidebar-board-${b.id}`}
+                className={SUB_ROW_CLASS}
+                onClick={() => {
+                  setSelectedBoardId(b.id)
+                  onNavigate()
+                }}
+              >
+                <ColorDot color={b.color} size={8} />
+                <span className="flex-1 truncate">{b.name}</span>
+                <span className="text-[11px] tabular-nums text-muted-foreground">{b.open_count}</span>
+              </NextLink>
+            </li>
+          )
+        })}
+      </ul>
+      {gates.canCreateBoard && (
+        <button
+          type="button"
+          data-testid="sidebar-new-board"
+          className={`${SUB_ROW_CLASS} text-muted-foreground`}
+          onClick={() => {
+            openCreateBoard()
+            onNavigate()
+          }}
+        >
+          <Plus className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{tMenu("newBoard")}</span>
+        </button>
+      )}
+      {flags.listViewEnabled && (
+        <div data-testid="sidebar-views" className="mt-2 flex flex-col gap-0.5">
+          <div className="flex h-6 items-center px-2 text-[11px] font-medium uppercase tracking-[.04em] text-muted-foreground">
+            {tViews("title")}
+          </div>
+          <ul className="flex flex-col gap-0.5">
+            {SIDEBAR_VIEWS.map((v) => {
+              const Icon = v.icon
+              const active = pathname === "/tickets" && filtersEqual(url.filters, v.filters)
+              const count = counts?.[v.count]
+              return (
+                <li key={v.key}>
+                  <NextLink
+                    href={viewHref(viewsBoardId, v.filters)}
+                    data-active={active}
+                    aria-current={active ? "page" : undefined}
+                    data-testid={`sidebar-view-${v.key}`}
+                    className={`${SUB_ROW_CLASS} h-[30px]`}
+                    onClick={onNavigate}
+                  >
+                    <Icon className="h-[15px] w-[15px] shrink-0 text-muted-foreground" />
+                    <span className="flex-1 truncate">{tViews(v.key)}</span>
+                    {typeof count === "number" && (
+                      <span className="text-[11px] tabular-nums text-muted-foreground">{count}</span>
+                    )}
+                  </NextLink>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface AppSidebarProps {
   tenant: TenantInfo
   userProfile: User | null
@@ -249,6 +435,17 @@ export function AppSidebar({
     closeOnMobile()
   }
   const showLocked = (label: string) => toast.info(t("premiumRequired", { name: label }))
+
+  // Boards item expansion (DC6): the user's last choice, else open on /tickets.
+  const onTicketsView = currentView === "tickets"
+  const [boardsOpenPref, setBoardsOpenPref] = React.useState<boolean | null>(null)
+  React.useEffect(() => { setBoardsOpenPref(readBoardsOpen()) }, [])
+  const boardsOpen = boardsOpenPref ?? onTicketsView
+  const toggleBoards = () => {
+    const next = !boardsOpen
+    setBoardsOpenPref(next)
+    writeBoardsOpen(next)
+  }
 
   // Get unread counts for sidebar badges
   const { data: unreadCount } = useUnreadMessagesCount()
@@ -346,6 +543,44 @@ export function AppSidebar({
               </SidebarMenuSub>
             </CollapsibleContent>
           </Collapsible>
+        </SidebarMenuItem>
+      )
+    }
+
+    if (item.id === "tickets" && !isLocked) {
+      return (
+        <SidebarMenuItem key={item.id}>
+          <SidebarMenuButton
+            onMouseEnter={() => onPrefetch?.(item.id)}
+            asChild
+            isActive={isActive}
+            tooltip={tooltipFor(item)}
+            className={`${ITEM_CLASS} relative cursor-pointer pe-8`}
+          >
+            <NextLink href="/tickets" className="flex w-full items-center gap-2" onClick={closeOnMobile}>
+              {renderIcon(item, false)}
+              <span className="truncate">{item.label}</span>
+            </NextLink>
+          </SidebarMenuButton>
+          <SidebarMenuAction
+            onClick={toggleBoards}
+            aria-expanded={boardsOpen}
+            aria-controls="sidebar-boards-list"
+            aria-label={boardsOpen ? t("hideBoards") : t("showBoards")}
+            data-testid="sidebar-boards-toggle"
+            className="text-muted-foreground"
+          >
+            <ChevronDown
+              className={`!size-3.5 transition-transform duration-200 ${boardsOpen ? "rotate-0" : "-rotate-90"}`}
+            />
+          </SidebarMenuAction>
+          {boardsOpen && !collapsed && (
+            <div id="sidebar-boards-list">
+              <React.Suspense fallback={null}>
+                <BoardsSubList onNavigate={closeOnMobile} />
+              </React.Suspense>
+            </div>
+          )}
         </SidebarMenuItem>
       )
     }
