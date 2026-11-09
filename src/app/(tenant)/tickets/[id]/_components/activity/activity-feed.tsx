@@ -163,7 +163,7 @@ export function ActivityFeed({ ticketId }: ActivityFeedProps) {
   const updatedAt = ticket?.updated_at;
 
   return (
-    <section id="activity" data-slot="activity-feed" data-ticket-id={ticketId} className="flex scroll-mt-4 flex-col gap-3">
+    <section id="activity" data-slot="activity-feed" data-ticket-id={ticketId} className="flex scroll-mt-4 flex-col gap-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-[13px] font-semibold leading-5">{t("title")}</h2>
         <div

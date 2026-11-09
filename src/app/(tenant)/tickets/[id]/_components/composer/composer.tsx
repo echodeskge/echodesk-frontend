@@ -206,7 +206,7 @@ function ComposerInner({ ticket }: ComposerProps) {
       data-ticket-id={ticket.id}
       data-internal={internal}
       data-focused={focused}
-      className="border-t bg-background px-4 pb-3.5 pt-3 sm:px-10"
+      className="border-t bg-background px-4 pb-3.5 pt-3 text-sm sm:px-10"
       style={keyboardInset ? { paddingBottom: `${14 + keyboardInset}px` } : undefined}
     >
       <div className="flex max-w-[780px] gap-2.5">
@@ -310,7 +310,7 @@ function ComposerInner({ ticket }: ComposerProps) {
               onClick={post}
               disabled={!canPost}
               aria-label={internal ? t("postInternal") : t("post")}
-              className="ml-auto inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:ml-0"
+              className="ml-auto inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium leading-5 text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:ml-0"
             >
               {createComment.isPending && <Loader2 aria-hidden="true" size={12} className="animate-spin" />}
               {t("post")}

@@ -97,7 +97,7 @@ beforeEach(() => {
   setProfile(STAFF);
   resetRealtime();
   routes();
-  patchRoute.mockImplementation((url, body) => ({ id: 2, comment: (body as { comment: string }).comment }));
+  patchRoute.mockImplementation((_url, body) => ({ id: 2, comment: (body as { comment: string }).comment }));
   deleteRoute.mockImplementation((url) => {
     const id = Number(String(url).match(/(\d+)\/$/)?.[1]);
     feed = feed.filter((i) => !(i.type === "comment" && i.comment_id === id));
