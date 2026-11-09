@@ -150,6 +150,8 @@ describe("Attendance page (LV-03)", () => {
     expect(leaveCell.getAttribute("title")).toBe("Nov 3 · Sick leave")
     expect(within(screen.getByTestId("attendance-legend")).getByText("Sick leave")).toBeTruthy()
     expect(within(table).getByText("1 / 1")).toBeTruthy()
+    // The department stays visible under the name (the old grid showed it too).
+    expect(within(screen.getByTestId("attendance-row")).getByText("Support")).toBeTruthy()
     expect(screen.getByText("1 employee")).toBeTruthy()
     expect(screen.getByTestId("outlet-meta").textContent).toMatch(/^· \S+ \d{4}$/)
   })

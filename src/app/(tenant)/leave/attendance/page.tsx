@@ -40,7 +40,7 @@ import {
 
 const ALL = "all"
 
-/** 28x28 day cell fill per kind (leave cells take the leave type colour). */
+/** 24x24 day cell fill per kind (leave cells take the leave type colour). */
 const CELL_CLASS: Record<AttendanceCellKind, string> = {
   worked: "bg-green-600/10 text-green-700 dark:bg-green-500/15 dark:text-green-400",
   leave: "",
@@ -221,7 +221,7 @@ export default function AttendancePage() {
                           key={day.date}
                           scope="col"
                           className={cn(
-                            "sticky top-0 z-20 h-10 w-8 min-w-8 border-b bg-background p-0 font-normal",
+                            "sticky top-0 z-20 h-10 w-7 min-w-7 border-b bg-background p-0 font-normal",
                             muted && "bg-muted/60 dark:bg-muted/40"
                           )}
                         >
@@ -256,12 +256,19 @@ export default function AttendancePage() {
                       <tr key={row.user.id} className="group" data-testid="attendance-row">
                         <th
                           scope="row"
-                          className="sticky start-0 z-10 h-9 w-[132px] min-w-[132px] max-w-[132px] border-b border-e bg-background px-3 text-start font-normal group-hover:bg-muted sm:w-[180px] sm:min-w-[180px] sm:max-w-[180px] sm:px-4"
+                          className="sticky start-0 z-10 h-10 w-[132px] min-w-[132px] max-w-[132px] border-b border-e bg-background px-3 text-start font-normal group-hover:bg-muted sm:w-[180px] sm:min-w-[180px] sm:max-w-[180px] sm:px-4"
                           title={row.user.department ? `${row.user.name} · ${row.user.department}` : row.user.name}
                         >
                           <span className="flex min-w-0 items-center gap-2">
                             <LeaveAvatar name={row.user.name} className="hidden sm:flex" />
-                            <span className="truncate text-[13px] font-medium">{row.user.name}</span>
+                            <span className="flex min-w-0 flex-col">
+                              <span className="truncate text-[13px] font-medium leading-4">{row.user.name}</span>
+                              {row.user.department && (
+                                <span className="truncate text-[11px] leading-[14px] text-muted-foreground">
+                                  {row.user.department}
+                                </span>
+                              )}
+                            </span>
                           </span>
                         </th>
                         {grid.days.map((day) => {
@@ -276,7 +283,7 @@ export default function AttendancePage() {
                             <td
                               key={day.date}
                               className={cn(
-                                "h-9 border-b p-0 text-center align-middle group-hover:bg-muted/40",
+                                "h-10 border-b p-0 text-center align-middle group-hover:bg-muted/40",
                                 isMutedDay(day) && "bg-muted/30"
                               )}
                             >
@@ -285,7 +292,7 @@ export default function AttendancePage() {
                                 aria-label={title}
                                 data-kind={cell.kind}
                                 className={cn(
-                                  "mx-auto flex h-7 w-7 items-center justify-center rounded",
+                                  "mx-auto flex h-6 w-6 items-center justify-center rounded",
                                   CELL_CLASS[cell.kind]
                                 )}
                                 style={
@@ -299,7 +306,7 @@ export default function AttendancePage() {
                             </td>
                           )
                         })}
-                        <td className="h-9 whitespace-nowrap border-b border-s bg-background px-3 text-end text-xs tabular-nums group-hover:bg-muted sm:sticky sm:end-0 sm:z-10">
+                        <td className="h-10 whitespace-nowrap border-b border-s bg-background px-3 text-end text-xs tabular-nums group-hover:bg-muted sm:sticky sm:end-0 sm:z-10">
                           {t("hr.attendance.summaryValue", { worked: sum.worked, leave: sum.leave })}
                         </td>
                       </tr>
