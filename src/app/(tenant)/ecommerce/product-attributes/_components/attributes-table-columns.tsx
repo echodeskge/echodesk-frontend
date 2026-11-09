@@ -1,130 +1,6 @@
 "use client"
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
-import { DataTableColumnHeader } from "@/components/ui/data-table/data-table-column-header"
-import { AttributeDefinition } from "@/api/generated"
-
-interface ColumnOptions {
-  t: (key: string) => string
-  locale: string
-  onEdit: (attribute: AttributeDefinition) => void
-  onDelete: (attribute: AttributeDefinition) => void
-}
-
-function getLocalizedName(name: unknown, locale: string): string {
-  if (!name) return "Unnamed"
-  if (typeof name === "string") return name
-  if (typeof name === "object") {
-    const nameObj = name as Record<string, string>
-    return nameObj[locale] || nameObj.en || Object.values(nameObj)[0] || "Unnamed"
-  }
-  return "Unnamed"
-}
-
-export function getAttributeColumns({
-  t,
-  locale,
-  onEdit,
-  onDelete,
-}: ColumnOptions): ColumnDef<AttributeDefinition>[] {
-  return [
-    {
-      accessorKey: "name",
-      // `name` is a {lang: text} object: the automatic filter for objects is
-      // strict equality, so any search text hid every row. Match the search
-      // against the name in every language and the key ("by name or key").
-      filterFn: (row, _columnId, value) => {
-        const query = String(value ?? "").trim().toLowerCase()
-        if (!query) return true
-        const name = row.original.name as unknown
-        const names =
-          name && typeof name === "object"
-            ? Object.values(name as Record<string, string>)
-            : [String(name ?? "")]
-        return [...names, row.original.key ?? ""].some((text) =>
-          String(text ?? "").toLowerCase().includes(query)
-        )
-      },
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.name")} />
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {getLocalizedName(row.original.name, locale)}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "key",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("key")} />
-      ),
-      cell: ({ row }) => (
-        <code className="text-sm text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-          {row.original.key}
-        </code>
-      ),
-    },
-    {
-      accessorKey: "attribute_type",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.type")} />
-      ),
-      cell: ({ row }) => {
-        const type = String(row.original.attribute_type)
-        return (
-          <Badge variant="secondary">
-            {t(`types.${type}`)}
-          </Badge>
-        )
-      },
-    },
-    {
-      accessorKey: "options",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("options")} />
-      ),
-      cell: ({ row }) => {
-        const options = row.original.options
-        const count = Array.isArray(options) ? options.length : 0
-        return <span className="text-muted-foreground">{count}</span>
-      },
-      enableSorting: false,
-    },
-    {
-      accessorKey: "is_active",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.status")} />
-      ),
-      cell: ({ row }) => (
-        <Badge variant={row.original.is_active ? "default" : "secondary"}>
-          {row.original.is_active ? t("sidebar.active") : t("sidebar.inactive")}
-        </Badge>
-      ),
-    },
-    {
-      id: "actions",
-      header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => {
-        const attr = row.original
-        return (
-          <AttributeRowActions
-            attribute={attr}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-        )
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ]
-}
-
-// Inline row actions to avoid circular imports
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,43 +8,176 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import type { AttributeDefinition } from "@/api/generated"
+import {
+  ActivePill,
+  IdText,
+  TonePill,
+  humanize,
+  localizedText,
+  rdButton,
+  type EcColumn,
+} from "@/app/(tenant)/ecommerce/_components/ui"
+import type { SortState, SortValue } from "../../products/_lib/table-kit"
+import { SortHeader } from "../../products/_components/table-kit"
 
-function AttributeRowActions({
-  attribute,
+type T = ((key: string, values?: Record<string, string | number>) => string) & { has?: (key: string) => boolean }
+
+/** The attribute's name in the UI language (then English, then any), else its key. */
+export function attributeName(attribute: Pick<AttributeDefinition, "name" | "key">, locale: string): string {
+  return localizedText(attribute.name as Parameters<typeof localizedText>[0], locale) || attribute.key || "—"
+}
+
+export function optionCount(attribute: Pick<AttributeDefinition, "options">): number {
+  return Array.isArray(attribute.options) ? attribute.options.length : 0
+}
+
+/**
+ * Search used by the toolbar: the name in any language or the key
+ * (case-insensitive), as the placeholder says.
+ */
+export function matchesAttribute(attribute: Pick<AttributeDefinition, "name" | "key">, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  const name = attribute.name as unknown
+  const names = name && typeof name === "object" ? Object.values(name as Record<string, string>) : [String(name ?? "")]
+  return [...names, attribute.key ?? ""].some((text) => String(text ?? "").toLowerCase().includes(q))
+}
+
+export const HIDEABLE_ATTRIBUTE_COLUMNS = ["type", "options", "flags", "status"] as const
+
+export function attributeSortAccessors(locale: string): Record<string, (a: AttributeDefinition) => SortValue> {
+  return {
+    name: (a) => attributeName(a, locale),
+    type: (a) => String(a.attribute_type ?? ""),
+    options: (a) => optionCount(a),
+    status: (a) => !!a.is_active,
+  }
+}
+
+export function getAttributeColumns({
+  t,
+  tc,
+  moreLabel,
+  locale,
+  sort,
+  onSortChange,
   onEdit,
   onDelete,
+  hidden,
 }: {
-  attribute: AttributeDefinition
-  onEdit: (attr: AttributeDefinition) => void
-  onDelete: (attr: AttributeDefinition) => void
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MoreHorizontal className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(attribute)}>
-          <Pencil className="me-2 h-4 w-4" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onClick={() => onDelete(attribute)}
-        >
-          <Trash2 className="me-2 h-4 w-4" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+  /** `productAttributes` namespace. */
+  t: T
+  /** `common` namespace. */
+  tc: (key: string) => string
+  /** "More actions" (ecommerceUi). */
+  moreLabel: string
+  locale: string
+  sort: SortState | null
+  onSortChange: (sort: SortState | null) => void
+  onEdit: (attribute: AttributeDefinition) => void
+  onDelete: (attribute: AttributeDefinition) => void
+  hidden: ReadonlySet<string>
+}): EcColumn<AttributeDefinition>[] {
+  const header = (id: string, label: string, align: "start" | "end" = "start") => (
+    <SortHeader id={id} label={label} sort={sort} onSortChange={onSortChange} align={align} />
   )
+  const typeLabel = (type: string) => (t.has?.(`types.${type}`) ? t(`types.${type}`) : humanize(type))
+  const columns: EcColumn<AttributeDefinition>[] = [
+    {
+      id: "name",
+      header: header("name", t("table.name")),
+      width: "minmax(0,2fr)",
+      mobile: "title",
+      cell: (a) => (
+        <span className="flex min-w-0 items-baseline gap-2">
+          <span className="truncate font-medium">{attributeName(a, locale)}</span>
+          <IdText className="hidden text-[11px] text-muted-foreground @3xl:inline">{a.key}</IdText>
+        </span>
+      ),
+    },
+    {
+      id: "type",
+      header: header("type", t("table.type")),
+      width: "minmax(0,1fr)",
+      mobile: "meta",
+      cell: (a) => <TonePill tone="neutral">{typeLabel(String(a.attribute_type))}</TonePill>,
+    },
+    {
+      id: "options",
+      header: header("options", t("options"), "end"),
+      width: "104px",
+      align: "end",
+      mobile: "meta",
+      cell: (a) =>
+        String(a.attribute_type) === "number" ? (
+          <span className="text-muted-foreground">{a.unit || "—"}</span>
+        ) : (
+          <span className="tabular-nums">
+            <span className="@3xl:hidden">{t("optionsCount", { count: optionCount(a) })}</span>
+            <span className="hidden @3xl:inline">{optionCount(a)}</span>
+          </span>
+        ),
+    },
+    {
+      id: "flags",
+      header: t("properties"),
+      width: "minmax(0,1.2fr)",
+      mobile: "meta",
+      cell: (a) =>
+        a.is_required || a.is_filterable ? (
+          <span className="flex min-w-0 flex-wrap gap-1">
+            {a.is_required && <TonePill tone="warning">{t("required")}</TonePill>}
+            {a.is_filterable && <TonePill tone="info">{t("filterable")}</TonePill>}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
+      id: "status",
+      header: header("status", t("table.status")),
+      width: "104px",
+      mobile: "meta",
+      cell: (a) => <ActivePill active={a.is_active} />,
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("table.actions")}</span>,
+      width: "36px",
+      align: "end",
+      mobile: "end",
+      cell: (a) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={rdButton.ghostIconSm}
+              aria-label={`${moreLabel}: ${attributeName(a, locale)}`}
+              title={moreLabel}
+              data-testid="ec-attribute-actions"
+            >
+              <MoreHorizontal className="h-4 w-4" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem className="text-[13px]" onClick={() => onEdit(a)}>
+              <Pencil className="me-2 h-3.5 w-3.5" aria-hidden />
+              {tc("edit")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-[13px] text-destructive focus:text-destructive"
+              onClick={() => onDelete(a)}
+              data-testid="ec-attribute-delete"
+            >
+              <Trash2 className="me-2 h-3.5 w-3.5" aria-hidden />
+              {tc("delete")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ]
+  return columns.filter((c) => !hidden.has(c.id))
 }
