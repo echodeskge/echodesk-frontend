@@ -86,10 +86,10 @@ interface UseTicketBoardWebSocketOptions {
   onTicketCreated?: (ticket: any) => void
   /** The second argument carries `reason` ('deleted' | 'transferred') and `to_board_id`. */
   onTicketDeleted?: (ticketId: number, event: TicketDeletedEvent) => void
-  onTicketCommented?: (event: any) => void
+  onTicketCommented?: (event: Record<string, unknown> & { ticket_id: number }) => void
   onTicketActivity?: (event: TicketActivityEvent) => void
   /** Every parsed frame, before the typed callbacks (unknown types included). */
-  onMessage?: (data: any) => void
+  onMessage?: (data: Record<string, unknown>) => void
   /** Close code 4403: the user cannot access this board. No reconnect follows. */
   onAccessDenied?: (boardId: string | number) => void
   onTicketBeingMoved?: (event: TicketBeingMovedEvent) => void
