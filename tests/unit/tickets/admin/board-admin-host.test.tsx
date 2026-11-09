@@ -26,6 +26,9 @@ import axios from "@/api/axios";
 import { BoardAdminHost, resolveFallbackBoard, useBoardAdmin, type BoardAdminApi } from "@/components/tickets-admin/board-admin-host";
 import { HttpError, renderWithClient, routeAxios, type Routes } from "./test-utils";
 
+/** The dialogs are lazy chunks; their first import can exceed findBy's 1s default under full-suite load (W1 flake). */
+const LAZY = { timeout: 4000 };
+
 const ax = axios as unknown as Parameters<typeof routeAxios>[0];
 const T = "tickets.boardAdmin";
 
@@ -90,28 +93,28 @@ describe("BoardAdminHost — opening from outside /tickets", () => {
   it("opens the create sheet", async () => {
     mount();
     act(() => api.openCreateBoard());
-    expect(await screen.findByText(`${T}.create.title`)).toBeInTheDocument();
+    expect(await screen.findByText(`${T}.create.title`, undefined, LAZY)).toBeInTheDocument();
   });
 
   it("opens board settings, manage users and edit columns", async () => {
     mount();
     act(() => api.openBoardSettings({ id: 7, name: "Support" }));
-    expect(await screen.findByText(`${T}.settings.title`)).toBeInTheDocument();
+    expect(await screen.findByText(`${T}.settings.title`, undefined, LAZY)).toBeInTheDocument();
 
     act(() => api.openManageUsers({ id: 7, name: "Support" }));
-    expect(await screen.findByText(`${T}.users.title`)).toBeInTheDocument();
+    expect(await screen.findByText(`${T}.users.title`, undefined, LAZY)).toBeInTheDocument();
     expect(screen.queryByText(`${T}.settings.title`)).not.toBeInTheDocument();
 
     act(() => api.openEditColumns({ id: 7, name: "Support" }));
-    expect(await screen.findByText(`${T}.columns.title`)).toBeInTheDocument();
+    expect(await screen.findByText(`${T}.columns.title`, undefined, LAZY)).toBeInTheDocument();
   });
 
   it("switches from settings to the users dialog through its shortcut", async () => {
     const user = userEvent.setup();
     mount();
     act(() => api.openBoardSettings({ id: 7, name: "Support" }));
-    await user.click(await screen.findByRole("button", { name: `${T}.menu.manageUsers` }));
-    expect(await screen.findByText(`${T}.users.title`)).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: `${T}.menu.manageUsers` }, LAZY));
+    expect(await screen.findByText(`${T}.users.title`, undefined, LAZY)).toBeInTheDocument();
   });
 });
 
@@ -154,7 +157,7 @@ describe("BoardAdminHost — after create and delete", () => {
     setLocation("/tickets", "?board=7");
     mount({ "POST /api/boards/": { id: 12, name: "Ops" } });
     act(() => api.openCreateBoard());
-    await user.type(await screen.findByLabelText(`${T}.create.name`), "Ops");
+    await user.type(await screen.findByLabelText(`${T}.create.name`, undefined, LAZY), "Ops");
     await user.click(screen.getByRole("button", { name: `${T}.create.submit` }));
     await waitFor(() => expect(boardCtx.setSelectedBoardId).toHaveBeenCalledWith(12));
     expect(nav.push).toHaveBeenCalledWith("/tickets?board=12");
@@ -164,7 +167,7 @@ describe("BoardAdminHost — after create and delete", () => {
     const user = userEvent.setup();
     mount({ "POST /api/boards/": { id: 12, name: "Ops" } });
     act(() => api.openCreateBoard());
-    await user.type(await screen.findByLabelText(`${T}.create.name`), "Ops");
+    await user.type(await screen.findByLabelText(`${T}.create.name`, undefined, LAZY), "Ops");
     await user.click(screen.getByRole("button", { name: `${T}.create.submit` }));
     await waitFor(() => expect(boardCtx.setSelectedBoardId).toHaveBeenCalledWith(12));
     expect(nav.push).not.toHaveBeenCalled();
@@ -176,7 +179,7 @@ describe("BoardAdminHost — after create and delete", () => {
     boardCtx.selectedBoardId = 7;
     mount({ "DELETE /api/boards/7/": null, "GET /api/boards/default/": { id: 2, name: "General" } });
     act(() => api.openBoardSettings({ id: 7, name: "Support" }));
-    await user.click(await screen.findByRole("button", { name: `${T}.settings.delete` }));
+    await user.click(await screen.findByRole("button", { name: `${T}.settings.delete` }, LAZY));
     const alert = await screen.findByRole("alertdialog");
     await user.click(within(alert).getByRole("button", { name: `${T}.settings.delete` }));
 
@@ -190,7 +193,7 @@ describe("BoardAdminHost — after create and delete", () => {
     boardCtx.selectedBoardId = 3;
     mount({ "DELETE /api/boards/7/": null, "GET /api/boards/default/": { id: 2 } });
     act(() => api.openBoardSettings({ id: 7, name: "Support" }));
-    await user.click(await screen.findByRole("button", { name: `${T}.settings.delete` }));
+    await user.click(await screen.findByRole("button", { name: `${T}.settings.delete` }, LAZY));
     const alert = await screen.findByRole("alertdialog");
     await user.click(within(alert).getByRole("button", { name: `${T}.settings.delete` }));
     await waitFor(() => expect(toastMock.success).toHaveBeenCalledWith(`${T}.settings.deleted`));
