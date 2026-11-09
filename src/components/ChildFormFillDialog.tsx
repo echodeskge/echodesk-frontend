@@ -16,13 +16,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Spinner } from "@/components/ui/spinner";
 import { SignatureCanvas } from "@/components/SignatureCanvas";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -38,7 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { TicketForm, ListItemMinimal } from "@/api/generated/interfaces";
+import type { TicketForm } from "@/api/generated/interfaces";
 import { ticketFormsRetrieve, itemListsRetrieve, formSubmissionsCreate } from "@/api/generated/api";
 
 interface ChildFormFillDialogProps {

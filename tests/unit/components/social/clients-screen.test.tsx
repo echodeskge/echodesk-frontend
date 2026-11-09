@@ -22,10 +22,17 @@ const mockClientTickets = vi.fn();
 const mockProfile = vi.fn();
 const mockAccess = vi.fn();
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
+const mockClientError = vi.fn();
+const nav = vi.hoisted(() => ({ search: "" }));
 const mockToast = vi.hoisted(() => ({ success: vi.fn(), info: vi.fn(), error: vi.fn() }));
 
 vi.mock("sonner", () => ({ toast: mockToast }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: mockPush }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  usePathname: () => "/social/clients",
+  useSearchParams: () => new URLSearchParams(nav.search),
+}));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (
     <a href={href} {...rest}>
@@ -37,7 +44,11 @@ vi.mock("@/hooks/useMyAccess", () => ({ useMyAccess: () => mockAccess() }));
 vi.mock("@/hooks/useUserProfile", () => ({ useUserProfile: () => ({ data: mockProfile() }) }));
 vi.mock("@/hooks/api/useSocialClients", () => ({
   useSocialClients: (filters: unknown) => mockUseSocialClients(filters),
-  useSocialClient: (id: number) => ({ data: mockClientDetail(id), isLoading: false }),
+  useSocialClient: (id: number, opts?: { enabled?: boolean }) => ({
+    data: opts?.enabled === false ? undefined : mockClientDetail(id),
+    isLoading: false,
+    isError: opts?.enabled === false ? false : !!mockClientError(id),
+  }),
   useSocialClientCustomFields: () => ({ data: { results: [{ name: "city", label: "City" }] } }),
   useCreateSocialClient: () => ({ mutateAsync: mockCreate, isPending: false }),
   useUpdateSocialClient: () => ({ mutateAsync: mockUpdate, isPending: false }),
@@ -53,7 +64,7 @@ vi.mock("@/hooks/api/useConversationTickets", async (importOriginal) => {
   };
 });
 
-import { ClientsScreen, CLIENTS_PAGE_SIZE } from "@/app/(tenant)/social/clients/_components/clients-screen";
+import { ClientsScreen, CLIENTS_PAGE_SIZE, parseClientParam } from "@/app/(tenant)/social/clients/_components/clients-screen";
 import {
   clientInitials,
   clientPageStats,
@@ -131,6 +142,8 @@ beforeEach(() => {
   mockClientTickets.mockReturnValue([{ id: 77, title: "Order issue" }]);
   mockProfile.mockReturnValue({ is_staff: true, feature_keys: ["ticket_management"] });
   mockAccess.mockReturnValue({ canManageSocialSettings: true });
+  mockClientError.mockReturnValue(false);
+  nav.search = "";
 });
 
 describe("ClientsScreen", () => {
@@ -249,6 +262,56 @@ describe("ClientsScreen", () => {
   it("renders in Georgian", () => {
     renderScreen(ka as Record<string, unknown>, "ka");
     expect(screen.getByRole("searchbox")).toHaveAttribute("placeholder", "ძებნა სახელით, ელფოსტით ან ტელეფონით…");
+  });
+});
+
+describe("?client= deep link (ticket rail Open client)", () => {
+  it("parses only positive integer ids", () => {
+    expect(parseClientParam("9")).toBe(9);
+    expect(parseClientParam("0")).toBeNull();
+    expect(parseClientParam("-3")).toBeNull();
+    expect(parseClientParam("9x")).toBeNull();
+    expect(parseClientParam(null)).toBeNull();
+  });
+
+  it("visiting /social/clients?client=1 opens the rail for that client", async () => {
+    nav.search = "client=1";
+    renderScreen();
+    const rail = await screen.findByTestId("client-detail-rail");
+    expect(within(rail).getByText("Client details")).toBeInTheDocument();
+    expect(mockClientDetail).toHaveBeenCalledWith(1);
+  });
+
+  it("a client that isn't on the current page still opens", async () => {
+    nav.search = "client=9";
+    mockClientDetail.mockReturnValue({ ...detail, id: 9, name: "Far away" });
+    renderScreen();
+    expect(await screen.findByTestId("client-detail-rail")).toBeInTheDocument();
+    expect(mockClientDetail).toHaveBeenCalledWith(9);
+  });
+
+  it("an unknown id is ignored: no rail, and the param is dropped", async () => {
+    nav.search = "client=404&tab=x";
+    mockClientError.mockImplementation((id: number) => id === 404);
+    renderScreen();
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith("/social/clients?tab=x", { scroll: false }));
+    expect(screen.queryByTestId("client-detail-rail")).toBeNull();
+  });
+
+  it("a malformed param is ignored", () => {
+    nav.search = "client=abc";
+    renderScreen();
+    expect(screen.queryByTestId("client-detail-rail")).toBeNull();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("closing the deep-linked rail drops the param", async () => {
+    nav.search = "client=1";
+    renderScreen();
+    const rail = await screen.findByTestId("client-detail-rail");
+    fireEvent.click(within(rail).getByRole("button", { name: /close/i }));
+    expect(mockReplace).toHaveBeenCalledWith("/social/clients", { scroll: false });
+    expect(screen.queryByTestId("client-detail-rail")).toBeNull();
   });
 });
 
