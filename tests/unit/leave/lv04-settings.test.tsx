@@ -74,4 +74,15 @@ describe("LV-04 leave settings page", () => {
     await waitFor(() => expect(screen.getByTestId("leave-settings-save")).not.toBeDisabled())
     expect(h.list).toHaveBeenCalledTimes(2)
   })
+
+  it("shows 'no access' without the form, a retry or a toast on a 403", async () => {
+    h.list.mockRejectedValueOnce({ response: { status: 403, data: { detail: "Only administrators can manage leave settings." } } })
+    renderLeave(<LeaveSettingsPage />, "ka")
+    const state = await screen.findByTestId("leave-no-access")
+    expect(state).toHaveAttribute("data-forbidden", "true")
+    expect(screen.queryByTestId("leave-settings-save")).toBeNull()
+    expect(screen.queryByTestId("leave-settings-approval")).toBeNull()
+    expect(screen.queryByRole("button", { name: "ხელახლა ცდა" })).toBeNull()
+    expect(h.toast.error).not.toHaveBeenCalled()
+  })
 })

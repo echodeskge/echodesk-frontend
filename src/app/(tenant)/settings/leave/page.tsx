@@ -17,6 +17,7 @@ import { AlertTriangle, CalendarDays, Loader2, RotateCw, Save } from "lucide-rea
 import {
   FieldRow,
   LeaveBanner,
+  LeaveErrorState,
   LeaveLoading,
   LeavePageHeader,
   SectionCard,
@@ -95,6 +96,8 @@ export default function LeaveSettingsPage() {
   // When loading fails we do not know whether a settings row exists, so
   // saving is blocked (creating a second row for the tenant is an error).
   const [loadFailed, setLoadFailed] = useState(false)
+  // A 403 (not an administrator): there is nothing to show or retry.
+  const [forbidden, setForbidden] = useState(false)
   const [formData, setFormData] = useState(DEFAULT_FORM)
   // Fingerprint of the last loaded/saved values, for the "unsaved changes" hint.
   const [baseline, setBaseline] = useState(() => settingsFingerprint(DEFAULT_FORM, DEFAULT_HR))
@@ -144,10 +147,12 @@ export default function LeaveSettingsPage() {
       const existing = unwrapList<LeaveSettings>(response)[0]
       if (existing) applySettings(existing)
       setLoadFailed(false)
+      setForbidden(false)
     } catch (error) {
       console.error("Failed to fetch settings:", error)
       setLoadFailed(true)
-      // A 403 already shows the translated "no access" state; the API reason is often English.
+      setForbidden(isForbidden(error))
+      // A 403 shows the translated "no access" state below; the API reason is often English.
       if (!isForbidden(error)) {
         toast.error(t("shared.loadFailed"), {
           description: getApiErrorMessage(error) || undefined,
@@ -218,6 +223,17 @@ export default function LeaveSettingsPage() {
 
   if (loading) {
     return <LeaveLoading className="py-24" />
+  }
+
+  if (forbidden) {
+    return (
+      <div className="p-4 sm:p-6" data-testid="leave-settings-page">
+        <div className="flex w-full min-w-0 max-w-[720px] flex-col gap-5">
+          <LeavePageHeader icon={CalendarDays} title={t("settings.title")} description={t("settings.subtitle")} />
+          <LeaveErrorState error={{ response: { status: 403 } }} testId="leave-no-access" />
+        </div>
+      </div>
+    )
   }
 
   const showPayroll = hr.payroll_enabled || hr.substitution_pay_enabled
