@@ -81,22 +81,26 @@ export function StatStrip({ items, loading, className, testId }: { items: StatIt
 export function StatTile({ item, loading, className }: { item: StatItem; loading?: boolean; className?: string }) {
   const body = (
     <>
-      <span className="truncate text-xs text-muted-foreground">{item.label}</span>
+      {/* Labels and hints wrap to two lines instead of "…": Georgian labels are long. */}
+      <span className="line-clamp-2 break-words text-xs leading-4 text-muted-foreground">{item.label}</span>
       {loading ? (
         <Skeleton className="my-0.5 h-6 w-14" />
       ) : (
         <span className="text-2xl font-semibold leading-7 tabular-nums tracking-[-.02em]">{display(item.value)}</span>
       )}
-      {item.hint && <span className={cn("truncate text-[11px]", HINT_TONE[item.hintTone ?? "muted"])}>{item.hint}</span>}
+      {item.hint && (
+        <span className={cn("line-clamp-2 break-words text-[11px] leading-[14px]", HINT_TONE[item.hintTone ?? "muted"])}>{item.hint}</span>
+      )}
     </>
   )
   const cls = cn("flex min-w-0 flex-col gap-1 rounded-lg border bg-card px-4 py-3.5 text-start", className)
+  const title = item.hint ? `${item.label} · ${item.hint}` : item.label
   return item.onClick ? (
-    <button type="button" onClick={item.onClick} className={cn(cls, "transition-colors hover:bg-muted/40")} data-testid={item.testId}>
+    <button type="button" onClick={item.onClick} title={title} className={cn(cls, "transition-colors hover:bg-muted/40")} data-testid={item.testId}>
       {body}
     </button>
   ) : (
-    <div className={cls} data-testid={item.testId}>
+    <div className={cls} title={title} data-testid={item.testId}>
       {body}
     </div>
   )
