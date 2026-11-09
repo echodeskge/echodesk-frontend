@@ -134,7 +134,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
           {labels.position && (
             <span
               data-testid="detail-position"
-              className="ml-1.5 hidden whitespace-nowrap text-xs font-normal tabular-nums text-muted-foreground sm:inline"
+              className="ml-1.5 hidden whitespace-nowrap text-xs leading-5 font-normal tabular-nums text-muted-foreground sm:inline"
             >
               {labels.position}
             </span>
@@ -217,7 +217,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
                 </>
               )}
               <DropdownMenuItem
-                className="h-[30px] gap-2 px-2 text-[13px]"
+                className="h-[30px] gap-2 rounded-md px-2 text-[13px]"
                 data-testid="detail-menu-history"
                 onSelect={() => handlers.current.onOpenHistory()}
               >
@@ -228,7 +228,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
                 <>
                   {/* Phones: prev/next move into the menu (no room in the header row, DC20). */}
                   <DropdownMenuItem
-                    className="h-[30px] gap-2 px-2 text-[13px]"
+                    className="h-[30px] gap-2 rounded-md px-2 text-[13px]"
                     data-testid="detail-menu-prev"
                     disabled={!prevId}
                     onSelect={() => handlers.current.onPrev()}
@@ -237,7 +237,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
                     {labels.prev}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    className="h-[30px] gap-2 px-2 text-[13px]"
+                    className="h-[30px] gap-2 rounded-md px-2 text-[13px]"
                     data-testid="detail-menu-next"
                     disabled={!nextId}
                     onSelect={() => handlers.current.onNext()}
@@ -249,7 +249,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
               )}
               {belowSm && (
                 <DropdownMenuItem
-                  className="h-[30px] gap-2 px-2 text-[13px]"
+                  className="h-[30px] gap-2 rounded-md px-2 text-[13px]"
                   data-testid="detail-menu-copy-link"
                   onSelect={copyLink}
                 >
@@ -262,7 +262,7 @@ export function DetailHeaderBridge(props: DetailHeaderProps) {
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem
                     variant="destructive"
-                    className="h-[30px] gap-2 px-2 text-[13px]"
+                    className="h-[30px] gap-2 rounded-md px-2 text-[13px]"
                     data-testid="detail-menu-delete"
                     onSelect={() => handlers.current.onDelete()}
                   >

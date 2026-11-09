@@ -54,14 +54,14 @@ export function TransferMenuSection({
   if (boards.length === 0) return null;
   return (
     <>
-      <DropdownMenuLabel className="flex h-6 items-center px-2 py-0 text-[11px] font-medium uppercase tracking-[0.04em] text-muted-foreground">
+      <DropdownMenuLabel className="flex h-6 items-center px-2 py-0 text-[11px] leading-5 font-medium uppercase tracking-[0.04em] text-muted-foreground">
         {label}
       </DropdownMenuLabel>
       {boards.map((b) => (
         <DropdownMenuItem
           key={b.id}
           data-testid={`transfer-board-${b.id}`}
-          className="h-[30px] gap-2 px-2 text-[13px]"
+          className="h-[30px] gap-2 rounded-md px-2 text-[13px]"
           onSelect={() => onPick(b)}
         >
           <ColorDot color={b.color ?? undefined} />

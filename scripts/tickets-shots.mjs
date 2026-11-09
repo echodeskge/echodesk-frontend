@@ -88,7 +88,60 @@ const SCREENS = {
   list: { url: `/tickets?board=${boardId}&view=list`, ref: { a: "1b List view" } },
   // W2: a saved view landing (sidebar "Urgent": list + priority chip active).
   "list-view": { url: `/tickets?board=${boardId}&view=list&priority=critical%2Chigh`, ref: { a: "1b List view" } },
-  detail: { url: `/tickets/${ticketId}`, ref: { file: "B-detail.rendered.html" } },
+  detail: { url: `/tickets/${ticketId}`, ref: { file: "B-detail.rendered.html" }, ready: '[data-testid="ticket-detail"][data-state="ready"]' },
+  // W3: the detail with the ⋮ menu, a rail picker, the feed, the Time tab and the lower main column.
+  "detail-menu": {
+    url: `/tickets/${ticketId}`,
+    ref: { file: "B-detail.rendered.html", query: { menu: "true" } },
+    ready: '[data-testid="ticket-detail"][data-state="ready"]',
+    act: async (page) => {
+      await page.locator('[data-testid="detail-more"]').click();
+      await page.waitForSelector('[data-testid="detail-menu"]');
+      await page.waitForTimeout(400);
+    },
+  },
+  "detail-picker": {
+    url: `/tickets/${ticketId}`,
+    ref: { file: "B-detail.rendered.html", query: { picker: "Status" } },
+    ready: '[data-testid="ticket-detail"][data-state="ready"]',
+    act: async (page) => {
+      const trigger = page.locator('[data-slot="rail-rows"] > [data-slot="property-row"]').nth(2).locator('[data-slot="property-picker-trigger"]');
+      await trigger.scrollIntoViewIfNeeded();
+      await trigger.click();
+      await page.waitForSelector('[data-slot="property-picker-content"]');
+      await page.waitForTimeout(400);
+    },
+  },
+  "detail-sections": {
+    url: `/tickets/${ticketId}`,
+    ref: { file: "B-detail.rendered.html", query: { files: "true" } },
+    ready: '[data-testid="ticket-detail"][data-state="ready"]',
+    act: async (page) => {
+      await page.locator('[data-slot="checklist-card"], [data-testid="checklist-card"]').first().scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+    },
+  },
+  "detail-feed": {
+    url: `/tickets/${ticketId}`,
+    ref: { file: "B-detail.rendered.html" },
+    ready: '[data-testid="ticket-detail"][data-state="ready"]',
+    act: async (page) => {
+      await page.locator('[data-slot="activity-feed"]').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(400);
+    },
+  },
+  "detail-time": {
+    url: `/tickets/${ticketId}`,
+    ref: { file: "B-detail.rendered.html" },
+    ready: '[data-testid="ticket-detail"][data-state="ready"]',
+    act: async (page) => {
+      const feed = page.locator('[data-slot="activity-feed"]');
+      await feed.scrollIntoViewIfNeeded();
+      await feed.getByRole("tab").last().click();
+      await page.waitForSelector('[data-slot="time-tab"]');
+      await page.waitForTimeout(400);
+    },
+  },
 };
 
 const screens = list(arg("screens", "board,detail"));
@@ -171,7 +224,7 @@ async function captureReference(browser, screen, theme, width) {
   if (fs.existsSync(out)) return out;
   const useB = renderMode !== "A+measurements" && fs.existsSync(path.join(DESIGN_DIR, `${renderMode}.html`));
   const file = ref.file || (useB ? `${renderMode}.html` : "A.html");
-  const query = new URLSearchParams();
+  const query = new URLSearchParams(ref.query || {});
   if (theme === "dark") query.set("theme", "dark");
   if (width <= 400 && file.startsWith("B-detail")) query.set("mobile", "true");
   const ctx = await browser.newContext({ viewport: { width: Math.max(width, 1440), height: 1000 }, deviceScaleFactor: 1 });
@@ -222,6 +275,10 @@ try {
             await page
               .goto(APP + SCREENS[screen].url, { waitUntil: "networkidle", timeout: 120_000 })
               .catch(() => index.errors.push(`${name}: networkidle timeout`));
+            if (SCREENS[screen].ready)
+              await page
+                .waitForSelector(SCREENS[screen].ready, { timeout: 45_000 })
+                .catch(() => index.errors.push(`${name}: not ready`));
             await page.waitForTimeout(1500);
             if (SCREENS[screen].act) await SCREENS[screen].act(page).catch((e) => index.errors.push(`${name}: act failed (${e.message.slice(0, 120)})`));
             const appShot = path.join(OUT, "app", `${name}.png`);
