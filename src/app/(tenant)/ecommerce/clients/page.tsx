@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useTranslations } from "next-intl"
-import { ecommerceAdminClientsList } from "@/api/generated"
 import { EcommerceClientList } from "@/api/generated/interfaces"
 import { toast } from "sonner"
 import { ClientsTable } from "./_components/clients-table"
+import { fetchEcommerceClients } from "./_lib/fetch-clients"
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -28,14 +28,12 @@ export default function ClientsPage() {
           : statusFilter === "inactive"
             ? false
             : undefined
-      const response = await ecommerceAdminClientsList(
+      const response = await fetchEcommerceClients({
         isActive,
-        undefined,
-        undefined,
         page,
         pageSize,
-        searchQuery || undefined
-      )
+        search: searchQuery || undefined,
+      })
       setClients(response.results || [])
       setTotalCount(response.count || 0)
     } catch {
