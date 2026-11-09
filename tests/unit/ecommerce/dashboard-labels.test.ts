@@ -66,3 +66,11 @@ describe("ecommerce dashboard labels", () => {
     expect(localizedName(null, "ka", "უცნობი")).toBe("უცნობი")
   })
 })
+
+describe("formatShortDay calendar days", () => {
+  it("keeps the calendar day in every time zone (date-only strings are not UTC instants)", () => {
+    // Runs under the process TZ; with TZ=America/Los_Angeles the old code showed "Oct 04".
+    expect(formatShortDay("2026-10-05", "en")).toBe("Oct 05")
+    expect(formatShortDay("2026-01-01", "en")).toBe("Jan 01")
+  })
+})
