@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { act, fireEvent, screen, within } from "@testing-library/react"
 import type { ProductList, AttributeDefinition, Language } from "@/api/generated"
 import { renderEc, messages, flatten } from "./ec00-helpers"
-import pending from "@/i18n/pending/ec-02.json"
+import { packageCatalog } from "./ec-catalog"
 
 const toastError = vi.fn()
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: (...a: unknown[]) => toastError(...a) } }))
@@ -257,7 +257,8 @@ describe("EC-02 languages page", () => {
   })
 })
 
-describe("EC-02 catalog (pending/ec-02.json)", () => {
+describe("EC-02 catalog keys", () => {
+  const pending = packageCatalog("ec-02")
   const en = flatten(pending.en)
   const ka = flatten(pending.ka)
   it("has every new key in both languages (ka may only add corrections of existing keys)", () => {

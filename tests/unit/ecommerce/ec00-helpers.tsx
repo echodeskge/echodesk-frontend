@@ -1,7 +1,7 @@
 /**
  * Shared helpers for the e-commerce redesign tests (EC-00..04).
- * `messages`: en/ka catalogs with every src/i18n/pending/ec-*.json merged in
- * (the integrator merges them into the catalogs later).
+ * `messages`: the en/ka catalogs, plus any src/i18n/pending/ec-*.json still waiting
+ * to be merged (none after the integration).
  */
 import React from "react"
 import fs from "node:fs"

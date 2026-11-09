@@ -4,7 +4,7 @@
  * Clock- and timezone-independent.
  */
 import { describe, expect, it } from "vitest"
-import pending from "@/i18n/pending/ec-04.json"
+import { packageCatalog } from "./ec-catalog"
 import {
   KNOWN_DISPLAY_MODES,
   KNOWN_SECTION_TYPES,
@@ -161,6 +161,7 @@ describe("e-commerce settings helpers", () => {
 })
 
 describe("ec-04 catalog", () => {
+  const pending = packageCatalog("ec-04")
   const en = flatten(pending.en)
   const ka = flatten(pending.ka)
   const args = (s: string) => [...s.matchAll(/\{(\w+)/g)].map((m) => m[1]).sort()

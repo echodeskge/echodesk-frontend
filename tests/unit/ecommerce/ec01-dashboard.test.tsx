@@ -10,6 +10,7 @@ import { SalesTrendChart, summarizeTrend } from "@/app/(tenant)/ecommerce/dashbo
 import { TopProductsCard } from "@/app/(tenant)/ecommerce/dashboard/_components/top-products-card"
 import { RecentOrdersCard } from "@/app/(tenant)/ecommerce/dashboard/_components/recent-orders-card"
 import { CustomerInsightsCard } from "@/app/(tenant)/ecommerce/dashboard/_components/customer-insights-card"
+import { packageCatalog } from "./ec-catalog"
 
 const push = vi.fn()
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }), usePathname: () => "/ecommerce/dashboard" }))
@@ -173,8 +174,8 @@ describe("EC-01 dashboard: cards", () => {
 })
 
 describe("EC-01 i18n", () => {
-  it("every ec-01 key exists in both languages with the same ICU arguments and no Latin in Georgian", async () => {
-    const pending = (await import("@/i18n/pending/ec-01.json")).default as { en: object; ka: object }
+  it("every ec-01 key exists in both languages with the same ICU arguments and no Latin in Georgian", () => {
+    const pending = packageCatalog("ec-01")
     const en = flatten(pending.en)
     const ka = flatten(pending.ka)
     expect(Object.keys(ka).sort()).toEqual(Object.keys(en).sort())
