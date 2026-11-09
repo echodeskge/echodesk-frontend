@@ -136,14 +136,12 @@ export function TimerButton({ ticketId }: TimerSectionProps) {
 
   return (
     <>
-      {longRunning ? (
-        <Tooltip>
-          <TooltipTrigger asChild>{button}</TooltipTrigger>
-          <TooltipContent sideOffset={6}>{t("longRunningHint")}</TooltipContent>
-        </Tooltip>
-      ) : (
-        button
-      )}
+      {/* Always wrapped, so the button keeps its place in the tree; the
+          tooltip only opens once the run passes 8 hours. */}
+      <Tooltip open={longRunning ? undefined : false}>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipContent sideOffset={6}>{t("longRunningHint")}</TooltipContent>
+      </Tooltip>
       <AlertDialog open={conflict !== null} onOpenChange={(open) => !open && setConflict(null)}>
         <AlertDialogContent data-testid="timer-switch-dialog">
           <AlertDialogHeader>

@@ -31,9 +31,7 @@ export function TimeRow({ ticketId }: TimerSectionProps) {
         {totals ? (
           <>
             <span>{t("timer.mine", { time: formatDuration(totals.mine, locale) })}</span>
-            <span aria-hidden="true" className="px-1 text-muted-foreground">
-              ·
-            </span>
+            <span className="whitespace-pre text-muted-foreground">{" · "}</span>
             <span className="text-muted-foreground">{t("timer.total", { time: formatDuration(totals.total, locale) })}</span>
           </>
         ) : (
