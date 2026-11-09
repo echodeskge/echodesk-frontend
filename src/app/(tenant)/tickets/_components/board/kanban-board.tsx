@@ -396,7 +396,7 @@ export function KanbanBoard({ boardId, className }: KanbanBoardProps) {
           data-board-id={boardId}
           data-filtered={filtered ? "true" : "false"}
           className={cn(
-            "min-h-0 flex-1 snap-x snap-mandatory overflow-auto p-3 md:snap-none",
+            "min-h-0 flex-1 snap-x snap-mandatory scroll-px-3 overflow-auto p-3 md:snap-none",
             className,
           )}
         >
