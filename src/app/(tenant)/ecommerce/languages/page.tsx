@@ -1,31 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Languages, Pencil, Trash2 } from "lucide-react";
+import { Languages, Pencil, Plus, Trash2 } from "lucide-react";
 import { useLanguages, useDeleteLanguage } from "@/hooks/useLanguages";
-import LoadingSpinner from "@/components/LoadingSpinner";
 import { AddLanguageSheet } from "@/components/languages/AddLanguageSheet";
 import type { Locale } from "@/lib/i18n";
-import { toast } from "sonner";
-import { getApiErrorMessage } from "@/lib/utils";
 import type { Language } from "@/api/generated";
 import {
   AlertDialog,
@@ -37,16 +17,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { cn, getApiErrorMessage } from "@/lib/utils";
+import {
+  ActivePill,
+  EcEmptyState,
+  EcPage,
+  EcTable,
+  EcommerceHeaderBridge,
+  IdText,
+  TonePill,
+  localizedText,
+  rdButton,
+  type EcColumn,
+} from "@/app/(tenant)/ecommerce/_components/ui";
+
+/** A language's name in the UI language, then English, then its code. */
+function languageDisplayName(language: Pick<Language, "name" | "code">, locale: string): string {
+  return localizedText(language.name as Parameters<typeof localizedText>[0], locale) || language.code;
+}
 
 export default function LanguagesPage() {
   const locale = useLocale() as Locale;
   const t = useTranslations("languages");
+  const tc = useTranslations("common");
   const [isAddLanguageOpen, setIsAddLanguageOpen] = useState(false);
   const [editingLanguage, setEditingLanguage] = useState<Language | null>(null);
   const [deletingLanguage, setDeletingLanguage] = useState<Language | null>(null);
 
   // Fetch languages
-  const { data: languagesData, isLoading } = useLanguages({
+  const { data: languagesData, error, refetch } = useLanguages({
     ordering: "sort_order,code",
   });
 
@@ -54,14 +54,6 @@ export default function LanguagesPage() {
 
   const languages = languagesData?.results || [];
   const totalCount = languagesData?.count || 0;
-
-  // Get language name in current locale
-  const getLanguageName = (language: Language) => {
-    if (typeof language.name === "object" && language.name !== null) {
-      return language.name[locale] || language.name.en || language.code;
-    }
-    return language.name || language.code;
-  };
 
   const handleEdit = (language: Language) => {
     setEditingLanguage(language);
@@ -85,115 +77,116 @@ export default function LanguagesPage() {
     setEditingLanguage(null);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  const columns = useMemo<EcColumn<Language>[]>(
+    () => [
+      {
+        id: "code",
+        header: t("table.code"),
+        width: "88px",
+        mobile: "meta",
+        cell: (l) => <IdText className="font-medium">{l.code}</IdText>,
+      },
+      {
+        id: "name",
+        header: t("table.name"),
+        width: "minmax(0,2fr)",
+        mobile: "title",
+        cell: (l) => <span className="truncate font-medium">{languageDisplayName(l, locale)}</span>,
+      },
+      {
+        id: "type",
+        header: t("table.type"),
+        width: "minmax(0,1fr)",
+        mobile: "meta",
+        cell: (l) =>
+          l.is_default ? <TonePill tone="info">{t("default")}</TonePill> : <TonePill tone="neutral">{t("custom")}</TonePill>,
+      },
+      {
+        id: "order",
+        header: t("table.order"),
+        width: "72px",
+        align: "end",
+        mobile: "hidden",
+        numeric: true,
+        cell: (l) => l.sort_order,
+      },
+      {
+        id: "status",
+        header: t("table.status"),
+        width: "104px",
+        mobile: "meta",
+        cell: (l) => <ActivePill active={l.is_active} />,
+      },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("table.actions")}</span>,
+        width: "64px",
+        align: "end",
+        mobile: "end",
+        cell: (l) => (
+          <span className="flex items-center gap-0.5">
+            <button
+              type="button"
+              className={rdButton.ghostIconSm}
+              onClick={() => handleEdit(l)}
+              aria-label={`${tc("edit")}: ${languageDisplayName(l, locale)}`}
+              title={tc("edit")}
+            >
+              <Pencil className="h-3.5 w-3.5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={cn(rdButton.ghostIconSm, "hover:text-destructive")}
+              onClick={() => setDeletingLanguage(l)}
+              disabled={l.is_default}
+              aria-label={`${tc("delete")}: ${languageDisplayName(l, locale)}`}
+              title={l.is_default ? t("defaultCannotDelete") : tc("delete")}
+              data-testid="ec-language-delete"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          </span>
+        ),
+      },
+    ],
+    [t, tc, locale]
+  );
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t("subtitle")}
-          </p>
-        </div>
-        <Button className="gap-2" onClick={() => setIsAddLanguageOpen(true)}>
-          <Plus className="h-4 w-4" />
-          {t("addLanguage")}
-        </Button>
-      </div>
+    <EcPage width="wide" testId="ec-languages-page">
+      <EcommerceHeaderBridge
+        sub={languagesData ? t("countLabel", { count: totalCount }) : null}
+        primary={{ label: t("addLanguage"), icon: Plus, onClick: () => setIsAddLanguageOpen(true), testId: "ec-languages-add" }}
+      />
 
-      {/* Languages Table */}
-      {languages.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="rounded-full bg-primary/10 p-6 mb-4">
-              <Languages className="h-12 w-12 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">{t("noLanguagesYet")}</h3>
-            <p className="text-muted-foreground text-center mb-6 max-w-md">
-              {t("noLanguagesDescription")}
-            </p>
-            <Button className="gap-2" onClick={() => setIsAddLanguageOpen(true)}>
-              <Plus className="h-4 w-4" />
-              {t("addFirstLanguage")}
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("allLanguages")}</CardTitle>
-            <CardDescription>
-              {t("totalLanguages", { count: totalCount })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("table.code")}</TableHead>
-                  <TableHead>{t("table.name")}</TableHead>
-                  <TableHead>{t("table.status")}</TableHead>
-                  <TableHead>{t("table.type")}</TableHead>
-                  <TableHead>{t("table.order")}</TableHead>
-                  <TableHead className="text-right">{t("table.actions")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {languages.map((language) => (
-                  <TableRow key={language.id}>
-                    <TableCell className="font-mono font-medium">
-                      {language.code}
-                    </TableCell>
-                    <TableCell>{getLanguageName(language)}</TableCell>
-                    <TableCell>
-                      {language.is_active ? (
-                        <Badge variant="default">{t("active")}</Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("inactive")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {language.is_default ? (
-                        <Badge variant="outline">{t("default")}</Badge>
-                      ) : (
-                        <Badge variant="secondary">{t("custom")}</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{language.sort_order}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(language)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeletingLanguage(language)}
-                          disabled={language.is_default}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+      <p className="text-[13px] text-muted-foreground">{t("subtitle")}</p>
+
+      <EcTable<Language>
+        variant="card"
+        ariaLabel={t("allLanguages")}
+        columns={columns}
+        rows={languagesData ? languages : undefined}
+        rowKey={(l) => l.id}
+        error={error}
+        onRetry={() => refetch()}
+        onRowClick={handleEdit}
+        skeletonRows={4}
+        testId="ec-languages-table"
+        empty={
+          <EcEmptyState
+            icon={Languages}
+            title={t("noLanguagesYet")}
+            description={t("noLanguagesDescription")}
+            action={
+              <button type="button" className={rdButton.primary} onClick={() => setIsAddLanguageOpen(true)}>
+                <Plus className="h-3.5 w-3.5" aria-hidden />
+                {t("addFirstLanguage")}
+              </button>
+            }
+          />
+        }
+        footer={!error && languages.length > 0 ? <span>{t("totalLanguages", { count: totalCount })}</span> : undefined}
+      />
 
       {/* Add/Edit Language Sheet */}
       <AddLanguageSheet
@@ -212,7 +205,7 @@ export default function LanguagesPage() {
             <AlertDialogTitle>{t("deleteDialog.title")}</AlertDialogTitle>
             <AlertDialogDescription>
               {t("deleteDialog.description", {
-                name: deletingLanguage ? getLanguageName(deletingLanguage) : "",
+                name: deletingLanguage ? languageDisplayName(deletingLanguage, locale) : "",
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -227,6 +220,6 @@ export default function LanguagesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </EcPage>
   );
 }
