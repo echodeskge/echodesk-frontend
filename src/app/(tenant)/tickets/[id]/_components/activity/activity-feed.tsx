@@ -70,7 +70,8 @@ export function useTimerEntriesCount(ticketId: number): number {
     retry: retryUnlessDenied,
     staleTime: 30_000,
   });
-  return q.data?.entries?.length ?? 0;
+  const entries = q.data?.entries;
+  return Array.isArray(entries) ? entries.length : 0;
 }
 
 function scrollToHash(): boolean {
@@ -100,7 +101,7 @@ export function ActivityFeed({ ticketId }: ActivityFeedProps) {
   const { isStaff } = useTicketPermissions();
   const mutations = useCommentMutations(ticketId, boardId);
 
-  const items = useMemo(() => activity.data ?? [], [activity.data]);
+  const items = useMemo(() => (Array.isArray(activity.data) ? activity.data : []), [activity.data]);
   const counts = feedCounts(items, timeCount);
   const visible = itemsForTab(items, tab);
 
@@ -133,7 +134,8 @@ export function ActivityFeed({ ticketId }: ActivityFeedProps) {
   useEffect(() => {
     if (!activity.data || !firstLoad.current) return;
     firstLoad.current = false;
-    requestAnimationFrame(() => scrollToHash());
+    const frame = requestAnimationFrame(() => scrollToHash());
+    return () => cancelAnimationFrame(frame);
   }, [activity.data]);
 
   // A comment this tab posted: scroll it into view when it shows up.

@@ -10,9 +10,6 @@
         "saveError": "Couldn't save the comment",
         "deleteError": "Couldn't delete the comment",
         "deleted": "Comment deleted"
-      },
-      "composer": {
-        "label": "Comment"
       }
     }
   },
@@ -27,9 +24,6 @@
         "saveError": "კომენტარის შენახვა ვერ მოხერხდა",
         "deleteError": "კომენტარის წაშლა ვერ მოხერხდა",
         "deleted": "კომენტარი წაიშალა"
-      },
-      "composer": {
-        "label": "კომენტარი"
       }
     }
   }

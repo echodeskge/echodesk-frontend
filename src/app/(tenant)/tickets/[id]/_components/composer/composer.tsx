@@ -97,6 +97,7 @@ export function Composer({ ticket, perms }: ComposerProps) {
 
 function ComposerInner({ ticket }: ComposerProps) {
   const t = useTranslations("ticketsScreen.composer");
+  const tTickets = useTranslations("tickets");
   const qc = useQueryClient();
   const { data: profile } = useUserProfile();
   const { isStaff, hasSocialFeature } = useTicketPermissions();
@@ -239,7 +240,7 @@ function ComposerInner({ ticket }: ComposerProps) {
             users={pickers.users}
             placement="above"
             rows={2}
-            aria-label={t("label")}
+            aria-label={tTickets("addComment")}
             placeholder={internal ? t("placeholderInternal") : t("placeholderPublic")}
             className="min-h-14 resize-none rounded-none border-0 bg-transparent px-3 pb-1 pt-2.5 text-[13px] leading-[19px] shadow-none focus-visible:ring-0"
           />
