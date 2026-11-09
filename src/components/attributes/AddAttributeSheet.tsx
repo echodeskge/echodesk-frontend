@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
 import { Form } from "@/components/ui/form";
@@ -75,27 +75,38 @@ export function AddAttributeSheet({ open, onOpenChange }: AddAttributeSheetProps
   useEffect(() => {
     if (open && activeLanguages.length > 0) {
       form.reset(buildDefaultValues());
+      lastGeneratedKey.current = "";
       setOptions([]);
     }
   }, [open, activeLanguages.length]);
 
   // Watch all name fields to auto-generate key from first filled language
   const nameValues = form.watch("name");
+  // watch() hands back the same (mutated) object on every keystroke, so an
+  // effect on it never re-ran and the key stayed empty until save: depend on
+  // the typed text instead, and keep following the name until the key is
+  // typed by hand (it no longer equals the last generated one).
+  const nameKey = JSON.stringify(nameValues ?? {});
+  const lastGeneratedKey = useRef("");
 
   // Auto-generate key from first filled language name
   useEffect(() => {
-    if (open && nameValues && typeof nameValues === "object" && !form.getValues("key")) {
-      // Find first non-empty name value
-      const firstFilledName = Object.values(nameValues).find((val) => typeof val === 'string' && val?.trim());
-      if (firstFilledName && typeof firstFilledName === 'string') {
-        const generatedKey = firstFilledName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "_")
-          .replace(/(^_|_$)/g, "");
-        form.setValue("key", generatedKey);
-      }
-    }
-  }, [nameValues, open, form]);
+    if (!open || !nameValues || typeof nameValues !== "object") return;
+    const current = form.getValues("key") || "";
+    if (current && current !== lastGeneratedKey.current) return;
+    // Find first non-empty name value
+    const firstFilledName = Object.values(nameValues).find((val) => typeof val === "string" && val?.trim());
+    const generatedKey =
+      typeof firstFilledName === "string"
+        ? firstFilledName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/(^_|_$)/g, "")
+        : "";
+    lastGeneratedKey.current = generatedKey;
+    form.setValue("key", generatedKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- nameKey stands for nameValues
+  }, [nameKey, open, form]);
 
   const onSubmit = async (data: Partial<AttributeDefinition>) => {
     try {
