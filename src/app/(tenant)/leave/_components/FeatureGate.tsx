@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react"
 import { useTranslations } from "next-intl"
-import { Loader2, Lock } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Lock } from "lucide-react"
+import { LeaveEmptyState, LeaveLoading } from "./ui/states"
 
 /**
  * Renders children only when `allowed`; a spinner while the profile loads and
@@ -23,21 +23,16 @@ export function FeatureGate({
 }) {
   const t = useTranslations("leave")
   if (!loaded) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
+    return <LeaveLoading className="min-h-[50vh]" />
   }
   if (!allowed) {
     return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <Lock className="h-10 w-10 mx-auto mb-3" />
-            {message || t("hr.common.featureDisabled")}
-          </CardContent>
-        </Card>
+      <div className="flex min-h-[50vh] items-center justify-center p-4 sm:p-6" data-testid="leave-feature-off">
+        <LeaveEmptyState
+          icon={Lock}
+          title={message || t("hr.common.featureDisabled")}
+          description={message ? undefined : t("ui.featureDisabledHint")}
+        />
       </div>
     )
   }

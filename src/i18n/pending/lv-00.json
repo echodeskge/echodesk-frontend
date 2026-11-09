@@ -1,0 +1,32 @@
+{
+  "en": {
+    "leave": {
+      "ui": {
+        "errorTitle": "Couldn't load the data",
+        "errorHint": "Check your connection and try again.",
+        "retry": "Try again",
+        "featureDisabledHint": "An administrator can turn it on in Settings → Leave settings.",
+        "clearSearch": "Clear search",
+        "noMatches": "Nothing matches these filters",
+        "noMatchesHint": "Try another status or clear the search.",
+        "clearFilters": "Clear filters",
+        "days": "{count, plural, one {# day} other {# days}}"
+      }
+    }
+  },
+  "ka": {
+    "leave": {
+      "ui": {
+        "errorTitle": "მონაცემები ვერ ჩაიტვირთა",
+        "errorHint": "შეამოწმეთ კავშირი და სცადეთ ხელახლა.",
+        "retry": "ხელახლა ცდა",
+        "featureDisabledHint": "ადმინისტრატორს შეუძლია მისი ჩართვა: პარამეტრები → შვებულების პარამეტრები.",
+        "clearSearch": "ძიების გასუფთავება",
+        "noMatches": "ამ ფილტრებით არაფერი მოიძებნა",
+        "noMatchesHint": "სცადეთ სხვა სტატუსი ან გაასუფთავეთ ძიება.",
+        "clearFilters": "ფილტრების გასუფთავება",
+        "days": "{count} დღე"
+      }
+    }
+  }
+}
