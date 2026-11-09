@@ -1,0 +1,48 @@
+{
+  "en": {
+    "leave": {
+      "lv04": {
+        "typesCount": "{count, plural, one {# leave type} other {# leave types}}",
+        "holidaysCount": "{count, plural, one {# holiday} other {# holidays}}",
+        "clickToEdit": "click a row to edit",
+        "allYears": "All years",
+        "yearFilter": "Filter by year",
+        "payrollSection": "Payroll",
+        "payrollHint": "Used by the payroll report and substitution pay",
+        "unsaved": "You have unsaved changes",
+        "allSaved": "All changes saved",
+        "loadFailedBanner": "Settings couldn't be loaded, so saving is turned off to avoid overwriting them.",
+        "limits": "Limits",
+        "allocation": "Allocation",
+        "rules": "Rules",
+        "editType": "Edit {name}",
+        "deleteType": "Delete {name}",
+        "editHoliday": "Edit {name}",
+        "deleteHoliday": "Delete {name}"
+      }
+    }
+  },
+  "ka": {
+    "leave": {
+      "lv04": {
+        "typesCount": "{count} შვებულების ტიპი",
+        "holidaysCount": "{count} დღესასწაული",
+        "clickToEdit": "რედაქტირებისთვის დააჭირეთ სტრიქონს",
+        "allYears": "ყველა წელი",
+        "yearFilter": "წლის მიხედვით ფილტრი",
+        "payrollSection": "ხელფასები",
+        "payrollHint": "გამოიყენება ხელფასების ანგარიშსა და შეცვლის ანაზღაურებაში",
+        "unsaved": "ცვლილებები შენახული არ არის",
+        "allSaved": "ყველა ცვლილება შენახულია",
+        "loadFailedBanner": "პარამეტრები ვერ ჩაიტვირთა, ამიტომ შენახვა გამორთულია, რომ არსებული მნიშვნელობები არ გადაიწეროს.",
+        "limits": "ლიმიტები",
+        "allocation": "განაწილება",
+        "rules": "წესები",
+        "editType": "{name} — რედაქტირება",
+        "deleteType": "{name} — წაშლა",
+        "editHoliday": "{name} — რედაქტირება",
+        "deleteHoliday": "{name} — წაშლა"
+      }
+    }
+  }
+}
