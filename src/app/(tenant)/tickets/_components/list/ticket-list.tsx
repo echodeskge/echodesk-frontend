@@ -26,7 +26,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Lock, Plus, SearchX } from "lucide-react";
+import { AlertCircle, Lock, MessageCircle, Plus, SearchX } from "lucide-react";
 import type { Board, TicketColumn } from "@/api/generated/interfaces";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -212,27 +212,46 @@ export function TicketList({ board, hasActiveFilters }: TicketListProps) {
       ref={scrollRef}
       data-testid="ticket-list"
       data-fetching={list.isFetching ? "true" : "false"}
-      className="min-h-0 flex-1 overflow-auto"
+      className="@container min-h-0 flex-1 overflow-auto"
     >
       <div
         aria-hidden="true"
         data-testid="list-header"
         className={cn(
-          "sticky top-0 z-[1] hidden h-8 items-center border-b bg-background px-4 md:grid",
+          "sticky top-0 z-[1] hidden h-8 items-center border-b bg-background px-4 @3xl:grid",
           "text-[11px] font-medium uppercase tracking-[.03em] text-muted-foreground",
           LIST_GRID_CLASS,
         )}
       >
         <span />
-        {(["id", "title", "labels", "assignee", "comments", "created"] as const).map((key) => (
-          <span
-            key={key}
-            title={t(`list.${key}`)}
-            className={cn("truncate pr-2", (key === "comments" || key === "created") && "pr-0 text-right")}
-          >
-            {t(`list.${key}`)}
-          </span>
-        ))}
+        {(["id", "title", "labels", "assignee", "comments", "created"] as const).map((key) =>
+          key === "comments" ? (
+            // The 56px column can't hold the word in either locale ("Comments" is
+            // 68px, Georgian 75px), so the header shows the rows' icon instead and
+            // the Assignee label may use the room it frees (Georgian needs 96px).
+            <span
+              key={key}
+              title={t("list.comments")}
+              data-header="comments"
+              className="flex justify-end"
+            >
+              <MessageCircle aria-hidden="true" size={12} />
+            </span>
+          ) : (
+            <span
+              key={key}
+              title={t(`list.${key}`)}
+              data-header={key}
+              className={cn(
+                "truncate pr-2",
+                key === "assignee" && "w-[calc(100%+36px)]",
+                key === "created" && "pr-0 text-right",
+              )}
+            >
+              {t(`list.${key}`)}
+            </span>
+          ),
+        )}
       </div>
 
       {groups.map(({ column, rows: groupRows }, i) => {
@@ -301,8 +320,8 @@ export function TicketList({ board, hasActiveFilters }: TicketListProps) {
 
 function ListSkeleton() {
   return (
-    <div aria-busy="true" data-testid="list-skeleton" className="min-h-0 flex-1 overflow-hidden">
-      <div className="hidden h-8 border-b md:block" />
+    <div aria-busy="true" data-testid="list-skeleton" className="@container min-h-0 flex-1 overflow-hidden">
+      <div className="hidden h-8 border-b @3xl:block" />
       {[4, 3, 2].map((n, g) => (
         <div key={g}>
           <div className="flex h-[34px] items-center gap-2 border-b bg-muted/50 px-4">

@@ -6,7 +6,7 @@
  * Desktop (md and up): a 40px row on the list grid
  *   priority icon · mono #id · title (ellipsis) · 20px label chips ·
  *   22px avatars or the dashed unassigned circle · comment count · created date.
- * Below md: two lines, priority icon, #id, title / label chips, avatars, date
+ * Below @3xl: two lines, priority icon, #id, title / label chips, avatars, date
  * (no header, DC18).
  *
  * One DOM for both: the two line wrappers are flex rows on mobile and
@@ -29,7 +29,7 @@ import type { TicketListRow } from "../../_lib/types";
  * The list grid (design B: `36px 64px minmax(0,1fr) 200px 90px 56px 90px`).
  * Kept as one literal so Tailwind sees it; shared by the header and the rows.
  */
-export const LIST_GRID_CLASS = "md:grid-cols-[36px_64px_minmax(0,1fr)_200px_90px_56px_90px]";
+export const LIST_GRID_CLASS = "@3xl:grid-cols-[36px_64px_minmax(0,1fr)_200px_90px_56px_90px]";
 export const LIST_GRID_TEMPLATE = "36px 64px minmax(0,1fr) 200px 90px 56px 90px";
 
 type ListUser = { id: number; email?: string | null; first_name?: string | null; last_name?: string | null };
@@ -79,21 +79,21 @@ export const ListRow = memo(function ListRow({ row, query }: ListRowProps) {
       className={cn(
         "flex flex-col gap-1 border-b px-4 py-2 text-[13px] text-foreground outline-none transition-colors",
         "hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/50",
-        "md:grid md:h-10 md:items-center md:gap-0 md:py-0",
+        "@3xl:grid @3xl:h-10 @3xl:items-center @3xl:gap-0 @3xl:py-0",
         LIST_GRID_CLASS,
       )}
     >
       {/* line 1 on mobile; cells 1–3 on desktop */}
-      <span className="flex min-w-0 items-center gap-2 md:contents" data-slot="list-row-main">
+      <span className="flex min-w-0 items-center gap-2 @3xl:contents" data-slot="list-row-main">
         <PriorityIcon priority={row.priority} size={15} />
-        <span className="shrink-0 font-mono text-xs text-muted-foreground md:shrink">#{row.id}</span>
-        <span className="min-w-0 flex-1 truncate font-medium md:pr-4" data-testid="list-row-title">
+        <span className="shrink-0 font-mono text-xs text-muted-foreground @3xl:shrink">#{row.id}</span>
+        <span className="min-w-0 flex-1 truncate font-medium @3xl:pr-4" data-testid="list-row-title">
           {row.title}
         </span>
       </span>
 
       {/* line 2 on mobile; cells 4–7 on desktop */}
-      <span className="flex min-w-0 items-center gap-2 md:contents" data-slot="list-row-meta">
+      <span className="flex min-w-0 items-center gap-2 @3xl:contents" data-slot="list-row-meta">
         <span className="flex min-w-0 gap-1 overflow-hidden" data-testid="list-row-labels">
           <LabelChips labels={row.tags ?? []} max={3} size="list" />
         </span>
@@ -107,7 +107,7 @@ export const ListRow = memo(function ListRow({ row, query }: ListRowProps) {
           />
         </span>
         <span
-          className="hidden items-center justify-end gap-1 text-xs tabular-nums text-muted-foreground md:inline-flex"
+          className="hidden items-center justify-end gap-1 text-xs tabular-nums text-muted-foreground @3xl:inline-flex"
           data-testid="list-row-comments"
           title={t("card.comments", { count: comments })}
         >
@@ -116,7 +116,7 @@ export const ListRow = memo(function ListRow({ row, query }: ListRowProps) {
           <span className="sr-only">{t("card.comments", { count: comments })}</span>
         </span>
         <span
-          className="ml-auto shrink-0 text-right text-xs tabular-nums text-muted-foreground md:ml-0"
+          className="ml-auto shrink-0 text-right text-xs tabular-nums text-muted-foreground @3xl:ml-0"
           data-testid="list-row-date"
         >
           {formatShortDate(row.created_at, locale)}

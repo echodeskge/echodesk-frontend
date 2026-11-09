@@ -1,5 +1,5 @@
 /**
- * FE-08 list view: the grid, the sticky header (hidden below md, DC18), one
+ * FE-08 list view: the grid, the sticky header (hidden below a 768px list, DC18), one
  * group per column with the column_counts total (DC17), the rows, the detail
  * link with the filters, infinite scroll, the empty states, the mobile
  * two-line layout and the realtime refresh. Also the view landing
@@ -173,19 +173,28 @@ describe("layout", () => {
     expect(LIST_GRID_TEMPLATE).toBe("36px 64px minmax(0,1fr) 200px 90px 56px 90px");
     renderList();
     const header = await screen.findByTestId("list-header");
-    const cls = "md:grid-cols-[36px_64px_minmax(0,1fr)_200px_90px_56px_90px]";
+    const cls = "@3xl:grid-cols-[36px_64px_minmax(0,1fr)_200px_90px_56px_90px]";
     expect(header.className).toContain(cls);
     expect(screen.getAllByTestId("list-row")[0].className).toContain(cls);
   });
 
-  it("the sticky header is translated and hidden below md (DC18)", async () => {
+  it("the sticky header is translated and hidden below a 768px list width (DC18)", async () => {
     renderList();
     const header = await screen.findByTestId("list-header");
+    // A container query on the list, not the viewport: with the sidebar open a
+    // 768–1023px window would otherwise squeeze the title column to nothing.
+    expect(screen.getByTestId("ticket-list").className).toContain("@container");
     expect(header.className).toMatch(/(^|\s)hidden(\s|$)/);
-    expect(header.className).toContain("md:grid");
+    expect(header.className).toContain("@3xl:grid");
     expect(header.className).toContain("sticky");
     expect(header.className).toContain("h-8");
-    expect(header).toHaveTextContent(/IDTitleLabelsAssigneeCommentsCreated/);
+    expect(header).toHaveTextContent(/IDTitleLabelsAssigneeCreated/);
+    // Comments is the rows' icon (the word doesn't fit 56px), labelled by its tooltip.
+    const comments = header.querySelector('[data-header="comments"]')!;
+    expect(comments).toHaveAttribute("title", "Comments");
+    expect(comments.querySelector("svg")).not.toBeNull();
+    // Assignee may use the room the icon frees in the comments column.
+    expect(header.querySelector('[data-header="assignee"]')!.className).toContain("w-[calc(100%+36px)]");
   });
 
   it("the header in Georgian", async () => {
@@ -193,7 +202,8 @@ describe("layout", () => {
     const header = await screen.findByTestId("list-header");
     expect(header).toHaveTextContent("სათაური");
     expect(header).toHaveTextContent("შემსრულებელი");
-    expect(header).toHaveTextContent("კომენტარები");
+    expect(header.querySelector('[data-header="comments"]')).toHaveAttribute("title", "კომენტარები");
+    expect(header.querySelector('[data-header="id"]')).toHaveTextContent("№");
   });
 });
 
@@ -302,16 +312,16 @@ describe("rows", () => {
     expect(nav.push).not.toHaveBeenCalled();
   });
 
-  it("two lines below md: line wrappers are flex rows that become grid cells from md", async () => {
+  it("two lines below a 768px list width: line wrappers are flex rows that become grid cells from @3xl", async () => {
     renderList();
     const [first] = await screen.findAllByTestId("list-row");
     expect(first.className).toContain("flex-col");
-    expect(first.className).toContain("md:grid");
-    expect(first.className).toContain("md:h-10");
+    expect(first.className).toContain("@3xl:grid");
+    expect(first.className).toContain("@3xl:h-10");
     const main = first.querySelector('[data-slot="list-row-main"]')!;
     const meta = first.querySelector('[data-slot="list-row-meta"]')!;
-    expect(main.className).toContain("md:contents");
-    expect(meta.className).toContain("md:contents");
+    expect(main.className).toContain("@3xl:contents");
+    expect(meta.className).toContain("@3xl:contents");
     // Mobile line 2: chips, avatars, date (comments from md only).
     expect(within(first).getByTestId("list-row-comments").className).toMatch(/(^|\s)hidden(\s|$)/);
   });
