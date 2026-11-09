@@ -170,11 +170,12 @@ describe("DetailScreen", () => {
 });
 
 describe("/tickets/[id] page flag", () => {
-  it("renders the old detail while flags.detailRedesignEnabled is false", () => {
+  it("renders the old detail while flags.detailRedesignEnabled is false", async () => {
     routes();
     flags.detailRedesignEnabled = false;
     render(<TicketPage />);
-    expect(screen.getByTestId("legacy-detail")).toBeInTheDocument();
+    // Loaded with next/dynamic (kept out of the new detail's bundle).
+    expect(await screen.findByTestId("legacy-detail")).toBeInTheDocument();
     expect(screen.queryByTestId("ticket-detail")).toBeNull();
   });
 

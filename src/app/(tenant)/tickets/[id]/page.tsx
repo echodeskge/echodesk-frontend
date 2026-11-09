@@ -5,10 +5,14 @@
  * (FE-09…FE-13) when `flags.detailRedesignEnabled`, otherwise the old
  * `ticket-detail/*` screen, which stays reachable until W4.
  */
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
-import { TicketDetailPage } from "@/components/ticket-detail/TicketDetailPage";
 import { flags } from "../_lib/flags";
 import { DetailScreen, parseTicketId } from "./_components/detail-screen";
+
+// The old screen is loaded only when the flag is off, so it stays out of the
+// new detail's first-load bundle (W3 bundle delta).
+const TicketDetailPage = dynamic(() => import("@/components/ticket-detail/TicketDetailPage").then((m) => m.TicketDetailPage));
 
 export default function TicketPage() {
   const params = useParams<{ id: string }>();
