@@ -1,146 +1,146 @@
 "use client"
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { DataTableColumnHeader } from "@/components/ui/data-table/data-table-column-header"
-import { OrderListItem } from "../_types"
 import {
-  STATUS_COLORS,
-  STATUS_ICONS,
-  PAYMENT_BADGE_VARIANTS,
-  PAYMENT_STATUS_ICONS,
-  PAYMENT_PROVIDER_LABELS,
-} from "../_data/constants"
-import { formatCurrency, formatDate } from "../_lib/utils"
+  IdText,
+  MoneyCell,
+  OrderStatusPill,
+  PaymentStatusPill,
+  PersonCell,
+  formatCount,
+  formatEcDate,
+  parseMoney,
+  selectionColumn,
+  type EcColumn,
+} from "../../_components/ui"
+import { OrderListItem } from "../_types"
+import { PAYMENT_PROVIDER_LABELS } from "../_data/constants"
+import { SortHeader, type SortState } from "./sort-header"
+
+type Translate = (key: string, values?: Record<string, string | number>) => string
 
 interface ColumnOptions {
-  t: (key: string) => string
-  locale?: string
+  t: Translate
+  tUi: Translate
+  locale: string
+  rows: OrderListItem[]
+  selected: ReadonlySet<number>
+  onSelectionChange: (ids: Set<number>) => void
+  sort: SortState | null
+  onSort: (next: SortState | null) => void
+}
+
+/** The value a column sorts by (current page only). */
+export function orderSortValue(order: OrderListItem, id: string): string | number | null {
+  switch (id) {
+    case "order":
+      return order.order_number
+    case "customer":
+      return order.client_name || ""
+    case "items":
+      return order.total_items ?? null
+    case "payment":
+      return String(order.payment_status ?? "")
+    case "status":
+      return String(order.status ?? "")
+    case "total":
+      return parseMoney(order.total_amount)
+    case "date":
+      return order.created_at ? new Date(order.created_at).getTime() : null
+    default:
+      return null
+  }
 }
 
 export function getOrderColumns({
   t,
+  tUi,
   locale,
-}: ColumnOptions): ColumnDef<OrderListItem>[] {
+  rows,
+  selected,
+  onSelectionChange,
+  sort,
+  onSort,
+}: ColumnOptions): EcColumn<OrderListItem>[] {
+  const head = (id: string, label: string, align: "start" | "end" = "start") => (
+    <SortHeader id={id} label={label} sort={sort} onSort={onSort} align={align} ariaLabel={t("sortBy", { column: label })} />
+  )
+  const customerName = (o: OrderListItem) => o.client_name || t("unknownCustomer")
+
   return [
+    selectionColumn<OrderListItem>({
+      rows,
+      getId: (o) => o.id,
+      selected,
+      onChange: onSelectionChange,
+      selectAllLabel: tUi("selectAll"),
+      selectRowLabel: (o) => tUi("selectRow", { name: `#${o.order_number}` }),
+    }),
     {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label={`Select order ${row.original.order_number}`}
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
+      id: "order",
+      header: head("order", t("table.orderNumber")),
+      width: "150px",
+      mobile: "title",
+      cell: (o) => <IdText className="font-medium">#{o.order_number}</IdText>,
     },
     {
-      accessorKey: "order_number",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.orderNumber")} />
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium">
-          #{row.original.order_number}
-        </span>
-      ),
-      enableHiding: false,
-    },
-    {
-      accessorKey: "client_name",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.customer")} />
-      ),
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium">
-            {row.original.client_name || "Unknown"}
-          </div>
-          {row.original.client_email && (
-            <div className="text-sm text-muted-foreground">
-              {row.original.client_email}
-            </div>
-          )}
-        </div>
+      id: "customer",
+      header: head("customer", t("table.customer")),
+      width: "minmax(0,1.6fr)",
+      mobile: "meta",
+      cell: (o) => (
+        <>
+          <PersonCell name={customerName(o)} sub={o.client_email} className="hidden @3xl:flex" />
+          <span className="truncate @3xl:hidden">{customerName(o)}</span>
+        </>
       ),
     },
     {
-      accessorKey: "created_at",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.date")} />
-      ),
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {formatDate(row.original.created_at, locale)}
-        </span>
-      ),
+      id: "items",
+      header: head("items", t("table.items"), "end"),
+      width: "64px",
+      align: "end",
+      mobile: "hidden",
+      className: "tabular-nums",
+      cell: (o) => (o.total_items === undefined || o.total_items === null ? "—" : formatCount(o.total_items)),
     },
     {
-      accessorKey: "total_amount",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.total")} />
-      ),
-      cell: ({ row }) => (
-        <div className="font-medium">
-          {formatCurrency(row.original.total_amount)}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "payment_status",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("columns.payment")} />
-      ),
-      cell: ({ row }) => {
-        const status = String(row.original.payment_status || "pending")
-        const variant = PAYMENT_BADGE_VARIANTS[status] || "secondary"
-        const PaymentIcon = PAYMENT_STATUS_ICONS[status] || PAYMENT_STATUS_ICONS.pending
-        const provider = row.original.payment_provider
+      id: "payment",
+      header: head("payment", t("columns.payment")),
+      width: "minmax(0,170px)",
+      mobile: "meta",
+      cell: (o) => {
+        const provider = o.payment_provider ? PAYMENT_PROVIDER_LABELS[o.payment_provider] || o.payment_provider : null
         return (
-          <div className="flex items-center gap-1.5">
-            <Badge variant={variant}>
-              <PaymentIcon className="mr-1 h-3 w-3" />
-              {t(`paymentStatus.${status}`)}
-            </Badge>
-            {provider && (
-              <span className="text-xs text-muted-foreground">
-                {PAYMENT_PROVIDER_LABELS[provider] || provider}
-              </span>
-            )}
-          </div>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <PaymentStatusPill status={String(o.payment_status || "pending")} />
+            {provider && <span className="truncate text-[11px] text-muted-foreground">{provider}</span>}
+          </span>
         )
       },
     },
     {
-      accessorKey: "status",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("table.status")} />
-      ),
-      cell: ({ row }) => {
-        const status = String(row.original.status || "pending")
-        const StatusIcon = STATUS_ICONS[status] || STATUS_ICONS.pending
-        return (
-          <Badge
-            variant="secondary"
-            className={STATUS_COLORS[status] || ""}
-          >
-            <StatusIcon className="mr-1 h-3 w-3" />
-            {t(`status.${status}`)}
-          </Badge>
-        )
-      },
+      id: "status",
+      header: head("status", t("table.status")),
+      width: "120px",
+      mobile: "end",
+      cell: (o) => <OrderStatusPill status={String(o.status || "pending")} />,
+    },
+    {
+      id: "total",
+      header: head("total", t("table.total"), "end"),
+      width: "100px",
+      align: "end",
+      mobile: "meta",
+      cell: (o) => <MoneyCell value={o.total_amount} className="font-medium" />,
+    },
+    {
+      id: "date",
+      header: head("date", t("table.date")),
+      width: "100px",
+      mobile: "meta",
+      muted: true,
+      className: "tabular-nums",
+      cell: (o) => formatEcDate(o.created_at, locale),
     },
   ]
 }

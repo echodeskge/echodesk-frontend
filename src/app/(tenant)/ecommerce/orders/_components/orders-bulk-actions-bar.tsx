@@ -1,7 +1,9 @@
 "use client"
 
 import { Truck, CheckCircle2, Download, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { BulkBar, rdButton } from "../../_components/ui"
+
+type Translate = (key: string, values?: Record<string, string | number>) => string
 
 interface OrdersBulkActionsBarProps {
   selectedCount: number
@@ -9,61 +11,42 @@ interface OrdersBulkActionsBarProps {
   onMarkShipped: () => void
   onMarkDelivered: () => void
   onExportSelected: () => void
-  t: (key: string) => string
+  onClear: () => void
+  t: Translate
+  tUi: Translate
 }
 
+/** Replaces the toolbar while orders are selected (same three actions as before). */
 export function OrdersBulkActionsBar({
   selectedCount,
   loading,
   onMarkShipped,
   onMarkDelivered,
   onExportSelected,
+  onClear,
   t,
+  tUi,
 }: OrdersBulkActionsBarProps) {
-  if (selectedCount === 0) return null
-
+  const Spin = <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
   return (
-    <div
-      className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform"
-      role="region"
-      aria-live="polite"
-      aria-label="Selection actions"
+    <BulkBar
+      count={selectedCount}
+      label={t("bulkActions.selected", { count: selectedCount })}
+      clearLabel={tUi("clearSelection")}
+      onClear={onClear}
     >
-      <div className="flex items-center gap-3 rounded-lg border bg-background px-6 py-3 shadow-lg">
-        <span className="text-sm font-medium">
-          {t("bulkActions.selected").replace("{count}", String(selectedCount))}
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={loading}
-          onClick={onMarkShipped}
-        >
-          {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Truck className="mr-2 h-4 w-4" />
-          )}
-          {t("bulkActions.markShipped")}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={loading}
-          onClick={onMarkDelivered}
-        >
-          {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <CheckCircle2 className="mr-2 h-4 w-4" />
-          )}
-          {t("bulkActions.markDelivered")}
-        </Button>
-        <Button size="sm" variant="outline" onClick={onExportSelected}>
-          <Download className="mr-2 h-4 w-4" />
-          {t("bulkActions.exportSelected")}
-        </Button>
-      </div>
-    </div>
+      <button type="button" className={rdButton.outlineSm} disabled={loading} onClick={onMarkShipped}>
+        {loading ? Spin : <Truck className="h-3.5 w-3.5" aria-hidden />}
+        {t("bulkActions.markShipped")}
+      </button>
+      <button type="button" className={rdButton.outlineSm} disabled={loading} onClick={onMarkDelivered}>
+        {loading ? Spin : <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />}
+        {t("bulkActions.markDelivered")}
+      </button>
+      <button type="button" className={rdButton.outlineSm} onClick={onExportSelected}>
+        <Download className="h-3.5 w-3.5" aria-hidden />
+        {t("bulkActions.exportSelected")}
+      </button>
+    </BulkBar>
   )
 }
