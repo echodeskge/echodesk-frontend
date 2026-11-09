@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Tag, Search } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/utils";
+import { isoToDateTimeLocal } from "../_components/ui/format";
 
 const EMPTY_FORM: PromoCodeRequest = {
   code: "",
@@ -154,8 +155,8 @@ export default function PromoCodesPage() {
       discount_value: code.discount_value,
       min_order_amount: code.min_order_amount || "",
       max_uses: code.max_uses,
-      valid_from: code.valid_from ? code.valid_from.slice(0, 16) : "",
-      valid_until: code.valid_until ? code.valid_until.slice(0, 16) : "",
+      valid_from: isoToDateTimeLocal(code.valid_from),
+      valid_until: isoToDateTimeLocal(code.valid_until),
       is_active: code.is_active ?? true,
     });
     setSheetOpen(true);
