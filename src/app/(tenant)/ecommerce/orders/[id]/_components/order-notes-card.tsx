@@ -1,7 +1,7 @@
 "use client"
 
 import { FileText } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { InfoCard } from "../../../_components/ui"
 import { OrderDetail } from "../../_types"
 
 interface OrderNotesCardProps {
@@ -9,31 +9,26 @@ interface OrderNotesCardProps {
   t: (key: string) => string
 }
 
+/** Customer and admin notes (hidden when there are none). */
 export function OrderNotesCard({ order, t }: OrderNotesCardProps) {
   if (!order.notes && !order.admin_notes) return null
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          {t("detail.notes")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <InfoCard title={t("detail.notes")} icon={<FileText />} testId="ec-order-notes">
+      <div className="flex flex-col gap-3 py-1">
         {order.notes && (
-          <div>
-            <h4 className="font-medium mb-2">{t("detail.customerNotes")}</h4>
-            <p className="text-muted-foreground">{order.notes}</p>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-xs font-medium text-muted-foreground">{t("detail.customerNotes")}</h3>
+            <p className="whitespace-pre-wrap text-[13px] [overflow-wrap:anywhere]">{order.notes}</p>
           </div>
         )}
         {order.admin_notes && (
-          <div>
-            <h4 className="font-medium mb-2">{t("detail.adminNotes")}</h4>
-            <p className="text-muted-foreground">{order.admin_notes}</p>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-xs font-medium text-muted-foreground">{t("detail.adminNotes")}</h3>
+            <p className="whitespace-pre-wrap text-[13px] [overflow-wrap:anywhere]">{order.admin_notes}</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </InfoCard>
   )
 }

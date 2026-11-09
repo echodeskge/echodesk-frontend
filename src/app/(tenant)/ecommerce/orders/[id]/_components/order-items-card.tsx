@@ -1,21 +1,22 @@
 "use client"
 
 import { useLocale } from "next-intl"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Package } from "lucide-react"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { formatCurrency, getCourierInfo } from "../../_lib/utils"
+  EcTable,
+  IdText,
+  InfoCard,
+  MoneyCell,
+  ProductThumb,
+  SummaryRows,
+  formatCount,
+  parseMoney,
+  type EcColumn,
+} from "../../../_components/ui"
+import { getCourierInfo } from "../../_lib/utils"
 import { OrderDetail } from "../../_types"
-import { ProductThumb } from "../../../_components/ui/product-thumb"
 
+type Translate = (key: string, values?: Record<string, string | number>) => string
 type Localized = string | Record<string, string> | null | undefined
 
 /** Readable variant info sent by the API with each order line. */
@@ -33,9 +34,10 @@ function localized(value: Localized, locale: string): string {
   return value[locale] || value.ka || value.en || Object.values(value)[0] || ""
 }
 
-function variantSummary(details: VariantDetails, locale: string): string {
+/** "Black / 41 · Color: black · Size: 41" */
+export function variantSummary(details: VariantDetails, locale: string): string {
   const name = localized(details.name, locale)
-  const attrs = details.attributes
+  const attrs = (details.attributes ?? [])
     .map((a) => {
       const value = Array.isArray(a.value)
         ? a.value.map((v) => localized(v, locale)).join(", ")
@@ -46,146 +48,127 @@ function variantSummary(details: VariantDetails, locale: string): string {
   return [name, ...attrs].filter(Boolean).join(" · ")
 }
 
+type Item = NonNullable<OrderDetail["items"]>[number]
+
 interface OrderItemsCardProps {
   order: OrderDetail
-  t: (key: string) => string
+  t: Translate
 }
 
+/** Order lines and the money summary (subtotal, shipping, tax, discount, total). */
 export function OrderItemsCard({ order, t }: OrderItemsCardProps) {
   const locale = useLocale()
   const courier = getCourierInfo(order.payment_metadata)
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t("detail.orderItems")}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea
-          orientation="horizontal"
-          className="w-[calc(100vw-2.25rem)] md:w-auto"
-        >
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("detail.product")}</TableHead>
-                <TableHead className="text-center">
-                  {t("detail.quantity")}
-                </TableHead>
-                <TableHead className="text-end">
-                  {t("detail.price")}
-                </TableHead>
-                <TableHead className="text-end">
-                  {t("detail.total")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {order.items?.map((item) => {
-                const productName =
-                  localized(item.product_name as Localized, locale) || "Product"
-                const extra = item as unknown as {
-                  product_image?: string | null
-                  variant_details?: VariantDetails | null
-                }
-                const variantDetails = extra.variant_details
-                const productImage =
-                  variantDetails?.image || extra.product_image || undefined
 
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        {productImage && (
-                          <ProductThumb src={productImage} alt={String(productName)} size={40} className="size-9" />
-                        )}
-                        <div>
-                          <span className="text-sm font-medium">
-                            {productName}
-                          </span>
-                          {variantDetails ? (
-                            <>
-                              <p className="text-xs text-muted-foreground">
-                                {variantSummary(variantDetails, locale)}
-                              </p>
-                              <p className="font-mono text-xs text-muted-foreground">
-                                {variantDetails.sku}
-                              </p>
-                            </>
-                          ) : (
-                            item.variant && (
-                              <p className="text-xs text-muted-foreground">
-                                #{item.variant}
-                              </p>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {item.quantity}
-                    </TableCell>
-                    <TableCell className="text-end">
-                      {formatCurrency(item.price)}
-                    </TableCell>
-                    <TableCell className="text-end">
-                      {formatCurrency(item.subtotal)}
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-        <Separator />
-        <div className="space-y-2 p-4">
-          {order.subtotal && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t("detail.subtotal")}
-              </span>
-              <span>{formatCurrency(order.subtotal)}</span>
-            </div>
-          )}
-          {order.shipping_cost && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t("detail.shipping")}
-                {courier.pickup
-                  ? ` · ${t("detail.pickup")}`
-                  : courier.chosen
-                    ? ` · ${courier.chosen}`
-                    : ""}
-              </span>
-              <span>
-                {parseFloat(order.shipping_cost) === 0
-                  ? t("detail.free")
-                  : formatCurrency(order.shipping_cost)}
-              </span>
-            </div>
-          )}
-          {order.tax_amount && parseFloat(order.tax_amount) > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{t("detail.tax")}</span>
-              <span>{formatCurrency(order.tax_amount)}</span>
-            </div>
-          )}
-          {order.discount_amount && parseFloat(order.discount_amount) > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t("detail.discount")}
-              </span>
-              <span className="text-green-600">
-                -{formatCurrency(order.discount_amount)}
-              </span>
-            </div>
-          )}
-          <Separator />
-          <div className="flex justify-between font-semibold">
-            <span>{t("detail.total")}</span>
-            <span>{formatCurrency(order.total_amount)}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+  const columns: EcColumn<Item>[] = [
+    {
+      id: "product",
+      header: t("detail.product"),
+      width: "minmax(0,1fr)",
+      mobile: "title",
+      cell: (item) => {
+        const productName = localized(item.product_name as Localized, locale) || t("detail.product")
+        const extra = item as unknown as { product_image?: string | null; variant_details?: VariantDetails | null }
+        const variantDetails = extra.variant_details
+        const productImage = variantDetails?.image || extra.product_image || undefined
+        return (
+          <span className="flex min-w-0 items-center gap-3">
+            <ProductThumb src={productImage} alt="" size={32} />
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate font-medium">{productName}</span>
+              {variantDetails ? (
+                <>
+                  <span className="truncate text-xs text-muted-foreground">{variantSummary(variantDetails, locale)}</span>
+                  {variantDetails.sku && <IdText className="text-[11px] text-muted-foreground">{variantDetails.sku}</IdText>}
+                </>
+              ) : (
+                item.variant && <span className="text-xs text-muted-foreground">#{item.variant}</span>
+              )}
+            </span>
+          </span>
+        )
+      },
+    },
+    {
+      id: "quantity",
+      header: t("detail.quantity"),
+      width: "72px",
+      align: "center",
+      mobile: "meta",
+      className: "tabular-nums",
+      cell: (item) => (
+        <span>
+          <span className="@3xl:hidden">× </span>
+          {formatCount(item.quantity)}
+        </span>
+      ),
+    },
+    {
+      id: "price",
+      header: t("detail.price"),
+      width: "104px",
+      align: "end",
+      mobile: "meta",
+      cell: (item) => <MoneyCell value={item.price} />,
+    },
+    {
+      id: "total",
+      header: t("detail.total"),
+      width: "104px",
+      align: "end",
+      mobile: "end",
+      cell: (item) => <MoneyCell value={item.subtotal} className="font-medium" />,
+    },
+  ]
+
+  const shippingLabel = `${t("detail.shipping")}${
+    courier.pickup ? ` · ${t("detail.pickup")}` : courier.chosen ? ` · ${courier.chosen}` : ""
+  }`
+  const tax = parseMoney(order.tax_amount)
+  const discount = parseMoney(order.discount_amount)
+
+  return (
+    <InfoCard title={t("detail.orderItems")} icon={<Package />} flush testId="ec-order-items">
+      <EcTable
+        variant="flush"
+        columns={columns}
+        rows={order.items ?? []}
+        rowKey={(item) => item.id}
+        rowClassName={() => "@3xl:h-auto @3xl:min-h-12 @3xl:py-2"}
+        ariaLabel={t("detail.orderItems")}
+        testId="ec-order-items-table"
+      />
+      <div className="border-t px-4 py-3">
+        <SummaryRows
+          rows={[
+            {
+              key: "subtotal",
+              label: t("detail.subtotal"),
+              value: <MoneyCell value={order.subtotal} />,
+              hidden: !order.subtotal,
+            },
+            {
+              key: "shipping",
+              label: shippingLabel,
+              value: parseMoney(order.shipping_cost) === 0 ? t("detail.free") : <MoneyCell value={order.shipping_cost} />,
+              hidden: !order.shipping_cost,
+            },
+            {
+              key: "tax",
+              label: t("detail.tax"),
+              value: <MoneyCell value={order.tax_amount} />,
+              hidden: !(tax && tax > 0),
+            },
+            {
+              key: "discount",
+              label: t("detail.discount"),
+              value: <MoneyCell value={order.discount_amount} negative className="text-green-700 dark:text-green-400" />,
+              hidden: !(discount && discount > 0),
+            },
+          ]}
+          total={{ label: t("detail.total"), value: <MoneyCell value={order.total_amount} /> }}
+        />
+      </div>
+    </InfoCard>
   )
 }

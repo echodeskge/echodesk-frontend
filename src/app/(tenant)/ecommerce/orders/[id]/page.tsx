@@ -8,7 +8,6 @@ import {
   ecommerceAdminOrdersRefundCreate,
 } from "@/api/generated"
 import axiosInstance from "@/api/axios"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { useMyAccess } from "@/hooks/useMyAccess"
@@ -16,12 +15,14 @@ import { getApiErrorMessage } from "@/lib/utils"
 import { OrderDetail } from "../_types"
 import { OrderDetails } from "./_components/order-details"
 import { OrderNotFound } from "./_components/order-not-found"
+import { DetailLayout, EcommerceHeaderBridge } from "../../_components/ui"
 
 export default function OrderDetailPage() {
   const params = useParams()
   const t = useTranslations("ecommerceOrders")
   const [order, setOrder] = useState<OrderDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<unknown>(null)
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [refunding, setRefunding] = useState(false)
   // Refund, mark-paid and cancelling a paid order need e-commerce manager rights.
@@ -30,14 +31,16 @@ export default function OrderDetailPage() {
   const fetchOrder = useCallback(async (id: number) => {
     try {
       setLoading(true)
+      setLoadError(null)
       const response = await ecommerceAdminOrdersRetrieve(id)
       setOrder(response as unknown as OrderDetail)
-    } catch {
-      toast.error("Failed to load order details")
+    } catch (error) {
+      setLoadError(error)
+      toast.error(t("detailToast.loadFailed"))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     if (params.id) {
@@ -55,14 +58,18 @@ export default function OrderDetailPage() {
           { status: newStatus }
         )
         setOrder(response.data as unknown as OrderDetail)
-        toast.success(`Order status updated to ${newStatus}`)
+        toast.success(
+          t("detailToast.statusUpdated", {
+            status: t.has(`status.${newStatus}`) ? t(`status.${newStatus}`) : newStatus,
+          })
+        )
       } catch (error) {
-        toast.error(getApiErrorMessage(error, "Failed to update order status"))
+        toast.error(getApiErrorMessage(error, t("detailToast.statusFailed")))
       } finally {
         setUpdatingStatus(false)
       }
     },
-    [order]
+    [order, t]
   )
 
   const handleMarkPaid = useCallback(async () => {
@@ -71,12 +78,12 @@ export default function OrderDetailPage() {
       await axiosInstance.post(
         `/api/ecommerce/admin/orders/${order.id}/mark-paid/`
       )
-      toast.success("Order marked as paid")
+      toast.success(t("detailToast.markedPaid"))
       fetchOrder(order.id)
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Failed to mark as paid"))
+      toast.error(getApiErrorMessage(error, t("detailToast.markPaidFailed")))
     }
-  }, [order, fetchOrder])
+  }, [order, fetchOrder, t])
 
   const handleRefund = useCallback(async () => {
     if (!order) return
@@ -94,46 +101,44 @@ export default function OrderDetailPage() {
     }
   }, [order, t, fetchOrder])
 
-  if (loading) {
+  const cardSkeleton = (key: number, h: string) => (
+    <div key={key} className="rounded-lg border bg-card">
+      <div className="flex h-11 items-center border-b px-4">
+        <Skeleton className="h-3 w-28" />
+      </div>
+      <div className="p-4">
+        <Skeleton className={`w-full ${h}`} />
+      </div>
+    </div>
+  )
+
+  // Keep the page on screen while it reloads after mark-paid / refund.
+  if (loading && !order) {
     return (
-      <section className="container space-y-4 p-4">
-        <Skeleton className="h-8 w-32" />
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-4 md:col-span-2">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-5 w-24" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-16 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <div aria-busy data-testid="ec-order-loading">
+        <DetailLayout
+          header={<Skeleton className="h-[58px] w-full rounded-lg" />}
+          main={cardSkeleton(0, "h-40")}
+          rail={[1, 2, 3].map((i) => cardSkeleton(i, "h-16"))}
+        />
+      </div>
     )
   }
 
   if (!order) {
-    return <OrderNotFound t={t} />
+    const notFound = (loadError as { response?: { status?: number } } | null)?.response?.status === 404
+    return (
+      <OrderNotFound
+        t={t}
+        error={loadError && !notFound ? loadError : undefined}
+        onRetry={params.id ? () => fetchOrder(Number(params.id)) : undefined}
+      />
+    )
   }
 
   return (
-    <section className="container p-4">
+    <>
+      <EcommerceHeaderBridge breadcrumb={`#${order.order_number}`} />
       <OrderDetails
         order={order}
         updatingStatus={updatingStatus}
@@ -144,6 +149,6 @@ export default function OrderDetailPage() {
         onRefund={handleRefund}
         t={t}
       />
-    </section>
+    </>
   )
 }
