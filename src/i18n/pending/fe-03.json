@@ -1,0 +1,18 @@
+{
+  "en": {
+    "nav": {
+      "sidebar": {
+        "showBoards": "Show boards",
+        "hideBoards": "Hide boards"
+      }
+    }
+  },
+  "ka": {
+    "nav": {
+      "sidebar": {
+        "showBoards": "დაფების ჩვენება",
+        "hideBoards": "დაფების დამალვა"
+      }
+    }
+  }
+}

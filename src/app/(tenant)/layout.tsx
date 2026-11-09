@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { Suspense, useEffect, useState, useMemo, useRef } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { profileLeaveFeatures } from "./leave/_lib/useLeaveFeatures";
-import { useBoards } from "@/hooks/useBoards";
+import { useBoardsLite } from "./tickets/_hooks/use-boards-lite";
 import { getSidebarMenuItems, MenuItem } from "@/services/permissionService";
 import { AppSidebar } from "@/components/AppSidebar";
 import {
@@ -13,7 +13,6 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import BoardSwitcher from "@/components/BoardSwitcher";
 import { TicketCreateProvider, useTicketCreate } from "@/contexts/TicketCreateContext";
 import { BugReportProvider, useBugReport } from "@/contexts/BugReportContext";
 
@@ -26,16 +25,11 @@ import { TenantInfo } from "@/types/auth";
 import { useTenant } from "@/contexts/TenantContext";
 import { NotificationBell } from "@/components/NotificationBell";
 import { MessengerBell } from "@/components/MessengerBell";
-import { BoardCollaborationIndicators } from "@/components/BoardCollaborationIndicators";
-import { BoardCollaborationProvider } from "@/contexts/BoardCollaborationContext";
-import { useTicketBoardWebSocket } from "@/hooks/useTicketBoardWebSocket";
+import { BoardAdminHost } from "@/components/tickets-admin/board-admin-host";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/lib/i18n";
 import dynamic from "next/dynamic";
 
-const BoardStatusEditor = dynamic(() => import("@/components/BoardStatusEditor"), { ssr: false });
-const BoardUserManager = dynamic(() => import("@/components/BoardUserManager"), { ssr: false });
-const BoardCreateSheet = dynamic(() => import("@/components/BoardCreateSheet").then(m => ({ default: m.BoardCreateSheet })), { ssr: false });
 const TeamChatWidget = dynamic(() => import("@/components/TeamChat").then(m => ({ default: m.TeamChatWidget })), { ssr: false });
 const DialpadWidget = dynamic(() => import("@/components/calls/DialpadWidget"), { ssr: false });
 const IncomingCallSidebar = dynamic(() => import("@/components/calls/IncomingCallSidebar").then(m => ({ default: m.IncomingCallSidebar })), { ssr: false });
@@ -55,11 +49,31 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SubscriptionInactiveAdminScreen } from "@/components/subscription/SubscriptionInactiveAdminScreen";
 import { SubscriptionInactiveUserScreen } from "@/components/subscription/SubscriptionInactiveUserScreen";
 import { useReactivateSubscription, useDashboardAppearance } from "@/hooks/api";
-import { Plus, Volume2, VolumeX, Sun, Moon, Search, X } from "lucide-react";
+import { Plus, Volume2, VolumeX, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { webRouteForNotificationLink } from "@/lib/notificationLinks";
 import { HeaderActionsProvider, useHeaderSlot } from "@/contexts/HeaderActionsContext";
+
+/**
+ * Keeps `BoardContext.selectedBoardId` in sync with `/tickets?board=` (plan
+ * E19): the URL is the source of truth on the tickets screens, and global
+ * consumers (create sheet, board admin host) read the context. Mounted at
+ * the top of the tenant tree (before the layout's loading skeleton) so the
+ * URL board wins over the default-board fallback; isolated in its own
+ * Suspense boundary because it reads `useSearchParams`.
+ */
+function BoardUrlSync() {
+  const { setSelectedBoardId } = useBoard();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const raw = pathname?.startsWith("/tickets") ? searchParams?.get("board") : null;
+  const boardParam = raw && /^\d+$/.test(raw) && Number(raw) > 0 ? Number(raw) : null;
+  useEffect(() => {
+    if (boardParam !== null) setSelectedBoardId(boardParam);
+  }, [boardParam, setSelectedBoardId]);
+  return null;
+}
 
 function TenantLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -73,10 +87,9 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   const { data: userProfile, isLoading: profileLoading } = useUserProfile();
   const { mutateAsync: reactivateSubscription } = useReactivateSubscription();
-  const { data: boards } = useBoards();
   const { data: appearance, isLoading: appearanceLoading } = useDashboardAppearance();
   const { setAppearance, resolvedMode, setMode } = useTheme();
-  const { selectedBoardId, setSelectedBoardId, ticketSearchQuery, setTicketSearchQuery } = useBoard();
+  const { selectedBoardId, setSelectedBoardId } = useBoard();
   const { data: socialSettings } = useSocialSettings();
 
   // Update notification sound manager with backend settings
@@ -93,61 +106,15 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [appearance, setAppearance]);
 
-  // Initialize WebSocket for board collaboration only on tickets page
-  const isTicketsPage = pathname.includes('/tickets');
+  // The ticket board socket lives in the tickets route (FE-02 TicketsWrapper),
+  // not here: the layout no longer opens it.
   const queryClient = useQueryClient();
-  const [ticketsBeingMoved, setTicketsBeingMoved] = useState<Map<number, string>>(new Map());
-  const [ticketsBeingEdited, setTicketsBeingEdited] = useState<Map<number, string>>(new Map());
   const [isSoundMuted, setIsSoundMuted] = useState(() => {
     // Initialize from sound manager (which reads from localStorage)
     if (typeof window !== 'undefined') {
       return !getNotificationSound().isEnabled();
     }
     return false;
-  });
-
-  const {
-    isConnected: boardIsConnected,
-    activeUsers: boardActiveUsers,
-  } = useTicketBoardWebSocket({
-    boardId: isTicketsPage && selectedBoardId ? selectedBoardId : 'none',
-
-    // Real-time updates: Refetch board data when tickets are moved or updated
-    onTicketMoved: (event) => {
-      queryClient.invalidateQueries({ queryKey: ['kanbanBoard', selectedBoardId] });
-    },
-
-    onTicketUpdated: (event) => {
-      queryClient.invalidateQueries({ queryKey: ['kanbanBoard', selectedBoardId] });
-    },
-
-    // Visual feedback: Someone is dragging a ticket
-    onTicketBeingMoved: (event) => {
-      setTicketsBeingMoved(prev => new Map(prev).set(event.ticket_id, event.user_name));
-
-      // Remove after 3 seconds (in case drag is abandoned)
-      setTimeout(() => {
-        setTicketsBeingMoved(prev => {
-          const next = new Map(prev);
-          next.delete(event.ticket_id);
-          return next;
-        });
-      }, 3000);
-    },
-
-    // Conflict prevention: Someone is editing a ticket
-    onTicketBeingEdited: (event) => {
-      setTicketsBeingEdited(prev => new Map(prev).set(event.ticket_id, event.user_name));
-    },
-
-    // Conflict prevention: Someone stopped editing
-    onTicketEditingStopped: (ticketId) => {
-      setTicketsBeingEdited(prev => {
-        const next = new Map(prev);
-        next.delete(ticketId);
-        return next;
-      });
-    },
   });
 
   // Global WebSocket for message notifications (plays sound and updates sidebar)
@@ -185,12 +152,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     },
     autoReconnect: true,
   });
-
-  const [editingBoardId, setEditingBoardId] = useState<number | null>(null);
-  const [managingBoardUsersId, setManagingBoardUsersId] = useState<
-    number | null
-  >(null);
-  const [isBoardCreateOpen, setIsBoardCreateOpen] = useState(false);
 
   // Get tenant from context (using React Query under the hood)
   const { tenant: tenantConfig, loading: tenantLoading } = useTenant();
@@ -423,6 +384,22 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     });
   }, [filteredMenuItems, appearance?.sidebar_order]);
 
+  // Accessible boards (lite, shared cache with the sidebar). Keeps the global
+  // selection valid: a board that was deleted or lost falls back to the
+  // default board, else the first accessible one (W11 for global consumers).
+  const hasTickets = visibleMenuItems.some((item) => item.id === "tickets");
+  const { data: boardsLite } = useBoardsLite({ enabled: hasTickets });
+  useEffect(() => {
+    if (!boardsLite) return;
+    if (selectedBoardId !== null && boardsLite.some((b) => b.id === selectedBoardId)) return;
+    const fallback = boardsLite.find((b) => b.is_default)?.id ?? boardsLite[0]?.id ?? null;
+    // Functional update: a board set in the same commit (URL sync) is checked
+    // against the list instead of being overwritten by this render's value.
+    setSelectedBoardId((current) =>
+      current !== null && boardsLite.some((b) => b.id === current) ? current : fallback,
+    );
+  }, [boardsLite, selectedBoardId, setSelectedBoardId]);
+
   // IDs that are sidebar actions (open dialogs), not navigable pages
   const actionOnlyItems = new Set(["report-bug"]);
 
@@ -593,22 +570,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleEditBoardStatuses = (boardId: number) => {
-    setEditingBoardId(boardId);
-  };
-
-  const handleManageBoardUsers = (boardId: number) => {
-    setManagingBoardUsersId(boardId);
-  };
-
-  const handleCloseEditor = () => {
-    setEditingBoardId(null);
-  };
-
-  const handleCloseUserManager = () => {
-    setManagingBoardUsersId(null);
-  };
-
   // Get current view from pathname
   const pathParts = pathname.split("/").filter(Boolean);
   // For nested routes like /ecommerce/orders or /calls/logs, use the full path
@@ -644,9 +605,6 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
 
   const pageTitle = currentMenuItem?.label || t("dashboard");
   const headerSlot = useHeaderSlot();
-
-  // Check if we should show board switcher (always show on tickets page, even with no boards)
-  const showBoardSwitcher = currentView === "tickets";
 
   if (profileLoading || tenantLoading || !tenantInfo || appearanceLoading || facebookStatusLoading) {
     return <LayoutSkeleton />;
@@ -725,47 +683,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
               )}
             </h1>
             {headerSlot?.meta && <div className="ml-2 flex min-w-0 items-center">{headerSlot.meta}</div>}
-            {showBoardSwitcher && (
-              <>
-                <div className="ml-2">
-                  <BoardSwitcher
-                    selectedBoardId={selectedBoardId}
-                    boards={boards}
-                    userProfile={userProfile}
-                    onBoardChange={setSelectedBoardId}
-                    onCreateBoard={() => setIsBoardCreateOpen(true)}
-                    onEditBoardStatuses={handleEditBoardStatuses}
-                    onManageBoardUsers={handleManageBoardUsers}
-                  />
-                </div>
-                <div className="relative ml-2 hidden sm:block">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder={t("searchTickets")}
-                    value={ticketSearchQuery}
-                    onChange={(e) => setTicketSearchQuery(e.target.value)}
-                    className="h-8 w-48 rounded-md border border-input bg-background pl-8 pr-8 text-[13px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  />
-                  {ticketSearchQuery && (
-                    <button
-                      onClick={() => setTicketSearchQuery("")}
-                      className="absolute right-2 top-1/2 -translate-y-1/2"
-                      aria-label={t("clearSearch")}
-                    >
-                      <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
             <div className="ml-auto flex items-center gap-1.5">
-              {/* Active Users Indicator - Only show on tickets page */}
-              {isTicketsPage && (
-                <BoardCollaborationIndicators
-                  activeUsers={boardActiveUsers}
-                />
-              )}
               {headerSlot?.primary}
               {headerSlot?.primary && <span aria-hidden className="mx-0.5 h-4 w-px bg-border" />}
               {headerSlot?.icons}
@@ -822,15 +740,7 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
           </header>
 
           <div className="flex-1 bg-background overflow-auto">
-            <BoardCollaborationProvider
-              isConnected={boardIsConnected}
-              activeUsers={boardActiveUsers}
-              boardId={selectedBoardId}
-              ticketsBeingMoved={ticketsBeingMoved}
-              ticketsBeingEdited={ticketsBeingEdited}
-            >
-              {children}
-            </BoardCollaborationProvider>
+            {children}
           </div>
         </SidebarInset>
       </div>
@@ -838,29 +748,8 @@ function TenantLayoutContent({ children }: { children: React.ReactNode }) {
       <TicketCreateSheet />
       <BugReportDialog />
 
-      {/* Board Create Sheet */}
-      <BoardCreateSheet
-        isOpen={isBoardCreateOpen}
-        onClose={() => setIsBoardCreateOpen(false)}
-        onBoardCreated={(board) => {
-          // Switch to the newly created board
-          setSelectedBoardId(board.id);
-        }}
-      />
-
-      {/* Board Status Editor Modal */}
-      <BoardStatusEditor
-        boardId={editingBoardId}
-        open={editingBoardId !== null}
-        onClose={handleCloseEditor}
-      />
-
-      {/* Board User Manager Modal */}
-      <BoardUserManager
-        boardId={managingBoardUsersId}
-        open={managingBoardUsersId !== null}
-        onClose={handleCloseUserManager}
-      />
+      {/* Board dialogs (create, settings, users, columns) are mounted by
+          BoardAdminHost, which wraps this tree (see TenantLayout). */}
 
       {/* Floating Dialpad Widget (above Team Chat) */}
       {userProfile?.id && <DialpadWidget />}
@@ -894,9 +783,14 @@ export default function TenantLayout({
           <TicketCreateProvider>
             <BugReportProvider>
               <BoardProvider>
-                <HeaderActionsProvider>
-                  <TenantLayoutContent>{children}</TenantLayoutContent>
-                </HeaderActionsProvider>
+                <Suspense fallback={null}>
+                  <BoardUrlSync />
+                </Suspense>
+                <BoardAdminHost>
+                  <HeaderActionsProvider>
+                    <TenantLayoutContent>{children}</TenantLayoutContent>
+                  </HeaderActionsProvider>
+                </BoardAdminHost>
               </BoardProvider>
             </BugReportProvider>
           </TicketCreateProvider>
