@@ -138,9 +138,30 @@ describe("useTicketFilters", () => {
     act(() => result.current.setFilter("assignee", ["me"]));
     expect(lastUrl()).toBe("/tickets?board=5&assignee=me");
     expect(nav.replace).toHaveBeenCalledWith("/tickets?board=5&assignee=me", { scroll: false });
+    // The mocked URL hasn't caught up yet: the second change builds on the first (W1 verify).
     act(() => result.current.setFilter("due", "none"));
-    expect(lastUrl()).toBe("/tickets?board=5&due=none");
+    expect(lastUrl()).toBe("/tickets?board=5&assignee=me&due=none");
     expect(nav.push).not.toHaveBeenCalled();
+  });
+
+  it("quick successive changes before the URL updates keep every change (W1 verify)", () => {
+    nav.search = "board=5";
+    const { result } = renderHook(() => useTicketFilters());
+    act(() => result.current.setFilter("priority", ["high"]));
+    act(() => result.current.setFilter("priority", ["high", "low"]));
+    act(() => result.current.setFilter("label", [3]));
+    act(() => result.current.cycleSort());
+    expect(lastUrl()).toBe("/tickets?board=5&priority=high%2Clow&label=3&sort=created");
+  });
+
+  it("drops the pending state once the URL moves on", () => {
+    nav.search = "board=5";
+    const { result, rerender } = renderHook(() => useTicketFilters());
+    act(() => result.current.setFilter("priority", ["high"]));
+    nav.search = "board=5&label=7";
+    rerender();
+    act(() => result.current.setFilter("due", "week"));
+    expect(lastUrl()).toBe("/tickets?board=5&label=7&due=week");
   });
 
   it("setFilters applies several changes in one replace", () => {

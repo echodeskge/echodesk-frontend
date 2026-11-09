@@ -10,7 +10,7 @@
  * `echodesk_selected_board_id` localStorage key, which may be unavailable
  * (private mode) and is read inside try/catch.
  */
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { isTicketPriority, type TicketPriority } from "../_lib/priority";
 import type { BoardSort, DueFilter, ListSort, TicketFilters, TicketSort, TicketView } from "../_lib/types";
@@ -209,35 +209,46 @@ export function useTicketFilters(): UseTicketFilters {
     [search],
   );
 
+  // `router.replace` lands a tick later, so a second change made before the
+  // URL updates must build on the first one, not on the stale URL state.
+  // The pending state is dropped as soon as the URL moves on.
+  const pendingRef = useRef<{ search: string; state: TicketUrlState } | null>(null);
+  const base = useCallback(
+    (): TicketUrlState =>
+      pendingRef.current && pendingRef.current.search === search ? pendingRef.current.state : state,
+    [search, state],
+  );
+
   const commit = useCallback(
     (next: TicketUrlState) => {
-      if (next.boardId !== state.boardId) writeStoredBoardId(next.boardId);
+      if (next.boardId !== base().boardId) writeStoredBoardId(next.boardId);
+      pendingRef.current = { search, state: next };
       const qs = serializeTicketState(next);
       router.replace(qs ? `${pathname}?${qs}` : pathname || "/tickets", { scroll: false });
     },
-    [router, pathname, state.boardId],
+    [router, pathname, search, base],
   );
 
   const setFilters = useCallback(
     (changes: Partial<Record<FilterKey, unknown>>) => {
-      let next = state;
+      let next = base();
       for (const [k, v] of Object.entries(changes)) next = applyFilterChange(next, k as FilterKey, v);
       commit(next);
     },
-    [state, commit],
+    [base, commit],
   );
 
   const setFilter = useCallback((key: FilterKey, value: unknown) => setFilters({ [key]: value }), [setFilters]);
 
-  const clear = useCallback(
-    () => commit({ boardId: state.boardId, view: state.view, sort: defaultSort(state.view), filters: EMPTY_FILTERS }),
-    [state, commit],
-  );
+  const clear = useCallback(() => {
+    const cur = base();
+    commit({ boardId: cur.boardId, view: cur.view, sort: defaultSort(cur.view), filters: EMPTY_FILTERS });
+  }, [base, commit]);
 
-  const cycleSort = useCallback(
-    () => commit({ ...state, sort: nextSort(state.view, state.sort) }),
-    [state, commit],
-  );
+  const cycleSort = useCallback(() => {
+    const cur = base();
+    commit({ ...cur, sort: nextSort(cur.view, cur.sort) });
+  }, [base, commit]);
 
   const toQueryString = useCallback(() => serializeTicketState(state), [state]);
 

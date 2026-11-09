@@ -6,7 +6,7 @@
  * it, and picking the selected value again clears it. Options can carry a
  * colour dot (labels), an icon (priority) or an initials avatar (users).
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Check, type LucideIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -74,16 +74,36 @@ export function FilterMenu({
     onOpenChange?.(v);
   };
 
-  const chosen = options.filter((o) => selected.includes(o.value));
+  // `selected` comes from the URL, which updates a tick after `router.replace`.
+  // Toggles build on the latest local pick, so two quick clicks keep both
+  // (the second no longer reads the pre-click selection). The URL value wins
+  // again as soon as it changes.
+  const [pending, setPending] = useState<string[] | null>(null);
+  const latest = useRef(selected);
+  const selectedKey = selected.join("\u0000");
+  useEffect(() => {
+    latest.current = selected;
+    setPending(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the value, not the array identity
+  }, [selectedKey]);
+  const current = pending ?? selected;
+
+  const chosen = options.filter((o) => current.includes(o.value));
   const active = chosen.length > 0;
 
   const toggle = (value: string) => {
-    if (multi) {
-      onChange(selected.includes(value) ? selected.filter((v) => v !== value) : [...selected, value]);
-    } else {
-      onChange(selected.includes(value) ? [] : [value]);
-      setOpen(false);
-    }
+    const base = latest.current;
+    const next = multi
+      ? base.includes(value)
+        ? base.filter((v) => v !== value)
+        : [...base, value]
+      : base.includes(value)
+        ? []
+        : [value];
+    latest.current = next;
+    setPending(next);
+    onChange(next);
+    if (!multi) setOpen(false);
   };
 
   const showSearch = searchable ?? options.length > 8;
@@ -111,7 +131,7 @@ export function FilterMenu({
             {emptyText && <CommandEmpty className="py-4 text-center text-xs text-muted-foreground">{emptyText}</CommandEmpty>}
             <CommandGroup className="p-1">
               {options.map((o) => {
-                const isSelected = selected.includes(o.value);
+                const isSelected = current.includes(o.value);
                 return (
                   <CommandItem
                     key={o.value}
